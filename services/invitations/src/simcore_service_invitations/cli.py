@@ -20,7 +20,7 @@ from .core.settings import ApplicationSettings, MinimalApplicationSettings
 from .services.invitations import (
     InvalidInvitationCodeError,
     create_invitation_link_and_content,
-    extract_invitation_code_from,
+    extract_invitation_code_from_url,
     extract_invitation_content,
 )
 
@@ -141,7 +141,7 @@ def extract(ctx: typer.Context, invitation_url: str):
 
     try:
         invitation: InvitationContent = extract_invitation_content(
-            invitation_code=extract_invitation_code_from(
+            invitation_code=extract_invitation_code_from_url(
                 parse_obj_as(HttpUrl, invitation_url)
             ),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),

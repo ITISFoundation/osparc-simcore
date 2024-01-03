@@ -14,7 +14,7 @@ from ..core.settings import ApplicationSettings
 from ..services.invitations import (
     InvalidInvitationCodeError,
     create_invitation_link_and_content,
-    extract_invitation_code_from,
+    extract_invitation_code_from_url,
     extract_invitation_content,
 )
 from ._dependencies import get_settings, get_validated_credentials
@@ -73,7 +73,7 @@ async def extracts_invitation_from_code(
 
     try:
         invitation = extract_invitation_content(
-            invitation_code=extract_invitation_code_from(encrypted.invitation_url),
+            invitation_code=extract_invitation_code_from_url(encrypted.invitation_url),
             secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
             default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
         )

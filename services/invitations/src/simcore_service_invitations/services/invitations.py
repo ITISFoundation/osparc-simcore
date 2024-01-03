@@ -130,7 +130,7 @@ def create_invitation_link_and_content(
     return link, content
 
 
-def extract_invitation_code_from(invitation_url: HttpUrl) -> str:
+def extract_invitation_code_from_url(invitation_url: HttpUrl) -> str:
     """Parses url and extracts invitation"""
     if not invitation_url.fragment:
         raise InvalidInvitationCodeError
