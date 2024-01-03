@@ -1,12 +1,10 @@
 import httpx
 
-
-def _is_secret(k: str) -> bool:
-    return "secret" in k.lower() or "pass" in k.lower()
+from ..utils_secrets import mask_sensitive_data
 
 
 def _get_headers_safely(request: httpx.Request) -> dict[str, str]:
-    return {k: "*" * 5 if _is_secret(k) else v for k, v in request.headers.items()}
+    return mask_sensitive_data(dict(request.headers))
 
 
 def to_httpx_command(
