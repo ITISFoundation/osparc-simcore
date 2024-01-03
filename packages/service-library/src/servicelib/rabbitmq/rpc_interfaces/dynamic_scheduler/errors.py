@@ -6,8 +6,8 @@ class BaseDynamicSchedulerRPCError(Exception, PydanticErrorMixin):
 
 
 class ServiceWaitingForManualInterventionError(BaseDynamicSchedulerRPCError):
-    msg = "service waiting for manual intervention"
+    msg = "Service {node_id} waiting for manual intervention"
 
 
 class ServiceWasNotFoundError(BaseDynamicSchedulerRPCError):
-    msg = "service waiting for manual intervention"
+    msg = "Service {node_id} was not found"
