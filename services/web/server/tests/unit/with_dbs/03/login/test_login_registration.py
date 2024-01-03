@@ -9,12 +9,14 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db.models import UserStatus
+from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.login._confirmation import _url_for_confirmation
 from simcore_service_webserver.login._constants import (
     MSG_EMAIL_ALREADY_REGISTERED,
@@ -55,7 +57,7 @@ async def test_register_entrypoint(
 ):
     assert client.app
     url = client.app.router["auth_register"].url_for()
-    assert url.path == "v0/auth/register"
+    assert url.path == "/v0/auth/register"
     response = await client.post(
         url.path,
         json={
@@ -114,13 +116,21 @@ async def test_registration_is_not_get(client: TestClient):
     await assert_error(response, web.HTTPMethodNotAllowed)
 
 
-async def test_registration_with_existing_email(
-    client: TestClient, cleanup_db_tables: None
+@pytest.fixture
+def product_name() -> ProductName:
+    return "osparc"
+
+
+async def test_registration_with_registered_user(
+    client: TestClient, product_name: ProductName, cleanup_db_tables: None
 ):
     assert client.app
 
     async with NewUser(app=client.app) as user:
-        # register
+        await auto_add_user_to_product_group(
+            client.app, user_id=user["id"], product_name=product_name
+        )
+
         url = client.app.router["auth_register"].url_for()
         response = await client.post(
             url.path,
@@ -131,11 +141,6 @@ async def test_registration_with_existing_email(
             },
         )
     await assert_error(response, web.HTTPConflict, MSG_EMAIL_ALREADY_REGISTERED)
-
-
-@pytest.fixture
-def product_name() -> str:
-    return "osparc"
 
 
 async def test_registration_invitation_stays_valid_if_once_tried_with_weak_password(
