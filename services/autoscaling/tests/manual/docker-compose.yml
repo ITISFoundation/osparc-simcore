@@ -48,7 +48,8 @@ services:
         scheduled_maintenance:${REDIS_HOST}:${REDIS_PORT}:3,
         user_notifications:${REDIS_HOST}:${REDIS_PORT}:4,
         announcements:${REDIS_HOST}:${REDIS_PORT}:5,
-        distributed_identifiers:${REDIS_HOST}:${REDIS_PORT}:6
+        distributed_identifiers:${REDIS_HOST}:${REDIS_PORT}:6,
+        distributed_caches:${REDIS_HOST}:${REDIS_PORT}:7
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
 
   autoscaling:
