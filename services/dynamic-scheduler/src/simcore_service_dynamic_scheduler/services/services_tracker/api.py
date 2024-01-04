@@ -1,4 +1,4 @@
-# nopycln: file
+# nopycln: file  # noqa: ERA001
 
 from ._resource_manager import (
     get_service_status,
