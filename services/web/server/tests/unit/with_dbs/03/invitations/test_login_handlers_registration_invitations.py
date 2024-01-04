@@ -175,6 +175,3 @@ async def test_registration_to_different_product(
     # CANNOT re-register in product
     response = await _register_account(invitation_product_b.invitation_url, product_b)
     await assert_status(response, web.HTTPConflict)
-
-    # # TODO: disable account -> cannot register anymore
-    # # TODO: add expiration to invitations (e.g if user is removed from a product, the same user could reuse old invitation to reactivate product)

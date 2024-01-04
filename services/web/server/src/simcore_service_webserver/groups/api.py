@@ -125,7 +125,8 @@ async def add_user_in_group(
     """
 
     if not new_user_id and not new_user_email:
-        raise GroupsError("Invalid method call, missing user id or user email")
+        msg = "Invalid method call, missing user id or user email"
+        raise GroupsError(msg)
 
     async with get_database_engine(app).acquire() as conn:
         if new_user_email:
@@ -133,7 +134,8 @@ async def add_user_in_group(
             new_user_id = user["id"]
 
         if not new_user_id:
-            raise GroupsError("Missing new user in arguments")
+            msg = "Missing new user in arguments"
+            raise GroupsError(msg)
 
         return await _db.add_new_user_in_group(
             conn,
