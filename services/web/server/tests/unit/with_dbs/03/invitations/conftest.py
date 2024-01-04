@@ -16,6 +16,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import CallbackResult
+from faker import Faker
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContent,
     ApiInvitationContentAndLink,
@@ -70,6 +71,16 @@ def fake_osparc_invitation(
     )
     content.product = "osparc"
     return content
+
+
+@pytest.fixture
+def guest_email(faker: Faker) -> str:
+    return faker.email()
+
+
+@pytest.fixture
+def guest_password() -> str:
+    return "secret" * 3
 
 
 @pytest.fixture()

@@ -9,7 +9,6 @@ from datetime import datetime, timezone
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from faker import Faker
 from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
     InvitationGenerated,
@@ -19,11 +18,6 @@ from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.users import UserRole
-
-
-@pytest.fixture
-def guest_email(faker: Faker) -> str:
-    return faker.email()
 
 
 @pytest.mark.parametrize(

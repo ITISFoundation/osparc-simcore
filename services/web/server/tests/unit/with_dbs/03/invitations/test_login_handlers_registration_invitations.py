@@ -7,7 +7,6 @@
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from faker import Faker
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContent,
     ApiInvitationInputs,
@@ -17,6 +16,7 @@ from pydantic import HttpUrl
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.invitations.api import generate_invitation
 from simcore_service_webserver.login.handlers_registration import (
     InvitationCheck,
@@ -113,9 +113,10 @@ def _extract_invitation_code_from_url(invitation_url: HttpUrl) -> str:
 @pytest.mark.acceptance_test()
 async def test_registration_to_different_product(
     mocker: MockerFixture,
-    faker: Faker,
     all_products_names: list[ProductName],
     client: TestClient,
+    guest_email: str,
+    guest_password: str,
     mock_invitations_service_http_api: AioResponsesMock,
 ):
     assert client.app
@@ -130,10 +131,7 @@ async def test_registration_to_different_product(
         ),
     )
 
-    guest_email = faker.email()
-    guest_password = "secret" * 3
-
-    async def _register_account(invitation_url: HttpUrl):
+    async def _register_account(invitation_url: HttpUrl, product_deployed: ProductName):
         assert client.app
         url = client.app.router["auth_register"].url_for()
 
@@ -145,34 +143,38 @@ async def test_registration_to_different_product(
                 "confirm": guest_password,
                 "invitation": _extract_invitation_code_from_url(invitation_url),
             },
+            header={X_PRODUCT_NAME_HEADER: product_deployed},
         )
 
     product_a = all_products_names[0]
     product_b = all_products_names[1]
 
-    # 1. PO creates an invitation for product A
+    # PO creates an two invitations for guest in product A and product B
     invitation_product_a = await generate_invitation(
         client.app,
-        ApiInvitationInputs(issuer="testcase1", guest=guest_email, product=product_a),
+        ApiInvitationInputs(issuer="PO", guest=guest_email, product=product_a),
     )
-    # guest registers for product A
-    response = await _register_account(invitation_product_a.invitation_url)
+    # 2. PO creates invitation for product B
+    invitation_product_b = await generate_invitation(
+        client.app,
+        ApiInvitationInputs(issuer="PO", guest=guest_email, product=product_b),
+    )
+
+    # CAN register for product A in deploy of product A
+    response = await _register_account(invitation_product_a.invitation_url, product_a)
     await assert_status(response, web.HTTPOk)
 
-    # # 2. PO creates invitation for product B
-    # invitation_product_b = await generate_invitation(
-    #     client.app,
-    #     ApiInvitationInputs(issuer="testcase2", guest=guest_email, product=product_b),
-    # )
+    # CANNOT register in product B in deploy of product A
+    response = await _register_account(invitation_product_b.invitation_url, product_a)
+    await assert_status(response, web.HTTPConflict)
 
-    # # guest registers for product B
-    # # FIXME: thisone has to have a different URL!
-    # response = await _register_account(invitation_product_b.invitation_url)
-    # await assert_status(response, web.HTTPOk)
+    # CAN register for product B in deploy of product B
+    response = await _register_account(invitation_product_b.invitation_url, product_b)
+    await assert_status(response, web.HTTPOk)
 
-    # # 3. Guest cannot re-register in product A
-    # response = await _register_account(invitation_product_a.invitation_url)
-    # await assert_status(response, web.HTTPConflict)
+    # CANNOT re-register in product
+    response = await _register_account(invitation_product_b.invitation_url, product_b)
+    await assert_status(response, web.HTTPConflict)
 
     # # TODO: disable account -> cannot register anymore
     # # TODO: add expiration to invitations (e.g if user is removed from a product, the same user could reuse old invitation to reactivate product)
