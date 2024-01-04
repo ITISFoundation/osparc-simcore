@@ -101,7 +101,7 @@ async def validate_invitation_url(
         )
 
         # check email
-        if invitation.guest != guest_email:
+        if invitation.guest.lower() != guest_email.lower():
             raise InvalidInvitation(
                 reason="This invitation was issued for a different email"
             )
