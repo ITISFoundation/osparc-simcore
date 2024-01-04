@@ -141,6 +141,22 @@ class BaseDistributedIdentifierManager(
             if not await self.is_used(identifier, cleanup_context):
                 await self.remove(identifier)
 
+    async def update_cleanup_context(
+        self, identifier: Identifier, cleanup_context: CleanupContext
+    ) -> None:
+        """Used to update an cleanup context required for ``remove`` calls.
+        NOTE: Sometimes the cleanup context can change based on user input.
+        It may differ from the one provided during resource creation.
+
+        Arguments:
+            identifier -- user chosen identifier for the resource
+            cleanup_context -- user defined CleanupContext object
+        """
+        await self._redis_client_sdk.redis.set(
+            self._to_redis_key(identifier),
+            self._serialize_cleanup_context(cleanup_context),
+        )
+
     async def create(
         self, *, cleanup_context: CleanupContext, **extra_kwargs
     ) -> tuple[Identifier, ResourceObject]:
@@ -154,10 +170,7 @@ class BaseDistributedIdentifierManager(
             tuple[identifier for the resource, resource object]
         """
         identifier, result = await self._create(**extra_kwargs)
-        await self._redis_client_sdk.redis.set(
-            self._to_redis_key(identifier),
-            self._serialize_cleanup_context(cleanup_context),
-        )
+        await self.update_cleanup_context(identifier, cleanup_context)
         return identifier, result
 
     async def remove(self, identifier: Identifier, *, reraise: bool = False) -> None:
