@@ -32,7 +32,23 @@ aiofiles==0.8.0
     #   -r requirements/_base.in
 aiohttp==3.8.5
     # via
-    #   -c requirements/./constraints.txt
+    #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/./../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/./../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
@@ -161,8 +177,6 @@ greenlet==2.0.2
     # via sqlalchemy
 gunicorn==20.1.0
     # via -r requirements/_base.in
-h11==0.14.0
-    # via wsproto
 idna==3.3
     # via
     #   email-validator
@@ -329,11 +343,11 @@ python-dateutil==2.8.2
     # via
     #   arrow
     #   faker
-python-engineio==4.8.1
+python-engineio==4.3.4
     # via python-socketio
 python-magic==0.4.25
     # via -r requirements/_base.in
-python-socketio==5.10.0
+python-socketio==5.8.0
     # via -r requirements/_base.in
 pytz==2022.1
     # via twilio
@@ -395,8 +409,6 @@ rich==13.4.2
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
 setproctitle==1.2.3
     # via gunicorn
-simple-websocket==1.0.0
-    # via python-engineio
 six==1.16.0
     # via
     #   isodate
@@ -502,8 +514,6 @@ urllib3==1.26.11
     #   requests
 werkzeug==2.1.2
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-wsproto==1.2.0
-    # via simple-websocket
 yarl==1.5.1
     # via
     #   -c requirements/./constraints.txt
