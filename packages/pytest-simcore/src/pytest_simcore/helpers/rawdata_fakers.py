@@ -205,7 +205,7 @@ def random_payment_method(
 
     data = {
         "payment_method_id": FAKE.uuid4(),
-        "user_id": FAKE.pyint(),
+        "user_id": FAKE.pyint(min_value=1),
         "wallet_id": FAKE.pyint(),
         "initiated_at": utcnow(),
         "state": InitPromptAckFlowState.PENDING,
@@ -232,7 +232,7 @@ def random_payment_transaction(
         "price_dollars": "123456.78",
         "osparc_credits": "123456.78",
         "product_name": "osparc",
-        "user_id": FAKE.pyint(),
+        "user_id": FAKE.pyint(min_value=1),
         "user_email": FAKE.email().lower(),
         "wallet_id": 1,
         "comment": "Free starting credits",
@@ -269,6 +269,7 @@ def random_payment_autorecharge(
 
 
 def random_api_key(product_name: str, user_id: int, **overrides) -> dict[str, Any]:
+    assert user_id > 0
     data = {
         "display_name": FAKE.word(),
         "product_name": product_name,
