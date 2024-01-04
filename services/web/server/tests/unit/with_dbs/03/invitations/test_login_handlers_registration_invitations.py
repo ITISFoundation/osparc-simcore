@@ -143,7 +143,7 @@ async def test_registration_to_different_product(
                 "confirm": guest_password,
                 "invitation": _extract_invitation_code_from_url(invitation_url),
             },
-            header={X_PRODUCT_NAME_HEADER: product_deployed},
+            headers={X_PRODUCT_NAME_HEADER: product_deployed},
         )
 
     product_a = all_products_names[0]
