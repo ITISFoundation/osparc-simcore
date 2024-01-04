@@ -11,7 +11,9 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 @pytest.fixture
 def app_environment(
-    disable_rabbitmq_setup: None, app_environment: EnvVarsDict
+    disable_services_tracker_setup: None,
+    disable_rabbitmq_setup: None,
+    app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment
 

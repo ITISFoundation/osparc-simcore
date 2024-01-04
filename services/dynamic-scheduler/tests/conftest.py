@@ -2,8 +2,8 @@
 # pylint:disable=unused-argument
 
 import re
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
 
 import pytest
 import simcore_service_dynamic_scheduler
@@ -21,6 +21,7 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.rabbit_service",
+    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.tmp_path_extra",
 ]
@@ -94,6 +95,12 @@ def disable_rabbitmq_setup(mocker: MockerFixture) -> None:
     base_path = "simcore_service_dynamic_scheduler.core.application"
     mocker.patch(f"{base_path}.setup_rabbitmq")
     mocker.patch(f"{base_path}.setup_rpc_api_routes")
+
+
+@pytest.fixture
+def disable_services_tracker_setup(mocker: MockerFixture) -> None:
+    base_path = "simcore_service_dynamic_scheduler.core.application"
+    mocker.patch(f"{base_path}.setup_services_tracker")
 
 
 @pytest.fixture

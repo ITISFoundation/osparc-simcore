@@ -13,6 +13,7 @@ from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..services.director_v2 import setup_director_v2
 from ..services.rabbitmq import setup_rabbitmq
+from ..services.services_tracker.api import setup_services_tracker
 from .settings import ApplicationSettings
 
 
@@ -39,6 +40,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     setup_director_v2(app)
     setup_rabbitmq(app)
+    setup_services_tracker(app)
     setup_rpc_api_routes(app)
 
     setup_rest_api(app)
