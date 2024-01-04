@@ -101,7 +101,7 @@ async def _raise_if_registered_in_product(app: web.Application, user_email, prod
 async def check_other_registrations(
     app: web.Application,
     email: str,
-    product: Product,
+    current_product: Product,
     db: AsyncpgStorage,
     cfg: LoginOptions,
 ) -> None:
@@ -112,7 +112,7 @@ async def check_other_registrations(
 
             case UserStatus.ACTIVE:
                 await _raise_if_registered_in_product(
-                    app, user_email=user["email"], product=product
+                    app, user_email=user["email"], product=current_product
                 )
 
             case UserStatus.CONFIRMATION_PENDING:
@@ -157,7 +157,7 @@ async def check_other_registrations(
                 )
                 raise web.HTTPConflict(
                     reason=MSG_USER_DISABLED.format(
-                        support_email=product.support_email
+                        support_email=current_product.support_email
                     ),
                     content_type=MIMETYPE_APPLICATION_JSON,
                 )

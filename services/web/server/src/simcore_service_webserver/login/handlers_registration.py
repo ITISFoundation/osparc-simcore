@@ -149,7 +149,7 @@ async def register(request: web.Request):
     registration = await parse_request_body_as(RegisterBody, request)
 
     await check_other_registrations(
-        request.app, email=registration.email, product=product, db=db, cfg=cfg
+        request.app, email=registration.email, current_product=product, db=db, cfg=cfg
     )
 
     # Check for weak passwords

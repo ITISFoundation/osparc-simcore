@@ -4,7 +4,9 @@
 # pylint: disable=too-many-arguments
 
 
+import binascii
 import json
+from contextlib import suppress
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -104,9 +106,18 @@ def mock_invitations_service_http_api(
     assert "/v1/invitations:extract" in oas["paths"]
 
     def _extract(url, **kwargs):
+        fake_code = URL(URL(kwargs["json"]["invitation_url"]).fragment).query[
+            "invitation"
+        ]
+        # if nothing is encoded in fake_code, just return fake_osparc_invitation
+        body = fake_osparc_invitation.dict()
+        with suppress(Exception):
+            decoded = json.loads(binascii.unhexlify(fake_code).decode())
+            body.update(decoded)
+
         return CallbackResult(
             status=web.HTTPOk.status_code,
-            payload=jsonable_encoder(fake_osparc_invitation.dict()),
+            payload=jsonable_encoder(body),
         )
 
     aioresponses_mocker.post(
@@ -121,11 +132,10 @@ def mock_invitations_service_http_api(
 
     def _generate(url, **kwargs):
         body = kwargs["json"]
-        assert isinstance(body, dict)
         if not body.get("product"):
             body["product"] = example["product"]
 
-        fake_code = body["product"] + "0" * 100
+        fake_code = binascii.hexlify(json.dumps(body).encode()).decode()
 
         return CallbackResult(
             status=web.HTTPOk.status_code,
@@ -134,7 +144,7 @@ def mock_invitations_service_http_api(
                     {
                         **example,
                         **body,
-                        "invitation_url": f"{base_url}/#/registration?invitation={fake_code}",
+                        "invitation_url": f"https://osparc-simcore.test/#/registration?invitation={fake_code}",
                         "created": datetime.now(tz=timezone.utc),
                     }
                 )
@@ -144,6 +154,7 @@ def mock_invitations_service_http_api(
     aioresponses_mocker.post(
         f"{base_url}/v1/invitations",
         callback=_generate,
+        repeat=True,  # NOTE: this can be used many times
     )
 
     return aioresponses_mocker
