@@ -125,6 +125,8 @@ def mock_invitations_service_http_api(
         if not body.get("product"):
             body["product"] = example["product"]
 
+        fake_code = body["product"] + "0" * 100
+
         return CallbackResult(
             status=web.HTTPOk.status_code,
             payload=jsonable_encoder(
@@ -132,6 +134,7 @@ def mock_invitations_service_http_api(
                     {
                         **example,
                         **body,
+                        "invitation_url": f"{base_url}/#/registration?invitation={fake_code}",
                         "created": datetime.now(tz=timezone.utc),
                     }
                 )

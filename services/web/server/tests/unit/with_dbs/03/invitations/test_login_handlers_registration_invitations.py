@@ -4,8 +4,6 @@
 # pylint: disable=unused-variable
 
 
-from urllib import parse
-
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -108,7 +106,7 @@ async def test_check_registration_invitation_and_get_email(
 
 def _extract_invitation_code_from_url(invitation_url: HttpUrl) -> str:
     assert invitation_url.fragment
-    query_params = dict(parse.parse_qsl(URL(invitation_url.fragment).query))
+    query_params = dict(URL(invitation_url.fragment).query)
     return query_params["invitation"]
 
 
@@ -118,6 +116,7 @@ async def test_registration_to_different_product(
     faker: Faker,
     all_products_names: list[ProductName],
     client: TestClient,
+    mock_invitations_service_http_api: AioResponsesMock,
 ):
     assert client.app
 
