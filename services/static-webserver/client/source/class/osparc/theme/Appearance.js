@@ -845,7 +845,7 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     // override in product
     "strong-button": {
-      include: "material-button",
+      include: "form-button",
       style: state => ({
         decorator: state.hovered || state.focused ? "strong-bordered-button" : "no-border",
         backgroundColor: "strong-main",
@@ -860,6 +860,43 @@ qx.Theme.define("osparc.theme.Appearance", {
         backgroundColor: state.hovered || state.focused ? "default-button-hover-background" : "error",
         textColor: state.hovered || state.focused ? "default-button-text" : "default-button-text" // dark theme's text color
       })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      TabButtons
+    ---------------------------------------------------------------------------
+    */
+
+    "tab-button": {
+      include: "form-button",
+      style: function(states) {
+        const style = {
+          decorator: "tab-button",
+          cursor: "pointer",
+          padding: 5,
+          textColor: "default-button-text-outline",
+          backgroundColor: "transparent"
+        };
+        if (states.hovered) {
+          style.decorator = "form-button-hovered";
+        }
+        if (states.focused) {
+          style.decorator = "form-button-focused";
+        }
+        if (states.active) {
+          style.decorator = "tab-button-selected";
+        }
+        if (states.disabled) {
+          style.cursor = "not-allowed";
+          style.decorator = "form-button-disabled";
+          style.textColor = "default-button-disabled";
+        }
+        if (states.checked || states.selected) {
+          style.decorator = "tab-button-selected";
+        }
+        return style;
+      }
     },
 
     /*
@@ -1036,6 +1073,23 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     /*
     ---------------------------------------------------------------------------
+      virtual overrides
+    ---------------------------------------------------------------------------
+    */
+
+    "virtual-tree": {
+      include: "tree",
+      alias: "tree",
+
+      style: function(states) {
+        return {
+          itemHeight: 30,
+        };
+      }
+    },
+
+  /*
+  ---------------------------------------------------------------------------
       jsonforms
     ---------------------------------------------------------------------------
     */
@@ -1044,6 +1098,15 @@ qx.Theme.define("osparc.theme.Appearance", {
         padding: 10,
         decorator: "border-editable"
       })
-    }
+    },
+
+    "iframe": {
+      style: function(states) {
+        return {
+          backgroundColor: "red",
+          decorator: "main-dark"
+        };
+      }
+    },
   }
 });

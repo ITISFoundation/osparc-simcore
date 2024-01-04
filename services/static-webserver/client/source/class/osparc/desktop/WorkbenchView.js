@@ -269,19 +269,21 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const tabPage = new qx.ui.tabview.Page().set({
         layout: new qx.ui.layout.VBox(10),
         backgroundColor,
-        icon: icon + "/24"
+        icon: icon + "/16"
       });
       const tabPageBtn = tabPage.getChildControl("button").set({
         toolTipText: tooltip,
-        paddingTop: 12,
+        margin: [12, 2, 0],
         height: this.self().TAB_BUTTON_HEIGHT,
         alignX: "center",
         alignY: "middle",
         backgroundColor
       });
-      osparc.utils.Utils.removeBorder(tabPageBtn);
       tabPageBtn.bind("value", tabPageBtn, "backgroundColor", {
-        converter: val => val ? backgroundColor : "background-main-4"
+        converter: val => val ? "default-button-disabled-background": undefined
+      });
+      tabPageBtn.bind("value", tabPageBtn, "decorator", {
+        converter: val => val ? "tab-button-selected" : "tab-button"
       });
       if (widget) {
         tabPage.add(widget, {
@@ -311,8 +313,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewPrimary.getChildControl("bar");
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
-        backgroundColor: "background-main-4",
-        paddingLeft: osparc.widget.CollapsibleViewLight.CARET_WIDTH
+        backgroundColor: "tab_navigation_bar_background_color"
       });
       this.__addTopBarSpacer(topBar);
 
@@ -338,12 +339,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       homeAndNodesTree.add(nodesTree);
 
       const addNewNodeBtn = new qx.ui.form.Button().set({
-        appearance: "strong-button",
+        appearance: "form-button",
         label: this.tr("New Node"),
         icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false,
         alignX: "center",
-        marginLeft: 14
+        marginLeft: 10
       });
       addNewNodeBtn.addListener("execute", () => {
         this.__workbenchUI.openServiceCatalog({
@@ -374,19 +375,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __initSecondaryColumn: function() {
       const tabViewSecondary = this.getChildControl("side-panel-right-tabs");
       this.__removePages(tabViewSecondary);
-
+      tabViewSecondary.setBackgroundColor(this.self().PRIMARY_COL_BG_COLOR);
       const topBar = tabViewSecondary.getChildControl("bar");
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
-        backgroundColor: "background-main-4",
-        paddingLeft: osparc.widget.CollapsibleViewLight.CARET_WIDTH
+        backgroundColor: "tab_navigation_bar_background_color"
       });
       this.__addTopBarSpacer(topBar);
 
       const studyOptionsPage = this.__studyOptionsPage = this.__createTabPage("@FontAwesome5Solid/book", this.tr("Study options"));
       studyOptionsPage.getLayout().set({
         separator: "separator-vertical",
-        spacing: 15
+        spacing: 10
       });
       studyOptionsPage.exclude();
       tabViewSecondary.add(studyOptionsPage);
@@ -424,10 +424,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewMain.getChildControl("bar");
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
-        backgroundColor: "background-main-4"
+        alignY: "top",
+        backgroundColor: "tab_navigation_bar_background_color"
       });
       this.__addTopBarSpacer(topBar);
-
 
       this.__workbenchUI.setStudy(study);
       this.__workbenchUI.loadModel(study.getWorkbench());
@@ -447,10 +447,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
       const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
+        appearance: "form-button-outlined",
         label: this.tr("App Mode"),
         toolTipText: this.tr("Start App Mode"),
         icon: "@FontAwesome5Solid/play/14",
-        alignY: "middle",
+        marginRight: 10,
+        marginTop: 7,
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
       });
       startAppButtonTB.addListener("execute", () => this.fireEvent("slidesAppStart"));
@@ -483,7 +485,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __addTopBarSpacer: function(tabViewTopBar) {
       const spacer = new qx.ui.core.Widget().set({
-        backgroundColor: "background-main-4"
+        backgroundColor: "tab_navigation_bar_background_color"
       });
       tabViewTopBar.add(spacer, {
         flex: 1
@@ -492,7 +494,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __createCollapsibleViewSpacer: function() {
       const spacer = new qx.ui.core.Widget().set({
-        backgroundColor: "background-main-4",
+        backgroundColor: "tab_navigation_bar_background_color",
         height: this.self().TAB_BUTTON_HEIGHT
       });
       return spacer;

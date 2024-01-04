@@ -341,6 +341,22 @@ qx.Theme.define("osparc.theme.Decoration", {
         color: "text"
       }
     },
+    "tab-button": {
+      style: {
+        style: "solid",
+        width: [0, 0, 2, 0],
+        color: "transparent",
+        radius: [3, 3, 0, 0]
+      }
+    },
+    "tab-button-selected": {
+      style: {
+        style: "solid",
+        width: [0, 0, 2, 0],
+        color: "default-button-focus",
+        radius: [3, 3, 0, 0]
+      }
+    },
     "form-button": {
       style: {
         style: "solid",
@@ -488,6 +504,13 @@ qx.Theme.define("osparc.theme.Decoration", {
         width: 1,
         color: "transparent",
         backgroundColor: "background-card-overlay"
+      }
+    },
+
+    // Remove border from iframe
+    "main-dark": {
+      style: {
+        width: 0
       }
     }
   }

@@ -136,16 +136,9 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
       osparc.utils.Utils.setIdToWidget(btn, "appModeButton_"+nodeId);
       btn.addListener("execute", () => this.fireDataEvent("nodeSelectionRequested", nodeId));
 
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const updateStyle = () => {
-        osparc.utils.Utils.addBorder(btn, 1, colorManager.resolve("text"));
-      };
-      colorManager.addListener("changeTheme", () => updateStyle(btn), this);
-      updateStyle(btn);
-
       const updateCurrentNodeId = currentNodeId => {
         if (nodeId === currentNodeId) {
-          btn.setAppearance("strong-button");
+          btn.setAppearance("form-button");
         } else {
           btn.resetAppearance();
         }

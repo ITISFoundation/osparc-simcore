@@ -35,6 +35,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
     "primary-background-color": "rgba(0, 20, 46, 1)",
     "navigation_bar_background_color": "rgba(1, 18, 26, 0.8)",
+    "tab_navigation_bar_background_color": "c00",
     "modal-backdrop": "rgba(8, 9, 13, 1)",
     "fab_text": "contrasted-text-dark",
     "fab_background": "rgba(47, 50, 69, 1)",
