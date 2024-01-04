@@ -8,6 +8,8 @@ aio-pika==9.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+aiocache==0.12.2
+    # via -r requirements/_base.in
 aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
@@ -239,6 +241,7 @@ redis==5.0.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   aiocache
 referencing==0.29.3
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
