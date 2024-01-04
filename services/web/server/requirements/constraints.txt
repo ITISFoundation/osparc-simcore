@@ -16,4 +16,7 @@ pyinstrument<4
 yarl<1.6
 
 
-aiohttp<3.9
+# 3.9.0 tests fail
+# 3.8.6 tests fail
+#
+aiohttp<=3.8.5
