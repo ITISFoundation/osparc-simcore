@@ -123,7 +123,7 @@ def client(
     mock_orphaned_services,
     redis_client: Redis,
     monkeypatch_setenv_from_app_config: Callable,
-    mock_rabbitmq: None,
+    mock_dynamic_scheduler_rabbitmq: None,
     mock_progress_bar: Any,
 ) -> TestClient:
     cfg = deepcopy(app_cfg)
@@ -174,6 +174,10 @@ def client(
 
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
+        autospec=True,
+    )
     return mocker.patch(
         "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
         return_value=None,
@@ -518,10 +522,10 @@ async def test_interactive_services_removed_after_logout(
                 f"--> Waiting for stop_dynamic_service with: {service['service_uuid']}, {expected_save_state=}",
             )
             mocked_director_v2_api[
-                "director_v2._core_dynamic_services.stop_dynamic_service"
+                "dynamic_scheduler.api.stop_dynamic_service"
             ].assert_awaited_with(
                 app=client.app,
-                service_uuid=service["service_uuid"],
+                node_id=service["service_uuid"],
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
                 progress=mock_progress_bar.sub_progress(1),
@@ -607,19 +611,25 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     await gc_core.collect_garbage(client.app)
 
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_not_called()
     # disconnect second websocket
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic service is still around for now
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_not_called()
     # reconnect websocket
     sio2 = await socketio_client_factory(client_session_id2)
     # it should still be there even after waiting for auto deletion from garbage collector
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
 
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_not_called()
     # now really disconnect
     await sio2.disconnect()
     await sio2.wait()
@@ -636,12 +646,12 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
             app=client.server.app,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
-            service_uuid=service["service_uuid"],
+            node_id=service["service_uuid"],
             progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
+        "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
 
 
@@ -710,7 +720,9 @@ async def test_interactive_services_removed_per_project(
     await sio1.disconnect()
     assert not sio1.sid
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
@@ -718,25 +730,23 @@ async def test_interactive_services_removed_per_project(
     calls = [
         call(
             app=client.server.app,
-            service_uuid=service1["service_uuid"],
+            node_id=service1["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
+        "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
-    mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
-    ].reset_mock()
+    mocked_director_v2_api["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
 
     # disconnect websocket2
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic services are still around
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
+        "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
@@ -745,25 +755,23 @@ async def test_interactive_services_removed_per_project(
     calls = [
         call(
             app=client.server.app,
-            service_uuid=service2["service_uuid"],
+            node_id=service2["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         ),
         call(
             app=client.server.app,
-            service_uuid=service3["service_uuid"],
+            node_id=service3["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             progress=mock_progress_bar.sub_progress(1),
         ),
     ]
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
+        "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
-    mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
-    ].reset_mock()
+    mocked_director_v2_api["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
 
 
 @pytest.mark.xfail(
@@ -813,13 +821,17 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
     # assert dynamic service is still around
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_not_called()
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_not_called()
     # close project in tab2
     await close_project(client, empty_user_project["uuid"], client_session_id2)
     # wait the defined delay
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].assert_has_calls(
+    mocked_director_v2_api[
+        "dynamic_scheduler.api.stop_dynamic_service"
+    ].assert_has_calls(
         [call(client.server.app, service["service_uuid"], expected_save_state)]
     )
 
@@ -876,12 +888,12 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
             app=client.server.app,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
-            service_uuid=service["service_uuid"],
+            node_id=service["service_uuid"],
             progress=mock_progress_bar.sub_progress(1),
         )
     ]
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.stop_dynamic_service"
+        "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_has_calls(calls)
 
     # this call is done async, so wait a bit here to ensure it is correctly done

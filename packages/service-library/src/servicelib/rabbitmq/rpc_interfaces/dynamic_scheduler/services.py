@@ -38,7 +38,7 @@ async def get_service_status(
 async def run_dynamic_service(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    rpc_dynamic_service_create: RPCDynamicServiceCreate
+    rpc_dynamic_service_create: RPCDynamicServiceCreate,
 ) -> DynamicServiceGet | NodeGet:
     result = await rabbitmq_rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
@@ -48,3 +48,23 @@ async def run_dynamic_service(
     )
     assert isinstance(result, DynamicServiceGet | NodeGet)  # nosec
     return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def stop_dynamic_service(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    node_id: NodeID,
+    simcore_user_agent: str,
+    save_state: bool,
+    timeout_s: NonNegativeInt,
+) -> None:
+    result = await rabbitmq_rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "stop_dynamic_service"),
+        node_id=node_id,
+        simcore_user_agent=simcore_user_agent,
+        save_state=save_state,
+        timeout_s=timeout_s,
+    )
+    assert result is None  # nosec

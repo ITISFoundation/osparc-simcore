@@ -723,8 +723,9 @@ async def test_replace_project_adding_or_removing_nodes_raises_conflict(
 def mock_director_v2_inactivity(
     aioresponses_mocker: aioresponses, is_inactive: bool
 ) -> None:
+    aioresponses_mocker.clear()
     get_services_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/.*/inactivity.*$"
+        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/inactivity.*$"
     )
     aioresponses_mocker.get(
         get_services_pattern,

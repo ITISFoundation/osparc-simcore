@@ -72,7 +72,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/health", no_api_version=True)
         return await self.client.get(url, timeout=self._health_request_timeout)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def get_health(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Response:
         return await self._get_health_common(dynamic_sidecar_endpoint)
@@ -83,7 +83,7 @@ class ThinSidecarsClient(BaseThinClient):
     ) -> Response:
         return await self._get_health_common(dynamic_sidecar_endpoint)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def get_containers(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, only_status: bool
@@ -91,7 +91,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/containers")
         return await self.client.get(url, params={"only_status": only_status})
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def patch_containers_ports_io(
         self,
@@ -105,7 +105,7 @@ class ThinSidecarsClient(BaseThinClient):
             url, json={"enable_outputs": enable_outputs, "enable_inputs": enable_inputs}
         )
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def post_containers_ports_outputs_dirs(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, outputs_labels: dict[str, Any]
@@ -113,7 +113,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs/dirs")
         return await self.client.post(url, json={"outputs_labels": outputs_labels})
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def get_containers_name(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, dynamic_sidecar_network_name: str
@@ -129,7 +129,7 @@ class ThinSidecarsClient(BaseThinClient):
         )
         return await self.client.get(url=url)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def post_containers_networks_attach(
         self,
@@ -148,7 +148,7 @@ class ThinSidecarsClient(BaseThinClient):
             timeout=self._attach_detach_network_timeout,
         )
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def post_containers_networks_detach(
         self,
@@ -166,7 +166,7 @@ class ThinSidecarsClient(BaseThinClient):
             timeout=self._attach_detach_network_timeout,
         )
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks(
         self,
@@ -185,7 +185,7 @@ class ThinSidecarsClient(BaseThinClient):
             },
         )
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_down(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
@@ -193,7 +193,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/containers:down")
         return await self.client.post(url)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_state_restore(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
@@ -201,7 +201,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/state:restore")
         return await self.client.post(url)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_state_save(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
@@ -209,7 +209,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/state:save")
         return await self.client.post(url)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_ports_inputs_pull(
         self,
@@ -220,7 +220,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/inputs:pull")
         return await self.client.post(url, json=port_keys)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_ports_outputs_pull(
         self,
@@ -231,7 +231,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:pull")
         return await self.client.post(url, json=port_keys)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_ports_outputs_push(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
@@ -239,7 +239,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:push")
         return await self.client.post(url)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_restart(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
@@ -247,7 +247,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
         return await self.client.post(url)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def put_volumes(
         self,
@@ -259,7 +259,7 @@ class ThinSidecarsClient(BaseThinClient):
 
         return await self.client.put(url, json={"status": volume_status})
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def proxy_config_load(
         self, proxy_endpoint: AnyHttpUrl, proxy_configuration: dict[str, Any]
@@ -267,7 +267,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(proxy_endpoint, "/load", no_api_version=True)
         return await self.client.post(url, json=proxy_configuration)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def get_containers_inactivity(
         self,
@@ -276,7 +276,7 @@ class ThinSidecarsClient(BaseThinClient):
         url = self._get_url(dynamic_sidecar_endpoint, "/containers/inactivity")
         return await self.client.get(url)
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def post_disk_reserved_free(
         self,

@@ -2,7 +2,9 @@
 
 import logging
 from collections.abc import AsyncIterable, Iterable
+from typing import Final
 
+import arrow
 import pytest
 from httpx import (
     HTTPError,
@@ -23,16 +25,22 @@ from servicelib.fastapi.http_client_thin import (
     retry_on_errors,
 )
 
+_TIMEOUT_OVERWRITE: Final[int] = 1
+
 # UTILS
 
 
 class FakeThickClient(BaseThinClient):
-    @retry_on_errors
+    @retry_on_errors()
     async def get_provided_url(self, provided_url: str) -> Response:
         return await self.client.get(provided_url)
 
-    @retry_on_errors
-    async def get_retry_for_status(self) -> Response:
+    @retry_on_errors()
+    async def normal_timeout(self) -> Response:
+        return await self.client.get("http://missing-host:1111")
+
+    @retry_on_errors(request_timeout_overwrite=_TIMEOUT_OVERWRITE)
+    async def overwritten_timeout(self) -> Response:
         return await self.client.get("http://missing-host:1111")
 
 
@@ -104,7 +112,7 @@ async def test_retry_on_errors_by_error_type(
 ) -> None:
     class ATestClient(BaseThinClient):
         # pylint: disable=no-self-use
-        @retry_on_errors
+        @retry_on_errors()
         async def raises_request_error(self) -> Response:
             raise error_class(
                 "mock_connect_error",  # noqa: EM101
@@ -132,7 +140,7 @@ async def test_retry_on_errors_raises_client_http_error(
 ) -> None:
     class ATestClient(BaseThinClient):
         # pylint: disable=no-self-use
-        @retry_on_errors
+        @retry_on_errors()
         async def raises_http_error(self) -> Response:
             msg = "mock_http_error"
             raise HTTPError(msg)
@@ -204,3 +212,27 @@ async def test_expect_state_decorator(
         f"{err_info.value}"
         == f"Expected status: {error_status}, got {codes.OK} for: {get_wrong_state}: headers=Headers({{}}), body=''"
     )
+
+
+async def test_retry_timeout_overwrite(
+    request_timeout: int,
+    caplog_info_level: pytest.LogCaptureFixture,
+) -> None:
+    client = FakeThickClient(request_timeout=request_timeout)
+
+    caplog_info_level.clear()
+    start = arrow.utcnow()
+    with pytest.raises(ClientHttpError):
+        await client.normal_timeout()
+
+    normal_duration = (arrow.utcnow() - start).total_seconds()
+    assert normal_duration >= request_timeout
+    _assert_messages(caplog_info_level.messages)
+
+    caplog_info_level.clear()
+    start = arrow.utcnow()
+    with pytest.raises(ClientHttpError):
+        await client.overwritten_timeout()
+    overwritten_duration = (arrow.utcnow() - start).total_seconds()
+    assert overwritten_duration >= _TIMEOUT_OVERWRITE
+    _assert_messages(caplog_info_level.messages)
