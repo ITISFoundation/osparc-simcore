@@ -122,7 +122,6 @@ async def check_other_registrations(
                 #  w/ an expired confirmation will get deleted and its account (i.e. email)
                 #  can be overtaken by this new registration
                 #
-                # resend confirmation ??
                 _confirmation = await db.get_confirmation(
                     filter_dict={
                         "user": user,
