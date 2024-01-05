@@ -16,7 +16,7 @@ from ..db.models import UserRole
 
 _logger = logging.getLogger(__name__)
 
-ContextType: TypeAlias = dict[str, Any] | None
+OptionalContext: TypeAlias = dict[str, Any] | None
 
 
 @dataclass
@@ -25,7 +25,8 @@ class _RolePermissions:
     # named permissions allowed
     allowed: list[str] = field(default_factory=list)
     # checked permissions: permissions with conditions
-    check: dict[str, Callable[[ContextType], bool]] = field(default_factory=dict)
+    check: dict[str, Callable[[OptionalContext], bool]] = field(default_factory=dict)
+    # inherited permission
     inherits: list[UserRole] = field(default_factory=list)
 
     @classmethod
@@ -45,7 +46,7 @@ class _RolePermissions:
                 allowed.add(item)
             else:
                 msg = f"Unexpected item for role '{role}'"
-                raise ValueError(msg)
+                raise TypeError(msg)
 
         role_permission.allowed = list(allowed)
         role_permission.check = check
@@ -66,7 +67,7 @@ class RoleBasedAccessModel:
         self.roles: dict[UserRole, _RolePermissions] = {r.role: r for r in roles}
 
     async def can(
-        self, role: UserRole, operation: str, context: ContextType = None
+        self, role: UserRole, operation: str, context: OptionalContext = None
     ) -> bool:
         # pylint: disable=too-many-return-statements
 
