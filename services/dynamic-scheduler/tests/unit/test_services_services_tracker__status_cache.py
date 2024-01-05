@@ -53,7 +53,7 @@ async def test_services_status_cache_workflow(
     app: FastAPI,
     obj: Any,
 ):
-    cache = ServiceStatusCache(app, ttl=0.1)
+    cache = ServiceStatusCache(app, ttl=0.1, namespace="services_caches")
 
     # when does nto exist returns nothing
     assert await cache.get_value("missing") is None
@@ -69,3 +69,42 @@ async def test_services_status_cache_workflow(
     ):
         with attempt:
             assert await cache.get_value("existing") is None
+
+
+async def test_service_status_cache_namespace(
+    disable_rabbitmq_setup: None, disable_services_tracker_setup: None, app: FastAPI
+):
+    cache_1 = ServiceStatusCache(app, ttl=0.2, namespace="c1")
+    cache_2 = ServiceStatusCache(app, ttl=0.2, namespace="c2")
+
+    key_1 = "key_1"
+    key_2 = "key_2"
+
+    value_1 = 1
+    value_2 = "ok"
+
+    await cache_1.set_value(key_1, value_1)
+
+    assert await cache_1.get_value(key_1) == value_1
+    assert await cache_2.get_value(key_1) is None
+    assert await cache_1.get_value(key_2) is None
+    assert await cache_2.get_value(key_2) is None
+
+    await cache_2.set_value(key_2, value_2)
+
+    assert await cache_1.get_value(key_1) == value_1
+    assert await cache_2.get_value(key_1) is None
+    assert await cache_1.get_value(key_2) is None
+    assert await cache_2.get_value(key_2) == value_2
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(2),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            assert await cache_1.get_value(key_1) is None
+            assert await cache_2.get_value(key_1) is None
+            assert await cache_1.get_value(key_2) is None
+            assert await cache_2.get_value(key_2) is None
