@@ -24,7 +24,7 @@ from ..security.api import (
     authorized_userid,
     encrypt_password,
     is_anonymous,
-    remember_identity,
+    remember_identity_in_session,
 )
 from ..users.api import get_user
 from ..users.exceptions import UserNotFoundError
@@ -172,4 +172,4 @@ async def ensure_authentication(
 ):
     if user.needs_login:
         _logger.debug("Auto login for anonymous user %s", user.name)
-        await remember_identity(request, response, user_email=user.email)
+        await remember_identity_in_session(request, response, user_email=user.email)
