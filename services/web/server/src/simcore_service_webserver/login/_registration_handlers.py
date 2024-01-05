@@ -16,7 +16,7 @@ from servicelib.utils import fire_and_forget_task
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..products.api import get_current_product
-from ..security.api import check_password, forget_identity_in_session
+from ..security.api import check_password, forget_identity
 from ..security.decorators import permission_required
 from ..users.api import get_user_credentials, set_user_as_deleted
 from ..utils import MINUTE
@@ -92,7 +92,7 @@ async def unregister_account(request: web.Request):
             request.app, user_id=req_ctx.user_id, client_session_id=None
         )
         response = flash_response(MSG_LOGGED_OUT, "INFO")
-        await forget_identity_in_session(request, response)
+        await forget_identity(request, response)
 
         # send email in the background
         fire_and_forget_task(

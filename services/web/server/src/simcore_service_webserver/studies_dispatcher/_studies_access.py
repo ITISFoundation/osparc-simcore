@@ -35,7 +35,7 @@ from ..projects.db import ANY_USER, ProjectDBAPI
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..projects.models import ProjectDict
 from ..redis import get_redis_lock_manager_client
-from ..security.api import is_anonymous, remember_identity_in_session
+from ..security.api import is_anonymous, remember_identity
 from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response
@@ -405,7 +405,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     if is_anonymous_user:
         _logger.debug("Auto login for anonymous user %s", user["name"])
         identity = user["email"]
-        await remember_identity_in_session(request, response, user_email=identity)
+        await remember_identity(request, response, user_email=identity)
 
         # NOTE: session is encrypted and stored in a cookie in the session middleware
         assert (await get_session(request))["AIOHTTP_SECURITY"] == identity  # nosec

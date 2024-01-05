@@ -14,7 +14,7 @@ from simcore_postgres_database.models.users import UserRole
 
 from ._authz import AuthorizationPolicy
 from ._authz_access_model import RoleBasedAccessModel
-from ._identity import forget_identity_in_session, remember_identity_in_session
+from ._identity import forget_identity, remember_identity
 
 
 def get_access_model(app: web.Application) -> RoleBasedAccessModel:
@@ -44,10 +44,10 @@ __all__: tuple[str, ...] = (
     "authorized_userid",
     "check_permission",
     "encrypt_password",
-    "forget_identity_in_session",
+    "forget_identity",
     "get_access_model",
     "is_anonymous",
-    "remember_identity_in_session",
+    "remember_identity",
     "UserRole",
 )
 

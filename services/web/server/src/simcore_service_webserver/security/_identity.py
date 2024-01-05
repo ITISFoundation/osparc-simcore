@@ -14,16 +14,15 @@ from models_library.emails import LowerCaseEmailStr
 IdentityStr: TypeAlias = LowerCaseEmailStr
 
 
-async def remember_identity_in_session(
+async def remember_identity(
     request: web.Request, response: web.Response, *, user_email: IdentityStr
 ) -> web.Response:
+    """Remember = Saves verified identify in current session"""
     await remember(request=request, response=response, identity=user_email)
     return response
 
 
-async def forget_identity_in_session(
-    request: web.Request, response: web.Response
-) -> web.Response:
-    """Drops verified identity stored in current session"""
+async def forget_identity(request: web.Request, response: web.Response) -> web.Response:
+    """Forget = Drops verified identity stored in current session"""
     await forget(request, response)
     return response
