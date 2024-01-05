@@ -230,6 +230,10 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         osparc.data.Resources.fetch("paymentMethods", "delete", params)
           .then(() => this.__fetchPaymentMethods());
       }
+    },
+
+    getPaymentMethods: function() {
+      return this.__allPaymentMethods || [];
     }
   }
 });

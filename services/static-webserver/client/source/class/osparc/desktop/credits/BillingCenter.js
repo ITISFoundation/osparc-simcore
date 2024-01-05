@@ -110,8 +110,8 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const iconSrc = "@FontAwesome5Solid/credit-card/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
-      const paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
-      page.add(paymentMethods, { flex: 1 });
+      this.__paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
+      page.add(this.__paymentMethods, { flex: 1 });
       return page;
     },
 
@@ -172,7 +172,17 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     },
 
     __openBuyCredits: function() {
-      this.__openPage(this.__buyCreditsPage);
+      if (this.__paymentMethods) {
+        const paymentMethods = this.__paymentMethods.getPaymentMethods();
+        const buyView = new osparc.desktop.credits.BuyCredits2(paymentMethods.map(({ idr, cardHolderName, cardNumberMasked }) => ({
+          label: `${cardHolderName} ${cardNumberMasked}`,
+          id: idr
+        })))
+        osparc.ui.window.Window.popUpInWindow(buyView, "Buy credits", 400, 550).set({
+          resizable: false,
+          movable: false
+        })
+      }
     },
 
     __openPaymentMethods: function() {
