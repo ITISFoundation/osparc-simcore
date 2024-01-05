@@ -16,7 +16,7 @@ MSG_CHANGE_EMAIL_REQUESTED: Final[
 MSG_EMAIL_CHANGED: Final[str] = "Your email is changed"
 MSG_EMAIL_ALREADY_REGISTERED: Final[
     str
-] = "This email is already registered in this product"
+] = "The email you have provided is already registered"  # NOTE: avoid the wording 'product'. User only tries to register in a website.
 MSG_EMAIL_SENT: Final[
     str
 ] = "An email has been sent to {email} with further instructions"
