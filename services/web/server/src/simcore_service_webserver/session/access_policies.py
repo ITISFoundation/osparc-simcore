@@ -10,7 +10,7 @@ from aiohttp_session import Session
 from pydantic import PositiveInt, validate_arguments
 from servicelib.aiohttp.typing_extension import Handler
 
-from .plugin import get_session
+from .api import get_session
 from .settings import SessionSettings, get_plugin_settings
 
 _SESSION_GRANTED_ACCESS_TOKENS_KEY = f"{__name__}._SESSION_GRANTED_ACCESS_TOKENS_KEY"
@@ -130,7 +130,7 @@ def session_access_required(
 
                     if remove_all_on_success:
                         # all access tokens removed
-                        access_tokens = {}
+                        access_tokens.clear()
 
             return response
 
