@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.8.6
+aiohttp==3.9.0
     # via
     #   -c requirements/_base.txt
     #   aioresponses
@@ -39,7 +39,6 @@ certifi==2023.7.22
 charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
-    #   aiohttp
     #   requests
 click==8.1.3
     # via

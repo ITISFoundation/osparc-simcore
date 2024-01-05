@@ -17,6 +17,5 @@ yarl<1.6
 
 
 # 3.9.0 tests fail
-# 3.8.6 tests fail
 #
-aiohttp<=3.8.6
+aiohttp<=3.9.0
