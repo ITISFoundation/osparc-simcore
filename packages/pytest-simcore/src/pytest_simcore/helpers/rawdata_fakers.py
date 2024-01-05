@@ -62,8 +62,8 @@ def _compute_hash(password: str) -> str:
         return hashlib.sha224(password.encode("ascii")).hexdigest()
 
 
-_DEFAULT_PASSWORD = "secret" * 3  # Password must be at least 12 characters long
-_DEFAULT_HASH = _compute_hash(_DEFAULT_PASSWORD)
+DEFAULT_PASSWORD = "secret" * 3  # Password must be at least 12 characters long
+_DEFAULT_HASH = _compute_hash(DEFAULT_PASSWORD)
 
 
 def random_user(**overrides) -> dict[str, Any]:

@@ -10,7 +10,7 @@ from simcore_service_webserver.login._registration import create_invitation_toke
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 from yarl import URL
 
-from .rawdata_fakers import FAKE, random_user
+from .rawdata_fakers import DEFAULT_PASSWORD, FAKE, random_user
 from .utils_assert import assert_status
 
 
@@ -52,11 +52,11 @@ def parse_link(text):
     return URL(link).path
 
 
-async def create_fake_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
+async def _insert_fake_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
     """Creates a fake user and inserts it in the users table in the database"""
     data = data or {}
     data.setdefault(
-        "password", "secret" * 3
+        "password", DEFAULT_PASSWORD
     )  # Password must be at least 12 characters long
     data.setdefault("status", UserStatus.ACTIVE.name)
     data.setdefault("role", UserRole.USER.name)
@@ -74,7 +74,7 @@ async def log_client_in(
     assert client.app
     db: AsyncpgStorage = get_plugin_storage(client.app)
 
-    user = await create_fake_user(db, user_data)
+    user = await _insert_fake_user(db, user_data)
 
     # login
     url = client.app.router["auth_login"].url_for()
@@ -100,7 +100,7 @@ class NewUser:
         self.db = get_plugin_storage(app)
 
     async def __aenter__(self) -> UserInfoDict:
-        self.user = await create_fake_user(self.db, self.params)
+        self.user = await _insert_fake_user(self.db, self.params)
         return self.user
 
     async def __aexit__(self, *args):
@@ -141,7 +141,7 @@ class NewInvitation(NewUser):
         # creates host user
         assert self.client.app
         db: AsyncpgStorage = get_plugin_storage(self.client.app)
-        self.user = await create_fake_user(db, self.params)
+        self.user = await _insert_fake_user(db, self.params)
 
         self.confirmation = await create_invitation_token(
             self.db,
