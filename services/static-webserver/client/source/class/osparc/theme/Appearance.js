@@ -461,7 +461,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         decorator = "form-input";
         padding = [3, 5, 4, 5];
         if (states.readonly) {
-          decorator += "-readonly";
+          decorator += "-disabled";
           padding = [3, 5, 5, 5];
         } else if (states.disabled) {
           decorator += "-disabled";
