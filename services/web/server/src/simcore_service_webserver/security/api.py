@@ -8,15 +8,13 @@ from aiohttp_security.api import (
     AUTZ_KEY,
     authorized_userid,
     check_permission,
-    forget,
     is_anonymous,
-    remember,
 )
 from simcore_postgres_database.models.users import UserRole
 
 from ._access_model import RoleBasedAccessModel
 from ._authorization import AuthorizationPolicy
-from ._identity import VerifiedIdentity, remember_identity
+from ._identity import forget_identity, remember_identity
 
 
 def encrypt_password(password: str) -> str:
@@ -43,11 +41,10 @@ __all__: tuple[str, ...] = (
     "authorized_userid",
     "check_permission",
     "encrypt_password",
-    "forget",
+    "forget_identity",
     "get_access_model",
     "is_anonymous",
     "remember_identity",
-    "VerifiedIdentity",
     "UserRole",
 )
 

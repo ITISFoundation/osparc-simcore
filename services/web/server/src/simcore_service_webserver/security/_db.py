@@ -1,9 +1,7 @@
-from ._identity import IdentityJsonStr
+from ._identity import IdentityStr
 
 
-async def _get_active_user_with(
-    self, identity: IdentityJsonStr
-) -> _UserIdentity | None:
+async def _get_active_user_with(self, identity: IdentityStr) -> _UserIdentity | None:
     # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
     user: _UserIdentity | None = self.timed_cache.get(identity, None)
     if user is None:

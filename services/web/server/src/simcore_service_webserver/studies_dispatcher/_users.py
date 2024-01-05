@@ -20,7 +20,12 @@ from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST, get_random_string
 from ..redis import get_redis_lock_manager_client
-from ..security.api import authorized_userid, encrypt_password, is_anonymous, remember
+from ..security.api import (
+    authorized_userid,
+    encrypt_password,
+    is_anonymous,
+    remember_identity,
+)
 from ..users.api import get_user
 from ..users.exceptions import UserNotFoundError
 from ._constants import MSG_GUESTS_NOT_ALLOWED
@@ -167,6 +172,4 @@ async def ensure_authentication(
 ):
     if user.needs_login:
         _logger.debug("Auto login for anonymous user %s", user.name)
-        identity = user.email
-        # FIXME:
-        await remember(request, response, identity)
+        await remember_identity(request, response, user_email=user.email)

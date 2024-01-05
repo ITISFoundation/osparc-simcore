@@ -48,6 +48,19 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
         # Careful when changing the function signature
         request[RQT_USERID_KEY] = await check_authorized(request)
 
+        # login-required is a combination of authetication (who you are?) and
+        # a first check on authorization (you have access to this resource? )
+
+        #
+        # TODO: User authorized in this product?
+        #
+        # - get product from session?
+        #    - if it does not exist, raise https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+        # - check whether user has access to this product?
+        #    - if not, raise https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+        #
+        # request[] = await check_authorized_product(request)
+
         return await handler(request)
 
     return _wrapper

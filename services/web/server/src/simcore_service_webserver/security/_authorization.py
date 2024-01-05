@@ -16,12 +16,12 @@ from tenacity import retry
 from ..db.models import UserStatus, users
 from ..db.plugin import get_database_engine
 from ._access_model import ContextType, RoleBasedAccessModel, check_access
-from ._identity import IdentityJsonStr
+from ._identity import IdentityStr
 
 _logger = logging.getLogger(__name__)
 
 
-class _UserIdentity(TypedDict, total=True):
+class _UserInfoDict(TypedDict, total=True):
     id: IdInt
     role: UserRole
 
@@ -43,37 +43,32 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return _engine
 
     @retry(**PostgresRetryPolicyUponOperation(_logger).kwargs)
-    async def _get_active_user_with(
-        self, identity: IdentityJsonStr
-    ) -> _UserIdentity | None:
+    async def _get_active_user(self, email: IdentityStr) -> _UserInfoDict | None:
         # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
-        user: _UserIdentity | None = self.timed_cache.get(identity, None)
+        user: _UserInfoDict | None = self.timed_cache.get(email, None)
         if user is None:
             async with self.engine.acquire() as conn:
                 # NOTE: sometimes it raises psycopg2.DatabaseError in #880 and #1160
                 result: ResultProxy = await conn.execute(
                     sa.select(users.c.id, users.c.role).where(
-                        (users.c.email == identity)
-                        & (users.c.status == UserStatus.ACTIVE)
+                        (users.c.email == email) & (users.c.status == UserStatus.ACTIVE)
                     )
                 )
                 row = await result.fetchone()
             if row is not None:
                 assert row["id"]  # nosec
                 assert row["role"]  # nosec
-                self.timed_cache[identity] = user = _UserIdentity(
-                    id=row.id, role=row.role
-                )
+                self.timed_cache[email] = user = _UserInfoDict(id=row.id, role=row.role)
 
         return user
 
-    async def authorized_userid(self, identity: IdentityJsonStr) -> int | None:
+    async def authorized_userid(self, identity: IdentityStr) -> int | None:
         """Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        user: _UserIdentity | None = await self._get_active_user_with(identity)
+        user: _UserInfoDict | None = await self._get_active_user(identity)
 
         if user is None:
             return None
@@ -83,7 +78,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
     async def permits(
         self,
-        identity: IdentityJsonStr,
+        identity: IdentityStr,
         permission: str,
         context: ContextType = None,
     ) -> bool:
@@ -102,7 +97,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             )
             return False
 
-        user = await self._get_active_user_with(identity)
+        user = await self._get_active_user(identity)
         if user is None:
             return False
 
