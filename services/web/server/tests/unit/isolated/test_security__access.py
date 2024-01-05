@@ -24,7 +24,7 @@ from simcore_service_webserver.security._access_roles import ROLES_PERMISSIONS, 
 
 @pytest.fixture
 def access_model() -> RoleBasedAccessModel:
-    def can_update_inputs(context):
+    def _can_update_inputs(context):
         current_data = context["current"]
         candidate_data = context["candidate"]
 
@@ -36,10 +36,7 @@ def access_model() -> RoleBasedAccessModel:
                     # can ONLY modify `inputs` fields set as ReadAndWrite
                     access = current_data["workbench"][node]["inputAccess"]
                     inputs = diffs["workbench"][node]["inputs"]
-                    for key in inputs:
-                        if access.get(key) != "ReadAndWrite":
-                            return False
-                    return True
+                    return all(access.get(key) == "ReadAndWrite" for key in inputs)
             except KeyError:
                 pass
             return False
@@ -55,7 +52,7 @@ def access_model() -> RoleBasedAccessModel:
                 "study.stop",
                 {
                     "name": "study.pipeline.node.inputs.update",
-                    "check": can_update_inputs,
+                    "check": _can_update_inputs,
                 },
             ]
         },
@@ -80,16 +77,10 @@ def access_model() -> RoleBasedAccessModel:
     }
 
     # RBAC: Role Based Access Control
-    rbac = RoleBasedAccessModel.from_rawdata(fake_roles_permissions)
-    return rbac
+    return RoleBasedAccessModel.from_rawdata(fake_roles_permissions)
 
 
 def test_unique_permissions():
-    # Limit for scalability. Test that unnecessary resources and/or actions are used
-    # Enforce reusable permission layouts
-    # TODO: limit the actions "read"
-    # TODO: limit the resouces "read"
-
     used = []
     for role in ROLES_PERMISSIONS:
         can = ROLES_PERMISSIONS[role].get("can", [])
@@ -211,6 +202,7 @@ async def test_async_checked_permissions(access_model: RoleBasedAccessModel):
     async def async_callback(context) -> bool:
         return context["response"]
 
+    assert access_model.roles[R.TESTER]
     access_model.roles[R.TESTER].check["study.edge.edit"] = async_callback
 
     assert not await access_model.can(
@@ -236,10 +228,3 @@ async def test_check_access_expressions(access_model: RoleBasedAccessModel):
     )
 
     assert await check_access(access_model, R.USER, "study.stop & study.node.create")
-
-    # TODO: extend expression parser
-    # assert await check_access(access_model, R.USER,
-    #    "study.stop & (study.node.create|study.nodestree.uuid.read)")
-
-    # assert await check_access(access_model, R.TESTER,
-    #    "study.stop & study.node.create & study.nodestree.uuid.read")
