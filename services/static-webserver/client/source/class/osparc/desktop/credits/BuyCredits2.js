@@ -52,7 +52,7 @@ qx.Class.define("osparc.desktop.credits.BuyCredits2", {
       })).set({
         marginTop: 30
       })
-      const amountContainer = new osparc.desktop.credits.BuyCreditsInput(10)
+      const amountContainer = new osparc.desktop.credits.BuyCreditsInput(osparc.store.Store.getInstance().getCreditPrice())
       formContainer.add(amountContainer)
 
       const paymentMethodContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
