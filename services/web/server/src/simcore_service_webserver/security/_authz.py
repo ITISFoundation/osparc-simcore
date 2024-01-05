@@ -1,3 +1,5 @@
+""" AUTHoriZation (auth) policy:
+"""
 import logging
 from dataclasses import dataclass, field
 from typing import TypedDict
@@ -15,7 +17,7 @@ from tenacity import retry
 
 from ..db.models import UserStatus, users
 from ..db.plugin import get_database_engine
-from ._access_model import ContextType, RoleBasedAccessModel, check_access
+from ._authz_access_model import ContextType, RoleBasedAccessModel, check_access
 from ._identity import IdentityStr
 
 _logger = logging.getLogger(__name__)
@@ -42,7 +44,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         _engine: Engine = get_database_engine(self.app)
         return _engine
 
-    @retry(**PostgresRetryPolicyUponOperation(_logger).kwargs)
+    @retry(
+        **PostgresRetryPolicyUponOperation(_logger).kwargs
+    )  # TODO: move this to the _db part, not here
     async def _get_active_user(self, email: IdentityStr) -> _UserInfoDict | None:
         # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
         user: _UserInfoDict | None = self.timed_cache.get(email, None)

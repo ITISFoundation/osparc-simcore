@@ -12,8 +12,8 @@ from aiohttp_security.api import (
 )
 from simcore_postgres_database.models.users import UserRole
 
-from ._access_model import RoleBasedAccessModel
-from ._authorization import AuthorizationPolicy
+from ._authz import AuthorizationPolicy
+from ._authz_access_model import RoleBasedAccessModel
 from ._identity import forget_identity, remember_identity
 
 

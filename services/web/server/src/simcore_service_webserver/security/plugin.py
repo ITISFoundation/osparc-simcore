@@ -13,9 +13,9 @@ from aiohttp import web
 from aiohttp_security.session_identity import SessionIdentityPolicy
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ._access_model import RoleBasedAccessModel
-from ._access_roles import ROLES_PERMISSIONS
-from ._authorization import AuthorizationPolicy
+from ._authz import AuthorizationPolicy
+from ._authz_access_model import RoleBasedAccessModel
+from ._authz_access_roles import ROLES_PERMISSIONS
 
 _logger = logging.getLogger(__name__)
 
