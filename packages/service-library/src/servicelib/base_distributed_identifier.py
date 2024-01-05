@@ -70,7 +70,7 @@ class BaseDistributedIdentifierManager(
         self._cleanup_task: Task | None = None
 
     async def setup(self) -> None:
-        lock_key = f"{self.class_path()}:base-distributed-identifier_lock"
+        lock_key = f"lock:{self.class_path()}:base-distributed-identifier"
         lock_value = json.dumps({})
         self._cleanup_task = start_periodic_task(
             exclusive(self._redis_client_sdk, lock_key=lock_key, lock_value=lock_value)(
