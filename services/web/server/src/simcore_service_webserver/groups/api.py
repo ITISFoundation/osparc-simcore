@@ -103,7 +103,7 @@ async def is_user_by_email_in_group(
     async with get_database_engine(app).acquire() as conn:
         return await _db.is_user_by_email_in_group(
             conn,
-            email=user_email,  # type: ignore
+            email=user_email,
             group_id=group_id,
         )
 
