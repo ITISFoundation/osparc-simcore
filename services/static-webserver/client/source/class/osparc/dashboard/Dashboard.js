@@ -65,18 +65,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     const myAccountWindow = osparc.desktop.credits.BillingCenterWindow.openWindow()
     myAccountWindow.openUsage()
-
-    // const buyView = new osparc.desktop.credits.BuyCredits2([{
-    //   id: 1,
-    //   label: "Method 1"
-    // }, {
-    //   id: 2,
-    //   label: "Method 2"
-    // }])
-    // osparc.ui.window.Window.popUpInWindow(buyView, "Buy credits", 400, 550).set({
-    //   resizable: false,
-    //   movable: false
-    // })
   },
 
   properties: {
