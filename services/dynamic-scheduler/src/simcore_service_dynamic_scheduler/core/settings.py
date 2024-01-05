@@ -1,3 +1,4 @@
+import datetime
 from functools import cached_property
 from typing import cast
 
@@ -32,6 +33,14 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+
+    DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=60),
+        description=(
+            "Time to wait before timing out when stopping a dynamic service. "
+            "Since services require data to be stopped, this operation is timed out after 1 hour"
+        ),
     )
 
     @cached_property

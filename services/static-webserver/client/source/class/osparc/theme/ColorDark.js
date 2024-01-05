@@ -48,7 +48,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     // text
     "text": "rgba(216, 216, 216, 1)",
     "text-disabled": "rgba(113, 157, 181, 1)",
-    "text-selected": "rgba(10, 182, 255, 1)",
+    "text-selected": "text",
     "text-placeholder": "rgba(174, 191, 207, 1)",
     "text-darker": "rgba(255, 255, 255, 1)",
     "contrasted-text-dark": "rgba(216, 216, 216, 1)",
@@ -96,7 +96,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "invalid": "error",
 
     // backgrounds
-    "background-selected": "success_bg",
+    "background-selected": "product-color",
     "background-selected-disabled":  "default-button-disabled",
     "background-selected-dark":  "product-color",
     "background-disabled": "background-main",

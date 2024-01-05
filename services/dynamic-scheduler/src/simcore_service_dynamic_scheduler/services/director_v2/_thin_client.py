@@ -1,3 +1,5 @@
+import datetime
+
 from fastapi import FastAPI, status
 from httpx import Response, Timeout
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -32,14 +34,14 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
             extra_allowed_method_names={"attach_lifespan_to"},
         )
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def get_status(self, node_id: NodeID) -> Response:
         return await self.client.get(
             f"/dynamic_services/{node_id}", follow_redirects=True
         )
 
-    @retry_on_errors
+    @retry_on_errors()
     @expect_status(status.HTTP_201_CREATED)
     async def post_dynamic_service(
         self, rpc_dynamic_service_create: RPCDynamicServiceCreate
@@ -73,3 +75,27 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
             headers=headers,
             follow_redirects=True,
         )
+
+    async def delete_dynamic_service(
+        self,
+        *,
+        node_id: NodeID,
+        simcore_user_agent: str,
+        save_state: bool,
+        timeout: datetime.timedelta,
+    ) -> Response:
+        @retry_on_errors(request_timeout_overwrite=timeout.total_seconds())
+        @expect_status(status.HTTP_204_NO_CONTENT)
+        async def _(
+            self,  # NOTE: required by retry_on_errors
+        ) -> Response:
+            headers = {X_SIMCORE_USER_AGENT: simcore_user_agent}
+
+            return await self.client.delete(
+                f"dynamic_services/{node_id}?can_save={f'{save_state}'.lower()}",
+                headers=headers,
+                timeout=timeout.total_seconds(),
+                follow_redirects=True,
+            )
+
+        return await _(self)

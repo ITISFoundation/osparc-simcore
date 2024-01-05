@@ -958,7 +958,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getDeleteStudyMenuButton: function(studyData) {
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
       deleteButton.set({
-        appearance: "form-button-outlined"
+        appearance: "menu-button"
       });
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => this.__deleteStudyRequested(studyData), this);
