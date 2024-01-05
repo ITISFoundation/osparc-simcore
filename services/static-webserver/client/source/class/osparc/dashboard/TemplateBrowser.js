@@ -345,7 +345,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
       deleteButton.set({
-        appearance: "menu-button-danger"
+        appearance: "menu-button"
       });
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => this.__deleteTemplateRequested(templateData), this);

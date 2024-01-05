@@ -609,45 +609,16 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
-    "menu-button":
-        {
-          alias: "atom",
-
-          style: function(states) {
-            return {
-              cursor: states.disabled ? "not-allowed" : "pointer",
-              backgroundColor: states.selected ? "background-selected" : undefined,
-              textColor: states.selected ? "text-selected" : "text",
-              padding: [2, 6]
-            };
-          }
-        },
-
-    "menu-button-danger": {
-      include: "menu-button",
+    "menu-button": {
       alias: "atom",
+
       style: function(states) {
-        const style = {
-          decorator: "text-button",
-          cursor: "pointer",
-          textColor: "error",
-          backgroundColor: "transparent"
+        return {
+          cursor: states.disabled ? "not-allowed" : "pointer",
+          backgroundColor: states.selected ? "background-selected" : undefined,
+          textColor: states.selected ? "text-selected" : "text",
+          padding: [2, 6]
         };
-        if (states.hovered || states.selected) {
-          style.textColor = "default-button-text";
-          style.backgroundColor = states.selected ? "error" : undefined;
-        }
-        if (states.focused) {
-          style.textColor = "default-button-focus";
-        }
-        if (states.active) {
-          style.textColor = "default-button-active";
-        }
-        if (states.disabled) {
-          style.cursor = "not-allowed";
-          style.textColor = "default-button-disabled";
-        }
-        return style;
       }
     },
 
