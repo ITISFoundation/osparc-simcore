@@ -8,12 +8,13 @@ from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContentAndLink,
     ApiInvitationInputs,
 )
+from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from servicelib.error_codes import create_error_code
 
+from ..groups.api import is_user_by_email_in_group
 from ..products.api import Product
 from ._client import InvitationsServiceApi, get_invitations_service_api
-from ._db import is_user_registered_in_product
 from .errors import (
     MSG_INVALID_INVITATION_URL,
     MSG_INVITATION_ALREADY_USED,
@@ -35,8 +36,7 @@ def _handle_exceptions_as_invitations_errors():
         if err.status == web.HTTPUnprocessableEntity.status_code:
             error_code = create_error_code(err)
             _logger.exception(
-                "Invitation request %s unexpectedly failed [%s]",
-                f"{err=} ",
+                "Invitation request unexpectedly failed [%s]",
                 f"{error_code}",
                 extra={"error_code": error_code},
             )
@@ -119,9 +119,12 @@ async def validate_invitation_url(
 
         # check invitation used
         assert invitation.product == current_product.name  # nosec
-        if await is_user_registered_in_product(
-            app=app, email=invitation.guest, product_group_id=current_product.group_id
-        ):
+        is_user_registered_in_product: bool = await is_user_by_email_in_group(
+            app,
+            user_email=LowerCaseEmailStr(invitation.guest),
+            group_id=current_product.group_id,
+        )
+        if is_user_registered_in_product:
             # NOTE: a user might be already registered but the invitation is for another product
             raise InvalidInvitation(reason=MSG_INVITATION_ALREADY_USED)
 

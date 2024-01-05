@@ -99,7 +99,7 @@ async def auto_add_user_to_product_group(
 
 async def is_user_by_email_in_group(
     app: web.Application, user_email: LowerCaseEmailStr, group_id: GroupID
-) -> str:
+) -> bool:
     async with get_database_engine(app).acquire() as conn:
         return await _db.is_user_by_email_in_group(
             conn,
