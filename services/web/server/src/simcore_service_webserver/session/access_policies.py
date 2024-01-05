@@ -1,8 +1,9 @@
 import functools
 import logging
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, TypedDict
+from typing import TypedDict
 
 from aiohttp import web
 from aiohttp_session import Session
@@ -57,6 +58,9 @@ def _access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, _AccessTo
         session[_SESSION_GRANTED_ACCESS_TOKENS_KEY] = pruned_access_tokens
 
 
+_SUCCESS_4XX_STATUS_CODE = 400
+
+
 @validate_arguments
 def on_success_grant_session_access_to(
     name: str,
@@ -72,7 +76,7 @@ def on_success_grant_session_access_to(
 
             response = await handler(request)
 
-            if response.status < 400:  # success
+            if response.status < _SUCCESS_4XX_STATUS_CODE:
                 settings: SessionSettings = get_plugin_settings(request.app)
                 with _access_tokens_cleanup_ctx(session) as access_tokens:
                     # NOTE: does NOT add up access counts but re-assigns to max_access_count

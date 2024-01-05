@@ -24,7 +24,8 @@ _logger = logging.getLogger(__name__)
     __name__, ModuleCategory.SYSTEM, settings_name="WEBSERVER_SECURITY", logger=_logger
 )
 def setup_security(app: web.Application):
-    # Once user is identified, an identity string is created for that user
+
+    # Uses sessions to identify (SEE how sessions are setup in session/plugin.py)
     identity_policy = SessionIdentityPolicy()
 
     # Authorization
