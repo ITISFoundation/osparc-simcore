@@ -10,13 +10,13 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Optional, TypeAlias
+from typing import Any, TypeAlias
 
 from ..db.models import UserRole
 
 _logger = logging.getLogger(__name__)
 
-ContextType: TypeAlias = Optional[dict[str, Any]]
+ContextType: TypeAlias = dict[str, Any] | None
 
 
 @dataclass
@@ -86,17 +86,13 @@ class RoleBasedAccessModel:
             return True
 
         # checked operations
-        if operation in role_access.check.keys():
+        if operation in role_access.check:
             check = role_access.check[operation]
             try:
-                is_valid: bool
-
                 if inspect.iscoroutinefunction(check):
-                    is_valid = await check(context)
-                    return is_valid
+                    return await check(context)
 
-                is_valid = check(context)
-                return is_valid
+                return check(context)
 
             except Exception:  # pylint: disable=broad-except
                 _logger.debug(
@@ -114,11 +110,7 @@ class RoleBasedAccessModel:
         return False
 
     async def who_can(self, operation: str, context: dict | None = None):
-        allowed = []
-        for role in self.roles:
-            if await self.can(role, operation, context):
-                allowed.append(role)
-        return allowed
+        return [role for role in self.roles if await self.can(role, operation, context)]
 
     @classmethod
     def from_rawdata(cls, raw: dict):
@@ -155,6 +147,5 @@ async def check_access(
             return False
         return can_lhs or (await model.can(role, rhs, context))
 
-    raise NotImplementedError(
-        f"Invalid expression '{operations}': only supports at most two operands"
-    )
+    msg = f"Invalid expression '{operations}': only supports at most two operands"
+    raise NotImplementedError(msg)
