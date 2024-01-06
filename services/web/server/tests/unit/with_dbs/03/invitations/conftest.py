@@ -4,7 +4,9 @@
 # pylint: disable=too-many-arguments
 
 
+import binascii
 import json
+from contextlib import suppress
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,12 +16,15 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import CallbackResult
+from faker import Faker
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContent,
     ApiInvitationContentAndLink,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.invitations.settings import (
     InvitationsSettings,
     get_plugin_settings,
@@ -68,6 +73,16 @@ def fake_osparc_invitation(
     return content
 
 
+@pytest.fixture
+def guest_email(faker: Faker) -> str:
+    return faker.email()
+
+
+@pytest.fixture
+def guest_password() -> str:
+    return "secret" * 3
+
+
 @pytest.fixture()
 def base_url(app_invitations_plugin_settings: InvitationsSettings) -> URL:
     return URL(app_invitations_plugin_settings.base_url)
@@ -102,9 +117,18 @@ def mock_invitations_service_http_api(
     assert "/v1/invitations:extract" in oas["paths"]
 
     def _extract(url, **kwargs):
+        fake_code = URL(URL(kwargs["json"]["invitation_url"]).fragment).query[
+            "invitation"
+        ]
+        # if nothing is encoded in fake_code, just return fake_osparc_invitation
+        body = fake_osparc_invitation.dict()
+        with suppress(Exception):
+            decoded = json.loads(binascii.unhexlify(fake_code).decode())
+            body.update(decoded)
+
         return CallbackResult(
             status=web.HTTPOk.status_code,
-            payload=jsonable_encoder(fake_osparc_invitation.dict()),
+            payload=jsonable_encoder(body),
         )
 
     aioresponses_mocker.post(
@@ -119,9 +143,10 @@ def mock_invitations_service_http_api(
 
     def _generate(url, **kwargs):
         body = kwargs["json"]
-        assert isinstance(body, dict)
         if not body.get("product"):
             body["product"] = example["product"]
+
+        fake_code = binascii.hexlify(json.dumps(body).encode()).decode()
 
         return CallbackResult(
             status=web.HTTPOk.status_code,
@@ -130,6 +155,7 @@ def mock_invitations_service_http_api(
                     {
                         **example,
                         **body,
+                        "invitation_url": f"https://osparc-simcore.test/#/registration?invitation={fake_code}",
                         "created": datetime.now(tz=timezone.utc),
                     }
                 )
@@ -139,6 +165,53 @@ def mock_invitations_service_http_api(
     aioresponses_mocker.post(
         f"{base_url}/v1/invitations",
         callback=_generate,
+        repeat=True,  # NOTE: this can be used many times
     )
 
     return aioresponses_mocker
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict,
+    env_devel_dict: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # ensures WEBSERVER_INVITATIONS is undefined
+    monkeypatch.delenv("WEBSERVER_INVITATIONS", raising=False)
+    app_environment.pop("WEBSERVER_INVITATIONS", None)
+
+    # new envs
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            # as before
+            **app_environment,
+            # disable these plugins
+            "WEBSERVER_ACTIVITY": "null",
+            "WEBSERVER_DB_LISTENER": "0",
+            "WEBSERVER_DIAGNOSTICS": "null",
+            "WEBSERVER_EXPORTER": "null",
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_META_MODELING": "0",
+            "WEBSERVER_NOTIFICATIONS": "0",
+            "WEBSERVER_PUBLICATIONS": "0",
+            "WEBSERVER_REMOTE_DEBUG": "0",
+            "WEBSERVER_SOCKETIO": "0",
+            "WEBSERVER_STUDIES_ACCESS_ENABLED": "0",
+            "WEBSERVER_TAGS": "0",
+            "WEBSERVER_TRACING": "null",
+            "WEBSERVER_VERSION_CONTROL": "0",
+            "WEBSERVER_WALLETS": "0",
+            # set INVITATIONS_* variables using those in .env-devel
+            **{
+                key: value
+                for key, value in env_devel_dict.items()
+                if key.startswith("INVITATIONS_")
+            },
+        },
+    )
+
+    # tests envs
+    print(ApplicationSettings.create_from_envs().json(indent=2))
+    return envs
