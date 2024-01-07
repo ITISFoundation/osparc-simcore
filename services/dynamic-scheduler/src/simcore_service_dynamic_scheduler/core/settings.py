@@ -71,3 +71,5 @@ class ApplicationSettings(_BaseApplicationSettings):
     DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS: DirectorV2Settings = Field(
         auto_default_from_env=True, description="settings for director-v2 service"
     )
+
+    DYNAMIC_SCHEDULER_ADD_METRICS_ENDPOINT: bool = True

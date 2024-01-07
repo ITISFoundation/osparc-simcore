@@ -35,6 +35,11 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.state.settings = app_settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
+    if app.state.settings.DYNAMIC_SCHEDULER_ADD_METRICS_ENDPOINT:
+        from servicelib.fastapi.prometheus_instrumentation import instrument_app
+
+        instrument_app(app)
+
     # PLUGINS SETUP
 
     setup_director_v2(app)
