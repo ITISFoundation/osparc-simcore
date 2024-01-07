@@ -59,6 +59,11 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     app.state.settings = settings
 
+    if app.state.settings.DATCORE_ADAPTER_ADD_METRICS_ENDPOINT:
+        from servicelib.fastapi.prometheus_instrumentation import instrument_app
+
+        instrument_app(app)
+
     # events
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("startup", create_start_app_handler(app))
