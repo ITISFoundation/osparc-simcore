@@ -46,6 +46,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AGENT_VOLUMES_CLEANUP_INTERVAL_S: NonNegativeInt = Field(
         60 * _MINUTE, description="interval at which to repeat volumes cleanup"
     )
+    AGENT_ADD_METRICS_ENDPOINT: bool = True
 
     @validator("AGENT_VOLUMES_CLEANUP_S3_ENDPOINT", pre=True)
     @classmethod
