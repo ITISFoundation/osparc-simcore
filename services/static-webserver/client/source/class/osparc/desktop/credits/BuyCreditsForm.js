@@ -30,6 +30,14 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
     })
     this._add(this.__getButtons())
   },
+  properties: {
+    fetching: {
+      check: "Boolean",
+      nullable: false,
+      init: false,
+      event: "changeFetching"
+    }
+  },
   events: {
     "submit": "qx.event.type.Data",
     "close": "qx.event.type.Event"
@@ -45,13 +53,17 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
       const cancelBtn = new qx.ui.form.Button("Cancel").set({
         appearance: "appmotion-button"
       })
-      const buyBtn = this.__buyBtn = new qx.ui.form.Button("Buy Credits").set({
+      const buyBtn = this.__buyBtn = new osparc.ui.form.FetchButton("Buy Credits").set({
         appearance: "appmotion-button-action",
         enabled: false
       })
+      this.bind("fetching", buyBtn, "fetching");
       cancelBtn.addListener("execute", () => this.fireEvent("close"));
       buttonsContainer.add(cancelBtn)
-      buyBtn.addListener("execute", () => this.fireDataEvent("submit", this.__amountInput.getValues()));
+      buyBtn.addListener("execute", () => this.fireDataEvent("submit", {
+        paymentMethodId: this.__paymentMethods.getSelection()[0].getModel(),
+        ...this.__amountInput.getValues()
+      }));
       buttonsContainer.add(buyBtn)
       return buttonsContainer
     },
@@ -66,35 +78,35 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
         const { osparcCredits, amountDollars } = e.getData();
         this.__buyBtn.setEnabled(isNaN(osparcCredits) || isNaN(amountDollars) ? false : true);
       });
-      formContainer.add(amountContainer)
+      formContainer.add(amountContainer);
 
       const paymentMethodContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
         marginTop: 30,
         allowStretchX: false
-      })
+      });
       const paymentMethodLabel = new qx.ui.basic.Label("Pay with").set({
         marginLeft: 15
-      })
+      });
       paymentMethodContainer.add(paymentMethodLabel)
-      const paymentMethodSelect = new osparc.form.AppMotionSelect().set({
+      const paymentMethodSelect = this.__paymentMethods = new osparc.form.AppMotionSelect().set({
         width: 300,
         allowStretchX: false
-      })
-      const unsavedCardOption = new qx.ui.form.ListItem('Enter card details in the next step...', null, -1)
-      paymentMethodSelect.add(unsavedCardOption)
+      });
+      const unsavedCardOption = new qx.ui.form.ListItem('Enter card details in the next step...', null, null)
+      paymentMethodSelect.add(unsavedCardOption);
       paymentMethods.forEach(({id, label}) => {
-        const item = new qx.ui.form.ListItem(label, null, id)
-        paymentMethodSelect.add(item)
-      })
+        const item = new qx.ui.form.ListItem(label, null, id);
+        paymentMethodSelect.add(item);
+      });
       if (paymentMethods.length < 1) {
-        paymentMethodSelect.setEnabled(false)
-        paymentMethodSelect.setSelection([unsavedCardOption])
+        paymentMethodSelect.setEnabled(false);
+        paymentMethodSelect.setSelection([unsavedCardOption]);
       } else {
-        paymentMethodSelect.setSelection([paymentMethodSelect.getChildren()[1]])
+        paymentMethodSelect.setSelection([paymentMethodSelect.getChildren()[1]]);
       }
-      paymentMethodContainer.add(paymentMethodSelect)
-      formContainer.add(paymentMethodContainer)
-      return formContainer
+      paymentMethodContainer.add(paymentMethodSelect);
+      formContainer.add(paymentMethodContainer);
+      return formContainer;
     }
   }
 });

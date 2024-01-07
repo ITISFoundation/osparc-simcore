@@ -12,6 +12,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
     this.__form = new osparc.desktop.credits.BuyCreditsForm(paymentMethods);
     this.__form.addListener("submit", e => {
       console.log(e.getData());
+      this.__form.setFetching(true)
     })
     this.add(this.__form)
   }
