@@ -1054,9 +1054,29 @@ qx.Theme.define("osparc.theme.Appearance", {
     "appmotion-button": {
       include: "lg-button",
       alias: "lg-button",
-      style: state => ({
-        padding: [10, 25]
-      })
+      style: state => {
+        const style = {
+          padding: [10, 25]
+        };
+        if (state.disabled) {
+          style.backgroundColor = "default-button-disabled-background";
+        }
+        return style;
+      }
+    },
+
+    "appmotion-button-action": {
+      include: "appmotion-button",
+      alias: "appmotion-button",
+      style: state => {
+        const style = {
+          backgroundColor: "strong-main"
+        };
+        if (state.disabled) {
+          style.backgroundColor = "default-button-disabled-background";
+        }
+        return style;
+      }
     },
 
     "appmotion-button/label": {

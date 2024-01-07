@@ -5,12 +5,14 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-qx.Class.define("osparc.desktop.credits.BuyCredits2", {
-  extend: qx.ui.container.Composite,
+qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
+  extend: qx.ui.core.Widget,
   construct: function(paymentMethods=[]) {
-    this.base(arguments, new qx.ui.layout.VBox(10).set({
+    this.base(arguments)
+
+    this._setLayout(new qx.ui.layout.VBox(10).set({
       alignX: "center"
-    }))
+    }));
 
     const title = new qx.ui.basic.Label("Buy Credits").set({
       marginTop: 35,
@@ -20,15 +22,20 @@ qx.Class.define("osparc.desktop.credits.BuyCredits2", {
       font: 'text-14'
     })
 
-    this.add(title)
-    this.add(subtitle)
-    this.add(this.__getForm(paymentMethods))
-    this.add(new qx.ui.core.Spacer(), {
+    this._add(title)
+    this._add(subtitle)
+    this._add(this.__getForm(paymentMethods))
+    this._add(new qx.ui.core.Spacer(), {
       flex: 1
     })
-    this.add(this.__getButtons())
+    this._add(this.__getButtons())
+  },
+  events: {
+    "submit": "qx.event.type.Data",
+    "close": "qx.event.type.Event"
   },
   members: {
+    __amountInput: null,
     __getButtons: function() {
       const buttonsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: 'center'
@@ -38,11 +45,13 @@ qx.Class.define("osparc.desktop.credits.BuyCredits2", {
       const cancelBtn = new qx.ui.form.Button("Cancel").set({
         appearance: "appmotion-button"
       })
-      const buyBtn = new qx.ui.form.Button("Buy Credits").set({
-        appearance: "appmotion-button",
-        backgroundColor: "strong-main"
+      const buyBtn = this.__buyBtn = new qx.ui.form.Button("Buy Credits").set({
+        appearance: "appmotion-button-action",
+        enabled: false
       })
+      cancelBtn.addListener("execute", () => this.fireEvent("close"));
       buttonsContainer.add(cancelBtn)
+      buyBtn.addListener("execute", () => this.fireDataEvent("submit", this.__amountInput.getValues()));
       buttonsContainer.add(buyBtn)
       return buttonsContainer
     },
@@ -52,7 +61,11 @@ qx.Class.define("osparc.desktop.credits.BuyCredits2", {
       })).set({
         marginTop: 30
       })
-      const amountContainer = new osparc.desktop.credits.BuyCreditsInput(osparc.store.Store.getInstance().getCreditPrice())
+      const amountContainer = this.__amountInput = new osparc.desktop.credits.BuyCreditsInput(osparc.store.Store.getInstance().getCreditPrice())
+      amountContainer.addListener("input", e => {
+        const { osparcCredits, amountDollars } = e.getData();
+        this.__buyBtn.setEnabled(isNaN(osparcCredits) || isNaN(amountDollars) ? false : true);
+      });
       formContainer.add(amountContainer)
 
       const paymentMethodContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({

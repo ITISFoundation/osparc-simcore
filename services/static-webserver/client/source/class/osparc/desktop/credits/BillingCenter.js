@@ -174,7 +174,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     __openBuyCredits: function() {
       if (this.__paymentMethods) {
         const paymentMethods = this.__paymentMethods.getPaymentMethods();
-        const buyView = new osparc.desktop.credits.BuyCredits2(
+        const buyView = new osparc.desktop.credits.BuyCreditsStepper(
           paymentMethods.map(({ idr, cardHolderName, cardNumberMasked }) => ({
             label: `${cardHolderName} ${cardNumberMasked}`,
             id: idr

@@ -18,6 +18,10 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
     this._render()
   },
 
+  events: {
+    "input": "qx.event.type.Data",
+  },
+
   members: {
     _render: function() {
       this._removeAll()
@@ -44,8 +48,9 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
         paddingRight: 0
       })
       amountInput.addListener("input", e => {
-        const value = Number(e.getData())
-        totalInput.setValue(!value ? '-' : 1 * (value * this.__pricePerCredit).toFixed(2) + this.__currencySymbol)
+        const value = Number(e.getData());
+        totalInput.setValue(!value ? '-' : 1 * (value * this.__pricePerCredit).toFixed(2) + this.__currencySymbol);
+        this.fireDataEvent("input", this.getValues());
       })
       this._add(totalContainer)
       this.__totalInput = totalInput
@@ -66,6 +71,13 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       container.add(input)
       container.add(label)
       return [container, input]
+    },
+
+    getValues: function() {
+      return {
+        osparcCredits: parseFloat(this.__amountInput.getValue()),
+        amountDollars: parseFloat(this.__totalInput.getValue().split(this.__currencySymbol)[0])
+      }
     }
   }
 });
