@@ -61,6 +61,11 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     # PLUGIN SETUP
     setup_function_services(app)
 
+    if app.state.settings.CATALOG_ADD_METRICS_ENDPOINT:
+        from servicelib.fastapi.prometheus_instrumentation import instrument_app
+
+        instrument_app(app)
+
     # EVENTS
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)
