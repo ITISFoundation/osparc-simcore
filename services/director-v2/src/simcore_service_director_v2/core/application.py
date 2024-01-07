@@ -179,6 +179,11 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER:
         resource_usage_tracker_client.setup(app)
 
+    if settings.DIRECTOR_V2_ADD_METRICS_ENDPOINT:
+        from servicelib.fastapi.prometheus_instrumentation import instrument_app
+
+        instrument_app(app)
+
     # setup app --
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
