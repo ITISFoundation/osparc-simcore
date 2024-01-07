@@ -39,6 +39,11 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.state.settings = settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
+    if settings.AUTOSCALING_ADD_METRICS_ENDPOINT:
+        from servicelib.fastapi.prometheus_instrumentation import instrument_app
+
+        instrument_app(app)
+
     # PLUGINS SETUP
     setup_api_routes(app)
     setup_docker(app)

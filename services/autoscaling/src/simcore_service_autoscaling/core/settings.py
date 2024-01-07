@@ -221,6 +221,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AUTOSCALING_DASK: DaskMonitoringSettings | None = Field(auto_default_from_env=True)
 
+    AUTOSCALING_ADD_METRICS_ENDPOINT: bool = Field(auto_default_from_env=True)
+
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802
         return self.AUTOSCALING_LOGLEVEL
