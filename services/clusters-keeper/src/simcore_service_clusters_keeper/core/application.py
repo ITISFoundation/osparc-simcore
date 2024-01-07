@@ -39,6 +39,11 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.state.settings = settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
+    if app.state.settings.CLUSTERS_KEEPER_ADD_METRICS_ENDPOINT:
+        from servicelib.fastapi.prometheus_instrumentation import instrument_app
+
+        instrument_app(app)
+
     # PLUGINS SETUP
     if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         setup_remote_debugging(app)
