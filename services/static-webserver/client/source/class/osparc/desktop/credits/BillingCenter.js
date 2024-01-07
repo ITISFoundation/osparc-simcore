@@ -180,10 +180,11 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
             id: idr
           }))
         )
-        osparc.ui.window.Window.popUpInWindow(buyView, "Buy credits", 400, 550).set({
+        const win = osparc.ui.window.Window.popUpInWindow(buyView, "Buy credits", 400, 550).set({
           resizable: false,
           movable: false
         })
+        buyView.addListener("completed", () => win.close());
       }
     },
 

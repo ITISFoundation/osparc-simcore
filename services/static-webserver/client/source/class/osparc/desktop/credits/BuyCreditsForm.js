@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
   },
   events: {
     "submit": "qx.event.type.Data",
-    "close": "qx.event.type.Event"
+    "cancel": "qx.event.type.Event"
   },
   members: {
     __amountInput: null,
@@ -58,7 +58,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
         enabled: false
       })
       this.bind("fetching", buyBtn, "fetching");
-      cancelBtn.addListener("execute", () => this.fireEvent("close"));
+      cancelBtn.addListener("execute", () => this.fireEvent("cancel"));
       buttonsContainer.add(cancelBtn)
       buyBtn.addListener("execute", () => this.fireDataEvent("submit", {
         paymentMethodId: this.__paymentMethods.getSelection()[0].getModel(),
@@ -76,7 +76,9 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
       const amountContainer = this.__amountInput = new osparc.desktop.credits.BuyCreditsInput(osparc.store.Store.getInstance().getCreditPrice())
       amountContainer.addListener("input", e => {
         const { osparcCredits, amountDollars } = e.getData();
-        this.__buyBtn.setEnabled(isNaN(osparcCredits) || isNaN(amountDollars) ? false : true);
+        if (!this.__buyBtn.isFetching()) {
+          this.__buyBtn.setEnabled(isNaN(osparcCredits) || isNaN(amountDollars) ? false : true);
+        }
       });
       formContainer.add(amountContainer);
 
