@@ -48,6 +48,11 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_api_routes(app)
     setup_fastapi_pagination(app)
 
+    if app.state.settings.RESOURCE_USAGE_TRACKER_ADD_METRICS_ENDPOINT:
+        from servicelib.fastapi.prometheus_instrumentation import instrument_app
+
+        instrument_app(app)
+
     # ERROR HANDLERS
     app.add_exception_handler(CustomResourceUsageTrackerError, http404_error_handler)
 
