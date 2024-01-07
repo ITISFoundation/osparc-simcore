@@ -129,7 +129,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         app.add_middleware(ApiServerProfilerMiddleware)
 
     if settings.API_SERVER_ADD_METRICS_ENDPOINT:
-        from ._prometheus_instrumentation import instrument_app
+        from servicelib.fastapi.prometheus_instrumentation import instrument_app
 
         instrument_app(app)
 
