@@ -112,3 +112,5 @@ class ApplicationSettings(_BaseApplicationSettings):
     PAYMENTS_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
         auto_default_from_env=True, description="settings for RUT service"
     )
+
+    PAYMENTS_ADD_METRICS_ENDPOINT: bool = True
