@@ -40,7 +40,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
   },
 
   events: {
-    "addNewPaymentMethod": "qx.event.type.Event"
+    "addNewPaymentMethod": "qx.event.type.Event",
+    "close": "qx.event.type.Event"
   },
 
   members: {
@@ -111,7 +112,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     },
 
     __populateForm: function(arData) {
-      this.__enabledField.setValue(arData.enabled)
+      this.__enabledField.setValue(arData.enabled);
       this.__topUpAmountField.setValue(arData["topUpAmountInUsd"]);
       this.__topUpAmountHelper.setValue(this.tr(`When your account reaches ${arData["minBalanceInUsd"]} credits, it gets recharged by this amount`));
       if (arData["monthlyLimitInUsd"]) {
@@ -237,13 +238,14 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
           this.__populateForm(arData);
           wallet.setAutoRecharge(arData);
           osparc.FlashMessenger.getInstance().logAs(successfulMsg, "INFO");
+          this.fireEvent("close");
         })
         .finally(() => fetchButton.setFetching(false));
     },
 
     __getSaveAutoRechargeButton: function() {
       const saveAutoRechargeBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Save changes"),
+        label: this.tr("Save and close"),
         font: "text-14",
         appearance: "strong-button",
         maxWidth: 200,
