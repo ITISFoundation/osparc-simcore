@@ -43,9 +43,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     const paymentMethodsPage = this.__paymentMethodsPage = this.__getPaymentMethodsPage();
     tabViews.add(paymentMethodsPage);
 
-    const buyCreditsPage = this.__buyCreditsPage = this.__getBuyCreditsPage();
-    tabViews.add(buyCreditsPage);
-
     const transactionsPage = this.__transactionsPage = this.__getTransactionsPage();
     tabViews.add(transactionsPage);
 
