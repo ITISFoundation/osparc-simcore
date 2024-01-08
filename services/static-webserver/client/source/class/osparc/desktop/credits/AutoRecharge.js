@@ -18,12 +18,15 @@
 qx.Class.define("osparc.desktop.credits.AutoRecharge", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(walletId) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
+    const store = osparc.store.Store.getInstance();
+    const wallet = store.getWallets().find(wallet => wallet.getWalletId() == walletId);
     this.__buildLayout();
+    this.setWallet(wallet)
   },
 
   properties: {
@@ -49,13 +52,6 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "auto-recharge-title":
-          control = new qx.ui.basic.Label().set({
-            value: this.tr("Auto recharge:"),
-            font: "text-16"
-          });
-          this._add(control);
-          break;
         case "auto-recharge-description":
           control = new qx.ui.basic.Label().set({
             value: this.tr("Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low."),
@@ -69,22 +65,12 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
           control = this.__getAutoRechargeForm();
           this._add(control);
           break;
-        case "enable-auto-recharge-button":
-          control = this.__getEnableAutoRechargeButton();
-          this._add(control);
-          break;
         case "buttons-layout-2":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._add(control);
           break;
         case "save-auto-recharge-button":
           control = this.__getSaveAutoRechargeButton();
-          control.exclude();
-          this.getChildControl("buttons-layout-2").add(control);
-          break;
-        case "disable-auto-recharge-button":
-          control = this.__getDisableAutoRechargeButton();
-          control.exclude();
           this.getChildControl("buttons-layout-2").add(control);
           break;
       }
@@ -92,12 +78,9 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("auto-recharge-title");
       this.getChildControl("auto-recharge-description");
       this.getChildControl("auto-recharge-form");
-      this.getChildControl("enable-auto-recharge-button");
       this.getChildControl("save-auto-recharge-button");
-      this.getChildControl("disable-auto-recharge-button");
     },
 
     __applyWallet: function(wallet) {
@@ -128,6 +111,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     },
 
     __populateForm: function(arData) {
+      this.__enabledField.setValue(arData.enabled)
       this.__topUpAmountField.setValue(arData["topUpAmountInUsd"]);
       this.__topUpAmountHelper.setValue(this.tr(`When your account reaches ${arData["minBalanceInUsd"]} credits, it gets recharged by this amount`));
       if (arData["monthlyLimitInUsd"]) {
@@ -140,20 +124,22 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       if (paymentMethodFound) {
         paymentMethodSB.setSelection([paymentMethodFound]);
       }
-
-      if (arData["enabled"]) {
-        this.getChildControl("enable-auto-recharge-button").exclude();
-        this.getChildControl("save-auto-recharge-button").show();
-        this.getChildControl("disable-auto-recharge-button").show();
-      } else {
-        this.getChildControl("enable-auto-recharge-button").show();
-        this.getChildControl("save-auto-recharge-button").exclude();
-        this.getChildControl("disable-auto-recharge-button").exclude();
-      }
     },
 
     __getAutoRechargeForm: function() {
       const autoRechargeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+
+
+      const enabledLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const enabledTitle = new qx.ui.basic.Label().set({
+        value: this.tr("ENABLED"),
+        font: "text-14"
+      });
+      const enabledCheckbox = this.__enabledField = new qx.ui.form.CheckBox();
+      enabledLayout.add(enabledTitle);
+      enabledLayout.add(enabledCheckbox);
+      autoRechargeLayout.add(enabledLayout);
+
 
       const topUpAmountLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       const topUpAmountTitleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -231,7 +217,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       return {
         topUpAmountInUsd: this.__topUpAmountField.getValue(),
         monthlyLimitInUsd: this.__monthlyLimitField.getValue(),
-        paymentMethodId: this.__paymentMethodField.getSelection()[0].getModel()
+        paymentMethodId: this.__paymentMethodField.getSelection()[0].getModel(),
+        enabled: this.__enabledField.getValue()
       };
     },
 
@@ -244,7 +231,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         },
         data: this.__getFieldsData()
       };
-      params.data["enabled"] = enabled;
+      params.data.enabled = enabled;
       osparc.data.Resources.fetch("autoRecharge", "put", params)
         .then(arData => {
           this.__populateForm(arData);
@@ -252,19 +239,6 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
           osparc.FlashMessenger.getInstance().logAs(successfulMsg, "INFO");
         })
         .finally(() => fetchButton.setFetching(false));
-    },
-
-    __getEnableAutoRechargeButton: function() {
-      const enableAutoRechargeBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Enable"),
-        font: "text-14",
-        appearance: "strong-button",
-        maxWidth: 200,
-        center: true
-      });
-      const successfulMsg = this.tr("Auto recharge was successfully enabled. Coming soon.");
-      enableAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(true, enableAutoRechargeBtn, successfulMsg));
-      return enableAutoRechargeBtn;
     },
 
     __getSaveAutoRechargeButton: function() {
@@ -276,21 +250,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         center: true
       });
       const successfulMsg = this.tr("Changes on the Auto recharge were successfully saved");
-      saveAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(true, saveAutoRechargeBtn, successfulMsg));
+      saveAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(this.__enabledField.getValue(), saveAutoRechargeBtn, successfulMsg));
       return saveAutoRechargeBtn;
-    },
-
-    __getDisableAutoRechargeButton: function() {
-      const disableAutoRechargeBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Disable"),
-        font: "text-14",
-        appearance: "danger-button",
-        maxWidth: 200,
-        center: true
-      });
-      const successfulMsg = this.tr("Auto recharge was successfully disabled");
-      disableAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(false, disableAutoRechargeBtn, successfulMsg));
-      return disableAutoRechargeBtn;
     }
   }
 });
