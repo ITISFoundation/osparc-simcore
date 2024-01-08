@@ -86,7 +86,8 @@ def test_sleepers(  # noqa: PLR0915
             sleep_interval_selector.click()
             sleep_interval_selector.fill(f"{input_sleep_time}")
             print(f"<--- sleeper {index} input time set to {input_sleep_time}")
-        workbench_selector = page.query_selector("#SvgjsSvg1001")
+
+        workbench_selector = page.get_by_test_id("desktopWindow")
         assert workbench_selector
         workbench_selector.click()
 
