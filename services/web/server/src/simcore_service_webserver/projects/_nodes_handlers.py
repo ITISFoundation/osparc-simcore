@@ -43,12 +43,16 @@ from servicelib.common_headers import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.rabbitmq import RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
+    ServiceWaitingForManualInterventionError,
+    ServiceWasNotFoundError,
+)
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
-from ..director_v2.exceptions import DirectorServiceError
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
@@ -252,21 +256,31 @@ async def start_node(request: web.Request) -> web.Response:
         raise web.HTTPConflict(reason=f"{exc}") from exc
 
 
-async def _stop_dynamic_service_with_progress(
-    _task_progress: TaskProgress, *args, **kwargs
+async def _stop_dynamic_service_task(
+    _task_progress: TaskProgress,
+    *,
+    app: web.Application,
+    node_id: NodeID,
+    simcore_user_agent: str,
+    save_state: bool,
 ):
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
-        await director_v2_api.stop_dynamic_service(*args, **kwargs)
+        await dynamic_scheduler_api.stop_dynamic_service(
+            app,
+            node_id=node_id,
+            simcore_user_agent=simcore_user_agent,
+            save_state=save_state,
+        )
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
-    except (ProjectNotFoundError, NodeNotFoundError) as exc:
+    # in case there is an error reply as not found
+    except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
         raise web.HTTPNotFound(reason=f"{exc}") from exc
-    except DirectorServiceError as exc:
-        if exc.status == web.HTTPNotFound.status_code:
-            # already stopped, it's all right
-            raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON) from exc
-        raise
+
+    # in case the service is not found reply as all OK
+    except ServiceWasNotFoundError as exc:
+        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON) from exc
 
 
 @routes.post(
@@ -292,11 +306,11 @@ async def stop_node(request: web.Request) -> web.Response:
 
     return await start_long_running_task(
         request,
-        _stop_dynamic_service_with_progress,
+        _stop_dynamic_service_task,
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
         app=request.app,
-        service_uuid=f"{path_params.node_id}",
+        node_id=path_params.node_id,
         simcore_user_agent=request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),

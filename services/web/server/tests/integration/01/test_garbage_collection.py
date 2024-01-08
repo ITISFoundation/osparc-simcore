@@ -110,6 +110,9 @@ async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
     projects_networks_pattern = re.compile(
         r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/-/networks$"
     )
+    dynamic_services_list_pattern = re.compile(
+        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services?.*"
+    )
     # NOTE: GitHK I have to copy paste that fixture for some unclear reason for now.
     # I think this is due to some conflict between these non-pytest-simcore fixtures and the loop fixture being defined at different locations?? not sure..
     # anyway I think this should disappear once the garbage collector moves to its own micro-service
@@ -122,6 +125,7 @@ async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
         )
         mock.delete(delete_computation_pattern, status=204, repeat=True)
         mock.patch(projects_networks_pattern, status=204, repeat=True)
+        mock.get(dynamic_services_list_pattern, status=200, repeat=True, payload=[])
         yield mock
 
 

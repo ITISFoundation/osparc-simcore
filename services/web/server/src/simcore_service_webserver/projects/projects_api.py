@@ -67,6 +67,10 @@ from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
     get_instance_type_details,
 )
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
+    ServiceWaitingForManualInterventionError,
+    ServiceWasNotFoundError,
+)
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
@@ -661,9 +665,9 @@ async def _remove_service_and_its_data_folders(
 ) -> None:
     if stop_service:
         # no need to save the state of the node when deleting it
-        await director_v2_api.stop_dynamic_service(
+        await dynamic_scheduler_api.stop_dynamic_service(
             app,
-            node_uuid,
+            node_id=NodeID(node_uuid),
             simcore_user_agent=user_agent,
             save_state=False,
         )
@@ -1414,9 +1418,13 @@ async def remove_project_dynamic_services(
         notify_users=notify_users,
     ):
         # save the state if the user is not a guest. if we do not know we save in any case.
-        with suppress(director_v2_api.DirectorServiceError):
-            # here director exceptions are suppressed. in case the service is not found to preserve old behavior
-            await director_v2_api.stop_dynamic_services_in_project(
+        with suppress(
+            RPCServerError,
+            ServiceWaitingForManualInterventionError,
+            ServiceWasNotFoundError,
+        ):
+            # here RPC exceptions are suppressed. in case the service is not found to preserve old behavior
+            await dynamic_scheduler_api.stop_dynamic_services_in_project(
                 app=app,
                 user_id=user_id,
                 project_id=project_uuid,

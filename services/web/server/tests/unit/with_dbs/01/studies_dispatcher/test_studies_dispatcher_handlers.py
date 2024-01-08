@@ -347,30 +347,30 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
     assert client.app
     query: dict[str, Any] = {}
     if redirect_type == "service_and_file":
-        query = dict(
-            file_name="users.csv",
-            file_size=parse_obj_as(ByteSize, "100KB"),
-            file_type="CSV",
-            viewer_key="simcore/services/dynamic/raw-graphs",
-            viewer_version="2.11.1",
-            download_link=URL(
+        query = {
+            "file_name": "users.csv",
+            "file_size": parse_obj_as(ByteSize, "100KB"),
+            "file_type": "CSV",
+            "viewer_key": "simcore/services/dynamic/raw-graphs",
+            "viewer_version": "2.11.1",
+            "download_link": URL(
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
-        )
+        }
     elif redirect_type == "service_only":
-        query = dict(
-            viewer_key="simcore/services/dynamic/raw-graphs",
-            viewer_version="2.11.1",
-        )
+        query = {
+            "viewer_key": "simcore/services/dynamic/raw-graphs",
+            "viewer_version": "2.11.1",
+        }
     elif redirect_type == "file_only":
-        query = dict(
-            file_name="users.csv",
-            file_size=parse_obj_as(ByteSize, "1MiB"),
-            file_type="CSV",
-            download_link=URL(
+        query = {
+            "file_name": "users.csv",
+            "file_size": parse_obj_as(ByteSize, "1MiB"),
+            "file_type": "CSV",
+            "download_link": URL(
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
-        )
+        }
     else:
         raise ValueError(f"{redirect_type=} undefined")
 
@@ -448,6 +448,7 @@ async def test_dispatch_logged_in_user(
     redirect_type: str,
     logged_user: UserInfoDict,
     mocker: MockerFixture,
+    mock_dynamic_scheduler: None,
     storage_subsystem_mock,
     catalog_subsystem_mock: None,
     mocks_on_projects_api,

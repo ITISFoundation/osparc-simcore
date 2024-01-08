@@ -7,16 +7,18 @@ SEE also https://github.com/Delgan/loguru for a future alternative
 import asyncio
 import functools
 import logging
-import os
 import sys
 from asyncio import iscoroutinefunction
 from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
+from pathlib import Path
 from typing import Any, TypeAlias, TypedDict
 
-log = logging.getLogger(__name__)
+from .utils_secrets import mask_sensitive_data
+
+_logger = logging.getLogger(__name__)
 
 
 BLACK = "\033[0;30m"
@@ -135,8 +137,13 @@ def test_logger_propagation(logger: logging.Logger):
 def _log_arguments(
     logger_obj: logging.Logger, level: int, func: Callable, *args, **kwargs
 ) -> dict[str, str]:
+    # NOTE: We should avoid logging arguments but in the meantime, we are trying to
+    # avoid exposing sensitive data in the logs. For `args` is more difficult. We could eventually
+    # deduced sensitivity based on the entropy of values but it is very costly
+    # SEE https://github.com/ITISFoundation/osparc-simcore/security/code-scanning/18
     args_passed_in_function = [repr(a) for a in args]
-    kwargs_passed_in_function = [f"{k}={v!r}" for k, v in kwargs.items()]
+    masked_kwargs = mask_sensitive_data(kwargs)
+    kwargs_passed_in_function = [f"{k}={v!r}" for k, v in masked_kwargs.items()]
 
     # The lists of positional and keyword arguments is joined together to form final string
     formatted_arguments = ", ".join(args_passed_in_function + kwargs_passed_in_function)
@@ -148,7 +155,7 @@ def _log_arguments(
     py_file_caller = getframeinfo(stack()[1][0])
     extra_args = {
         "func_name_override": func.__name__,
-        "file_name_override": os.path.basename(py_file_caller.filename),
+        "file_name_override": Path(py_file_caller.filename).name,
     }
 
     #  Before to the function execution, log function details.
@@ -164,7 +171,7 @@ def _log_arguments(
 
 def log_decorator(logger=None, level: int = logging.DEBUG, log_traceback: bool = False):
     # Build logger object
-    logger_obj = logger or log
+    logger_obj = logger or _logger
 
     def log_decorator_info(func):
         if iscoroutinefunction(func):

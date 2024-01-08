@@ -5,26 +5,17 @@
 """
 
 import logging
-from contextlib import AsyncExitStack
-from functools import partial
 
 from aiohttp import web
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeIDStr
-from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
 from models_library.services import ServicePortKey
 from pydantic import BaseModel
 from pydantic.types import NonNegativeFloat, PositiveInt
-from servicelib.common_headers import X_SIMCORE_USER_AGENT
 from servicelib.logging_utils import log_decorator
-from servicelib.progress_bar import ProgressBarData
-from servicelib.rabbitmq import RabbitMQClient
-from servicelib.utils import logged_gather
 from yarl import URL
 
-from ..rabbitmq import get_rabbitmq_client
 from ._core_base import DataType, request_director_v2
-from .exceptions import DirectorServiceError, ServiceWaitingForManualIntervention
+from .exceptions import DirectorServiceError
 from .settings import DirectorV2Settings, get_plugin_settings
 
 _log = logging.getLogger(__name__)
@@ -58,101 +49,6 @@ async def list_dynamic_services(
         services = []
     assert isinstance(services, list)  # nosec
     return services
-
-
-async def stop_dynamic_service(
-    app: web.Application,
-    service_uuid: NodeIDStr,
-    simcore_user_agent: str,
-    *,
-    save_state: bool = True,
-    progress: ProgressBarData | None = None,
-) -> None:
-    """
-    Stopping a service can take a lot of time
-    bumping the stop command timeout to 1 hour
-    this will allow to sava bigger datasets from the services
-    """
-    headers = {
-        X_SIMCORE_USER_AGENT: simcore_user_agent,
-    }
-    settings: DirectorV2Settings = get_plugin_settings(app)
-
-    async with AsyncExitStack() as stack:
-        if progress:
-            await stack.enter_async_context(progress)
-
-        await request_director_v2(
-            app,
-            "DELETE",
-            url=(settings.base_url / f"dynamic_services/{service_uuid}").update_query(
-                can_save="true" if save_state else "false",
-            ),
-            headers=headers,
-            expected_status=web.HTTPNoContent,
-            timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,
-            on_error={
-                web.HTTPConflict.status_code: (
-                    ServiceWaitingForManualIntervention,
-                    {"service_uuid": service_uuid},
-                )
-            },
-        )
-
-
-async def _post_progress_message(
-    rabbitmq_client: RabbitMQClient,
-    user_id: PositiveInt,
-    project_id: str,
-    progress_value: NonNegativeFloat,
-) -> None:
-    progress_message = ProgressRabbitMessageProject(
-        user_id=user_id,
-        project_id=ProjectID(project_id),
-        progress_type=ProgressType.PROJECT_CLOSING,
-        progress=progress_value,
-    )
-
-    await rabbitmq_client.publish(progress_message.channel_name, progress_message)
-
-
-async def stop_dynamic_services_in_project(
-    app: web.Application,
-    user_id: PositiveInt,
-    project_id: str,
-    simcore_user_agent: str,
-    save_state: bool = True,
-) -> None:
-    """Stops all dynamic services of either project_id or user_id in concurrently"""
-    running_dynamic_services = await list_dynamic_services(
-        app, user_id=user_id, project_id=project_id
-    )
-
-    async with AsyncExitStack() as stack:
-        progress_bar = await stack.enter_async_context(
-            ProgressBarData(
-                num_steps=len(running_dynamic_services),
-                progress_report_cb=partial(
-                    _post_progress_message,
-                    get_rabbitmq_client(app),
-                    user_id,
-                    project_id,
-                ),
-            )
-        )
-
-        services_to_stop = [
-            stop_dynamic_service(
-                app=app,
-                service_uuid=service["service_uuid"],
-                simcore_user_agent=simcore_user_agent,
-                save_state=save_state,
-                progress=progress_bar.sub_progress(1),
-            )
-            for service in running_dynamic_services
-        ]
-
-        await logged_gather(*services_to_stop)
 
 
 # NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191

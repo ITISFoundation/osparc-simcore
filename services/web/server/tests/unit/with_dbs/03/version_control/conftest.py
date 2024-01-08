@@ -245,8 +245,8 @@ async def request_delete_project(
         "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
         autospec=True,
     )
-    director_v2_api_stop_dynamic_services_in_project: mock.AsyncMock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.director_v2_api.stop_dynamic_services_in_project",
+    dynamic_scheduler_api_stop_dynamic_services_in_project: mock.AsyncMock = mocker.patch(
+        "simcore_service_webserver.projects.projects_api.dynamic_scheduler_api.stop_dynamic_services_in_project",
         autospec=True,
     )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
@@ -266,5 +266,5 @@ async def request_delete_project(
     async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(20)):
         with attempt:
             director_v2_api_delete_pipeline.assert_called()
-            director_v2_api_stop_dynamic_services_in_project.assert_awaited()
+            dynamic_scheduler_api_stop_dynamic_services_in_project.assert_awaited()
             fire_and_forget_call_to_storage.assert_called()

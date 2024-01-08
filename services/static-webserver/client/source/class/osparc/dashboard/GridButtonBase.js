@@ -85,12 +85,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         rowSpan: 1,
         colSpan: 4
       },
-      SUBTITLE: {
-        row: 1,
-        column: 0,
-        rowSpan: 1,
-        colSpan: 3
-      },
       THUMBNAIL: {
         row: 2,
         column: 0,
@@ -119,25 +113,27 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         row: 0,
         column: 0,
         rowSpan: 1,
-        colSpan: 2
+        colSpan: 3
       },
       STATUS: {
         row: 1,
         column: 0,
         rowSpan: 1,
-        colSpan: 2
+        colSpan: 4
       },
       TSR: {
-        row: 1,
-        column: 2
+        row: 3,
+        column: 0,
+        colSpan: 2
       },
       HITS: {
-        row: 0,
-        column: 2
+        row: 3,
+        column: 2,
+        colSpan: 1
       },
       UPDATES: {
         row: 0,
-        column: 3,
+        column: 4,
         colSpan: 1
       }
     }

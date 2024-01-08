@@ -116,40 +116,52 @@ def _assert_public_interface(
 
 
 def retry_on_errors(
-    request_func: Callable[..., Awaitable[Response]]
-) -> Callable[..., Awaitable[Response]]:
+    request_timeout_overwrite: float | None = None,
+) -> Callable[..., Callable[..., Awaitable[Response]]]:
     """
     Will retry the request on `ConnectError` and `PoolTimeout`.
     Also wraps `httpx.HTTPError`
     raises:
     - `ClientHttpError`
     """
-    assert asyncio.iscoroutinefunction(request_func)
 
-    @functools.wraps(request_func)
-    async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
-        # pylint: disable=protected-access
-        try:
-            async for attempt in AsyncRetrying(
-                stop=stop_after_delay(zelf.request_timeout),
-                wait=wait_exponential(min=1),
-                retry=retry_if_exception_type((ConnectError, PoolTimeout)),
-                before_sleep=before_sleep_log(_logger, logging.WARNING),
-                after=_after_log(_logger),
-                reraise=True,
-            ):
-                with attempt:
-                    r: Response = await request_func(zelf, *args, **kwargs)
-                    return r
-        except HTTPError as e:
-            if isinstance(e, PoolTimeout):
-                _log_pool_status(zelf.client, "pool timeout")
-            raise ClientHttpError(error=e) from e
+    def decorator(
+        request_func: Callable[..., Awaitable[Response]]
+    ) -> Callable[..., Awaitable[Response]]:
+        assert asyncio.iscoroutinefunction(request_func)
 
-    return request_wrapper
+        @functools.wraps(request_func)
+        async def request_wrapper(zelf: "BaseThinClient", *args, **kwargs) -> Response:
+            # pylint: disable=protected-access
+            try:
+                async for attempt in AsyncRetrying(
+                    stop=stop_after_delay(
+                        request_timeout_overwrite
+                        if request_timeout_overwrite
+                        else zelf.request_timeout
+                    ),
+                    wait=wait_exponential(min=1),
+                    retry=retry_if_exception_type((ConnectError, PoolTimeout)),
+                    before_sleep=before_sleep_log(_logger, logging.WARNING),
+                    after=_after_log(_logger),
+                    reraise=True,
+                ):
+                    with attempt:
+                        r: Response = await request_func(zelf, *args, **kwargs)
+                        return r
+            except HTTPError as e:
+                if isinstance(e, PoolTimeout):
+                    _log_pool_status(zelf.client, "pool timeout")
+                raise ClientHttpError(error=e) from e
+
+        return request_wrapper
+
+    return decorator
 
 
-def expect_status(expected_code: int):
+def expect_status(
+    expected_code: int,
+) -> Callable[..., Callable[..., Awaitable[Response]]]:
     """
     raises an `UnexpectedStatusError` if the request's status is different
     from `expected_code`
