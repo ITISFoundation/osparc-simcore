@@ -1,12 +1,10 @@
 docker
 faker
-jsonschema
 pydantic[email]
 pytest-html
 pytest-instafail
 pytest-playwright
 pytest-runner
 pytest-sugar
-python-dotenv
 pyyaml
 tenacity
