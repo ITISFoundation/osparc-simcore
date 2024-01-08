@@ -73,7 +73,8 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
             })
             .finally(() => this.__form.setFetching(false));
         }
-      })
+      });
+      this.__form.addListener("cancel", () => this.fireEvent("completed"));
       this.add(this.__form);
     },
     __paymentCompleted(paymentData) {
