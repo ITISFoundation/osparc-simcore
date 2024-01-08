@@ -1,3 +1,9 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
+from collections import OrderedDict
 from collections.abc import Callable
 
 import pytest
@@ -10,6 +16,10 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
+from simcore_service_webserver.products._events import _set_app_state
+from simcore_service_webserver.products._middlewares import discover_product_middleware
+from simcore_service_webserver.products._model import Product
+from simcore_service_webserver.products.api import get_current_product
 from simcore_service_webserver.security.api import forget_identity, remember_identity
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.settings import SessionSettings
@@ -29,12 +39,44 @@ async def forget_product(request: web.Request):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client: Callable, mocker: MockerFixture):
+def set_products_in_app_state() -> Callable[
+    [web.Application, OrderedDict[str, Product]], None
+]:
+    """
+    Add products in app's state to avoid setting up a full database in tests
+
+        app: web.Application,
+        app_products: OrderedDict[str, Product] with the first product being the default
+    """
+
+    def _(
+        app: web.Application,
+        app_products: OrderedDict[str, Product],
+    ) -> None:
+        first_product = next(iter(app_products.keys()))
+        return _set_app_state(app, app_products, default_product_name=first_product)
+
+    return _
+
+
+@pytest.fixture
+def client(
+    loop,
+    aiohttp_client: Callable,
+    mocker: MockerFixture,
+    set_products_in_app_state: Callable[
+        [web.Application, OrderedDict[str, Product]], None
+    ],
+):
+    # routes ----------
+
     async def _login(request: web.Request):
         body = await request.json()
 
         email = parse_obj_as(LowerCaseEmailStr, body["email"])
         product = parse_obj_as(ProductName, body["product"])
+
+        get_current_product(request)
 
         # username, product_name, password or 2FA -> yes, this product exist
         # can username use this product # Auth!
@@ -74,7 +116,8 @@ def client(loop, aiohttp_client: Callable, mocker: MockerFixture):
 
     app = web.Application()
 
-    # patch for setup_session: avoids setting up all ApplicationSettings
+    # mocks setup_session -----
+    # patch to avoid setting up all ApplicationSettings
     mocker.patch(
         "simcore_service_webserver.session.plugin.get_plugin_settings",
         autospec=True,
@@ -82,7 +125,13 @@ def client(loop, aiohttp_client: Callable, mocker: MockerFixture):
             SESSION_SECRET_KEY=Fernet.generate_key().decode("utf-8")
         ),  # type: ignore
     )
+
     setup_security(app)
+
+    # mocks setup_products  -----
+    app_products: OrderedDict[str, Product] = OrderedDict()  # TODO:
+    set_products_in_app_state(app, app_products)
+    app.middlewares.append(discover_product_middleware)
 
     app.add_routes(
         [

@@ -166,7 +166,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
     #
     # Front end then creates the following request
     #
-    session_settings = get_plugin_settings(client.app, default_product_name)
+    session_plugin_settings = get_plugin_settings(client.app, default_product_name)
     async with NewInvitation(client) as f:
         confirmation = f.confirmation
         assert confirmation
@@ -186,7 +186,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
             response,
             web.HTTPUnauthorized,
             MSG_WEAK_PASSWORD.format(
-                LOGIN_PASSWORD_MIN_LENGTH=login_settings.LOGIN_PASSWORD_MIN_LENGTH
+                LOGIN_PASSWORD_MIN_LENGTH=session_plugin_settings.LOGIN_PASSWORD_MIN_LENGTH
             ),
         )
         response = await client.post(
