@@ -75,7 +75,10 @@ async def test_unknown_email(
 
 @pytest.mark.parametrize(
     "user_status,expected_msg",
-    ((UserStatus.BANNED, MSG_USER_BANNED), (UserStatus.EXPIRED, MSG_USER_EXPIRED)),
+    (
+        (UserStatus.BANNED, MSG_USER_BANNED),
+        (UserStatus.EXPIRED, MSG_USER_EXPIRED),
+    ),
 )
 async def test_blocked_user(
     client: TestClient,
