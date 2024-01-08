@@ -21,7 +21,8 @@ async def get_default_product_name(conn: DBConnection) -> str:
         sa.select(products.c.name).order_by(products.c.priority)
     )
     if not product_name:
-        raise ValueError("No product defined in database")
+        msg = "No product defined in database"
+        raise ValueError(msg)
 
     assert isinstance(product_name, str)  # nosec
     return product_name
