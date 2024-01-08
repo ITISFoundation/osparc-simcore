@@ -69,4 +69,6 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
 
         request[RQ_PRODUCT_KEY] = product_name
 
+    assert request.get(RQ_PRODUCT_KEY) is not None  # nosec
+
     return await handler(request)

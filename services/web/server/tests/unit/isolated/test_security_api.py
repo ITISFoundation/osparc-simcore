@@ -5,37 +5,57 @@
 
 from collections import OrderedDict
 from collections.abc import Callable
+from typing import Any
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aiohttp_security import check_authorized, check_permission
+from aiohttp.web import RouteTableDef
+from aiohttp_security import check_authorized
 from aiohttp_session import get_session
 from cryptography.fernet import Fernet
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
+from simcore_postgres_database.models.products import LOGIN_SETTINGS_DEFAULT, products
+from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.products._events import _set_app_state
 from simcore_service_webserver.products._middlewares import discover_product_middleware
 from simcore_service_webserver.products._model import Product
-from simcore_service_webserver.products.api import get_current_product
-from simcore_service_webserver.security.api import forget_identity, remember_identity
+from simcore_service_webserver.security.api import (
+    check_permission,
+    forget_identity,
+    remember_identity,
+)
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.settings import SessionSettings
 
-
+# Prototype concept -------------------------------------------------------
 #
-# remember/forget are verbs that refers to statefull sessions
+# - remember/forget are verbs that refers to statefull sessions
+# - get borrowed from dict/maps
 #
-async def remember_product(request: web.Request, product: ProductName):
-    session = await get_session(request)
-    session["product_name"] = product
+_SESSION_PRODUCT_NAME_KEY = "product_name"
 
 
-async def forget_product(request: web.Request):
+async def _remember_product_name(request: web.Request, product: ProductName):
     session = await get_session(request)
-    return session.pop("product", None)
+    session[_SESSION_PRODUCT_NAME_KEY] = product
+
+
+async def _get_product_name(request: web.Request) -> ProductName | None:
+    session = await get_session(request)
+    return session.get(_SESSION_PRODUCT_NAME_KEY, None)
+
+
+async def _forget_product_name(request: web.Request) -> ProductName | None:
+    session = await get_session(request)
+    return session.pop(_SESSION_PRODUCT_NAME_KEY, None)
+
+
+# ------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -60,64 +80,114 @@ def set_products_in_app_state() -> Callable[
 
 
 @pytest.fixture
-def client(
-    loop,
-    aiohttp_client: Callable,
-    mocker: MockerFixture,
-    set_products_in_app_state: Callable[
-        [web.Application, OrderedDict[str, Product]], None
-    ],
-):
-    # routes ----------
+def expected_product_name():
+    return "tis"
 
+
+@pytest.fixture
+def app_products(expected_product_name: ProductName) -> OrderedDict[str, Product]:
+    column_defaults: dict[str, Any] = {
+        c.name: f"{c.server_default.arg}" for c in products.columns if c.server_default
+    }
+    column_defaults["login_settings"] = LOGIN_SETTINGS_DEFAULT
+
+    pp: OrderedDict[str, Product] = OrderedDict()
+    pp[expected_product_name] = Product(
+        name=expected_product_name,
+        host_regex=expected_product_name,
+        **column_defaults,
+    )
+    assert expected_product_name not in {"osparc", "s4l"}
+
+    pp["osparc"] = Product(
+        name="osparc",
+        host_regex="osparc",
+        **column_defaults,
+    )
+    pp["s4l"] = Product(
+        name="s4l",
+        host_regex="s4l",
+        **column_defaults,
+    )
+    return pp
+
+
+@pytest.fixture
+def app_routes(
+    expected_product_name: ProductName, app_products: OrderedDict[str, Product]
+) -> RouteTableDef:
+    assert "v0" == API_VTAG
+
+    routes = RouteTableDef()
+
+    @routes.post("/v0/login")
     async def _login(request: web.Request):
         body = await request.json()
-
         email = parse_obj_as(LowerCaseEmailStr, body["email"])
-        product = parse_obj_as(ProductName, body["product"])
+        product_name = parse_obj_as(ProductName, body["product"])
 
-        get_current_product(request)
-
-        # username, product_name, password or 2FA -> yes, this product exist
-        # can username use this product # Auth!
-        # user identity granted
+        # Authentication takes place here
         if body.get("password") != "secret":
             raise web.HTTPUnauthorized(reason="wrong password")
 
-        # product identity confirmed
+        # Product identity confirmed
+        if product_name not in app_products:
+            raise web.HTTPUnprocessableEntity(reason="wrong product")
 
-        # has user access to product?
+        # Permission in this product: Has user access to product?
+        # raise web.HTTPForbidden
 
-        # permission in this product?
-        await remember_product(request, product)
-
+        # if all good, let's update session with
+        await _remember_product_name(request, product_name)
         return await remember_identity(
             request,
             web.HTTPOk(),
             user_email=email,
         )
 
+    @routes.post("/v0/public")
     async def _public(request: web.Request):
+        # NOTE: this will not be true if login is not done!
+        assert await _get_product_name(request) == expected_product_name
+
         return web.HTTPOk()
 
+    @routes.post("/v0/protected")
     async def _protected(request: web.Request):
         await check_authorized(request)  # = you are logged in
         await check_permission(request, "admin.*")
 
+        assert await _get_product_name(request) == expected_product_name
+
         return web.HTTPOk()
 
+    @routes.post("/v0/logout")
     async def _logout(request: web.Request):
         await check_authorized(request)
 
-        product_name = await forget_product(request)
-        assert product_name
+        product_name = await _forget_product_name(request)
+        assert product_name == expected_product_name
 
         return await forget_identity(request, web.HTTPOk())
 
-    app = web.Application()
+    return routes
 
-    # mocks setup_session -----
-    # patch to avoid setting up all ApplicationSettings
+
+@pytest.fixture
+def client(
+    loop,
+    aiohttp_client: Callable,
+    mocker: MockerFixture,
+    app_products: OrderedDict[str, Product],
+    set_products_in_app_state: Callable[
+        [web.Application, OrderedDict[str, Product]], None
+    ],
+    app_routes: RouteTableDef,
+):
+    app = web.Application()
+    app.router.add_routes(app_routes)
+
+    # mocks 'setup_session': patch to avoid setting up all ApplicationSettings
     mocker.patch(
         "simcore_service_webserver.session.plugin.get_plugin_settings",
         autospec=True,
@@ -128,19 +198,9 @@ def client(
 
     setup_security(app)
 
-    # mocks setup_products  -----
-    app_products: OrderedDict[str, Product] = OrderedDict()  # TODO:
+    # mocks 'setup_products': patch to avoid database
     set_products_in_app_state(app, app_products)
     app.middlewares.append(discover_product_middleware)
-
-    app.add_routes(
-        [
-            web.post("/login", _login),
-            web.post("/public", _public),
-            web.post("/protected", _protected),
-            web.post("/logout", _logout),
-        ]
-    )
 
     return loop.run_until_complete(aiohttp_client(app))
 
@@ -153,24 +213,26 @@ async def test_user_session(client: TestClient, mocker: MockerFixture):
     get_active_user_or_none_mock = mocker.patch(
         "simcore_service_webserver.security._authz.get_active_user_or_none",
         autospec=True,
+        return_value={"email": "foo@email.com", "id": 1, "role": UserRole.ADMIN},
     )
 
-    response = await client.post(
-        "/login",
+    resp = await client.post(
+        "/v0/login",
         json={
             "email": "foo@email.com",
             "password": "secret",
-            "product": "osparc",
+            "product": "tis",
         },
     )
-    assert response.ok
+    assert resp.ok
 
-    await client.post("/public")
-    assert response.ok
+    resp = await client.post("/v0/public")
+    assert resp.ok
+    assert not get_active_user_or_none_mock.called
 
-    await client.post("/protected")
-    assert response.ok
+    resp = await client.post("/v0/protected")
+    assert resp.ok
     assert get_active_user_or_none_mock.called
 
-    await client.post("/logout")
-    assert response.ok
+    resp = await client.post("/v0/logout")
+    assert resp.ok
