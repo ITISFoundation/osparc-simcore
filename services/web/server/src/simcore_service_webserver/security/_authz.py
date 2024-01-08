@@ -22,9 +22,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
     async def _get_user_info(self, email: IdentityStr) -> UserInfoDict | None:
         # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
-        user: UserInfoDict | None = self._cache.get(email, None, with_age=False)  # type: ignore
+        user: UserInfoDict | None = self._cache.get(email, None, with_age=False)
         if user is None:
-            user = await get_active_user_or_none(get_database_engine(self._app), email)  # type: ignore
+            user = await get_active_user_or_none(get_database_engine(self._app), email)
             if user:
                 assert user["id"]  # nosec
                 assert user["role"]  # nosec
@@ -33,7 +33,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return user
 
     @property
-    def access_model(self):
+    def access_model(self) -> RoleBasedAccessModel:
         return self._access_model
 
     def clear_cache(self):

@@ -90,10 +90,12 @@ class RoleBasedAccessModel:
         if operation in role_access.check:
             check = role_access.check[operation]
             try:
+                ok: bool
                 if inspect.iscoroutinefunction(check):
-                    return await check(context)
-
-                return check(context)
+                    ok = await check(context)
+                else:
+                    ok = check(context)
+                return ok
 
             except Exception:  # pylint: disable=broad-except
                 _logger.debug(
