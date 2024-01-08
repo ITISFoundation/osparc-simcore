@@ -21,11 +21,13 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   construct: function() {
     this.base(arguments);
 
-    const creditsCol = 4;
+    const creditsCol = 7;
     const layout = this._getLayout();
     layout.setSpacingX(10);
     layout.setColumnWidth(creditsCol, 110);
     layout.setColumnAlign(creditsCol, "right", "middle");
+
+    this.__buildLayout();
   },
 
   properties: {
@@ -47,6 +49,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       init: null,
       nullable: false,
       apply: "__applyPreferredWallet"
+    },
+
+    autoRecharge: {
+      check: "Object",
+      nullable: true,
+      event: "changeAutoRecharge"
     }
   },
 
@@ -76,7 +84,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           });
           this._add(control, {
             row: 0,
-            column: 4,
+            column: 7,
             rowSpan: 2
           });
           break;
@@ -117,7 +125,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           }, this);
           this._add(control, {
             row: 0,
-            column: 5,
+            column: 4,
             rowSpan: 2
           });
           break;
@@ -156,13 +164,38 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           }), this);
           this._add(control, {
             row: 0,
-            column: 7,
+            column: 8,
             rowSpan: 2
           });
           break;
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __buildLayout() {
+      this.__autorechargeBtn = new qx.ui.form.ToggleButton("Autorecharge").set({
+        maxHeight: 30,
+        alignX: "center",
+        alignY: "middle",
+        value: false
+      });
+      this.__autorechargeBtn.addListener("execute", () => {
+        const autorecharge = new osparc.desktop.credits.AutoRecharge(this.getKey());
+        const win = osparc.ui.window.Window.popUpInWindow(autorecharge, "Autorecharge", 400, 550);
+      });
+      this.bind("autoRecharge", this.__autorechargeBtn, "value", {
+        converter: ar => ar ? ar.enabled : false
+      });
+      this.bind("autoRecharge", this.__autorechargeBtn, "icon", {
+        converter: ar => ar && ar.enabled ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16"
+      });
+      this._add(this.__autorechargeBtn, {
+        // Takes the status button place for the moment
+        row: 0,
+        column: 5,
+        rowSpan: 2
+      });
     },
 
     __applyCreditsAvailable: function(creditsAvailable) {
@@ -185,10 +218,10 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     // overridden
     _applyAccessRights: function(accessRights) {
       this.base(arguments, accessRights);
-
       this.getChildControl("buy-credits-button").set({
-        visibility: this.__canIWrite() ? "visible" : "hidden"
+        visibility: this.__canIWrite() ? "visible" : "excluded"
       });
+      this.__autorechargeBtn.setVisibility(this.__canIWrite() ? "visible" : "excluded")
     },
 
     // overridden
