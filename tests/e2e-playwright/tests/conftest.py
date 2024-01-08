@@ -192,7 +192,7 @@ def register(
     product_url: AnyUrl,
     user_name: str,
     user_password: str,
-) -> Iterator[Callable[[], AutoRegisteredUser]]:
+) -> Callable[[], AutoRegisteredUser]:
     def _do() -> AutoRegisteredUser:
         print(
             f"------> Registering in {product_url=} using {user_name=}/{user_password=}"
