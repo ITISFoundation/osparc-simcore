@@ -759,7 +759,7 @@ async def test_close_project(
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
     fake_services,
-    mock_rabbitmq: None,
+    mock_dynamic_scheduler_rabbitmq: None,
     mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
@@ -767,7 +767,7 @@ async def test_close_project(
     fake_dynamic_services = fake_services(number_services=5)
     assert len(fake_dynamic_services) == 5
     mocked_director_v2_api[
-        "director_v2._core_dynamic_services.list_dynamic_services"
+        "dynamic_scheduler.api.list_dynamic_services"
     ].return_value = fake_dynamic_services
 
     # open project
@@ -806,13 +806,13 @@ async def test_close_project(
             ),
         ]
         mocked_director_v2_api[
-            "director_v2._core_dynamic_services.list_dynamic_services"
+            "dynamic_scheduler.api.list_dynamic_services"
         ].assert_has_calls(calls)
 
         calls = [
             call(
                 app=client.server.app,
-                service_uuid=service["service_uuid"],
+                node_id=service["service_uuid"],
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
                 progress=mock_progress_bar.sub_progress(1),
@@ -820,7 +820,7 @@ async def test_close_project(
             for service in fake_dynamic_services
         ]
         mocked_director_v2_api[
-            "director_v2._core_dynamic_services.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_has_calls(calls)
 
         # should not be callsed request_retrieve_dyn_service
@@ -1041,17 +1041,17 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     data, errors = await assert_status(resp, expected_response_on_delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[
-            "director_v2.api.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_called_once()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
         mocked_director_v2_api[
-            "director_v2.api.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
     # delete the NOT dynamic node
-    mocked_director_v2_api["director_v2.api.stop_dynamic_service"].reset_mock()
+    mocked_director_v2_api["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
     mock_storage_api_delete_data_folders_of_project_node.reset_mock()
     # mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
     url = client.app.router["delete_node"].url_for(
@@ -1061,12 +1061,12 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     data, errors = await assert_status(resp, expected_response_on_delete)
     if resp.status == web.HTTPNoContent.status_code:
         mocked_director_v2_api[
-            "director_v2.api.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
         mocked_director_v2_api[
-            "director_v2.api.stop_dynamic_service"
+            "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
@@ -1130,7 +1130,7 @@ async def test_open_shared_project_2_users_locked(
     mock_orphaned_services,
     mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table: None,
-    mock_rabbitmq: None,
+    mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
@@ -1312,7 +1312,7 @@ async def test_open_shared_project_at_same_time(
     mock_orphaned_services,
     mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
-    mock_rabbitmq: None,
+    mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 10

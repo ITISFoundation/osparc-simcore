@@ -80,7 +80,7 @@ click==8.1.7
     #   uvicorn
 colorama==0.4.6
     # via typer
-cryptography==41.0.5
+cryptography==41.0.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

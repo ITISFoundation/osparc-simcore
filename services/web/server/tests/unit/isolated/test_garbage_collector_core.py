@@ -1,15 +1,16 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import re
 from typing import Final
 from unittest.mock import AsyncMock
 
 import pytest
-from aiohttp import ClientSession, web
-from aioresponses import aioresponses as AioResponsesMock
+from aiohttp import ClientSession
 from faker import Faker
 from pytest_mock import MockerFixture
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
+    ServiceWaitingForManualInterventionError,
+)
 from simcore_service_webserver.garbage_collector._core_orphans import (
     _remove_single_service_if_orphan,
     remove_orphaned_services,
@@ -47,7 +48,7 @@ def mock_get_workbench_node_ids_from_project_uuid(
 @pytest.fixture
 def mock_list_dynamic_services(mocker: MockerFixture):
     mocker.patch(
-        f"{MODULE_GC_CORE_ORPHANS}.api.list_dynamic_services",
+        f"{MODULE_GC_CORE_ORPHANS}.director_v2_api.list_dynamic_services",
         autospec=True,
     )
 
@@ -76,7 +77,10 @@ async def test_regression_project_id_recovered_from_the_wrong_data_structure(
         autospec=True,
         return_value=AsyncMock(),
     )
-    mocker.patch(f"{MODULE_GC_CORE_ORPHANS}.api.stop_dynamic_service", autospec=True)
+    mocker.patch(
+        f"{MODULE_GC_CORE_ORPHANS}.dynamic_scheduler_api.stop_dynamic_service",
+        autospec=True,
+    )
 
     await _remove_single_service_if_orphan(
         app=AsyncMock(),
@@ -93,7 +97,6 @@ async def test_regression_project_id_recovered_from_the_wrong_data_structure(
 async def test_remove_single_service_if_orphan_service_is_waiting_manual_intervention(
     faker: Faker,
     mocker: MockerFixture,
-    aioresponses_mocker: AioResponsesMock,
 ):
     mocker.patch(
         f"{MODULE_GC_CORE_ORPHANS}.is_node_id_present_in_any_project_workbench",
@@ -122,11 +125,9 @@ async def test_remove_single_service_if_orphan_service_is_waiting_manual_interve
         return_value=ClientSession(),
     )
 
-    aioresponses_mocker.delete(
-        re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services.*$"),
-        status=web.HTTPConflict.status_code,
-        payload={"code": "waiting_for_intervention"},
-        repeat=True,
+    mocker.patch(
+        f"{MODULE_GC_CORE_ORPHANS}.dynamic_scheduler_api.stop_dynamic_service",
+        side_effect=ServiceWaitingForManualInterventionError,
     )
 
     await _remove_single_service_if_orphan(

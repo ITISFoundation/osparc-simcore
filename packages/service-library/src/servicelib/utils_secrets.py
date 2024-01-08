@@ -57,3 +57,39 @@ def secure_randint(start: StrictInt, end: StrictInt) -> int:
 
     diff = end - start
     return secrets.randbelow(diff) + start
+
+
+_PLACEHOLDER: Final[str] = "*" * 8
+_DEFAULT_SENSITIVE_KEYWORDS: Final[set[str]] = {"pass", "secret"}
+
+
+def _is_possibly_sensitive(name: str, sensitive_keywords: set[str]) -> bool:
+    return any(k.lower() in name.lower() for k in sensitive_keywords)
+
+
+def mask_sensitive_data(
+    data: dict, *, extra_sensitive_keywords: set[str] | None = None
+) -> dict:
+    """Replaces the sensitive values in the dict with a placeholder  before logging
+
+    Sensitive values are detected testing the key name (i.e. a str(key) ) againts sensitive keywords `pass` or `secret`.
+
+    NOTE: this function is used to avoid logging sensitive information like passwords or secrets
+    """
+    sensitive_keywords = _DEFAULT_SENSITIVE_KEYWORDS | (
+        extra_sensitive_keywords or set()
+    )
+    masked_data = {}
+    for key, value in data.items():
+        if isinstance(value, dict):
+            masked_data[key] = mask_sensitive_data(
+                value, extra_sensitive_keywords=sensitive_keywords
+            )
+        else:
+            masked_data[key] = (
+                _PLACEHOLDER
+                if _is_possibly_sensitive(f"{key}", sensitive_keywords)
+                else value
+            )
+
+    return masked_data

@@ -340,6 +340,7 @@ async def test_access_cookie_of_expired_user(
     storage_subsystem_mock_override: None,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: AioResponsesMock,
+    mock_dynamic_scheduler: None,
     mocks_on_projects_api: None,
     # needed to cleanup the locks between parametrizations
     redis_locks_client: AsyncIterator[aioredis.Redis],

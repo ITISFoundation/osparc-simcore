@@ -16,7 +16,7 @@ import textwrap
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
@@ -33,6 +33,7 @@ import simcore_service_webserver.utils
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from models_library.products import ProductName
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -50,8 +51,10 @@ from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
+from simcore_postgres_database.utils_products import get_default_product_name
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
+from simcore_service_webserver.db.plugin import get_database_engine
 from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
@@ -203,6 +206,13 @@ def osparc_product_name() -> str:
     return "osparc"
 
 
+@pytest.fixture
+async def default_product_name(client: TestClient) -> ProductName:
+    assert client.app
+    async with get_database_engine(client.app).acquire() as conn:
+        return await get_default_product_name(conn)
+
+
 # SUBSYSTEM MOCKS FIXTURES ------------------------------------------------
 #
 # Mocks entirely or part of the calls to the web-server subsystems
@@ -348,6 +358,13 @@ def asyncpg_storage_system_mock(mocker):
     )
 
 
+_LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH: Final[list[str]] = [
+    "director_v2.api",
+    "director_v2._core_dynamic_services",
+    "dynamic_scheduler.api",
+]
+
+
 @pytest.fixture
 async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     mock = {}
@@ -356,20 +373,13 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     # NOTE: depending on the test, function might have to be patched
     #  via the director_v2_api or director_v2_core_dynamic_services modules
     #
-    for func_name in (
-        "list_dynamic_services",
-        "stop_dynamic_service",
-    ):
-        for mod_name in (
-            "director_v2.api",
-            "director_v2._core_dynamic_services",
-        ):
-            name = f"{mod_name}.{func_name}"
-            mock[name] = mocker.patch(
-                f"simcore_service_webserver.{name}",
-                autospec=True,
-                return_value={},
-            )
+    for mod_name in _LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH:
+        name = f"{mod_name}.list_dynamic_services"
+        mock[name] = mocker.patch(
+            f"simcore_service_webserver.{name}",
+            autospec=True,
+            return_value={},
+        )
     # add here redirects from director-v2 via dynamic-scheduler
     # NOTE: once all above are moved to dynamic-scheduler
     # this fixture needs to be renamed to mocked_dynamic_scheduler
@@ -377,6 +387,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
     for func_name in (
         "get_dynamic_service",
         "run_dynamic_service",
+        "stop_dynamic_service",
     ):
         name = f"dynamic_scheduler.api.{func_name}"
         mock[name] = mocker.patch(
@@ -417,12 +428,11 @@ def create_dynamic_service_mock(
 
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_v2_api[
-            "director_v2.api.list_dynamic_services"
-        ].return_value = services
-        mocked_director_v2_api[
-            "director_v2._core_dynamic_services.list_dynamic_services"
-        ].return_value = services
+        for module_name in _LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH:
+            mocked_director_v2_api[
+                f"{module_name}.list_dynamic_services"
+            ].return_value = services
+
         return running_service_dict
 
     return _create
@@ -643,9 +653,9 @@ async def all_group(
 
 
 @pytest.fixture
-def mock_rabbitmq(mocker: MockerFixture) -> None:
+def mock_dynamic_scheduler_rabbitmq(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_webserver.director_v2._core_dynamic_services.get_rabbitmq_client",
+        "simcore_service_webserver.dynamic_scheduler.api.get_rabbitmq_client",
         autospec=True,
         return_value=AsyncMock(),
     )
@@ -682,7 +692,7 @@ def mock_progress_bar(mocker: MockerFixture) -> Any:
     mock_bar = MockedProgress()
 
     mocker.patch(
-        "simcore_service_webserver.director_v2._core_dynamic_services.ProgressBarData",
+        "simcore_service_webserver.dynamic_scheduler.api.ProgressBarData",
         autospec=True,
         return_value=mock_bar,
     )
