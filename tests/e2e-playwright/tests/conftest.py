@@ -14,8 +14,6 @@ import pytest
 from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from pydantic import AnyUrl, TypeAdapter
-from pytest_simcore.helpers.typing_docker import UrlStr
-from pytest_simcore.helpers.utils_public_api import StacksDeployedDict
 from pytest_simcore.playwright_utils import (
     AutoRegisteredUser,
     SocketIOEvent,
@@ -23,21 +21,7 @@ from pytest_simcore.playwright_utils import (
     decode_socketio_42_message,
 )
 
-pytest_plugins = [
-    "pytest_simcore.docker_compose",
-    "pytest_simcore.docker_registry",
-    "pytest_simcore.docker_swarm",
-    "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.repository_paths",
-    "pytest_simcore.schemas",
-    "pytest_simcore.simcore_services",
-    "pytest_simcore.tmp_path_extra",
-]
 
-
-#
-# Generic pytest options
-#
 def pytest_addoption(parser: pytest.Parser) -> None:
     group = parser.getgroup(
         "oSparc e2e options", description="oSPARC-e2e specific parameters"
@@ -91,36 +75,9 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
-@pytest.fixture(scope="module")
-def core_services_selection(simcore_docker_compose: dict) -> list[str]:
-    """Selection of services from the simcore stack"""
-    # OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection fixture
-    return list(simcore_docker_compose["services"].keys())
-
-
-@pytest.fixture(scope="module")
-def ops_services_selection(ops_docker_compose: dict) -> list[str]:
-    """Selection of services from the ops stack"""
-    # OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection fixture
-    all_ops_services = list(ops_docker_compose["services"].keys())
-    if "CI" in os.environ:
-        all_ops_services = ["minio"]
-        print(
-            f"WARNING: CI-mode: Only required services will be started {all_ops_services=}"
-        )
-    return all_ops_services
-
-
-@pytest.fixture(scope="module")
-def simcore_stack_and_registry_ready(
-    docker_registry: UrlStr, docker_stack: StacksDeployedDict
-) -> StacksDeployedDict:
-    ...
-
-
 @pytest.fixture(autouse=True)
-def osparc_test_id_attribute(playwright) -> None:
-    # Set a custom test id attribute for playwright
+def osparc_test_id_attribute(playwright):
+    # Set a custom test id attribute
     playwright.selectors.set_test_id_attribute("osparc-test-id")
 
 
