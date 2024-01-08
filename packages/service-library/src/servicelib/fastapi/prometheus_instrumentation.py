@@ -6,4 +6,4 @@ def instrument_app(app: FastAPI):
 
     Instrumentator(
         should_instrument_requests_inprogress=True, inprogress_labels=False
-    ).instrument(app).expose(app)
+    ).instrument(app).expose(app, include_in_schema=False)
