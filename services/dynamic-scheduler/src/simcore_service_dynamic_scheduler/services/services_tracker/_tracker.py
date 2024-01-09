@@ -4,6 +4,7 @@ from asyncio import Task
 from typing import Final
 
 from fastapi import FastAPI
+from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.redis import RedisClientSDK
@@ -54,7 +55,7 @@ class ServicesTracker(ServicesManager):
 
         await super().shutdown()
 
-    async def _check_single_service(self, node_id) -> None:
+    async def _check_single_service(self, node_id: NodeID) -> None:
         service_status = await self.get(identifier=node_id)
         if service_status is None:
             _logger.info("Could not retrieve the status of services %s", node_id)
@@ -64,14 +65,26 @@ class ServicesTracker(ServicesManager):
         await self.service_status_cache.set_value(f"{node_id}", service_status)
 
         if cached_status is None:
+            context = await self._get_identifier_context(node_id)
+            assert context  # nosec
+
             await publish_message(
-                self.app, node_id=node_id, service_status=service_status
+                self.app,
+                node_id=node_id,
+                service_status=service_status,
+                primary_group_id=context.primary_group_id,
             )
             return
 
         if service_status != cached_status:
+            context = await self._get_identifier_context(node_id)
+            assert context  # nosec
+
             await publish_message(
-                self.app, node_id=node_id, service_status=service_status
+                self.app,
+                node_id=node_id,
+                service_status=service_status,
+                primary_group_id=context.primary_group_id,
             )
 
     async def _check_services_status_task(self) -> None:
