@@ -24,9 +24,9 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     this._setLayout(new qx.ui.layout.VBox(15));
 
     const store = osparc.store.Store.getInstance();
-    const wallet = store.getWallets().find(wallet => wallet.getWalletId() == walletId);
+    const wallet = store.getWallets().find(w => w.getWalletId() == walletId);
     this.__buildLayout();
-    this.setWallet(wallet)
+    this.setWallet(wallet);
   },
 
   properties: {

@@ -108,7 +108,9 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       page.showLabelOnTab();
       this.__paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
-      page.add(this.__paymentMethods, { flex: 1 });
+      page.add(this.__paymentMethods, {
+        flex: 1
+      });
       return page;
     },
 
@@ -121,7 +123,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       buyCredits.set({
         margin: 10
       });
-      buyCredits.addListener("addNewPaymentMethod", () => this.__openPaymentMethods(true), this);
+      buyCredits.addListener("addNewPaymentMethod", () => this.openPaymentMethods(true), this);
       buyCredits.addListener("transactionCompleted", () => this.__openTransactions(true), this);
       page.add(buyCredits);
       return page;
@@ -172,20 +174,20 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       if (this.__paymentMethods) {
         const paymentMethods = this.__paymentMethods.getPaymentMethods();
         const buyView = new osparc.desktop.credits.BuyCreditsStepper(
-          paymentMethods.map(({ idr, cardHolderName, cardNumberMasked }) => ({
+          paymentMethods.map(({idr, cardHolderName, cardNumberMasked}) => ({
             label: `${cardHolderName} ${cardNumberMasked}`,
             id: idr
           }))
-        )
+        );
         const win = osparc.ui.window.Window.popUpInWindow(buyView, "Buy credits", 400, 550).set({
           resizable: false,
           movable: false
-        })
+        });
         buyView.addListener("completed", () => win.close());
       }
     },
 
-    __openPaymentMethods: function() {
+    openPaymentMethods: function() {
       this.__openPage(this.__paymentMethodsPage);
     },
 
@@ -200,6 +202,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __openUsage: function() {
       this.__openPage(this.__usagePage);
-    },
+    }
   }
 });
