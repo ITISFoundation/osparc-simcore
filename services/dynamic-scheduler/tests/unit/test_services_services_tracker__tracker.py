@@ -240,13 +240,12 @@ async def test_services_tracker_notification_sequence(
     ],
     app: FastAPI,
 ):
-    assert len(mock_publish_message.call_args_list) == 0
-
     # create a new service
     node_id = get_node_id()
     await _create_service(services_tracker, node_id)
     await _manual_check_services_status(services_tracker)
     assert mock_publish_message.call_args_list == []
+    assert len(mock_publish_message.call_args_list) == 0
 
     # create a sequence of events where some of them repeat
     event_node_get = NodeGet.parse_obj(NodeGet.Config.schema_extra["example"])
@@ -282,7 +281,9 @@ async def test_services_tracker_notification_sequence(
 
     # check events appear in expected sequence
     assert len(services_status_changes) == 5
-    assert len(mock_publish_message.call_args_list) == 5
+    assert (
+        len(mock_publish_message.call_args_list) == 5
+    ), f"Calls\n:{mock_publish_message.call_args_list}\nEvents:\n{service_status_sequence}\nExpected:\n{services_status_changes}"
 
     for i, service_status_change in enumerate(services_status_changes):
         assert mock_publish_message.await_args_list[i] == call(
