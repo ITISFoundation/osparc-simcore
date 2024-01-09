@@ -10,6 +10,7 @@ from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
+from models_library.users import UserID
 from pydantic.types import NonNegativeFloat, PositiveInt
 from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient
@@ -18,6 +19,7 @@ from servicelib.utils import logged_gather
 
 from ..director_v2.api import list_dynamic_services
 from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
+from ..users.api import get_user
 from .settings import DynamicSchedulerSettings, get_plugin_settings
 
 
@@ -44,6 +46,7 @@ async def stop_dynamic_service(
     node_id: NodeID,
     simcore_user_agent: str,
     save_state: bool,
+    user_id: UserID,
     progress: ProgressBarData | None = None,
 ) -> None:
     async with AsyncExitStack() as stack:
@@ -51,11 +54,13 @@ async def stop_dynamic_service(
             await stack.enter_async_context(progress)
 
         settings: DynamicSchedulerSettings = get_plugin_settings(app)
+        user_dict = await get_user(app, user_id)
         await services.stop_dynamic_service(
             get_rabbitmq_rpc_client(app),
             node_id=node_id,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
+            primary_group_id=user_dict["primary_gid"],
             timeout_s=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
         )
 
@@ -108,6 +113,7 @@ async def stop_dynamic_services_in_project(
                 node_id=service["service_uuid"],
                 simcore_user_agent=simcore_user_agent,
                 save_state=save_state,
+                user_id=user_id,
                 progress=progress_bar.sub_progress(1),
             )
             for service in running_dynamic_services

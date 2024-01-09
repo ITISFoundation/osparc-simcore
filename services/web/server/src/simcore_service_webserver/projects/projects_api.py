@@ -670,6 +670,7 @@ async def _remove_service_and_its_data_folders(
             node_id=NodeID(node_uuid),
             simcore_user_agent=user_agent,
             save_state=False,
+            user_id=user_id,
         )
 
     # remove the node's data if any

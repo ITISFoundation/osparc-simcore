@@ -37,6 +37,7 @@ async def _remove_single_service_if_orphan(
 
     service_host = dynamic_service["service_host"]
     service_uuid = dynamic_service["service_uuid"]
+    user_id = dynamic_service["user_id"]
 
     # if not present in DB or not part of currently opened projects, can be removed
     # if the node does not exist in any project in the db
@@ -53,6 +54,7 @@ async def _remove_single_service_if_orphan(
                 node_id=service_uuid,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=False,
+                user_id=user_id,
             )
         except (
             RPCServerError,
@@ -117,6 +119,7 @@ async def _remove_single_service_if_orphan(
                     node_id=service_uuid,
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     save_state=save_state,
+                    user_id=user_id,
                 )
 
         except (RPCServerError, ServiceWasNotFoundError) as err:

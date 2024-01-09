@@ -116,11 +116,14 @@ async def stop_dynamic_service(
     node_id: NodeID,
     simcore_user_agent: str,
     save_state: bool,
+    primary_group_id: GroupID,
 ) -> None:
     await services_manager.update_cleanup_context(
         identifier=node_id,
         cleanup_context=TrackerCleanupContext(
-            simcore_user_agent=simcore_user_agent, save_state=save_state
+            simcore_user_agent=simcore_user_agent,
+            save_state=save_state,
+            primary_group_id=primary_group_id,
         ),
     )
 
