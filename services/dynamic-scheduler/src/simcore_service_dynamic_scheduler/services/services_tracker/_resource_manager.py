@@ -7,6 +7,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
+from models_library.users import GroupID
 from pydantic import BaseModel
 from servicelib.base_distributed_identifier import BaseDistributedIdentifierManager
 from servicelib.redis import RedisClientSDK
@@ -19,6 +20,7 @@ _CLEANUP_INTERVAL = timedelta(minutes=1)
 class TrackerCleanupContext(BaseModel):
     simcore_user_agent: str
     save_state: bool
+    primary_group_id: GroupID
 
 
 class ServicesManager(
@@ -56,10 +58,10 @@ class ServicesManager(
         return not isinstance(service_status, NodeGetIdle)
 
     async def _create(  # pylint:disable=arguments-differ
-        self, identifier: NodeID, rpc_dynamic_service_create: RPCDynamicServiceCreate
+        self, rpc_dynamic_service_create: RPCDynamicServiceCreate
     ) -> tuple[NodeID, NodeGet | DynamicServiceGet | NodeGetIdle]:
         return (
-            identifier,
+            rpc_dynamic_service_create.node_uuid,
             await director_v2_api.run_dynamic_service(
                 self.app, rpc_dynamic_service_create=rpc_dynamic_service_create
             ),
@@ -99,6 +101,7 @@ async def run_dynamic_service(
         cleanup_context=TrackerCleanupContext(
             simcore_user_agent=rpc_dynamic_service_create.simcore_user_agent,
             save_state=rpc_dynamic_service_create.can_save,
+            primary_group_id=rpc_dynamic_service_create.primary_group_id,
         ),
         identifier=rpc_dynamic_service_create.node_uuid,
         rpc_dynamic_service_create=rpc_dynamic_service_create,
