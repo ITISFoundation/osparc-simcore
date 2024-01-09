@@ -274,14 +274,11 @@ async def test_services_tracker_notification_sequence(
     # identify service status changes
     services_status_changes: list[NodeGet | DynamicServiceGet | NodeGetIdle] = []
 
-    def _get_last_status_change() -> NodeGet | DynamicServiceGet | NodeGetIdle | None:
-        if len(services_status_changes) == 0:
-            return None
-        return services_status_changes[-1]
-
+    last_service_status: NodeGet | DynamicServiceGet | NodeGetIdle | None = None
     for service_status in service_status_sequence:
-        if service_status != _get_last_status_change():
-            services_status_changes.append(service_status)  # noqa: PERF401
+        if service_status != last_service_status:
+            last_service_status = service_status
+            services_status_changes.append(service_status)
 
     # check events appear in expected sequence
     assert len(services_status_changes) == 5
