@@ -124,7 +124,8 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         console.log("export");
       });
       filterContainer.add(this.__exportButton);
-      container.add(filterContainer);
+      // FEATURE TOGGLE
+      // container.add(filterContainer);
       this._add(container);
       walletSelectBox.addListener("changeSelection", e => {
         if (walletSelectBox.getSelection().length) {
