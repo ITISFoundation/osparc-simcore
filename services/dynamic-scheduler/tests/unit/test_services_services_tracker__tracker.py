@@ -274,7 +274,8 @@ async def test_services_tracker_notification_sequence(
     service_status_event_sequence_factory({node_id: service_status_sequence})
 
     # make sure all events are processed
-    for _ in range(len(service_status_sequence)):
+    events_to_process = len(service_status_sequence) * 2
+    for _ in range(events_to_process):
         await _manual_check_services_status(services_tracker)
 
     # identify service status changes
