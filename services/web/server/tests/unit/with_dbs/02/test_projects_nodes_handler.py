@@ -668,6 +668,7 @@ async def test_delete_node(
                 mock.ANY,
                 node_id=NodeID(node_id),
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                user_id=mock.ANY,
                 save_state=False,
             )
             mocked_director_v2_api[
