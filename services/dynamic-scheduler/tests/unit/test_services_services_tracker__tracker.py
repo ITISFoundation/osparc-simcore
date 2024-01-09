@@ -290,5 +290,8 @@ async def test_services_tracker_notification_sequence(
 
     for i, service_status_change in enumerate(services_status_changes):
         assert mock_publish_message.await_args_list[i] == call(
-            app, node_id=node_id, service_status=service_status_change
+            app,
+            node_id=node_id,
+            service_status=service_status_change,
+            primary_group_id=1,
         )
