@@ -57,7 +57,7 @@ def service_status_event_sequence_factory(
         def _gen_status(
             node_id: NodeID,
         ) -> Generator[NodeGet | DynamicServiceGet | NodeGetIdle | None, None, None]:
-            yield from service_status_sequence.get(node_id, [])  # noqa: UP028
+            yield from service_status_sequence.get(node_id, [])
 
             # if no more entries found always yeld None
             while True:
@@ -225,7 +225,10 @@ async def test_services_tracker_notification_publishing(
     await _manual_check_services_status(services_tracker)
     assert len(mock_publish_message.call_args_list) == 1
     mock_publish_message.assert_awaited_once_with(
-        app, node_id=new_service_node_id, service_status=new_service_status_sequence[0]
+        app,
+        node_id=new_service_node_id,
+        primary_group_id=1,
+        service_status=new_service_status_sequence[0],
     )
     mock_publish_message.reset_mock()
 
