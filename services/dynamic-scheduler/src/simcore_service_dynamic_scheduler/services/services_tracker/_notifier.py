@@ -18,6 +18,9 @@ async def publish_message(
 ) -> None:
     _ = app
     _logger.debug(
-        "Publishing message for %s(%s) -> %s", node_id, primary_group_id, service_status
+        "Publishing message for user %s (primary_gid %s) -> %s",
+        node_id,
+        primary_group_id,
+        service_status,
     )
     # NOTE: implementation is coming in a followup PR
