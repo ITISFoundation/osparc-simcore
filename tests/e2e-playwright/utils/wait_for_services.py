@@ -5,6 +5,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import arrow
 import docker
 import yaml
 from tenacity import RetryError, Retrying
@@ -92,20 +93,20 @@ def ops_services() -> list[str]:
         return list(dc_specs["services"].keys())
 
 
-def to_datetime(datetime_str: str) -> datetime:
-    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
-    #  - The T separates the date portion from the time-of-day portion
-    #  - The Z on the end means UTC, that is, an offset-from-UTC
-    # The 099 before the Z is not clear, therefore we will truncate the last part
-    N = len("2020-10-09T12:28:14.7710")
-    if len(datetime_str) > N:
-        datetime_str = datetime_str[:N]
-    return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
+def _to_datetime(docker_timestamp: str) -> datetime:
+    # docker follows RFC3339Nano timestamp which is based on ISO 8601
+    # https://medium.easyread.co/understanding-about-rfc-3339-for-datetime-formatting-in-software-engineering-940aa5d5f68a
+    # This is acceptable in ISO 8601 and RFC 3339 (with T)
+    # 2019-10-12T07:20:50.52Z
+    # This is only accepted in RFC 3339 (without T)
+    # 2019-10-12 07:20:50.52Z
+    dt: datetime = arrow.get(docker_timestamp).datetime
+    return dt
 
 
-def by_service_creation(service):
+def _by_service_creation(service) -> datetime:
     datetime_str = service.attrs["CreatedAt"]
-    return to_datetime(datetime_str)
+    return _to_datetime(datetime_str)
 
 
 def wait_for_services() -> int:
@@ -125,7 +126,7 @@ def wait_for_services() -> int:
                         for s in client.services.list()
                         if s.name.split("_")[-1] in expected_services
                     ),
-                    key=by_service_creation,
+                    key=_by_service_creation,
                 )
 
                 assert len(started_services), "no services started!"
@@ -141,11 +142,14 @@ def wait_for_services() -> int:
         return os.EX_SOFTWARE
 
     for service in started_services:
+        assert service
+        assert service.attrs
         expected_replicas = (
             service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
             if "Replicated" in service.attrs["Spec"]["Mode"]
             else len(client.nodes.list())  # we are in global mode
         )
+        assert hasattr(service, "name")
         print(f"Service: {service.name} expects {expected_replicas} replicas", "-" * 10)
 
         try:
