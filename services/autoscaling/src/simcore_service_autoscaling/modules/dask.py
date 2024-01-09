@@ -49,47 +49,6 @@ async def _scheduler_client(url: AnyUrl) -> AsyncIterator[distributed.Client]:
         raise DaskSchedulerNotFoundError(url=url) from exc
 
 
-async def list_unrunnable_tasks(url: AnyUrl) -> list[DaskTask]:
-    """
-    Raises:
-        DaskSchedulerNotFoundError
-    """
-
-    def _list_tasks(
-        dask_scheduler: distributed.Scheduler,
-    ) -> dict[str, dict[str, Any]]:
-        return {
-            task.key: task.resource_restrictions for task in dask_scheduler.unrunnable
-        }
-
-    async with _scheduler_client(url) as client:
-        list_of_tasks: dict[
-            DaskTaskId, DaskTaskResources
-        ] = await _wrap_client_async_routine(client.run_on_scheduler(_list_tasks))
-        _logger.info("found unrunnable tasks: %s", list_of_tasks)
-        return [
-            DaskTask(task_id=task_id, required_resources=task_resources)
-            for task_id, task_resources in list_of_tasks.items()
-        ]
-
-
-async def list_processing_tasks(url: AnyUrl) -> list[DaskTaskId]:
-    """
-    Raises:
-        DaskSchedulerNotFoundError
-    """
-    async with _scheduler_client(url) as client:
-        processing_tasks = set()
-        if worker_to_processing_tasks := await _wrap_client_async_routine(
-            client.processing()
-        ):
-            _logger.info("cluster worker processing: %s", worker_to_processing_tasks)
-            for tasks in worker_to_processing_tasks.values():
-                processing_tasks |= set(tasks)
-
-        return list(processing_tasks)
-
-
 DaskWorkerUrl: TypeAlias = str
 DaskWorkerDetails: TypeAlias = dict[str, Any]
 
@@ -129,6 +88,57 @@ def _dask_worker_from_ec2_instance(
         )
     assert len(filtered_workers) == 1  # nosec
     return next(iter(filtered_workers.items()))
+
+
+async def is_worker_connected(
+    scheduler_url: AnyUrl, worker_ec2_instance: EC2InstanceData
+) -> bool:
+    with contextlib.suppress(DaskNoWorkersError, DaskWorkerNotFoundError):
+        async with _scheduler_client(scheduler_url) as client:
+            _dask_worker_from_ec2_instance(client, worker_ec2_instance)
+            return True
+    return False
+
+
+async def list_unrunnable_tasks(url: AnyUrl) -> list[DaskTask]:
+    """
+    Raises:
+        DaskSchedulerNotFoundError
+    """
+
+    def _list_tasks(
+        dask_scheduler: distributed.Scheduler,
+    ) -> dict[str, dict[str, Any]]:
+        return {
+            task.key: task.resource_restrictions for task in dask_scheduler.unrunnable
+        }
+
+    async with _scheduler_client(url) as client:
+        list_of_tasks: dict[
+            DaskTaskId, DaskTaskResources
+        ] = await _wrap_client_async_routine(client.run_on_scheduler(_list_tasks))
+        _logger.debug("found unrunnable tasks: %s", list_of_tasks)
+        return [
+            DaskTask(task_id=task_id, required_resources=task_resources)
+            for task_id, task_resources in list_of_tasks.items()
+        ]
+
+
+async def list_processing_tasks(url: AnyUrl) -> list[DaskTaskId]:
+    """
+    Raises:
+        DaskSchedulerNotFoundError
+    """
+    async with _scheduler_client(url) as client:
+        processing_tasks = set()
+        if worker_to_processing_tasks := await _wrap_client_async_routine(
+            client.processing()
+        ):
+            _logger.info("cluster worker processing: %s", worker_to_processing_tasks)
+            for tasks in worker_to_processing_tasks.values():
+                processing_tasks |= set(tasks)
+
+        return list(processing_tasks)
 
 
 async def get_worker_still_has_results_in_memory(
