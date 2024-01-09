@@ -1,5 +1,6 @@
 import contextlib
 import logging
+import re
 from collections import defaultdict
 from collections.abc import AsyncIterator, Coroutine
 from typing import Any, Final, TypeAlias
@@ -52,6 +53,7 @@ async def _scheduler_client(url: AnyUrl) -> AsyncIterator[distributed.Client]:
 
 DaskWorkerUrl: TypeAlias = str
 DaskWorkerDetails: TypeAlias = dict[str, Any]
+DASK_NAME_PATTERN: Final[re.Pattern] = re.compile(r"^.+_(ip-\d+-\d+-\d+-\d+).+$")
 
 
 def _dask_worker_from_ec2_instance(
@@ -64,7 +66,6 @@ def _dask_worker_from_ec2_instance(
         DaskWorkerNotFoundError
     """
     node_hostname = node_host_name_from_ec2_private_dns(ec2_instance)
-    node_ip = node_ip_from_ec2_private_dns(ec2_instance)
     scheduler_info = client.scheduler_info()
     assert client.scheduler  # nosec
     if "workers" not in scheduler_info or not scheduler_info["workers"]:
@@ -78,16 +79,18 @@ def _dask_worker_from_ec2_instance(
         dask_worker: tuple[DaskWorkerUrl, DaskWorkerDetails]
     ) -> bool:
         _, details = dask_worker
-        return bool(details["host"] == node_ip) or bool(
-            node_hostname in details["name"]
-        )
+        if match := re.match(DASK_NAME_PATTERN, details["name"]):
+            return match.group(0) == node_hostname
+        return False
 
     filtered_workers = dict(filter(_find_by_worker_host, workers.items()))
     if not filtered_workers:
         raise DaskWorkerNotFoundError(
             worker_host=ec2_instance.aws_private_dns, url=client.scheduler.address
         )
-    assert len(filtered_workers) == 1  # nosec
+    assert (
+        len(filtered_workers) == 1
+    ), f"returned workers {filtered_workers}, {node_hostname=}"  # nosec
     return next(iter(filtered_workers.items()))
 
 
