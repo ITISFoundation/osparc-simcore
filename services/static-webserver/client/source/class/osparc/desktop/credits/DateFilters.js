@@ -81,8 +81,8 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
         }
         return;
       }
-      const from =  osparc.utils.Utils.formatDateYyyyMmDd(this.__from.getValue());
-      const until =  osparc.utils.Utils.formatDateYyyyMmDd(this.__until.getValue());
+      const from = osparc.utils.Utils.formatDateYyyyMmDd(this.__from.getValue());
+      const until = osparc.utils.Utils.formatDateYyyyMmDd(this.__until.getValue());
       this.fireDataEvent("change", {
         from,
         until
