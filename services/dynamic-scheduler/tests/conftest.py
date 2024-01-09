@@ -98,6 +98,12 @@ def disable_rabbitmq_setup(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
+def disable_notifier(mocker: MockerFixture) -> None:
+    base_path = "simcore_service_dynamic_scheduler.services"
+    mocker.patch(f"{base_path}.services_tracker._setup.setup_notifier")
+
+
+@pytest.fixture
 def disable_services_tracker_setup(mocker: MockerFixture) -> None:
     base_path = "simcore_service_dynamic_scheduler.core.application"
     mocker.patch(f"{base_path}.setup_services_tracker")

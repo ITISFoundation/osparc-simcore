@@ -64,6 +64,8 @@ attrs==23.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
+bidict==0.22.1
+    # via python-socketio
 certifi==2023.7.22
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -116,6 +118,7 @@ h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
+    #   wsproto
 httpcore==0.18.0
     # via httpx
 httptools==0.6.1
@@ -212,6 +215,10 @@ python-dateutil==2.8.2
     # via arrow
 python-dotenv==1.0.0
     # via uvicorn
+python-engineio==4.8.2
+    # via python-socketio
+python-socketio==5.11.0
+    # via -r requirements/_base.in
 pyyaml==6.0.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -260,6 +267,8 @@ rpds-py==0.10.6
     #   referencing
 shellingham==1.5.4
     # via typer
+simple-websocket==1.0.0
+    # via python-engineio
 six==1.16.0
     # via python-dateutil
 sniffio==1.3.0
@@ -333,6 +342,8 @@ watchfiles==0.21.0
     # via uvicorn
 websockets==12.0
     # via uvicorn
+wsproto==1.2.0
+    # via simple-websocket
 yarl==1.9.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in

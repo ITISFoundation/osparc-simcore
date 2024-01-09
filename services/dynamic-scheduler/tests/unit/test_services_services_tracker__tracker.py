@@ -75,6 +75,7 @@ def mock_publish_message(mocker: MockerFixture) -> AsyncMock:
 
 @pytest.fixture
 async def services_tracker(
+    disable_notifier: None,
     disable_rabbitmq_setup: None,
     mock_director_v2_api: None,
     mock_publish_message: AsyncMock,

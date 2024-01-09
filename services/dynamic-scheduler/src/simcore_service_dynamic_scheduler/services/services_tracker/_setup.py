@@ -3,10 +3,13 @@ from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
 
 from ...core.settings import ApplicationSettings
+from ._notifier import setup_notifier
 from ._tracker import ServicesTracker
 
 
 def setup_services_tracker(app: FastAPI) -> None:
+    setup_notifier(app)
+
     async def on_startup() -> None:
         settings: ApplicationSettings = app.state.settings
 

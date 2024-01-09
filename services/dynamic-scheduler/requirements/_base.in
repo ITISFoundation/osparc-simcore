@@ -18,5 +18,6 @@ aiocache[redis]
 fastapi
 httpx
 packaging
+python-socketio
 typer[all]
 uvicorn[standard]
