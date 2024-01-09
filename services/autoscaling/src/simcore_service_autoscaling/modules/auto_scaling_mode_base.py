@@ -122,3 +122,8 @@ class BaseAutoscaling(ABC):  # pragma: no cover
         return utils_docker.is_node_ready_and_available(
             instance.node, Availability.drain
         )
+
+    @staticmethod
+    @abstractmethod
+    async def try_retire_nodes(app: FastAPI) -> None:
+        ...

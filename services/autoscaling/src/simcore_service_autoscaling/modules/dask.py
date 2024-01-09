@@ -229,3 +229,8 @@ async def compute_cluster_total_resources(
                 continue
 
         return Resources.create_as_empty()
+
+
+async def try_retire_nodes(url: AnyUrl) -> None:
+    async with _scheduler_client(url) as client:
+        await _wrap_client_async_routine(client.retire_workers())

@@ -140,3 +140,8 @@ class DynamicAutoscaling(BaseAutoscaling):
         return utils_docker.is_node_ready_and_available(
             instance.node, Availability.active
         )
+
+    @staticmethod
+    async def try_retire_nodes(app: FastAPI) -> None:
+        assert app  # nosec
+        # nothing to do here

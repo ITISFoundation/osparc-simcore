@@ -570,7 +570,7 @@ async def _start_instances(
                 "Exceptionally high load on computational cluster, please try again later.",
                 level=logging.ERROR,
             )
-        elif isinstance(r, Exception):
+        elif isinstance(r, BaseException):
             _logger.error("Unexpected error happened when starting EC2 instance: %s", r)
             last_issue = f"{r}"
         elif isinstance(r, list):
@@ -793,6 +793,7 @@ async def _autoscale_cluster(
         )
     elif still_unrunnable_tasks == unrunnable_tasks:
         # NOTE: we only scale down in case we did not just scale up. The swarm needs some time to adjust
+        await auto_scaling_mode.try_retire_nodes(app)
         cluster = await _deactivate_empty_nodes(app, cluster, auto_scaling_mode)
         cluster = await _try_scale_down_cluster(app, cluster)
 

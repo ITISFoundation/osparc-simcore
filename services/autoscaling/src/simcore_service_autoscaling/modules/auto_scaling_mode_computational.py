@@ -187,3 +187,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
         return await dask.is_worker_connected(
             _scheduler_url(app), instance.ec2_instance
         )
+
+    @staticmethod
+    async def try_retire_nodes(app: FastAPI) -> None:
+        await dask.try_retire_nodes(_scheduler_url(app))
