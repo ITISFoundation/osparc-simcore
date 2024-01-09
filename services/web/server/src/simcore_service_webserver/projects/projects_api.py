@@ -100,7 +100,7 @@ from ..socketio.messages import (
     send_messages,
 )
 from ..storage import api as storage_api
-from ..users.api import UserNameDict, get_user_name, get_user_role
+from ..users.api import UserNameDict, get_user, get_user_name, get_user_role
 from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
     PreferredWalletIdFrontendUserPreference,
@@ -544,6 +544,9 @@ async def _start_dynamic_service(
             service_key=service_key,
             service_version=service_version,
         )
+
+        user_dict: dict = await get_user(request.app, user_id)
+
         await dynamic_scheduler_api.run_dynamic_service(
             app=request.app,
             rpc_dynamic_service_create=RPCDynamicServiceCreate(
@@ -565,6 +568,7 @@ async def _start_dynamic_service(
                 wallet_info=wallet_info,
                 pricing_info=pricing_info,
                 hardware_info=hardware_info,
+                primary_group_id=user_dict["primary_gid"],
             ),
         )
 
