@@ -1,5 +1,6 @@
 import contextlib
 import logging
+from collections import defaultdict
 from collections.abc import AsyncIterator, Coroutine
 from typing import Any, Final, TypeAlias
 
@@ -124,21 +125,36 @@ async def list_unrunnable_tasks(url: AnyUrl) -> list[DaskTask]:
         ]
 
 
-async def list_processing_tasks(url: AnyUrl) -> list[DaskTaskId]:
+async def list_processing_tasks_per_worker(
+    url: AnyUrl,
+) -> dict[DaskWorkerUrl, list[DaskTask]]:
     """
     Raises:
         DaskSchedulerNotFoundError
     """
-    async with _scheduler_client(url) as client:
-        processing_tasks = set()
-        if worker_to_processing_tasks := await _wrap_client_async_routine(
-            client.processing()
-        ):
-            _logger.info("cluster worker processing: %s", worker_to_processing_tasks)
-            for tasks in worker_to_processing_tasks.values():
-                processing_tasks |= set(tasks)
 
-        return list(processing_tasks)
+    def _list_tasks(
+        dask_scheduler: distributed.Scheduler,
+    ) -> dict[str, list[tuple[DaskTaskId, DaskTaskResources]]]:
+        worker_to_processing_tasks = defaultdict(list)
+        for task_key, task_state in dask_scheduler.tasks.items():
+            if task_state.processing_on:
+                worker_to_processing_tasks[task_state.processing_on.address].append(
+                    (task_key, task_state.resource_restrictions)
+                )
+        return worker_to_processing_tasks
+
+    async with _scheduler_client(url) as client:
+        worker_to_tasks: dict[
+            str, list[tuple[DaskTaskId, DaskTaskResources]]
+        ] = await _wrap_client_async_routine(client.run_on_scheduler(_list_tasks))
+        _logger.debug("found processing tasks: %s", worker_to_tasks)
+        tasks_per_worker = {}
+        for worker, tasks in worker_to_tasks.items():
+            tasks_per_worker[worker] = [
+                DaskTask(task_id=t[0], required_resources=t[1]) for t in tasks
+            ]
+        return tasks_per_worker
 
 
 async def get_worker_still_has_results_in_memory(

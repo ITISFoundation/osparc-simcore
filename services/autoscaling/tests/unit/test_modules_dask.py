@@ -28,7 +28,7 @@ from simcore_service_autoscaling.modules.dask import (
     _scheduler_client,
     get_worker_still_has_results_in_memory,
     get_worker_used_resources,
-    list_processing_tasks,
+    list_processing_tasks_per_worker,
     list_unrunnable_tasks,
 )
 from tenacity import retry, stop_after_delay, wait_fixed
@@ -107,13 +107,13 @@ async def test_list_processing_tasks(
         return x + y
 
     # there is nothing now
-    assert await list_processing_tasks(url=scheduler_url) == []
+    assert await list_processing_tasks_per_worker(url=scheduler_url) == []
 
     # this function will be queued and executed as there are no specific resources needed
     future_queued_task = dask_spec_cluster_client.submit(_add_fct, 2, 5)
     assert future_queued_task
 
-    assert await list_processing_tasks(scheduler_url) == [
+    assert await list_processing_tasks_per_worker(scheduler_url) == [
         DaskTaskId(future_queued_task.key)
     ]
 
@@ -121,7 +121,7 @@ async def test_list_processing_tasks(
     assert result == 7
 
     # nothing processing anymore
-    assert await list_processing_tasks(url=scheduler_url) == []
+    assert await list_processing_tasks_per_worker(url=scheduler_url) == []
 
 
 _DASK_SCHEDULER_REACTION_TIME_S: Final[int] = 4
