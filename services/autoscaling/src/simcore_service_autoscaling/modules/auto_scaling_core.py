@@ -614,14 +614,19 @@ async def _scale_up_cluster(
         await auto_scaling_mode.log_message_from_tasks(
             app,
             pending_tasks,
-            "service is pending due to missing resources, scaling up cluster now\n"
-            f"{sum(n for n in needed_ec2_instances.values())} new machines will be added, please wait...",
+            "service is pending due to missing resources, scaling up cluster now...",
             level=logging.INFO,
         )
         # NOTE: notify the up-scaling progress started...
         await auto_scaling_mode.progress_message_from_tasks(app, pending_tasks, 0.001)
         new_pending_instances = await _start_instances(
             app, needed_ec2_instances, pending_tasks, auto_scaling_mode
+        )
+        await auto_scaling_mode.log_message_from_tasks(
+            app,
+            pending_tasks,
+            f"{len(new_pending_instances)} new machines being started, please wait...",
+            level=logging.INFO,
         )
         cluster.pending_ec2s.extend(new_pending_instances)
         # NOTE: to check the logs of UserData in EC2 instance
