@@ -195,22 +195,3 @@ async def test_proxy_login(
 
         if not error:
             assert data["login"] == user["email"]
-
-
-def test_login_user_in_product(
-    client: TestClient,
-):
-
-    raise NotImplementedError
-
-    # register new user in product A
-
-    # can login in product A
-
-    # cannot login in product B
-
-    # now registers in product B
-
-    # can login in products A and B
-
-    # products stays in session
