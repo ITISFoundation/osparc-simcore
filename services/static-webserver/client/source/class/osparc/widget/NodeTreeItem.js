@@ -44,7 +44,8 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
     this.base(arguments);
 
     this.set({
-      indent: 6,
+      indent: 5,
+      textColor: "text",
       allowGrowX: true,
       alignY: "middle"
     });
@@ -299,7 +300,6 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
 
     _addWidgets: function() {
       // Here's our indentation and tree-lines
-      this.addSpacer();
       this.addOpenButton();
 
       // The standard tree icon follows
@@ -366,7 +366,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
     },
 
     __setHoveredStyle: function() {
-      osparc.utils.Utils.addBorder(this, 1, qx.theme.manager.Color.getInstance().resolve("background-selected"));
+      osparc.utils.Utils.addBorder(this, 1, qx.theme.manager.Color.getInstance().resolve("background-selected-dark"));
     },
 
     __setNotHoveredStyle: function() {

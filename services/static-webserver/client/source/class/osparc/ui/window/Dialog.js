@@ -107,6 +107,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
     addButton: function(button) {
       const btnToolbar = this.getChildControl("buttons-layout");
       button.set({
+        appearance: "form-button",
         font: "text-14"
       });
       btnToolbar.add(button);
@@ -117,6 +118,11 @@ qx.Class.define("osparc.ui.window.Dialog", {
      */
     addCancelButton: function() {
       const cancelButton = this.getChildControl("cancel-button");
+      cancelButton.set({
+        appearance: "form-button-text",
+        font: "text-14",
+        textColor: "link"
+      });
       cancelButton.addListener("execute", () => this.close(), this);
       return cancelButton;
     }

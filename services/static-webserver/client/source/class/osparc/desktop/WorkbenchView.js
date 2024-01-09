@@ -274,13 +274,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const tabPageBtn = tabPage.getChildControl("button").set({
         toolTipText: tooltip,
         margin: [12, 2, 0],
+        padding: [8, 10, 8, 10],
         height: this.self().TAB_BUTTON_HEIGHT,
         alignX: "center",
         alignY: "middle",
         backgroundColor
       });
       tabPageBtn.bind("value", tabPageBtn, "backgroundColor", {
-        converter: val => val ? "default-button-disabled-background": undefined
+        converter: val => val ? "default-button-background": undefined
+      });
+      tabPageBtn.bind("value", tabPageBtn, "textColor", {
+        converter: val => val ? "default-button-text-outline": "default-button-text-action"
       });
       tabPageBtn.bind("value", tabPageBtn, "decorator", {
         converter: val => val ? "tab-button-selected" : "tab-button"

@@ -50,7 +50,7 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           control = new qx.ui.toolbar.Separator().set({
             width: 2,
             padding: 0,
-            margin: [7, 0],
+            margin: [7, 10, 7, 0],
             backgroundColor: "default-button-disabled-background"
           });
           this._add(control);
