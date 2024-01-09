@@ -2,15 +2,10 @@
 
 """
 
+import aiohttp_security.api
 import passlib.hash
 from aiohttp import web
-from aiohttp_security.api import (
-    AUTZ_KEY,
-    authorized_userid,
-    check_permission,
-    is_anonymous,
-)
-from simcore_postgres_database.models.users import UserRole
+from models_library.users import UserID
 
 from ._authz import AuthorizationPolicy
 from ._authz_access_model import RoleBasedAccessModel
@@ -18,16 +13,39 @@ from ._identity import forget_identity, remember_identity
 
 
 def get_access_model(app: web.Application) -> RoleBasedAccessModel:
-    autz_policy: AuthorizationPolicy = app[AUTZ_KEY]
+    autz_policy: AuthorizationPolicy = app[aiohttp_security.api.AUTZ_KEY]
     return autz_policy.access_model
 
 
 def clean_auth_policy_cache(app: web.Application) -> None:
-    autz_policy: AuthorizationPolicy = app[AUTZ_KEY]
+    autz_policy: AuthorizationPolicy = app[aiohttp_security.api.AUTZ_KEY]
     autz_policy.clear_cache()
 
 
+async def check_permission(request: web.Request, permission: str) -> None:
+    """Checker that passes only to authoraised users with given permission.
+
+    Raises:
+        web.HTTPUnauthorized: If user is not authorized
+        web.HTTPForbidden: If user is authorized and does not have permission
+    """
+    return await aiohttp_security.api.check_permission(request, permission)
+
+
+async def authorized_userid(request: web.Request) -> UserID | None:
+    return await aiohttp_security.api.authorized_userid(request)
+
+
+async def is_anonymous(request: web.Request) -> bool:
+    """
+    User is considered anonymous if there is not identityin request.
+    """
+    return await aiohttp_security.api.is_anonymous(request)
+
+
+#
 # utils (i.e. independent from setup)
+#
 
 
 def encrypt_password(password: str) -> str:
@@ -40,6 +58,10 @@ def check_password(password: str, password_hash: str) -> bool:
     return is_valid
 
 
+assert forget_identity  # nosec
+assert remember_identity  # nosec
+
+
 __all__: tuple[str, ...] = (
     "authorized_userid",
     "check_permission",
@@ -48,7 +70,4 @@ __all__: tuple[str, ...] = (
     "get_access_model",
     "is_anonymous",
     "remember_identity",
-    "UserRole",
 )
-
-# nopycln: file
