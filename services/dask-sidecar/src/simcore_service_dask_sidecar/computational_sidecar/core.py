@@ -160,8 +160,10 @@ class ComputationalSidecar:
     async def run(self, command: list[str]) -> TaskOutputData:
         # ensure we pass the initial logs and progress
         await self._publish_sidecar_log(
-            f"Starting task for {self.task_parameters.image}:{self.task_parameters.tag} on {socket.gethostname()}..."
+            f"Starting task {self.task_parameters.image}:{self.task_parameters.tag} on {socket.gethostname()}..."
         )
+        # NOTE: this is for tracing purpose
+        _logger.info("Running task owner: %s", self.task_parameters.task_owner)
 
         settings = Settings.create_from_envs()
         run_id = f"{uuid4()}"
