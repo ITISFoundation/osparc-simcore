@@ -19,8 +19,8 @@ def upgrade():
     # If a user has NO associated product groups, assign them a default product
     migration_query = sa.text(
         """
-        INSERT INTO users_to_groups (uid, gid)
-        SELECT u.uid, (
+        INSERT INTO user_to_groups (uid, gid)
+        SELECT u.id, (
             SELECT p.group_id
             FROM products p
             WHERE p.group_id IS NOT NULL
@@ -28,15 +28,15 @@ def upgrade():
             LIMIT 1
         ) AS default_group_id
         FROM users u
-        WHERE u.uid NOT IN (
+        WHERE u.id NOT IN (
             SELECT utg.uid
-            FROM users_to_groups utg
+            FROM user_to_groups utg
             WHERE utg.gid IN (
                 SELECT p.group_id
                 FROM products p
             )
         )
-        AND u.state = 'ACTIVE';
+        AND u.status = 'ACTIVE';
     """
     )
 
