@@ -1,3 +1,5 @@
+arrow
+docker
 faker
 pydantic[email]
 pytest-html
@@ -5,4 +7,5 @@ pytest-instafail
 pytest-playwright
 pytest-runner
 pytest-sugar
+pyyaml
 tenacity
