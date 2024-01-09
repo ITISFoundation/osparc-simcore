@@ -8,7 +8,7 @@ from aiohttp import web
 from models_library.users import UserID
 
 from ._authz import AuthorizationPolicy
-from ._authz_access_model import RoleBasedAccessModel
+from ._authz_access_model import OptionalContext, RoleBasedAccessModel
 from ._identity import forget_identity, remember_identity
 
 
@@ -22,14 +22,16 @@ def clean_auth_policy_cache(app: web.Application) -> None:
     autz_policy.clear_cache()
 
 
-async def check_permission(request: web.Request, permission: str) -> None:
+async def check_permission(
+    request: web.Request, permission: str, *, context: OptionalContext = None
+) -> None:
     """Checker that passes only to authoraised users with given permission.
 
     Raises:
         web.HTTPUnauthorized: If user is not authorized
         web.HTTPForbidden: If user is authorized and does not have permission
     """
-    return await aiohttp_security.api.check_permission(request, permission)
+    await aiohttp_security.api.check_permission(request, permission, context)
 
 
 async def authorized_userid(request: web.Request) -> UserID | None:
@@ -40,7 +42,8 @@ async def is_anonymous(request: web.Request) -> bool:
     """
     User is considered anonymous if there is not identityin request.
     """
-    return await aiohttp_security.api.is_anonymous(request)
+    yes: bool = await aiohttp_security.api.is_anonymous(request)
+    return yes
 
 
 #
