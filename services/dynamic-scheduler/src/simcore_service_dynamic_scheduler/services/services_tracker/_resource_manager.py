@@ -103,7 +103,6 @@ async def run_dynamic_service(
             save_state=rpc_dynamic_service_create.can_save,
             primary_group_id=rpc_dynamic_service_create.primary_group_id,
         ),
-        identifier=rpc_dynamic_service_create.node_uuid,
         rpc_dynamic_service_create=rpc_dynamic_service_create,
     )
     assert isinstance(status_after_creation, NodeGet | DynamicServiceGet)  # nosec
