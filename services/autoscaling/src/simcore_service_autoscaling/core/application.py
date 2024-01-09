@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
+from models_library.basic_types import BootModeEnum
 
 from .._meta import (
     API_VERSION,
@@ -16,6 +17,7 @@ from .._meta import (
     APP_STARTED_DYNAMIC_BANNER_MSG,
 )
 from ..api.routes import setup_api_routes
+from ..modules import remote_debug
 from ..modules.auto_scaling_task import setup as setup_background_task
 from ..modules.docker import setup as setup_docker
 from ..modules.ec2 import setup as setup_ec2
@@ -46,6 +48,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     # PLUGINS SETUP
+    if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
+        remote_debug.setup(app)
     setup_api_routes(app)
     setup_docker(app)
     setup_rabbitmq(app)
