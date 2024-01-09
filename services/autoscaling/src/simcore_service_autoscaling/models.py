@@ -25,16 +25,21 @@ class AssociatedInstance:
     ec2_instance: EC2InstanceData
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Cluster:
     active_nodes: list[AssociatedInstance] = field(
         metadata={
-            "description": "This is a EC2 backed docker node which is active (with running tasks)"
+            "description": "This is a EC2 backed docker node which is active and ready to receive tasks (or with running tasks)"
+        }
+    )
+    pending_nodes: list[AssociatedInstance] = field(
+        metadata={
+            "description": "This is a EC2 backed docker node which is active and NOT yet ready to receive tasks"
         }
     )
     drained_nodes: list[AssociatedInstance] = field(
         metadata={
-            "description": "This is a EC2 backed docker node which is drained (with no tasks)"
+            "description": "This is a EC2 backed docker node which is drained (cannot accept tasks)"
         }
     )
     reserve_drained_nodes: list[AssociatedInstance] = field(
