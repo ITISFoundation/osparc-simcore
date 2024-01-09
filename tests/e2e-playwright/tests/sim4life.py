@@ -15,6 +15,10 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
+projects_uuid_pattern = re.compile(
+    r"/projects/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
+)
+
 
 def on_web_socket(ws) -> None:
     print(f"WebSocket opened: {ws.url}")
@@ -42,7 +46,7 @@ def test_sim4life(
     _textbox.press("Enter")
     page.get_by_test_id(service_test_id).click()
 
-    with page.expect_response(re.compile(r"/projects/")) as response_info:
+    with page.expect_response(projects_uuid_pattern) as response_info:
         # Project detail view pop-ups shows
         page.get_by_test_id("openResource").click()
         if product_billable:
@@ -51,8 +55,8 @@ def test_sim4life(
         page.wait_for_timeout(1000)
 
     # Get project uuid, will be used to delete this project in the end
-    uuid_pattern = re.compile(r"/projects/([0-9a-fA-F-]+)")
-    match = uuid_pattern.search(response_info.value.url)
+    print(f"projects uuid endpoint captured: {response_info.value.url}")
+    match = projects_uuid_pattern.search(response_info.value.url)
     assert match
     extracted_uuid = match.group(1)
 
