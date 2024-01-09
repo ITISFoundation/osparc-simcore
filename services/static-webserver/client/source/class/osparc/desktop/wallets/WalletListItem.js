@@ -202,9 +202,9 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         visibility: this.__canIWrite() ? "visible" : "excluded",
       });
       this.bind("accessRights", this.__buyBtn, "enabled", {
-        converter: accessRights => {
-          const myAr = osparc.data.model.Wallet.getMyAccessRights(accessRights);
-          return Boolean(myAr && myAr["write"]);
+        converter: aR => {
+          const myAr = osparc.data.model.Wallet.getMyAccessRights(aR);
+          return Boolean(myAr && myAr.write);
         }
       });
       this.__buyBtn.addListener("execute", () => this.fireDataEvent("buyCredits", {
