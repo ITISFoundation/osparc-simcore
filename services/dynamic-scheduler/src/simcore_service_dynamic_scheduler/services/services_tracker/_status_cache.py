@@ -30,3 +30,6 @@ class ServiceStatusCache(Generic[T]):
     async def get_value(self, key: str) -> T | None:
         result: T | None = await self.cache.get(key)  # pylint:disable=no-member
         return result
+
+    async def clear(self) -> None:
+        await self.cache.clear()  # pylint:disable=no-member

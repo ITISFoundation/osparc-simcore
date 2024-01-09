@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import asyncio
 from collections.abc import Callable, Generator
 from copy import deepcopy
 from unittest.mock import AsyncMock, call
@@ -38,7 +39,48 @@ def app_environment(
 
 
 @pytest.fixture
-def services_tracker(disable_rabbitmq_setup: None, app: FastAPI) -> ServicesTracker:
+def mock_director_v2_api(
+    mocker: MockerFixture,
+    service_status_event_sequence_factory: Callable[
+        [dict[NodeID, list[NodeGet | DynamicServiceGet | NodeGetIdle]]], None
+    ],
+) -> None:
+    # mocks the following inside ServicesManager: `_create` and `_destroy`
+    # to change what `get` returns use `service_status_event_sequence_factory` fixture
+    base_module = (
+        "simcore_service_dynamic_scheduler.services.services_tracker._resource_manager"
+    )
+    mocker.patch(f"{base_module}.director_v2_api.run_dynamic_service")
+    mocker.patch(f"{base_module}.director_v2_api.stop_dynamic_service")
+
+    # disable background tasks
+    base_module = "simcore_service_dynamic_scheduler.services.services_tracker._tracker"
+    mocker.patch(f"{base_module}.start_periodic_task")
+    mocker.patch(f"{base_module}.stop_periodic_task")
+    base_module = "servicelib.base_distributed_identifier"
+    mocker.patch(f"{base_module}.start_periodic_task")
+    mocker.patch(f"{base_module}.stop_periodic_task")
+
+    # mocks the get to reply with nothing
+    service_status_event_sequence_factory({})
+
+
+@pytest.fixture
+def mock_publish_message(mocker: MockerFixture) -> AsyncMock:
+    base_module = "simcore_service_dynamic_scheduler.services.services_tracker._tracker"
+    mock = AsyncMock()
+    mocker.patch(f"{base_module}.publish_message", mock)
+    return mock
+
+
+@pytest.fixture
+def services_tracker(
+    disable_rabbitmq_setup: None,
+    mock_director_v2_api: None,
+    mock_publish_message: AsyncMock,
+    app: FastAPI,
+) -> ServicesTracker:
+    mock_publish_message.reset_mock()
     return get_services_tracker(app)
 
 
@@ -149,34 +191,9 @@ async def test__fixture_service_status_event_sequence_factory(
     await _assert_always_returns_none(node_id_mix_sequence)
 
 
-@pytest.fixture
-def mock_director_v2_api(
-    mocker: MockerFixture,
-    service_status_event_sequence_factory: Callable[
-        [dict[NodeID, list[NodeGet | DynamicServiceGet | NodeGetIdle]]], None
-    ],
-) -> None:
-    # mocks the following inside ServicesManager: `_create` and `_destroy`
-    # to change what `get` returns use `service_status_event_sequence_factory` fixture
-    base_module = (
-        "simcore_service_dynamic_scheduler.services.services_tracker._resource_manager"
-    )
-    mocker.patch(f"{base_module}.director_v2_api.run_dynamic_service")
-    mocker.patch(f"{base_module}.director_v2_api.stop_dynamic_service")
-    # mocks the get to reply with nothing
-    service_status_event_sequence_factory({})
-
-
-@pytest.fixture
-def mock_publish_message(mocker: MockerFixture) -> AsyncMock:
-    base_module = "simcore_service_dynamic_scheduler.services.services_tracker._tracker"
-    mock = AsyncMock()
-    mocker.patch(f"{base_module}.publish_message", mock)
-    return mock
-
-
 async def _manual_check_services_status(services_tracker: ServicesTracker) -> None:
     await services_tracker._check_services_status_task()  # pylint:disable=protected-access # noqa: SLF001
+    await asyncio.sleep(0.1)
 
 
 async def _create_service(services_tracker: ServicesTracker, node_id: NodeID) -> None:
@@ -194,7 +211,6 @@ async def _create_service(services_tracker: ServicesTracker, node_id: NodeID) ->
 
 
 async def test_services_tracker_notification_publishing(
-    mock_director_v2_api: None,
     mock_publish_message: AsyncMock,
     services_tracker: ServicesTracker,
     get_node_id: Callable[[], NodeID],
@@ -230,11 +246,9 @@ async def test_services_tracker_notification_publishing(
         primary_group_id=1,
         service_status=new_service_status_sequence[0],
     )
-    mock_publish_message.reset_mock()
 
 
 async def test_services_tracker_notification_sequence(
-    mock_director_v2_api: None,
     mock_publish_message: AsyncMock,
     services_tracker: ServicesTracker,
     get_node_id: Callable[[], NodeID],
@@ -269,7 +283,7 @@ async def test_services_tracker_notification_sequence(
     service_status_event_sequence_factory({node_id: service_status_sequence})
 
     # make sure all events are processed
-    events_to_process = len(service_status_sequence) * 2
+    events_to_process = len(service_status_sequence)
     for _ in range(events_to_process):
         await _manual_check_services_status(services_tracker)
 
@@ -284,9 +298,11 @@ async def test_services_tracker_notification_sequence(
 
     # check events appear in expected sequence
     assert len(services_status_changes) == 5
-    assert (
-        len(mock_publish_message.call_args_list) == 5
-    ), f"Calls\n:{mock_publish_message.call_args_list}\nEvents:\n{service_status_sequence}\nExpected:\n{services_status_changes}"
+    assert len(mock_publish_message.call_args_list) == 5, (
+        f"Calls\n:{mock_publish_message.call_args_list}\n"
+        f"Events:\n{service_status_sequence}\n"
+        f"Expected:\n{services_status_changes}"
+    )
 
     for i, service_status_change in enumerate(services_status_changes):
         assert mock_publish_message.await_args_list[i] == call(

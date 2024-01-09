@@ -53,38 +53,28 @@ class ServicesTracker(ServicesManager):
         if self._check_task:
             await stop_periodic_task(self._check_task, timeout=5)
 
+        await self.service_status_cache.clear()
+
         await super().shutdown()
 
     async def _check_single_service(self, node_id: NodeID) -> None:
         service_status = await self.get(identifier=node_id)
         if service_status is None:
-            _logger.info("Could not retrieve the status of services %s", node_id)
+            _logger.debug("Could not retrieve the status of services %s", node_id)
             return
 
         cached_status = await self.service_status_cache.get_value(f"{node_id}")
         await self.service_status_cache.set_value(f"{node_id}", service_status)
 
-        if cached_status is None:
-            context = await self._get_identifier_context(node_id)
-            assert context  # nosec
+        if cached_status is None or cached_status != service_status:
+            cleanup_context = await self._get_identifier_context(node_id)
+            assert cleanup_context  # nosec
 
             await publish_message(
                 self.app,
                 node_id=node_id,
                 service_status=service_status,
-                primary_group_id=context.primary_group_id,
-            )
-            return
-
-        if service_status != cached_status:
-            context = await self._get_identifier_context(node_id)
-            assert context  # nosec
-
-            await publish_message(
-                self.app,
-                node_id=node_id,
-                service_status=service_status,
-                primary_group_id=context.primary_group_id,
+                primary_group_id=cleanup_context.primary_group_id,
             )
 
     async def _check_services_status_task(self) -> None:
