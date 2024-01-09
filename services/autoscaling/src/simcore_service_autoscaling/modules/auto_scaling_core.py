@@ -105,7 +105,8 @@ async def _analyze_current_cluster(
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
     _logger.debug(
-        "current state: %s", f"{json.dumps(jsonable_encoder( cluster), indent=2)}"
+        "current state: %s",
+        f"{json.dumps(jsonable_encoder(cluster), indent=2)}",
     )
     return cluster
 
