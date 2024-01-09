@@ -47,5 +47,9 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - ../../:/devel/services/autoscaling
       - ../../../../packages:/devel/packages
+    deploy:
+      placement:
+        constraints:
+          - "node.role==manager"
 volumes:
   redis-data:
