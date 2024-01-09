@@ -135,7 +135,7 @@ class DynamicAutoscaling(BaseAutoscaling):
         )
 
     @staticmethod
-    def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
+    async def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
         assert app  # nosec
         return utils_docker.is_node_ready_and_available(
             instance.node, Availability.active

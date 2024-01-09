@@ -12,6 +12,10 @@ from models_library.generated_models.docker_rest_api import Availability, Node
 from pydantic import AnyUrl, ByteSize
 from servicelib.logging_utils import LogLevelInt
 from servicelib.utils import logged_gather
+from simcore_service_autoscaling.core.errors import (
+    DaskNoWorkersError,
+    DaskWorkerNotFoundError,
+)
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
@@ -117,15 +121,18 @@ class ComputationalAutoscaling(BaseAutoscaling):
     async def compute_node_used_resources(
         app: FastAPI, instance: AssociatedInstance
     ) -> Resources:
-        num_results_in_memory = await dask.get_worker_still_has_results_in_memory(
-            _scheduler_url(app), instance.ec2_instance
-        )
-        if num_results_in_memory > 0:
-            # NOTE: this is a trick to consider the node still useful
-            return Resources(cpus=1, ram=ByteSize())
-        return await dask.get_worker_used_resources(
-            _scheduler_url(app), instance.ec2_instance
-        )
+        try:
+            num_results_in_memory = await dask.get_worker_still_has_results_in_memory(
+                _scheduler_url(app), instance.ec2_instance
+            )
+            if num_results_in_memory > 0:
+                # NOTE: this is a trick to consider the node still useful
+                return Resources(cpus=1, ram=ByteSize())
+            return await dask.get_worker_used_resources(
+                _scheduler_url(app), instance.ec2_instance
+            )
+        except (DaskWorkerNotFoundError, DaskNoWorkersError):
+            return Resources.create_as_empty()
 
     @staticmethod
     async def compute_cluster_used_resources(
@@ -146,15 +153,21 @@ class ComputationalAutoscaling(BaseAutoscaling):
     async def compute_cluster_total_resources(
         app: FastAPI, instances: list[AssociatedInstance]
     ) -> Resources:
-        return await dask.compute_cluster_total_resources(
-            _scheduler_url(app), instances
-        )
+        try:
+            return await dask.compute_cluster_total_resources(
+                _scheduler_url(app), instances
+            )
+        except DaskNoWorkersError:
+            return Resources.create_as_empty()
 
     @staticmethod
-    def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
+    async def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
         if not utils_docker.is_node_ready_and_available(
             instance.node, Availability.active
         ):
             return False
 
-        # now check if dask can be connected
+        # now check if dask-scheduler is available
+        return await dask.is_worker_connected(
+            _scheduler_url(app), instance.ec2_instance
+        )

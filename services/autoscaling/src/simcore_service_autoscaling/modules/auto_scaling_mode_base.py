@@ -114,7 +114,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
 
     @staticmethod
     @abstractmethod
-    def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
+    async def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
         ...
 
     @staticmethod
