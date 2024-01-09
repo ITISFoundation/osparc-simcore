@@ -260,6 +260,17 @@ async def auto_add_user_to_product_group(
     return product_group_id
 
 
+async def is_user_by_email_in_group(
+    conn: SAConnection, email: str, group_id: GroupID
+) -> bool:
+    user_id = await conn.scalar(
+        sa.select(users.c.id)
+        .select_from(sa.join(user_to_groups, users, user_to_groups.c.uid == users.c.id))
+        .where((users.c.email == email) & (user_to_groups.c.gid == group_id))
+    )
+    return user_id is not None
+
+
 async def add_new_user_in_group(
     conn: SAConnection,
     user_id: UserID,

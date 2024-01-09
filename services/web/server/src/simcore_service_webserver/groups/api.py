@@ -2,6 +2,7 @@ from typing import Any
 
 from aiohttp import web
 from aiopg.sa.result import RowProxy
+from models_library.emails import LowerCaseEmailStr
 from models_library.users import GroupID, UserID
 
 from ..db.plugin import get_database_engine
@@ -96,6 +97,17 @@ async def auto_add_user_to_product_group(
         )
 
 
+async def is_user_by_email_in_group(
+    app: web.Application, user_email: LowerCaseEmailStr, group_id: GroupID
+) -> bool:
+    async with get_database_engine(app).acquire() as conn:
+        return await _db.is_user_by_email_in_group(
+            conn,
+            email=user_email,
+            group_id=group_id,
+        )
+
+
 async def add_user_in_group(
     app: web.Application,
     user_id: UserID,
@@ -113,7 +125,8 @@ async def add_user_in_group(
     """
 
     if not new_user_id and not new_user_email:
-        raise GroupsError("Invalid method call, missing user id or user email")
+        msg = "Invalid method call, missing user id or user email"
+        raise GroupsError(msg)
 
     async with get_database_engine(app).acquire() as conn:
         if new_user_email:
@@ -121,7 +134,8 @@ async def add_user_in_group(
             new_user_id = user["id"]
 
         if not new_user_id:
-            raise GroupsError("Missing new user in arguments")
+            msg = "Missing new user in arguments"
+            raise GroupsError(msg)
 
         return await _db.add_new_user_in_group(
             conn,
