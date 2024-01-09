@@ -60,6 +60,24 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	# installing playwright dependencies
 	@playwright install
 
+
+RETRY_DURATION_SECONDS := 30
+RETRY_INTERVAL_SECONDS := 1
+
+install-ci-up-simcore: install-ci
+	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
+	@$(_up_simcore)
+	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@$(_transfer-images-to-registry)
+
+	# giving access rights to images (this might take some time until the catalog is ready)
+	@for ((i=0; i<$(RETRY_DURATION_SECONDS); i+=$(RETRY_INTERVAL_SECONDS))); do \
+		@$(_give_service_access_rights) && echo "Access rights granted successfully" && break || true; \
+		echo "catalog not ready yet, retrying in ${RETRY_INTERVAL_SECONDS}..."; \
+		sleep $(RETRY_INTERVAL_SECONDS); \
+	done
+
+
 install-ci-up-simcore: install-ci
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_up_simcore)
