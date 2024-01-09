@@ -856,7 +856,7 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     // override in product
     "strong-button": {
-      include: "form-button",
+      include: "form-button"
     },
 
     "danger-button": {
@@ -1088,13 +1088,13 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "tree",
       style: function(states) {
         return {
-          itemHeight: 30,
+          itemHeight: 30
         };
       }
     },
 
-  /*
-  ---------------------------------------------------------------------------
+    /*
+    ---------------------------------------------------------------------------
       jsonforms
     ---------------------------------------------------------------------------
     */
@@ -1108,10 +1108,9 @@ qx.Theme.define("osparc.theme.Appearance", {
     "iframe": {
       style: function(states) {
         return {
-          backgroundColor: "red",
           decorator: "main-dark"
         };
       }
-    },
+    }
   }
 });
