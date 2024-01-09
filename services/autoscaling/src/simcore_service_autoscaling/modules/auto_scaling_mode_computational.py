@@ -12,12 +12,13 @@ from models_library.generated_models.docker_rest_api import Availability, Node
 from pydantic import AnyUrl, ByteSize
 from servicelib.logging_utils import LogLevelInt
 from servicelib.utils import logged_gather
-from simcore_service_autoscaling.core.errors import (
-    DaskNoWorkersError,
-    DaskWorkerNotFoundError,
-)
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
+from ..core.errors import (
+    DaskNoWorkersError,
+    DaskSchedulerNotFoundError,
+    DaskWorkerNotFoundError,
+)
 from ..core.settings import get_application_settings
 from ..models import (
     AssignedTasksToInstance,
@@ -61,7 +62,13 @@ class ComputationalAutoscaling(BaseAutoscaling):
 
     @staticmethod
     async def list_unrunnable_tasks(app: FastAPI) -> list[DaskTask]:
-        return await dask.list_unrunnable_tasks(_scheduler_url(app))
+        try:
+            return await dask.list_unrunnable_tasks(_scheduler_url(app))
+        except DaskSchedulerNotFoundError:
+            _logger.warning(
+                "No dask scheduler found. TIP: Normal during machine startup."
+            )
+            return []
 
     @staticmethod
     def try_assigning_task_to_node(
