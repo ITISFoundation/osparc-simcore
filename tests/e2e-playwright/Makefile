@@ -72,7 +72,7 @@ install-ci-up-simcore: install-ci
 
 	# giving access rights to images (this might take some time until the catalog is ready)
 	@for ((i=0; i<$(RETRY_DURATION_SECONDS); i+=$(RETRY_INTERVAL_SECONDS))); do \
-		@$(_give_service_access_rights) && echo "Access rights granted successfully" && break || true; \
+		$(_give_service_access_rights) && echo "Access rights granted successfully" && break || true; \
 		echo "catalog not ready yet, retrying in ${RETRY_INTERVAL_SECONDS}..."; \
 		sleep $(RETRY_INTERVAL_SECONDS); \
 	done
