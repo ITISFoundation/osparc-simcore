@@ -63,7 +63,16 @@ class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     async def list_unrunnable_tasks(app: FastAPI) -> list[DaskTask]:
         try:
-            return await dask.list_unrunnable_tasks(_scheduler_url(app))
+            unrunnable_tasks = await dask.list_unrunnable_tasks(_scheduler_url(app))
+            # NOTE: any worker "processing" more than 1 task means that the other tasks are queued!
+            processing_tasks_by_worker = await dask.list_processing_tasks_per_worker(
+                _scheduler_url(app)
+            )
+            queued_tasks = []
+            for tasks in processing_tasks_by_worker.values():
+                queued_tasks += tasks[1:]
+            _logger.info("found %s potentially queued tasks", len(queued_tasks))
+            return unrunnable_tasks + queued_tasks
         except DaskSchedulerNotFoundError:
             _logger.warning(
                 "No dask scheduler found. TIP: Normal during machine startup."
@@ -83,7 +92,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
         pending_task,
         instances_to_tasks: list[AssignedTasksToInstance],
         *,
-        notify_progress: bool
+        notify_progress: bool,
     ) -> bool:
         return await utils.try_assigning_task_to_instances(
             app,
