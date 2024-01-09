@@ -4,13 +4,7 @@ from aiohttp import web
 from aiohttp_security.api import forget, remember
 from models_library.emails import LowerCaseEmailStr
 
-# Identification string for an autheticated user:
-# FIXME:
-#   Identity is a string that is shared between the browser and the server.
-#   Therefore it is recommended that a random string such as a uuid or hash is used rather
-#   than things like a database primary key, user login/email, etc.
-#
-# SEE https://aiohttp-security.readthedocs.io/en/latest/usage.html#authentication
+# Identification string for an autheticated user
 IdentityStr: TypeAlias = LowerCaseEmailStr
 
 
