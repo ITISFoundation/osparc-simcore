@@ -36,7 +36,7 @@
       }
     ],
     "no-eq-null": 0,
-    "semi": "never"
+    "semi": "off"
   },
   "env": {
     "browser": true
