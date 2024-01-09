@@ -62,9 +62,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         }
       });
     this.__createMainViewLayout();
-
-    const myAccountWindow = osparc.desktop.credits.BillingCenterWindow.openWindow()
-    myAccountWindow.openWallets()
   },
 
   properties: {
