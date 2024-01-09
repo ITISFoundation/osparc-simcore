@@ -53,6 +53,13 @@ class Resources(BaseModel):
             }
         )
 
+    @validator("cpus", pre=True)
+    @classmethod
+    def ensure_negative_is_0(cls, v: float) -> float:
+        if v < 0:
+            return 0
+        return v
+
 
 @dataclass(frozen=True)
 class EC2InstanceType:
