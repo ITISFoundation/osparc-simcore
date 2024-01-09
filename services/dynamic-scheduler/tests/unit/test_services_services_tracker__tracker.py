@@ -191,7 +191,9 @@ async def _create_service(services_tracker: ServicesTracker, node_id: NodeID) ->
     new_rpc_dynamic_service_create = deepcopy(base_rpc_dynamic_service_create)
     new_rpc_dynamic_service_create.node_uuid = node_id
     await services_tracker.create(
-        cleanup_context=TrackerCleanupContext(simcore_user_agent="", save_state=True),
+        cleanup_context=TrackerCleanupContext(
+            simcore_user_agent="", save_state=True, primary_group_id=1
+        ),
         rpc_dynamic_service_create=new_rpc_dynamic_service_create,
     )
 
