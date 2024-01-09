@@ -29,7 +29,7 @@ async def stop_dynamic_service(
 ) -> None:
     director_v2_client = DirectorV2Client.get_from_app_state(app)
     settings: ApplicationSettings = app.state.settings
-    return await director_v2_client.stop_dynamic_service(
+    await director_v2_client.stop_dynamic_service(
         node_id=node_id,
         simcore_user_agent=simcore_user_agent,
         save_state=save_state,

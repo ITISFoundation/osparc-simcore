@@ -29,7 +29,7 @@ class ServicesTracker(ServicesManager):
         super().__init__(app, redis_client_sdk)
 
         self.check_interval = check_interval
-        self.service_status_cache = ServiceStatusCache(
+        self.service_status_cache: ServiceStatusCache = ServiceStatusCache(
             app, ttl=self.check_interval * 4, namespace="services_tracker"
         )
 
