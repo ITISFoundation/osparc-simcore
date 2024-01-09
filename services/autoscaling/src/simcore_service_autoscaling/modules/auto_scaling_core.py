@@ -84,16 +84,16 @@ async def _analyze_current_cluster(
         i for i in attached_ec2s if auto_scaling_mode.is_instance_drained(i)
     ]
 
-    active_nodes, attached_not_yet_ready_nodes = [], []
+    active_nodes, pending_nodes = [], []
     for instance in attached_ec2s:
         if await auto_scaling_mode.is_instance_active(app, instance):
             active_nodes.append(instance)
         else:
-            attached_not_yet_ready_nodes.append(instance)
+            pending_nodes.append(instance)
 
     cluster = Cluster(
         active_nodes=active_nodes,
-        pending_nodes=attached_not_yet_ready_nodes,
+        pending_nodes=pending_nodes,
         drained_nodes=all_drained_nodes[
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER :
         ],
@@ -140,6 +140,7 @@ async def _try_attach_pending_ec2s(
                     available=False,
                 )
                 new_found_instances.append(AssociatedInstance(new_node, instance_data))
+                _logger.info("Attached new EC2 instance %s", instance_data.id)
             else:
                 still_pending_ec2s.append(instance_data)
         except Ec2InvalidDnsNameError:  # noqa: PERF203
