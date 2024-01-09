@@ -5,6 +5,7 @@
 # pylint: disable=too-many-statements
 
 
+import json
 from collections.abc import Iterator
 from typing import cast
 
@@ -139,3 +140,96 @@ async def test_list_service_usage(
     await assert_status(resp, web.HTTPOk)
     assert mock_list_usage_services[1].call_count == 2
     assert mock_list_usage_services[1].call_args[1]["access_all_wallet_usage"] is False
+
+
+@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+async def test_list_service_usage_with_special_query_params(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    setup_wallets_db,
+    mock_list_usage_services,
+):
+    # without anything
+    url = client.app.router["list_resource_usage_services"].url_for()
+    resp = await client.get(f"{url}")
+    await assert_status(resp, web.HTTPOk)
+    assert mock_list_usage_services[0].called
+
+    ### ADDING SORT BY
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(order_by="started_at desc, stopped_at")
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, web.HTTPOk)
+    assert mock_list_usage_services[0].called
+
+    #### ADDING SORT BY WITH non-supported field
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(order_by="non-supported desc, stopped_at")
+    )
+    resp = await client.get(f"{url}")
+    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    assert mock_list_usage_services[0].called
+    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["errors"][0]["message"].startswith(
+        "We do not support ordering by provided field"
+    )
+
+    #### ADDING SORT BY WITH non-parsable field
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(order_by=",non-supported desc, stopped_at")
+    )
+    resp = await client.get(f"{url}")
+    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    assert mock_list_usage_services[0].called
+    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["errors"][0]["message"].startswith(
+        "order_by parameter is not parsable"
+    )
+
+    #### ADDING SORT BY WITH unable to decode
+    _filter = {"started_at": {"from": "2023-12-01", "until": "2024-01-01"}}
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(filters='{"test"}')
+    )
+    resp = await client.get(f"{url}")
+    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    assert mock_list_usage_services[0].called
+    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["errors"][0]["message"].startswith(
+        "Unable to decode filters parameter"
+    )
+
+    #### ADDING SORT BY Correct
+    _filter = {"started_at": {"from": "2023-12-01", "until": "2024-01-01"}}
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(filters=json.dumps(_filter))
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, web.HTTPOk)
+    assert mock_list_usage_services[0].called
+
+    #### ADDING SORT BY Correct
+    _filter = {"started_at": {"from": "2023-12-01"}}
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(filters=json.dumps(_filter))
+    )
+    resp = await client.get(f"{url}")
+    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    assert mock_list_usage_services[0].called
+    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["errors"][0]["message"].startswith(
+        "Both 'from' and 'until' keys must be provided in proper format <yyyy-mm-dd>."
+    )

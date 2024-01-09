@@ -19,7 +19,12 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingUnitGet,
     ServicePricingPlanGet,
 )
-from models_library.resource_tracker import PricingPlanId, PricingUnitId
+from models_library.resource_tracker import (
+    PricingPlanId,
+    PricingUnitId,
+    ServiceResourceUsagesFilters,
+)
+from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt, parse_obj_as
@@ -39,6 +44,8 @@ async def list_service_runs_by_user_and_product(
     product_name: str,
     offset: int,
     limit: NonNegativeInt,
+    order_by: list[OrderBy] | None,
+    filters: ServiceResourceUsagesFilters | None,
 ) -> dict:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
     url = (URL(settings.api_base_url) / "services" / "-" / "usages").with_query(
@@ -64,6 +71,8 @@ async def list_service_runs_by_user_and_product_and_wallet(
     access_all_wallet_usage: bool,
     offset: int,
     limit: NonNegativeInt,
+    order_by: list[OrderBy] | None,
+    filters: ServiceResourceUsagesFilters | None,
 ) -> dict:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
     url = (URL(settings.api_base_url) / "services" / "-" / "usages").with_query(

@@ -16,7 +16,8 @@ from .._meta import (
     PROJECT_NAME,
     SUMMARY,
 )
-from ..api.routes import setup_api_routes
+from ..api.rest.routes import setup_api_routes
+from ..api.rpc.routes import setup_rpc_api_routes
 from ..modules.db import setup as setup_db
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
@@ -57,6 +58,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_rabbitmq(app)
 
     setup_resource_tracker(app)
+    setup_rpc_api_routes(app)
 
     # EVENTS
     async def _on_startup() -> None:

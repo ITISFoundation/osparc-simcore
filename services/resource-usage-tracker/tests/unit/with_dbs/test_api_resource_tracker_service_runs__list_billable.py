@@ -76,7 +76,6 @@ async def test_list_service_runs_which_was_billed(
     async_client: httpx.AsyncClient,
 ):
     url = URL("/v1/services/-/usages")
-
     response = await async_client.get(
         f'{url.with_query({"product_name": "osparc", "user_id": _USER_ID})}'
     )

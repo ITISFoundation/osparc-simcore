@@ -12,7 +12,7 @@ from simcore_service_resource_usage_tracker.core.errors import (
     CustomResourceUsageTrackerError,
 )
 
-from ..api.dependencies import get_repository
+from ..api.rest.dependencies import get_repository
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 

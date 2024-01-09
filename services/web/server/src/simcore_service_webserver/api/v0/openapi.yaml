@@ -3091,6 +3091,29 @@ paths:
       parameters:
       - required: false
         schema:
+          title: Order By
+          type: string
+          decription: Sorting field. The default sorting order is ascending. To specify
+            descending order for a field, users append a 'desc' suffix
+        example: foo desc, bar
+        name: order_by
+        in: query
+      - description: Filters to process on the resource usages list, encoded as JSON.
+          Currently supports the filtering of 'started_at' field with 'from' and 'until'
+          parameters in <yyyy-mm-dd> format. The date range specidied is inclusive.
+        required: false
+        schema:
+          title: Filters
+          type: string
+          description: Filters to process on the resource usages list, encoded as
+            JSON. Currently supports the filtering of 'started_at' field with 'from'
+            and 'until' parameters in <yyyy-mm-dd> format. The date range specidied
+            is inclusive.
+        example: '{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}'
+        name: filters
+        in: query
+      - required: false
+        schema:
           title: Wallet Id
           exclusiveMinimum: true
           type: integer
@@ -7227,6 +7250,9 @@ components:
           title: Serviceuuid
           type: string
           format: uuid
+      example:
+        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        service_state: idle
     NodeRetrieve:
       title: NodeRetrieve
       type: object

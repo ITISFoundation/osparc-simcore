@@ -1,6 +1,8 @@
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import WalletGetPermissions
 from models_library.products import ProductName
+from models_library.resource_tracker import ServiceResourceUsagesFilters
+from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt
@@ -16,6 +18,8 @@ async def list_usage_services(
     wallet_id: WalletID | None,
     offset: int,
     limit: NonNegativeInt,
+    order_by: list[OrderBy] | None,
+    filters: ServiceResourceUsagesFilters | None,
 ) -> dict:
     if not wallet_id:
         data: dict = (
@@ -25,6 +29,8 @@ async def list_usage_services(
                 product_name=product_name,
                 offset=offset,
                 limit=limit,
+                order_by=order_by,
+                filters=filters,
             )
         )
     else:
@@ -43,6 +49,8 @@ async def list_usage_services(
             access_all_wallet_usage=access_all_wallet_usage,
             offset=offset,
             limit=limit,
+            order_by=order_by,
+            filters=filters,
         )
 
     return data

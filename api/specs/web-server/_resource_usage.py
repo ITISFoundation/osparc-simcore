@@ -43,6 +43,16 @@ router = APIRouter(prefix=f"/{API_VTAG}")
     tags=["usage"],
 )
 async def list_resource_usage_services(
+    order_by: str = Query(
+        None,
+        decription="Sorting field. The default sorting order is ascending. To specify descending order for a field, users append a 'desc' suffix",
+        example="foo desc, bar",
+    ),
+    filters: str = Query(
+        None,
+        description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> format. The date range specidied is inclusive.",
+        example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
+    ),
     wallet_id: WalletID = Query(None),
     limit: int = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,

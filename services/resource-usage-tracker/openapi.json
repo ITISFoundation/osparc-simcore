@@ -55,29 +55,6 @@
         "operationId": "list_usage_services",
         "parameters": [
           {
-            "required": false,
-            "schema": {
-              "title": "Limit",
-              "maximum": 50,
-              "minimum": 1,
-              "type": "integer",
-              "default": 20
-            },
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "title": "Offset",
-              "minimum": 0,
-              "type": "integer",
-              "default": 0
-            },
-            "name": "offset",
-            "in": "query"
-          },
-          {
             "required": true,
             "schema": {
               "title": "User Id",
@@ -115,6 +92,29 @@
               "type": "boolean"
             },
             "name": "access_all_wallet_usage",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Limit",
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "default": 20
+            },
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Offset",
+              "minimum": 0,
+              "type": "integer",
+              "default": 0
+            },
+            "name": "offset",
             "in": "query"
           }
         ],

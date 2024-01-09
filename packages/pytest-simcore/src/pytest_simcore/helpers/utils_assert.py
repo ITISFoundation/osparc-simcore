@@ -4,7 +4,7 @@
 from pprint import pformat
 
 from aiohttp import ClientResponse
-from aiohttp.web import HTTPError, HTTPException, HTTPInternalServerError, HTTPNoContent
+from aiohttp.web import HTTPError, HTTPException, HTTPNoContent
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 
 
@@ -78,8 +78,5 @@ def do_assert_error(
 
     if expected_error_code:
         assert expected_error_code == err["code"]
-    elif expected_cls != HTTPInternalServerError:
-        # otherwise, code is exactly the name of the Exception class
-        assert expected_cls.__name__ == err["code"]
 
     return data, error

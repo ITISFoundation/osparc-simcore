@@ -1,9 +1,11 @@
 import logging
+from datetime import datetime
 from enum import auto
 from typing import Any, ClassVar, NamedTuple, TypeAlias
 
 from pydantic import BaseModel, PositiveInt, validator
 
+from .rest_filters import Filters
 from .utils.enums import StrAutoEnum
 
 _logger = logging.getLogger(__name__)
@@ -85,3 +87,15 @@ class PricingAndHardwareInfoTuple(NamedTuple):
 class PricingPlanAndUnitIdsTuple(NamedTuple):
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
+
+
+# Filtering for listing service runs/usages
+
+
+class StartedAt(BaseModel):
+    from_: datetime
+    until: datetime
+
+
+class ServiceResourceUsagesFilters(Filters):
+    started_at: StartedAt
