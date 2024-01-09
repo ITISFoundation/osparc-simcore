@@ -39,7 +39,7 @@ define _transfer-images-to-registry
 endef
 
 define _give_service_access_rights
-@docker exec \
+docker exec \
 	$$(docker ps -q --filter="name=postgres") \
 	psql --user scu --dbname simcoredb --command \
 "INSERT INTO services_access_rights (key, version, gid, execute_access, write_access, product_name) \
