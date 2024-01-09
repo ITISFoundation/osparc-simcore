@@ -66,9 +66,9 @@ RETRY_INTERVAL_SECONDS := 1
 
 install-ci-up-simcore: install-ci
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
+	@$(_transfer-images-to-registry)
 	@$(_up_simcore)
 	@$(VENV_DIR)/bin/python utils/wait_for_services.py
-	@$(_transfer-images-to-registry)
 
 	# giving access rights to images (this might take some time until the catalog is ready)
 	@for ((i=0; i<$(RETRY_DURATION_SECONDS); i+=$(RETRY_INTERVAL_SECONDS))); do \
@@ -78,12 +78,6 @@ install-ci-up-simcore: install-ci
 	done
 
 
-install-ci-up-simcore: install-ci
-	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
-	@$(_up_simcore)
-	@$(VENV_DIR)/bin/python utils/wait_for_services.py
-	@$(_transfer-images-to-registry)
-	@$(_give_service_access_rights)
 
 
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
