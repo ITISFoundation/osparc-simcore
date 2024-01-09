@@ -10,12 +10,13 @@ def setup_services_tracker(app: FastAPI) -> None:
     async def on_startup() -> None:
         settings: ApplicationSettings = app.state.settings
 
-        redis_dsn = settings.DYNAMIC_SCHEDULER_REDIS.build_redis_dsn(
-            RedisDatabase.DISTRIBUTED_IDENTIFIERS
-        )
-        redis_client_sdk = RedisClientSDK(redis_dsn)
         app.state.services_tracker = services_tracker = ServicesTracker(
-            app, redis_client_sdk
+            app,
+            RedisClientSDK(
+                settings.DYNAMIC_SCHEDULER_REDIS.build_redis_dsn(
+                    RedisDatabase.DISTRIBUTED_IDENTIFIERS
+                )
+            ),
         )
 
         await services_tracker.setup()
