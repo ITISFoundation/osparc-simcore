@@ -20,7 +20,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
     "product-color": "rgba(0, 144, 208, 1)", // override in product
     "strong-main": "product-color",
-    "strong-text": "c12",
+    "strong-text": "rgba(255, 255, 255, 1)",
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
 
     // main
@@ -49,27 +49,12 @@ qx.Theme.define("osparc.theme.ColorDark", {
     // text
     "text": "rgba(216, 216, 216, 1)",
     "text-disabled": "rgba(113, 157, 181, 1)",
-    "text-selected": "text",
+    "text-selected": "rgba(255, 255, 255, 1)",
     "text-placeholder": "rgba(174, 191, 207, 1)",
     "text-darker": "rgba(255, 255, 255, 1)",
     "contrasted-text-dark": "rgba(216, 216, 216, 1)",
     "contrasted-text-light": "rgba(255, 255, 255, 1)",
     "link": "rgba(10, 182, 255, 1)",
-
-    // button
-    "default-button-text": "contrasted-text-light",
-    "default-button-text-outline": "contrasted-text-dark",
-    "default-button-text-action": "contrasted-text-dark",
-    "default-button": "product-color",
-    "default-button-hover": "rgba(4, 73, 102, 1)",
-    "default-button-hover-background": "rgba(4, 73, 102, 0.4)",
-    "default-button-active": "rgba(9, 89, 122, 1)",
-    "default-button-active-background": "rgba(4, 73, 102, 0.4)",
-    "default-button-focus": "product-color",
-    "default-button-focus-background": "rgba(4, 73, 102, 0.4)",
-    "default-button-disabled": "text-disabled",
-    "default-button-disabled-background": "rgba(113, 157, 181, 0.25)",
-    "default-button-focus-blur": "rgba(254, 233, 86, 1)",
 
     // shadows
     "bg-shadow":  "background-main-5",
@@ -87,7 +72,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "material-button-background-hovered":  "default-button-hover-background",
     "material-button-background-pressed":  "default-button-active-background",
     "material-button-text-disabled": "default-button-disabled-background",
-    "material-button-text": "default-button-text",
+    "material-button-text": "default-button-text-outline",
 
     // material-textfield
     "material-textfield": "input_background",
