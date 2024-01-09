@@ -8,7 +8,7 @@
 qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
   extend: qx.ui.core.Widget,
 
-  construct(pricePerCredit, currencySymbol = '$') {
+  construct(pricePerCredit, currencySymbol = "$") {
     this.base(arguments);
     this.__currencySymbol = currencySymbol
     this.__pricePerCredit = pricePerCredit

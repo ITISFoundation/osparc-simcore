@@ -124,7 +124,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
         margin: 10
       });
       buyCredits.addListener("addNewPaymentMethod", () => this.openPaymentMethods(true), this);
-      buyCredits.addListener("transactionCompleted", () => this.__openTransactions(true), this);
+      buyCredits.addListener("transactionCompleted", () => this.openTransactions(true), this);
       page.add(buyCredits);
       return page;
     },
@@ -191,7 +191,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       this.__openPage(this.__paymentMethodsPage);
     },
 
-    __openTransactions: function(fetchTransactions = false) {
+    openTransactions: function(fetchTransactions = false) {
       if (fetchTransactions) {
         this.__transactionsTable.refresh();
         this.__openPage(this.__transactionsPage);

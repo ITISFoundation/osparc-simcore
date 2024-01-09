@@ -35,7 +35,8 @@
         "ignoreChainWithDepth": 3
       }
     ],
-    "no-eq-null": 0
+    "no-eq-null": 0,
+    "semi": "never"
   },
   "env": {
     "browser": true

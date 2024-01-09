@@ -61,7 +61,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenterWindow", {
     },
 
     openTransactions: function() {
-      this.__billingCenter.__openTransactions()
+      this.__billingCenter.openTransactions();
     },
 
     openUsage: function() {
