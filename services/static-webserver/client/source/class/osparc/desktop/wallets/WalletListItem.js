@@ -150,45 +150,25 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         maxHeight: 30,
         alignX: "center",
         alignY: "middle",
-        value: false
+        focusable: false
       });
       this.__autorechargeBtn.addListener("execute", () => {
         const autorecharge = new osparc.desktop.credits.AutoRecharge(this.getKey());
         const win = osparc.ui.window.Window.popUpInWindow(autorecharge, "Autorecharge", 400, 550);
         autorecharge.addListener("close", () => win.close());
+        // Revert default execute action (toggle the buttons's vale)
+        this.__autorechargeBtn.toggleValue();
       });
       this.bind("autoRecharge", this.__autorechargeBtn, "value", {
         converter: ar => ar ? ar.enabled : false
       });
-      this.bind("autoRecharge", this.__autorechargeBtn, "icon", {
-        converter: ar => ar && ar.enabled ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16"
+      this.__autorechargeBtn.bind("value", this.__autorechargeBtn, "icon", {
+        converter: value => value ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16"
       });
       this._add(this.__autorechargeBtn, {
         // Takes the status button place for the moment
         row: 0,
         column: 5,
-        rowSpan: 2
-      });
-
-      this.__buyBtn = new qx.ui.form.Button().set({
-        label: this.tr("Buy Credits"),
-        icon: "@FontAwesome5Solid/dollar-sign/16",
-        maxHeight: 30,
-        alignY: "middle",
-        visibility: "hidden"
-      });
-      this.bind("accessRights", this.__buyBtn, "enabled", {
-        converter: accessRights => {
-          const myAr = osparc.data.model.Wallet.getMyAccessRights(accessRights);
-          return Boolean(myAr && myAr["write"]);
-        }
-      });
-      this.__buyBtn.addListener("execute", () => this.fireDataEvent("buyCredits", {
-        walletId: this.getKey()
-      }), this);
-      this._add(this.__buyBtn, {
-        row: 0,
-        column: 6,
         rowSpan: 2
       });
     },
@@ -212,9 +192,28 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
     // overridden
     _applyAccessRights: function(accessRights) {
+      this.__buildLayout();
       this.base(arguments, accessRights);
-      this.__buyBtn.set({
-        visibility: this.__canIWrite() ? "visible" : "excluded"
+      this.__buyBtn = new qx.ui.form.Button().set({
+        label: this.tr("Buy Credits"),
+        icon: "@FontAwesome5Solid/dollar-sign/16",
+        maxHeight: 30,
+        alignY: "middle",
+        visibility: this.__canIWrite() ? "visible" : "excluded",
+      });
+      this.bind("accessRights", this.__buyBtn, "enabled", {
+        converter: accessRights => {
+          const myAr = osparc.data.model.Wallet.getMyAccessRights(accessRights);
+          return Boolean(myAr && myAr["write"]);
+        }
+      });
+      this.__buyBtn.addListener("execute", () => this.fireDataEvent("buyCredits", {
+        walletId: this.getKey()
+      }), this);
+      this._add(this.__buyBtn, {
+        row: 0,
+        column: 6,
+        rowSpan: 2
       });
       this.__autorechargeBtn.setVisibility(this.__canIWrite() ? "visible" : "excluded");
     },
