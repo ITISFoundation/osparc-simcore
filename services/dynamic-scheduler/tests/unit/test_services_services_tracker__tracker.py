@@ -175,26 +175,21 @@ def mock_publish_message(mocker: MockerFixture) -> AsyncMock:
     return mock
 
 
-@pytest.fixture
-def base_rpc_dynamic_service_create() -> RPCDynamicServiceCreate:
-    return RPCDynamicServiceCreate.parse_obj(
-        RPCDynamicServiceCreate.Config.schema_extra["example"]
-    )
-
-
 async def _manual_check_services_status(services_tracker: ServicesTracker) -> None:
     await services_tracker._check_services_status_task()  # pylint:disable=protected-access # noqa: SLF001
 
 
 async def _create_service(services_tracker: ServicesTracker, node_id: NodeID) -> None:
     # add a service to tracking
-    new_rpc_dynamic_service_create = deepcopy(base_rpc_dynamic_service_create)
-    new_rpc_dynamic_service_create.node_uuid = node_id
+    rpc_dynamic_service_create = RPCDynamicServiceCreate.parse_obj(
+        RPCDynamicServiceCreate.Config.schema_extra["example"]
+    )
+    rpc_dynamic_service_create.node_uuid = node_id
     await services_tracker.create(
         cleanup_context=TrackerCleanupContext(
             simcore_user_agent="", save_state=True, primary_group_id=1
         ),
-        rpc_dynamic_service_create=new_rpc_dynamic_service_create,
+        rpc_dynamic_service_create=rpc_dynamic_service_create,
     )
 
 
@@ -202,7 +197,6 @@ async def test_services_tracker_notification_publishing(
     mock_director_v2_api: None,
     mock_publish_message: AsyncMock,
     services_tracker: ServicesTracker,
-    base_rpc_dynamic_service_create: RPCDynamicServiceCreate,
     get_node_id: Callable[[], NodeID],
     service_status_event_sequence_factory: Callable[
         [dict[NodeID, list[NodeGet | DynamicServiceGet | NodeGetIdle]]], None
@@ -240,7 +234,6 @@ async def test_services_tracker_notification_sequence(
     mock_director_v2_api: None,
     mock_publish_message: AsyncMock,
     services_tracker: ServicesTracker,
-    base_rpc_dynamic_service_create: RPCDynamicServiceCreate,
     get_node_id: Callable[[], NodeID],
     service_status_event_sequence_factory: Callable[
         [dict[NodeID, list[NodeGet | DynamicServiceGet | NodeGetIdle]]], None
@@ -280,11 +273,18 @@ async def test_services_tracker_notification_sequence(
 
     # identify service status changes
     services_status_changes: list[NodeGet | DynamicServiceGet | NodeGetIdle] = []
-    for entry in service_status_sequence:
-        if [entry] != services_status_changes[-1:]:
-            services_status_changes.append(entry)
+
+    def _get_last_status_change() -> NodeGet | DynamicServiceGet | NodeGetIdle | None:
+        if len(services_status_changes) == 0:
+            return None
+        return services_status_changes[-1]
+
+    for service_status in service_status_sequence:
+        if service_status != _get_last_status_change():
+            services_status_changes.append(service_status)  # noqa: PERF401
 
     # check events appear in expected sequence
+    assert len(services_status_changes) == 5
     assert len(mock_publish_message.call_args_list) == 5
 
     for i, service_status_change in enumerate(services_status_changes):
