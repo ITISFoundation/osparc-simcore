@@ -12,6 +12,40 @@ leave build:
 	$(MAKE_C) $(REPO_BASE_DIR) $@
 
 
+SIMCORE_DOT_ENV = $(abspath $(CURDIR)/../../.env)
+
+define _up_simcore
+# set some parameters to allow for e2e to run
+echo LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
+echo LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
+echo DEFAULT_MAX_NANO_CPUS=1000000000 >> $(SIMCORE_DOT_ENV)
+echo DEFAULT_MAX_MEMORY=134217728 >> $(SIMCORE_DOT_ENV)
+echo SIDECAR_FORCE_CPU_NODE=1 >> $(SIMCORE_DOT_ENV)
+$(MAKE_C) $(REPO_BASE_DIR) up-prod ops_ci=1
+endef
+
+SERVICE_IMAGE_NAME = "sleeper"
+SERVICE_VERSION = "2.1.6"
+SERVICE_IMAGE_TAG = $(SERVICE_IMAGE_NAME):$(SERVICE_VERSION)
+
+define _transfer-images-to-registry
+# pushing sleeper image
+@docker pull itisfoundation/$(SERVICE_IMAGE_TAG)
+@docker tag itisfoundation/$(SERVICE_IMAGE_TAG) registry:5000/simcore/services/comp/itis/$(SERVICE_IMAGE_TAG)
+@docker push registry:5000/simcore/services/comp/itis/$(SERVICE_IMAGE_TAG)
+# completed transfer of images
+@curl -s registry:5000/v2/_catalog | jq '.repositories'
+@curl -s http://registry:5000/v2/simcore/services/comp/itis/$(SERVICE_IMAGE_NAME)/tags/list?n=50 | jq '.'
+endef
+
+define _give_service_access_rights
+@docker exec \
+	$$(docker ps -q --filter="name=postgres") \
+	psql --user scu --dbname simcoredb --command \
+"INSERT INTO services_access_rights (key, version, gid, execute_access, write_access, product_name) \
+VALUES ('simcore/services/comp/itis/$(SERVICE_IMAGE_NAME)', '$(SERVICE_VERSION)', 1, TRUE, FALSE, 'osparc');"
+endef
+
 # LOCAL ------------------
 
 .PHONY: requirements
@@ -26,6 +60,13 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	# installing playwright dependencies
 	@playwright install
 
+install-ci-up-simcore: install-ci
+	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
+	@$(_up_simcore)
+	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@$(_transfer-images-to-registry)
+	@$(_give_service_access_rights)
+
 
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
@@ -38,7 +79,8 @@ test-sleepers: _check_venv_active ## runs sleepers test on local deploy
 		--pdb \
 		--product-url=http://$(get_my_ip):9081 \
 		--autoregister \
-		$(CURDIR)/tests/sleepers.py
+		--tracing=retain-on-failure \
+		$(CURDIR)/tests/sleepers/sleepers.py
 
 
 .PHONY: test-sleepers-dev
@@ -50,7 +92,7 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 		--product-url=http://$(get_my_ip):9081 \
 		--headed \
 		--autoregister \
-		$(CURDIR)/tests/sleepers.py
+		$(CURDIR)/tests/sleepers/sleepers.py
 
 
 
