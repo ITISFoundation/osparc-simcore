@@ -174,6 +174,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addDesktop: function() {
       const desktop = this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
+      osparc.utils.Utils.setIdToWidget(desktop, "desktopWindow");
       this.__workbenchLayout.add(desktop, {
         left: 0,
         top: 0,
