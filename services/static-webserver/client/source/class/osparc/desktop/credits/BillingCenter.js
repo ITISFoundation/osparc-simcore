@@ -200,7 +200,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       }
     },
 
-    __openUsage: function() {
+    openUsage: function() {
       this.__openPage(this.__usagePage);
     }
   }

@@ -19,7 +19,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
   },
 
   events: {
-    "input": "qx.event.type.Data",
+    "input": "qx.event.type.Data"
   },
 
   members: {
@@ -49,7 +49,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       })
       amountInput.addListener("input", e => {
         const value = Number(e.getData());
-        totalInput.setValue(!value ? '-' : 1 * (value * this.__pricePerCredit).toFixed(2) + this.__currencySymbol);
+        totalInput.setValue(value ? 1 * Number(value * this.__pricePerCredit).toFixed(2) + this.__currencySymbol : "-");
         this.fireDataEvent("input", this.getValues());
       })
       this._add(totalContainer)
