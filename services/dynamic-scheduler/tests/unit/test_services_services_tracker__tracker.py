@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from collections.abc import Callable, Generator
+from collections.abc import AsyncIterable, Callable, Generator
 from copy import deepcopy
 from unittest.mock import AsyncMock, call
 
@@ -74,14 +74,17 @@ def mock_publish_message(mocker: MockerFixture) -> AsyncMock:
 
 
 @pytest.fixture
-def services_tracker(
+async def services_tracker(
     disable_rabbitmq_setup: None,
     mock_director_v2_api: None,
     mock_publish_message: AsyncMock,
     app: FastAPI,
-) -> ServicesTracker:
+) -> AsyncIterable[ServicesTracker]:
     mock_publish_message.reset_mock()
-    return get_services_tracker(app)
+    tracker = get_services_tracker(app)
+    yield tracker
+    # cleanup distributed cache between tests to avoid flakiness
+    await tracker.service_status_cache.clear()
 
 
 @pytest.fixture

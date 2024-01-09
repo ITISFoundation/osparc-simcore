@@ -53,8 +53,6 @@ class ServicesTracker(ServicesManager):
         if self._check_task:
             await stop_periodic_task(self._check_task, timeout=5)
 
-        await self.service_status_cache.clear()
-
         await super().shutdown()
 
     async def _check_single_service(self, node_id: NodeID) -> None:
