@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.prometheus_instrumentation import instrument_app
 
 from .._meta import (
     API_VERSION,
@@ -33,8 +34,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     setup_api_routes(app)
 
     if app.state.settings.INVITATIONS_ADD_METRICS_ENDPOINT:
-        from servicelib.fastapi.prometheus_instrumentation import instrument_app
-
         instrument_app(app)
 
     # ERROR HANDLERS
