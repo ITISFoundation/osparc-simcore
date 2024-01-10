@@ -1,7 +1,9 @@
 import logging
 from typing import Final
 
-from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
+from models_library.api_schemas_resource_usage_tracker import (
+    RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
+)
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunPage,
 )
@@ -35,7 +37,7 @@ async def get_service_run_page(
     filters: ServiceResourceUsagesFilters | None = None
 ) -> ServiceRunPage:
     result = await rabbitmq_rpc_client.request(
-        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "get_service_run_page"),
         user_id=user_id,
         product_name=product_name,

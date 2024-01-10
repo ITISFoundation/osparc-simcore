@@ -4,7 +4,12 @@ from unittest import mock
 import httpx
 import pytest
 import sqlalchemy as sa
+from models_library.api_schemas_resource_usage_tracker.service_runs import (
+    ServiceRunPage,
+)
 from models_library.resource_tracker import CreditTransactionStatus
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import service_runs
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -16,6 +21,7 @@ from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "postgres",
+    "rabbit",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
@@ -86,3 +92,29 @@ async def test_list_service_runs_which_was_billed(
 
     assert data["items"][0]["credit_cost"] < 0
     assert data["items"][0]["transaction_status"] in list(CreditTransactionStatus)
+
+
+@pytest.mark.rpc_test()
+async def test_rpc_list_service_runs_which_was_billed(
+    mocked_redis_server: None,
+    postgres_db: sa.engine.Engine,
+    resource_tracker_setup_db: dict,
+    rpc_client: RabbitMQRPCClient,
+):
+    result = await service_runs.get_service_run_page(
+        rpc_client,
+        user_id=_USER_ID,
+        product_name="osparc",
+        # limit=20,
+        # offset=0,
+        # wallet_id=1,
+        # access_all_wallet_usage=None,
+        # order_by=None,
+        # filters=None,
+    )
+    assert isinstance(result, ServiceRunPage)
+
+    assert len(result.items) == 1
+    assert result.total == 1
+    assert result.items[0].credit_cost < 0
+    assert result.items[0].transaction_status in list(CreditTransactionStatus)
