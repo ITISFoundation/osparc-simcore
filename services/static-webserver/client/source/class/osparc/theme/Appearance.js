@@ -176,6 +176,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: function(states) {
         return {
           backgroundColor: states.selected ? "node-selected-background" : "node-background",
+          textColor: states.selected ? "text-selected" : "text",
           decorator: states.maximized ? "window-small-cap-maximized" : "window-small-cap"
         };
       }
@@ -200,7 +201,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         return {
           marginLeft: 2,
           font: "text-12",
-          textColor: "rgba(20, 20, 20, 1)" // Dark theme text color
+          textColor: states.selected ? "text-selected" : "text"// Dark theme text color
         };
       }
     },
@@ -360,13 +361,35 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
-    "toolbar-progressbar": {
-      include: "progressbar",
-      alias: "progressbar",
-      style: () => ({
-        margin: [7, 10]
-      })
-    },
+    /*
+    ---------------------------------------------------------------------------
+      PROGRESSBAR
+    ---------------------------------------------------------------------------
+    */
+
+    "progressbar": {
+          style: function(states) {
+            return {
+              decorator: "progressbar",
+              padding: 1,
+              backgroundColor: "fab_background",
+              margin: [7, 10],
+              width: 200,
+              height: 20
+            };
+          }
+        },
+
+    "progressbar/progress":
+        {
+          style: function(states) {
+            return {
+              backgroundColor: states.disabled ?
+                  "background-disabled-checked" :
+                  "success"
+            };
+          }
+        },
 
     /*
     ---------------------------------------------------------------------------
@@ -503,6 +526,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         };
         if (states.hovered) {
           style.decorator = "form-button-hovered";
+          style.textColor = "default-button-text-action";
           style.backgroundColor = "default-button-hover-background";
         }
         if (states.focused) {
@@ -534,17 +558,18 @@ qx.Theme.define("osparc.theme.Appearance", {
         };
         if (states.hovered) {
           style.decorator = "form-button-hovered";
+          style.textColor = "default-button-text-action";
+          style.backgroundColor = "default-button-hover-background";
         }
-        if (states.focused) {
+        if (states.focused || states.active) {
           style.decorator = "form-button-focused";
-        }
-        if (states.active) {
-          style.decorator = "form-button-focused";
+          style.backgroundColor = "default-button-focus-background";
         }
         if (states.disabled) {
           style.cursor = "not-allowed";
           style.decorator = "form-button-disabled";
           style.textColor = "default-button-disabled";
+          style.backgroundColor = "default-button-disabled-background";
         }
         if (states.checked || states.selected) {
           style.decorator = "form-button-checked";
@@ -559,7 +584,9 @@ qx.Theme.define("osparc.theme.Appearance", {
         const style = {
           decorator: "fab-button",
           cursor: "pointer",
-          padding: [8, 16],
+          padding: 5,
+          alignY: "middle",
+          alignX: "center",
           textColor: "fab_text",
           backgroundColor: "background-card-overlay"
         };
@@ -618,7 +645,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: function(states) {
         return {
           cursor: states.disabled ? "not-allowed" : "pointer",
-          backgroundColor: states.selected ? "background-selected" : undefined,
+          backgroundColor: states.selected ? "background-selected-dark" : undefined,
           textColor: states.selected ? "default-button-text" : "text",
           padding: [2, 6]
         };

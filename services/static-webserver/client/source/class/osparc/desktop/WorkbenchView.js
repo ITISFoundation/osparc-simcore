@@ -281,10 +281,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         backgroundColor
       });
       tabPageBtn.bind("value", tabPageBtn, "backgroundColor", {
-        converter: val => val ? "default-button-background": undefined
+        converter: val => val ? "default-button-disabled-background" : undefined
       });
       tabPageBtn.bind("value", tabPageBtn, "textColor", {
-        converter: val => val ? "default-button-text-outline": "default-button-text-action"
+        converter: val => val ? "default-button-text-outline" : "default-button-text-action"
       });
       tabPageBtn.bind("value", tabPageBtn, "decorator", {
         converter: val => val ? "tab-button-selected" : "tab-button"

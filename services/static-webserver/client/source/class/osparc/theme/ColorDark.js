@@ -82,7 +82,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "invalid": "error",
 
     // backgrounds
-    "background-selected": "product-color",
+    "background-selected": "default-button-background",
     "background-selected-disabled":  "default-button-disabled",
     "background-selected-dark":  "product-color",
     "background-disabled": "background-main",
@@ -123,7 +123,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "border-disabled": "background-main",
 
     // separator
-    "border-separator": "c07",
+    "border-separator": "fab_background",
 
     // tooltip
     "tooltip": "flash_message_bg",
@@ -152,7 +152,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "table-column-line": "background-main",
 
     // used in progressive code
-    "progressive-table-header": "lime",
+    "progressive-table-header": "c08",
     "progressive-table-row-background-even": "background-main",
     "progressive-table-row-background-odd": "background-main",
     "progressive-progressbar-background":  "background-main",
@@ -169,8 +169,8 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "workbench-start-hint": "#505050",
 
     "node-background": "rgba(174, 191, 207, 0.8)",
-    "node-selected-background": "product-color",
-    "node-title-text": "#232323",
+    "node-selected-background": "background-selected",
+    "node-title-text": "text-selected",
     "node-port-text": "#454545",
 
     "logger-debug-message": "#FFFFFF",

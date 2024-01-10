@@ -27,8 +27,8 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "pb-locked": "rgba(113, 157, 181, 0.5)",
 
     // button
-    "default-button-text": "contrasted-text-light",
-    "default-button-text-outline": "contrasted-text-dark",
+    "default-button-text": "rgba(255, 255, 255, 1)",
+    "default-button-text-outline": "contrasted-text-light",
     "default-button-text-action": "contrasted-text-dark",
     "default-button": "product-color",
     "default-button-background": "rgba(10, 182, 255, 0.1)",

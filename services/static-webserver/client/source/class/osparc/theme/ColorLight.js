@@ -82,7 +82,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "invalid": "error",
 
     // backgrounds
-    "background-selected": "product-color",
+    "background-selected": "default-button-background",
     "background-selected-disabled":  "default-button-disabled",
     "background-selected-dark":  "product-color",
     "background-disabled": "background-main",
@@ -123,7 +123,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "border-disabled": "background-main",
 
     // separator
-    "border-separator": "c07",
+    "border-separator": "fab_background",
 
     // tooltip
     "tooltip": "flash_message_bg",
@@ -169,7 +169,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "workbench-start-hint": "#AFAFAF",
 
     "node-background": "rgba(174, 191, 207, 0.8)",
-    "node-selected-background": "product-color",
+    "node-selected-background": "background-selected",
     "node-title-text": "#232323",
     "node-port-text": "#454545",
 

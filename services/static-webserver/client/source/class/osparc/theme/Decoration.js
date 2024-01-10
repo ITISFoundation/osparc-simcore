@@ -121,7 +121,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     "window-small-cap-maximized": {
       include: "service-window-maximized",
       style: {
-        width: 0,
+        width: 1,
         transitionProperty: "opacity",
         transitionDuration: "0.05s",
         transitionTimingFunction: "ease-in"
@@ -372,7 +372,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       include: "form-button",
       style: {
         width: 1,
-        color: "transparent",
+        color: "background-card-overlay",
         backgroundColor: "background-card-overlay"
       }
     },

@@ -99,9 +99,6 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
         node.bind("label", btn, "label", {
           converter: val => `${pos+1}: ${val}`
         });
-        node.getStatus().bind("dependencies", btn.getChildControl("label"), "textColor", {
-          converter: dependencies => (dependencies && dependencies.length) ? "material-button-text-disabled" : "material-button-text"
-        });
 
         const statusIcon = new qx.ui.basic.Image();
         if (node.isFilePicker()) {
@@ -135,12 +132,12 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
       });
       osparc.utils.Utils.setIdToWidget(btn, "appModeButton_"+nodeId);
       btn.addListener("execute", () => this.fireDataEvent("nodeSelectionRequested", nodeId));
-
+      btn.setAppearance("fab-button");
       const updateCurrentNodeId = currentNodeId => {
         if (nodeId === currentNodeId) {
           btn.setAppearance("form-button");
         } else {
-          btn.resetAppearance();
+          btn.setAppearance("fab-button");
         }
         btn.setFont("text-14");
       };
