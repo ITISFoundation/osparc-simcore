@@ -3,6 +3,7 @@
 
 import asyncio
 from collections.abc import AsyncIterable, AsyncIterator, Callable
+from contextlib import AsyncExitStack, asynccontextmanager
 from unittest.mock import AsyncMock
 
 import pytest
@@ -18,10 +19,11 @@ from models_library.api_schemas_dynamic_scheduler.socketio import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.users import GroupID
-from pydantic import parse_obj_as
+from pydantic import NonNegativeInt, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
+from servicelib.utils import logged_gather
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.core.settings import ApplicationSettings
@@ -119,17 +121,6 @@ async def server_url(web_server: URL) -> str:
 
 
 @pytest.fixture
-async def socketio_client(server_url: str) -> AsyncIterable[socketio.AsyncClient]:
-    """This emulates a socketio client in the front-end"""
-    client = socketio.AsyncClient(logger=True, engineio_logger=True)
-    await client.connect(f"{server_url}", transports=["websocket"])
-
-    yield client
-
-    await client.disconnect()
-
-
-@pytest.fixture
 def user_primary_group_id() -> GroupID:
     return 4
 
@@ -150,13 +141,6 @@ def socketio_server_events(
     async def on_check(sid, data):
         print("check", sid, data)
 
-    async def on_service_status(sid, data):
-        print(
-            "service_status",
-            sid,
-            parse_obj_as(NodeGet | DynamicServiceGet | NodeGetIdle, data),
-        )
-
     async def disconnect(sid: str):
         print("disconnecting", sid)
         await socketio_server.leave_room(sid, user_room_name)
@@ -164,9 +148,6 @@ def socketio_server_events(
     # spies
     spy_connect = mocker.AsyncMock(wraps=connect)
     socketio_server.on("connect", spy_connect)
-
-    spy_on_service_status = mocker.AsyncMock(wraps=on_service_status)
-    socketio_server.on(SOCKET_IO_SERVICE_STATUS_EVENT, spy_on_service_status)
 
     spy_on_check = mocker.AsyncMock(wraps=on_check)
     socketio_server.on("check", spy_on_check)
@@ -178,14 +159,21 @@ def socketio_server_events(
         connect.__name__: spy_connect,
         disconnect.__name__: spy_disconnect,
         on_check.__name__: spy_on_check,
-        on_service_status.__name__: spy_on_service_status,
     }
 
 
-@pytest.fixture
-async def socketio_client_events(
-    socketio_client: socketio.AsyncClient,
-) -> dict[str, AsyncMock]:
+@asynccontextmanager
+async def get_socketio_client(server_url: str) -> AsyncIterator[socketio.AsyncClient]:
+    """This emulates a socketio client in the front-end"""
+    client = socketio.AsyncClient(logger=True, engineio_logger=True)
+    await client.connect(f"{server_url}", transports=["websocket"])
+
+    yield client
+
+    await client.disconnect()
+
+
+def _get_on_service_status_event(socketio_client: socketio.AsyncClient) -> AsyncMock:
     # emulates front-end receiving message
 
     async def on_service_status(data):
@@ -194,14 +182,15 @@ async def socketio_client_events(
     on_event_spy = AsyncMock(wraps=on_service_status)
     socketio_client.on(SOCKET_IO_SERVICE_STATUS_EVENT, on_event_spy)
 
-    return {on_service_status.__name__: on_event_spy}
+    return on_event_spy
 
 
-_WAIT_FOR_EVENT = {
-    "wait": wait_fixed(0.1),
-    "stop": stop_after_attempt(5),
-    "reraise": True,
-}
+async def _assert_call_count(mock: AsyncMock, *, call_count: int) -> None:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1), stop=stop_after_attempt(5), reraise=True
+    ):
+        with attempt:
+            assert mock.call_count == call_count
 
 
 @pytest.mark.parametrize(
@@ -217,8 +206,7 @@ _WAIT_FOR_EVENT = {
 async def test_notifier_publish_message(
     services_tracker: ServicesTracker,
     socketio_server_events: dict[str, AsyncMock],
-    socketio_client_events: dict[str, AsyncMock],
-    socketio_client: socketio.AsyncClient,
+    server_url: str,
     app: FastAPI,
     faker: Faker,
     user_primary_group_id: GroupID,
@@ -228,34 +216,46 @@ async def test_notifier_publish_message(
     server_connect = socketio_server_events["connect"]
     server_disconnect = socketio_server_events["disconnect"]
     server_on_check = socketio_server_events["on_check"]
-    server_on_service_status = socketio_server_events["on_service_status"]
 
-    # client spy events
-    client_on_service_status = socketio_client_events["on_service_status"]
+    number_of_clients: NonNegativeInt = 10
+    async with AsyncExitStack() as socketio_frontend_clients:
+        frontend_clients: list[socketio.AsyncClient] = await logged_gather(
+            *[
+                socketio_frontend_clients.enter_async_context(
+                    get_socketio_client(server_url)
+                )
+                for _ in range(number_of_clients)
+            ]
+        )
+        await _assert_call_count(server_connect, call_count=number_of_clients)
 
-    # checks
-    assert server_connect.called
-    assert not server_disconnect.called
+        # client emits and check it was received
+        await logged_gather(
+            *[
+                frontend_client.emit("check", data="an_event")
+                for frontend_client in frontend_clients
+            ]
+        )
+        await _assert_call_count(server_on_check, call_count=number_of_clients)
 
-    # client emits
-    await socketio_client.emit("check", data="hoi")
+        # attach spy to client
+        on_service_status_events: list[AsyncMock] = [
+            _get_on_service_status_event(c) for c in frontend_clients
+        ]
 
-    async for attempt in AsyncRetrying(**_WAIT_FOR_EVENT):
-        with attempt:
-            assert server_on_check.called
+        # server publishes a message
+        await publish_message(
+            app,
+            node_id=faker.uuid4(cast_to=None),
+            service_status=service_status,
+            primary_group_id=user_primary_group_id,
+        )
 
-    node_id = faker.uuid4(cast_to=None)
-    await publish_message(
-        app,
-        node_id=node_id,
-        service_status=service_status,
-        primary_group_id=user_primary_group_id,
-    )
-
-    async for attempt in AsyncRetrying(**_WAIT_FOR_EVENT):
-        with attempt:
-            assert client_on_service_status.called
-            assert not server_on_service_status.called
-            client_on_service_status.assert_awaited_once_with(
+        # check that all clients received it
+        for on_service_status_event in on_service_status_events:
+            await _assert_call_count(on_service_status_event, call_count=1)
+            on_service_status_event.assert_awaited_once_with(
                 jsonable_encoder(service_status)
             )
+
+    await _assert_call_count(server_disconnect, call_count=number_of_clients)
