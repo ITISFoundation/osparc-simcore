@@ -27,9 +27,10 @@ class Notifier(SingletonInAppStateMixin):
         primary_group_id: GroupID,
         service_status: NodeGet | DynamicServiceGet | NodeGetIdle,
     ) -> None:
+        by_alias = not isinstance(service_status, NodeGetIdle | NodeGet)
         await self._sio_manager.emit(
             SOCKET_IO_SERVICE_STATUS_EVENT,
-            data=jsonable_encoder(service_status),
+            data=jsonable_encoder(service_status, by_alias=by_alias),
             room=f"{primary_group_id}",
         )
 
