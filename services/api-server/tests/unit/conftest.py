@@ -71,7 +71,6 @@ def app_environment(
             "API_SERVER_RABBITMQ": "null",
             "LOG_LEVEL": "debug",
             "SC_BOOT_MODE": "production",
-            #            "API_SERVER_ADD_METRICS_ENDPOINT": "0"
         },
     )
 
