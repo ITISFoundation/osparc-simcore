@@ -162,8 +162,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       this.bind("autoRecharge", this.__autorechargeBtn, "value", {
         converter: ar => ar ? ar.enabled : false
       });
-      this.__autorechargeBtn.bind("value", this.__autorechargeBtn, "icon", {
-        converter: value => value ? "@FontAwesome5Solid/toggle-on/16" : "@FontAwesome5Solid/toggle-off/16"
+      this.__autorechargeBtn.bind("value", this.__autorechargeBtn, "label", {
+        converter: value => value ? "Autorecharge: ON" : "Autorecharge: OFF"
       });
       this._add(this.__autorechargeBtn, {
         // Takes the status button place for the moment
