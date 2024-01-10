@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from models_library.basic_types import BootModeEnum
+from servicelib.fastapi.prometheus_instrumentation import instrument_app
 
 from .._meta import (
     API_VERSION,
@@ -40,8 +41,6 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     if app.state.settings.CLUSTERS_KEEPER_ADD_METRICS_ENDPOINT:
-        from servicelib.fastapi.prometheus_instrumentation import instrument_app
-
         instrument_app(app)
 
     # PLUGINS SETUP

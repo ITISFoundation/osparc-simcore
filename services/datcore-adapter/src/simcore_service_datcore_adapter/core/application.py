@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.prometheus_instrumentation import instrument_app
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import API_VERSION, API_VTAG
@@ -60,8 +61,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.state.settings = settings
 
     if app.state.settings.DATCORE_ADAPTER_ADD_METRICS_ENDPOINT:
-        from servicelib.fastapi.prometheus_instrumentation import instrument_app
-
         instrument_app(app)
 
     # events

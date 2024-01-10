@@ -7,6 +7,7 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
+from servicelib.fastapi.prometheus_instrumentation import instrument_app
 from servicelib.logging_utils import config_all_loggers
 
 from ..api.entrypoints import api_router
@@ -180,8 +181,6 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         resource_usage_tracker_client.setup(app)
 
     if settings.DIRECTOR_V2_ADD_METRICS_ENDPOINT:
-        from servicelib.fastapi.prometheus_instrumentation import instrument_app
-
         instrument_app(app)
 
     # setup app --
