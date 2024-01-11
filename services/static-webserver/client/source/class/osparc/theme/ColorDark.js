@@ -168,7 +168,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "workbench-edge-api-active": "#BBBBBB",
     "workbench-start-hint": "#505050",
 
-    "node-background": "rgba(174, 191, 207, 0.8)",
+    "node-background": "rgba(113, 157, 181, 0.5)",
     "node-selected-background": "background-selected",
     "node-title-text": "text-selected",
     "node-port-text": "#454545",
