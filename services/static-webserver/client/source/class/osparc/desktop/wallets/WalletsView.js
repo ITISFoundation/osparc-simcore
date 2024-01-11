@@ -20,7 +20,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsView", {
 
   construct: function() {
     this.base(arguments);
-
     this.__buildLayout();
   },
 
