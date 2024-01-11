@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.prometheus_instrumentation import instrument_app
+from servicelib.fastapi.prometheus_instrumentation import (
+    setup_prometheus_instrumentation,
+)
 from simcore_service_payments.services.notifier import setup_notifier
 from simcore_service_payments.services.socketio import setup_socketio
 
@@ -61,7 +63,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     setup_notifier(app)
 
     if app.state.settings.PAYMENTS_ADD_METRICS_ENDPOINT:
-        instrument_app(app)
+        setup_prometheus_instrumentation(app)
 
     # ERROR HANDLERS
     # ... add here ...

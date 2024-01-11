@@ -3,7 +3,9 @@ import logging
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination as setup_fastapi_pagination
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.prometheus_instrumentation import instrument_app
+from servicelib.fastapi.prometheus_instrumentation import (
+    setup_prometheus_instrumentation,
+)
 from simcore_service_resource_usage_tracker.core.errors import (
     CustomResourceUsageTrackerError,
     http404_error_handler,
@@ -50,7 +52,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_fastapi_pagination(app)
 
     if app.state.settings.RESOURCE_USAGE_TRACKER_ADD_METRICS_ENDPOINT:
-        instrument_app(app)
+        setup_prometheus_instrumentation(app)
 
     # ERROR HANDLERS
     app.add_exception_handler(CustomResourceUsageTrackerError, http404_error_handler)

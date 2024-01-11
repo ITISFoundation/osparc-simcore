@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.prometheus_instrumentation import instrument_app
+from servicelib.fastapi.prometheus_instrumentation import (
+    setup_prometheus_instrumentation,
+)
 
 from .._meta import (
     API_VERSION,
@@ -37,7 +39,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     if app.state.settings.DYNAMIC_SCHEDULER_ADD_METRICS_ENDPOINT:
-        instrument_app(app)
+        setup_prometheus_instrumentation(app)
 
     # PLUGINS SETUP
 

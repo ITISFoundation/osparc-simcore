@@ -5,7 +5,9 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.prometheus_instrumentation import instrument_app
+from servicelib.fastapi.prometheus_instrumentation import (
+    setup_prometheus_instrumentation,
+)
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import (
@@ -49,7 +51,7 @@ def create_app() -> FastAPI:
     app.state.settings = settings
 
     if app.state.settings.AGENT_ADD_METRICS_ENDPOINT:
-        instrument_app(app)
+        setup_prometheus_instrumentation(app)
 
     # ROUTERS
     app.include_router(router)
