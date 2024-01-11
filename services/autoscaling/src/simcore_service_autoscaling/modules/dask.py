@@ -195,7 +195,10 @@ async def get_worker_used_resources(
     ) -> dict[str, dict]:
         used_resources = {}
         for worker_name, worker_state in dask_scheduler.workers.items():
-            used_resources[worker_name] = worker_state.used_resources
+            if worker_state.status is distributed.Status.closing_gracefully:
+                used_resources[worker_name] = {}
+            else:
+                used_resources[worker_name] = worker_state.used_resources
         return used_resources
 
     async with _scheduler_client(url) as client:
@@ -238,4 +241,6 @@ async def compute_cluster_total_resources(
 
 async def try_retire_nodes(url: AnyUrl) -> None:
     async with _scheduler_client(url) as client:
-        await _wrap_client_async_routine(client.retire_workers())
+        await _wrap_client_async_routine(
+            client.retire_workers(close_workers=False, remove=False)
+        )
