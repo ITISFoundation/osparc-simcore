@@ -71,7 +71,11 @@ class ComputationalAutoscaling(BaseAutoscaling):
             queued_tasks = []
             for tasks in processing_tasks_by_worker.values():
                 queued_tasks += tasks[1:]
-            _logger.info("found %s potentially queued tasks", len(queued_tasks))
+            _logger.info(
+                "found %s unrunnable tasks and %s potentially queued tasks",
+                len(unrunnable_tasks),
+                len(queued_tasks),
+            )
             return unrunnable_tasks + queued_tasks
         except DaskSchedulerNotFoundError:
             _logger.warning(

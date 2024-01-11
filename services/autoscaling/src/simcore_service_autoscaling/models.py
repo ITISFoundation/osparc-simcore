@@ -59,12 +59,21 @@ class Cluster:
     )
     terminated_instances: list[EC2InstanceData]
 
-    def need_scaling_down(self) -> bool:
+    def can_scale_down(self) -> bool:
         return bool(
             self.active_nodes
             or self.pending_nodes
             or self.drained_nodes
             or self.pending_ec2s
+        )
+
+    def total_number_of_machines(self) -> int:
+        return (
+            len(self.active_nodes)
+            + len(self.pending_nodes)
+            + len(self.drained_nodes)
+            + len(self.reserve_drained_nodes)
+            + len(self.pending_ec2s)
         )
 
 
