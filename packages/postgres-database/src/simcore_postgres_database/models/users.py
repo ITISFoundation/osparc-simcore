@@ -83,17 +83,10 @@ users = sa.Table(
         doc="Primary key for user identifier",
     ),
     sa.Column(
-        "name",
-        sa.String,
-        nullable=False,
-        doc="DEPRECATED: Will move to first_name, last_name",
-    ),
-    sa.Column(
         "username",
         sa.String(50),
-        unique=True,
         nullable=False,
-        doc="User friendly identifier. E.g. could be used to create notifications to user as @pcrespov",
+        doc="Unique user friendly identifier. E.g. pcrespov, sanderegg, GitHK, ...",
     ),
     sa.Column("first_name", sa.String(50)),
     sa.Column("last_name", sa.String(50)),
@@ -159,6 +152,7 @@ users = sa.Table(
     ),
     # ---------------------------
     sa.PrimaryKeyConstraint("id", name="user_pkey"),
+    sa.UniqueConstraint("username", name="user_username_ukey"),
     sa.UniqueConstraint("email", name="user_login_key"),
     sa.UniqueConstraint(
         "phone",

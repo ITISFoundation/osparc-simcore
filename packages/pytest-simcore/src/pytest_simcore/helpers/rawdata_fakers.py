@@ -62,11 +62,15 @@ def _compute_hash(password: str) -> str:
         return hashlib.sha224(password.encode("ascii")).hexdigest()
 
 
-DEFAULT_PASSWORD = "secret" * 3  # Password must be at least 12 characters long
+DEFAULT_PASSWORD = "password-with-at-least-12-characters"
 _DEFAULT_HASH = _compute_hash(DEFAULT_PASSWORD)
 
 
-def random_user(faker: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
+def random_user(
+    faker: Faker = DEFAULT_FAKER, password: str | None = None, **overrides
+) -> dict[str, Any]:
+    assert set(overrides.keys()).issubset({c.name for c in users.columns})
+
     data = {
         "username": faker.user_name(),
         "email": faker.email().lower(),
@@ -74,10 +78,9 @@ def random_user(faker: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
         "status": UserStatus.ACTIVE,
     }
 
-    assert set(data.keys()).issubset({c.name for c in users.columns})  # nosec
+    assert set(data.keys()).issubset({c.name for c in users.columns})
 
     # transform password in hash
-    password = overrides.pop("password", None)
     if password:
         assert len(password) >= 12
         overrides["password_hash"] = _compute_hash(password)
@@ -98,7 +101,7 @@ def random_project(faker: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
         "workbench": {},
         "published": False,
     }
-    assert set(data.keys()).issubset({c.name for c in projects.columns})  # nosec
+    assert set(data.keys()).issubset({c.name for c in projects.columns})
 
     data.update(overrides)
     return data
