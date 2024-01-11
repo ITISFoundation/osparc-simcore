@@ -1,9 +1,3 @@
-""" Users table
-
-    - List of users in the framework
-    - Users they have a role within the framework that provides
-    them different access levels to it
-"""
 from enum import Enum
 from functools import total_ordering
 from typing import Final, NamedTuple
