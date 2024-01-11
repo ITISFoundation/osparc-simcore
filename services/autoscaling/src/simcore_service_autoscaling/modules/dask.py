@@ -53,7 +53,9 @@ async def _scheduler_client(url: AnyUrl) -> AsyncIterator[distributed.Client]:
 
 DaskWorkerUrl: TypeAlias = str
 DaskWorkerDetails: TypeAlias = dict[str, Any]
-DASK_NAME_PATTERN: Final[re.Pattern] = re.compile(r"^.+_(ip-\d+-\d+-\d+-\d+).+$")
+DASK_NAME_PATTERN: Final[re.Pattern] = re.compile(
+    r"^.+_(?P<private_ip>ip-\d+-\d+-\d+-\d+).+$"
+)
 
 
 def _dask_worker_from_ec2_instance(
@@ -80,7 +82,7 @@ def _dask_worker_from_ec2_instance(
     ) -> bool:
         _, details = dask_worker
         if match := re.match(DASK_NAME_PATTERN, details["name"]):
-            return match.group(0) == node_hostname
+            return match.group("private_ip") == node_hostname
         return False
 
     filtered_workers = dict(filter(_find_by_worker_host, workers.items()))
