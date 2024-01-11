@@ -17,6 +17,7 @@ from models_library.resource_tracker import (
     ServiceRunId,
     ServiceRunStatus,
 )
+from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -198,6 +199,9 @@ class ResourceTrackerRepository(BaseRepository):
         offset: int,
         limit: int,
         service_run_status: ServiceRunStatus | None = None,
+        started_from: datetime | None = None,
+        started_until: datetime | None = None,
+        order_by: list[OrderBy] | None = None,
     ) -> list[ServiceRunWithCreditsDB]:
         async with self.db_engine.begin() as conn:
             query = (
@@ -255,6 +259,21 @@ class ResourceTrackerRepository(BaseRepository):
                     resource_tracker_service_runs.c.service_run_status
                     == service_run_status
                 )
+            if started_from:
+                query = query.where(
+                    resource_tracker_service_runs.c.started_at >= started_from
+                )
+            if started_until:
+                query = query.where(
+                    resource_tracker_service_runs.c.started_at <= started_until
+                )
+
+            if order_by:
+                for item in order_by:
+                    if item.direction == OrderDirection.ASC:
+                        query = query.order_by(sa.asc(item.field))
+                    else:
+                        query = query.order_by(sa.desc(item.field))
 
             result = await conn.execute(query)
 
@@ -267,6 +286,8 @@ class ResourceTrackerRepository(BaseRepository):
         user_id: UserID | None,
         wallet_id: WalletID | None,
         service_run_status: ServiceRunStatus | None = None,
+        started_from: datetime | None = None,
+        started_until: datetime | None = None,
     ) -> PositiveInt:
         async with self.db_engine.begin() as conn:
             query = (
@@ -280,6 +301,14 @@ class ResourceTrackerRepository(BaseRepository):
             if wallet_id:
                 query = query.where(
                     resource_tracker_service_runs.c.wallet_id == wallet_id
+                )
+            if started_from:
+                query = query.where(
+                    resource_tracker_service_runs.c.started_at >= started_from
+                )
+            if started_until:
+                query = query.where(
+                    resource_tracker_service_runs.c.started_at <= started_until
                 )
             if service_run_status:
                 query = query.where(

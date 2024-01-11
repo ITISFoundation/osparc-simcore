@@ -25,6 +25,13 @@ async def list_service_runs(
     order_by: list[OrderBy] | None = None,  # noqa: ARG001
     filters: ServiceResourceUsagesFilters | None = None,  # noqa: ARG001
 ) -> ServiceRunPage:
+    if filters:
+        started_from = None
+        started_until = None
+    else:
+        started_from = None
+        started_until = None
+
     # Situation when we want to see all usage of a specific user
     if wallet_id is None and access_all_wallet_usage is None:
         total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(
