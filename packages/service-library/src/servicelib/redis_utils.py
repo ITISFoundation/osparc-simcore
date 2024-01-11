@@ -82,6 +82,13 @@ def start_exclusive_periodic_task(
     Before the ``task`` is scheduled for periodic background execution, it acquires a lock.
     Subsequent calls to ``start_exclusive_periodic_task`` will not allow the same ``task``
     to run since the lock will prevent the scheduling.
+
+    Q&A:
+    - Why is `_exclusive_task_starter` run as a task?
+        This is usually used at setup time and cannot block the setup process forever
+    - Why is `_exclusive_task_starter` task a periodic task?
+        If Redis connectivity is lost, the periodic `_exclusive_task_starter` ensures the lock is
+        reacquired
     """
     return start_periodic_task(
         _exclusive_task_starter,
