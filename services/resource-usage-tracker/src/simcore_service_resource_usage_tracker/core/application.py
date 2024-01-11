@@ -51,7 +51,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_api_routes(app)
     setup_fastapi_pagination(app)
 
-    if app.state.settings.RESOURCE_USAGE_TRACKER_ADD_METRICS_ENDPOINT:
+    if app.state.settings.RESOURCE_USAGE_TRACKER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
     # ERROR HANDLERS

@@ -168,7 +168,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         default="",
         description="Filepath to self-signed osparc.crt file *as mounted inside the container*, empty strings disables it",
     )
-    DIRECTOR_V2_ADD_METRICS_ENDPOINT: bool = True
+    DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
     # extras
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")

@@ -221,7 +221,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CLUSTERS_KEEPER_RABBITMQ: RabbitSettings | None = Field(auto_default_from_env=True)
 
-    CLUSTERS_KEEPER_ADD_METRICS_ENDPOINT: bool = True
+    CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
     CLUSTERS_KEEPER_REDIS: RedisSettings = Field(auto_default_from_env=True)
 

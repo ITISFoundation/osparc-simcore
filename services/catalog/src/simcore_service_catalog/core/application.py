@@ -64,7 +64,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     # PLUGIN SETUP
     setup_function_services(app)
 
-    if app.state.settings.CATALOG_ADD_METRICS_ENDPOINT:
+    if app.state.settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
     # EVENTS

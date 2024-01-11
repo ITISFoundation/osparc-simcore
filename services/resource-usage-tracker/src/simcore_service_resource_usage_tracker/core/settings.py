@@ -114,4 +114,4 @@ class ApplicationSettings(MinimalApplicationSettings):
         default=6,
         description="Heartbeat couter limit when RUT considers service as unhealthy.",
     )
-    RESOURCE_USAGE_TRACKER_ADD_METRICS_ENDPOINT: bool = True
+    RESOURCE_USAGE_TRACKER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True

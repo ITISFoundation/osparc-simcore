@@ -42,7 +42,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.state.settings = settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
-    if settings.AUTOSCALING_ADD_METRICS_ENDPOINT:
+    if settings.AUTOSCALING_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
     # PLUGINS SETUP

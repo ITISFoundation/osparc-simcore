@@ -72,4 +72,4 @@ class ApplicationSettings(_BaseApplicationSettings):
         auto_default_from_env=True, description="settings for director-v2 service"
     )
 
-    DYNAMIC_SCHEDULER_ADD_METRICS_ENDPOINT: bool = True
+    DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True

@@ -171,7 +171,7 @@ def mock_env(
         "R_CLONE_PROVIDER": "MINIO",
         "SC_BOOT_MODE": "production",
         "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
-        "DIRECTOR_V2_ADD_METRICS_ENDPOINT": "0",
+        "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "0",
     }
     setenvs_from_dict(monkeypatch, env_vars)
     return env_vars

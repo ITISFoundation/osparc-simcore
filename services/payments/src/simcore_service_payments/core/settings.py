@@ -113,4 +113,4 @@ class ApplicationSettings(_BaseApplicationSettings):
         auto_default_from_env=True, description="settings for RUT service"
     )
 
-    PAYMENTS_ADD_METRICS_ENDPOINT: bool = True
+    PAYMENTS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True

@@ -131,7 +131,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
         app.add_middleware(ApiServerProfilerMiddleware)
 
-    if settings.API_SERVER_ADD_METRICS_ENDPOINT:
+    if settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
     # routing

@@ -50,7 +50,7 @@ def create_app() -> FastAPI:
     override_fastapi_openapi_method(app)
     app.state.settings = settings
 
-    if app.state.settings.AGENT_ADD_METRICS_ENDPOINT:
+    if app.state.settings.AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
     # ROUTERS

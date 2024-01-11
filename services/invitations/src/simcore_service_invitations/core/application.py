@@ -35,7 +35,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     # PLUGINS SETUP
     setup_api_routes(app)
 
-    if app.state.settings.INVITATIONS_ADD_METRICS_ENDPOINT:
+    if app.state.settings.INVITATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
     # ERROR HANDLERS

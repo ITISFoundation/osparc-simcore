@@ -69,7 +69,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CATALOG_DIRECTOR: DirectorSettings | None = Field(auto_default_from_env=True)
 
-    CATALOG_ADD_METRICS_ENDPOINT: bool = True
+    CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60

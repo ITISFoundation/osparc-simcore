@@ -182,7 +182,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER:
         resource_usage_tracker_client.setup(app)
 
-    if settings.DIRECTOR_V2_ADD_METRICS_ENDPOINT:
+    if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
     # setup app --
