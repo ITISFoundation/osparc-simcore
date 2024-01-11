@@ -59,6 +59,14 @@ class Cluster:
     )
     terminated_instances: list[EC2InstanceData]
 
+    def need_scaling_down(self) -> bool:
+        return bool(
+            self.active_nodes
+            or self.pending_nodes
+            or self.drained_nodes
+            or self.pending_ec2s
+        )
+
 
 DaskTaskId: TypeAlias = str
 
