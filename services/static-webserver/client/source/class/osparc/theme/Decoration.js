@@ -24,8 +24,9 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         radius: 4,
         backgroundColor: "material-button-background",
-        transitionProperty: ["all"],
+        transitionProperty: ["background-color", "border-color", "opacity"],
         transitionDuration: "0.25s",
+        transitionTimingFunction: "ease-in-out",
         shadowColor: "transparent"
       }
     },
@@ -360,6 +361,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     // Button types
     "form-button": {
+      include: "material-button",
       style: {
         style: "solid",
         width: 1,
@@ -371,7 +373,9 @@ qx.Theme.define("osparc.theme.Decoration", {
     "fab-button": {
       include: "form-button",
       style: {
+        style: "solid",
         width: 1,
+        radius: 5,
         color: "background-card-overlay",
         backgroundColor: "background-card-overlay"
       }
@@ -516,6 +520,26 @@ qx.Theme.define("osparc.theme.Decoration", {
       include: "form-button-outlined",
       style: {
         backgroundColor: "default-button-hover-background"
+      }
+    },
+
+    "selected-light": {
+      include: "material-button",
+      style: {
+        style: "solid",
+        width: 1,
+        color: "background-selected-dark",
+        backgroundColor: "background-selected"
+      }
+    },
+
+    "selected-dark": {
+      include: "material-button",
+      style: {
+        style: "solid",
+        width: 1,
+        color: "background-selected-dark",
+        backgroundColor: "background-selected-dark"
       }
     },
 

@@ -372,7 +372,7 @@ qx.Theme.define("osparc.theme.Appearance", {
             return {
               decorator: "progressbar",
               padding: 1,
-              backgroundColor: "fab_background",
+              backgroundColor: "fab-background",
               margin: [7, 10],
               width: 200,
               height: 20
@@ -613,6 +613,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     "form-button-text": {
       include: "form-button",
       style: function(states) {
+        debugger
         const style = {
           decorator: "text-button",
           cursor: "pointer",

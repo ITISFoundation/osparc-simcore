@@ -60,9 +60,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
           break;
         case "cancel-button": {
           const btnsLayout = this.getChildControl("buttons-layout");
-          control = new qx.ui.form.Button(this.tr("Cancel")).set({
-            font: "text-14"
-          });
+          control = new qx.ui.form.Button(this.tr("Cancel"));
           btnsLayout.add(control);
           break;
         }
@@ -119,10 +117,10 @@ qx.Class.define("osparc.ui.window.Dialog", {
     addCancelButton: function() {
       const cancelButton = this.getChildControl("cancel-button");
       cancelButton.set({
-        appearance: "form-button-text",
         font: "text-14",
         textColor: "link"
       });
+      cancelButton.addListener("mouseover", event => console.log(event), this);
       cancelButton.addListener("execute", () => this.close(), this);
       return cancelButton;
     }

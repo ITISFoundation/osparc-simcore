@@ -38,7 +38,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "tab_navigation_bar_background_color": "c00",
     "modal-backdrop": "rgba(8, 9, 13, 1)",
     "fab_text": "contrasted-text-dark",
-    "fab_background": "rgba(47, 50, 69, 1)",
+    "fab-background": "rgba(47, 50, 69, 1)",
     "input_background": "#213248",
     "input_background_disable": "rgba(113, 157, 181, 0.25)",
     "window-popup-background": "rgba(66, 66, 66, 1)",
@@ -67,7 +67,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background":  "fab_background",
+    "material-button-background":  "fab-background",
     "material-button-background-disabled":  "default-button-disabled-background",
     "material-button-background-hovered":  "default-button-hover-background",
     "material-button-background-pressed":  "default-button-active-background",
@@ -123,7 +123,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "border-disabled": "background-main",
 
     // separator
-    "border-separator": "fab_background",
+    "border-separator": "fab-background",
 
     // tooltip
     "tooltip": "flash_message_bg",

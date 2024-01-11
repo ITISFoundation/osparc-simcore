@@ -38,7 +38,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "tab_navigation_bar_background_color": "c00",
     "modal-backdrop": "rgba(247, 248, 252, 0.4)",
     "fab_text": "contrasted-text-dark",
-    "fab_background": "rgba(230, 235, 255, 1)",
+    "fab-background": "rgba(247, 248, 252, 0.4)",
     "input_background": "rgba(209, 214, 218, 1)",
     "input_background_disable": "rgba(113, 157, 181, 0.04)",
     "window-popup-background": "rgba(255,255,255, 1)",
@@ -49,7 +49,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     // text
     "text": "rgba(40, 40, 40, 1)",
     "text-disabled": "rgba(113, 157, 181, 1)",
-    "text-selected": "rgba(255, 255, 255, 1)",
+    "text-selected": "rgba(20, 20, 20, 1)",
     "text-placeholder": "rgba(90, 100, 110, 1)",
     "text-darker": "rgba(20, 20, 20, 1)",
     "contrasted-text-dark": "rgba(20, 20, 20, 1)",
@@ -67,7 +67,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background":  "fab_background",
+    "material-button-background":  "fab-background",
     "material-button-background-disabled":  "default-button-disabled-background",
     "material-button-background-hovered":  "default-button-hover-background",
     "material-button-background-pressed":  "default-button-active-background",
@@ -123,7 +123,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "border-disabled": "background-main",
 
     // separator
-    "border-separator": "fab_background",
+    "border-separator": "fab-background",
 
     // tooltip
     "tooltip": "flash_message_bg",
