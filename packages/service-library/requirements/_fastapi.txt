@@ -68,7 +68,9 @@ mdurl==0.1.2
 orjson==3.9.10
     # via -r requirements/./../../../packages/models-library/requirements/_base.in
 prometheus-client==0.19.0
-    # via prometheus-fastapi-instrumentator
+    # via
+    #   -r requirements/_fastapi.in
+    #   prometheus-fastapi-instrumentator
 prometheus-fastapi-instrumentator==6.1.0
     # via -r requirements/_fastapi.in
 pydantic==1.10.13
