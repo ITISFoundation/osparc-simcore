@@ -11,7 +11,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_user
-from simcore_postgres_database.errors import IntegrityError
+from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.users import (
     _USER_ROLE_TO_LEVEL,
     FullNameTuple,
@@ -99,7 +99,16 @@ def test_user_roles_compares():
     assert UserRole.ADMIN == UserRole.ADMIN
 
 
-async def test_unique_username(connection: SAConnection, faker: Faker):
+@pytest.fixture
+async def clean_users_db_table(connection: SAConnection):
+    yield
+
+    await connection.execute(users.delete())
+
+
+async def test_unique_username(
+    connection: SAConnection, faker: Faker, clean_users_db_table: None
+):
     data = random_user(
         faker,
         status=UserStatus.ACTIVE,
@@ -118,19 +127,22 @@ async def test_unique_username(connection: SAConnection, faker: Faker):
     assert user.username == "pcrespov"
 
     # same username fails
-    with pytest.raises(IntegrityError):
+    with pytest.raises(UniqueViolation):
+        data["email"] = faker.email()
         await connection.scalar(users.insert().values(data).returning(users.c.id))
 
     # generate new username
     data["username"] = generate_username_from_email(user.email)
+    data["email"] = faker.email()
     await connection.scalar(users.insert().values(data).returning(users.c.id))
 
     # and another one
     data["username"] += generate_random_suffix()
+    data["email"] = faker.email()
     await connection.scalar(users.insert().values(data).returning(users.c.id))
 
 
-async def test_trial_accounts(connection: SAConnection):
+async def test_trial_accounts(connection: SAConnection, clean_users_db_table: None):
     EXPIRATION_INTERVAL = timedelta(minutes=5)
 
     # creates trial user
@@ -187,9 +199,3 @@ def test_user_name_conversions(first_name: str, last_name: str):
 
     # back to full_name
     assert UserNameConverter.get_full_name(name) == full_name
-
-
-async def test_migrate_name_to_username(connection: SAConnection):
-
-    # Drobuliak.drobuliak@itis#swiss
-    ...

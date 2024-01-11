@@ -80,7 +80,7 @@ users = sa.Table(
         "id",
         sa.BigInteger,
         nullable=False,
-        doc="Primary key for user identifier",
+        doc="Primary key index for user identifier",
     ),
     sa.Column(
         "username",
@@ -228,13 +228,13 @@ DECLARE
 BEGIN
     IF TG_OP = 'INSERT' THEN
         -- set primary group
-        INSERT INTO "groups" ("name", "description", "type") VALUES (NEW.name, 'primary group', 'PRIMARY') RETURNING gid INTO group_id;
+        INSERT INTO "groups" ("name", "description", "type") VALUES (NEW.username, 'primary group', 'PRIMARY') RETURNING gid INTO group_id;
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, group_id);
         UPDATE "users" SET "primary_gid" = group_id WHERE "id" = NEW.id;
         -- set everyone goup
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, (SELECT "gid" FROM "groups" WHERE "type" = 'EVERYONE'));
     ELSIF TG_OP = 'UPDATE' THEN
-        UPDATE "groups" SET "name" = NEW.name WHERE "gid" = NEW.primary_gid;
+        UPDATE "groups" SET "name" = NEW.username WHERE "gid" = NEW.primary_gid;
     ELSEIF TG_OP = 'DELETE' THEN
         DELETE FROM "groups" WHERE "gid" = OLD.primary_gid;
     END IF;
