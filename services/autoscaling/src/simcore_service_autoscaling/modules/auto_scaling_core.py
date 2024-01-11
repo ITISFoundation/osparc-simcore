@@ -104,7 +104,7 @@ async def _analyze_current_cluster(
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
-    _logger.info(
+    _logger.debug(
         "current state: %s",
         f"{json.dumps(jsonable_encoder(cluster), indent=2)}",
     )
@@ -794,8 +794,14 @@ async def _autoscale_cluster(
         cluster = await _scale_up_cluster(
             app, cluster, still_unrunnable_tasks, auto_scaling_mode
         )
-    elif still_unrunnable_tasks == unrunnable_tasks == 0 and cluster.can_scale_down():
-        _logger.info("there is 0 waiting task, try to scale down...")
+    elif (
+        len(still_unrunnable_tasks) == len(unrunnable_tasks) == 0
+        and cluster.can_scale_down()
+    ):
+        _logger.info(
+            "there is %s waiting task, try to scale down...",
+            len(still_unrunnable_tasks),
+        )
         # NOTE: we only scale down in case we did not just scale up. The swarm needs some time to adjust
         await auto_scaling_mode.try_retire_nodes(app)
         cluster = await _deactivate_empty_nodes(app, cluster, auto_scaling_mode)
