@@ -7,8 +7,9 @@ from datetime import datetime, timedelta
 
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.engine import Engine
+from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_user
 from simcore_postgres_database.models.users import (
     _USER_ROLE_TO_LEVEL,
@@ -93,45 +94,47 @@ def test_user_roles_compares():
     assert UserRole.ADMIN == UserRole.ADMIN
 
 
-async def test_trial_accounts(pg_engine: Engine):
+async def test_create_user(connection: SAConnection, faker: Faker):
+
+    ...
+
+
+async def test_trial_accounts(connection: SAConnection):
     EXPIRATION_INTERVAL = timedelta(minutes=5)
 
-    async with pg_engine.acquire() as conn:
-        # creates trial user
-        client_now = datetime.utcnow()
-        user_id: int | None = await conn.scalar(
-            users.insert()
-            .values(
-                **random_user(
-                    status=UserStatus.ACTIVE,
-                    # Using some magic from sqlachemy ...
-                    expires_at=func.now() + EXPIRATION_INTERVAL,
-                )
-            )
-            .returning(users.c.id)
-        )
-        assert user_id
-
-        # check expiration date
-        result: ResultProxy = await conn.execute(
-            sa.select(users.c.status, users.c.created_at, users.c.expires_at).where(
-                users.c.id == user_id
+    # creates trial user
+    client_now = datetime.utcnow()
+    user_id: int | None = await connection.scalar(
+        users.insert()
+        .values(
+            **random_user(
+                status=UserStatus.ACTIVE,
+                # Using some magic from sqlachemy ...
+                expires_at=func.now() + EXPIRATION_INTERVAL,
             )
         )
-        row: RowProxy | None = await result.first()
-        assert row
-        assert row.created_at - client_now < timedelta(
-            minutes=1
-        ), "Difference between server and client now should not differ much"
-        assert row.expires_at - row.created_at == EXPIRATION_INTERVAL
-        assert row.status == UserStatus.ACTIVE
+        .returning(users.c.id)
+    )
+    assert user_id
 
-        # sets user as expired
-        await conn.execute(
-            users.update()
-            .values(status=UserStatus.EXPIRED)
-            .where(users.c.id == user_id)
+    # check expiration date
+    result: ResultProxy = await connection.execute(
+        sa.select(users.c.status, users.c.created_at, users.c.expires_at).where(
+            users.c.id == user_id
         )
+    )
+    row: RowProxy | None = await result.first()
+    assert row
+    assert row.created_at - client_now < timedelta(
+        minutes=1
+    ), "Difference between server and client now should not differ much"
+    assert row.expires_at - row.created_at == EXPIRATION_INTERVAL
+    assert row.status == UserStatus.ACTIVE
+
+    # sets user as expired
+    await connection.execute(
+        users.update().values(status=UserStatus.EXPIRED).where(users.c.id == user_id)
+    )
 
 
 @pytest.mark.parametrize(
@@ -153,3 +156,9 @@ def test_user_name_conversions(first_name: str, last_name: str):
 
     # back to full_name
     assert UserNameConverter.get_full_name(name) == full_name
+
+
+async def test_migrate_name_to_username(connection: SAConnection):
+
+    # TODO: UserNameConverter is used
+    ...

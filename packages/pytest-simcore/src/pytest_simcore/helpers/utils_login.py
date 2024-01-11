@@ -11,7 +11,7 @@ from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_s
 from simcore_service_webserver.security.api import clean_auth_policy_cache
 from yarl import URL
 
-from .rawdata_fakers import DEFAULT_PASSWORD, FAKE, random_user
+from .rawdata_fakers import DEFAULT_FAKER, DEFAULT_PASSWORD, random_user
 from .utils_assert import assert_status
 
 
@@ -139,7 +139,7 @@ class NewInvitation(NewUser):
         assert client.app
         super().__init__(params=host, app=client.app)
         self.client = client
-        self.tag = f"Created by {guest_email or FAKE.email()}"
+        self.tag = f"Created by {guest_email or DEFAULT_FAKER.email()}"
         self.confirmation = None
         self.trial_days = trial_days
         self.extra_credits_in_usd = extra_credits_in_usd

@@ -86,8 +86,17 @@ users = sa.Table(
         "name",
         sa.String,
         nullable=False,
-        doc="Display name. NOTE: this is NOT a user name since uniqueness is NOT guaranteed",
+        doc="DEPRECATED: Will move to first_name, last_name",
     ),
+    sa.Column(
+        "username",
+        sa.String(50),
+        unique=True,
+        nullable=False,
+        doc="User friendly identifier. E.g. could be used to create notifications to user as @pcrespov",
+    ),
+    sa.Column("first_name", sa.String(50)),
+    sa.Column("last_name", sa.String(50)),
     sa.Column(
         "email",
         sa.String,
