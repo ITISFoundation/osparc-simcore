@@ -368,28 +368,25 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
 
     "progressbar": {
-          style: function(states) {
-            return {
-              decorator: "progressbar",
-              padding: 1,
-              backgroundColor: "fab-background",
-              margin: [7, 10],
-              width: 200,
-              height: 20
-            };
-          }
-        },
+      style: function(states) {
+        return {
+          decorator: "progressbar",
+          padding: 1,
+          backgroundColor: "fab-background",
+          margin: [7, 10],
+          width: 200,
+          height: 20
+        };
+      }
+    },
 
-    "progressbar/progress":
-        {
-          style: function(states) {
-            return {
-              backgroundColor: states.disabled ?
-                  "background-disabled-checked" :
-                  "success"
-            };
-          }
-        },
+    "progressbar/progress": {
+      style: function(states) {
+        return {
+          backgroundColor: states.disabled ? "background-disabled-checked" : "success"
+        };
+      }
+    },
 
     /*
     ---------------------------------------------------------------------------
@@ -613,7 +610,6 @@ qx.Theme.define("osparc.theme.Appearance", {
     "form-button-text": {
       include: "form-button",
       style: function(states) {
-        debugger
         const style = {
           decorator: "text-button",
           cursor: "pointer",
