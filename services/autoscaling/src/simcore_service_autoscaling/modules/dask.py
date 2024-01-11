@@ -82,7 +82,7 @@ def _dask_worker_from_ec2_instance(
     ) -> bool:
         _, details = dask_worker
         if match := re.match(DASK_NAME_PATTERN, details["name"]):
-            return match.group("private_ip") == node_hostname
+            return bool(match.group("private_ip") == node_hostname)
         return False
 
     filtered_workers = dict(filter(_find_by_worker_host, workers.items()))
@@ -193,7 +193,7 @@ async def get_worker_used_resources(
     def _get_worker_used_resources(
         dask_scheduler: distributed.Scheduler,
     ) -> dict[str, dict]:
-        used_resources = {}
+        used_resources: dict[str, dict] = {}
         for worker_name, worker_state in dask_scheduler.workers.items():
             if worker_state.status is distributed.Status.closing_gracefully:
                 used_resources[worker_name] = {}
