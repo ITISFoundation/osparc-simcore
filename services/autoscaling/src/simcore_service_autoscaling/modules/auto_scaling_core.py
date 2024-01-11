@@ -270,7 +270,7 @@ async def _activate_drained_nodes(
     )
 
 
-async def _try_assign_tasks_to_instances(
+async def _try_assign_task_to_instances(
     app: FastAPI,
     task,
     auto_scaling_mode: BaseAutoscaling,
@@ -337,6 +337,7 @@ async def _find_needed_instances(
         )
         for i in cluster.active_nodes
     ]
+    # NOTE: we add pending nodes to pending ec2, since they are both unavailable for now
     pending_ec2s_to_tasks: list[AssignedTasksToInstance] = [
         AssignedTasksToInstance(
             instance=i, assigned_tasks=[], available_resources=i.resources
@@ -363,7 +364,7 @@ async def _find_needed_instances(
             if task_defined_ec2_type
             else "does NOT define ec2 type",
         )
-        if await _try_assign_tasks_to_instances(
+        if await _try_assign_task_to_instances(
             app,
             task,
             auto_scaling_mode,

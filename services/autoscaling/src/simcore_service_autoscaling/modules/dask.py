@@ -196,6 +196,7 @@ async def get_worker_used_resources(
         used_resources: dict[str, dict] = {}
         for worker_name, worker_state in dask_scheduler.workers.items():
             if worker_state.status is distributed.Status.closing_gracefully:
+                # NOTE: when a worker was retired it is in this state
                 used_resources[worker_name] = {}
             else:
                 used_resources[worker_name] = worker_state.used_resources
