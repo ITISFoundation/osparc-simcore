@@ -324,6 +324,12 @@ qx.Class.define("osparc.utils.Utils", {
       return dateStr;
     },
 
+    formatDateYyyyMmDd(date) {
+      const offset = date.getTimezoneOffset();
+      const ret = new Date(date.getTime() - (offset*60*1000));
+      return ret.toISOString().split("T")[0]
+    },
+
     /**
       * @param value {Date Object} Date Object
       */

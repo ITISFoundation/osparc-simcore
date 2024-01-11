@@ -481,7 +481,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         decorator = "form-input";
         padding = [3, 5, 4, 5];
         if (states.readonly) {
-          decorator += "-readonly";
+          decorator += "-disabled";
           padding = [3, 5, 5, 5];
         } else if (states.disabled) {
           decorator += "-disabled";
@@ -1129,12 +1129,71 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
-    "iframe": {
-      style: function(states) {
-        return {
-          decorator: "main-dark"
+    /*
+    ---------------------------------------------------------------------------
+      Appmotion
+    ---------------------------------------------------------------------------
+    */
+    "appmotion-button": {
+      include: "lg-button",
+      alias: "lg-button",
+      style: state => {
+        const style = {
+          padding: [10, 25]
         };
+        if (state.disabled) {
+          style.backgroundColor = "default-button-disabled-background";
+        }
+        return style;
       }
+    },
+
+    "appmotion-button-action": {
+      include: "appmotion-button",
+      alias: "appmotion-button",
+      style: state => {
+        const style = {
+          backgroundColor: "strong-main"
+        };
+        if (state.disabled) {
+          style.backgroundColor = "default-button-disabled-background";
+        }
+        return style;
+      }
+    },
+
+    "appmotion-button/label": {
+      include: "lg-button/label",
+      style: state => ({
+        font: "title-16"
+      })
+    },
+
+    "appmotion-buy-credits-input": {
+      include: "textfield",
+      style: state => ({
+        backgroundColor: state.readonly ? "transparent" : "background-main-1",
+        padding: [10, 15],
+        font: "text-18"
+      })
+    },
+
+    "appmotion-buy-credits-select": {
+      include: "selectbox",
+      alias: "selectbox",
+      style: state => ({
+        backgroundColor: "background-main-1",
+        padding: [10, 15],
+        font: "text-14"
+      })
+    },
+
+    "appmotion-buy-credits-select/list": {
+      include: "selectbox/list",
+      alias: "selectbox/list",
+      style: state => ({
+        backgroundColor: "background-main-1"
+      })
     }
   }
 });

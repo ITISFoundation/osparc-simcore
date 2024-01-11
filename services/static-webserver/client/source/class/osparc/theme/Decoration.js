@@ -543,10 +543,14 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
-    // Remove border from iframe
-    "main-dark": {
+    /*
+    ---------------------------------------------------------------------------
+      Appmotion
+    ---------------------------------------------------------------------------
+    */
+    "appmotion-buy-credits-input": {
       style: {
-        width: 0
+        radius: 8
       }
     }
   }

@@ -177,7 +177,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
         },
         configureItem: item => {
-          item.subscribeToFilterGroup("organizationMembersList");
+          item.subscribeToFilterGroup("walletMembersList");
           item.getChildControl("thumbnail").getContentElement()
             .setStyles({
               "border-radius": "16px"

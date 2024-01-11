@@ -25,12 +25,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenterWindow", {
     const viewWidth = 1000;
     const viewHeight = 700;
 
-    const store = osparc.store.Store.getInstance();
-    // Concatenate context wallet's name
-    store.bind("contextWallet", this, "caption", {
-      converter: contextWallet => caption + (contextWallet ? (" - " + contextWallet.getName()) : "")
-    });
-
     this.set({
       layout: new qx.ui.layout.Grow(),
       modal: true,
@@ -58,12 +52,20 @@ qx.Class.define("osparc.desktop.credits.BillingCenterWindow", {
   members: {
     __billingCenter: null,
 
-    openOverview: function() {
-      return this.__billingCenter.openOverview();
-    },
-
     openWallets: function() {
       return this.__billingCenter.openWallets();
+    },
+
+    openPaymentMethods: function() {
+      this.__billingCenter.openPaymentMethods();
+    },
+
+    openTransactions: function() {
+      this.__billingCenter.openTransactions();
+    },
+
+    openUsage: function() {
+      this.__billingCenter.openUsage();
     }
   }
 });

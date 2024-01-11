@@ -58,9 +58,8 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control = new qx.ui.menu.Button(this.tr("Billing Center"));
           control.addListener("execute", () => {
             const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-            const myAccountWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
             if (walletsEnabled) {
-              myAccountWindow.openOverview();
+              osparc.desktop.credits.BillingCenterWindow.openWindow();
             }
           }, this);
           this.add(control);

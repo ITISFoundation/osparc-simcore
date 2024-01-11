@@ -16,14 +16,10 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.navigation.CreditsMenuButton", {
-  extend: qx.ui.form.MenuButton,
+  extend: qx.ui.form.Button,
 
   construct: function() {
-    const menu = new qx.ui.menu.Menu().set({
-      position: "top-right"
-    });
-
-    this.base(arguments, null, null, menu);
+    this.base(arguments);
 
     this.set({
       font: "text-16",
@@ -52,22 +48,12 @@ qx.Class.define("osparc.navigation.CreditsMenuButton", {
     this.__contextWalletChanged(store.getContextWallet());
     store.addListener("changeContextWallet", () => this.__contextWalletChanged());
 
-
-    const preferencesButton = new qx.ui.menu.Button(this.tr("Preferences"));
-    preferencesButton.addListener("execute", () => osparc.desktop.preferences.PreferencesWindow.openWindow(), this);
-    menu.add(preferencesButton);
-
-    const billingCenterButton = new qx.ui.menu.Button(this.tr("Billing Center"));
-    billingCenterButton.addListener("execute", () => {
+    this.addListener("execute", () => {
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-      const myAccountWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
       if (walletsEnabled) {
-        myAccountWindow.openOverview();
+        osparc.desktop.credits.BillingCenterWindow.openWindow();
       }
     }, this);
-    menu.add(billingCenterButton);
-
-    osparc.utils.Utils.prettifyMenu(menu);
   },
 
   properties: {

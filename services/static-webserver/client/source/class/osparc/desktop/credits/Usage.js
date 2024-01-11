@@ -24,16 +24,9 @@ qx.Class.define("osparc.desktop.credits.Usage", {
     this._setLayout(new qx.ui.layout.VBox(15));
 
     const store = osparc.store.Store.getInstance();
-    store.bind("contextWallet", this, "contextWallet");
-  },
+    this.__userWallets = store.getWallets();
 
-  properties: {
-    contextWallet: {
-      check: "osparc.data.model.Wallet",
-      init: null,
-      nullable: true,
-      apply: "__buildLayout"
-    }
+    this.__buildLayout()
   },
 
   statics: {
@@ -47,15 +40,6 @@ qx.Class.define("osparc.desktop.credits.Usage", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "loading-image":
-          control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/circle-notch/64",
-            alignX: "center",
-            alignY: "middle"
-          });
-          control.getContentElement().addClass("rotate");
-          this._add(control);
-          break;
         case "usage-table":
           control = new osparc.desktop.credits.UsageTable().set({
             height: (this.self().ITEMS_PER_PAGE*20 + 40)
@@ -105,19 +89,58 @@ qx.Class.define("osparc.desktop.credits.Usage", {
     },
 
     __buildLayout: function() {
-      const loadingImage = this.getChildControl("loading-image");
-      loadingImage.show();
-      const table = this.getChildControl("usage-table");
-      table.exclude();
+      this._removeAll();
 
-      this.__fetchData();
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const lbl = new qx.ui.basic.Label("Select a credit account:");
+      container.add(lbl);
+      const selectBoxContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const walletSelectBox = new qx.ui.form.SelectBox().set({
+        allowStretchX: false,
+        width: 200
+      });
+      selectBoxContainer.add(walletSelectBox);
+      this.__fetchingImg = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/circle-notch/12",
+        alignX: "center",
+        alignY: "middle",
+        visibility: "excluded"
+      });
+      this.__fetchingImg.getContentElement().addClass("rotate");
+      selectBoxContainer.add(this.__fetchingImg);
+      container.add(selectBoxContainer);
+      const filterContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox())
+      this.__dateFilters = new osparc.desktop.credits.DateFilters();
+      this.__dateFilters.addListener("change", e => console.log(e.getData()));
+      filterContainer.add(this.__dateFilters);
+      filterContainer.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+      this.__exportButton = new qx.ui.form.Button(this.tr("Export")).set({
+        allowStretchY: false,
+        alignY: "bottom"
+      });
+      this.__exportButton.addListener("execute", () => {
+        console.log("export");
+      });
+      filterContainer.add(this.__exportButton);
+      // FEATURE TOGGLE
+      // container.add(filterContainer);
+      this._add(container);
+      walletSelectBox.addListener("changeSelection", e => {
+        if (walletSelectBox.getSelection().length) {
+          const selectedWallet = walletSelectBox.getSelection()[0].getModel();
+          this.__selectedWallet = selectedWallet;
+          this.__fetchData();
+        }
+      });
+      this.__userWallets.forEach(wallet => {
+        walletSelectBox.add(new qx.ui.form.ListItem(wallet.getName(), null, wallet));
+      });
     },
 
     __fetchData: function(request) {
-      const loadingImage = this.getChildControl("loading-image");
-      loadingImage.show();
-      const table = this.getChildControl("usage-table");
-      table.exclude();
+      this.__fetchingImg.show();
 
       if (request === undefined) {
         request = this.__getNextRequest();
@@ -131,8 +154,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
           this.__evaluatePageButtons(resp);
         })
         .finally(() => {
-          loadingImage.exclude();
-          table.show();
+          this.__fetchingImg.exclude();
         });
     },
 
@@ -169,9 +191,9 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         resolveWResponse: true
       };
 
-      const contextWallet = this.getContextWallet();
-      if (contextWallet) {
-        const walletId = contextWallet.getWalletId();
+      const selectedWallet = this.__selectedWallet;
+      if (selectedWallet) {
+        const walletId = selectedWallet.getWalletId();
         params.url["walletId"] = walletId.toString();
         return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", params, undefined, options);
       }
