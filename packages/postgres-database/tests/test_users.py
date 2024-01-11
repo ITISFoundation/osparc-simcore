@@ -11,6 +11,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_user
+from simcore_postgres_database.errors import IntegrityError
 from simcore_postgres_database.models.users import (
     _USER_ROLE_TO_LEVEL,
     FullNameTuple,
@@ -18,6 +19,10 @@ from simcore_postgres_database.models.users import (
     UserRole,
     UserStatus,
     users,
+)
+from simcore_postgres_database.utils_users import (
+    generate_random_suffix,
+    generate_username_from_email,
 )
 from sqlalchemy.sql import func
 
@@ -94,9 +99,35 @@ def test_user_roles_compares():
     assert UserRole.ADMIN == UserRole.ADMIN
 
 
-async def test_create_user(connection: SAConnection, faker: Faker):
+async def test_unique_username(connection: SAConnection, faker: Faker):
+    data = random_user(
+        faker,
+        status=UserStatus.ACTIVE,
+        username="pcrespov",
+        email="some-fanky-name@email.com",
+        first_name="Pedro",
+        last_name="Crespo Valero",
+    )
+    user_id = await connection.scalar(users.insert().values(data).returning(users.c.id))
+    user = await (
+        await connection.execute(users.select().where(users.c.id == user_id))
+    ).first()
+    assert user
 
-    ...
+    assert user.id == user_id
+    assert user.username == "pcrespov"
+
+    # same username fails
+    with pytest.raises(IntegrityError):
+        await connection.scalar(users.insert().values(data).returning(users.c.id))
+
+    # generate new username
+    data["username"] = generate_username_from_email(user.email)
+    await connection.scalar(users.insert().values(data).returning(users.c.id))
+
+    # and another one
+    data["username"] += generate_random_suffix()
+    await connection.scalar(users.insert().values(data).returning(users.c.id))
 
 
 async def test_trial_accounts(connection: SAConnection):
@@ -160,5 +191,5 @@ def test_user_name_conversions(first_name: str, last_name: str):
 
 async def test_migrate_name_to_username(connection: SAConnection):
 
-    # TODO: UserNameConverter is used
+    # Drobuliak.drobuliak@itis#swiss
     ...
