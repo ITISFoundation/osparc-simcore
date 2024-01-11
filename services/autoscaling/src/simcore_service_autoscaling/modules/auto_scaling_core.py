@@ -784,14 +784,15 @@ async def _autoscale_cluster(
         < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     ):
         _logger.info(
-            "still %s unrunnable tasks after node activation",
+            "still %s unrunnable tasks after node activation, try to scale up...",
             len(still_unrunnable_tasks),
         )
         # yes? then scale up
         cluster = await _scale_up_cluster(
             app, cluster, still_unrunnable_tasks, auto_scaling_mode
         )
-    elif still_unrunnable_tasks == unrunnable_tasks:
+    elif still_unrunnable_tasks == unrunnable_tasks and cluster.need_scaling_down():
+        _logger.info("there is 0 waiting task, try to scale down...")
         # NOTE: we only scale down in case we did not just scale up. The swarm needs some time to adjust
         await auto_scaling_mode.try_retire_nodes(app)
         cluster = await _deactivate_empty_nodes(app, cluster, auto_scaling_mode)
