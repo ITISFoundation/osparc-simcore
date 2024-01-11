@@ -66,8 +66,7 @@ qx.Class.define("osparc.desktop.credits.WalletsMiniViewer", {
       creditsIndicator.addListener("tap", () => {
         const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
         if (walletsEnabled) {
-          const billingCenterWindow = osparc.desktop.credits.BillingCenterWindow.openWindow();
-          billingCenterWindow.openOverview();
+          osparc.desktop.credits.BillingCenterWindow.openWindow();
         }
       }, this);
       this._add(creditsIndicator, {

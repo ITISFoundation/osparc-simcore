@@ -23,7 +23,7 @@
       "error",
       {
         "allowAfterThis": true,
-        "enforceInMethodNames": true
+        "enforceInMethodNames": false
       }
     ],
     "no-warning-comments": "off",
@@ -35,7 +35,11 @@
         "ignoreChainWithDepth": 3
       }
     ],
-    "no-eq-null": 0
+    "no-eq-null": 0,
+    "semi": "off",
+    "comma-dangle": "off",
+    "object-curly-spacing": "off",
+    "no-implicit-coercion": "off"
   },
   "env": {
     "browser": true

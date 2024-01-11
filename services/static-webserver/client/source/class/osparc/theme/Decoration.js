@@ -489,6 +489,16 @@ qx.Theme.define("osparc.theme.Decoration", {
         color: "transparent",
         backgroundColor: "background-card-overlay"
       }
+    },
+    /*
+    ---------------------------------------------------------------------------
+      Appmotion
+    ---------------------------------------------------------------------------
+    */
+    "appmotion-buy-credits-input": {
+      style: {
+        radius: 8
+      }
     }
   }
 });
