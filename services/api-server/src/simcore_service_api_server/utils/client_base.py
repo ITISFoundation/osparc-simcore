@@ -30,7 +30,7 @@ class BaseServiceClientApi(AppDataMixin):
             resp.raise_for_status()
             return True
         except (httpx.HTTPStatusError, httpx.RequestError) as err:
-            _logger.error("%s not responsive: %s", self.service_name, err)
+            _logger.debug("%s not responsive: %s", self.service_name, err)
             return False
 
     ping = is_responsive  # alias
