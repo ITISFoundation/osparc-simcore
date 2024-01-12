@@ -160,7 +160,7 @@ async def test_get_state(
 
     # node not tracked any of the two directors
     result = await services.get_service_status(rpc_client, node_id=node_not_found)
-    assert result == NodeGetIdle(service_state="idle", service_uuid=node_not_found)
+    assert result == NodeGetIdle.from_node_id(node_not_found)
 
 
 @pytest.fixture
