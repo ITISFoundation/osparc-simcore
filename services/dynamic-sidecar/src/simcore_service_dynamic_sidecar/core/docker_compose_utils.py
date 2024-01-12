@@ -124,14 +124,12 @@ async def docker_compose_create(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_up/)
     """
-    # building is a security risk hence is disabled via "--no-build" parameter
     result: CommandResult = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f"{_get_timeout_options()} docker compose {_docker_compose_options_from_settings(settings)}"
-            f" --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE}"
-            " --file - up"
-            " --no-build --no-start"
+            f"{_get_timeout_options()} docker compose {_docker_compose_options_from_settings(settings)} "
+            f"--project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file - "
+            "up --no-start --no-build"  # building is a security risk hence is disabled via "--no-build" parameter
         ),
         process_termination_timeout=None,
     )
@@ -150,8 +148,8 @@ async def docker_compose_start(
         compose_spec_yaml,
         command=(
             f"{_get_timeout_options()} docker compose {_docker_compose_options_from_settings(settings)} "
-            f"--project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} "
-            "--file - start"
+            f"--project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file - "
+            "start"
         ),
         process_termination_timeout=None,
     )
@@ -170,10 +168,9 @@ async def docker_compose_restart(
     result: CommandResult = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f"{_get_timeout_options()} docker compose {_docker_compose_options_from_settings(settings)}"
-            f" --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE}"
-            " --file - restart"
-            f" --timeout {default_compose_restart_timeout}"
+            f"{_get_timeout_options()} docker compose {_docker_compose_options_from_settings(settings)} "
+            f"--project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file - "
+            f"restart --timeout {default_compose_restart_timeout}"
         ),
         process_termination_timeout=_increase_timeout(default_compose_restart_timeout),
     )
@@ -196,10 +193,9 @@ async def docker_compose_down(
     result: CommandResult = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f"{_get_timeout_options()}  docker compose {_docker_compose_options_from_settings(settings)}"
-            f" --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE}"
-            " --file - down"
-            f" --volumes --remove-orphans --timeout {default_compose_down_timeout}"
+            f"{_get_timeout_options()}  docker compose {_docker_compose_options_from_settings(settings)} "
+            f" --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file - "
+            f"down --volumes --remove-orphans --timeout {default_compose_down_timeout}"
         ),
         process_termination_timeout=_increase_timeout(default_compose_down_timeout),
     )
@@ -221,9 +217,8 @@ async def docker_compose_rm(
         compose_spec_yaml,
         command=(
             f"{_get_timeout_options()} docker compose {_docker_compose_options_from_settings(settings)}"
-            f" --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE}"
-            " --file - rm"
-            " --force -v"
+            f" --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file - "
+            "rm --force -v"
         ),
         process_termination_timeout=None,
     )
