@@ -19,7 +19,7 @@ from servicelib.fastapi.http_client_thin import (
     retry_on_errors,
 )
 from servicelib.json_serialization import json_dumps
-from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import (
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
     DEFAULT_LEGACY_TIMEOUT_S,
 )
 
