@@ -13,13 +13,12 @@ from pydantic import (
     Extra,
     Field,
     NonNegativeFloat,
-    PositiveInt,
     validator,
 )
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
 
-class Resources(BaseModel):
+class Resources(BaseModel, frozen=True):
     cpus: NonNegativeFloat
     ram: ByteSize
 
@@ -61,11 +60,10 @@ class Resources(BaseModel):
         return v
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class EC2InstanceType:
     name: InstanceTypeType
-    cpus: PositiveInt
-    ram: ByteSize
+    resources: Resources
 
 
 InstancePrivateDNSName: TypeAlias = str
