@@ -60,11 +60,8 @@ def upgrade():
 
 
 def downgrade():
-    op.add_column(
-        "users", sa.Column("name", sa.VARCHAR(), autoincrement=False, nullable=False)
-    )
-
     connection = op.get_bind()
+    op.drop_constraint("user_name_ukey", "users", type_="unique")
 
     result = connection.execute(sa.text("SELECT id, first_name, last_name FROM users"))
 
@@ -76,6 +73,5 @@ def downgrade():
         )
 
     # delete
-    op.drop_constraint("user_name_ukey", "users", type_="unique")
     op.drop_column("users", "last_name")
     op.drop_column("users", "first_name")
