@@ -3,10 +3,10 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import Callable
+from collections.abc import AsyncIterable, Callable
 from copy import deepcopy
 from datetime import datetime, timedelta
-from typing import Any, AsyncIterable, Final
+from typing import Any, Final
 
 import httpx
 import pytest
@@ -109,4 +109,4 @@ async def mocked_directorv2_service(
     mocked_directorv2_service_api_base.get(
         path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
     ).mock(side_effect=_get_computation)
-    yield mocked_directorv2_service_api_base
+    return mocked_directorv2_service_api_base

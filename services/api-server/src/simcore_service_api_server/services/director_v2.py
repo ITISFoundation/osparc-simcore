@@ -84,7 +84,7 @@ def _handle_errors_context(project_id: UUID):
                     detail=f"Job {project_id} not found",
                 ) from err
 
-            raise err
+            raise
 
         # server errors are logged and re-raised as 503
         assert codes.is_server_error(err.response.status_code)  # nosec

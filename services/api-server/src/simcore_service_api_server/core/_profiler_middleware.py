@@ -14,7 +14,7 @@ def _check_response_headers(
         "application/x-ndjson",
         "application/json",
     }  # nosec
-    headers: dict = dict()
+    headers: dict = {}
     headers[b"content-type"] = b"application/x-ndjson"
     return list(headers.items())
 
@@ -36,7 +36,8 @@ def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, An
         return True
     if (more_body := message.get("more_body")) is not None:
         return not more_body
-    raise RuntimeError("Could not determine if last response")
+    msg = "Could not determine if last response"
+    raise RuntimeError(msg)
 
 
 class ApiServerProfilerMiddleware:

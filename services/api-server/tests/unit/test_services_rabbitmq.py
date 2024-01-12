@@ -7,10 +7,10 @@
 import asyncio
 import logging
 import random
-from collections.abc import AsyncIterable, Callable
+from collections.abc import AsyncIterable, Callable, Iterable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import Final, Iterable
+from typing import Final
 from unittest.mock import AsyncMock
 
 import httpx
@@ -99,7 +99,7 @@ def node_id(faker: Faker) -> NodeID:
 async def log_distributor(
     client: httpx.AsyncClient, app: FastAPI
 ) -> AsyncIterable[LogDistributor]:
-    yield get_log_distributor(app)
+    return get_log_distributor(app)
 
 
 async def test_subscribe_publish_receive_logs(
@@ -219,7 +219,7 @@ async def test_one_job_multiple_registrations(
         pass
 
     await log_distributor.register(project_id, _)
-    with pytest.raises(LogStreamerRegistionConflict) as e_info:
+    with pytest.raises(LogStreamerRegistionConflict):
         await log_distributor.register(project_id, _)
     await log_distributor.deregister(project_id)
 
@@ -314,7 +314,7 @@ def computation_done() -> Iterable[Callable[[], bool]]:
     def _job_done() -> bool:
         return datetime.now() >= stop_time
 
-    yield _job_done
+    return _job_done
 
 
 @pytest.fixture

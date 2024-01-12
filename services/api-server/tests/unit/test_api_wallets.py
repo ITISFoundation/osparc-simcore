@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 import pytest
@@ -43,7 +44,7 @@ async def test_get_wallet(
             response["data"]["walletId"] = path_params["wallet_id"]
         return response
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / capture,
         [_get_wallet_side_effect],
@@ -73,7 +74,7 @@ async def test_get_default_wallet(
     project_tests_dir: Path,
 ):
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / "get_default_wallet.json",
         [],
