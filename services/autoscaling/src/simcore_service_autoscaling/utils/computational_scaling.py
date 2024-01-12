@@ -89,6 +89,6 @@ def try_assigning_task_to_instance_types(
         if assigned_tasks_to_instance_type.has_resources_for_task(
             task_required_resources
         ):
-            assigned_tasks_to_instance_type.assign_task(task)
+            assigned_tasks_to_instance_type.assign_task(task, task_required_resources)
             return True
     return False
