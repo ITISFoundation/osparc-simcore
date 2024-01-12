@@ -795,13 +795,15 @@ async def _autoscale_cluster(
     # let's check if there are still pending tasks or if the reserve was used
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    if (
-        still_unrunnable_tasks
-        or (
-            len(cluster.reserve_drained_nodes)
-            < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-        )
-    ) and cluster.total_number_of_machines() < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES:
+    if still_unrunnable_tasks or (
+        len(cluster.reserve_drained_nodes)
+        < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    ):
+        # we might want to scale up if we do not already have reached the maximum amount of machines
+        # if (
+        #     cluster.total_number_of_machines()
+        #     < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+        # ):
         _logger.info(
             "still %s unrunnable tasks after node activation, try to scale up...",
             len(still_unrunnable_tasks),
@@ -810,6 +812,7 @@ async def _autoscale_cluster(
         cluster = await _scale_up_cluster(
             app, cluster, still_unrunnable_tasks, auto_scaling_mode
         )
+        # give feedback on machine creation
     elif (
         len(still_unrunnable_tasks) == len(unrunnable_tasks) == 0
         and cluster.can_scale_down()

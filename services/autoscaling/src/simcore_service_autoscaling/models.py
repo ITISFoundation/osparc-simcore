@@ -12,12 +12,26 @@ class AssignedTasksToInstance:
     available_resources: Resources
     assigned_tasks: list
 
+    def has_resources_for_task(self, task_resources: Resources) -> bool:
+        return bool(self.available_resources >= task_resources)
+
+    def assign_task(self, task, task_resources: Resources) -> None:
+        self.assigned_tasks.append(task)
+        self.available_resources -= task_resources
+
 
 @dataclass(kw_only=True, slots=True)
 class AssignedTasksToInstanceType:
     instance_type: EC2InstanceType
     assigned_tasks: list
     available_resources: Resources
+
+    def has_resources_for_task(self, task_resources: Resources) -> bool:
+        return bool(self.available_resources >= task_resources)
+
+    def assign_task(self, task, task_resources: Resources) -> None:
+        self.assigned_tasks.append(task)
+        self.available_resources -= task_resources
 
 
 @dataclass(frozen=True)

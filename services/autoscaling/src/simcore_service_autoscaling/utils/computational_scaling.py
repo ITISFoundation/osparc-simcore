@@ -41,7 +41,7 @@ def _compute_tasks_resources(tasks: list[DaskTask]) -> Resources:
 
 async def try_assigning_task_to_instances(
     app: FastAPI,
-    pending_task: DaskTask,
+    task: DaskTask,
     instances_to_tasks: list[AssignedTasksToInstance],
     *,
     notify_progress: bool,
@@ -51,11 +51,11 @@ async def try_assigning_task_to_instances(
     instance_max_time_to_start = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
-    task_required_resources = resources_from_dask_task(pending_task)
+    task_required_resources = resources_from_dask_task(task)
     for assigned_tasks_to_instance in instances_to_tasks:
-        if assigned_tasks_to_instance.available_resources >= task_required_resources:
-            assigned_tasks_to_instance.assigned_tasks.append(pending_task)
-            assigned_tasks_to_instance.available_resources -= task_required_resources
+        if assigned_tasks_to_instance.has_resources_for_task(task_required_resources):
+            assigned_tasks_to_instance.assign_task(task, task_required_resources)
+
             if notify_progress:
                 now = datetime.datetime.now(datetime.timezone.utc)
                 time_since_launch = (
@@ -81,18 +81,14 @@ async def try_assigning_task_to_instances(
 
 
 def try_assigning_task_to_instance_types(
-    pending_task: DaskTask,
+    task: DaskTask,
     instance_types_to_tasks: list[AssignedTasksToInstanceType],
 ) -> bool:
-    task_required_resources = resources_from_dask_task(pending_task)
+    task_required_resources = resources_from_dask_task(task)
     for assigned_tasks_to_instance_type in instance_types_to_tasks:
-        if (
-            assigned_tasks_to_instance_type.available_resources
-            >= task_required_resources
+        if assigned_tasks_to_instance_type.has_resources_for_task(
+            task_required_resources
         ):
-            assigned_tasks_to_instance_type.assigned_tasks.append(pending_task)
-            assigned_tasks_to_instance_type.available_resources -= (
-                task_required_resources
-            )
+            assigned_tasks_to_instance_type.assign_task(task)
             return True
     return False

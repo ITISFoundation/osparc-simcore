@@ -1,7 +1,6 @@
 import datetime
 import logging
 
-from aws_library.ec2.models import Resources
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Task
 from servicelib.utils_formatting import timedelta_as_minute_second
@@ -15,28 +14,22 @@ logger = logging.getLogger(__name__)
 
 
 def try_assigning_task_to_instance_types(
-    pending_task: Task,
+    task: Task,
     instance_types_to_tasks: list[AssignedTasksToInstanceType],
 ) -> bool:
+    task_required_resources = utils_docker.get_max_resources_from_docker_task(task)
     for assigned_tasks_to_instance_type in instance_types_to_tasks:
-        instance_total_resource = Resources(
-            cpus=assigned_tasks_to_instance_type.instance_type.cpus,
-            ram=assigned_tasks_to_instance_type.instance_type.ram,
-        )
-        tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
-            assigned_tasks_to_instance_type.assigned_tasks
-        )
-        if (
-            instance_total_resource - tasks_needed_resources
-        ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
-            assigned_tasks_to_instance_type.assigned_tasks.append(pending_task)
+        if assigned_tasks_to_instance_type.has_resources_for_task(
+            task_required_resources
+        ):
+            assigned_tasks_to_instance_type.assign_task(task)
             return True
     return False
 
 
 async def try_assigning_task_to_instances(
     app: FastAPI,
-    pending_task: Task,
+    task: Task,
     instances_to_tasks: list[AssignedTasksToInstance],
     *,
     notify_progress: bool,
@@ -46,14 +39,10 @@ async def try_assigning_task_to_instances(
     instance_max_time_to_start = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
+    task_required_resources = utils_docker.get_max_resources_from_docker_task(task)
     for assigned_tasks_to_instance in instances_to_tasks:
-        tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
-            assigned_tasks_to_instance.assigned_tasks
-        )
-        if (
-            assigned_tasks_to_instance.available_resources - tasks_needed_resources
-        ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
-            assigned_tasks_to_instance.assigned_tasks.append(pending_task)
+        if assigned_tasks_to_instance.has_resources_for_task(task_required_resources):
+            assigned_tasks_to_instance.assign_task(task, task_required_resources)
             if notify_progress:
                 now = datetime.datetime.now(datetime.timezone.utc)
                 time_since_launch = (
@@ -67,13 +56,13 @@ async def try_assigning_task_to_instances(
 
                 await log_tasks_message(
                     app,
-                    [pending_task],
+                    [task],
                     f"adding machines to the cluster (time waiting: {timedelta_as_minute_second(time_since_launch)}, "
                     f"est. remaining time: {timedelta_as_minute_second(estimated_time_to_completion)})...please wait...",
                 )
                 await progress_tasks_message(
                     app,
-                    [pending_task],
+                    [task],
                     time_since_launch.total_seconds()
                     / instance_max_time_to_start.total_seconds(),
                 )
