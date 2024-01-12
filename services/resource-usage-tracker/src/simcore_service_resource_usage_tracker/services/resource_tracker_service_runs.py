@@ -25,12 +25,11 @@ async def list_service_runs(
     order_by: list[OrderBy] | None = None,  # noqa: ARG001
     filters: ServiceResourceUsagesFilters | None = None,  # noqa: ARG001
 ) -> ServiceRunPage:
+    started_from = None
+    started_until = None
     if filters:
-        started_from = None
-        started_until = None
-    else:
-        started_from = None
-        started_until = None
+        started_from = filters.started_at.from_
+        started_until = filters.started_at.until
 
     # Situation when we want to see all usage of a specific user
     if wallet_id is None and access_all_wallet_usage is None:
@@ -45,6 +44,9 @@ async def list_service_runs(
             wallet_id=None,
             offset=offset,
             limit=limit,
+            started_from=started_from,
+            started_until=started_until,
+            order_by=order_by,
         )
     # Situation when accountant user can see all users usage of the wallet
     elif wallet_id and access_all_wallet_usage is True:
@@ -59,6 +61,9 @@ async def list_service_runs(
             wallet_id=wallet_id,
             offset=offset,
             limit=limit,
+            started_from=started_from,
+            started_until=started_until,
+            order_by=order_by,
         )
     # Situation when regular user can see only his usage of the wallet
     elif wallet_id and access_all_wallet_usage is False:
@@ -73,6 +78,9 @@ async def list_service_runs(
             wallet_id=wallet_id,
             offset=offset,
             limit=limit,
+            started_from=started_from,
+            started_until=started_until,
+            order_by=order_by,
         )
     else:
         msg = "wallet_id and access_all_wallet_usage parameters must be specified together"
