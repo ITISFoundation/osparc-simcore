@@ -5,8 +5,9 @@ Revises: 392a86f2e446
 Create Date: 2024-01-12 06:29:40.364669+00:00
 
 """
-import random
 import re
+import secrets
+import string
 
 import sqlalchemy as sa
 from alembic import op
@@ -35,7 +36,7 @@ def upgrade():
         # from name -> generate name
         new_name = re.sub(r"[^a-zA-Z0-9]", "", name).lower()
         while new_name in used:
-            new_name += f"{random.randint(1000, 9999)}"  # noqa: S311
+            new_name += f"{''.join(secrets.choice(string.digits) for _ in range(4))}"
 
         # from name -> create first_name, last_name
         parts = name.split(SEPARATOR, 1)
