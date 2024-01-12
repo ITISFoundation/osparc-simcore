@@ -1,6 +1,5 @@
 import datetime
 import logging
-from collections.abc import Iterable
 
 from aws_library.ec2.models import Resources
 from fastapi import FastAPI
@@ -8,32 +7,11 @@ from models_library.generated_models.docker_rest_api import Task
 from servicelib.utils_formatting import timedelta_as_minute_second
 
 from ..core.settings import get_application_settings
-from ..models import (
-    AssignedTasksToInstance,
-    AssignedTasksToInstanceType,
-    AssociatedInstance,
-)
+from ..models import AssignedTasksToInstance, AssignedTasksToInstanceType
 from . import utils_docker
 from .rabbitmq import log_tasks_message, progress_tasks_message
 
 logger = logging.getLogger(__name__)
-
-
-def try_assigning_task_to_node(
-    pending_task: Task,
-    instances_to_tasks: Iterable[tuple[AssociatedInstance, list[Task]]],
-) -> bool:
-    for instance, node_assigned_tasks in instances_to_tasks:
-        instance_total_resource = instance.ec2_instance.resources
-        tasks_needed_resources = utils_docker.compute_tasks_needed_resources(
-            node_assigned_tasks
-        )
-        if (
-            instance_total_resource - tasks_needed_resources
-        ) >= utils_docker.get_max_resources_from_docker_task(pending_task):
-            node_assigned_tasks.append(pending_task)
-            return True
-    return False
 
 
 def try_assigning_task_to_instance_types(

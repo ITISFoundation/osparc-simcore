@@ -27,7 +27,6 @@ from simcore_service_autoscaling.utils.computational_scaling import (
     resources_from_dask_task,
     try_assigning_task_to_instance_types,
     try_assigning_task_to_instances,
-    try_assigning_task_to_node,
 )
 
 
@@ -93,13 +92,6 @@ def fake_task(faker: Faker) -> Callable[..., DaskTask]:
     return _creator
 
 
-async def test_try_assigning_task_to_node_with_no_instances(
-    fake_task: Callable[..., DaskTask],
-):
-    task = fake_task()
-    assert try_assigning_task_to_node(task, []) is False
-
-
 @pytest.fixture
 def fake_associated_host_instance(
     host_node: DockerNode,
@@ -109,28 +101,6 @@ def fake_associated_host_instance(
         host_node,
         fake_ec2_instance_data(),
     )
-
-
-async def test_try_assigning_task_to_node(
-    fake_task: Callable[..., DaskTask],
-    fake_associated_host_instance: AssociatedInstance,
-):
-    task = fake_task(required_resources={"CPU": 2})
-    assert fake_associated_host_instance.node.Description
-    assert fake_associated_host_instance.node.Description.Resources
-    # we set the node to have 4 CPUs
-    fake_associated_host_instance.node.Description.Resources.NanoCPUs = int(4e9)
-    instance_to_tasks: list[tuple[AssociatedInstance, list[DaskTask]]] = [
-        (fake_associated_host_instance, [])
-    ]
-    assert try_assigning_task_to_node(task, instance_to_tasks) is True
-    assert instance_to_tasks[0][1] == [task]
-    # this should work again
-    assert try_assigning_task_to_node(task, instance_to_tasks) is True
-    assert instance_to_tasks[0][1] == [task, task]
-    # this should now fail
-    assert try_assigning_task_to_node(task, instance_to_tasks) is False
-    assert instance_to_tasks[0][1] == [task, task]
 
 
 async def test_try_assigning_task_to_instances_with_no_instances(

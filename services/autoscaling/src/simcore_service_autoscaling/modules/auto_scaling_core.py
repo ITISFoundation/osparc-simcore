@@ -221,10 +221,11 @@ async def _activate_drained_nodes(
         # nothing to do
         return [], cluster
 
-    activatable_nodes: list[tuple[AssociatedInstance, list]] = [
-        (
-            node,
-            [],
+    activatable_instances: list[AssignedTasksToInstance] = [
+        AssignedTasksToInstance(
+            instance=node.ec2_instance,
+            available_resources=node.ec2_instance.resources,
+            assigned_tasks=[],
         )
         for node in itertools.chain(
             cluster.drained_nodes, cluster.reserve_drained_nodes
@@ -234,13 +235,19 @@ async def _activate_drained_nodes(
     still_pending_tasks = [
         task
         for task in pending_tasks
-        if not auto_scaling_mode.try_assigning_task_to_node(task, activatable_nodes)
+        if not await auto_scaling_mode.try_assigning_task_to_instances(
+            app, task, activatable_instances, notify_progress=False
+        )
     ]
 
     nodes_to_activate = [
-        (node, assigned_tasks)
-        for node, assigned_tasks in activatable_nodes
-        if assigned_tasks
+        (node, assigned_tasks_to_instance.assigned_tasks)
+        for assigned_tasks_to_instance, node in zip(
+            activatable_instances,
+            itertools.chain(cluster.drained_nodes, cluster.reserve_drained_nodes),
+            strict=True,
+        )
+        if assigned_tasks_to_instance.assigned_tasks
     ]
 
     # activate these nodes now

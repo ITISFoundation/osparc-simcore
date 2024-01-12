@@ -43,13 +43,6 @@ class BaseAutoscaling(ABC):  # pragma: no cover
 
     @staticmethod
     @abstractmethod
-    def try_assigning_task_to_node(
-        task, instances_to_tasks: list[tuple[AssociatedInstance, list]]
-    ) -> bool:
-        ...
-
-    @staticmethod
-    @abstractmethod
     async def try_assigning_task_to_instances(
         app: FastAPI,
         pending_task,

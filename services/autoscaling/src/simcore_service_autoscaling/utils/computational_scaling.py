@@ -1,6 +1,5 @@
 import datetime
 import logging
-from collections.abc import Iterable
 from typing import Final
 
 from aws_library.ec2.models import Resources
@@ -11,12 +10,7 @@ from fastapi import FastAPI
 from servicelib.utils_formatting import timedelta_as_minute_second
 
 from ..core.settings import get_application_settings
-from ..models import (
-    AssignedTasksToInstance,
-    AssignedTasksToInstanceType,
-    AssociatedInstance,
-    DaskTask,
-)
+from ..models import AssignedTasksToInstance, AssignedTasksToInstanceType, DaskTask
 
 _logger = logging.getLogger(__name__)
 
@@ -43,21 +37,6 @@ def _compute_tasks_resources(tasks: list[DaskTask]) -> Resources:
         (resources_from_dask_task(t) for t in tasks),
         Resources.create_as_empty(),
     )
-
-
-def try_assigning_task_to_node(
-    pending_task: DaskTask,
-    instance_to_tasks: Iterable[tuple[AssociatedInstance, list[DaskTask]]],
-) -> bool:
-    task_resources = resources_from_dask_task(pending_task)
-    for instance, node_assigned_tasks in instance_to_tasks:
-        instance_used_resources = _compute_tasks_resources(node_assigned_tasks)
-        if (
-            instance.ec2_instance.resources - instance_used_resources
-        ) >= task_resources:
-            node_assigned_tasks.append(pending_task)
-            return True
-    return False
 
 
 async def try_assigning_task_to_instances(

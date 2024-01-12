@@ -1,5 +1,3 @@
-from collections.abc import Iterable
-
 from aws_library.ec2.models import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
@@ -50,12 +48,6 @@ class DynamicAutoscaling(BaseAutoscaling):
             get_docker_client(app),
             service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
         )
-
-    @staticmethod
-    def try_assigning_task_to_node(
-        task, instances_to_tasks: Iterable[tuple[AssociatedInstance, list]]
-    ) -> bool:
-        return utils.try_assigning_task_to_node(task, instances_to_tasks)
 
     @staticmethod
     async def try_assigning_task_to_instances(
