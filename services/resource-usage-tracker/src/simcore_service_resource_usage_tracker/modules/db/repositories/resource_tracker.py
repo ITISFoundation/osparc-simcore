@@ -243,7 +243,6 @@ class ResourceTrackerRepository(BaseRepository):
                     )
                 )
                 .where(resource_tracker_service_runs.c.product_name == product_name)
-                .order_by(resource_tracker_service_runs.c.started_at.desc())
                 .offset(offset)
                 .limit(limit)
             )
@@ -274,6 +273,11 @@ class ResourceTrackerRepository(BaseRepository):
                         query = query.order_by(sa.asc(item.field))
                     else:
                         query = query.order_by(sa.desc(item.field))
+            else:
+                # Default ordering
+                query = query.order_by(
+                    resource_tracker_service_runs.c.started_at.desc()
+                )
 
             result = await conn.execute(query)
 

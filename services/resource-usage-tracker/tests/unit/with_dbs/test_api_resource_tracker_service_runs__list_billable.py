@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 import httpx
@@ -7,7 +8,12 @@ import sqlalchemy as sa
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunPage,
 )
-from models_library.resource_tracker import CreditTransactionStatus
+from models_library.resource_tracker import (
+    CreditTransactionStatus,
+    ServiceResourceUsagesFilters,
+    StartedAt,
+)
+from models_library.rest_ordering import OrderBy, OrderDirection
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import service_runs
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
@@ -28,7 +34,8 @@ pytest_simcore_ops_services_selection = [
 ]
 
 _USER_ID = 1
-_SERVICE_RUN_ID = "12345"
+_SERVICE_RUN_ID_1 = "12345"
+_SERVICE_RUN_ID_2 = "54321"
 
 
 @pytest.fixture()
@@ -45,8 +52,23 @@ def resource_tracker_setup_db(
             .values(
                 **random_resource_tracker_service_run(
                     user_id=_USER_ID,
-                    service_run_id=_SERVICE_RUN_ID,
+                    service_run_id=_SERVICE_RUN_ID_1,
                     product_name="osparc",
+                    started_at=datetime.now(tz=timezone.utc),
+                )
+            )
+            .returning(resource_tracker_service_runs)
+        )
+        row = result.first()
+        assert row
+        result = con.execute(
+            resource_tracker_service_runs.insert()
+            .values(
+                **random_resource_tracker_service_run(
+                    user_id=_USER_ID,
+                    service_run_id=_SERVICE_RUN_ID_2,
+                    product_name="osparc",
+                    started_at=datetime.now(tz=timezone.utc) - timedelta(minutes=10),
                 )
             )
             .returning(resource_tracker_service_runs)
@@ -59,7 +81,7 @@ def resource_tracker_setup_db(
             .values(
                 **random_resource_tracker_credit_transactions(
                     user_id=_USER_ID,
-                    service_run_id=_SERVICE_RUN_ID,
+                    service_run_id=_SERVICE_RUN_ID_1,
                     product_name="osparc",
                 )
             )
@@ -87,8 +109,8 @@ async def test_list_service_runs_which_was_billed(
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert len(data["items"]) == 1
-    assert data["total"] == 1
+    assert len(data["items"]) == 2
+    assert data["total"] == 2
 
     assert data["items"][0]["credit_cost"] < 0
     assert data["items"][0]["transaction_status"] in list(CreditTransactionStatus)
@@ -105,16 +127,74 @@ async def test_rpc_list_service_runs_which_was_billed(
         rpc_client,
         user_id=_USER_ID,
         product_name="osparc",
-        # limit=20,
-        # offset=0,
-        # wallet_id=1,
-        # access_all_wallet_usage=None,
-        # order_by=None,
-        # filters=None,
     )
     assert isinstance(result, ServiceRunPage)
 
-    assert len(result.items) == 1
-    assert result.total == 1
+    assert len(result.items) == 2
+    assert result.total == 2
     assert result.items[0].credit_cost < 0
     assert result.items[0].transaction_status in list(CreditTransactionStatus)
+
+
+@pytest.mark.rpc_test()
+async def test_rpc_list_service_runs_with_filtered_by__started_at(
+    mocked_redis_server: None,
+    postgres_db: sa.engine.Engine,
+    resource_tracker_setup_db: dict,
+    rpc_client: RabbitMQRPCClient,
+):
+    result = await service_runs.get_service_run_page(
+        rpc_client,
+        user_id=_USER_ID,
+        product_name="osparc",
+        filters=ServiceResourceUsagesFilters(
+            started_at=StartedAt(
+                from_=datetime.now(timezone.utc) - timedelta(minutes=50),
+                until=datetime.now(timezone.utc) - timedelta(minutes=40),
+            )
+        ),
+    )
+    assert isinstance(result, ServiceRunPage)
+    assert len(result.items) == 0
+    assert result.total == 0
+
+    result = await service_runs.get_service_run_page(
+        rpc_client,
+        user_id=_USER_ID,
+        product_name="osparc",
+        filters=ServiceResourceUsagesFilters(
+            started_at=StartedAt(
+                from_=datetime.now(timezone.utc) - timedelta(minutes=15),
+                until=datetime.now(timezone.utc) - timedelta(minutes=5),
+            )
+        ),
+    )
+    assert isinstance(result, ServiceRunPage)
+    assert len(result.items) == 1
+    assert result.total == 1
+
+
+@pytest.mark.parametrize(
+    "direction,service_run_id",
+    [(OrderDirection.DESC, _SERVICE_RUN_ID_1), (OrderDirection.ASC, _SERVICE_RUN_ID_2)],
+)
+@pytest.mark.rpc_test()
+async def test_rpc_list_service_runs_with_order_by__started_at(
+    mocked_redis_server: None,
+    postgres_db: sa.engine.Engine,
+    resource_tracker_setup_db: dict,
+    rpc_client: RabbitMQRPCClient,
+    direction: OrderDirection,
+    service_run_id: str,
+):
+    result = await service_runs.get_service_run_page(
+        rpc_client,
+        user_id=_USER_ID,
+        product_name="osparc",
+        order_by=[OrderBy(field="started_at", direction=direction)],
+    )
+    assert isinstance(result, ServiceRunPage)
+    assert len(result.items) == 2
+    assert result.total == 2
+
+    assert result.items[0].service_run_id == service_run_id
