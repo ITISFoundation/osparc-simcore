@@ -5,10 +5,14 @@
 
 import random
 import re
+from datetime import datetime
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
+from aiopg.sa.result import RowProxy
+from models_library.users import UserID
 
+from .errors import UniqueViolation
 from .models.users import UserRole, users
 
 
@@ -32,6 +36,45 @@ def generate_random_suffix() -> str:
 
 
 class UsersRepo:
+    @staticmethod
+    async def new_user(
+        conn: SAConnection,
+        email: str,
+        password_hash: str,
+        status: str,
+        expires_at: datetime | None,
+    ) -> RowProxy:
+        data = {
+            "name": generate_username_from_email(email),
+            "email": email,
+            "password_hash": password_hash,
+            "status": status,
+            "role": UserRole.USER,
+            "expires_at": expires_at,
+        }
+        try:
+            user_id: UserID = await conn.scalar(
+                users.insert().values(data).returning(users.c.id)
+            )
+        except UniqueViolation:
+            data["name"] += generate_random_suffix()
+            user_id = await conn.scalar(
+                users.insert().values(data).returning(users.c.id)
+            )
+
+        result = await conn.execute(
+            sa.select(
+                users.c.id,
+                users.c.name,
+                users.c.email,
+                users.c.role,
+                users.c.status,
+            ).where(users.c.id == user_id)
+        )
+        row = await result.first()
+        assert row  # nosec
+        return row
+
     @staticmethod
     async def get_role(conn: SAConnection, user_id: int) -> UserRole:
         value: UserRole | None = await conn.scalar(

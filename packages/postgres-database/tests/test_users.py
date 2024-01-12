@@ -21,6 +21,7 @@ from simcore_postgres_database.models.users import (
     users,
 )
 from simcore_postgres_database.utils_users import (
+    UsersRepo,
     generate_random_suffix,
     generate_username_from_email,
 )
@@ -140,6 +141,17 @@ async def test_unique_username(
     data["name"] += generate_random_suffix()
     data["email"] = faker.email()
     await connection.scalar(users.insert().values(data).returning(users.c.id))
+
+    # shall not raise
+    new_user = await UsersRepo.new_user(
+        connection,
+        email=data["email"],
+        password_hash=data["password_hash"],
+        status=data["status"],
+        expires_at=data["expires_at"],
+    )
+    assert new_user.email == data["email"]
+    assert new_user.name != data["name"]
 
 
 async def test_trial_accounts(connection: SAConnection, clean_users_db_table: None):
