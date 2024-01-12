@@ -3,7 +3,6 @@ from enum import auto
 import httpx
 from models_library.utils.enums import StrAutoEnum
 from pydantic.errors import PydanticErrorMixin
-from servicelib.error_codes import create_error_code
 from servicelib.fastapi.httpx_utils import to_httpx_command
 
 
@@ -12,9 +11,6 @@ class _BaseAppError(PydanticErrorMixin, ValueError):
     def get_full_class_name(cls) -> str:
         # Can be used as unique code identifier
         return f"{cls.__module__}.{cls.__name__}"
-
-    def get_error_code(self):
-        return create_error_code(self)
 
 
 class BackendEnum(StrAutoEnum):
