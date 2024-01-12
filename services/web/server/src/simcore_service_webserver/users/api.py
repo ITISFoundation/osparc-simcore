@@ -15,7 +15,7 @@ from aiopg.sa.result import RowProxy
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from pydantic import ValidationError, parse_obj_as
-from simcore_postgres_database.models.users import UserNameConverter, UserRole
+from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import GroupType, groups, user_to_groups, users
 from ..db.plugin import get_database_engine
@@ -114,32 +114,16 @@ async def update_user_profile(
     """
     :raises UserNotFoundError:
     """
-
-    engine = get_database_engine(app)
     user_id = _parse_as_user(user_id)
 
-    async with engine.acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         first_name = profile_update.first_name
         last_name = profile_update.last_name
-        if not first_name or not last_name:
-            name = await conn.scalar(
-                sa.select(users.c.name).where(users.c.id == user_id)
-            )
-            try:
-                first_name, last_name = name.rsplit(".", maxsplit=2)
-            except ValueError:
-                first_name = name
 
-        # update name
-        name = UserNameConverter.get_name(
-            first_name=profile_update.first_name or first_name,
-            last_name=profile_update.last_name or last_name,
-        )
         resp = await conn.execute(
-            # pylint: disable=no-value-for-parameter
             users.update()
             .where(users.c.id == user_id)
-            .values(name=name)
+            .values(first_name=first_name, last_name=last_name)
         )
         assert resp.rowcount == 1  # nosec
 
@@ -215,28 +199,30 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
     await clean_auth_policy_cache(app)
 
 
-class UserNameDict(TypedDict):
+class FullNameDict(TypedDict):
     first_name: str
     last_name: str
 
 
-async def get_user_name(app: web.Application, user_id: UserID) -> UserNameDict:
+async def get_user_fullname(app: web.Application, user_id: UserID) -> FullNameDict:
     """
     :raises UserNotFoundError:
     """
-    engine = get_database_engine(app)
     user_id = _parse_as_user(user_id)
-    async with engine.acquire() as conn:
-        user_name = await conn.scalar(
-            sa.select(users.c.name).where(users.c.id == user_id)
+
+    async with get_database_engine(app).acquire() as conn:
+        result = await conn.execute(
+            sa.select(users.c.first_name, users.c.last_name).where(
+                users.c.id == user_id
+            )
         )
-        if not user_name:
+        user = await result.first()
+        if not user:
             raise UserNotFoundError(uid=user_id)
 
-        full_name = UserNameConverter.get_full_name(user_name)
-        return UserNameDict(
-            first_name=full_name.first_name,
-            last_name=full_name.last_name,
+        return FullNameDict(
+            first_name=user.first_name,
+            last_name=user.last_name,
         )
 
 

@@ -20,7 +20,7 @@ from simcore_service_webserver.projects.lock import (
     is_project_locked,
     lock_project,
 )
-from simcore_service_webserver.users.api import UserNameDict
+from simcore_service_webserver.users.api import FullNameDict
 
 
 @pytest.fixture()
@@ -41,7 +41,7 @@ async def test_lock_project(
     faker: Faker,
 ):
     assert client.app
-    user_name: UserNameDict = {
+    user_name: FullNameDict = {
         "first_name": faker.first_name(),
         "last_name": faker.last_name(),
     }
@@ -78,7 +78,7 @@ async def test_lock_already_locked_project_raises(
     faker: Faker,
 ):
     assert client.app
-    user_name: UserNameDict = {
+    user_name: FullNameDict = {
         "first_name": faker.first_name(),
         "last_name": faker.last_name(),
     }
@@ -109,7 +109,7 @@ async def test_raise_exception_while_locked_release_lock(
     faker: Faker,
 ):
     assert client.app
-    user_name: UserNameDict = {
+    user_name: FullNameDict = {
         "first_name": faker.first_name(),
         "last_name": faker.last_name(),
     }
@@ -143,7 +143,7 @@ async def test_is_project_locked(
 ):
     assert client.app
     assert await is_project_locked(client.app, project_uuid) == False
-    user_name: UserNameDict = {
+    user_name: FullNameDict = {
         "first_name": faker.first_name(),
         "last_name": faker.last_name(),
     }
@@ -178,7 +178,7 @@ async def test_get_project_locked_state(
     assert await get_project_locked_state(client.app, project_uuid) == None
 
     assert await is_project_locked(client.app, project_uuid) == False
-    user_name: UserNameDict = {
+    user_name: FullNameDict = {
         "first_name": faker.first_name(),
         "last_name": faker.last_name(),
     }

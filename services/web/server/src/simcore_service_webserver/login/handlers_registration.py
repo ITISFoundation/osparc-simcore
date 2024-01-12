@@ -381,7 +381,7 @@ async def register_phone(request: web.Request):
             twilo_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            user_name=get_user_name_from_email(registration.email),
+            first_name=get_user_name_from_email(registration.email),
         )
 
         message = MSG_2FA_CODE_SENT.format(

@@ -5,11 +5,7 @@ from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import UserID
 from pydantic import parse_obj_as
-from simcore_postgres_database.models.users import (
-    FullNameTuple,
-    UserNameConverter,
-    UserStatus,
-)
+from simcore_postgres_database.models.users import UserStatus
 
 from ..db.plugin import get_database_engine
 from ._db import get_user_or_raise
@@ -32,7 +28,7 @@ async def list_user_permissions(
 class UserCredentialsTuple(NamedTuple):
     email: LowerCaseEmailStr
     password_hash: str
-    full_name: FullNameTuple
+    display_name: str
 
 
 async def get_user_credentials(
@@ -41,13 +37,18 @@ async def get_user_credentials(
     row = await get_user_or_raise(
         get_database_engine(app),
         user_id=user_id,
-        return_column_names=["name", "email", "password_hash"],
+        return_column_names=[
+            "name",
+            "first_name",
+            "email",
+            "password_hash",
+        ],
     )
 
     return UserCredentialsTuple(
         email=parse_obj_as(LowerCaseEmailStr, row.email),
         password_hash=row.password_hash,
-        full_name=UserNameConverter.get_full_name(row.name),
+        display_name=row.first_name or row.name.capitalize(),
     )
 
 

@@ -56,6 +56,8 @@ class _ProfileCommon(BaseModel):
     last_name: str | None = None
 
     class Config:
+        str_strip_whitespace: bool = True
+        str_max_length: int = 50
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "first_name": "Pedro",
@@ -65,7 +67,7 @@ class _ProfileCommon(BaseModel):
 
 
 class ProfileUpdate(_ProfileCommon):
-    pass
+    ...
 
 
 class ProfileGet(_ProfileCommon):

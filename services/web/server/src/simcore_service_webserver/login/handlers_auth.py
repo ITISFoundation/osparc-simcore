@@ -139,7 +139,7 @@ async def login(request: web.Request):
             twilo_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            user_name=user["name"],
+            first_name=user["first_name"],
         )
 
         return envelope_response(

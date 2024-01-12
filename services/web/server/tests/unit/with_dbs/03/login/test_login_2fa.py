@@ -316,7 +316,7 @@ async def test_send_email_code(
         user_email=user_email,
         support_email=support_email,
         code=code,
-        user_name=user_name,
+        first_name=faker.first_name(),
     )
 
     out, _ = capsys.readouterr()
