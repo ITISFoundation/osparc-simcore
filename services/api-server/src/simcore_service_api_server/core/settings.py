@@ -134,7 +134,7 @@ class ApplicationSettings(BasicSettings):
         auto_default_from_env=True
     )
     API_SERVER_MAX_LOG_CHECK_SECONDS: NonNegativeInt = 30
-    API_SERVER_ADD_METRICS_ENDPOINT: bool = True
+    API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     # DEV-TOOLS
     API_SERVER_DEV_HTTP_CALLS_LOGS_PATH: Path | None = Field(
         default=None,
