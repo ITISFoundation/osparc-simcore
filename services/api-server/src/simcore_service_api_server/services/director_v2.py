@@ -1,26 +1,30 @@
 import logging
 from contextlib import contextmanager
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeAlias
 from uuid import UUID
 
+import httpx
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
-from httpx import HTTPStatusError, codes
+from httpx import codes
 from models_library.clusters import ClusterID
 from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as
+from servicelib.error_codes import create_error_code
+from servicelib.fastapi.httpx_utils import to_httpx_command
 from simcore_service_api_server.db.repositories.groups_extra_properties import (
     GroupsExtraPropertiesRepository,
 )
 from starlette import status
 
+from ..core.errors import DirectorError
 from ..core.settings import DirectorV2Settings
 from ..models.schemas.jobs import PercentageInt
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 # API MODELS ---------------------------------------------
@@ -59,10 +63,8 @@ class TaskLogFileGet(BaseModel):
     )
 
 
-NodeName = str
-DownloadLink = AnyUrl
-
-# API CLASS ---------------------------------------------
+NodeName: TypeAlias = str
+DownloadLink: TypeAlias = AnyUrl
 
 
 @contextmanager
@@ -70,32 +72,53 @@ def _handle_errors_context(project_id: UUID):
     try:
         yield
 
-    # except ValidationError
-    except HTTPStatusError as err:
-        msg = (
-            f"Failed {err.request.url} with status={err.response.status_code}: {err.response.json()}",
-        )
+    except httpx.HTTPStatusError as err:
         if codes.is_client_error(err.response.status_code):
-            # client errors are mapped
-            logger.debug(msg)
             if err.response.status_code == status.HTTP_404_NOT_FOUND:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Job {project_id} not found",
                 ) from err
 
-            raise
+            # FIXME: what to do with these
+            raise DirectorError.from_httpx_status_error(err) from err
 
-        # server errors are logged and re-raised as 503
-        assert codes.is_server_error(err.response.status_code)  # nosec
+        else:
+            # server errors are logged and re-raised as 503
+            assert codes.is_server_error(err.response.status_code)  # nosec
 
-        logger.exception(
-            "director-v2 service failed: %s. Re-rasing as service unavailable (503)",
-            msg,
+            oec = create_error_code(err)
+            err_detail = (
+                f"Service handling job '{project_id}' unexpectedly failed [{oec}]"
+            )
+            _logger.exception(
+                "%s: %s",
+                err_detail,
+                DirectorError.from_httpx_status_error(err).get_debug_message(),
+                extra={"error_code": oec},
+            )
+
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=err_detail,
+            ) from err
+
+    except httpx.TimeoutException as err:
+        oec = create_error_code(err)
+        err_detail = (
+            f"Service handling job operation on '{project_id}' timed out [{oec}]"
         )
+        _logger.exception(
+            "%s: %s",
+            err_detail,
+            to_httpx_command(err.request),
+            extra={"error_code": oec},
+        )
+
+        # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/504
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Director service failed",
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=err_detail,
         ) from err
 
 
@@ -126,7 +149,9 @@ class DirectorV2Api(BaseServiceClientApi):
         groups_extra_properties_repository: GroupsExtraPropertiesRepository,
         cluster_id: ClusterID | None = None,
     ) -> ComputationTaskGet:
+
         with _handle_errors_context(project_id):
+
             extras = {}
 
             use_on_demand_clusters = (
@@ -155,56 +180,63 @@ class DirectorV2Api(BaseServiceClientApi):
     async def get_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
-        response = await self.client.get(
-            f"/v2/computations/{project_id}",
-            params={
-                "user_id": user_id,
-            },
-        )
-        response.raise_for_status()
-        return ComputationTaskGet(**response.json())
+
+        with _handle_errors_context(project_id):
+
+            response = await self.client.get(
+                f"/v2/computations/{project_id}",
+                params={
+                    "user_id": user_id,
+                },
+            )
+            response.raise_for_status()
+
+            return ComputationTaskGet(**response.json())
 
     async def stop_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
-        response = await self.client.post(
-            f"/v2/computations/{project_id}:stop",
-            json={
-                "user_id": user_id,
-            },
-        )
+        with _handle_errors_context(project_id):
+            response = await self.client.post(
+                f"/v2/computations/{project_id}:stop",
+                json={
+                    "user_id": user_id,
+                },
+            )
 
-        return ComputationTaskGet(**response.json())
+            return ComputationTaskGet(**response.json())
 
     async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
-        await self.client.request(
-            "DELETE",
-            f"/v2/computations/{project_id}",
-            json={
-                "user_id": user_id,
-                "force": True,
-            },
-        )
+        with _handle_errors_context(project_id):
+            await self.client.request(
+                "DELETE",
+                f"/v2/computations/{project_id}",
+                json={
+                    "user_id": user_id,
+                    "force": True,
+                },
+            )
 
     async def get_computation_logs(
         self, user_id: PositiveInt, project_id: UUID
     ) -> dict[NodeName, DownloadLink]:
-        response = await self.client.get(
-            f"/v2/computations/{project_id}/tasks/-/logfile",
-            params={
-                "user_id": user_id,
-            },
-        )
+        with _handle_errors_context(project_id):
+            response = await self.client.get(
+                f"/v2/computations/{project_id}/tasks/-/logfile",
+                params={
+                    "user_id": user_id,
+                },
+            )
 
-        # probably not found
-        response.raise_for_status()
+            # probably not found
+            response.raise_for_status()
 
-        node_to_links: dict[NodeName, DownloadLink] = {}
-        for r in parse_raw_as(list[TaskLogFileGet], response.text or "[]"):
-            if r.download_link:
-                node_to_links[f"{r.task_id}"] = r.download_link
+            node_to_links: dict[NodeName, DownloadLink] = {}
+            for r in parse_raw_as(list[TaskLogFileGet], response.text or "[]"):
+                if r.download_link:
+                    node_to_links[f"{r.task_id}"] = r.download_link
 
-        return node_to_links
+            return node_to_links
 
 
 # MODULES APP SETUP -------------------------------------------------------------

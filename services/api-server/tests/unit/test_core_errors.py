@@ -10,7 +10,7 @@ import pytest
 import respx
 from fastapi import status
 from httpx import AsyncClient
-from simcore_service_api_server.core.errors import BackendEnum, BackendServiceError
+from simcore_service_api_server.core.errors import BackendEnum, DirectorError
 
 
 @pytest.fixture
@@ -49,9 +49,8 @@ async def test_backend_error(client: AsyncClient):
         response.raise_for_status()
 
     except httpx.HTTPStatusError as err:
-        service_error = BackendServiceError.from_httpx_status_error(
-            service=BackendEnum.DIRECTOR, error=err
-        )
+
+        service_error = DirectorError.from_httpx_status_error(err)
 
         assert hasattr(service_error, "http_status_error")  # auto-injected as context
 
