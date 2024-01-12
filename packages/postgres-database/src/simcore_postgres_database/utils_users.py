@@ -10,7 +10,6 @@ from datetime import datetime
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.users import UserID
 
 from .errors import UniqueViolation
 from .models.users import UserRole, users
@@ -53,7 +52,7 @@ class UsersRepo:
             "expires_at": expires_at,
         }
         try:
-            user_id: UserID = await conn.scalar(
+            user_id = await conn.scalar(
                 users.insert().values(data).returning(users.c.id)
             )
         except UniqueViolation:

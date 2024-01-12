@@ -14,8 +14,6 @@ from pytest_simcore.helpers.rawdata_fakers import random_user
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.users import (
     _USER_ROLE_TO_LEVEL,
-    FullNameTuple,
-    UserNameConverter,
     UserRole,
     UserStatus,
     users,
@@ -190,24 +188,3 @@ async def test_trial_accounts(connection: SAConnection, clean_users_db_table: No
     await connection.execute(
         users.update().values(status=UserStatus.EXPIRED).where(users.c.id == user_id)
     )
-
-
-@pytest.mark.parametrize(
-    "first_name,last_name",
-    [
-        ("Erdem", "Ofli"),
-        ("", "Ofli"),
-        ("Erdem", ""),
-        ("Dr. Erdem", "Ofli"),
-        ("Erdem", "Ofli PhD."),
-    ],
-)
-def test_user_name_conversions(first_name: str, last_name: str):
-    # as 'update_user_profile'
-    full_name = FullNameTuple(first_name, last_name)
-
-    # gets name
-    name = UserNameConverter.get_name(**full_name._asdict())
-
-    # back to full_name
-    assert UserNameConverter.get_full_name(name) == full_name
