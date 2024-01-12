@@ -3,8 +3,9 @@
 """
 
 
-import random
 import re
+import secrets
+import string
 from datetime import datetime
 
 import sqlalchemy as sa
@@ -31,7 +32,7 @@ def generate_username_from_email(email: str) -> str:
 
 
 def generate_random_suffix() -> str:
-    return f"_{random.randint(1000, 9999)}"  # noqa: S311
+    return f"_{''.join(secrets.choice(string.digits) for _ in range(4))}"
 
 
 class UsersRepo:
