@@ -72,7 +72,7 @@ def random_user(
     assert set(overrides.keys()).issubset({c.name for c in users.columns})
 
     data = {
-        "username": faker.user_name(),
+        "name": faker.user_name(),
         "email": faker.email().lower(),
         "password_hash": _DEFAULT_HASH,
         "status": UserStatus.ACTIVE,

@@ -112,7 +112,7 @@ async def test_unique_username(
     data = random_user(
         faker,
         status=UserStatus.ACTIVE,
-        username="pcrespov",
+        name="pcrespov",
         email="some-fanky-name@email.com",
         first_name="Pedro",
         last_name="Crespo Valero",
@@ -124,20 +124,20 @@ async def test_unique_username(
     assert user
 
     assert user.id == user_id
-    assert user.username == "pcrespov"
+    assert user.name == "pcrespov"
 
-    # same username fails
+    # same name fails
     with pytest.raises(UniqueViolation):
         data["email"] = faker.email()
         await connection.scalar(users.insert().values(data).returning(users.c.id))
 
-    # generate new username
-    data["username"] = generate_username_from_email(user.email)
+    # generate new name
+    data["name"] = generate_username_from_email(user.email)
     data["email"] = faker.email()
     await connection.scalar(users.insert().values(data).returning(users.c.id))
 
     # and another one
-    data["username"] += generate_random_suffix()
+    data["name"] += generate_random_suffix()
     data["email"] = faker.email()
     await connection.scalar(users.insert().values(data).returning(users.c.id))
 

@@ -77,18 +77,26 @@ users = sa.Table(
         doc="Primary key index for user identifier",
     ),
     sa.Column(
-        "username",
-        sa.String(50),
+        "name",
+        sa.String(),
         nullable=False,
-        doc="Unique user friendly identifier. E.g. pcrespov, sanderegg, GitHK, ...",
+        doc="username is a unique short user friendly identifier e.g. pcrespov, sanderegg, GitHK, ...",
     ),
-    sa.Column("first_name", sa.String(50)),
-    sa.Column("last_name", sa.String(50)),
+    sa.Column(
+        "first_name",
+        sa.String(50),
+        doc="User's first name",
+    ),
+    sa.Column(
+        "last_name",
+        sa.String(50),
+        doc="User's last/family name",
+    ),
     sa.Column(
         "email",
-        sa.String,
+        sa.String(50),
         nullable=False,
-        doc="User email is used as username since it is a unique human-readable identifier",
+        doc="Validated email",
     ),
     sa.Column(
         "phone",
@@ -146,7 +154,7 @@ users = sa.Table(
     ),
     # ---------------------------
     sa.PrimaryKeyConstraint("id", name="user_pkey"),
-    sa.UniqueConstraint("username", name="user_username_ukey"),
+    sa.UniqueConstraint("name", name="user_name_ukey"),
     sa.UniqueConstraint("email", name="user_login_key"),
     sa.UniqueConstraint(
         "phone",
@@ -222,13 +230,13 @@ DECLARE
 BEGIN
     IF TG_OP = 'INSERT' THEN
         -- set primary group
-        INSERT INTO "groups" ("name", "description", "type") VALUES (NEW.username, 'primary group', 'PRIMARY') RETURNING gid INTO group_id;
+        INSERT INTO "groups" ("name", "description", "type") VALUES (NEW.name, 'primary group', 'PRIMARY') RETURNING gid INTO group_id;
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, group_id);
         UPDATE "users" SET "primary_gid" = group_id WHERE "id" = NEW.id;
-        -- set everyone goup
+        -- set everyone group
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, (SELECT "gid" FROM "groups" WHERE "type" = 'EVERYONE'));
     ELSIF TG_OP = 'UPDATE' THEN
-        UPDATE "groups" SET "name" = NEW.username WHERE "gid" = NEW.primary_gid;
+        UPDATE "groups" SET "name" = NEW.name WHERE "gid" = NEW.primary_gid;
     ELSEIF TG_OP = 'DELETE' THEN
         DELETE FROM "groups" WHERE "gid" = OLD.primary_gid;
     END IF;
@@ -237,7 +245,11 @@ END; $$ LANGUAGE 'plpgsql';
 """
 )
 
-sa.event.listen(users, "after_create", set_user_groups_procedure)
+sa.event.listen(
+    users,
+    "after_create",
+    set_user_groups_procedure,
+)
 sa.event.listen(
     users,
     "after_create",
