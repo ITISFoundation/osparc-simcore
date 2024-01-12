@@ -18,7 +18,7 @@ async def get_user_by_email(app: web.Application, *, email: str) -> dict:
     return user
 
 
-async def create_standard_user(
+async def create_user(
     app: web.Application,
     *,
     email: str,

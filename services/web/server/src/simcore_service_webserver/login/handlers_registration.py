@@ -214,7 +214,7 @@ async def register(request: web.Request):
             product=product,
         )
     else:
-        user = await _auth_api.create_standard_user(
+        user = await _auth_api.create_user(
             request.app,
             email=registration.email,
             password=registration.password.get_secret_value(),

@@ -140,16 +140,29 @@ async def test_unique_username(
     data["email"] = faker.email()
     await connection.scalar(users.insert().values(data).returning(users.c.id))
 
-    # shall not raise
-    new_user = await UsersRepo.new_user(
-        connection,
-        email=data["email"],
-        password_hash=data["password_hash"],
-        status=data["status"],
-        expires_at=data["expires_at"],
-    )
+
+async def test_new_user(
+    connection: SAConnection, faker: Faker, clean_users_db_table: None
+):
+    data = {
+        "email": faker.email(),
+        "password_hash": "foo",
+        "status": UserStatus.ACTIVE,
+        "expires_at": datetime.utcnow(),
+    }
+    new_user = await UsersRepo.new_user(connection, **data)
+
     assert new_user.email == data["email"]
-    assert new_user.name != data["name"]
+    assert new_user.status == data["status"]
+    assert new_user.role == UserRole.USER
+
+    other_email = f"{new_user.name}@other-domain.com"
+    assert generate_username_from_email(other_email) == new_user.name
+    other_data = {**data, "email": other_email}
+
+    other_user = await UsersRepo.new_user(connection, **other_data)
+    assert other_user.email != new_user.email
+    assert other_user.name != new_user.name
 
 
 async def test_trial_accounts(connection: SAConnection, clean_users_db_table: None):
