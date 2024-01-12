@@ -10,7 +10,6 @@ import re
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.exc import IntegrityError
 
 # revision identifiers, used by Alembic.
 revision = "f9f9a650bf4b"
@@ -29,9 +28,14 @@ def upgrade():
     # fill new and update existing
     connection = op.get_bind()
     result = connection.execute(sa.text("SELECT id, name FROM users"))
+
+    used = set()
+
     for user_id, name in result:
         # from name -> generate name
         new_name = re.sub(r"[^a-zA-Z0-9]", "", name).lower()
+        while new_name in used:
+            new_name += f"{random.randint(1000, 9999)}"  # noqa: S311
 
         # from name -> create first_name, last_name
         parts = name.split(SEPARATOR, 1)
@@ -48,11 +52,8 @@ def upgrade():
             "uname": new_name,
         }
 
-        try:
-            connection.execute(query, values)
-        except IntegrityError:
-            values["uname"] = f"{new_name}_{random.randint(1000, 9999)}"  # noqa: S311
-            connection.execute(query, values)
+        connection.execute(query, values)
+        used.add(new_name)
 
     op.create_unique_constraint("user_name_ukey", "users", ["name"])
 
