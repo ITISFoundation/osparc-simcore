@@ -18,7 +18,7 @@ from aws_library.ec2.models import (
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.generated_models.docker_rest_api import Node, NodeState
-from servicelib.logging_utils import log_catch
+from servicelib.logging_utils import log_catch, log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import (
@@ -292,7 +292,7 @@ async def _try_assign_task_to_instances(
         drained_instances_to_tasks,
         needed_new_instance_types_for_tasks,
     )
-    # try to assign the task to one of the active, pending or net created instances
+    # try to assign the task to one of the active, pending or newly created instances
     if (
         await auto_scaling_mode.try_assigning_task_to_instances(
             app,
@@ -353,61 +353,69 @@ async def _find_needed_instances(
         for i in cluster.drained_nodes
     ]
     needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType] = []
-    for task in pending_tasks:
-        task_defined_ec2_type = await auto_scaling_mode.get_task_defined_instance(
-            app, task
-        )
-        _logger.info(
-            "task %s %s",
-            task,
-            f"defines ec2 type as {task_defined_ec2_type}"
-            if task_defined_ec2_type
-            else "does NOT define ec2 type",
-        )
-        if await _try_assign_task_to_instances(
-            app,
-            task,
-            auto_scaling_mode,
-            task_defined_ec2_type,
-            active_ec2s_to_tasks,
-            pending_ec2s_to_tasks,
-            drained_ec2s_to_tasks,
-            needed_new_instance_types_for_tasks,
-        ):
-            continue
-
-        # so we need to find what we can create now
-        try:
-            # check if exact instance type is needed first
-            if task_defined_ec2_type:
-                defined_ec2 = find_selected_instance_type_for_task(
-                    task_defined_ec2_type, available_ec2_types, auto_scaling_mode, task
-                )
-                needed_new_instance_types_for_tasks.append(
-                    AssignedTasksToInstanceType(
-                        instance_type=defined_ec2, assigned_tasks=[task]
-                    )
-                )
-            else:
-                # we go for best fitting type
-                best_ec2_instance = utils_ec2.find_best_fitting_ec2_instance(
-                    available_ec2_types,
-                    auto_scaling_mode.get_max_resources_from_task(task),
-                    score_type=utils_ec2.closest_instance_policy,
-                )
-                needed_new_instance_types_for_tasks.append(
-                    AssignedTasksToInstanceType(
-                        instance_type=best_ec2_instance, assigned_tasks=[task]
-                    )
-                )
-        except Ec2InstanceNotFoundError:
-            _logger.exception(
-                "Task %s needs more resources than any EC2 instance "
-                "can provide with the current configuration. Please check!",
-                f"{task}",
+    with log_context(_logger, logging.DEBUG, msg="finding needed instances"):
+        for task in pending_tasks:
+            task_defined_ec2_type = await auto_scaling_mode.get_task_defined_instance(
+                app, task
             )
-        except Ec2InstanceInvalidError:
-            _logger.exception("Unexpected error:")
+            _logger.debug(
+                "task %s %s",
+                task,
+                f"defines ec2 type as {task_defined_ec2_type}"
+                if task_defined_ec2_type
+                else "does NOT define ec2 type",
+            )
+            if await _try_assign_task_to_instances(
+                app,
+                task,
+                auto_scaling_mode,
+                task_defined_ec2_type,
+                active_ec2s_to_tasks,
+                pending_ec2s_to_tasks,
+                drained_ec2s_to_tasks,
+                needed_new_instance_types_for_tasks,
+            ):
+                continue
+
+            # so we need to find what we can create now
+            try:
+                # check if exact instance type is needed first
+                if task_defined_ec2_type:
+                    defined_ec2 = find_selected_instance_type_for_task(
+                        task_defined_ec2_type,
+                        available_ec2_types,
+                        auto_scaling_mode,
+                        task,
+                    )
+                    needed_new_instance_types_for_tasks.append(
+                        AssignedTasksToInstanceType(
+                            instance_type=defined_ec2,
+                            assigned_tasks=[task],
+                            available_resources=defined_ec2.resources,
+                        )
+                    )
+                else:
+                    # we go for best fitting type
+                    best_ec2_instance = utils_ec2.find_best_fitting_ec2_instance(
+                        available_ec2_types,
+                        auto_scaling_mode.get_task_required_resources(task),
+                        score_type=utils_ec2.closest_instance_policy,
+                    )
+                    needed_new_instance_types_for_tasks.append(
+                        AssignedTasksToInstanceType(
+                            instance_type=best_ec2_instance,
+                            assigned_tasks=[task],
+                            available_resources=best_ec2_instance.resources,
+                        )
+                    )
+            except Ec2InstanceNotFoundError:
+                _logger.exception(
+                    "Task %s needs more resources than any EC2 instance "
+                    "can provide with the current configuration. Please check!",
+                    f"{task}",
+                )
+            except Ec2InstanceInvalidError:
+                _logger.exception("Unexpected error:")
 
     num_instances_per_type = collections.defaultdict(
         int,

@@ -7,7 +7,6 @@ from aws_library.ec2.models import (
     EC2InstanceBootSpecific,
     EC2InstanceData,
     EC2InstanceType,
-    Resources,
 )
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
@@ -202,12 +201,13 @@ def find_selected_instance_type_for_task(
     selected_instance = filtered_instances[0]
 
     # check that the assigned resources and the machine resource fit
-    if auto_scaling_mode.get_max_resources_from_task(task) > Resources(
-        cpus=selected_instance.cpus, ram=selected_instance.ram
+    if (
+        auto_scaling_mode.get_task_required_resources(task)
+        > selected_instance.resources
     ):
         msg = (
             f"Task {task} requires more resources than the selected instance provides."
-            f" Asked for {selected_instance}, but task needs {auto_scaling_mode.get_max_resources_from_task(task)}. Please check!"
+            f" Asked for {selected_instance}, but task needs {auto_scaling_mode.get_task_required_resources(task)}. Please check!"
         )
         raise Ec2InstanceInvalidError(msg=msg)
 

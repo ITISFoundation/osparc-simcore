@@ -83,7 +83,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
 
     @staticmethod
     @abstractmethod
-    def get_max_resources_from_task(task) -> Resources:
+    def get_task_required_resources(task) -> Resources:
         ...
 
     @staticmethod

@@ -24,7 +24,7 @@ from simcore_service_autoscaling.models import (
 from simcore_service_autoscaling.utils.computational_scaling import (
     _DEFAULT_MAX_CPU,
     _DEFAULT_MAX_RAM,
-    get_max_resources_from_dask_task,
+    resources_from_dask_task,
     try_assigning_task_to_instance_types,
     try_assigning_task_to_instances,
     try_assigning_task_to_node,
@@ -64,10 +64,8 @@ from simcore_service_autoscaling.utils.computational_scaling import (
         ),
     ],
 )
-def test_get_max_resources_from_dask_task(
-    dask_task: DaskTask, expected_resource: Resources
-):
-    assert get_max_resources_from_dask_task(dask_task) == expected_resource
+def test_resources_from_dask_task(dask_task: DaskTask, expected_resource: Resources):
+    assert resources_from_dask_task(dask_task) == expected_resource
 
 
 @pytest.fixture
@@ -209,10 +207,15 @@ def test_try_assigning_task_to_instance_types(
     task = fake_task(required_resources={"CPU": 2})
     # create an instance type with some CPUs
     fake_instance_type = EC2InstanceType(
-        name=faker.name(), cpus=6, ram=parse_obj_as(ByteSize, "2GiB")
+        name=faker.name(),
+        resources=Resources(cpus=6, ram=parse_obj_as(ByteSize, "2GiB")),
     )
     instance_type_to_tasks: list[AssignedTasksToInstanceType] = [
-        AssignedTasksToInstanceType(instance_type=fake_instance_type, assigned_tasks=[])
+        AssignedTasksToInstanceType(
+            instance_type=fake_instance_type,
+            assigned_tasks=[],
+            available_resources=fake_instance_type.resources,
+        )
     ]
     # now this should work 3 times
     assert try_assigning_task_to_instance_types(task, instance_type_to_tasks) is True

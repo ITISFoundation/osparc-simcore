@@ -94,7 +94,7 @@ class DynamicAutoscaling(BaseAutoscaling):
         await progress_tasks_message(app, tasks, progress=progress)
 
     @staticmethod
-    def get_max_resources_from_task(task) -> Resources:
+    def get_task_required_resources(task) -> Resources:
         return utils_docker.get_max_resources_from_docker_task(task)
 
     @staticmethod

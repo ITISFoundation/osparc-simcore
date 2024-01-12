@@ -6,17 +6,18 @@ from dask_task_models_library.resource_constraints import DaskTaskResources
 from models_library.generated_models.docker_rest_api import Node
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class AssignedTasksToInstance:
     instance: EC2InstanceData
     available_resources: Resources
     assigned_tasks: list
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class AssignedTasksToInstanceType:
     instance_type: EC2InstanceType
     assigned_tasks: list
+    available_resources: Resources
 
 
 @dataclass(frozen=True)

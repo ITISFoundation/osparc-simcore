@@ -34,8 +34,7 @@ def random_fake_available_instances(faker: Faker) -> list[EC2InstanceType]:
     list_of_instances = [
         EC2InstanceType(
             name=faker.pystr(),
-            cpus=n,
-            ram=ByteSize(n),
+            resources=Resources(cpus=n, ram=ByteSize(n)),
         )
         for n in range(1, 30)
     ]
@@ -59,7 +58,9 @@ async def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resou
     [
         (
             Resources(cpus=n, ram=ByteSize(n)),
-            EC2InstanceType(name="c5ad.12xlarge", cpus=n, ram=ByteSize(n)),
+            EC2InstanceType(
+                name="c5ad.12xlarge", resources=Resources(cpus=n, ram=ByteSize(n))
+            ),
         )
         for n in range(1, 30)
     ],

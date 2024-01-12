@@ -129,8 +129,8 @@ class ComputationalAutoscaling(BaseAutoscaling):
         _logger.info("PROGRESS: %s", progress)
 
     @staticmethod
-    def get_max_resources_from_task(task) -> Resources:
-        return utils.get_max_resources_from_dask_task(task)
+    def get_task_required_resources(task) -> Resources:
+        return utils.resources_from_dask_task(task)
 
     @staticmethod
     async def get_task_defined_instance(app: FastAPI, task) -> InstanceTypeType | None:

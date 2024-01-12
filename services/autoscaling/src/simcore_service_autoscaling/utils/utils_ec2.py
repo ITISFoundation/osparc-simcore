@@ -73,12 +73,19 @@ def closest_instance_policy(
     ec2_instance: EC2InstanceType,
     resources: Resources,
 ) -> float:
-    if ec2_instance.cpus < resources.cpus or ec2_instance.ram < resources.ram:
+    if (
+        ec2_instance.resources.cpus < resources.cpus
+        or ec2_instance.resources.ram < resources.ram
+    ):
         return 0
     # compute a score for all the instances that are above expectations
     # best is the exact ec2 instance
-    cpu_ratio = float(ec2_instance.cpus - resources.cpus) / float(ec2_instance.cpus)
-    ram_ratio = float(ec2_instance.ram - resources.ram) / float(ec2_instance.ram)
+    cpu_ratio = float(ec2_instance.resources.cpus - resources.cpus) / float(
+        ec2_instance.resources.cpus
+    )
+    ram_ratio = float(ec2_instance.resources.ram - resources.ram) / float(
+        ec2_instance.resources.ram
+    )
     return 100 * (1.0 - cpu_ratio) * (1.0 - ram_ratio)
 
 
