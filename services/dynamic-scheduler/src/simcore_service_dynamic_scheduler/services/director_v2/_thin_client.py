@@ -29,7 +29,6 @@ from ...core.settings import ApplicationSettings
 class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
     def __init__(self, app: FastAPI) -> None:
         settings: ApplicationSettings = app.state.settings
-
         super().__init__(
             request_timeout=DEFAULT_LEGACY_TIMEOUT_S,
             base_url=settings.DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS.api_base_url,
