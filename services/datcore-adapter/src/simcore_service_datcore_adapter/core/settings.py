@@ -40,6 +40,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
+    DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
     @cached_property
     def debug(self) -> bool:

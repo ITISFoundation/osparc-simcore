@@ -23,7 +23,6 @@ fastapi[all]
 httpx
 orjson
 packaging
-prometheus-fastapi-instrumentator
 pydantic[dotenv]
 pyyaml
 tenacity

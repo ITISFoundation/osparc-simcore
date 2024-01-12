@@ -6,7 +6,8 @@
 
 import asyncio
 import datetime
-from typing import AsyncIterator, Final
+from collections.abc import AsyncIterator
+from typing import Final
 
 import pytest
 from faker import Faker
