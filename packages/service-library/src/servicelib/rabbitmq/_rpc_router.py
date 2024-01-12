@@ -64,7 +64,9 @@ class RPCRouter:
                         ):
                             raise
 
-                        _logger.exception("Unhandled exception:")
+                        _logger.exception(
+                            "Unhandled exception: %s", exc  # noqa: TRY401
+                        )
                         # NOTE: we do not return internal exceptions over RPC
                         formatted_traceback = "\n".join(
                             traceback.format_tb(exc.__traceback__)
@@ -72,7 +74,7 @@ class RPCRouter:
                         raise RPCServerError(
                             method_name=func.__name__,
                             exc_type=f"{exc.__class__.__module__}.{exc.__class__.__name__}",
-                            msg=f"{formatted_traceback}",
+                            msg=f"{exc} {formatted_traceback}",
                         ) from None
 
             self.routes[RPCMethodName(func.__name__)] = _wrapper
