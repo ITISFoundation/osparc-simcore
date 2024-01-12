@@ -2436,7 +2436,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Union_NodeGet__NodeGetIdle__'
+                $ref: '#/components/schemas/Envelope_Union_NodeGetIdle__NodeGetUnknown__RunningDynamicServiceDetails__NodeGet__'
     delete:
       tags:
       - projects
@@ -5710,15 +5710,18 @@ components:
           $ref: '#/components/schemas/Token'
         error:
           title: Error
-    Envelope_Union_NodeGet__NodeGetIdle__:
-      title: Envelope[Union[NodeGet, NodeGetIdle]]
+    Envelope_Union_NodeGetIdle__NodeGetUnknown__RunningDynamicServiceDetails__NodeGet__:
+      title: Envelope[Union[NodeGetIdle, NodeGetUnknown, RunningDynamicServiceDetails,
+        NodeGet]]
       type: object
       properties:
         data:
           title: Data
           anyOf:
-          - $ref: '#/components/schemas/NodeGet'
           - $ref: '#/components/schemas/NodeGetIdle'
+          - $ref: '#/components/schemas/NodeGetUnknown'
+          - $ref: '#/components/schemas/RunningDynamicServiceDetails'
+          - $ref: '#/components/schemas/NodeGet'
         error:
           title: Error
     Envelope_Union_PricingUnitGet__NoneType__:
@@ -7227,6 +7230,28 @@ components:
           title: Serviceuuid
           type: string
           format: uuid
+      example:
+        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        service_state: idle
+    NodeGetUnknown:
+      title: NodeGetUnknown
+      required:
+      - serviceState
+      - serviceUuid
+      type: object
+      properties:
+        serviceState:
+          title: Servicestate
+          enum:
+          - unknown
+          type: string
+        serviceUuid:
+          title: Serviceuuid
+          type: string
+          format: uuid
+      example:
+        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        service_state: unknown
     NodeRetrieve:
       title: NodeRetrieve
       type: object
@@ -8774,6 +8799,90 @@ components:
           - type: integer
           - type: number
           - type: string
+    RunningDynamicServiceDetails:
+      title: RunningDynamicServiceDetails
+      required:
+      - service_key
+      - service_version
+      - user_id
+      - project_id
+      - service_uuid
+      - service_host
+      - service_port
+      - service_state
+      type: object
+      properties:
+        service_key:
+          title: Service Key
+          pattern: ^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+          description: distinctive name for the node based on the docker registry
+            path
+        service_version:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+          description: semantic version number of the node
+        user_id:
+          title: User Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        project_id:
+          title: Project Id
+          type: string
+          format: uuid
+        service_uuid:
+          title: Service Uuid
+          type: string
+          format: uuid
+        service_basepath:
+          title: Service Basepath
+          type: string
+          description: predefined path where the dynamic service should be served.
+            If empty, the service shall use the root endpoint.
+          format: path
+        boot_type:
+          allOf:
+          - $ref: '#/components/schemas/ServiceBootType'
+          description: Describes how the dynamic services was started (legacy=V0,
+            modern=V2).Since legacy services do not have this label it defaults to
+            V0.
+          default: V0
+        service_host:
+          title: Service Host
+          type: string
+          description: the service swarm internal host name
+        service_port:
+          title: Service Port
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          type: integer
+          description: the service swarm internal port
+          maximum: 65535
+          minimum: 0
+        published_port:
+          title: Published Port
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          type: integer
+          description: the service swarm published port if any
+          deprecated: true
+          maximum: 65535
+          minimum: 0
+        entry_point:
+          title: Entry Point
+          type: string
+          description: if empty the service entrypoint is on the root endpoint.
+          deprecated: true
+        service_state:
+          allOf:
+          - $ref: '#/components/schemas/ServiceState'
+          description: service current state
+        service_message:
+          title: Service Message
+          type: string
+          description: additional information related to service state
     RunningState:
       title: RunningState
       enum:
@@ -8820,6 +8929,13 @@ components:
           items:
             $ref: '#/components/schemas/Structure'
       additionalProperties: false
+    ServiceBootType:
+      title: ServiceBootType
+      enum:
+      - V0
+      - V2
+      type: string
+      description: An enumeration.
     ServiceGroupAccessRights:
       title: ServiceGroupAccessRights
       type: object
