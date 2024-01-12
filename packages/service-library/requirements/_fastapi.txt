@@ -39,6 +39,7 @@ fastapi==0.99.1
     #   -c requirements/./../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/./../../../requirements/constraints.txt
     #   -r requirements/_fastapi.in
+    #   prometheus-fastapi-instrumentator
 h11==0.14.0
     # via
     #   httpcore
@@ -66,6 +67,12 @@ mdurl==0.1.2
     # via markdown-it-py
 orjson==3.9.10
     # via -r requirements/./../../../packages/models-library/requirements/_base.in
+prometheus-client==0.19.0
+    # via
+    #   -r requirements/_fastapi.in
+    #   prometheus-fastapi-instrumentator
+prometheus-fastapi-instrumentator==6.1.0
+    # via -r requirements/_fastapi.in
 pydantic==1.10.13
     # via
     #   -c requirements/./../../../packages/models-library/requirements/../../../requirements/constraints.txt

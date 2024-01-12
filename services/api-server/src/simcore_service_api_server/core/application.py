@@ -5,6 +5,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi_pagination import add_pagination
 from httpx import HTTPStatusError
 from models_library.basic_types import BootModeEnum
+from servicelib.fastapi.prometheus_instrumentation import (
+    setup_prometheus_instrumentation,
+)
 from servicelib.logging_utils import config_all_loggers
 from simcore_service_api_server.api.errors.log_handling_error import (
     log_handling_error_handler,
@@ -128,10 +131,8 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
         app.add_middleware(ApiServerProfilerMiddleware)
 
-    if settings.API_SERVER_ADD_METRICS_ENDPOINT:
-        from ._prometheus_instrumentation import instrument_app
-
-        instrument_app(app)
+    if settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        setup_prometheus_instrumentation(app)
 
     # routing
 
