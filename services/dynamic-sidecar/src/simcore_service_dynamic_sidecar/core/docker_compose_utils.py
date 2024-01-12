@@ -17,7 +17,7 @@ from settings_library.basic_types import LogLevel
 from .docker_utils import get_docker_service_images, pull_images
 from .rabbitmq import post_progress_message, post_sidecar_log_message
 from .settings import ApplicationSettings
-from .utils import CommandResult, async_command, write_to_tmp_file
+from .utils import CommandResult, async_command
 
 logger = logging.getLogger(__name__)
 
@@ -49,24 +49,28 @@ async def _write_file_and_spawn_process(
 
     This calls is intentionally verbose at INFO level
     """
-    async with write_to_tmp_file(yaml_content) as file_path:
-        cmd = command.format(file_path=file_path)
 
-        logger.debug("Runs %s ...\n%s", cmd, yaml_content)
+    logger.debug("Runs %s ...\n%s", command, yaml_content)
 
-        result = await async_command(
-            command=cmd,
-            timeout=process_termination_timeout,
-        )
-        debug_message = deepcopy(result._asdict())
-        logger.debug(
-            "Finished executing docker compose command '%s' finished_ok='%s' elapsed='%s'\n%s",
-            debug_message["command"],
-            debug_message["success"],
-            debug_message["elapsed"],
-            debug_message["message"],
-        )
-        return result
+    result = await async_command(
+        command=command, timeout=process_termination_timeout, pipe_as_input=yaml_content
+    )
+    debug_message = deepcopy(result._asdict())
+    logger.debug(
+        "Finished executing docker compose command '%s' finished_ok='%s' elapsed='%s'\n%s",
+        debug_message["command"],
+        debug_message["success"],
+        debug_message["elapsed"],
+        debug_message["message"],
+    )
+    return result
+
+
+def _get_timeout_options() -> str:
+    # NOTE: TIMEOUT adjusted because of:
+    #   https://github.com/docker/compose/issues/3927
+    #   https://github.com/AzuraCast/AzuraCast/issues/3258
+    return "export DOCKER_CLIENT_TIMEOUT=120 && export COMPOSE_HTTP_TIMEOUT=120 &&"
 
 
 async def docker_compose_config(
@@ -81,10 +85,9 @@ async def docker_compose_config(
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_convert/)
     [SEE compose-file](https://docs.docker.com/compose/compose-file/)
     """
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     result: CommandResult = await _write_file_and_spawn_process(
         compose_spec_yaml,
-        command='export DOCKER_CLIENT_TIMEOUT=120 && export COMPOSE_HTTP_TIMEOUT=120 && docker compose --file "{file_path}" config',
+        command=f"{_get_timeout_options()} docker compose --file - config",
         process_termination_timeout=timeout,
     )
     return result
@@ -121,12 +124,15 @@ async def docker_compose_create(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_up/)
     """
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     # building is a security risk hence is disabled via "--no-build" parameter
     result: CommandResult = await _write_file_and_spawn_process(
         compose_spec_yaml,
-        command=f'export DOCKER_CLIENT_TIMEOUT=120 && export COMPOSE_HTTP_TIMEOUT=120 && docker compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" up'
-        " --no-build --no-start",
+        command=(
+            f"{_get_timeout_options()} docker compose {_docker_compose_options_from_settings(settings)}"
+            f" --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE}"
+            " --file - up"
+            " --no-build --no-start"
+        ),
         process_termination_timeout=None,
     )
     return result
@@ -140,10 +146,13 @@ async def docker_compose_start(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_start/)
     """
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     result: CommandResult = await _write_file_and_spawn_process(
         compose_spec_yaml,
-        command=f'export DOCKER_CLIENT_TIMEOUT=120 && export COMPOSE_HTTP_TIMEOUT=120 && docker compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" start',
+        command=(
+            f"{_get_timeout_options()} docker compose {_docker_compose_options_from_settings(settings)} "
+            f"--project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} "
+            "--file - start"
+        ),
         process_termination_timeout=None,
     )
     return result
@@ -158,11 +167,12 @@ async def docker_compose_restart(
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_restart/)
     """
     default_compose_restart_timeout = 10
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     result: CommandResult = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f'export DOCKER_CLIENT_TIMEOUT=120 && export COMPOSE_HTTP_TIMEOUT=120 && docker compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" restart'
+            f"{_get_timeout_options()} docker compose {_docker_compose_options_from_settings(settings)}"
+            f" --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE}"
+            " --file - restart"
             f" --timeout {default_compose_restart_timeout}"
         ),
         process_termination_timeout=_increase_timeout(default_compose_restart_timeout),
@@ -183,11 +193,12 @@ async def docker_compose_down(
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_down/)
     """
     default_compose_down_timeout = 10
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     result: CommandResult = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f'export DOCKER_CLIENT_TIMEOUT=120 && export COMPOSE_HTTP_TIMEOUT=120 && docker compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" down'
+            f"{_get_timeout_options()}  docker compose {_docker_compose_options_from_settings(settings)}"
+            f" --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE}"
+            " --file - down"
             f" --volumes --remove-orphans --timeout {default_compose_down_timeout}"
         ),
         process_termination_timeout=_increase_timeout(default_compose_down_timeout),
@@ -206,11 +217,12 @@ async def docker_compose_rm(
 
     [SEE docker-compose](https://docs.docker.com/engine/reference/commandline/compose_rm)
     """
-    # NOTE: TIMEOUT adjusted because of https://github.com/docker/compose/issues/3927, https://github.com/AzuraCast/AzuraCast/issues/3258
     result: CommandResult = await _write_file_and_spawn_process(
         compose_spec_yaml,
         command=(
-            f'export DOCKER_CLIENT_TIMEOUT=120 && export COMPOSE_HTTP_TIMEOUT=120 && docker compose {_docker_compose_options_from_settings(settings)} --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE} --file "{{file_path}}" rm'
+            f"{_get_timeout_options()} docker compose {_docker_compose_options_from_settings(settings)}"
+            f" --project-name {settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE}"
+            " --file - rm"
             " --force -v"
         ),
         process_termination_timeout=None,

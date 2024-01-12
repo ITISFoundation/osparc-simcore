@@ -4,18 +4,13 @@ import json
 import logging
 import os
 import signal
-import tempfile
 import time
 from asyncio.subprocess import Process
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import NamedTuple
 
-import aiofiles
 import httpx
 import psutil
-from aiofiles import os as aiofiles_os
 from servicelib.error_codes import create_error_code
 from settings_library.docker_registry import RegistrySettings
 from starlette import status
@@ -100,18 +95,6 @@ async def login_registry(registry_settings: RegistrySettings) -> None:
         )
 
 
-@asynccontextmanager
-async def write_to_tmp_file(file_contents: str) -> AsyncIterator[Path]:
-    """Disposes of file on exit"""
-    file_path = Path(tempfile.mkdtemp()) / "file"
-    async with aiofiles.open(file_path, mode="w") as tmp_file:
-        await tmp_file.write(file_contents)
-    try:
-        yield file_path
-    finally:
-        await aiofiles_os.remove(file_path)
-
-
 def _close_transport(proc: Process):
     # Closes transport (initialized during 'await proc.communicate(...)' ) and avoids error:
     #
@@ -129,16 +112,25 @@ def _close_transport(proc: Process):
                 t.close()
 
 
-async def async_command(command: str, timeout: float | None = None) -> CommandResult:
+async def async_command(
+    command: str, timeout: float | None = None, pipe_as_input: str | None = None
+) -> CommandResult:
     """
     Does not raise Exception
     """
     proc = await asyncio.create_subprocess_shell(
         command,
+        stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
         # NOTE that stdout/stderr together. Might want to separate them?
     )
+
+    if pipe_as_input:
+        assert proc.stdin  # nosec
+        proc.stdin.write(pipe_as_input.encode())
+        proc.stdin.close()
+
     start = time.time()
 
     try:
