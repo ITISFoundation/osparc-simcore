@@ -19,6 +19,9 @@ from servicelib.fastapi.http_client_thin import (
     retry_on_errors,
 )
 from servicelib.json_serialization import json_dumps
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import (
+    DEFAULT_LEGACY_TIMEOUT_S,
+)
 
 from ...core.settings import ApplicationSettings
 
@@ -28,7 +31,7 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
         settings: ApplicationSettings = app.state.settings
 
         super().__init__(
-            request_timeout=10,
+            request_timeout=DEFAULT_LEGACY_TIMEOUT_S,
             base_url=settings.DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS.api_base_url,
             timeout=Timeout(10),
             extra_allowed_method_names={"attach_lifespan_to"},
