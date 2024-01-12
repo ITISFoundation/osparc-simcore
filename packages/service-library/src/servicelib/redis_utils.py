@@ -74,14 +74,13 @@ def start_exclusive_periodic_task(
     **kwargs,
 ) -> asyncio.Task:
     """
-    Ensures that only 1 instance of ``task`` is periodically ran at all times across
-    multiple processes.
+    Ensures that only 1 process periodically ever runs ``task`` at all times.
     If one process dies, another process will run the ``task``.
 
     Creates a background task that periodically tries to start the user ``task``.
     Before the ``task`` is scheduled for periodic background execution, it acquires a lock.
     Subsequent calls to ``start_exclusive_periodic_task`` will not allow the same ``task``
-    to run since the lock will prevent the scheduling.
+    to start since the lock will prevent the scheduling.
 
     Q&A:
     - Why is `_exclusive_task_starter` run as a task?
