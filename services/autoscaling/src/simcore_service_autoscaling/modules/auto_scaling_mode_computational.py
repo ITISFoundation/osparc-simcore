@@ -1,6 +1,7 @@
 import collections
 import logging
 from collections.abc import Iterable
+from typing import cast
 
 from aws_library.ec2.models import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
@@ -135,7 +136,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     async def get_task_defined_instance(app: FastAPI, task) -> InstanceTypeType | None:
         assert app  # nosec
-        return utils.get_task_instance_restriction(task)
+        return cast(InstanceTypeType | None, utils.get_task_instance_restriction(task))
 
     @staticmethod
     async def compute_node_used_resources(
