@@ -20,8 +20,8 @@ from simcore_postgres_database.models.users import (
 )
 from simcore_postgres_database.utils_users import (
     UsersRepo,
-    generate_random_suffix,
-    generate_username_from_email,
+    _generate_random_suffix,
+    _generate_username_from_email,
 )
 from sqlalchemy.sql import func
 
@@ -131,12 +131,12 @@ async def test_unique_username(
         await connection.scalar(users.insert().values(data).returning(users.c.id))
 
     # generate new name
-    data["name"] = generate_username_from_email(user.email)
+    data["name"] = _generate_username_from_email(user.email)
     data["email"] = faker.email()
     await connection.scalar(users.insert().values(data).returning(users.c.id))
 
     # and another one
-    data["name"] += generate_random_suffix()
+    data["name"] += _generate_random_suffix()
     data["email"] = faker.email()
     await connection.scalar(users.insert().values(data).returning(users.c.id))
 
@@ -157,7 +157,7 @@ async def test_new_user(
     assert new_user.role == UserRole.USER
 
     other_email = f"{new_user.name}@other-domain.com"
-    assert generate_username_from_email(other_email) == new_user.name
+    assert _generate_username_from_email(other_email) == new_user.name
     other_data = {**data, "email": other_email}
 
     other_user = await UsersRepo.new_user(connection, **other_data)

@@ -24,14 +24,14 @@ class UserNotFoundInRepoError(BaseUserRepoError):
     pass
 
 
-def generate_username_from_email(email: str) -> str:
+def _generate_username_from_email(email: str) -> str:
     username = email.split("@")[0]
 
     # Remove any non-alphanumeric characters and convert to lowercase
     return re.sub(r"[^a-zA-Z0-9]", "", username).lower()
 
 
-def generate_random_suffix() -> str:
+def _generate_random_suffix() -> str:
     return f"_{''.join(secrets.choice(string.digits) for _ in range(4))}"
 
 
@@ -45,7 +45,7 @@ class UsersRepo:
         expires_at: datetime | None,
     ) -> RowProxy:
         data = {
-            "name": generate_username_from_email(email),
+            "name": _generate_username_from_email(email),
             "email": email,
             "password_hash": password_hash,
             "status": status,
@@ -57,7 +57,7 @@ class UsersRepo:
                 users.insert().values(data).returning(users.c.id)
             )
         except UniqueViolation:
-            data["name"] += generate_random_suffix()
+            data["name"] += _generate_random_suffix()
             user_id = await conn.scalar(
                 users.insert().values(data).returning(users.c.id)
             )
