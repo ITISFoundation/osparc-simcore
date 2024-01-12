@@ -5,7 +5,7 @@ import datetime
 import itertools
 import json
 import logging
-from typing import cast
+from typing import Final, cast
 
 import arrow
 from aws_library.ec2.models import (
@@ -111,11 +111,22 @@ async def _analyze_current_cluster(
     return cluster
 
 
+_DELAY_FOR_REMOVING_DISCONNECTED_NODES_S: Final[int] = 30
+
+
 async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
-    if cluster.disconnected_nodes:
-        await utils_docker.remove_nodes(
-            get_docker_client(app), nodes=cluster.disconnected_nodes
+    utc_now = arrow.utcnow().datetime
+    removeable_nodes = [
+        node
+        for node in cluster.disconnected_nodes
+        if node.UpdatedAt
+        and (
+            (utc_now - arrow.get(node.UpdatedAt).datetime).total_seconds()
+            > _DELAY_FOR_REMOVING_DISCONNECTED_NODES_S
         )
+    ]
+    if removeable_nodes:
+        await utils_docker.remove_nodes(get_docker_client(app), nodes=removeable_nodes)
     return dataclasses.replace(cluster, disconnected_nodes=[])
 
 
