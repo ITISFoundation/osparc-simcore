@@ -5,6 +5,7 @@
 import re
 from enum import Enum
 
+from models_library.users import FirstNameStr, LastNameStr
 from pydantic import BaseModel, Extra, Field
 from pydantic.types import ConstrainedStr, PositiveInt
 
@@ -45,8 +46,12 @@ class Owner(BaseModel):
         description="Owner's identifier when registered in the user's database table",
         examples=[2],
     )
-    first_name: str = Field(..., description="Owner first name", examples=["John"])
-    last_name: str = Field(..., description="Owner last name", examples=["Smith"])
+    first_name: FirstNameStr | None = Field(
+        ..., description="Owner first name", examples=["John"]
+    )
+    last_name: LastNameStr | None = Field(
+        ..., description="Owner last name", examples=["Smith"]
+    )
 
     class Config:
         extra = Extra.forbid

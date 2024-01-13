@@ -200,8 +200,8 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
 
 
 class FullNameDict(TypedDict):
-    first_name: str
-    last_name: str
+    first_name: str | None
+    last_name: str | None
 
 
 async def get_user_fullname(app: web.Application, user_id: UserID) -> FullNameDict:

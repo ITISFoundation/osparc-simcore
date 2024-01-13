@@ -8,6 +8,7 @@ from models_library.api_schemas_webserver.groups import AllUsersGroups
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import FirstNameStr, LastNameStr, UserID
+from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from pydantic import BaseModel, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
@@ -62,6 +63,10 @@ class _ProfileCommon(BaseModel):
                 "last_name": "Crespo",
             }
         }
+
+    _empty_is_none = validator("first_name", "last_name", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )
 
 
 class ProfileUpdate(_ProfileCommon):

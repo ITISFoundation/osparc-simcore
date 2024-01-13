@@ -8,7 +8,6 @@ GroupID: TypeAlias = PositiveInt
 
 class FirstNameStr(ConstrainedStr):
     strip_whitespace = True
-    min_length = 1
     max_length = 255
 
 
