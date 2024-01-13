@@ -67,13 +67,13 @@ _DEFAULT_HASH = _compute_hash(DEFAULT_PASSWORD)
 
 
 def random_user(
-    faker: Faker = DEFAULT_FAKER, password: str | None = None, **overrides
+    fake: Faker = DEFAULT_FAKER, password: str | None = None, **overrides
 ) -> dict[str, Any]:
     assert set(overrides.keys()).issubset({c.name for c in users.columns})
 
     data = {
-        "name": faker.user_name(),
-        "email": faker.email().lower(),
+        "name": fake.user_name(),
+        "email": fake.email().lower(),
         "password_hash": _DEFAULT_HASH,
         "status": UserStatus.ACTIVE,
     }
@@ -89,14 +89,14 @@ def random_user(
     return data
 
 
-def random_project(faker: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
+def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     """Generates random fake data projects DATABASE table"""
     data = {
-        "uuid": faker.uuid4(),
-        "name": faker.word(),
-        "description": faker.sentence(),
-        "prj_owner": faker.pyint(),
-        "thumbnail": faker.image_url(width=120, height=120),
+        "uuid": fake.uuid4(),
+        "name": fake.word(),
+        "description": fake.sentence(),
+        "prj_owner": fake.pyint(),
+        "thumbnail": fake.image_url(width=120, height=120),
         "access_rights": {},
         "workbench": {},
         "published": False,
@@ -107,11 +107,11 @@ def random_project(faker: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     return data
 
 
-def random_group(faker: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
+def random_group(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
 
     data = {
-        "name": faker.company(),
-        "description": faker.text(),
+        "name": fake.company(),
+        "description": fake.text(),
         "type": GroupType.STANDARD.name,
     }
 
@@ -160,7 +160,7 @@ def fake_task_factory(first_internal_id=1) -> Callable:
 def random_product(
     group_id: int | None = None,
     registration_email_template: str | None = None,
-    faker: Faker = DEFAULT_FAKER,
+    fake: Faker = DEFAULT_FAKER,
     **overrides,
 ):
     """
@@ -171,29 +171,27 @@ def random_product(
     """
 
     fake_vendor = {
-        "name": faker.company(),
-        "copyright": faker.company_suffix(),
-        "url": faker.url(),
-        "license_url": faker.url(),
-        "invitation_url": faker.url(),
-        "has_landing_page": faker.boolean(),
+        "name": fake.company(),
+        "copyright": fake.company_suffix(),
+        "url": fake.url(),
+        "license_url": fake.url(),
+        "invitation_url": fake.url(),
+        "has_landing_page": fake.boolean(),
     }
 
     data = {
-        "name": faker.unique.first_name(),
-        "display_name": faker.company(),
-        "short_name": faker.user_name()[:10],
+        "name": fake.unique.first_name(),
+        "display_name": fake.company(),
+        "short_name": fake.user_name()[:10],
         "host_regex": r"[a-zA-Z0-9]+\.com",
-        "support_email": faker.email(),
-        "twilio_messaging_sid": faker.random_element(
-            elements=(None, faker.uuid4()[:34])
-        ),
-        "vendor": faker.random_element([None, fake_vendor]),
+        "support_email": fake.email(),
+        "twilio_messaging_sid": fake.random_element(elements=(None, fake.uuid4()[:34])),
+        "vendor": fake.random_element([None, fake_vendor]),
         "registration_email_template": registration_email_template,
-        "created": faker.date_time_this_decade(),
-        "modified": faker.date_time_this_decade(),
-        "priority": faker.pyint(0, 10),
-        "max_open_studies_per_user": faker.pyint(1, 10),
+        "created": fake.date_time_this_decade(),
+        "modified": fake.date_time_this_decade(),
+        "priority": fake.pyint(0, 10),
+        "max_open_studies_per_user": fake.pyint(1, 10),
         "group_id": group_id,
     }
 
@@ -207,15 +205,15 @@ def utcnow() -> datetime:
 
 
 def random_payment_method(
-    faker: Faker = DEFAULT_FAKER,
+    fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
     from simcore_postgres_database.models.payments_methods import payments_methods
 
     data = {
-        "payment_method_id": faker.uuid4(),
-        "user_id": faker.pyint(),
-        "wallet_id": faker.pyint(),
+        "payment_method_id": fake.uuid4(),
+        "user_id": fake.pyint(),
+        "wallet_id": fake.pyint(),
         "initiated_at": utcnow(),
         "state": InitPromptAckFlowState.PENDING,
         "completed_at": None,
@@ -228,7 +226,7 @@ def random_payment_method(
 
 
 def random_payment_transaction(
-    faker: Faker = DEFAULT_FAKER,
+    fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
     """Generates Metadata + concept/info (excludes state)"""
@@ -238,12 +236,12 @@ def random_payment_transaction(
 
     # initiated
     data = {
-        "payment_id": faker.uuid4(),
+        "payment_id": fake.uuid4(),
         "price_dollars": "123456.78",
         "osparc_credits": "123456.78",
         "product_name": "osparc",
-        "user_id": faker.pyint(),
-        "user_email": faker.email().lower(),
+        "user_id": fake.pyint(),
+        "user_email": fake.email().lower(),
         "wallet_id": 1,
         "comment": "Free starting credits",
         "initiated_at": utcnow(),
@@ -259,7 +257,7 @@ def random_payment_transaction(
 
 def random_payment_autorecharge(
     primary_payment_method_id: str = DEFAULT_FAKER.uuid4(),
-    faker: Faker = DEFAULT_FAKER,
+    fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
     from simcore_postgres_database.models.payments_autorecharge import (
@@ -267,7 +265,7 @@ def random_payment_autorecharge(
     )
 
     data = {
-        "wallet_id": faker.pyint(),
+        "wallet_id": fake.pyint(),
         "enabled": True,
         "primary_payment_method_id": primary_payment_method_id,
         "top_up_amount_in_usd": 100,
@@ -280,14 +278,14 @@ def random_payment_autorecharge(
 
 
 def random_api_key(
-    product_name: str, user_id: int, faker: Faker = DEFAULT_FAKER, **overrides
+    product_name: str, user_id: int, fake: Faker = DEFAULT_FAKER, **overrides
 ) -> dict[str, Any]:
     data = {
-        "display_name": faker.word(),
+        "display_name": fake.word(),
         "product_name": product_name,
         "user_id": user_id,
-        "api_key": faker.password(),
-        "api_secret": faker.password(),
+        "api_key": fake.password(),
+        "api_secret": fake.password(),
         "expires_at": None,
     }
     assert set(data.keys()).issubset({c.name for c in api_keys.columns})  # nosec
@@ -296,16 +294,16 @@ def random_api_key(
 
 
 def random_payment_method_view(
-    faker: Faker = DEFAULT_FAKER, **overrides
+    fake: Faker = DEFAULT_FAKER, **overrides
 ) -> dict[str, Any]:
     # Produces data for GetPaymentMethod
     data = {
-        "id": faker.uuid4(),
-        "card_holder_name": faker.name(),
-        "card_number_masked": f"**** **** **** {faker.credit_card_number()[:4]}",
-        "card_type": faker.credit_card_provider(),
-        "expiration_month": faker.random_int(min=1, max=12),
-        "expiration_year": faker.future_date().year,
+        "id": fake.uuid4(),
+        "card_holder_name": fake.name(),
+        "card_number_masked": f"**** **** **** {fake.credit_card_number()[:4]}",
+        "card_type": fake.credit_card_provider(),
+        "expiration_month": fake.random_int(min=1, max=12),
+        "expiration_year": fake.future_date().year,
         "created": utcnow(),
     }
     assert set(overrides.keys()).issubset(data.keys())
