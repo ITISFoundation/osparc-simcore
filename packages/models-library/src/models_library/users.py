@@ -12,4 +12,5 @@ class FirstNameStr(ConstrainedStr):
     max_length = 255
 
 
-LastNameStr: TypeAlias = FirstNameStr
+class LastNameStr(FirstNameStr):
+    ...

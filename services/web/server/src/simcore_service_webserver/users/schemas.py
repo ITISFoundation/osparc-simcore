@@ -7,7 +7,7 @@ from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.groups import AllUsersGroups
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.emails import LowerCaseEmailStr
-from models_library.users import UserID
+from models_library.users import FirstNameStr, LastNameStr, UserID
 from pydantic import BaseModel, Field, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
@@ -52,12 +52,10 @@ class TokenCreate(Token):
 
 
 class _ProfileCommon(BaseModel):
-    first_name: str | None = None
-    last_name: str | None = None
+    first_name: FirstNameStr | None = None
+    last_name: LastNameStr | None = None
 
     class Config:
-        str_strip_whitespace: bool = True
-        str_max_length: int = 50
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "first_name": "Pedro",
