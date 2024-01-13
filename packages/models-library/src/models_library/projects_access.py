@@ -55,9 +55,9 @@ class Owner(BaseModel):
         ..., description="Owner last name", examples=["Smith"]
     )
 
-    class Config:
-        extra = Extra.forbid
-
     _none_is_empty = validator("first_name", "last_name", allow_reuse=True, pre=True)(
         none_to_empty_str_pre_validator
     )
+
+    class Config:
+        extra = Extra.forbid

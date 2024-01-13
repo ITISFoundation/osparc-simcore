@@ -30,6 +30,8 @@ class _UserInfoDictRequired(TypedDict, total=True):
 class UserInfoDict(_UserInfoDictRequired, total=False):
     created_at: datetime
     password_hash: str
+    first_name: str
+    last_name: str
 
 
 TEST_MARKS = re.compile(r"TEST (\w+):(.*)")

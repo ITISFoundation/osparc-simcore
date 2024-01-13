@@ -1274,8 +1274,8 @@ async def test_open_shared_project_2_users_locked(
         expected_project_state_client_2.locked.status = ProjectStatus.OPENED
         owner2 = Owner(
             user_id=PositiveIntWithExclusiveMinimumRemoved(user_2["id"]),
-            first_name=([*user_2["name"].split("."), ""])[0],
-            last_name=([*user_2["name"].split("."), ""])[1],
+            first_name=user_2.get("first_name", None),
+            last_name=user_2.get("last_name", None),
         )
         expected_project_state_client_2.locked.owner = owner2
         expected_project_state_client_1.locked.value = True
