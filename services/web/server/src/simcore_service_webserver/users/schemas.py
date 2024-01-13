@@ -18,7 +18,7 @@ from ..utils import gravatar_hash
 #
 # TOKENS resource
 #
-class Token(BaseModel):
+class ThirdPartyToken(BaseModel):
     """
     Tokens used to access third-party services connected to osparc (e.g. pennsieve, scicrunch, etc)
     """
@@ -38,11 +38,7 @@ class Token(BaseModel):
         }
 
 
-class TokenID(BaseModel):
-    __root__: str = Field(..., description="toke identifier")
-
-
-class TokenCreate(Token):
+class TokenCreate(ThirdPartyToken):
     ...
 
 
@@ -124,6 +120,9 @@ class ProfileGet(_ProfileCommon):
 def convert_user_db_to_schema(
     row: Mapping[str, Any], prefix: Literal["users_", ""] = ""
 ) -> dict[str, Any]:
+
+    # FIXME: remove this once and for all!
+
     # NOTE: this type of functions will be replaced by pydantic.
     assert prefix is not None  # nosec
     data = {

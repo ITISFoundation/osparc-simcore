@@ -9,12 +9,12 @@ from models_library.generics import Envelope
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.users.schemas import ProfileGet, Token
+from simcore_service_webserver.users.schemas import ProfileGet, ThirdPartyToken
 
 
 @pytest.mark.parametrize(
     "model_cls",
-    [ProfileGet, Token],
+    [ProfileGet, ThirdPartyToken],
 )
 def test_user_models_examples(
     model_cls: type[BaseModel], model_cls_examples: dict[str, Any]
