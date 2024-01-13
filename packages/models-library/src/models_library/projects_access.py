@@ -6,8 +6,10 @@ import re
 from enum import Enum
 
 from models_library.users import FirstNameStr, LastNameStr
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field, validator
 from pydantic.types import ConstrainedStr, PositiveInt
+
+from .utils.common_validators import none_to_empty_str_pre_validator
 
 
 class GroupIDStr(ConstrainedStr):
@@ -46,12 +48,16 @@ class Owner(BaseModel):
         description="Owner's identifier when registered in the user's database table",
         examples=[2],
     )
-    first_name: FirstNameStr | None = Field(
+    first_name: FirstNameStr = Field(
         ..., description="Owner first name", examples=["John"]
     )
-    last_name: LastNameStr | None = Field(
+    last_name: LastNameStr = Field(
         ..., description="Owner last name", examples=["Smith"]
     )
 
     class Config:
         extra = Extra.forbid
+
+    _none_is_empty = validator("first_name", "last_name", allow_reuse=True, pre=True)(
+        none_to_empty_str_pre_validator
+    )
