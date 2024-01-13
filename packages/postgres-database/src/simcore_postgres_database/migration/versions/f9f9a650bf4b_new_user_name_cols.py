@@ -23,8 +23,8 @@ SEPARATOR = "."  # Based on this info UserNameConverter: 'first_name.lastname'
 
 def upgrade():
     # new columns
-    op.add_column("users", sa.Column("first_name", sa.String(length=50), nullable=True))
-    op.add_column("users", sa.Column("last_name", sa.String(length=50), nullable=True))
+    op.add_column("users", sa.Column("first_name", sa.String(), nullable=True))
+    op.add_column("users", sa.Column("last_name", sa.String(), nullable=True))
 
     # fill new and update existing
     connection = op.get_bind()

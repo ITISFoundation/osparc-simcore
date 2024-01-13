@@ -71,7 +71,7 @@ users = sa.Table(
     metadata,
     sa.Column(
         "id",
-        sa.BigInteger,
+        sa.BigInteger(),
         nullable=False,
         doc="Primary key index for user identifier",
     ),
@@ -83,30 +83,35 @@ users = sa.Table(
     ),
     sa.Column(
         "first_name",
-        sa.String(50),
+        sa.String(),
         doc="User's first name",
     ),
     sa.Column(
         "last_name",
-        sa.String(50),
+        sa.String(),
         doc="User's last/family name",
     ),
     sa.Column(
         "email",
-        sa.String(50),
+        sa.String(),
         nullable=False,
         doc="Validated email",
     ),
     sa.Column(
         "phone",
-        sa.String,
+        sa.String(),
         nullable=True,  # since 2FA can be configured optional
         doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication",
     ),
-    sa.Column("password_hash", sa.String, nullable=False),
+    sa.Column(
+        "password_hash",
+        sa.String(),
+        nullable=False,
+        doc="Hashed password",
+    ),
     sa.Column(
         "primary_gid",
-        sa.BigInteger,
+        sa.BigInteger(),
         sa.ForeignKey(
             "groups.gid",
             name="fk_users_gid_groups",
