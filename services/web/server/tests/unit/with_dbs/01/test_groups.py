@@ -93,7 +93,6 @@ def _assert__group_user(
     actual_user: dict,
 ):
     assert "first_name" in actual_user
-    parts = [*expected_user["name"].split("."), ""]
     assert actual_user["first_name"] == expected_user["first_name"]
     assert "last_name" in actual_user
     assert actual_user["last_name"] == expected_user["last_name"]

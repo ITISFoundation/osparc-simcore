@@ -126,12 +126,11 @@ def convert_user_db_to_schema(
 ) -> dict[str, Any]:
     # NOTE: this type of functions will be replaced by pydantic.
     assert prefix is not None  # nosec
-    parts = [*row[f"{prefix}name"].split("."), ""]
     data = {
         "id": row[f"{prefix}id"],
         "login": row[f"{prefix}email"],
-        "first_name": parts[0],
-        "last_name": parts[1],
+        "first_name": row.get(f"{prefix}first_name"),
+        "last_name": row.get(f"{prefix}last_name"),
         "role": row[f"{prefix}role"].name.capitalize(),
         "gravatar_id": gravatar_hash(row[f"{prefix}email"]),
     }
