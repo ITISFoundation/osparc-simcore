@@ -283,7 +283,7 @@ async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicM
 
     assert not (await autz_cache.exists("_get_auth_or_none/foo@email.com"))
     for _ in range(3):
-        got = await authz_policy._get_auth_or_none("foo@email.com")
+        got = await authz_policy._get_auth_or_none(email="foo@email.com")
         assert mock_db.call_count == 1
         assert got["id"] == 1
 
@@ -294,7 +294,7 @@ async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicM
     assert (await autz_cache.get("_get_auth_or_none/foo@email.com"))["id"] == 1
 
     # gets cache, db is NOT called
-    got = await authz_policy._get_auth_or_none("foo@email.com")
+    got = await authz_policy._get_auth_or_none(email="foo@email.com")
     assert mock_db.call_count == 1
     assert got["id"] == 1
 
@@ -302,7 +302,7 @@ async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicM
     await authz_policy.clear_cache()
 
     # gets new value
-    got = await authz_policy._get_auth_or_none("foo@email.com")
+    got = await authz_policy._get_auth_or_none(email="foo@email.com")
     assert mock_db.call_count == 2
     assert got["id"] == 2
 
@@ -311,10 +311,10 @@ async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicM
 
     for _ in range(4):
         # NOTE: None
-        assert await authz_policy._get_auth_or_none("bar@email.com")
+        assert await authz_policy._get_auth_or_none(email="bar@email.com")
         assert await autz_cache.exists("_get_auth_or_none/bar@email.com")
         assert mock_db.call_count == 3
 
     # should raise web.HTTPServiceUnavailable on db failure
     with pytest.raises(web.HTTPServiceUnavailable):
-        await authz_policy._get_auth_or_none("db-failure@email.com")
+        await authz_policy._get_auth_or_none(email="db-failure@email.com")

@@ -28,10 +28,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
     @cached(
         ttl=_ACTIVE_USER_AUTHZ_CACHE_TTL,
         namespace=__name__,
-        key_builder=lambda f, self, email: f"{f.__name__}/{email}",
-        noself=True,
+        key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['email']}",
     )
-    async def _get_auth_or_none(self, email: IdentityStr) -> AuthInfoDict | None:
+    async def _get_auth_or_none(self, *, email: IdentityStr) -> AuthInfoDict | None:
         """Keeps a cache for a few seconds. Avoids stress on the database with the
         successive streams observerd on this query
 
@@ -50,6 +49,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return self._access_model
 
     async def clear_cache(self):
+        # pylint: disable=no-member
         autz_cache: BaseCache = self._get_auth_or_none.cache
         await autz_cache.clear()
 
@@ -63,7 +63,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        user_info: AuthInfoDict | None = await self._get_auth_or_none(identity)
+        user_info: AuthInfoDict | None = await self._get_auth_or_none(email=identity)
 
         if user_info is None:
             return None
@@ -92,7 +92,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             )
             return False
 
-        auth_info = await self._get_auth_or_none(identity)
+        auth_info = await self._get_auth_or_none(email=identity)
         if auth_info is None:
             return False
 
