@@ -2,7 +2,7 @@ from enum import auto
 from typing import Any, ClassVar
 
 from models_library.emails import LowerCaseEmailStr
-from models_library.users import UserID
+from models_library.users import FirstNameStr, LastNameStr, UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field, validator
 
@@ -10,8 +10,8 @@ from ..domain.groups import Groups
 
 
 class ProfileCommon(BaseModel):
-    first_name: str | None = Field(None, example="James")
-    last_name: str | None = Field(None, example="Maxwell")
+    first_name: FirstNameStr | None = Field(None, example="James")
+    last_name: LastNameStr | None = Field(None, example="Maxwell")
 
 
 class ProfileUpdate(ProfileCommon):
