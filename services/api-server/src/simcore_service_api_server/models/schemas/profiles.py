@@ -15,7 +15,7 @@ class ProfileCommon(BaseModel):
 
 
 class ProfileUpdate(ProfileCommon):
-    pass
+    ...
 
 
 class UserRoleEnum(StrAutoEnum):

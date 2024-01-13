@@ -37,6 +37,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
@@ -60,8 +61,8 @@ API_PREFIX = f"/{API_VTAG}"
 
 @pytest.fixture
 def app_environment(
-    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
-) -> dict[str, str]:
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
     # disable the garbage collector
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
     return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
@@ -86,7 +87,8 @@ async def _list_projects(
     client: TestClient,
     expected: type[web.HTTPException],
     query_parameters: dict | None = None,
-) -> list[dict[str, Any]]:
+) -> list[ProjectDict]:
+
     assert client.app
 
     # GET /v0/projects
@@ -101,8 +103,8 @@ async def _list_projects(
 
 
 async def _replace_project(
-    client: TestClient, project_update: dict, expected: type[web.HTTPException]
-) -> dict:
+    client: TestClient, project_update: ProjectDict, expected: type[web.HTTPException]
+) -> ProjectDict:
     assert client.app
 
     # PUT /v0/projects/{project_id}
@@ -139,7 +141,7 @@ async def _connect_websocket(
 async def _open_project(
     client: TestClient,
     client_id: str,
-    project: dict,
+    project: ProjectDict,
     expected: type[web.HTTPException] | list[type[web.HTTPException]],
 ) -> tuple[dict, dict]:
     assert client.app
