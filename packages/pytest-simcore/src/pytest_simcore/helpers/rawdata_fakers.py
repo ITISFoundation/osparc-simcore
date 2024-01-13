@@ -33,7 +33,7 @@ from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.webserver_models import GroupType, UserStatus
 
-COMPUTATIONAL_SERVICE_STATES = [
+_STATES = [
     StateType.NOT_STARTED,
     StateType.PENDING,
     StateType.RUNNING,
@@ -124,7 +124,7 @@ def random_group(faker: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
 def fake_pipeline(**overrides) -> dict[str, Any]:
     data = {
         "dag_adjacency_list": json.dumps({}),
-        "state": random.choice(COMPUTATIONAL_SERVICE_STATES),
+        "state": random.choice(_STATES),
     }
     data.update(overrides)
     return data
@@ -145,7 +145,7 @@ def fake_task_factory(first_internal_id=1) -> Callable:
             "inputs": json.dumps({}),
             "outputs": json.dumps({}),
             "image": json.dumps({}),
-            "state": random.choice(COMPUTATIONAL_SERVICE_STATES),
+            "state": random.choice(_STATES),
             "submit": t0,
             "start": t0 + timedelta(seconds=1),
             "end": t0 + timedelta(minutes=5),
