@@ -33,7 +33,7 @@ def _generate_username_from_email(email: str) -> str:
 
 def _generate_random_chars(length=5) -> str:
     """returns '_dddd' where d is a random digit"""
-    return f"_{''.join(secrets.choice(string.digits) for _ in range(length-1))}"
+    return "".join(secrets.choice(string.digits) for _ in range(length - 1))
 
 
 class UsersRepo:
@@ -42,7 +42,7 @@ class UsersRepo:
         conn: SAConnection,
         email: str,
         password_hash: str,
-        status: str,
+        status: UserStatus,
         expires_at: datetime | None,
     ) -> RowProxy:
         data = {
@@ -61,7 +61,7 @@ class UsersRepo:
                     users.insert().values(data).returning(users.c.id)
                 )
             except UniqueViolation:  # noqa: PERF203
-                data["name"] += _generate_random_chars()
+                data["name"] = f'{data["name"]}_{_generate_random_chars()}'
 
         result = await conn.execute(
             sa.select(

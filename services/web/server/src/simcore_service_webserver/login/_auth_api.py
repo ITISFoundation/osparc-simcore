@@ -2,6 +2,7 @@ from datetime import datetime
 
 from aiohttp import web
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.models.users import UserStatus
 from simcore_postgres_database.utils_users import UsersRepo
 
 from ..db.plugin import get_database_engine
@@ -23,7 +24,7 @@ async def create_user(
     *,
     email: str,
     password: str,
-    status: str,
+    status: UserStatus,
     expires_at: datetime | None
 ) -> dict:
 
