@@ -7227,6 +7227,9 @@ components:
           title: Serviceuuid
           type: string
           format: uuid
+      example:
+        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        service_state: idle
     NodeRetrieve:
       title: NodeRetrieve
       type: object
@@ -7335,10 +7338,12 @@ components:
           description: Owner's identifier when registered in the user's database table
         first_name:
           title: First Name
+          maxLength: 255
           type: string
           description: Owner first name
         last_name:
           title: Last Name
+          maxLength: 255
           type: string
           description: Owner last name
       additionalProperties: false
@@ -7810,9 +7815,11 @@ components:
       properties:
         first_name:
           title: First Name
+          maxLength: 255
           type: string
         last_name:
           title: Last Name
+          maxLength: 255
           type: string
         id:
           title: Id
@@ -7855,9 +7862,11 @@ components:
       properties:
         first_name:
           title: First Name
+          maxLength: 255
           type: string
         last_name:
           title: Last Name
+          maxLength: 255
           type: string
       example:
         first_name: Pedro
