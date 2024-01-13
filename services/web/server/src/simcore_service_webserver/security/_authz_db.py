@@ -6,9 +6,7 @@ from aiopg.sa import Engine
 from aiopg.sa.result import ResultProxy
 from models_library.basic_types import IdInt
 from pydantic import parse_obj_as
-from servicelib.aiohttp.aiopg_utils import PostgresRetryPolicyUponOperation
 from simcore_postgres_database.models.users import UserRole
-from tenacity import retry
 
 from ..db.models import UserStatus, users
 from ._identity import IdentityStr
@@ -21,7 +19,6 @@ class UserInfoDict(TypedDict, total=True):
     role: UserRole
 
 
-@retry(**PostgresRetryPolicyUponOperation(_logger).kwargs)
 async def get_active_user_or_none(
     engine: Engine, email: IdentityStr
 ) -> UserInfoDict | None:
