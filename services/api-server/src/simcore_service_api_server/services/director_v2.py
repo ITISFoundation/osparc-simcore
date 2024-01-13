@@ -104,6 +104,7 @@ def _handle_errors_context(project_id: UUID):
             ) from err
 
     except httpx.TimeoutException as err:
+        # TODO: refer resource?
         oec = create_error_code(err)
         err_detail = (
             f"Service handling job operation on '{project_id}' timed out [{oec}]"
@@ -121,6 +122,21 @@ def _handle_errors_context(project_id: UUID):
             detail=err_detail,
         ) from err
 
+    except httpx.HTTPError as err:
+        oec = create_error_code(err)
+        err_detail = f"Unexpected error while processing job '{project_id}' [{oec}]"
+        _logger.exception(
+            "%s: %s",
+            err_detail,
+            to_httpx_command(err.request),
+            extra={"error_code": oec},
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=err_detail,
+        ) from err
+
 
 class DirectorV2Api(BaseServiceClientApi):
     async def create_computation(
@@ -129,17 +145,18 @@ class DirectorV2Api(BaseServiceClientApi):
         user_id: PositiveInt,
         product_name: str,
     ) -> ComputationTaskGet:
-        response = await self.client.post(
-            "/v2/computations",
-            json={
-                "user_id": user_id,
-                "project_id": str(project_id),
-                "start_pipeline": False,
-                "product_name": product_name,
-            },
-        )
-        response.raise_for_status()
-        return ComputationTaskGet(**response.json())
+        with _handle_errors_context(project_id):
+            response = await self.client.post(
+                "/v2/computations",
+                json={
+                    "user_id": user_id,
+                    "project_id": str(project_id),
+                    "start_pipeline": False,
+                    "product_name": product_name,
+                },
+            )
+            response.raise_for_status()
+            return ComputationTaskGet(**response.json())
 
     async def start_computation(
         self,
@@ -149,11 +166,8 @@ class DirectorV2Api(BaseServiceClientApi):
         groups_extra_properties_repository: GroupsExtraPropertiesRepository,
         cluster_id: ClusterID | None = None,
     ) -> ComputationTaskGet:
-
         with _handle_errors_context(project_id):
-
             extras = {}
-
             use_on_demand_clusters = (
                 await groups_extra_properties_repository.use_on_demand_clusters(
                     user_id, product_name
@@ -180,9 +194,7 @@ class DirectorV2Api(BaseServiceClientApi):
     async def get_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
-
         with _handle_errors_context(project_id):
-
             response = await self.client.get(
                 f"/v2/computations/{project_id}",
                 params={
