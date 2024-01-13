@@ -10,7 +10,7 @@ from simcore_postgres_database.errors import DatabaseError
 
 from ..db.plugin import get_database_engine
 from ._authz_access_model import OptionalContext, RoleBasedAccessModel, check_access
-from ._authz_db import UserInfoDict, get_active_user_or_none
+from ._authz_db import AuthInfoDict, get_active_user_or_none
 from ._identity import IdentityStr
 
 _logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         key_builder=lambda f, *a, **kw: f"{f.__name__}_{kw['email']}",
         noself=True,
     )
-    async def _get_active_user_or_none(self, email: IdentityStr) -> UserInfoDict | None:
+    async def _get_auth_or_none(self, email: IdentityStr) -> AuthInfoDict | None:
         """Keeps a cache for a few seconds. Avoids stress on the database with the
         successive streams observerd on this query
 
@@ -50,7 +50,11 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return self._access_model
 
     async def clear_cache(self):
-        await self._get_active_user_or_none.cache.clear()
+        await self._get_auth_or_none.cache.clear()
+
+    #
+    # AbstractAuthorizationPolicy API
+    #
 
     async def authorized_userid(self, identity: IdentityStr) -> int | None:
         """Implements Inteface: Retrieve authorized user id.
@@ -58,7 +62,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        user_info: UserInfoDict | None = await self._get_active_user_or_none(identity)
+        user_info: AuthInfoDict | None = await self._get_auth_or_none(identity)
 
         if user_info is None:
             return None
@@ -87,14 +91,14 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             )
             return False
 
-        user_info = await self._get_active_user_or_none(identity)
-        if user_info is None:
+        auth_info = await self._get_auth_or_none(identity)
+        if auth_info is None:
             return False
 
         # role-based access
         return await check_access(
             self._access_model,
-            role=user_info["role"],
+            role=auth_info["role"],
             operations=permission,
             context=context,
         )

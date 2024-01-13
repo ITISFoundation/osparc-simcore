@@ -14,7 +14,11 @@ from pathlib import Path
 
 import jsondiff
 import pytest
+from aiohttp import web
+from psycopg2 import DatabaseError
+from pytest_mock import MockerFixture
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.security._authz import AuthorizationPolicy
 from simcore_service_webserver.security._authz_access_model import (
     RoleBasedAccessModel,
     check_access,
@@ -23,6 +27,7 @@ from simcore_service_webserver.security._authz_access_roles import (
     ROLES_PERMISSIONS,
     UserRole,
 )
+from simcore_service_webserver.security._authz_db import AuthInfoDict
 
 
 @pytest.fixture
@@ -231,3 +236,43 @@ async def test_check_access_expressions(access_model: RoleBasedAccessModel):
     )
 
     assert await check_access(access_model, R.USER, "study.stop & study.node.create")
+
+
+async def test_authorization_policy_cache(mocker: MockerFixture):
+
+    _users: dict[str, AuthInfoDict] = {
+        "foo@email.com": AuthInfoDict(id=1, role=UserRole.GUEST)
+    }
+
+    async def _get_active_user_or_none(email):
+        if email == "db-failure":
+            raise DatabaseError
+        # inactive user or not found
+        return _users.get(email, None)
+
+    mocker.patch(
+        "simcore_service_webserver.security._authz.get_active_user_or_none",
+        autospec=True,
+        side_effect=_get_active_user_or_none,
+    )
+
+    app = web.Application()
+    authz_policy = AuthorizationPolicy(app, RoleBasedAccessModel([]))
+
+    got = await authz_policy._get_auth_or_none("foo@email.com")
+    assert got["id"] == 1
+
+    # new value
+    _users["foo@email.com"]["id"] = 2
+
+    # gets cache
+    got = await authz_policy._get_auth_or_none("foo@email.com")
+    assert got["id"] == 1
+
+    # gets new value after clear
+    await authz_policy.clear_cache()
+    got = await authz_policy._get_auth_or_none("foo@email.com")
+    assert got["id"] == 2
+
+    with pytest.raises(web.HTTPServiceUnavailable):
+        await authz_policy._get_auth_or_none("db-failure@email.com")

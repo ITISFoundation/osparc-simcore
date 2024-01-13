@@ -14,17 +14,19 @@ from ._identity import IdentityStr
 _logger = logging.getLogger(__name__)
 
 
-class UserInfoDict(TypedDict, total=True):
+class AuthInfoDict(TypedDict, total=True):
     id: IdInt
     role: UserRole
 
 
 async def get_active_user_or_none(
     engine: Engine, email: IdentityStr
-) -> UserInfoDict | None:
-    """Gets a user with email if ACTIVE othewise None"""
-    # NOTE: sometimes it raises psycopg2.DatabaseError in #880 and #1160
+) -> AuthInfoDict | None:
+    """Gets a user with email if ACTIVE othewise return None
 
+    Raises:
+        DatabaseError: unexpected errors found in https://github.com/ITISFoundation/osparc-simcore/issues/880 and https://github.com/ITISFoundation/osparc-simcore/pull/1160
+    """
     async with engine.acquire() as conn:
         result: ResultProxy = await conn.execute(
             sa.select(users.c.id, users.c.role).where(
@@ -35,4 +37,4 @@ async def get_active_user_or_none(
         assert row is None or parse_obj_as(IdInt, row.id) is not None  # nosec
         assert row is None or parse_obj_as(UserRole, row.role) is not None  # nosec
 
-        return UserInfoDict(id=row.id, role=row.role) if row else None
+        return AuthInfoDict(id=row.id, role=row.role) if row else None
