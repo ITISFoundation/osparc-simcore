@@ -1,10 +1,10 @@
-import pytest
-
 # pylint: disable=no-value-for-parameter
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+
+import pytest
 import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -41,7 +41,7 @@ async def test_lock_project(
     faker: Faker,
 ):
     assert client.app
-    user_name: FullNameDict = {
+    user_fullname: FullNameDict = {
         "first_name": faker.first_name(),
         "last_name": faker.last_name(),
     }
@@ -50,7 +50,7 @@ async def test_lock_project(
         project_uuid=project_uuid,
         status=ProjectStatus.EXPORTING,
         user_id=user_id,
-        user_name=user_name,
+        user_fullname=user_fullname,
     ):
         redis_value = await redis_locks_client.get(
             PROJECT_REDIS_LOCK_KEY.format(project_uuid)
@@ -59,7 +59,7 @@ async def test_lock_project(
         lock_value = parse_raw_as(ProjectLocked, redis_value)
         assert lock_value == ProjectLocked(
             value=True,
-            owner=Owner(user_id=user_id, **user_name),
+            owner=Owner(user_id=user_id, **user_fullname),
             status=ProjectStatus.EXPORTING,
         )
 
@@ -87,7 +87,7 @@ async def test_lock_already_locked_project_raises(
         project_uuid=project_uuid,
         status=ProjectStatus.EXPORTING,
         user_id=user_id,
-        user_name=user_name,
+        user_fullname=user_name,
     ):
         # locking again is not permitted
         with pytest.raises(ProjectLockError):
@@ -96,7 +96,7 @@ async def test_lock_already_locked_project_raises(
                 project_uuid=project_uuid,
                 status=ProjectStatus.OPENING,
                 user_id=user_id,
-                user_name=user_name,
+                user_fullname=user_name,
             ):
                 ...
 
@@ -119,7 +119,7 @@ async def test_raise_exception_while_locked_release_lock(
             project_uuid=project_uuid,
             status=ProjectStatus.EXPORTING,
             user_id=user_id,
-            user_name=user_name,
+            user_fullname=user_name,
         ):
             # here we have the project locked
             redis_value = await redis_locks_client.get(
@@ -152,7 +152,7 @@ async def test_is_project_locked(
         project_uuid=project_uuid,
         status=ProjectStatus.EXPORTING,
         user_id=user_id,
-        user_name=user_name,
+        user_fullname=user_name,
     ):
         assert await is_project_locked(client.app, project_uuid) == True
 
@@ -187,7 +187,7 @@ async def test_get_project_locked_state(
         project_uuid=project_uuid,
         status=lock_status,
         user_id=user_id,
-        user_name=user_name,
+        user_fullname=user_name,
     ):
         locked_state = await get_project_locked_state(client.app, project_uuid)
         expected_locked_state = ProjectLocked(
