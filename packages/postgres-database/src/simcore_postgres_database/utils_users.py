@@ -31,8 +31,9 @@ def _generate_username_from_email(email: str) -> str:
     return re.sub(r"[^a-zA-Z0-9]", "", username).lower()
 
 
-def _generate_random_suffix() -> str:
-    return f"_{''.join(secrets.choice(string.digits) for _ in range(4))}"
+def _generate_random_chars(length=5) -> str:
+    """returns '_dddd' where d is a random digit"""
+    return f"_{''.join(secrets.choice(string.digits) for _ in range(length-1))}"
 
 
 class UsersRepo:
@@ -52,15 +53,15 @@ class UsersRepo:
             "role": UserRole.USER,
             "expires_at": expires_at,
         }
-        try:
-            user_id = await conn.scalar(
-                users.insert().values(data).returning(users.c.id)
-            )
-        except UniqueViolation:
-            data["name"] += _generate_random_suffix()
-            user_id = await conn.scalar(
-                users.insert().values(data).returning(users.c.id)
-            )
+
+        user_id = None
+        while user_id is None:
+            try:
+                user_id = await conn.scalar(
+                    users.insert().values(data).returning(users.c.id)
+                )
+            except UniqueViolation:  # noqa: PERF203
+                data["name"] += _generate_random_chars()
 
         result = await conn.execute(
             sa.select(
