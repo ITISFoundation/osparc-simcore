@@ -4,6 +4,7 @@ import logging
 from typing import Final
 
 from aiocache import cached
+from aiocache.base import BaseCache
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
 from simcore_postgres_database.errors import DatabaseError
@@ -14,7 +15,6 @@ from ._authz_db import AuthInfoDict, get_active_user_or_none
 from ._identity import IdentityStr
 
 _logger = logging.getLogger(__name__)
-
 
 _SECOND = 1  # in seconds
 _ACTIVE_USER_AUTHZ_CACHE_TTL: Final = 10 * _SECOND
@@ -28,7 +28,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
     @cached(
         ttl=_ACTIVE_USER_AUTHZ_CACHE_TTL,
         namespace=__name__,
-        key_builder=lambda f, *a, **kw: f"{f.__name__}_{kw['email']}",
+        key_builder=lambda f, self, email: f"{f.__name__}/{email}",
         noself=True,
     )
     async def _get_auth_or_none(self, email: IdentityStr) -> AuthInfoDict | None:
@@ -50,7 +50,8 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return self._access_model
 
     async def clear_cache(self):
-        await self._get_auth_or_none.cache.clear()
+        autz_cache: BaseCache = self._get_auth_or_none.cache
+        await autz_cache.clear()
 
     #
     # AbstractAuthorizationPolicy API

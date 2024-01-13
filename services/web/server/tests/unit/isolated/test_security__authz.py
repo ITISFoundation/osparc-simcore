@@ -11,9 +11,11 @@
 import copy
 import json
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import jsondiff
 import pytest
+from aiocache.base import BaseCache
 from aiohttp import web
 from psycopg2 import DatabaseError
 from pytest_mock import MockerFixture
@@ -238,41 +240,81 @@ async def test_check_access_expressions(access_model: RoleBasedAccessModel):
     assert await check_access(access_model, R.USER, "study.stop & study.node.create")
 
 
-async def test_authorization_policy_cache(mocker: MockerFixture):
-
-    _users: dict[str, AuthInfoDict] = {
-        "foo@email.com": AuthInfoDict(id=1, role=UserRole.GUEST)
-    }
-
-    async def _get_active_user_or_none(email):
-        if email == "db-failure":
-            raise DatabaseError
-        # inactive user or not found
-        return _users.get(email, None)
+@pytest.fixture
+def mock_db(mocker: MockerFixture) -> MagicMock:
 
     mocker.patch(
+        "simcore_service_webserver.security._authz.get_database_engine",
+        autospec=True,
+        return_value="FAKE-ENGINE",
+    )
+
+    users_db: dict[str, AuthInfoDict] = {
+        "foo@email.com": AuthInfoDict(id=1, role=UserRole.GUEST),
+        "bar@email.com": AuthInfoDict(id=55, role=UserRole.GUEST),
+    }
+
+    async def _fake_db(engine, email):
+        assert engine == "FAKE-ENGINE"
+
+        if "db-failure" in email:
+            raise DatabaseError
+
+        # inactive user or not found
+        return copy.deepcopy(users_db.get(email, None))
+
+    mock_db_fun = mocker.patch(
         "simcore_service_webserver.security._authz.get_active_user_or_none",
         autospec=True,
-        side_effect=_get_active_user_or_none,
+        side_effect=_fake_db,
     )
+
+    mock_db_fun.users_db = users_db
+    return mock_db_fun
+
+
+async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicMock):
 
     app = web.Application()
     authz_policy = AuthorizationPolicy(app, RoleBasedAccessModel([]))
 
+    # cache under test
+    autz_cache: BaseCache = authz_policy._get_auth_or_none.cache
+
+    assert not (await autz_cache.exists("_get_auth_or_none/foo@email.com"))
+    for _ in range(3):
+        got = await authz_policy._get_auth_or_none("foo@email.com")
+        assert mock_db.call_count == 1
+        assert got["id"] == 1
+
+    assert await autz_cache.exists("_get_auth_or_none/foo@email.com")
+
+    # new value in db
+    mock_db.users_db["foo@email.com"]["id"] = 2
+    assert (await autz_cache.get("_get_auth_or_none/foo@email.com"))["id"] == 1
+
+    # gets cache, db is NOT called
     got = await authz_policy._get_auth_or_none("foo@email.com")
+    assert mock_db.call_count == 1
     assert got["id"] == 1
 
-    # new value
-    _users["foo@email.com"]["id"] = 2
-
-    # gets cache
-    got = await authz_policy._get_auth_or_none("foo@email.com")
-    assert got["id"] == 1
-
-    # gets new value after clear
+    # clear cache
     await authz_policy.clear_cache()
+
+    # gets new value
     got = await authz_policy._get_auth_or_none("foo@email.com")
+    assert mock_db.call_count == 2
     assert got["id"] == 2
 
+    # other email has other key
+    assert not (await autz_cache.exists("_get_auth_or_none/bar@email.com"))
+
+    for _ in range(4):
+        # NOTE: None
+        assert await authz_policy._get_auth_or_none("bar@email.com")
+        assert await autz_cache.exists("_get_auth_or_none/bar@email.com")
+        assert mock_db.call_count == 3
+
+    # should raise web.HTTPServiceUnavailable on db failure
     with pytest.raises(web.HTTPServiceUnavailable):
         await authz_policy._get_auth_or_none("db-failure@email.com")
