@@ -212,7 +212,7 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
 
     # This user might be cached in the auth. If so, any request
     # with this user-id will get thru producing unexpected side-effects
-    clean_auth_policy_cache(app)
+    await clean_auth_policy_cache(app)
 
 
 class UserNameDict(TypedDict):

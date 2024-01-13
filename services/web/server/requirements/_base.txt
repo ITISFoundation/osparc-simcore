@@ -165,8 +165,6 @@ email-validator==1.2.1
     # via pydantic
 et-xmlfile==1.1.0
     # via openpyxl
-expiringdict==1.2.1
-    # via -r requirements/_base.in
 faker==19.6.1
     # via -r requirements/_base.in
 frozenlist==1.3.0

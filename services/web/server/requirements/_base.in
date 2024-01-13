@@ -20,6 +20,7 @@
 
 
 aio-pika # RabbitMQ client
+aiocache
 aiodebug # asyncio debug
 aiofiles # i/o
 aiohttp
@@ -31,7 +32,6 @@ aiopg[sa] # db
 aiosmtplib # email
 asyncpg # db
 cryptography # security
-expiringdict
 faker # Only used in dev-mode for proof-of-concepts
 gunicorn[setproctitle]
 jinja_app_loader # email

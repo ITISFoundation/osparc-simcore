@@ -1,10 +1,12 @@
 """ AUTHoriZation (auth) policy:
 """
 import logging
+from typing import Final
 
+from aiocache import cached
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
-from expiringdict import ExpiringDict
+from simcore_postgres_database.errors import DatabaseError
 
 from ..db.plugin import get_database_engine
 from ._authz_access_model import OptionalContext, RoleBasedAccessModel, check_access
@@ -14,30 +16,41 @@ from ._identity import IdentityStr
 _logger = logging.getLogger(__name__)
 
 
+_SECOND = 1  # in seconds
+_ACTIVE_USER_AUTHZ_CACHE_TTL: Final = 10 * _SECOND
+
+
 class AuthorizationPolicy(AbstractAuthorizationPolicy):
     def __init__(self, app: web.Application, access_model: RoleBasedAccessModel):
         self._app = app
         self._access_model = access_model
-        self._cache = ExpiringDict(max_len=100, max_age_seconds=10)
 
-    async def _get_user_info(self, email: IdentityStr) -> UserInfoDict | None:
-        # NOTE: Keeps a cache for a few seconds. Observed successive streams of this query
-        user: UserInfoDict | None = self._cache.get(email, None, with_age=False)
-        if user is None:
-            user = await get_active_user_or_none(get_database_engine(self._app), email)
-            if user:
-                assert user["id"]  # nosec
-                assert user["role"]  # nosec
-                self._cache[email] = user
+    @cached(
+        ttl=_ACTIVE_USER_AUTHZ_CACHE_TTL,
+        namespace=__name__,
+        key_builder=lambda f, *a, **kw: f"{f.__name__}_{kw['email']}",
+        noself=True,
+    )
+    async def _get_active_user_or_none(self, email: IdentityStr) -> UserInfoDict | None:
+        """Keeps a cache for a few seconds. Avoids stress on the database with the
+        successive streams observerd on this query
 
-        return user
+        Raises:
+            web.HTTPServiceUnavailable: if database raises an exception
+        """
+        try:
+            return await get_active_user_or_none(get_database_engine(self._app), email)
+        except DatabaseError as err:
+            raise web.HTTPServiceUnavailable(
+                reason="Authentication service is temporary unavailable"
+            ) from err
 
     @property
     def access_model(self) -> RoleBasedAccessModel:
         return self._access_model
 
-    def clear_cache(self):
-        self._cache.clear()
+    async def clear_cache(self):
+        await self._get_active_user_or_none.cache.clear()
 
     async def authorized_userid(self, identity: IdentityStr) -> int | None:
         """Implements Inteface: Retrieve authorized user id.
@@ -45,7 +58,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        user_info: UserInfoDict | None = await self._get_user_info(identity)
+        user_info: UserInfoDict | None = await self._get_active_user_or_none(identity)
 
         if user_info is None:
             return None
@@ -74,7 +87,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             )
             return False
 
-        user_info = await self._get_user_info(identity)
+        user_info = await self._get_active_user_or_none(identity)
         if user_info is None:
             return False
 

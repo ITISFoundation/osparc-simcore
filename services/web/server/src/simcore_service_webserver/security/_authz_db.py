@@ -22,11 +22,7 @@ class UserInfoDict(TypedDict, total=True):
 async def get_active_user_or_none(
     engine: Engine, email: IdentityStr
 ) -> UserInfoDict | None:
-    """Gets a user with email if ACTIVE othewise None
-
-    Raises:
-        HTTPServiceUnavailable: after pg retries fail
-    """
+    """Gets a user with email if ACTIVE othewise None"""
     # NOTE: sometimes it raises psycopg2.DatabaseError in #880 and #1160
 
     async with engine.acquire() as conn:

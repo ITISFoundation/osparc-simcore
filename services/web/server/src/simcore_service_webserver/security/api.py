@@ -17,9 +17,9 @@ def get_access_model(app: web.Application) -> RoleBasedAccessModel:
     return autz_policy.access_model
 
 
-def clean_auth_policy_cache(app: web.Application) -> None:
+async def clean_auth_policy_cache(app: web.Application) -> None:
     autz_policy: AuthorizationPolicy = app[aiohttp_security.api.AUTZ_KEY]
-    autz_policy.clear_cache()
+    await autz_policy.clear_cache()
 
 
 async def check_permission(
