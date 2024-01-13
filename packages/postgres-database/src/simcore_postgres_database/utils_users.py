@@ -13,7 +13,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 
 from .errors import UniqueViolation
-from .models.users import UserRole, users
+from .models.users import UserRole, UserStatus, users
 
 
 class BaseUserRepoError(Exception):
@@ -90,6 +90,19 @@ class UsersRepo:
     async def get_email(conn: SAConnection, user_id: int) -> str:
         value: str | None = await conn.scalar(
             sa.select(users.c.email).where(users.c.id == user_id)
+        )
+        if value:
+            assert isinstance(value, str)  # nosec
+            return value
+
+        raise UserNotFoundInRepoError
+
+    @staticmethod
+    async def get_active_user_email(conn: SAConnection, user_id: int) -> str:
+        value: str | None = await conn.scalar(
+            sa.select(users.c.email).where(
+                (users.c.status == UserStatus.ACTIVE) & (users.c.id == user_id)
+            )
         )
         if value:
             assert isinstance(value, str)  # nosec

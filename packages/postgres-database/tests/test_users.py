@@ -126,8 +126,8 @@ async def test_unique_username(
     assert user.name == "pcrespov"
 
     # same name fails
+    data["email"] = faker.email()
     with pytest.raises(UniqueViolation):
-        data["email"] = faker.email()
         await connection.scalar(users.insert().values(data).returning(users.c.id))
 
     # generate new name
@@ -163,6 +163,13 @@ async def test_new_user(
     other_user = await UsersRepo.new_user(connection, **other_data)
     assert other_user.email != new_user.email
     assert other_user.name != new_user.name
+
+    assert await UsersRepo.get_email(connection, other_user.id) == other_user.email
+    assert await UsersRepo.get_role(connection, other_user.id) == other_user.role
+    assert (
+        await UsersRepo.get_active_user_email(connection, other_user.id)
+        == other_user.email
+    )
 
 
 async def test_trial_accounts(connection: SAConnection, clean_users_db_table: None):
