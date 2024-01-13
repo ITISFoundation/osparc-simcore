@@ -1,10 +1,10 @@
 import logging
 
 from fastapi import FastAPI
+from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
-from models_library.basic_types import BootModeEnum
 
 from .._meta import (
     API_VERSION,
