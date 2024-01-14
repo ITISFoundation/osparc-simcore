@@ -2119,11 +2119,6 @@ paths:
           type: string
         name: search
         in: query
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Body_list_projects'
       responses:
         '200':
           description: Successful Response
@@ -3089,13 +3084,16 @@ paths:
         are taken from context, optionally wallet_id parameter might be provided).
       operationId: list_resource_usage_services
       parameters:
-      - required: false
+      - description: Order by field (started_at|stopped_at|credit_cost) and direction
+          (asc|desc). The default sorting order is ascending.
+        required: false
         schema:
           title: Order By
           type: string
-          decription: Sorting field. The default sorting order is ascending. To specify
-            descending order for a field, users append a 'desc' suffix
-        example: foo desc, bar
+          description: Order by field (started_at|stopped_at|credit_cost) and direction
+            (asc|desc). The default sorting order is ascending.
+          format: json-string
+        example: '{"field": "started_at", "direction": "desc"}'
         name: order_by
         in: query
       - description: Filters to process on the resource usages list, encoded as JSON.
@@ -3109,6 +3107,7 @@ paths:
             JSON. Currently supports the filtering of 'started_at' field with 'from'
             and 'until' parameters in <yyyy-mm-dd> format. The date range specidied
             is inclusive.
+          format: json-string
         example: '{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}'
         name: filters
         in: query
@@ -4831,17 +4830,6 @@ components:
           description: Link to the status
           format: uri
       additionalProperties: false
-    Body_list_projects:
-      title: Body_list_projects
-      type: object
-      properties:
-        order_by:
-          title: Order By
-          type: array
-          items:
-            $ref: '#/components/schemas/ProjectOrderBy'
-        filters:
-          $ref: '#/components/schemas/ProjectListFilters'
     Body_service_submission:
       title: Body_service_submission
       required:
@@ -7340,13 +7328,6 @@ components:
       - WALLET_SHARED
       type: string
       description: An enumeration.
-    OrderDirection:
-      title: OrderDirection
-      enum:
-      - asc
-      - desc
-      type: string
-      description: An enumeration.
     Owner:
       title: Owner
       required:
@@ -8146,27 +8127,6 @@ components:
           format: uri
         results:
           $ref: '#/components/schemas/ExtractedResults'
-    ProjectListFilters:
-      title: ProjectListFilters
-      type: object
-      properties:
-        tags:
-          title: Tags
-          type: array
-          items:
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-        classifiers:
-          title: Classifiers
-          type: array
-          items:
-            type: string
-      additionalProperties: false
-      description: 'inspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.
-
-        Encoded as JSON. Each available filter can have its own logic (should be well
-        documented)'
     ProjectListItem:
       title: ProjectListItem
       required:
@@ -8326,19 +8286,6 @@ components:
             - type: integer
             - type: number
             - type: string
-    ProjectOrderBy:
-      title: ProjectOrderBy
-      type: object
-      properties:
-        field:
-          title: Field
-          type: string
-        direction:
-          allOf:
-          - $ref: '#/components/schemas/OrderDirection'
-          default: desc
-      additionalProperties: false
-      description: inspired by Google AIP https://google.aip.dev/132#ordering
     ProjectOutputGet:
       title: ProjectOutputGet
       required:
