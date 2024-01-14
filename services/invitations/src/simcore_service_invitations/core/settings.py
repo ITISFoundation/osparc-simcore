@@ -103,3 +103,4 @@ class ApplicationSettings(MinimalApplicationSettings):
         description="Password for HTTP Basic Auth. Required if started as a web app.",
         min_length=10,
     )
+    INVITATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True

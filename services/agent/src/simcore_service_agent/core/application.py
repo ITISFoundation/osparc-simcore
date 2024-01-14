@@ -5,6 +5,9 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
+from servicelib.fastapi.prometheus_instrumentation import (
+    setup_prometheus_instrumentation,
+)
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import (
@@ -46,6 +49,9 @@ def create_app() -> FastAPI:
     )
     override_fastapi_openapi_method(app)
     app.state.settings = settings
+
+    if app.state.settings.AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        setup_prometheus_instrumentation(app)
 
     # ROUTERS
     app.include_router(router)
