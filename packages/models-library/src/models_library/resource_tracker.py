@@ -101,11 +101,13 @@ class StartedAt(BaseModel):
     def parse_from_filter(cls, v):
         """Parse the filters field."""
         if v:
+            if isinstance(v, datetime):
+                return v
             try:
                 from_ = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=timezone.utc)
             except Exception as exc:
                 raise ValueError(
-                    "Both 'from' and 'until' keys must be provided in proper format <yyyy-mm-dd>."
+                    "'from' value must be provided in proper format <yyyy-mm-dd>."
                 ) from exc
             return from_
         return v
@@ -115,11 +117,13 @@ class StartedAt(BaseModel):
     def parse_until_filter(cls, v):
         """Parse the filters field."""
         if v:
+            if isinstance(v, datetime):
+                return v
             try:
                 until = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=timezone.utc)
             except Exception as exc:
                 raise ValueError(
-                    "Both 'from' and 'until' keys must be provided in proper format <yyyy-mm-dd>."
+                    "'until' value must be provided in proper format <yyyy-mm-dd>."
                 ) from exc
             return until
         return v
