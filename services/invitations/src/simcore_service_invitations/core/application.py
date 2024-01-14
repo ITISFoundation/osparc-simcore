@@ -1,7 +1,8 @@
-from typing import Optional
-
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.prometheus_instrumentation import (
+    setup_prometheus_instrumentation,
+)
 
 from .._meta import (
     API_VERSION,
@@ -15,7 +16,7 @@ from ..api.routes import setup_api_routes
 from .settings import ApplicationSettings
 
 
-def create_app(settings: Optional[ApplicationSettings] = None) -> FastAPI:
+def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
@@ -33,6 +34,9 @@ def create_app(settings: Optional[ApplicationSettings] = None) -> FastAPI:
 
     # PLUGINS SETUP
     setup_api_routes(app)
+
+    if app.state.settings.INVITATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        setup_prometheus_instrumentation(app)
 
     # ERROR HANDLERS
     # ... add here ...

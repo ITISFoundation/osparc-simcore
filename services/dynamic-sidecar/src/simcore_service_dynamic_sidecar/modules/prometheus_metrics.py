@@ -113,7 +113,7 @@ class UserServicesMetrics:
             )
             self._metrics_response = MetricsResponse.from_error(e)
         except Exception as e:  # pylint: disable=broad-exception-caught
-            _logger.exception("Unexpected exception")
+            _logger.info("Unexpected exception", exc_info=True)
             self._metrics_response = MetricsResponse.from_error(e)
 
     async def _task_metrics_recovery(self) -> None:

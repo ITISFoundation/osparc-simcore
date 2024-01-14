@@ -1,6 +1,9 @@
 import logging
 
 from fastapi import FastAPI
+from servicelib.fastapi.prometheus_instrumentation import (
+    setup_prometheus_instrumentation,
+)
 
 from .._meta import (
     API_VERSION,
@@ -38,6 +41,9 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     # STATE
     app.state.settings = settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
+
+    if settings.AUTOSCALING_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        setup_prometheus_instrumentation(app)
 
     # PLUGINS SETUP
     setup_api_routes(app)
