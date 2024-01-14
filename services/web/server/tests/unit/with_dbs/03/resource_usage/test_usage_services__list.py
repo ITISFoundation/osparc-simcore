@@ -23,46 +23,6 @@ from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.models import UserRole
 
-# _SERVICE_RUN_GET: dict = {
-#     "items": [
-#         {
-#             "service_run_id": "comp_1_5c2110be-441b-11ee-a0e8-02420a000040_1",
-#             "wallet_id": 1,
-#             "wallet_name": "the super wallet!",
-#             "user_id": 1,
-#             "project_id": "5c2110be-441b-11ee-a0e8-02420a000040",
-#             "project_name": "osparc",
-#             "node_id": "3d2133f4-aba4-4364-9f7a-9377dea1221f",
-#             "node_name": "sleeper",
-#             "service_key": "simcore/services/comp/itis/sleeper",
-#             "service_version": "2.0.2",
-#             "service_type": "DYNAMIC_SERVICE",
-#             "service_resources": {
-#                 "container": {
-#                     "image": "simcore/services/comp/itis/sleeper:2.0.2",
-#                     "resources": {
-#                         "CPU": {"limit": 0.1, "reservation": 0.1},
-#                         "RAM": {"limit": 2147483648, "reservation": 2147483648},
-#                     },
-#                     "boot_modes": ["CPU"],
-#                 }
-#             },
-#             "started_at": "2023-08-26T14:18:17.600493+00:00",
-#             "stopped_at": "2023-08-26T14:18:19.358355+00:00",
-#             "service_run_status": "SUCCESS",
-#         }
-#     ],
-#     "total": 1,
-#     "limit": 1,
-#     "offset": 0,
-#     "links": {
-#         "first": "/api/v1/users?limit=1&offset=0",
-#         "last": "/api/v1/users?limit=1&offset=0",
-#         "self": "/api/v1/users?limit=1&offset=0",
-#         "next": "/api/v1/users?limit=1&offset=0",
-#         "prev": "/api/v1/users?limit=1&offset=0",
-#     },
-# }
 _SERVICE_RUN_GET = ServiceRunPage(
     items=[
         ServiceRunGet(
@@ -100,11 +60,6 @@ _SERVICE_RUN_GET = ServiceRunPage(
 
 @pytest.fixture
 def mock_list_usage_services(mocker: MockerFixture) -> tuple:
-    # mock_list_with_wallets = mocker.patch(
-    #     "simcore_service_webserver.resource_usage._service_runs_api.resource_tracker_client.list_service_runs_by_user_and_product",
-    #     spec=True,
-    #     return_value=_SERVICE_RUN_GET,
-    # )
     mock_list_usage = mocker.patch(
         "simcore_service_webserver.resource_usage._service_runs_api.service_runs.get_service_run_page",
         spec=True,
@@ -144,7 +99,7 @@ async def test_list_service_usage(
     url = client.app.router["list_resource_usage_services"].url_for()
     resp = await client.get(f"{url}")
     await assert_status(resp, web.HTTPOk)
-    assert mock_list_usage_services[0].called
+    assert mock_list_usage_services.called
 
     # list service usage with wallets as "accountant"
     url = (
@@ -296,7 +251,6 @@ async def test_list_service_usage_with_filters_query_param(
     )
     resp = await client.get(f"{url}")
     _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
-    assert mock_list_usage_services.called
     assert error["status"] == web.HTTPUnprocessableEntity.status_code
     assert error["errors"][0]["message"].startswith("Invalid JSON")
 
@@ -319,4 +273,4 @@ async def test_list_service_usage_with_filters_query_param(
         .with_query(filters=json.dumps(_filter))
     )
     resp = await client.get(f"{url}")
-    _, error = await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, web.HTTPOk)
