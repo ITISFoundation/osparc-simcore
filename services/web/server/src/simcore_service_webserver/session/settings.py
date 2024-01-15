@@ -46,7 +46,7 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         default=True,
         description="Ensures the cookie is only sent over secure HTTPS connections",
     )
-    SESSION_HTTPONLY: bool = Field(
+    SESSION_COOKIE_HTTPONLY: bool = Field(
         default=True,
         description="This prevents JavaScript from accessing the session cookie",
     )

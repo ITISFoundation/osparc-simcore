@@ -36,7 +36,7 @@ def setup_session(app: web.Application):
         secret_key=settings.SESSION_SECRET_KEY.get_secret_value(),
         cookie_name="osparc-ssn",
         secure=settings.SESSION_COOKIE_SECURE,
-        httponly=settings.SESSION_HTTPONLY,
+        httponly=settings.SESSION_COOKIE_HTTPONLY,
         max_age=settings.SESSION_COOKIE_MAX_AGE,
         samesite=settings.SESSION_COOKIE_SAMESITE,
     )
