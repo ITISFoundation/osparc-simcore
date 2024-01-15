@@ -376,8 +376,12 @@ qx.Theme.define("osparc.theme.Decoration", {
         style: "solid",
         width: 1,
         radius: 5,
-        color: "background-card-overlay",
-        backgroundColor: "background-card-overlay"
+        color: "fab-background",
+        backgroundColor: "fab-background",
+        shadowSpreadRadius: 0,
+        shadowBlurRadius: 3,
+        shadowLength: 0,
+        shadowColor: "box-shadow"
       }
     },
     "form-button-outlined": {
