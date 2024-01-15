@@ -336,32 +336,36 @@ async def _assign_tasks_to_current_cluster(
             app, task
         )
 
-        all_drained_nodes = cluster.drained_nodes + cluster.reserve_drained_nodes
-        if (
-            _try_assign_task_to_ec2_instance(
+        assignment_functions = [
+            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
                 task,
                 instances=cluster.active_nodes,
-                task_required_ec2_instance=task_required_ec2_instance,
-                task_required_resources=task_required_resources,
-            )
-            or _try_assign_task_to_ec2_instance(
+                task_required_ec2_instance=required_ec2,
+                task_required_resources=required_resources,
+            ),
+            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
                 task,
-                instances=all_drained_nodes,
-                task_required_ec2_instance=task_required_ec2_instance,
-                task_required_resources=task_required_resources,
-            )
-            or _try_assign_task_to_ec2_instance(
+                instances=cluster.drained_nodes + cluster.reserve_drained_nodes,
+                task_required_ec2_instance=required_ec2,
+                task_required_resources=required_resources,
+            ),
+            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
                 task,
                 instances=cluster.pending_nodes,
-                task_required_ec2_instance=task_required_ec2_instance,
-                task_required_resources=task_required_resources,
-            )
-            or _try_assign_task_to_ec2_instance(
+                task_required_ec2_instance=required_ec2,
+                task_required_resources=required_resources,
+            ),
+            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
                 task,
                 instances=cluster.pending_ec2s,
-                task_required_ec2_instance=task_required_ec2_instance,
-                task_required_resources=task_required_resources,
-            )
+                task_required_ec2_instance=required_ec2,
+                task_required_resources=required_resources,
+            ),
+        ]
+
+        if any(
+            assignment(task, task_required_ec2_instance, task_required_resources)
+            for assignment in assignment_functions
         ):
             _logger.info("assigned task to cluster")
         else:
