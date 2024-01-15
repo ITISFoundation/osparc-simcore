@@ -104,11 +104,13 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
         const previews = previewsPerNode["screenshots"];
         if (previews && previews.length) {
           previews.forEach(preview => {
-            this.__addThumbnail({
-              type: preview["mimetype"],
-              thumbnailUrl: preview["thumbnail_url"],
-              fileUrl: preview["file_url"]
-            });
+            if (preview["mimetype"]) {
+              this.__addThumbnail({
+                type: preview["mimetype"],
+                thumbnailUrl: preview["thumbnail_url"],
+                fileUrl: preview["file_url"]
+              });
+            }
           });
           this.__reloadSuggestions();
         }
@@ -120,8 +122,9 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
     },
 
     thumbnailTapped: function(thumbnail) {
-      this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
-      osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue
+      this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.hideBorder(thumbnailImg));
+      const color = qx.theme.manager.Color.getInstance().resolve("background-selected-dark");
+      osparc.utils.Utils.addBorder(thumbnail, 1, color);
       this.fireDataEvent("thumbnailTapped", {
         type: thumbnail.thumbnailType,
         source: thumbnail.thumbnailFileUrl
@@ -136,7 +139,11 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
         thumbnail.thumbnailType = suggestion["type"];
         thumbnail.thumbnailFileUrl = suggestion["fileUrl"];
         thumbnail.setMarginLeft(1); // give some extra space to the selection border
-        thumbnail.addListener("tap", () => this.thumbnailTapped(thumbnail), this);
+        thumbnail.addListener("mouseover", () => thumbnail.set({decorator: "selected-light"}), this);
+        thumbnail.addListener("mouseout", () => thumbnail.set({decorator: "fab-button"}), this);
+        thumbnail.addListener("tap", () => {
+          this.thumbnailTapped(thumbnail);
+        }, this);
         this.add(thumbnail);
       });
     }

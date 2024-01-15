@@ -26,7 +26,7 @@ qx.Class.define("osparc.widget.SlideBar", {
   construct: function(spacing) {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.HBox(spacing? spacing : 5);
+    const layout = new qx.ui.layout.HBox(spacing ? spacing : 5);
     this.setLayout(layout);
 
     this.__pimpLayout();
