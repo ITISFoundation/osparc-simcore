@@ -1,7 +1,89 @@
 import os
 
 from dotenv import load_dotenv
-from pydantic import BaseModel
+from pydantic import BaseModel, BaseSettings, Field
+
+DEPLOYMENTS = [
+    "master",
+    "dalco-staging",
+    "dalco-production",
+    "tip-production",
+    "aws-zmt-production",
+    "aws-nih-production",
+    "aws-staging",
+]
+
+
+class NewSettings(BaseSettings):
+    OSPARC_DEPLOYMENT_TARGET: str
+    portainer_url: str = Field(..., env="PORTAINER_DOMAIN")
+    portainer_username: str = Field(..., env="PORTAINER_USER")
+    portainer_password: str = Field(..., env="PORTAINER_PASSWORD")
+    swarm_stack_name: str = Field(..., env="SWARM_STACK_NAME")
+    portainer_endpoint_version: int
+
+    @property
+    def starts_with(self) -> str:
+        return {
+            "master": "master-simcore_master",
+            "dalco-staging": "staging-simcore_staging",
+            "dalco-production": "production-simcore_production",
+            "tip-production": "production-simcore_production",
+            "aws-staging": "staging-simcore_staging",
+            "aws-nih-production": "production-simcore_production",
+            "aws-zmt-production": "staging-simcore_staging",
+        }[self.OSPARC_DEPLOYMENT_TARGET]
+
+
+def get_new_settings(env_file_path, deployment: str):
+
+    match deployment:
+        case "master":
+            settings = NewSettings(
+                _enf_file=env_file_path,
+                _env_prefix="MASTER_",
+                portainer_endpoint_version=1,
+            )
+        case "dalco-staging":
+            settings = NewSettings(
+                _enf_file=env_file_path,
+                _env_prefix="DALCO_STAGING_",
+                portainer_endpoint_version=1,
+            )
+        case "dalco-production":
+            settings = NewSettings(
+                _enf_file=env_file_path,
+                _env_prefix="TIP_PRODUCTION_",
+                portainer_endpoint_version=1,
+            )
+        case "tip-production":
+            settings = NewSettings(
+                _enf_file=env_file_path,
+                _env_prefix="MASTER",
+                portainer_endpoint_version=2,
+            )
+        case "aws-staging":
+            settings = NewSettings(
+                _enf_file=env_file_path,
+                _env_prefix="MASTER",
+                portainer_endpoint_version=2,
+            )
+        case "aws-nih-production":
+            settings = NewSettings(
+                _enf_file=env_file_path,
+                _env_prefix="MASTER",
+                portainer_endpoint_version=2,
+            )
+        case "aws-zmt-production":
+            settings = NewSettings(
+                _enf_file=env_file_path,
+                _env_prefix="MASTER",
+                portainer_endpoint_version=1,
+            )
+        case _:
+            raise ValueError(f"Invalid {deployment=}")
+
+    return settings
 
 
 class Settings(BaseModel):
@@ -13,7 +95,7 @@ class Settings(BaseModel):
     portainer_endpoint_version: int
 
 
-def get_settings(env_file, deployment):
+def get_settings(env_file, deployment: str) -> Settings:
     # pylint: disable=too-many-return-statements
     load_dotenv(env_file)
 
