@@ -62,12 +62,14 @@ class _ListServicesResourceUsagesQueryParams(BaseModel):
         default=0, description="index to the first item to return (pagination)"
     )
     wallet_id: WalletID | None = Field(default=None)
-    order_by: Json[OrderBy] | None = Field(
+    order_by: Json[OrderBy] | None = Field(  # pylint: disable=unsubscriptable-object
         default=None,
         description="Order by field (started_at|stopped_at|credit_cost) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "started_at", "direction": "desc"}',
     )
-    filters: Json[ServiceResourceUsagesFilters] | None = Field(
+    filters: Json[  # pylint: disable=unsubscriptable-object
+        ServiceResourceUsagesFilters
+    ] | None = Field(
         default=None,
         description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> UTC format. The date range specified is inclusive.",
         example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
