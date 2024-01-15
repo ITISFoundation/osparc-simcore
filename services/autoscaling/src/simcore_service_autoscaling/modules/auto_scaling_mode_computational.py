@@ -90,7 +90,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
     async def progress_message_from_tasks(app: FastAPI, tasks: list, progress: float):
         assert app  # nosec
         assert tasks  # nosec
-        _logger.info("PROGRESS: %s", progress)
+        _logger.info("PROGRESS: %s", f"{progress:.2f}")
 
     @staticmethod
     def get_task_required_resources(task) -> Resources:
