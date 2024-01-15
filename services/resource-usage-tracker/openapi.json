@@ -89,7 +89,8 @@
             "required": false,
             "schema": {
               "title": "Access All Wallet Usage",
-              "type": "boolean"
+              "type": "boolean",
+              "default": false
             },
             "name": "access_all_wallet_usage",
             "in": "query"

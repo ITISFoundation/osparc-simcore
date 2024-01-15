@@ -9,6 +9,8 @@ This OAS are the source of truth
 # pylint: disable=too-many-arguments
 
 
+from typing import Annotated
+
 from _common import assert_handler_signature_against_model
 from fastapi import APIRouter, Query
 from models_library.api_schemas_webserver.resource_usage import (
@@ -43,17 +45,21 @@ router = APIRouter(prefix=f"/{API_VTAG}")
     tags=["usage"],
 )
 async def list_resource_usage_services(
-    order_by: Json = Query(
-        None,
-        description="Order by field (started_at|stopped_at|credit_cost) and direction (asc|desc). The default sorting order is ascending.",
-        example='{"field": "started_at", "direction": "desc"}',
-    ),
-    filters: Json = Query(
-        None,
-        description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> UTC format. The date range specidied is inclusive.",
-        example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
-    ),
-    wallet_id: WalletID = Query(None),
+    order_by: Annotated[
+        Json | None,
+        Query(
+            description="Order by field (started_at|stopped_at|credit_cost) and direction (asc|desc). The default sorting order is ascending.",
+            example='{"field": "started_at", "direction": "desc"}',
+        ),
+    ] = None,
+    filters: Annotated[
+        Json | None,
+        Query(
+            description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> UTC format. The date range specidied is inclusive.",
+            example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
+        ),
+    ] = None,
+    wallet_id: Annotated[WalletID | None, Query] = None,
     limit: int = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
 ):
