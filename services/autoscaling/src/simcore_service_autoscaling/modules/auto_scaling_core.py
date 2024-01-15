@@ -804,8 +804,6 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         terminated_instances=cluster.terminated_instances
         + [i.ec2_instance for i in terminateable_instances],
     )
-    # 3. we could ask on rabbit whether someone would like to keep that machine for something (like the agent for example), if that is the case, we wait another hour and ask again?
-    # 4.
 
 
 async def _notify_machine_creation_progress(app: FastAPI, cluster: Cluster) -> None:
