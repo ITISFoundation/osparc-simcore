@@ -338,6 +338,12 @@ async def _try_assign_task_to_instances(
     return False
 
 
+async def _assign_tasks_to_current_cluster(
+    app: FastAPI, tasks: list, cluster: Cluster
+) -> Cluster:
+    ...
+
+
 async def _find_needed_instances(
     app: FastAPI,
     pending_tasks: list,

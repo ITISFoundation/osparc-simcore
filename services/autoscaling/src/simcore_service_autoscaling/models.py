@@ -34,10 +34,15 @@ class AssignedTasksToInstanceType:
         self.available_resources -= task_resources
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class AssociatedInstance:
     node: Node
     ec2_instance: EC2InstanceData
+    assigned_tasks: list = field(default_factory=list)
+    _available_resources: Resources = field(init=False)
+
+    def __post_init__(self) -> None:
+        super().__setattr__("_available_resources", self.ec2_instance.resources)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
