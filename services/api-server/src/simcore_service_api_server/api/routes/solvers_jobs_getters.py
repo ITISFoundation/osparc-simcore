@@ -184,7 +184,7 @@ async def get_job_outputs(
         assert wallet_with_credits is not None
         if wallet_with_credits.available_credits < 0.0:
             raise InsufficientCredits(
-                f"Wallet {wallet_with_credits.wallet_id} does not have any credits. Please add some"
+                f"Wallet {wallet_with_credits.name} does not have any credits. Please add some"
             )
 
     outputs: dict[str, ResultsTypes] = await get_solver_output_results(
