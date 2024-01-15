@@ -19,6 +19,8 @@ qx.Theme.define("osparc.theme.products.osparc.ColorLight", {
   include: osparc.theme.ColorLight,
 
   colors: {
-    "product-color": "#8329bf"
+    "product-color": "rgba(131, 0, 191, 1)",
+    "default-button": "product-color",
+    "default-button-background": "rgba(228, 203, 240, 1)"
   }
 });

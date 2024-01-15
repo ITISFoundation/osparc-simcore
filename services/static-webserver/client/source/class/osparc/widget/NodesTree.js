@@ -172,7 +172,7 @@ qx.Class.define("osparc.widget.NodesTree", {
       }
       this.setDelegate(this._getDelegate(study));
       const nChildren = rootModel.getChildren().length;
-      this.setHeight(nChildren*21 + 12);
+      this.setHeight(nChildren*30 + 12);
     },
 
     _getDelegate: function(study) {
