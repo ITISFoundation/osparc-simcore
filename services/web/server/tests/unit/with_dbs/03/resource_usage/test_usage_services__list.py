@@ -130,8 +130,8 @@ async def test_list_service_usage(
     )
     resp = await client.get(f"{url}")
     await assert_status(resp, web.HTTPOk)
-    assert mock_list_usage_services[1].call_count == 2
-    assert mock_list_usage_services[1].call_args[1]["access_all_wallet_usage"] is False
+    assert mock_list_usage_services.call_count == 2
+    assert mock_list_usage_services.call_args[1]["access_all_wallet_usage"] is False
 
 
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
