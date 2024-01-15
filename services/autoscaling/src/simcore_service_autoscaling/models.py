@@ -35,8 +35,7 @@ class AssignedTasksToInstanceType:
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class AssociatedInstance:
-    node: Node
+class _BaseInstance:
     ec2_instance: EC2InstanceData
     assigned_tasks: list = field(default_factory=list)
     _available_resources: Resources = field(default_factory=Resources.create_as_empty)
@@ -59,48 +58,35 @@ class AssociatedInstance:
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class NonAssociatedInstance:
-    ec2_instance: EC2InstanceData
-    assigned_tasks: list = field(default_factory=list)
-    _available_resources: Resources = field(default_factory=Resources.create_as_empty)
+class AssociatedInstance(_BaseInstance):
+    node: Node
 
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "_available_resources", self.ec2_instance.resources)
 
-    def has_resources_for_task(self, task_resources: Resources) -> bool:
-        return bool(self._available_resources >= task_resources)
-
-    def assign_task(self, task, task_resources: Resources) -> None:
-        self.assigned_tasks.append(task)
-        object.__setattr__(
-            self, "_available_resources", self._available_resources - task_resources
-        )
-
-    @property
-    def available_resources(self) -> Resources:
-        return self._available_resources
+@dataclass(frozen=True, kw_only=True, slots=True)
+class NonAssociatedInstance(_BaseInstance):
+    ...
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Cluster:
     active_nodes: list[AssociatedInstance] = field(
         metadata={
-            "description": "This is a EC2 backed docker node which is active and ready to receive tasks (or with running tasks)"
+            "description": "This is a EC2-backed docker node which is active and ready to receive tasks (or with running tasks)"
         }
     )
     pending_nodes: list[AssociatedInstance] = field(
         metadata={
-            "description": "This is a EC2 backed docker node which is active and NOT yet ready to receive tasks"
+            "description": "This is a EC2-backed docker node which is active and NOT yet ready to receive tasks"
         }
     )
     drained_nodes: list[AssociatedInstance] = field(
         metadata={
-            "description": "This is a EC2 backed docker node which is drained (cannot accept tasks)"
+            "description": "This is a EC2-backed docker node which is drained (cannot accept tasks)"
         }
     )
     reserve_drained_nodes: list[AssociatedInstance] = field(
         metadata={
-            "description": "This is a EC2 backed docker node which is drained in the reserve if this is enabled (with no tasks)"
+            "description": "This is a EC2-backed docker node which is drained in the reserve if this is enabled (with no tasks)"
         }
     )
     pending_ec2s: list[NonAssociatedInstance] = field(
