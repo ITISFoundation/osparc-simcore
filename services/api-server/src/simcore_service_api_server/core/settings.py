@@ -17,7 +17,10 @@ from settings_library.utils_service import (
     MixinServiceSettings,
     URLPart,
 )
-from settings_library.utils_session import MixinSessionSettings
+from settings_library.utils_session import (
+    DEFAULT_SESSION_COOKIE_NAME,
+    MixinSessionSettings,
+)
 
 
 class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSettings):
@@ -32,7 +35,7 @@ class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSe
         min_length=44,
         env=["SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"],
     )
-    WEBSERVER_SESSION_NAME: str = "osparc.WEBAPI_SESSION"
+    WEBSERVER_SESSION_NAME: str = DEFAULT_SESSION_COOKIE_NAME
 
     @cached_property
     def base_url(self) -> str:

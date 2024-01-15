@@ -7,6 +7,7 @@ import aiohttp_session
 from aiohttp import web
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 
 from .settings import SessionSettings, get_plugin_settings
 
@@ -34,7 +35,7 @@ def setup_session(app: web.Application):
     # SEE https://aiohttp-session.readthedocs.io/en/latest/reference.html#abstract-storage
     encrypted_cookie_sessions = EncryptedCookieStorage(
         secret_key=settings.SESSION_SECRET_KEY.get_secret_value(),
-        cookie_name=settings.SESSION_COOKIE_NAME,
+        cookie_name=DEFAULT_SESSION_COOKIE_NAME,
         secure=settings.SESSION_COOKIE_SECURE,
         httponly=settings.SESSION_COOKIE_HTTPONLY,
         max_age=settings.SESSION_COOKIE_MAX_AGE,
