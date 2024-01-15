@@ -109,8 +109,8 @@ async def test_list_service_usage(
     )
     resp = await client.get(f"{url}")
     await assert_status(resp, web.HTTPOk)
-    assert mock_list_usage_services[1].call_count == 1
-    assert mock_list_usage_services[1].call_args[1]["access_all_wallet_usage"] is True
+    assert mock_list_usage_services.call_count == 1
+    assert mock_list_usage_services.call_args[1]["access_all_wallet_usage"] is True
 
     # Remove "write" permission on the wallet
     url = client.app.router["update_wallet_group"].url_for(
