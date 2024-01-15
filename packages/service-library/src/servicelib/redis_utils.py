@@ -69,8 +69,8 @@ def start_exclusive_periodic_task(
     redis: RedisClientSDK,
     task: Callable[..., Awaitable[None]],
     *,
-    interval: timedelta,
-    exclusive_task_starter_interval: timedelta = timedelta(seconds=1),
+    task_period: timedelta,
+    retry_after: timedelta = timedelta(seconds=1),
     task_name: str,
     **kwargs,
 ) -> asyncio.Task:
@@ -92,11 +92,11 @@ def start_exclusive_periodic_task(
     """
     return start_periodic_task(
         _exclusive_task_starter,
-        interval=exclusive_task_starter_interval,
+        interval=retry_after,
         task_name=f"exclusive_task_starter_{task_name}",
         redis=redis,
         usr_tsk_task=task,
-        usr_tsk_interval=interval,
+        usr_tsk_interval=task_period,
         usr_tsk_task_name=task_name,
         **kwargs,
     )
