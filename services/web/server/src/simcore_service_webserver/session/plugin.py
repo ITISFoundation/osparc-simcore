@@ -30,9 +30,15 @@ def setup_session(app: web.Application):
     #   - client tx/rx session's data everytime (middleware?)
     #   - This way, we can scale in theory server-side w/o issues
     #
+
+    # SEE https://aiohttp-session.readthedocs.io/en/latest/reference.html#abstract-storage
     encrypted_cookie_sessions = EncryptedCookieStorage(
         secret_key=settings.SESSION_SECRET_KEY.get_secret_value(),
-        cookie_name="osparc.WEBAPI_SESSION",
+        cookie_name="osparc-ssn",
+        secure=settings.SESSION_COOKIE_SECURE,
+        httponly=settings.SESSION_HTTPONLY,
+        max_age=settings.SESSION_COOKIE_MAX_AGE,
+        samesite=settings.SESSION_COOKIE_SAMESITE,
     )
     aiohttp_session.setup(app=app, storage=encrypted_cookie_sessions)
     app.middlewares[-1].__middleware_name__ = f"{__name__}.session"

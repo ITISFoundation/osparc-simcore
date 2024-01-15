@@ -1,6 +1,7 @@
-from typing import Final
+from typing import Final, Literal
 
 from aiohttp import web
+from pydantic import PositiveInt
 from pydantic.class_validators import validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
@@ -9,7 +10,9 @@ from settings_library.utils_session import MixinSessionSettings
 
 from .._constants import APP_SETTINGS_KEY
 
-_MINUTES: Final[int] = 60  # secs
+_MINUTE: Final[int] = 60  # secs
+_HOUR: Final[int] = 60 * _MINUTE
+_DAY: Final[int] = 24 * _HOUR
 
 
 class SessionSettings(BaseCustomSettings, MixinSessionSettings):
@@ -23,8 +26,29 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
     )
 
     SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS: int = Field(
-        30 * _MINUTES,
+        30 * _MINUTE,
         description="Time interval for session access tokens to expire since creation",
+    )
+
+    # Cookies attributes
+    # - https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
+    # - https://aiohttp-session.readthedocs.io/en/latest/reference.html#abstract-storage
+
+    SESSION_COOKIE_MAX_AGE: PositiveInt | None = Field(
+        default=_DAY,
+        description="Max-Age attribute. Maximum age for session data, int seconds or None for “session cookie” which last until you close your browser.",
+    )
+    SESSION_COOKIE_SAMESITE: Literal["Strict", "Lax"] | None = Field(
+        None,
+        description="SameSite attribute lets servers specify whether/when cookies are sent with cross-site requests",
+    )
+    SESSION_COOKIE_SECURE: bool = Field(
+        default=True,
+        description="Ensures the cookie is only sent over secure HTTPS connections",
+    )
+    SESSION_HTTPONLY: bool = Field(
+        default=True,
+        description="This prevents JavaScript from accessing the session cookie",
     )
 
     @validator("SESSION_SECRET_KEY")

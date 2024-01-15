@@ -12,6 +12,7 @@ from simcore_postgres_database.errors import DatabaseError
 from ..db.plugin import get_database_engine
 from ._authz_access_model import OptionalContext, RoleBasedAccessModel, check_access
 from ._authz_db import AuthInfoDict, get_active_user_or_none
+from ._constants import MSG_AUTH_NOT_AVAILABLE
 from ._identity import IdentityStr
 
 _logger = logging.getLogger(__name__)
@@ -40,9 +41,8 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         try:
             return await get_active_user_or_none(get_database_engine(self._app), email)
         except DatabaseError as err:
-            raise web.HTTPServiceUnavailable(
-                reason="Authentication service is temporary unavailable"
-            ) from err
+            _logger.exception("Auth unavailable due to database error")
+            raise web.HTTPServiceUnavailable(reason=MSG_AUTH_NOT_AVAILABLE) from err
 
     @property
     def access_model(self) -> RoleBasedAccessModel:
