@@ -57,7 +57,7 @@ async def list_usage_services(
         ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
     ],
     wallet_id: Annotated[WalletID | None, Query()] = None,
-    access_all_wallet_usage: Annotated[bool | None, Query()] = None,
+    access_all_wallet_usage: Annotated[bool, Query()] = False,
 ):
     usage_services_page: ServiceRunPage = (
         await resource_tracker_service_runs.list_service_runs(

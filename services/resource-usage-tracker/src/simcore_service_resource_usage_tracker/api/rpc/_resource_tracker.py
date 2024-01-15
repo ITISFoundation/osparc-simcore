@@ -8,16 +8,15 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
-from simcore_service_resource_usage_tracker.modules.db.repositories.resource_tracker import (
-    ResourceTrackerRepository,
-)
 
+from ...core.errors import CustomResourceUsageTrackerError
+from ...modules.db.repositories.resource_tracker import ResourceTrackerRepository
 from ...services.resource_tracker_service_runs import list_service_runs
 
 router = RPCRouter()
 
 
-@router.expose()  # reraise_if_error_type=(PaymentsError, PaymentServiceUnavailableError)
+@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
 async def get_service_run_page(
     app: FastAPI,
     *,
@@ -26,7 +25,7 @@ async def get_service_run_page(
     limit: int = 20,
     offset: int = 0,
     wallet_id: WalletID | None = None,
-    access_all_wallet_usage: bool | None = None,  # MD: Maybe default should be False??
+    access_all_wallet_usage: bool = False,
     order_by: list[OrderBy] | None = None,
     filters: ServiceResourceUsagesFilters | None = None
 ) -> ServiceRunPage:

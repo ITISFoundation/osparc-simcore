@@ -25,7 +25,7 @@ async def list_usage_services(
     order_by: list[OrderBy] | None,
     filters: ServiceResourceUsagesFilters | None,
 ) -> ServiceRunPage:
-    access_all_wallet_usage = None
+    access_all_wallet_usage = False
     if wallet_id:
         wallet: WalletGetPermissions = (
             await wallet_api.get_wallet_with_permissions_by_user(
@@ -35,7 +35,7 @@ async def list_usage_services(
         access_all_wallet_usage = wallet.write is True
 
     rpc_client = get_rabbitmq_rpc_client(app)
-    result = await service_runs.get_service_run_page(
+    return await service_runs.get_service_run_page(
         rpc_client,
         user_id=user_id,
         product_name=product_name,
@@ -46,5 +46,3 @@ async def list_usage_services(
         order_by=order_by,
         filters=filters,
     )
-
-    return result

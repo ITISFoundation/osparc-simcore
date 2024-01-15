@@ -32,7 +32,7 @@ async def get_service_run_page(
     limit: int = 20,
     offset: int = 0,
     wallet_id: WalletID | None = None,
-    access_all_wallet_usage: bool | None = None,  # MD: Maybe default should be False??
+    access_all_wallet_usage: bool = False,
     order_by: list[OrderBy] | None = None,
     filters: ServiceResourceUsagesFilters | None = None
 ) -> ServiceRunPage:
