@@ -9,6 +9,10 @@ from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
 from servicelib.logging_utils import config_all_loggers
+from simcore_service_api_server.api.errors.custom_errors import (
+    CustomBaseError,
+    custom_error_handler,
+)
 from simcore_service_api_server.api.errors.log_handling_error import (
     log_handling_error_handler,
 )
@@ -108,6 +112,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_exception_handler(RequestValidationError, http422_error_handler)
     app.add_exception_handler(HTTPStatusError, httpx_client_error_handler)
     app.add_exception_handler(LogDistributionBaseException, log_handling_error_handler)
+    app.add_exception_handler(CustomBaseError, custom_error_handler)
 
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(
