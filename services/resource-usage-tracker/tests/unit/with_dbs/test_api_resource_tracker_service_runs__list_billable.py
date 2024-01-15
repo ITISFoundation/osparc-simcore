@@ -191,7 +191,7 @@ async def test_rpc_list_service_runs_with_order_by__started_at(
         rpc_client,
         user_id=_USER_ID,
         product_name="osparc",
-        order_by=[OrderBy(field="started_at", direction=direction)],
+        order_by=OrderBy(field="started_at", direction=direction),
     )
     assert isinstance(result, ServiceRunPage)
     assert len(result.items) == 2
