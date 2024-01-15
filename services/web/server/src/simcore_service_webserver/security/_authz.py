@@ -18,7 +18,7 @@ from ._identity import IdentityStr
 _logger = logging.getLogger(__name__)
 
 _SECOND = 1  # in seconds
-_ACTIVE_USER_AUTHZ_CACHE_TTL: Final = 10 * _SECOND
+_ACTIVE_USER_AUTHZ_CACHE_TTL: Final = 5 * _SECOND
 
 
 class AuthorizationPolicy(AbstractAuthorizationPolicy):

@@ -44,8 +44,9 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         description="SameSite attribute lets servers specify whether/when cookies are sent with cross-site requests",
     )
     SESSION_COOKIE_SECURE: bool = Field(
-        default=True,
+        default=False,
         description="Ensures the cookie is only sent over secure HTTPS connections",
+        # NOTE: careful in tests keep it False!
     )
     SESSION_COOKIE_HTTPONLY: bool = Field(
         default=True,
