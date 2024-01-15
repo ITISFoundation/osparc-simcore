@@ -140,7 +140,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
             )
             if num_results_in_memory > 0:
                 # NOTE: this is a trick to consider the node still useful
-                return Resources(cpus=1, ram=ByteSize())
+                return Resources(cpus=0, ram=ByteSize(1024 * 1024 * 1024))
             return await dask.get_worker_used_resources(
                 _scheduler_url(app), instance.ec2_instance
             )
