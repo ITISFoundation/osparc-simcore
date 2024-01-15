@@ -81,14 +81,12 @@ async def _analyze_current_cluster(
         assert node.Status  # nosec
         return bool(node.Status.State != NodeState.ready)
 
-    all_drained_nodes = [
-        i for i in attached_ec2s if auto_scaling_mode.is_instance_drained(i)
-    ]
-
-    active_nodes, pending_nodes = [], []
+    active_nodes, pending_nodes, all_drained_nodes = [], [], []
     for instance in attached_ec2s:
         if await auto_scaling_mode.is_instance_active(app, instance):
             active_nodes.append(instance)
+        elif auto_scaling_mode.is_instance_drained(instance):
+            all_drained_nodes.append(instance)
         else:
             pending_nodes.append(instance)
 
