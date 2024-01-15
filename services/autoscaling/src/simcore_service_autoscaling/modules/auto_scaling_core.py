@@ -329,7 +329,7 @@ async def _assign_tasks_to_current_cluster(
     cluster: Cluster,
     auto_scaling_mode: BaseAutoscaling,
 ) -> tuple[list, Cluster]:
-    unnassigned_tasks = []
+    unassigned_tasks = []
     for task in tasks:
         task_required_resources = auto_scaling_mode.get_task_required_resources(task)
         task_required_ec2_instance = await auto_scaling_mode.get_task_defined_instance(
@@ -337,38 +337,43 @@ async def _assign_tasks_to_current_cluster(
         )
 
         all_drained_nodes = cluster.drained_nodes + cluster.reserve_drained_nodes
-        if _try_assign_task_to_ec2_instance(
-            task,
-            instances=cluster.active_nodes,
-            task_required_ec2_instance=task_required_ec2_instance,
-            task_required_resources=task_required_resources,
+        if (
+            _try_assign_task_to_ec2_instance(
+                task,
+                instances=cluster.active_nodes,
+                task_required_ec2_instance=task_required_ec2_instance,
+                task_required_resources=task_required_resources,
+            )
+            or _try_assign_task_to_ec2_instance(
+                task,
+                instances=all_drained_nodes,
+                task_required_ec2_instance=task_required_ec2_instance,
+                task_required_resources=task_required_resources,
+            )
+            or _try_assign_task_to_ec2_instance(
+                task,
+                instances=cluster.pending_nodes,
+                task_required_ec2_instance=task_required_ec2_instance,
+                task_required_resources=task_required_resources,
+            )
+            or _try_assign_task_to_ec2_instance(
+                task,
+                instances=cluster.pending_ec2s,
+                task_required_ec2_instance=task_required_ec2_instance,
+                task_required_resources=task_required_resources,
+            )
         ):
-            _logger.info("assigned task to active nodes")
-        elif _try_assign_task_to_ec2_instance(
-            task,
-            instances=all_drained_nodes,
-            task_required_ec2_instance=task_required_ec2_instance,
-            task_required_resources=task_required_resources,
-        ):
-            _logger.info("assigned task to drained nodes")
-        elif _try_assign_task_to_ec2_instance(
-            task,
-            instances=cluster.pending_nodes,
-            task_required_ec2_instance=task_required_ec2_instance,
-            task_required_resources=task_required_resources,
-        ):
-            _logger.info("assigned task to pending nodes")
-        elif _try_assign_task_to_ec2_instance(
-            task,
-            instances=cluster.pending_ec2s,
-            task_required_ec2_instance=task_required_ec2_instance,
-            task_required_resources=task_required_resources,
-        ):
-            _logger.info("assigned task to pending ec2s")
+            _logger.info("assigned task to cluster")
         else:
-            unnassigned_tasks.append(task)
-            _logger.info("assigned task to nothing")
-    return unnassigned_tasks, cluster
+            unassigned_tasks.append(task)
+
+    if unassigned_tasks:
+        _logger.info(
+            "the current cluster should cope with %s tasks, %s are unnassigned/queued tasks",
+            len(tasks) - len(unassigned_tasks),
+            len(unassigned_tasks),
+        )
+    return unassigned_tasks, cluster
 
 
 async def _find_needed_instances(
@@ -842,13 +847,17 @@ async def _autoscale_cluster(
         len(cluster.reserve_drained_nodes)
         < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     ):
-        _logger.info(
-            "%s unrunnable tasks could not be assigned to drained nodes, slowly trying to scale up...",
-            len(queued_or_missing_instance_tasks),
-        )
-        cluster = await _scale_up_cluster(
-            app, cluster, queued_or_missing_instance_tasks, auto_scaling_mode
-        )
+        if (
+            cluster.total_number_of_machines()
+            < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
+        ):
+            _logger.info(
+                "%s unrunnable tasks could not be assigned, slowly trying to scale up...",
+                len(queued_or_missing_instance_tasks),
+            )
+            cluster = await _scale_up_cluster(
+                app, cluster, queued_or_missing_instance_tasks, auto_scaling_mode
+            )
 
     elif (
         len(queued_or_missing_instance_tasks) == len(unrunnable_tasks) == 0
