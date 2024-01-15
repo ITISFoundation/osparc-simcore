@@ -84,7 +84,16 @@ async def _analyze_current_cluster(
     active_nodes, pending_nodes, all_drained_nodes = [], [], []
     for instance in attached_ec2s:
         if await auto_scaling_mode.is_instance_active(app, instance):
-            active_nodes.append(instance)
+            node_used_resources = await auto_scaling_mode.compute_node_used_resources(
+                app, instance
+            )
+            active_nodes.append(
+                dataclasses.replace(
+                    instance,
+                    _available_resources=instance.ec2_instance.resources
+                    - node_used_resources,
+                )
+            )
         elif auto_scaling_mode.is_instance_drained(instance):
             all_drained_nodes.append(instance)
         else:
