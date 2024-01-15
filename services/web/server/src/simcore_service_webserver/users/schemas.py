@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.groups import AllUsersGroups
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import FirstNameStr, LastNameStr, UserID
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, root_validator, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
 
@@ -47,7 +47,7 @@ class TokenCreate(ThirdPartyToken):
 #
 
 
-class _ProfileCommon(BaseModel):
+class ProfileUpdate(BaseModel):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
 
@@ -60,12 +60,10 @@ class _ProfileCommon(BaseModel):
         }
 
 
-class ProfileUpdate(_ProfileCommon):
-    ...
-
-
-class ProfileGet(_ProfileCommon):
+class ProfileGet(BaseModel):
     id: UserID
+    first_name: FirstNameStr | None = None
+    last_name: LastNameStr | None = None
     login: LowerCaseEmailStr
     role: Literal["ANONYMOUS", "GUEST", "USER", "TESTER", "PRODUCT_OWNER", "ADMIN"]
     groups: AllUsersGroups | None = None
@@ -104,12 +102,21 @@ class ProfileGet(_ProfileCommon):
 
     @validator("role", pre=True)
     @classmethod
-    def to_capitalize(cls, v):
+    def to_upper_string(cls, v):
         if isinstance(v, str):
             return v.upper()
         if isinstance(v, UserRole):
             return v.name.upper()
         return v
+
+    @root_validator
+    @classmethod
+    def auto_generate_gravatar(cls, values):
+        gravatar = values.get("gravatar")
+        email = values.get("email")
+        if gravatar is None and email:
+            values["gravatar"] = gravatar_hash(email)
+        return values
 
 
 #
