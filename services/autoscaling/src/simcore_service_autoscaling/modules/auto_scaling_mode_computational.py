@@ -20,12 +20,7 @@ from ..core.errors import (
     DaskWorkerNotFoundError,
 )
 from ..core.settings import get_application_settings
-from ..models import (
-    AssignedTasksToInstance,
-    AssignedTasksToInstanceType,
-    AssociatedInstance,
-    DaskTask,
-)
+from ..models import AssociatedInstance, DaskTask
 from ..utils import computational_scaling as utils
 from ..utils import utils_docker, utils_ec2
 from . import dask
@@ -71,7 +66,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
             queued_tasks = []
             for tasks in processing_tasks_by_worker.values():
                 queued_tasks += tasks[1:]
-            _logger.info(
+            _logger.debug(
                 "found %s unrunnable tasks and %s potentially queued tasks",
                 len(unrunnable_tasks),
                 len(queued_tasks),
@@ -82,30 +77,6 @@ class ComputationalAutoscaling(BaseAutoscaling):
                 "No dask scheduler found. TIP: Normal during machine startup."
             )
             return []
-
-    @staticmethod
-    async def try_assigning_task_to_instances(
-        app: FastAPI,
-        pending_task,
-        instances_to_tasks: list[AssignedTasksToInstance],
-        *,
-        notify_progress: bool,
-    ) -> bool:
-        return await utils.try_assigning_task_to_instances(
-            app,
-            pending_task,
-            instances_to_tasks,
-            notify_progress=notify_progress,
-        )
-
-    @staticmethod
-    def try_assigning_task_to_instance_types(
-        pending_task,
-        instance_types_to_tasks: list[AssignedTasksToInstanceType],
-    ) -> bool:
-        return utils.try_assigning_task_to_instance_types(
-            pending_task, instance_types_to_tasks
-        )
 
     @staticmethod
     async def log_message_from_tasks(

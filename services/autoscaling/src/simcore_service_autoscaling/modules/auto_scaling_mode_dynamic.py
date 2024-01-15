@@ -6,12 +6,7 @@ from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
-from ..models import (
-    AssignedTasksToInstance,
-    AssignedTasksToInstanceType,
-    AssociatedInstance,
-)
-from ..utils import dynamic_scaling as utils
+from ..models import AssociatedInstance
 from ..utils import utils_docker, utils_ec2
 from ..utils.rabbitmq import log_tasks_message, progress_tasks_message
 from .auto_scaling_mode_base import BaseAutoscaling
@@ -47,30 +42,6 @@ class DynamicAutoscaling(BaseAutoscaling):
         return await utils_docker.pending_service_tasks_with_insufficient_resources(
             get_docker_client(app),
             service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
-        )
-
-    @staticmethod
-    async def try_assigning_task_to_instances(
-        app: FastAPI,
-        pending_task,
-        instances_to_tasks: list[AssignedTasksToInstance],
-        *,
-        notify_progress: bool
-    ) -> bool:
-        return await utils.try_assigning_task_to_instances(
-            app,
-            pending_task,
-            instances_to_tasks,
-            notify_progress=notify_progress,
-        )
-
-    @staticmethod
-    def try_assigning_task_to_instance_types(
-        pending_task,
-        instance_types_to_tasks: list[AssignedTasksToInstanceType],
-    ) -> bool:
-        return utils.try_assigning_task_to_instance_types(
-            pending_task, instance_types_to_tasks
         )
 
     @staticmethod

@@ -19,6 +19,7 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.generated_models.docker_rest_api import Node, NodeState
 from servicelib.logging_utils import log_catch, log_context
+from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import (
@@ -30,7 +31,6 @@ from ..core.errors import (
 )
 from ..core.settings import ApplicationSettings, get_application_settings
 from ..models import (
-    AssignedTasksToInstance,
     AssignedTasksToInstanceType,
     AssociatedInstance,
     Cluster,
@@ -40,7 +40,6 @@ from ..utils import utils_docker, utils_ec2
 from ..utils.auto_scaling_core import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
-    filter_by_task_defined_instance,
     find_selected_instance_type_for_task,
     node_host_name_from_ec2_private_dns,
 )
@@ -276,56 +275,6 @@ async def _activate_drained_nodes(
         drained_nodes=remaining_drained_nodes,
         reserve_drained_nodes=remaining_reserved_drained_nodes,
     )
-
-
-async def _try_assign_task_to_instances(
-    app: FastAPI,
-    task,
-    auto_scaling_mode: BaseAutoscaling,
-    task_defined_ec2_type: InstanceTypeType | None,
-    active_instances_to_tasks: list[AssignedTasksToInstance],
-    pending_instances_to_tasks: list[AssignedTasksToInstance],
-    drained_instances_to_tasks: list[AssignedTasksToInstance],
-    needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType],
-) -> bool:
-    (
-        filtered_active_instance_to_task,
-        filtered_pending_instance_to_task,
-        filtered_drained_instances_to_task,
-        filtered_needed_new_instance_types_to_task,
-    ) = filter_by_task_defined_instance(
-        task_defined_ec2_type,
-        active_instances_to_tasks,
-        pending_instances_to_tasks,
-        drained_instances_to_tasks,
-        needed_new_instance_types_for_tasks,
-    )
-    # try to assign the task to one of the active, pending or newly created instances
-    if (
-        await auto_scaling_mode.try_assigning_task_to_instances(
-            app,
-            task,
-            filtered_active_instance_to_task,
-            notify_progress=False,
-        )
-        or await auto_scaling_mode.try_assigning_task_to_instances(
-            app,
-            task,
-            filtered_pending_instance_to_task,
-            notify_progress=True,
-        )
-        or await auto_scaling_mode.try_assigning_task_to_instances(
-            app,
-            task,
-            filtered_drained_instances_to_task,
-            notify_progress=False,
-        )
-        or auto_scaling_mode.try_assigning_task_to_instance_types(
-            task, filtered_needed_new_instance_types_to_task
-        )
-    ):
-        return True
-    return False
 
 
 def _try_assign_task_to_ec2_instance(
@@ -850,6 +799,29 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     # 4.
 
 
+async def _notify_machine_creation_progress(app: FastAPI, cluster: Cluster) -> None:
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    instance_max_time_to_start = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+    )
+    now = datetime.datetime.now(datetime.timezone.utc)
+    for instance in cluster.pending_ec2s:
+        time_since_launch = now - instance.ec2_instance.launch_time
+        estimated_time_to_completion = (
+            instance.ec2_instance.launch_time + instance_max_time_to_start - now
+        )
+        _logger.info(
+            "LOG: %s",
+            f"adding machines to the cluster (time waiting: {timedelta_as_minute_second(time_since_launch)},"
+            f" est. remaining time: {timedelta_as_minute_second(estimated_time_to_completion)})...please wait...",
+        )
+        _logger.info(
+            "PROGRESS: %s",
+            f"{time_since_launch.total_seconds() / instance_max_time_to_start.total_seconds():.2f}",
+        )
+
+
 async def _autoscale_cluster(
     app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
 ) -> Cluster:
@@ -870,26 +842,20 @@ async def _autoscale_cluster(
         len(cluster.reserve_drained_nodes)
         < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     ):
-        # we might want to scale up if we do not already have reached the maximum amount of machines
-        # if (
-        #     cluster.total_number_of_machines()
-        #     < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-        # ):
         _logger.info(
             "still %s unrunnable tasks after node activation, try to scale up...",
             len(queued_or_missing_instance_tasks),
         )
-        # yes? then scale up
         cluster = await _scale_up_cluster(
             app, cluster, queued_or_missing_instance_tasks, auto_scaling_mode
         )
-        # give feedback on machine creation
+
     elif (
         len(queued_or_missing_instance_tasks) == len(unrunnable_tasks) == 0
         and cluster.can_scale_down()
     ):
         _logger.info(
-            "there is %s waiting task, try to scale down...",
+            "there is %s waiting task, slowly and gracefully scaling down...",
             len(queued_or_missing_instance_tasks),
         )
         # NOTE: we only scale down in case we did not just scale up. The swarm needs some time to adjust
@@ -939,5 +905,5 @@ async def auto_scale_cluster(
     cluster = await _try_attach_pending_ec2s(app, cluster, auto_scaling_mode)
 
     cluster = await _autoscale_cluster(app, cluster, auto_scaling_mode)
-
+    await _notify_machine_creation_progress(app, cluster)
     await _notify_autoscaling_status(app, cluster, auto_scaling_mode)

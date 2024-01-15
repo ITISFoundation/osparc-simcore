@@ -13,11 +13,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import Ec2InstanceInvalidError, Ec2InvalidDnsNameError
 from ..core.settings import ApplicationSettings
-from ..models import (
-    AssignedTasksToInstance,
-    AssignedTasksToInstanceType,
-    AssociatedInstance,
-)
+from ..models import AssociatedInstance
 from ..modules.auto_scaling_mode_base import BaseAutoscaling
 from . import utils_docker
 
@@ -114,68 +110,6 @@ def _instance_type_by_type_name(
     if type_name is None:
         return True
     return bool(ec2_type.name == type_name)
-
-
-def _instance_type_map_by_type_name(
-    mapping: AssignedTasksToInstanceType, *, type_name: InstanceTypeType | None
-) -> bool:
-    return _instance_type_by_type_name(mapping.instance_type, type_name=type_name)
-
-
-def _instance_data_map_by_type_name(
-    mapping: AssignedTasksToInstance, *, type_name: InstanceTypeType | None
-) -> bool:
-    if type_name is None:
-        return True
-    return bool(mapping.instance.type == type_name)
-
-
-def filter_by_task_defined_instance(
-    instance_type_name: InstanceTypeType | None,
-    active_instances_to_tasks: list[AssignedTasksToInstance],
-    pending_instances_to_tasks: list[AssignedTasksToInstance],
-    drained_instances_to_tasks: list[AssignedTasksToInstance],
-    needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType],
-) -> tuple[
-    list[AssignedTasksToInstance],
-    list[AssignedTasksToInstance],
-    list[AssignedTasksToInstance],
-    list[AssignedTasksToInstanceType],
-]:
-    return (
-        list(
-            filter(
-                functools.partial(
-                    _instance_data_map_by_type_name, type_name=instance_type_name
-                ),
-                active_instances_to_tasks,
-            )
-        ),
-        list(
-            filter(
-                functools.partial(
-                    _instance_data_map_by_type_name, type_name=instance_type_name
-                ),
-                pending_instances_to_tasks,
-            )
-        ),
-        list(
-            filter(
-                functools.partial(
-                    _instance_data_map_by_type_name, type_name=instance_type_name
-                ),
-                drained_instances_to_tasks,
-            )
-        ),
-        list(
-            filter(
-                functools.partial(
-                    _instance_type_map_by_type_name, type_name=instance_type_name
-                ),
-                needed_new_instance_types_for_tasks,
-            )
-        ),
-    )
 
 
 def find_selected_instance_type_for_task(

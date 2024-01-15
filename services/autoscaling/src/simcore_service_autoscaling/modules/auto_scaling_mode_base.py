@@ -9,11 +9,7 @@ from models_library.generated_models.docker_rest_api import Node as DockerNode
 from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..models import (
-    AssignedTasksToInstance,
-    AssignedTasksToInstanceType,
-    AssociatedInstance,
-)
+from ..models import AssociatedInstance
 from ..utils import utils_docker
 
 
@@ -39,25 +35,6 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     @staticmethod
     @abstractmethod
     async def list_unrunnable_tasks(app: FastAPI) -> list:
-        ...
-
-    @staticmethod
-    @abstractmethod
-    async def try_assigning_task_to_instances(
-        app: FastAPI,
-        pending_task,
-        instances_to_tasks: list[AssignedTasksToInstance],
-        *,
-        notify_progress: bool
-    ) -> bool:
-        ...
-
-    @staticmethod
-    @abstractmethod
-    def try_assigning_task_to_instance_types(
-        pending_task,
-        instance_types_to_tasks: list[AssignedTasksToInstanceType],
-    ) -> bool:
         ...
 
     @staticmethod

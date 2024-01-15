@@ -6,25 +6,14 @@ from models_library.generated_models.docker_rest_api import Task
 from servicelib.utils_formatting import timedelta_as_minute_second
 
 from ..core.settings import get_application_settings
-from ..models import AssignedTasksToInstance, AssignedTasksToInstanceType
+from ..models import AssignedTasksToInstance
 from . import utils_docker
 from .rabbitmq import log_tasks_message, progress_tasks_message
 
 logger = logging.getLogger(__name__)
 
 
-def try_assigning_task_to_instance_types(
-    task: Task,
-    instance_types_to_tasks: list[AssignedTasksToInstanceType],
-) -> bool:
-    task_required_resources = utils_docker.get_max_resources_from_docker_task(task)
-    for assigned_tasks_to_instance_type in instance_types_to_tasks:
-        if assigned_tasks_to_instance_type.has_resources_for_task(
-            task_required_resources
-        ):
-            assigned_tasks_to_instance_type.assign_task(task, task_required_resources)
-            return True
-    return False
+# NOTE: DEPRECATED module!!! kept until the logging is moved to auto_scaling_core.py
 
 
 async def try_assigning_task_to_instances(
