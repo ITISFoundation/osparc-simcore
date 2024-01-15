@@ -843,7 +843,7 @@ async def _autoscale_cluster(
         < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     ):
         _logger.info(
-            "still %s unrunnable tasks after node activation, try to scale up...",
+            "%s unrunnable tasks could not be assigned to drained nodes, slowly trying to scale up...",
             len(queued_or_missing_instance_tasks),
         )
         cluster = await _scale_up_cluster(
