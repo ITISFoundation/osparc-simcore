@@ -14,7 +14,9 @@ MSG_CHANGE_EMAIL_REQUESTED: Final[
     str
 ] = "Please click on the verification link we sent to your new email address"
 MSG_EMAIL_CHANGED: Final[str] = "Your email is changed"
-MSG_EMAIL_EXISTS: Final[str] = "This email is already registered"
+MSG_EMAIL_ALREADY_REGISTERED: Final[
+    str
+] = "The email you have provided is already registered"  # NOTE: avoid the wording 'product'. User only tries to register in a website.
 MSG_EMAIL_SENT: Final[
     str
 ] = "An email has been sent to {email} with further instructions"
@@ -53,6 +55,11 @@ MSG_USER_BANNED: Final[
 MSG_USER_EXPIRED: Final[
     str
 ] = "This account has expired and does not have anymore access. Please contact support for further details: {support_email}"
+
+MSG_USER_DISABLED: Final[
+    str
+] = "This account was disabled and cannot be registered. Please contact support for further details: {support_email}"
+
 MSG_WRONG_2FA_CODE: Final[str] = "Invalid code (wrong or expired)"
 MSG_WRONG_PASSWORD: Final[str] = "Wrong password"
 MSG_WEAK_PASSWORD: Final[

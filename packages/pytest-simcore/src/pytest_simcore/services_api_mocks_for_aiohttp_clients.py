@@ -247,8 +247,9 @@ async def director_v2_service_mock(
     )
 
     get_services_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services$"
+        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services.*$"
     )
+
     aioresponses_mocker.get(
         get_services_pattern, status=web.HTTPOk.status_code, repeat=True
     )

@@ -115,10 +115,13 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         }
         case "stop-slideshow":
           control = new qx.ui.form.Button().set({
-            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            appearance: "form-button-outlined",
             label: this.tr("App Mode"),
             toolTipText: this.tr("Stop App Mode"),
             icon: "@FontAwesome5Solid/stop/14",
+            alignY: "middle",
+            marginRight: 10,
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
             visibility: osparc.data.Permissions.getInstance().canDo("study.slides.stop") ? "visible" : "excluded"
           });
           control.addListener("execute", () => this.fireEvent("slidesStop"));

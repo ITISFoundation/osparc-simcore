@@ -45,7 +45,7 @@ qx.Class.define("osparc.desktop.credits.TransactionsTable", {
       },
       price: {
         pos: 1,
-        title: qx.locale.Manager.tr("Price US$")
+        title: qx.locale.Manager.tr("Price USD")
       },
       credits: {
         pos: 2,

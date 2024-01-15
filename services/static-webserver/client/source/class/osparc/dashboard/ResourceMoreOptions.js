@@ -127,7 +127,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         appearance: "strong-button",
         font: "text-14",
         alignX: "right",
-        height: 35,
+        minHeight: 35,
+        maxHeight: 35,
         width: 70,
         center: true,
         enabled: false
@@ -150,7 +151,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       openButton.addListener("execute", () => {
         switch (this.__resourceData["resourceType"]) {
           case "study":
-            this.fireDataEvent("openStudy", this.__resourceData["uuid"]);
+            this.fireDataEvent("openStudy", this.__resourceData);
             break;
           case "template":
             this.fireDataEvent("openTemplate", this.__resourceData);

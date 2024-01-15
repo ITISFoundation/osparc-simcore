@@ -13,7 +13,7 @@ from models_library.docker import (
 )
 from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
-from pydantic import ByteSize
+from pydantic import ByteSize, parse_obj_as
 from servicelib.json_serialization import json_dumps
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
@@ -21,7 +21,7 @@ from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
-from ....core.settings import AppSettings
+from ....core.settings import AppSettings, PlacementConstraintStr
 from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
@@ -361,12 +361,18 @@ def get_dynamic_sidecar_spec(
         | standard_simcore_docker_labels
     )
 
+    placement_constraints = deepcopy(
+        app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+    )
     # if service has a pricing plan apply constraints for autoscaling
     if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
         ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
-        service_labels[
-            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
-        ] = ec2_instance_type
+        placement_constraints.append(
+            parse_obj_as(
+                PlacementConstraintStr,
+                f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ec2_instance_type}",
+            )
+        )
 
     #  -----------
     create_service_params = {
@@ -414,11 +420,7 @@ def get_dynamic_sidecar_spec(
                 )
                 else None,
             },
-            "Placement": {
-                "Constraints": deepcopy(
-                    app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
-                )
-            },
+            "Placement": {"Constraints": placement_constraints},
             "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,
             # this will get overwritten
             "Resources": {

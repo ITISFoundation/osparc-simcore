@@ -21,11 +21,13 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   construct: function() {
     this.base(arguments);
 
-    const creditsCol = 4;
+    const creditsCol = 7;
     const layout = this._getLayout();
     layout.setSpacingX(10);
     layout.setColumnWidth(creditsCol, 110);
     layout.setColumnAlign(creditsCol, "right", "middle");
+
+    this.__buildLayout();
   },
 
   properties: {
@@ -47,6 +49,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       init: null,
       nullable: false,
       apply: "__applyPreferredWallet"
+    },
+
+    autoRecharge: {
+      check: "Object",
+      nullable: true,
+      event: "changeAutoRecharge"
     }
   },
 
@@ -60,21 +68,16 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "credits-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            marginLeft: 10,
-            alignY: "middle",
-            width: 140
-          });
-          break;
         case "credits-indicator":
-          control = new osparc.desktop.credits.CreditsIndicator();
+          control = new osparc.desktop.credits.CreditsIndicator().set({
+            allowStretchY: false
+          });
           control.getChildControl("credits-text").set({
             alignX: "right"
           });
           this._add(control, {
             row: 0,
-            column: 4,
+            column: 7,
             rowSpan: 2
           });
           break;
@@ -115,30 +118,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           }, this);
           this._add(control, {
             row: 0,
-            column: 5,
-            rowSpan: 2
-          });
-          break;
-        case "buy-credits-button":
-          control = new qx.ui.form.Button().set({
-            label: this.tr("Buy Credits"),
-            icon: "@FontAwesome5Solid/dollar-sign/16",
-            maxHeight: 30,
-            alignY: "middle",
-            visibility: "hidden"
-          });
-          this.bind("accessRights", control, "enabled", {
-            converter: accessRights => {
-              const myAr = osparc.data.model.Wallet.getMyAccessRights(accessRights);
-              return Boolean(myAr && myAr["write"]);
-            }
-          });
-          control.addListener("execute", () => this.fireDataEvent("buyCredits", {
-            walletId: this.getKey()
-          }), this);
-          this._add(control, {
-            row: 0,
-            column: 6,
+            column: 4,
             rowSpan: 2
           });
           break;
@@ -149,22 +129,48 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             maxHeight: 30,
             alignY: "middle"
           });
-          control.getChildControl("label").set({
-            allowGrowX: true,
-            textAlign: "right"
-          });
           control.addListener("execute", () => this.fireDataEvent("toggleFavourite", {
             walletId: this.getKey()
           }), this);
           this._add(control, {
             row: 0,
-            column: 7,
+            column: 8,
             rowSpan: 2
           });
           break;
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __buildLayout() {
+      this._removeAll();
+
+      this.__autorechargeBtn = new qx.ui.form.ToggleButton("Autorecharge").set({
+        maxHeight: 30,
+        alignX: "center",
+        alignY: "middle",
+        focusable: false
+      });
+      this.__autorechargeBtn.addListener("execute", () => {
+        const autorecharge = new osparc.desktop.credits.AutoRecharge(this.getKey());
+        const win = osparc.ui.window.Window.popUpInWindow(autorecharge, "Autorecharge", 400, 550);
+        autorecharge.addListener("close", () => win.close());
+        // Revert default execute action (toggle the buttons's vale)
+        this.__autorechargeBtn.toggleValue();
+      });
+      this.bind("autoRecharge", this.__autorechargeBtn, "value", {
+        converter: ar => ar ? ar.enabled : false
+      });
+      this.__autorechargeBtn.bind("value", this.__autorechargeBtn, "label", {
+        converter: value => value ? "Autorecharge: ON" : "Autorecharge: OFF"
+      });
+      this._add(this.__autorechargeBtn, {
+        // Takes the status button place for the moment
+        row: 0,
+        column: 5,
+        rowSpan: 2
+      });
     },
 
     __applyCreditsAvailable: function(creditsAvailable) {
@@ -186,11 +192,30 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
     // overridden
     _applyAccessRights: function(accessRights) {
+      this.__buildLayout();
       this.base(arguments, accessRights);
-
-      this.getChildControl("buy-credits-button").set({
-        visibility: this.__canIWrite() ? "visible" : "hidden"
+      this.__buyBtn = new qx.ui.form.Button().set({
+        label: this.tr("Buy Credits"),
+        icon: "@FontAwesome5Solid/dollar-sign/16",
+        maxHeight: 30,
+        alignY: "middle",
+        visibility: this.__canIWrite() ? "visible" : "excluded",
       });
+      this.bind("accessRights", this.__buyBtn, "enabled", {
+        converter: aR => {
+          const myAr = osparc.data.model.Wallet.getMyAccessRights(aR);
+          return Boolean(myAr && myAr.write);
+        }
+      });
+      this.__buyBtn.addListener("execute", () => this.fireDataEvent("buyCredits", {
+        walletId: this.getKey()
+      }), this);
+      this._add(this.__buyBtn, {
+        row: 0,
+        column: 6,
+        rowSpan: 2
+      });
+      this.__autorechargeBtn.setVisibility(this.__canIWrite() ? "visible" : "excluded");
     },
 
     // overridden
@@ -270,16 +295,14 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       const favouriteButtonIcon = favouriteButton.getChildControl("icon");
       if (isPreferredWallet) {
         favouriteButton.set({
-          label: this.tr("Primary"),
-          toolTipText: this.tr("Default Credit Account"),
-          icon: "@FontAwesome5Solid/toggle-on/20"
+          toolTipText: this.tr("Currently being used"),
+          icon: "@FontAwesome5Solid/check-circle/20"
         });
         favouriteButtonIcon.setTextColor("strong-main");
       } else {
         favouriteButton.set({
-          label: this.tr("Secondary"),
-          toolTipText: this.tr("Make it Default Credit Account"),
-          icon: "@FontAwesome5Solid/toggle-off/20"
+          toolTipText: this.tr("Switch to this credit account"),
+          icon: "@FontAwesome5Solid/circle/20"
         });
         favouriteButtonIcon.setTextColor("text");
       }

@@ -62,7 +62,8 @@ def _compute_hash(password: str) -> str:
         return hashlib.sha224(password.encode("ascii")).hexdigest()
 
 
-_DEFAULT_HASH = _compute_hash("secret")
+DEFAULT_PASSWORD = "secret" * 3  # Password must be at least 12 characters long
+_DEFAULT_HASH = _compute_hash(DEFAULT_PASSWORD)
 
 
 def random_user(**overrides) -> dict[str, Any]:
@@ -77,6 +78,7 @@ def random_user(**overrides) -> dict[str, Any]:
     # transform password in hash
     password = overrides.pop("password", None)
     if password:
+        assert len(password) >= 12
         overrides["password_hash"] = _compute_hash(password)
 
     data.update(overrides)

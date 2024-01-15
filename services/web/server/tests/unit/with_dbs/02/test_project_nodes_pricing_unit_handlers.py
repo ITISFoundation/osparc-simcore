@@ -7,15 +7,19 @@
 
 
 import re
+from unittest import mock
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from faker import Faker
+from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingUnitGet,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
@@ -111,6 +115,28 @@ def mock_rut_api_responses(
     return aioresponses_mocker
 
 
+@pytest.fixture
+def mocked_clusters_keeper_service_get_instance_type_details(
+    mocker: MockerFixture, faker: Faker
+) -> mock.Mock:
+    def _fake_instance_type_details(
+        rabbitmq_client, instance_type_names: set[str]
+    ) -> list[EC2InstanceTypeGet]:
+        assert len(instance_type_names) > 0
+        return [
+            EC2InstanceTypeGet(
+                name=next(iter(instance_type_names)),
+                cpus=faker.pyfloat(min_value=0.1),
+                ram=faker.pyint(min_value=1024),
+            )
+        ]
+
+    return mocker.patch(
+        "simcore_service_webserver.projects.projects_api.get_instance_type_details",
+        side_effect=_fake_instance_type_details,
+    )
+
+
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
 async def test_project_wallets_full_workflow(
     client: TestClient,
@@ -118,16 +144,16 @@ async def test_project_wallets_full_workflow(
     user_project: ProjectDict,
     expected: type[web.HTTPException],
     mock_rut_api_responses: AioResponsesMock,
+    mocked_clusters_keeper_service_get_instance_type_details: mock.Mock,
 ):
-
     node_id = next(iter(user_project["workbench"]))
-
+    assert client.app
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
-    assert data == None
+    assert data is None
 
     # Now we will connect pricing unit to the project node
     base_url = client.app.router["connect_pricing_unit_to_project_node"].url_for(
@@ -136,13 +162,13 @@ async def test_project_wallets_full_workflow(
         pricing_plan_id=f"{_PRICING_PLAN_ID}",
         pricing_unit_id=f"{_PRICING_UNIT_ID_1}",
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     await assert_status(resp, web.HTTPNoContent)
-
+    mocked_clusters_keeper_service_get_instance_type_details.assert_called_once()
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["pricingUnitId"] == _PRICING_UNIT_ID_1
 
@@ -153,12 +179,12 @@ async def test_project_wallets_full_workflow(
         pricing_plan_id=f"{_PRICING_PLAN_ID}",
         pricing_unit_id=f"{_PRICING_UNIT_ID_2}",
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     await assert_status(resp, web.HTTPNoContent)
 
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["pricingUnitId"] == _PRICING_UNIT_ID_2

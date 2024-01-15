@@ -1,12 +1,20 @@
+import datetime
 from typing import Any
 
 from fastapi import FastAPI, status
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    RPCDynamicServiceCreate,
+)
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import AttachLifespanMixin, HasClientSetupInterface
 from servicelib.fastapi.http_client_thin import UnexpectedStatusError
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
+    ServiceWaitingForManualInterventionError,
+    ServiceWasNotFoundError,
+)
 
 from ._thin_client import DirectorV2ThinClient
 
@@ -44,6 +52,51 @@ class DirectorV2Client(
                 == status.HTTP_404_NOT_FOUND
             ):
                 return NodeGetIdle(service_state="idle", service_uuid=node_id)
+            raise
+
+    async def run_dynamic_service(
+        self, rpc_dynamic_service_create: RPCDynamicServiceCreate
+    ) -> NodeGet | DynamicServiceGet:
+        response = await self.thin_client.post_dynamic_service(
+            rpc_dynamic_service_create
+        )
+        dict_response: dict[str, Any] = response.json()
+
+        # legacy services
+        if "data" in dict_response:
+            return NodeGet.parse_obj(dict_response["data"])
+
+        return DynamicServiceGet.parse_obj(dict_response)
+
+    async def stop_dynamic_service(
+        self,
+        *,
+        node_id: NodeID,
+        simcore_user_agent: str,
+        save_state: bool,
+        timeout: datetime.timedelta
+    ) -> None:
+        try:
+            await self.thin_client.delete_dynamic_service(
+                node_id=node_id,
+                simcore_user_agent=simcore_user_agent,
+                save_state=save_state,
+                timeout=timeout,
+            )
+        except UnexpectedStatusError as e:
+            if (
+                e.response.status_code  # pylint:disable=no-member # type: ignore
+                == status.HTTP_409_CONFLICT
+            ):
+                raise ServiceWaitingForManualInterventionError(
+                    node_id=node_id
+                ) from None
+            if (
+                e.response.status_code  # pylint:disable=no-member # type: ignore
+                == status.HTTP_404_NOT_FOUND
+            ):
+                raise ServiceWasNotFoundError(node_id=node_id) from None
+
             raise
 
 

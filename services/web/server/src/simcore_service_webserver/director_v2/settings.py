@@ -30,20 +30,6 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     # - Timeouts are typically used in clients (total/read/connection timeouts) or asyncio calls
     # - Mostly in floats (aiohttp.Client/) but sometimes in ints
     # - Typically in seconds but occasionally in ms
-    DIRECTOR_V2_STOP_SERVICE_TIMEOUT: PositiveInt = Field(
-        _HOUR + 10,
-        description=(
-            "Timeout on stop service request (seconds)"
-            "ANE: The below will try to help explaining what is happening: "
-            "webserver -(stop_service)-> director-v* -(save_state)-> service_x"
-            "- webserver requests stop_service and uses a 01:00:10 timeout"
-            "- director-v* requests save_state and uses a 01:00:00 timeout"
-            "The +10 seconds is used to make sure the director replies"
-        ),
-        envs=[
-            "DIRECTOR_V2_STOP_SERVICE_TIMEOUT",
-        ],
-    )
 
     DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT: PositiveInt = Field(
         1 * _MINUTE,

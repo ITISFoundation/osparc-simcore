@@ -1,3 +1,4 @@
+import datetime
 from functools import cached_property
 from typing import cast
 
@@ -34,6 +35,14 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
+    DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=60),
+        description=(
+            "Time to wait before timing out when stopping a dynamic service. "
+            "Since services require data to be stopped, this operation is timed out after 1 hour"
+        ),
+    )
+
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802
         return self.DYNAMIC_SCHEDULER__LOGLEVEL
@@ -62,3 +71,5 @@ class ApplicationSettings(_BaseApplicationSettings):
     DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS: DirectorV2Settings = Field(
         auto_default_from_env=True, description="settings for director-v2 service"
     )
+
+    DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True

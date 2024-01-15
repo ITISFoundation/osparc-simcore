@@ -7,7 +7,7 @@
 import logging
 
 import pytest
-from pytest import MonkeyPatch
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_webserver.log import setup_logging
@@ -17,7 +17,7 @@ from simcore_service_webserver.studies_dispatcher.settings import (
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     envs_plugins = setenvs_from_dict(
         monkeypatch,
         {
@@ -60,3 +60,11 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
     print(plugin_settings.json(indent=1))
 
     return {**app_environment, **envs_plugins, **envs_studies_dispatcher}
+
+
+@pytest.fixture
+def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.stop_dynamic_services_in_project",
+        autospec=True,
+    )

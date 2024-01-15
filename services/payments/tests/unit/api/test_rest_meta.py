@@ -5,9 +5,13 @@
 
 
 import httpx
+import pytest
 import simcore_service_payments.api.rest._health as health_module
 from fastapi import status
+from pytest_mock import MockerFixture
+from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_payments._meta import API_VTAG
+from simcore_service_payments.api.rest._health import HealthCheckError
 from simcore_service_payments.models.schemas.meta import Meta
 
 
@@ -15,12 +19,37 @@ async def test_healthcheck(
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
     client: httpx.AsyncClient,
+    mocker: MockerFixture,
 ):
+    rabbitmq_mock = mocker.Mock(spec=RabbitMQClient)
+    rabbitmq_mock.healthy = True
+    mocker.patch(
+        "simcore_service_payments.services.rabbitmq.get_rabbitmq_client",
+        return_value=rabbitmq_mock,
+    )
+
     response = await client.get("/")
     assert response.status_code == status.HTTP_200_OK
     assert response.text.startswith(
         f"{health_module.__name__}@"
     ), f"got {response.text!r}"
+
+
+async def test_healthcheck__unhealthy(
+    with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_postgres: None,
+    client: httpx.AsyncClient,
+    mocker: MockerFixture,
+):
+    rabbitmq_mock = mocker.Mock(spec=RabbitMQClient)
+    rabbitmq_mock.healthy = False
+    mocker.patch(
+        "simcore_service_payments.services.rabbitmq.get_rabbitmq_client",
+        return_value=rabbitmq_mock,
+    )
+
+    with pytest.raises(HealthCheckError):
+        await client.get("/")
 
 
 async def test_meta(

@@ -10,12 +10,19 @@ from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.api_schemas_dynamic_scheduler import DYNAMIC_SCHEDULER_RPC_NAMESPACE
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    RPCDynamicServiceCreate,
+)
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
-from models_library.rabbitmq_basic_types import RPCMethodName
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
+    ServiceWaitingForManualInterventionError,
+    ServiceWasNotFoundError,
+)
 from settings_library.rabbit import RabbitSettings
 
 pytest_simcore_core_services_selection = [
@@ -56,7 +63,7 @@ def fake_director_v0_base_url() -> str:
 
 
 @pytest.fixture
-def mock_director_v0(
+def mock_director_v0_service_state(
     fake_director_v0_base_url: str,
     node_id_legacy: NodeID,
     node_not_found: NodeID,
@@ -79,7 +86,7 @@ def mock_director_v0(
 
 
 @pytest.fixture
-def mock_director_v2(
+def mock_director_v2_service_state(
     node_id_new_style: NodeID,
     node_id_legacy: NodeID,
     node_not_found: NodeID,
@@ -126,8 +133,8 @@ def app_environment(
 @pytest.fixture
 async def rpc_client(
     app_environment: EnvVarsDict,
-    mock_director_v2: None,
-    mock_director_v0: None,
+    mock_director_v2_service_state: None,
+    mock_director_v0_service_state: None,
     app: FastAPI,
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ) -> RabbitMQRPCClient:
@@ -143,25 +150,262 @@ async def test_get_state(
     service_status_legacy: NodeGet,
 ):
     # status from director-v2
-    result = await rpc_client.request(
-        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        RPCMethodName("get_service_status"),
-        node_id=node_id_new_style,
-    )
+
+    result = await services.get_service_status(rpc_client, node_id=node_id_new_style)
     assert result == service_status_new_style
 
     # status from director-v0
-    result = await rpc_client.request(
-        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        RPCMethodName("get_service_status"),
-        node_id=node_id_legacy,
-    )
+    result = await services.get_service_status(rpc_client, node_id=node_id_legacy)
     assert result == service_status_legacy
 
     # node not tracked any of the two directors
-    result = await rpc_client.request(
-        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        RPCMethodName("get_service_status"),
-        node_id=node_not_found,
-    )
+    result = await services.get_service_status(rpc_client, node_id=node_not_found)
     assert result == NodeGetIdle(service_state="idle", service_uuid=node_not_found)
+
+
+@pytest.fixture
+def rpc_dynamic_service_create() -> RPCDynamicServiceCreate:
+    # one for legacy and one for new style?
+    return RPCDynamicServiceCreate.parse_obj(
+        RPCDynamicServiceCreate.Config.schema_extra["example"]
+    )
+
+
+@pytest.fixture
+def mock_director_v0_service_run(
+    fake_director_v0_base_url: str, service_status_legacy: NodeGet
+) -> Iterator[None]:
+    with respx.mock(
+        base_url=fake_director_v0_base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.post("/fake-service-run").respond(
+            status.HTTP_201_CREATED,
+            text=json.dumps(jsonable_encoder({"data": service_status_legacy.dict()})),
+        )
+
+        yield None
+
+
+@pytest.fixture
+def mock_director_v2_service_run(
+    is_legacy: bool,
+    service_status_new_style: DynamicServiceGet,
+    service_status_legacy: NodeGet,
+    fake_director_v0_base_url: str,
+) -> Iterator[None]:
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        request = mock.post("/dynamic_services")
+        if is_legacy:
+            request.respond(
+                status.HTTP_307_TEMPORARY_REDIRECT,
+                headers={"Location": f"{fake_director_v0_base_url}/fake-service-run"},
+            )
+        else:
+            request.respond(
+                status.HTTP_201_CREATED,
+                text=service_status_new_style.json(),
+            )
+        yield None
+
+
+@pytest.mark.parametrize("is_legacy", [True, False])
+async def test_run_dynamic_service(
+    mock_director_v0_service_run: None,
+    mock_director_v2_service_run: None,
+    rpc_client: RabbitMQRPCClient,
+    rpc_dynamic_service_create: RPCDynamicServiceCreate,
+    is_legacy: bool,
+):
+    result = await services.run_dynamic_service(
+        rpc_client, rpc_dynamic_service_create=rpc_dynamic_service_create
+    )
+
+    if is_legacy:
+        assert isinstance(result, NodeGet)
+    else:
+        assert isinstance(result, DynamicServiceGet)
+
+
+@pytest.fixture
+def simcore_user_agent(faker: Faker) -> str:
+    return faker.pystr()
+
+
+@pytest.fixture
+def node_id(faker: Faker) -> NodeID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def node_id_not_found(faker: Faker) -> NodeID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def node_id_manual_intervention(faker: Faker) -> NodeID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def mock_director_v0_service_stop(
+    fake_director_v0_base_url: str,
+    node_id: NodeID,
+    node_id_not_found: NodeID,
+    node_id_manual_intervention: NodeID,
+    save_state: bool,
+) -> Iterator[None]:
+    can_save_str = f"{save_state}".lower()
+    with respx.mock(
+        base_url=fake_director_v0_base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        mock.delete(f"/fake-service-stop-ok/{node_id}?can_save={can_save_str}").respond(
+            status.HTTP_204_NO_CONTENT
+        )
+
+        mock.delete(
+            f"/fake-service-stop-not-found/{node_id_not_found}?can_save={can_save_str}"
+        ).respond(status.HTTP_404_NOT_FOUND)
+
+        mock.delete(
+            f"/fake-service-stop-manual/{node_id_manual_intervention}?can_save={can_save_str}"
+        ).respond(status.HTTP_409_CONFLICT)
+
+        yield None
+
+
+@pytest.fixture
+def mock_director_v2_service_stop(
+    node_id: NodeID,
+    node_id_not_found: NodeID,
+    node_id_manual_intervention: NodeID,
+    is_legacy: bool,
+    fake_director_v0_base_url: str,
+    save_state: bool,
+) -> Iterator[None]:
+    can_save_str = f"{save_state}".lower()
+    with respx.mock(
+        base_url="http://director-v2:8000/v2",
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as mock:
+        request_ok = mock.delete(f"/dynamic_services/{node_id}?can_save={can_save_str}")
+        if is_legacy:
+            request_ok.respond(
+                status.HTTP_307_TEMPORARY_REDIRECT,
+                headers={
+                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-ok/{node_id}?can_save={can_save_str}"
+                },
+            )
+        else:
+            request_ok.respond(status.HTTP_204_NO_CONTENT)
+
+        request_not_found = mock.delete(
+            f"/dynamic_services/{node_id_not_found}?can_save={can_save_str}"
+        )
+        if is_legacy:
+            request_not_found.respond(
+                status.HTTP_307_TEMPORARY_REDIRECT,
+                headers={
+                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-not-found/{node_id_not_found}?can_save={can_save_str}"
+                },
+            )
+        else:
+            request_not_found.respond(status.HTTP_404_NOT_FOUND)
+
+        request_manual_intervention = mock.delete(
+            f"/dynamic_services/{node_id_manual_intervention}?can_save={can_save_str}"
+        )
+        if is_legacy:
+            request_manual_intervention.respond(
+                status.HTTP_307_TEMPORARY_REDIRECT,
+                headers={
+                    "Location": f"{fake_director_v0_base_url}/fake-service-stop-manual/{node_id_manual_intervention}?can_save={can_save_str}"
+                },
+            )
+        else:
+            request_manual_intervention.respond(status.HTTP_409_CONFLICT)
+
+        yield None
+
+
+@pytest.mark.parametrize("is_legacy", [True, False])
+@pytest.mark.parametrize("save_state", [True, False])
+async def test_stop_dynamic_service(
+    mock_director_v0_service_stop: None,
+    mock_director_v2_service_stop: None,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    node_id_not_found: NodeID,
+    node_id_manual_intervention: NodeID,
+    simcore_user_agent: str,
+    save_state: bool,
+):
+    # service was stopped
+    result = await services.stop_dynamic_service(
+        rpc_client,
+        node_id=node_id,
+        simcore_user_agent=simcore_user_agent,
+        save_state=save_state,
+        timeout_s=5,
+    )
+    assert result is None
+
+    # service was not found
+    with pytest.raises(ServiceWasNotFoundError):
+        await services.stop_dynamic_service(
+            rpc_client,
+            node_id=node_id_not_found,
+            simcore_user_agent=simcore_user_agent,
+            save_state=save_state,
+            timeout_s=5,
+        )
+
+    # service awaits for manual intervention
+    with pytest.raises(ServiceWaitingForManualInterventionError):
+        await services.stop_dynamic_service(
+            rpc_client,
+            node_id=node_id_manual_intervention,
+            simcore_user_agent=simcore_user_agent,
+            save_state=save_state,
+            timeout_s=5,
+        )
+
+
+@pytest.fixture
+def mock_raise_generic_error(
+    mocker: MockerFixture,
+) -> None:
+    module_base = (
+        "simcore_service_dynamic_scheduler.services.director_v2._public_client"
+    )
+    mocker.patch(
+        f"{module_base}.DirectorV2Client.stop_dynamic_service",
+        autospec=True,
+        side_effect=Exception("raised as expected"),
+    )
+
+
+@pytest.mark.parametrize("save_state", [True, False])
+async def test_stop_dynamic_service_serializes_generic_errors(
+    mock_raise_generic_error: None,
+    rpc_client: RabbitMQRPCClient,
+    node_id: NodeID,
+    simcore_user_agent: str,
+    save_state: bool,
+):
+    with pytest.raises(RPCServerError, match="while running 'stop_dynamic_service'"):
+        await services.stop_dynamic_service(
+            rpc_client,
+            node_id=node_id,
+            simcore_user_agent=simcore_user_agent,
+            save_state=save_state,
+            timeout_s=5,
+        )

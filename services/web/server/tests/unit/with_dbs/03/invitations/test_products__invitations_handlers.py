@@ -9,7 +9,6 @@ from datetime import datetime, timezone
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from faker import Faker
 from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
     InvitationGenerated,
@@ -17,58 +16,8 @@ from models_library.api_schemas_webserver.product import (
 from pydantic import PositiveInt
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.users import UserRole
-
-
-@pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict,
-    env_devel_dict: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-):
-    envs_plugins = setenvs_from_dict(
-        monkeypatch,
-        {
-            "WEBSERVER_ACTIVITY": "null",
-            "WEBSERVER_DB_LISTENER": "0",
-            "WEBSERVER_DIAGNOSTICS": "null",
-            "WEBSERVER_EXPORTER": "null",
-            "WEBSERVER_GARBAGE_COLLECTOR": "null",
-            "WEBSERVER_META_MODELING": "0",
-            "WEBSERVER_NOTIFICATIONS": "0",
-            "WEBSERVER_PUBLICATIONS": "0",
-            "WEBSERVER_REMOTE_DEBUG": "0",
-            "WEBSERVER_SOCKETIO": "0",
-            "WEBSERVER_STUDIES_ACCESS_ENABLED": "0",
-            "WEBSERVER_TAGS": "0",
-            "WEBSERVER_TRACING": "null",
-            "WEBSERVER_VERSION_CONTROL": "0",
-            "WEBSERVER_WALLETS": "0",
-        },
-    )
-
-    # undefine WEBSERVER_INVITATIONS
-    app_environment.pop("WEBSERVER_INVITATIONS", None)
-    monkeypatch.delenv("WEBSERVER_INVITATIONS", raising=False)
-
-    # set INVITATIONS_* variables using those in .devel-env
-    envs_invitations = setenvs_from_dict(
-        monkeypatch,
-        envs={
-            name: value
-            for name, value in env_devel_dict.items()
-            if name.startswith("INVITATIONS_")
-        },
-    )
-
-    return app_environment | envs_plugins | envs_invitations
-
-
-@pytest.fixture
-def guest_email(faker: Faker) -> str:
-    return faker.email()
 
 
 @pytest.mark.parametrize(
@@ -89,6 +38,12 @@ async def test_role_access_to_generate_invitation(
     expected_status: type[web.HTTPException],
     guest_email: str,
 ):
+    assert client.app
+    assert (
+        client.app.router["generate_invitation"].url_for().path
+        == "/v0/invitation:generate"
+    )
+
     response = await client.post(
         "/v0/invitation:generate",
         json={

@@ -81,8 +81,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     BUTTON_OPTIONS: {
       font: "text-14",
       allowGrowY: false,
-      minWidth: 32,
-      minHeight: 32
+      minWidth: 30,
+      minHeight: 30
     },
 
     PAGE_CONTEXT: {

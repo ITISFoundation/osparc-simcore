@@ -11,7 +11,8 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from pydantic import PositiveInt
-from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
+
+from ..models.comp_tasks import CompTaskAtDB
 
 SCHEDULED_STATES: set[RunningState] = {
     RunningState.PUBLISHED,
@@ -47,7 +48,6 @@ COMPLETED_STATES: set[RunningState] = {
     RunningState.ABORTED,
     RunningState.SUCCESS,
     RunningState.FAILED,
-    RunningState.UNKNOWN,
 }
 
 
