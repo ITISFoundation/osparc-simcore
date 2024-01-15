@@ -14,11 +14,11 @@ from aiohttp.test_utils import TestClient
 from aiohttp.web import RouteTableDef
 from aiohttp_security import check_authorized
 from aiohttp_session import get_session
-from cryptography.fernet import Fernet
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import LOGIN_SETTINGS_DEFAULT, products
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
@@ -184,6 +184,7 @@ def client(
         [web.Application, OrderedDict[str, Product]], None
     ],
     app_routes: RouteTableDef,
+    mock_env_devel_environment: EnvVarsDict,
 ):
     app = web.Application()
     app.router.add_routes(app_routes)
@@ -192,9 +193,7 @@ def client(
     mocker.patch(
         "simcore_service_webserver.session.plugin.get_plugin_settings",
         autospec=True,
-        return_value=SessionSettings(
-            SESSION_SECRET_KEY=Fernet.generate_key().decode("utf-8")
-        ),  # type: ignore
+        return_value=SessionSettings.create_from_envs(),
     )
 
     setup_security(app)
