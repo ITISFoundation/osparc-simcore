@@ -33,6 +33,13 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
     # Cookies attributes
     # - https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
     # - Defaults taken from https://github.com/aio-libs/aiohttp-session/blob/master/aiohttp_session/cookie_storage.py#L20-L26
+    #
+
+    SESSION_COOKIE_NAME: str = Field(
+        default="osparc.WEBAPI_SESSION",
+        min_length=4,
+        description="Name of the session's cookie",
+    )
 
     SESSION_COOKIE_MAX_AGE: PositiveInt | None = Field(
         default=None,
