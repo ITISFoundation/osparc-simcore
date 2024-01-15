@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import asyncio
 from collections import OrderedDict
 from collections.abc import Callable
 from typing import Any
@@ -175,7 +176,7 @@ def app_routes(
 
 @pytest.fixture
 def client(
-    loop,
+    event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     mocker: MockerFixture,
     app_products: OrderedDict[str, Product],
@@ -202,7 +203,7 @@ def client(
     set_products_in_app_state(app, app_products)
     app.middlewares.append(discover_product_middleware)
 
-    return loop.run_until_complete(aiohttp_client(app))
+    return event_loop.run_until_complete(aiohttp_client(app))
 
 
 async def test_user_session(client: TestClient, mocker: MockerFixture):
@@ -227,12 +228,12 @@ async def test_user_session(client: TestClient, mocker: MockerFixture):
     assert resp.ok
 
     resp = await client.post("/v0/public")
-    assert resp.ok
+    assert resp.ok, f"error: {await resp.text()}"
     assert not get_active_user_or_none_mock.called
 
     resp = await client.post("/v0/protected")
-    assert resp.ok
+    assert resp.ok, f"error: {await resp.text()}"
     assert get_active_user_or_none_mock.called
 
     resp = await client.post("/v0/logout")
-    assert resp.ok
+    assert resp.ok, f"error: {await resp.text()}"

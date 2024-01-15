@@ -279,6 +279,8 @@ async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicM
     authz_policy = AuthorizationPolicy(app, RoleBasedAccessModel([]))
 
     # cache under test
+
+    # pylint: disable=no-member
     autz_cache: BaseCache = authz_policy._get_auth_or_none.cache
 
     assert not (await autz_cache.exists("_get_auth_or_none/foo@email.com"))
