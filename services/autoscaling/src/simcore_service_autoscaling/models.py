@@ -39,7 +39,7 @@ class AssociatedInstance:
     node: Node
     ec2_instance: EC2InstanceData
     assigned_tasks: list = field(default_factory=list)
-    _available_resources: Resources = field(init=False)
+    _available_resources: Resources = field(default_factory=Resources.create_as_empty)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "_available_resources", self.ec2_instance.resources)
@@ -62,7 +62,7 @@ class AssociatedInstance:
 class NonAssociatedInstance:
     ec2_instance: EC2InstanceData
     assigned_tasks: list = field(default_factory=list)
-    _available_resources: Resources = field(init=False)
+    _available_resources: Resources = field(default_factory=Resources.create_as_empty)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "_available_resources", self.ec2_instance.resources)
