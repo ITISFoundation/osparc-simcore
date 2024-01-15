@@ -58,6 +58,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
                     get_redis_client(app),
                     periodic_check_of_running_services_task,
                     interval=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC,
+                    exclusive_task_starter_interval=app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC,
                     task_name=_TASK_NAME_PERIODICALY_CHECK_RUNNING_SERVICES,
                     app=app,
                 )
