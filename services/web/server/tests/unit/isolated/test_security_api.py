@@ -27,6 +27,7 @@ from simcore_service_webserver.products._middlewares import discover_product_mid
 from simcore_service_webserver.products._model import Product
 from simcore_service_webserver.security.api import (
     check_permission,
+    clean_auth_policy_cache,
     forget_identity,
     remember_identity,
 )
@@ -190,10 +191,12 @@ def client(
     app.router.add_routes(app_routes)
 
     # mocks 'setup_session': patch to avoid setting up all ApplicationSettings
+    session_settings = SessionSettings.create_from_envs()
+    print(session_settings.json(indent=1))
     mocker.patch(
         "simcore_service_webserver.session.plugin.get_plugin_settings",
         autospec=True,
-        return_value=SessionSettings.create_from_envs(),
+        return_value=session_settings,
     )
 
     setup_security(app)
@@ -206,6 +209,10 @@ def client(
 
 
 async def test_user_session(client: TestClient, mocker: MockerFixture):
+    assert client.app
+    # NOTE: this might be a problem with every test since cache is global per process
+    await clean_auth_policy_cache(client.app)
+
     mocker.patch(
         "simcore_service_webserver.security._authz.get_database_engine",
         autospec=True,
