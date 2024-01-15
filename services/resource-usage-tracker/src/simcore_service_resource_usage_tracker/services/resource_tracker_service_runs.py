@@ -22,7 +22,7 @@ async def list_service_runs(
     offset: int = 0,
     wallet_id: WalletID | None = None,
     access_all_wallet_usage: bool = False,
-    order_by: list[OrderBy] | None = None,  # noqa: ARG001
+    order_by: OrderBy | None = None,  # noqa: ARG001
     filters: ServiceResourceUsagesFilters | None = None,  # noqa: ARG001
 ) -> ServiceRunPage:
     started_from = None

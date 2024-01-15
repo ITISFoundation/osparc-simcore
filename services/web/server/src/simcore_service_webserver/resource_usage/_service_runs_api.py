@@ -22,7 +22,7 @@ async def list_usage_services(
     wallet_id: WalletID | None,
     offset: int,
     limit: NonNegativeInt,
-    order_by: list[OrderBy] | None,
+    order_by: OrderBy | None,
     filters: ServiceResourceUsagesFilters | None,
 ) -> ServiceRunPage:
     access_all_wallet_usage = False

@@ -33,7 +33,7 @@ async def get_service_run_page(
     offset: int = 0,
     wallet_id: WalletID | None = None,
     access_all_wallet_usage: bool = False,
-    order_by: list[OrderBy] | None = None,
+    order_by: OrderBy | None = None,
     filters: ServiceResourceUsagesFilters | None = None
 ) -> ServiceRunPage:
     result = await rabbitmq_rpc_client.request(

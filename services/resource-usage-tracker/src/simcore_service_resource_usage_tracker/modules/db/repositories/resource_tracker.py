@@ -201,7 +201,7 @@ class ResourceTrackerRepository(BaseRepository):
         service_run_status: ServiceRunStatus | None = None,
         started_from: datetime | None = None,
         started_until: datetime | None = None,
-        order_by: list[OrderBy] | None = None,
+        order_by: OrderBy | None = None,
     ) -> list[ServiceRunWithCreditsDB]:
         async with self.db_engine.begin() as conn:
             query = (
@@ -268,11 +268,10 @@ class ResourceTrackerRepository(BaseRepository):
                 )
 
             if order_by:
-                for item in order_by:
-                    if item.direction == OrderDirection.ASC:
-                        query = query.order_by(sa.asc(item.field))
-                    else:
-                        query = query.order_by(sa.desc(item.field))
+                if order_by.direction == OrderDirection.ASC:
+                    query = query.order_by(sa.asc(order_by.field))
+                else:
+                    query = query.order_by(sa.desc(order_by.field))
             else:
                 # Default ordering
                 query = query.order_by(
