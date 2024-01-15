@@ -32,10 +32,10 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
 
     # Cookies attributes
     # - https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
-    # - https://aiohttp-session.readthedocs.io/en/latest/reference.html#abstract-storage
+    # - Defaults taken from https://github.com/aio-libs/aiohttp-session/blob/master/aiohttp_session/cookie_storage.py#L20-L26
 
     SESSION_COOKIE_MAX_AGE: PositiveInt | None = Field(
-        default=_DAY,
+        default=None,
         description="Max-Age attribute. Maximum age for session data, int seconds or None for “session cookie” which last until you close your browser.",
     )
     SESSION_COOKIE_SAMESITE: str | None = Field(
