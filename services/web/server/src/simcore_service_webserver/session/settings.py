@@ -1,4 +1,4 @@
-from typing import Final, Literal
+from typing import Final
 
 from aiohttp import web
 from pydantic import PositiveInt
@@ -38,8 +38,8 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         default=_DAY,
         description="Max-Age attribute. Maximum age for session data, int seconds or None for “session cookie” which last until you close your browser.",
     )
-    SESSION_COOKIE_SAMESITE: Literal["Strict", "Lax"] | None = Field(
-        None,
+    SESSION_COOKIE_SAMESITE: str | None = Field(
+        default=None,
         description="SameSite attribute lets servers specify whether/when cookies are sent with cross-site requests",
     )
     SESSION_COOKIE_SECURE: bool = Field(
@@ -55,6 +55,14 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
     @classmethod
     def check_valid_fernet_key(cls, v):
         return cls.do_check_valid_fernet_key(v)
+
+    @validator("SESSION_COOKIE_SAMESITE")
+    @classmethod
+    def check_valid_samesite_attribute(cls, v):
+        # NOTE: Replacement to `Literal["Strict", "Lax"] | None` due to bug in settings_library/base.py:93: in prepare_field
+        if v is not None and v not in ("Strict", "Lax"):
+            msg = "Invalid {v}. Expected Strict, Lax or None"
+            raise ValueError(msg)
 
 
 def get_plugin_settings(app: web.Application) -> SessionSettings:
