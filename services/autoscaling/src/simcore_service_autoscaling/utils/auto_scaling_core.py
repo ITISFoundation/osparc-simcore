@@ -72,7 +72,9 @@ async def associate_ec2_instances_with_nodes(
             continue
 
         if node := next(iter(filter(_find_node_with_name, nodes)), None):
-            associated_instances.append(AssociatedInstance(node, instance_data))
+            associated_instances.append(
+                AssociatedInstance(node=node, ec2_instance=instance_data)
+            )
         else:
             non_associated_instances.append(instance_data)
     return associated_instances, non_associated_instances

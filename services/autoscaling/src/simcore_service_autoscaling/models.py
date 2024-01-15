@@ -42,7 +42,43 @@ class AssociatedInstance:
     _available_resources: Resources = field(init=False)
 
     def __post_init__(self) -> None:
-        super().__setattr__("_available_resources", self.ec2_instance.resources)
+        object.__setattr__(self, "_available_resources", self.ec2_instance.resources)
+
+    def has_resources_for_task(self, task_resources: Resources) -> bool:
+        return bool(self._available_resources >= task_resources)
+
+    def assign_task(self, task, task_resources: Resources) -> None:
+        self.assigned_tasks.append(task)
+        object.__setattr__(
+            self, "_available_resources", self._available_resources - task_resources
+        )
+
+    @property
+    def available_resources(self) -> Resources:
+        return self._available_resources
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class NonAssociatedInstance:
+    ec2_instance: EC2InstanceData
+    assigned_tasks: list = field(default_factory=list)
+    _available_resources: Resources = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "_available_resources", self.ec2_instance.resources)
+
+    def has_resources_for_task(self, task_resources: Resources) -> bool:
+        return bool(self._available_resources >= task_resources)
+
+    def assign_task(self, task, task_resources: Resources) -> None:
+        self.assigned_tasks.append(task)
+        object.__setattr__(
+            self, "_available_resources", self._available_resources - task_resources
+        )
+
+    @property
+    def available_resources(self) -> Resources:
+        return self._available_resources
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -67,7 +103,7 @@ class Cluster:
             "description": "This is a EC2 backed docker node which is drained in the reserve if this is enabled (with no tasks)"
         }
     )
-    pending_ec2s: list[EC2InstanceData] = field(
+    pending_ec2s: list[NonAssociatedInstance] = field(
         metadata={
             "description": "This is an EC2 instance that is not yet associated to a docker node"
         }

@@ -34,6 +34,7 @@ from ..models import (
     AssignedTasksToInstanceType,
     AssociatedInstance,
     Cluster,
+    NonAssociatedInstance,
 )
 from ..utils import utils_docker, utils_ec2
 from ..utils.auto_scaling_core import (
@@ -100,7 +101,7 @@ async def _analyze_current_cluster(
         reserve_drained_nodes=all_drained_nodes[
             : app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
         ],
-        pending_ec2s=pending_ec2s,
+        pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
@@ -135,12 +136,14 @@ async def _try_attach_pending_ec2s(
 ) -> Cluster:
     """label the drained instances that connected to the swarm which are missing the monitoring labels"""
     new_found_instances: list[AssociatedInstance] = []
-    still_pending_ec2s: list[EC2InstanceData] = []
+    still_pending_ec2s: list[NonAssociatedInstance] = []
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     for instance_data in cluster.pending_ec2s:
         try:
-            node_host_name = node_host_name_from_ec2_private_dns(instance_data)
+            node_host_name = node_host_name_from_ec2_private_dns(
+                instance_data.ec2_instance
+            )
             if new_node := await utils_docker.find_node_with_name(
                 get_docker_client(app), node_host_name
             ):
@@ -148,11 +151,19 @@ async def _try_attach_pending_ec2s(
                 new_node = await utils_docker.tag_node(
                     get_docker_client(app),
                     new_node,
-                    tags=auto_scaling_mode.get_new_node_docker_tags(app, instance_data),
+                    tags=auto_scaling_mode.get_new_node_docker_tags(
+                        app, instance_data.ec2_instance
+                    ),
                     available=False,
                 )
-                new_found_instances.append(AssociatedInstance(new_node, instance_data))
-                _logger.info("Attached new EC2 instance %s", instance_data.id)
+                new_found_instances.append(
+                    AssociatedInstance(
+                        node=new_node, ec2_instance=instance_data.ec2_instance
+                    )
+                )
+                _logger.info(
+                    "Attached new EC2 instance %s", instance_data.ec2_instance.id
+                )
             else:
                 still_pending_ec2s.append(instance_data)
         except Ec2InvalidDnsNameError:  # noqa: PERF203
@@ -364,9 +375,12 @@ async def _find_needed_instances(
     # NOTE: we add pending nodes to pending ec2, since they are both unavailable for now
     pending_ec2s_to_tasks: list[AssignedTasksToInstance] = [
         AssignedTasksToInstance(
-            instance=i, assigned_tasks=[], available_resources=i.resources
+            instance=i,
+            assigned_tasks=[],
+            available_resources=i.resources,
         )
-        for i in cluster.pending_ec2s + [i.ec2_instance for i in cluster.pending_nodes]
+        for i in [i.ec2_instance for i in cluster.pending_ec2s]
+        + [i.ec2_instance for i in cluster.pending_nodes]
     ]
     drained_ec2s_to_tasks: list[AssignedTasksToInstance] = [
         AssignedTasksToInstance(
@@ -662,7 +676,9 @@ async def _scale_up_cluster(
             f"{len(new_pending_instances)} new machines being started, please wait...",
             level=logging.INFO,
         )
-        cluster.pending_ec2s.extend(new_pending_instances)
+        cluster.pending_ec2s.extend(
+            [NonAssociatedInstance(ec2_instance=i) for i in new_pending_instances]
+        )
         # NOTE: to check the logs of UserData in EC2 instance
         # run: tail -f -n 1000 /var/log/cloud-init-output.log in the instance
 
@@ -712,7 +728,7 @@ async def _deactivate_empty_nodes(
             f"{[node.Description.Hostname for node in updated_nodes if node.Description]}",
         )
     newly_drained_instances = [
-        AssociatedInstance(node, instance.ec2_instance)
+        AssociatedInstance(node=node, ec2_instance=instance.ec2_instance)
         for instance, node in zip(active_empty_instances, updated_nodes, strict=True)
     ]
     return dataclasses.replace(
