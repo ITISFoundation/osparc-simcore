@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
-from pydantic import ByteSize, PositiveInt
+from pydantic import ByteSize, NonNegativeFloat
 
 
 @dataclass(frozen=True)
 class EC2InstanceTypeGet:
     name: str
-    cpus: PositiveInt
+    cpus: NonNegativeFloat
     ram: ByteSize
