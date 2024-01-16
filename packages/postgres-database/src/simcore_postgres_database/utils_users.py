@@ -58,7 +58,7 @@ class UsersRepo:
         while user_id is None:
             try:
                 user_id = await conn.scalar(
-                    users.insert().values(data).returning(users.c.id)
+                    users.insert().values(**data).returning(users.c.id)
                 )
             except UniqueViolation:  # noqa: PERF203
                 data["name"] = f'{data["name"]}_{_generate_random_chars()}'
