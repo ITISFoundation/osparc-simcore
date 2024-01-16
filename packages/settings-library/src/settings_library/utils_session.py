@@ -1,5 +1,9 @@
 import base64
 import binascii
+from typing import Final
+
+DEFAULT_SESSION_COOKIE_NAME: Final[str] = "osparc-sc"
+_32_BYTES_LENGTH: Final[int] = 32
 
 
 class MixinSessionSettings:
@@ -13,10 +17,12 @@ class MixinSessionSettings:
             # NOTE: len(v) cannot be 1 more than a multiple of 4
             key_b64decode = base64.urlsafe_b64decode(value)
         except binascii.Error as exc:
-            raise ValueError(f"Invalid session key {value=}: {exc}") from exc
-        if len(key_b64decode) != 32:
-            raise ValueError(
+            msg = f"Invalid session key {value=}: {exc}"
+            raise ValueError(msg) from exc
+        if len(key_b64decode) != _32_BYTES_LENGTH:
+            msg = (
                 f"Invalid session secret {value=} must be 32 url-safe base64-encoded bytes, got {len(key_b64decode)=}."
                 'TIP: create new key with python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"'
             )
+            raise ValueError(msg)
         return v

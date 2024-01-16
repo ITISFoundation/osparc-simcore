@@ -29,6 +29,7 @@ from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_api import submit_delete_project_task
 from simcore_service_webserver.users.api import (
@@ -66,7 +67,7 @@ def _assert_same_projects(got: dict, expected: dict):
 
 
 def _is_user_authenticated(session: ClientSession) -> bool:
-    return "osparc.WEBAPI_SESSION" in [c.key for c in session.cookie_jar]
+    return DEFAULT_SESSION_COOKIE_NAME in [c.key for c in session.cookie_jar]
 
 
 @pytest.fixture

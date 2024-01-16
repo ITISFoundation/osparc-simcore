@@ -536,7 +536,7 @@ def redis_service(docker_services, docker_ip) -> RedisSettings:
 
 
 @pytest.fixture
-async def redis_client(redis_service: RedisSettings):
+async def redis_client(redis_service: RedisSettings) -> AsyncIterator[aioredis.Redis]:
     client = aioredis.from_url(
         redis_service.build_redis_dsn(RedisDatabase.RESOURCES),
         encoding="utf-8",
