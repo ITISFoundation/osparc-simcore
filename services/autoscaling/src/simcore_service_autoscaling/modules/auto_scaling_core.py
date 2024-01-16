@@ -824,7 +824,7 @@ async def _notify_based_on_machine_type(
     instance_max_time_to_start = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
-    launch_time_to_tasks = collections.defaultdict(list)
+    launch_time_to_tasks: dict[datetime.datetime, list] = collections.defaultdict(list)
     now = datetime.datetime.now(datetime.timezone.utc)
     for instance in instances:
         launch_time_to_tasks[
