@@ -70,7 +70,7 @@ async def get_user_profile(
         ):
             if not user_profile:
                 user_profile = {
-                    "id": row.user_id,
+                    "id": row.users_id,
                     "first_name": row.users_first_name,
                     "last_name": row.users_last_name,
                     "login": row.users_email,
