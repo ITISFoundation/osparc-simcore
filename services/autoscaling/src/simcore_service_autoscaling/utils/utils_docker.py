@@ -426,7 +426,7 @@ def get_docker_pull_images_on_start_bash_command(
     write_docker_compose_pull_script_cmd = " ".join(
         [
             "echo",
-            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{_DOCKER_COMPOSE_CMD} --file={_PRE_PULL_COMPOSE_PATH} pull --ignore-pull-failures"',
+            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{_DOCKER_COMPOSE_CMD} --project-name=autoscaleprepull --file={_PRE_PULL_COMPOSE_PATH} pull --ignore-pull-failures"',
             ">",
             f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
         ]
