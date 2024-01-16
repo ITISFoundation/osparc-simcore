@@ -695,7 +695,7 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     docker_client = get_docker_client(app)
     active_empty_instances: list[AssociatedInstance] = []
     active_non_empty_instances: list[AssociatedInstance] = []
-    for instance in cluster.active_nodes:
+    for instance in cluster.active_nodes + cluster.pending_nodes:
         try:
             if instance.available_resources == instance.ec2_instance.resources:
                 active_empty_instances.append(instance)
@@ -853,12 +853,6 @@ async def _notify_based_on_machine_type(
 async def _notify_machine_creation_progress(
     app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
 ) -> None:
-    await _notify_based_on_machine_type(
-        app,
-        cluster.pending_nodes,
-        auto_scaling_mode,
-        message="machine joined cluster! waiting for connection",
-    )
     await _notify_based_on_machine_type(
         app,
         cluster.pending_ec2s,
