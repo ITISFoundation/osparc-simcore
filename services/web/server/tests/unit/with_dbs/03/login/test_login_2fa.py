@@ -309,20 +309,20 @@ async def test_send_email_code(
     user_email = faker.email()
     support_email = faker.email()
     code = generate_passcode()
-    user_name = faker.user_name()
+    first_name = faker.first_name()
 
     await send_email_code(
         request,
         user_email=user_email,
         support_email=support_email,
         code=code,
-        first_name=faker.first_name(),
+        first_name=first_name,
     )
 
     out, _ = capsys.readouterr()
     parsed_context = parse_test_marks(out)
     assert parsed_context["code"] == f"{code}"
-    assert parsed_context["name"] == user_name.capitalize()
+    assert parsed_context["name"] == first_name.capitalize()
     assert parsed_context["support_email"] == support_email
 
 
