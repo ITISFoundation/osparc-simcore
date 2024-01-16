@@ -1380,7 +1380,7 @@ async def test_open_shared_project_at_same_time(
                 assert project_status.locked.value
                 assert project_status.locked.owner
                 assert project_status.locked.owner.first_name in [
-                    c["user"]["name"] for c in clients
+                    c["user"]["first_name"] for c in clients
                 ]
 
         assert num_assertions == NUMBER_OF_ADDITIONAL_CLIENTS
