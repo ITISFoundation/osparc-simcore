@@ -100,6 +100,15 @@ class ProfileGet(BaseModel):
             ]
         }
 
+    @root_validator(pre=True)
+    @classmethod
+    def auto_generate_gravatar(cls, values):
+        gravatar_id = values.get("gravatar_id")
+        email = values.get("login")
+        if not gravatar_id and email:
+            values["gravatar_id"] = gravatar_hash(email)
+        return values
+
     @validator("role", pre=True)
     @classmethod
     def to_upper_string(cls, v):
@@ -108,15 +117,6 @@ class ProfileGet(BaseModel):
         if isinstance(v, UserRole):
             return v.name.upper()
         return v
-
-    @root_validator
-    @classmethod
-    def auto_generate_gravatar(cls, values):
-        gravatar = values.get("gravatar")
-        email = values.get("email")
-        if gravatar is None and email:
-            values["gravatar"] = gravatar_hash(email)
-        return values
 
 
 #

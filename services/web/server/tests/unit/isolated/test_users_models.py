@@ -8,6 +8,7 @@ from faker import Faker
 from models_library.generics import Envelope
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.users.schemas import ProfileGet, ThirdPartyToken
 
@@ -53,6 +54,29 @@ def test_profile_get_expiration_date(faker: Faker):
 
     body = jsonable_encoder(profile.dict(exclude_unset=True, by_alias=True))
     assert body["expirationDate"] == fake_expiration.date().isoformat()
+
+
+def test_auto_compute_gravatar(faker: Faker):
+
+    profile = ProfileGet(
+        id=faker.pyint(),
+        first_name=faker.first_name(),
+        last_name=faker.last_name(),
+        login=faker.email(),
+        role="USER",
+        preferences={},
+    )
+
+    envelope = Envelope[Any](data=profile)
+    data = envelope.dict(**RESPONSE_MODEL_POLICY)["data"]
+
+    assert data["gravatar_id"]
+    assert data["id"] == profile.id
+    assert data["first_name"] == profile.first_name
+    assert data["last_name"] == profile.last_name
+    assert data["login"] == profile.login
+    assert data["role"] == profile.role
+    assert data["preferences"] == profile.preferences
 
 
 @pytest.mark.parametrize("user_role", [u.name for u in UserRole])
