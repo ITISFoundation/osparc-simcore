@@ -24,6 +24,7 @@ from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
+from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
 from simcore_service_webserver.studies_dispatcher._rest_handlers import ServiceGet
 from sqlalchemy.sql import text
@@ -313,7 +314,7 @@ async def assert_redirected_to_study(
     ), "Expected front-end rendering workbench's study, got %s" % str(content)
 
     # Expects auth cookie for current user
-    assert "osparc.WEBAPI_SESSION" in [c.key for c in session.cookie_jar]
+    assert DEFAULT_SESSION_COOKIE_NAME in [c.key for c in session.cookie_jar]
 
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
