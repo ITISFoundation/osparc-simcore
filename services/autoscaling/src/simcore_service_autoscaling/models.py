@@ -7,20 +7,6 @@ from models_library.generated_models.docker_rest_api import Node
 
 
 @dataclass(kw_only=True, slots=True)
-class AssignedTasksToInstance:
-    instance: EC2InstanceData
-    available_resources: Resources
-    assigned_tasks: list
-
-    def has_resources_for_task(self, task_resources: Resources) -> bool:
-        return bool(self.available_resources >= task_resources)
-
-    def assign_task(self, task, task_resources: Resources) -> None:
-        self.assigned_tasks.append(task)
-        self.available_resources -= task_resources
-
-
-@dataclass(kw_only=True, slots=True)
 class AssignedTasksToInstanceType:
     instance_type: EC2InstanceType
     assigned_tasks: list
