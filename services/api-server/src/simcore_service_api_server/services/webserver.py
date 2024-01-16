@@ -11,6 +11,7 @@ from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import Response
 from models_library.api_schemas_webserver.computations import ComputationStart
+from models_library.api_schemas_webserver.product import GetProduct
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
@@ -466,6 +467,19 @@ class AuthSession:
             )
             response.raise_for_status()
             data = Envelope[WalletGet].parse_raw(response.text).data
+            return data
+
+    # PRODUCTS -------------------------------------------------
+
+    async def get_product(self, product_name: str) -> GetProduct:
+        with _handle_webserver_api_errors():
+            response = await self.client.get(
+                f"/products/{product_name}",
+                cookies=self.session_cookies,
+            )
+            response.raise_for_status()
+            data = Envelope[GetProduct].parse_raw(response.text).data
+            assert data is not None
             return data
 
     # SERVICES -------------------------------------------------

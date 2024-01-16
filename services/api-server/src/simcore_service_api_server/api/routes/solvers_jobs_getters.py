@@ -19,6 +19,7 @@ from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
 from starlette.background import BackgroundTask
+from test_services_rabbitmq import project_id
 
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams
@@ -38,7 +39,7 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.rabbitmq import get_log_distributor, get_max_log_check_seconds
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ..errors.custom_errors import InsufficientCredits
+from ..errors.custom_errors import InsufficientCredits, MissingWallet
 from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
 from .solvers_jobs import (
@@ -169,6 +170,7 @@ async def get_job_outputs(
     job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     db_engine: Annotated[Engine, Depends(get_db_engine)],
+    product_name: Annotated[str, Depends(get_product_name)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
@@ -179,7 +181,13 @@ async def get_job_outputs(
     node_ids = list(project.workbench.keys())
     assert len(node_ids) == 1  # nosec
 
-    if wallet := await webserver_api.get_project_wallet(project_id=project.uuid):
+    product = await webserver_api.get_product(product_name=product_name)
+    if product.is_payment_enabled:
+        wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
+        if wallet is None:
+            raise MissingWallet(
+                f"Job {project.uuid} does not have an associated wallet."
+            )
         wallet_with_credits = await webserver_api.get_wallet(wallet_id=wallet.wallet_id)
         assert wallet_with_credits is not None
         if wallet_with_credits.available_credits < 0.0:
