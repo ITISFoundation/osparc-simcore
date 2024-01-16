@@ -23,7 +23,6 @@ from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import (
-    DaskWorkerNotFoundError,
     Ec2InstanceInvalidError,
     Ec2InstanceNotFoundError,
     Ec2InvalidDnsNameError,
@@ -113,7 +112,7 @@ async def _analyze_current_cluster(
     )
     _logger.debug(
         "current state: %s",
-        f"{json.dumps(jsonable_encoder(cluster), indent=2)}",
+        f"{json.dumps(jsonable_encoder(cluster, include={'active_nodes', 'pending_nodes', 'drained_nodes', 'reserve_drained_nodes', 'pending_ec2s'}), indent=2)}",
     )
     return cluster
 
@@ -685,16 +684,12 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     docker_client = get_docker_client(app)
     active_empty_instances: list[AssociatedInstance] = []
     active_non_empty_instances: list[AssociatedInstance] = []
-    for instance in cluster.active_nodes + cluster.pending_nodes:
-        try:
-            if instance.available_resources == instance.ec2_instance.resources:
-                active_empty_instances.append(instance)
-            else:
-                active_non_empty_instances.append(instance)
-        except DaskWorkerNotFoundError:  # noqa: PERF203
-            _logger.exception(
-                "EC2 node instance is not registered to dask-scheduler! TIP: Needs investigation"
-            )
+    for instance in cluster.active_nodes:
+        if instance.available_resources == instance.ec2_instance.resources:
+            active_empty_instances.append(instance)
+        else:
+            active_non_empty_instances.append(instance)
+
     if not active_empty_instances:
         return cluster
     _logger.info(
