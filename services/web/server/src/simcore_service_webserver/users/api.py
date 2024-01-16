@@ -75,7 +75,7 @@ async def get_user_profile(
                     "last_name": row.users_last_name,
                     "login": row.users_email,
                     "role": row.users_role,
-                    "expires_at": row.users_expires_at.date()
+                    "expiration_date": row.users_expires_at.date()
                     if row.users_expires_at
                     else None,
                 }
@@ -105,17 +105,24 @@ async def get_user_profile(
     if not user_profile:
         raise UserNotFoundError(uid=user_id)
 
-    user_profile["preferences"] = await get_frontend_user_preferences_aggregation(
+    preferences = await get_frontend_user_preferences_aggregation(
         app, user_id=user_id, product_name=product_name
     )
 
-    user_profile["groups"] = {
-        "me": user_primary_group,
-        "organizations": user_standard_groups,
-        "all": all_group,
-    }
-
-    return ProfileGet(**user_profile)
+    return ProfileGet(
+        id=user_profile["id"],
+        first_name=user_profile["first_name"],
+        last_name=user_profile["last_name"],
+        login=user_profile["login"],
+        role=user_profile["role"],
+        groups={
+            "me": user_primary_group,
+            "organizations": user_standard_groups,
+            "all": all_group,
+        },
+        expiration_date=user_profile["expiration_date"],
+        preferences=preferences,
+    )
 
 
 async def update_user_profile(

@@ -211,7 +211,7 @@ async def test_update_profile(
         resp = await client.get(url)
         data, _ = await assert_status(resp, web.HTTPOk)
 
-        assert data["first_name"] == logged_user["name"]
+        assert data["first_name"] == logged_user.get("first_name")
         assert data["last_name"] == "Foo"
         assert data["role"] == user_role.name
 
