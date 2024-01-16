@@ -15,7 +15,7 @@ from aiopg.sa.result import RowProxy
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from pydantic import ValidationError, parse_obj_as
-from simcore_postgres_database.models.users import UserNameConverter, UserRole
+from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import GroupType, groups, user_to_groups, users
 from ..db.plugin import get_database_engine
@@ -26,7 +26,7 @@ from . import _db
 from ._api import get_user_credentials, set_user_as_deleted
 from ._preferences_api import get_frontend_user_preferences_aggregation
 from .exceptions import UserNotFoundError
-from .schemas import ProfileGet, ProfileUpdate, convert_user_db_to_schema
+from .schemas import ProfileGet, ProfileUpdate
 
 _logger = logging.getLogger(__name__)
 
@@ -68,14 +68,26 @@ async def get_user_profile(
             .order_by(sa.asc(groups.c.name))
             .set_label_style(sa.LABEL_STYLE_TABLENAME_PLUS_COL)
         ):
-            user_profile.update(convert_user_db_to_schema(row, prefix="users_"))
-            if row["groups_type"] == GroupType.EVERYONE:
+            if not user_profile:
+                user_profile = {
+                    "id": row.users_id,
+                    "first_name": row.users_first_name,
+                    "last_name": row.users_last_name,
+                    "login": row.users_email,
+                    "role": row.users_role,
+                    "expiration_date": row.users_expires_at.date()
+                    if row.users_expires_at
+                    else None,
+                }
+                assert user_profile["id"] == user_id  # nosec
+
+            if row.groups_type == GroupType.EVERYONE:
                 all_group = convert_groups_db_to_schema(
                     row,
                     prefix="groups_",
                     accessRights=row["user_to_groups_access_rights"],
                 )
-            elif row["groups_type"] == GroupType.PRIMARY:
+            elif row.groups_type == GroupType.PRIMARY:
                 user_primary_group = convert_groups_db_to_schema(
                     row,
                     prefix="groups_",
@@ -90,22 +102,27 @@ async def get_user_profile(
                     )
                 )
 
-    user_profile["preferences"] = await get_frontend_user_preferences_aggregation(
-        app, user_id=user_id, product_name=product_name
-    )
     if not user_profile:
         raise UserNotFoundError(uid=user_id)
 
-    user_profile["groups"] = {
-        "me": user_primary_group,
-        "organizations": user_standard_groups,
-        "all": all_group,
-    }
+    preferences = await get_frontend_user_preferences_aggregation(
+        app, user_id=user_id, product_name=product_name
+    )
 
-    if expires_at := user_profile.get("expires_at"):
-        user_profile["expiration_date"] = expires_at.date()
-
-    return ProfileGet.parse_obj(user_profile)
+    return ProfileGet(
+        id=user_profile["id"],
+        first_name=user_profile["first_name"],
+        last_name=user_profile["last_name"],
+        login=user_profile["login"],
+        role=user_profile["role"],
+        groups={
+            "me": user_primary_group,
+            "organizations": user_standard_groups,
+            "all": all_group,
+        },
+        expiration_date=user_profile["expiration_date"],
+        preferences=preferences,
+    )
 
 
 async def update_user_profile(
@@ -114,32 +131,16 @@ async def update_user_profile(
     """
     :raises UserNotFoundError:
     """
-
-    engine = get_database_engine(app)
     user_id = _parse_as_user(user_id)
 
-    async with engine.acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         first_name = profile_update.first_name
         last_name = profile_update.last_name
-        if not first_name or not last_name:
-            name = await conn.scalar(
-                sa.select(users.c.name).where(users.c.id == user_id)
-            )
-            try:
-                first_name, last_name = name.rsplit(".", maxsplit=2)
-            except ValueError:
-                first_name = name
 
-        # update name
-        name = UserNameConverter.get_name(
-            first_name=profile_update.first_name or first_name,
-            last_name=profile_update.last_name or last_name,
-        )
         resp = await conn.execute(
-            # pylint: disable=no-value-for-parameter
             users.update()
             .where(users.c.id == user_id)
-            .values(name=name)
+            .values(first_name=first_name, last_name=last_name)
         )
         assert resp.rowcount == 1  # nosec
 
@@ -215,28 +216,30 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
     await clean_auth_policy_cache(app)
 
 
-class UserNameDict(TypedDict):
-    first_name: str
-    last_name: str
+class FullNameDict(TypedDict):
+    first_name: str | None
+    last_name: str | None
 
 
-async def get_user_name(app: web.Application, user_id: UserID) -> UserNameDict:
+async def get_user_fullname(app: web.Application, user_id: UserID) -> FullNameDict:
     """
     :raises UserNotFoundError:
     """
-    engine = get_database_engine(app)
     user_id = _parse_as_user(user_id)
-    async with engine.acquire() as conn:
-        user_name = await conn.scalar(
-            sa.select(users.c.name).where(users.c.id == user_id)
+
+    async with get_database_engine(app).acquire() as conn:
+        result = await conn.execute(
+            sa.select(users.c.first_name, users.c.last_name).where(
+                users.c.id == user_id
+            )
         )
-        if not user_name:
+        user = await result.first()
+        if not user:
             raise UserNotFoundError(uid=user_id)
 
-        full_name = UserNameConverter.get_full_name(user_name)
-        return UserNameDict(
-            first_name=full_name.first_name,
-            last_name=full_name.last_name,
+        return FullNameDict(
+            first_name=user.first_name,
+            last_name=user.last_name,
         )
 
 
