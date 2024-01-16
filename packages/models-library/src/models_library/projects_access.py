@@ -7,7 +7,7 @@ from typing import Any, ClassVar
 
 from models_library.basic_types import IDStr
 from models_library.users import FirstNameStr, LastNameStr
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field
 from pydantic.types import PositiveInt
 
 from .utils.common_validators import none_to_empty_str_pre_validator
@@ -44,19 +44,19 @@ class Owner(BaseModel):
     user_id: PositiveIntWithExclusiveMinimumRemoved = Field(
         ..., description="Owner's user id"
     )
-    first_name: FirstNameStr = Field(..., description="Owner's first name")
-    last_name: LastNameStr = Field(..., description="Owner's last name")
+    first_name: FirstNameStr | None = Field(..., description="Owner's first name")
+    last_name: LastNameStr | None = Field(..., description="Owner's last name")
 
-    _none_is_empty = validator("first_name", "last_name", allow_reuse=True, pre=True)(
-        none_to_empty_str_pre_validator
-    )
+    # _none_is_empty = validator("first_name", "last_name", allow_reuse=True, pre=True)(
+    assert none_to_empty_str_pre_validator
+    # )
 
     class Config:
         extra = Extra.forbid
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
+                # None and empty string are equivalent
                 {"user_id": 1, "first_name": None, "last_name": None},
-                # Equivalent to the first one
                 {"user_id": 2, "first_name": "", "last_name": ""},
                 {"user_id": 3, "first_name": "John", "last_name": "Smith"},
             ]

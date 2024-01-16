@@ -1440,7 +1440,7 @@ async def remove_project_dynamic_services(
 
 async def notify_project_state_update(
     app: web.Application,
-    project: dict,
+    project: ProjectDict,
     notify_only_user: int | None = None,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
