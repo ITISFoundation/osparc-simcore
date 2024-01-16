@@ -41,7 +41,10 @@ class _BaseInstance:
     _available_resources: Resources = field(default_factory=Resources.create_as_empty)
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "_available_resources", self.ec2_instance.resources)
+        if self._available_resources == Resources.create_as_empty():
+            object.__setattr__(
+                self, "_available_resources", self.ec2_instance.resources
+            )
 
     def has_resources_for_task(self, task_resources: Resources) -> bool:
         return bool(self._available_resources >= task_resources)
