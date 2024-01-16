@@ -63,12 +63,13 @@ async def assert_error(
 def do_assert_error(
     data,
     error,
-    expected_cls: type[HTTPException],  # pylint: disable=unused-argument
+    expected_cls: type[HTTPException],
     expected_msg: str | None = None,
     expected_error_code: str | None = None,
 ):
     assert not data, pformat(data)
     assert error, pformat(error)
+    assert expected_cls
 
     assert len(error["errors"]) == 1
 

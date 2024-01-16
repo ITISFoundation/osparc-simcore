@@ -88,6 +88,30 @@ def setup_wallets_db(
         con.execute(wallets.delete())
 
 
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.PRODUCT_OWNER, web.HTTPOk),
+        (UserRole.ADMIN, web.HTTPOk),
+    ],
+)
+async def test_list_service_usage_user_role_access(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    setup_wallets_db,
+    mock_list_usage_services,
+    user_role: UserRole,
+    expected: type[web.HTTPException],
+):
+    url = client.app.router["list_resource_usage_services"].url_for()
+    resp = await client.get(f"{url}")
+    await assert_status(resp, expected)
+
+
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
 async def test_list_service_usage(
     client: TestClient,

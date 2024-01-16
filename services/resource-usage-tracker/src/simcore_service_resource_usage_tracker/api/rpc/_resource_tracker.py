@@ -8,8 +8,10 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RPCRouter
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CustomResourceUsageTrackerError,
+)
 
-from ...core.errors import CustomResourceUsageTrackerError
 from ...modules.db.repositories.resource_tracker import ResourceTrackerRepository
 from ...services.resource_tracker_service_runs import list_service_runs
 

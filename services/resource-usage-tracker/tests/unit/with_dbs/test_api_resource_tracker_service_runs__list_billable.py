@@ -16,6 +16,9 @@ from models_library.resource_tracker import (
 from models_library.rest_ordering import OrderBy, OrderDirection
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import service_runs
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CustomResourceUsageTrackerError,
+)
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -198,3 +201,19 @@ async def test_rpc_list_service_runs_with_order_by__started_at(
     assert result.total == 2
 
     assert result.items[0].service_run_id == service_run_id
+
+
+@pytest.mark.rpc_test()
+async def test_rpc_list_service_runs_raising_custom_error(
+    mocked_redis_server: None,
+    postgres_db: sa.engine.Engine,
+    resource_tracker_setup_db: dict,
+    rpc_client: RabbitMQRPCClient,
+):
+    with pytest.raises(CustomResourceUsageTrackerError):
+        await service_runs.get_service_run_page(
+            rpc_client,
+            user_id=_USER_ID,
+            product_name="osparc",
+            access_all_wallet_usage=True,
+        )

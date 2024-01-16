@@ -31,4 +31,6 @@ async def healthcheck(
     if not rabbitmq_client.healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
+    # NOTE: check also redis?/postgres connections
+
     return f"{__name__}@{datetime.datetime.now(datetime.timezone.utc).isoformat()}"

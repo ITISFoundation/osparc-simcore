@@ -55,7 +55,7 @@ async def list_resource_usage_services(
     filters: Annotated[
         Json | None,
         Query(
-            description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> UTC format. The date range specidied is inclusive.",
+            description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is inclusive.",
             example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
         ),
     ] = None,
