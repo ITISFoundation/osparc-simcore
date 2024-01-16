@@ -1,7 +1,8 @@
 import jsondiff
 from aiohttp import web
+from simcore_postgres_database.models.users import UserRole
 
-from ..security.api import UserRole, get_access_model
+from ..security.api import get_access_model
 from .db import ProjectDBAPI
 
 

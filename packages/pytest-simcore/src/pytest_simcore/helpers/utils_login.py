@@ -8,6 +8,7 @@ from simcore_service_webserver.db.models import UserRole, UserStatus
 from simcore_service_webserver.login._constants import MSG_LOGGED_IN
 from simcore_service_webserver.login._registration import create_invitation_token
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
+from simcore_service_webserver.security.api import clean_auth_policy_cache
 from yarl import URL
 
 from .rawdata_fakers import DEFAULT_PASSWORD, FAKE, random_user
@@ -118,6 +119,12 @@ class LoggedUser(NewUser):
             self.client, self.params, enable_check=self.enable_check
         )
         return self.user
+
+    async def __aexit__(self, *args):
+        # NOTE: cache key is based on an email. If the email is
+        # reused during the test, then it creates quite some noise
+        await clean_auth_policy_cache(self.client.app)
+        return await super().__aexit__(*args)
 
 
 class NewInvitation(NewUser):

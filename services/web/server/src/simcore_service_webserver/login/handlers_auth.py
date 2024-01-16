@@ -13,7 +13,7 @@ from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG
 from ..products.api import Product, get_current_product
-from ..security.api import forget
+from ..security.api import forget_identity
 from ..session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
@@ -246,6 +246,6 @@ async def logout(request: web.Request) -> web.Response:
     ):
         response = flash_response(MSG_LOGGED_OUT, "INFO")
         await notify_user_logout(request.app, user_id, logout_.client_session_id)
-        await forget(request, response)
+        await forget_identity(request, response)
 
         return response

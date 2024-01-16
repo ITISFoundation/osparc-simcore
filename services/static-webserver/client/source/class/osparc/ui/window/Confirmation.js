@@ -71,7 +71,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
       const confBtn = this.__confirmButton;
       switch (confirmationAction) {
         case "create":
-          confBtn.setAppearance("strong-button");
+          confBtn.setAppearance("form-button");
           break;
         case "delete":
           confBtn.setAppearance("danger-button");

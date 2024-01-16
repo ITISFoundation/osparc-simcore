@@ -12,6 +12,7 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
 
     - User is considered authorized if check_authorized(request) raises no exception
     - If authorized, it injects user_id in request[RQT_USERID_KEY]
+    - Use this decorator instead of aiohttp_security.api.login_required!
 
     WARNING: Add always @router. decorator FIRST, e.g.
 
@@ -39,9 +40,14 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
 
     @functools.wraps(handler)
     async def _wrapper(request: web.Request):
+        """
+        Raises:
+            HTTPUnauthorized: if request authorization check fails
+        """
         # WARNING: note that check_authorized is patched in some tests.
         # Careful when changing the function signature
         request[RQT_USERID_KEY] = await check_authorized(request)
+
         return await handler(request)
 
     return _wrapper
