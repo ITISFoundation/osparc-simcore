@@ -35,9 +35,10 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
     "primary-background-color": "rgba(255, 255, 255, 1)",
     "navigation_bar_background_color": "rgba(229, 229, 229, 0.8)",
+    "tab_navigation_bar_background_color": "c00",
     "modal-backdrop": "rgba(247, 248, 252, 0.4)",
     "fab_text": "contrasted-text-dark",
-    "fab_background": "rgba(230, 235, 255, 1)",
+    "fab-background": "rgba(255, 255, 255, 1)",
     "input_background": "rgba(209, 214, 218, 1)",
     "input_background_disable": "rgba(113, 157, 181, 0.04)",
     "window-popup-background": "rgba(255,255,255, 1)",
@@ -48,30 +49,16 @@ qx.Theme.define("osparc.theme.ColorLight", {
     // text
     "text": "rgba(40, 40, 40, 1)",
     "text-disabled": "rgba(113, 157, 181, 1)",
-    "text-selected": "text",
+    "text-selected": "rgba(20, 20, 20, 1)",
     "text-placeholder": "rgba(90, 100, 110, 1)",
     "text-darker": "rgba(20, 20, 20, 1)",
     "contrasted-text-dark": "rgba(20, 20, 20, 1)",
     "contrasted-text-light": "rgba(40, 40, 40, 1)",
     "link": "rgba(10, 182, 255, 1)",
 
-    // button
-    "default-button-text": "contrasted-text-light",
-    "default-button-text-outline": "contrasted-text-dark",
-    "default-button-text-action": "contrasted-text-dark",
-    "default-button": "product-color",
-    "default-button-hover": "rgba(4, 73, 102, 1)",
-    "default-button-hover-background": "rgba(4, 73, 102, 0.04)",
-    "default-button-active": "rgba(9, 89, 122, 1)",
-    "default-button-active-background": "rgba(4, 73, 102, 0.04)",
-    "default-button-focus": "product-color",
-    "default-button-focus-background": "rgba(4, 73, 102, 0.04)",
-    "default-button-disabled": "text-disabled",
-    "default-button-disabled-background": "rgba(113, 157, 181, 0.04)",
-    "default-button-focus-blur": "rgba(254, 233, 86, 1)",
-
     // shadows
     "bg-shadow":  "background-main-5",
+    "box-shadow":  "rgba(0,0,0, 0.15)",
     "shadow": qx.core.Environment.get("css.rgba") ? "a-bit-transparent" : "bg-shadow",
 
     // window
@@ -81,12 +68,12 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background":  "fab_background",
+    "material-button-background":  "fab-background",
     "material-button-background-disabled":  "default-button-disabled-background",
     "material-button-background-hovered":  "default-button-hover-background",
     "material-button-background-pressed":  "default-button-active-background",
     "material-button-text-disabled": "default-button-disabled-background",
-    "material-button-text": "default-button-text",
+    "material-button-text": "default-button-text-outline",
 
     // material-textfield
     "material-textfield": "input_background",
@@ -96,7 +83,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "invalid": "error",
 
     // backgrounds
-    "background-selected": "product-color",
+    "background-selected": "default-button-background",
     "background-selected-disabled":  "default-button-disabled",
     "background-selected-dark":  "product-color",
     "background-disabled": "background-main",
@@ -137,7 +124,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "border-disabled": "background-main",
 
     // separator
-    "border-separator": "c07",
+    "border-separator": "fab-background",
 
     // tooltip
     "tooltip": "flash_message_bg",
@@ -182,8 +169,8 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "workbench-edge-api-active": "#444444",
     "workbench-start-hint": "#AFAFAF",
 
-    "node-background": "rgba(174, 191, 207, 0.8)",
-    "node-selected-background": "product-color",
+    "node-background": "rgba(113, 157, 181, 0.35)",
+    "node-selected-background": "background-selected",
     "node-title-text": "#232323",
     "node-port-text": "#454545",
 

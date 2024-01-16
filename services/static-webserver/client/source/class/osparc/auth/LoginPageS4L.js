@@ -52,12 +52,8 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
 
     __setBackgroundImage: function() {
       let backgroundImage = "";
-      const today = new Date();
-      const xmas = new Date(2023, 12, 24);
-      const endDay = new Date(new Date().setDate(xmas.getDate() + 12));
-      const isXmasDays = today < endDay;
 
-      const defaultBG = isXmasDays ? "url(resource/osparc/Santa_Billie.png)" : "url(resource/osparc/Sim4Life_login_page_master_transparent_bg.png)";
+      const defaultBG = "url(resource/osparc/Sim4Life_login_page_master_transparent_bg.png)";
 
       switch (osparc.product.Utils.getProductName()) {
         case "s4llite":
