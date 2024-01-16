@@ -83,13 +83,13 @@ class ComputationalAutoscaling(BaseAutoscaling):
         app: FastAPI, tasks: list, message: str, *, level: LogLevelInt
     ) -> None:
         assert app  # nosec
-        assert tasks  # nosec
+        assert tasks is not None  # nosec
         _logger.log(level, "LOG: %s", message)
 
     @staticmethod
     async def progress_message_from_tasks(app: FastAPI, tasks: list, progress: float):
         assert app  # nosec
-        assert tasks  # nosec
+        assert tasks is not None  # nosec
         _logger.info("PROGRESS: %s", f"{progress:.2f}")
 
     @staticmethod

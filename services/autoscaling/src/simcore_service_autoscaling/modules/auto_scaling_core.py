@@ -806,37 +806,59 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     )
 
 
-async def _notify_machine_creation_progress(
-    app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
+async def _notify_based_on_machine_type(
+    app: FastAPI,
+    instances: list[AssociatedInstance] | list[NonAssociatedInstance],
+    auto_scaling_mode: BaseAutoscaling,
+    *,
+    message: str,
 ) -> None:
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     instance_max_time_to_start = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
     )
-    time_since_launch_to_tasks = collections.defaultdict(list)
+    launch_time_to_tasks = collections.defaultdict(list)
     now = datetime.datetime.now(datetime.timezone.utc)
-    for instance in cluster.pending_nodes + cluster.pending_ec2s:
-        time_since_launch = now - instance.ec2_instance.launch_time
-        estimated_time_to_completion = (
-            instance.ec2_instance.launch_time + instance_max_time_to_start - now
-        )
-        time_since_launch_to_tasks[time_since_launch] += instance.assigned_tasks
+    for instance in instances:
+        launch_time_to_tasks[
+            instance.ec2_instance.launch_time
+        ] += instance.assigned_tasks
 
-    for time_since_launch, tasks in time_since_launch_to_tasks.items():
+    for launch_time, tasks in launch_time_to_tasks.items():
+        time_since_launch = now - launch_time
+        estimated_time_to_completion = launch_time + instance_max_time_to_start - now
         msg = (
-            f"adding machines to the cluster (time waiting: {timedelta_as_minute_second(time_since_launch)},"
+            f"{message} (time waiting: {timedelta_as_minute_second(time_since_launch)},"
             f" est. remaining time: {timedelta_as_minute_second(estimated_time_to_completion)})...please wait..."
         )
-        await auto_scaling_mode.log_message_from_tasks(
-            app, tasks, message=msg, level=logging.INFO
-        )
-        await auto_scaling_mode.progress_message_from_tasks(
-            app,
-            tasks,
-            progress=time_since_launch.total_seconds()
-            / instance_max_time_to_start.total_seconds(),
-        )
+        if tasks:
+            await auto_scaling_mode.log_message_from_tasks(
+                app, tasks, message=msg, level=logging.INFO
+            )
+            await auto_scaling_mode.progress_message_from_tasks(
+                app,
+                tasks,
+                progress=time_since_launch.total_seconds()
+                / instance_max_time_to_start.total_seconds(),
+            )
+
+
+async def _notify_machine_creation_progress(
+    app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
+) -> None:
+    await _notify_based_on_machine_type(
+        app,
+        cluster.pending_nodes,
+        auto_scaling_mode,
+        message="machine joined cluster! waiting for connection",
+    )
+    await _notify_based_on_machine_type(
+        app,
+        cluster.pending_ec2s,
+        auto_scaling_mode,
+        message="waiting for machine to join cluster",
+    )
 
 
 async def _autoscale_cluster(
@@ -926,5 +948,5 @@ async def auto_scale_cluster(
     cluster = await _try_attach_pending_ec2s(app, cluster, auto_scaling_mode)
 
     cluster = await _autoscale_cluster(app, cluster, auto_scaling_mode)
-    await _notify_machine_creation_progress(app, cluster)
+    await _notify_machine_creation_progress(app, cluster, auto_scaling_mode)
     await _notify_autoscaling_status(app, cluster, auto_scaling_mode)
