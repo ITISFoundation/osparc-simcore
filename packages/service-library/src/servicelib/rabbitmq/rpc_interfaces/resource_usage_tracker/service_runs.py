@@ -14,8 +14,9 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt, parse_obj_as
-from servicelib.logging_utils import log_decorator
-from servicelib.rabbitmq import RabbitMQRPCClient
+
+from ....logging_utils import log_decorator
+from ....rabbitmq import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
 
