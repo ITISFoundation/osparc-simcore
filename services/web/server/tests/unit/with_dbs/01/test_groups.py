@@ -38,6 +38,7 @@ from simcore_service_webserver.groups.api import (
 from simcore_service_webserver.groups.plugin import setup_groups
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.rest.plugin import setup_rest
+from simcore_service_webserver.security.api import clean_auth_policy_cache
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.users.plugin import setup_users
@@ -582,15 +583,14 @@ async def test_add_user_gets_added_to_group(
     expected: ExpectedResponse,
 ):
     assert client.app
-    emails = [
-        "good@sparc.io",
-        "bad@bad.com",
-        "bad@osparc.com",
-        "good@black.com",
-        "bad@blanco.com",
-    ]
     async with AsyncExitStack() as users_stack:
-        for email in emails:
+        for email in (
+            "good@sparc.io",
+            "bad@bad.com",
+            "bad@osparc.com",
+            "good@black.com",
+            "bad@blanco.com",
+        ):
             user = await users_stack.enter_async_context(
                 LoggedUser(
                     client,
@@ -609,6 +609,9 @@ async def test_add_user_gets_added_to_group(
             )
             if not error:
                 assert len(data["organizations"]) == (0 if "bad" in email else 1)
+
+    # NOTE: here same email are used for different users! Therefore sessions get mixed!
+    await clean_auth_policy_cache(client.app)
 
 
 @pytest.fixture
