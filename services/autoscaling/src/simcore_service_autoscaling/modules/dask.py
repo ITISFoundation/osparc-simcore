@@ -54,7 +54,7 @@ async def _scheduler_client(url: AnyUrl) -> AsyncIterator[distributed.Client]:
 DaskWorkerUrl: TypeAlias = str
 DaskWorkerDetails: TypeAlias = dict[str, Any]
 DASK_NAME_PATTERN: Final[re.Pattern] = re.compile(
-    r"^.+_(?P<private_ip>ip-\d+-\d+-\d+-\d+).+$"
+    r"^(.+_)?(?P<private_ip>ip-\d+-\d+-\d+-\d+)_.+$"
 )
 
 

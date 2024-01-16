@@ -53,7 +53,7 @@ def scheduler_url(dask_spec_local_cluster: distributed.SpecCluster) -> AnyUrl:
 def dask_workers_config() -> dict[str, Any]:
     # NOTE: override of pytest-simcore dask_workers_config to have only 1 worker
     return {
-        "single-cpu-worker": {
+        "single-cpu_worker": {
             "cls": distributed.Worker,
             "options": {
                 "nthreads": 2,
