@@ -67,6 +67,8 @@ async def _insert_fake_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
 
     user = await db.create_user(params)
     user["raw_password"] = data["password"]
+    user.setdefault("first_name", None)
+    user.setdefault("last_name", None)
     return user
 
 

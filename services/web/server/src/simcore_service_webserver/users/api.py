@@ -26,7 +26,7 @@ from . import _db
 from ._api import get_user_credentials, set_user_as_deleted
 from ._preferences_api import get_frontend_user_preferences_aggregation
 from .exceptions import UserNotFoundError
-from .schemas import ProfileGet, ProfileUpdate, convert_user_db_to_schema
+from .schemas import ProfileGet, ProfileUpdate
 
 _logger = logging.getLogger(__name__)
 
@@ -68,15 +68,26 @@ async def get_user_profile(
             .order_by(sa.asc(groups.c.name))
             .set_label_style(sa.LABEL_STYLE_TABLENAME_PLUS_COL)
         ):
+            if not user_profile:
+                user_profile = {
+                    "id": row.user_id,
+                    "first_name": row.users_first_name,
+                    "last_name": row.users_last_name,
+                    "login": row.users_email,
+                    "role": row.users_role,
+                    "expires_at": row.users_expires_at.date()
+                    if row.users_expires_at
+                    else None,
+                }
+                assert user_profile["id"] == user_id  # nosec
 
-            user_profile.update(convert_user_db_to_schema(row, prefix="users_"))
-            if row["groups_type"] == GroupType.EVERYONE:
+            if row.groups_type == GroupType.EVERYONE:
                 all_group = convert_groups_db_to_schema(
                     row,
                     prefix="groups_",
                     accessRights=row["user_to_groups_access_rights"],
                 )
-            elif row["groups_type"] == GroupType.PRIMARY:
+            elif row.groups_type == GroupType.PRIMARY:
                 user_primary_group = convert_groups_db_to_schema(
                     row,
                     prefix="groups_",
@@ -91,11 +102,12 @@ async def get_user_profile(
                     )
                 )
 
+    if not user_profile:
+        raise UserNotFoundError(uid=user_id)
+
     user_profile["preferences"] = await get_frontend_user_preferences_aggregation(
         app, user_id=user_id, product_name=product_name
     )
-    if not user_profile:
-        raise UserNotFoundError(uid=user_id)
 
     user_profile["groups"] = {
         "me": user_primary_group,
@@ -103,10 +115,7 @@ async def get_user_profile(
         "all": all_group,
     }
 
-    if expires_at := user_profile.get("expires_at"):
-        user_profile["expiration_date"] = expires_at.date()
-
-    return ProfileGet.parse_obj(user_profile)
+    return ProfileGet(**user_profile)
 
 
 async def update_user_profile(
