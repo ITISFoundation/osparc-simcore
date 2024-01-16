@@ -32,7 +32,7 @@ def _generate_username_from_email(email: str) -> str:
 
 
 def _generate_random_chars(length=5) -> str:
-    """returns '_dddd' where d is a random digit"""
+    """returns `length` random digit character"""
     return "".join(secrets.choice(string.digits) for _ in range(length - 1))
 
 

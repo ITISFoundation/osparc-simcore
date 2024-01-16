@@ -2,21 +2,19 @@
     Ownership and access rights
 """
 
-import re
 from enum import Enum
+from typing import Any, ClassVar
 
+from models_library.basic_types import IDStr
 from models_library.users import FirstNameStr, LastNameStr
 from pydantic import BaseModel, Extra, Field, validator
-from pydantic.types import ConstrainedStr, PositiveInt
+from pydantic.types import PositiveInt
 
 from .utils.common_validators import none_to_empty_str_pre_validator
 
 
-class GroupIDStr(ConstrainedStr):
-    regex = re.compile(r"^\S+$")
-
-    class Config:
-        frozen = True
+class GroupIDStr(IDStr):
+    ...
 
 
 class AccessEnum(str, Enum):
@@ -26,9 +24,9 @@ class AccessEnum(str, Enum):
 
 
 class AccessRights(BaseModel):
-    read: bool = Field(..., description="gives read access")
-    write: bool = Field(..., description="gives write access")
-    delete: bool = Field(..., description="gives deletion rights")
+    read: bool = Field(..., description="has read access")
+    write: bool = Field(..., description="has write access")
+    delete: bool = Field(..., description="has deletion rights")
 
     class Config:
         extra = Extra.forbid
@@ -44,16 +42,10 @@ class PositiveIntWithExclusiveMinimumRemoved(PositiveInt):
 
 class Owner(BaseModel):
     user_id: PositiveIntWithExclusiveMinimumRemoved = Field(
-        ...,
-        description="Owner's identifier when registered in the user's database table",
-        examples=[2],
+        ..., description="Owner's user id"
     )
-    first_name: FirstNameStr = Field(
-        ..., description="Owner first name", examples=["John"]
-    )
-    last_name: LastNameStr = Field(
-        ..., description="Owner last name", examples=["Smith"]
-    )
+    first_name: FirstNameStr = Field(..., description="Owner's first name")
+    last_name: LastNameStr = Field(..., description="Owner's last name")
 
     _none_is_empty = validator("first_name", "last_name", allow_reuse=True, pre=True)(
         none_to_empty_str_pre_validator
@@ -61,3 +53,11 @@ class Owner(BaseModel):
 
     class Config:
         extra = Extra.forbid
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {"user_id": 1, "first_name": None, "last_name": None},
+                # Equivalent to the first one
+                {"user_id": 2, "first_name": "", "last_name": ""},
+                {"user_id": 3, "first_name": "John", "last_name": "Smith"},
+            ]
+        }
