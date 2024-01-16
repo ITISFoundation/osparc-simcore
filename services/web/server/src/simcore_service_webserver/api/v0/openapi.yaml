@@ -3662,7 +3662,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users.schemas.Token__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users.schemas.ThirdPartyToken__'
     post:
       tags:
       - user
@@ -3680,7 +3680,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Token_'
+                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
   /v0/me/tokens/{service}:
     get:
       tags:
@@ -3700,7 +3700,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Token_'
+                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
     delete:
       tags:
       - user
@@ -4532,15 +4532,15 @@ components:
         read:
           title: Read
           type: boolean
-          description: gives read access
+          description: has read access
         write:
           title: Write
           type: boolean
-          description: gives write access
+          description: has write access
         delete:
           title: Delete
           type: boolean
-          description: gives deletion rights
+          description: has deletion rights
       additionalProperties: false
     AccountRequestInfo:
       title: AccountRequestInfo
@@ -5702,12 +5702,12 @@ components:
           $ref: '#/components/schemas/TaskStatus'
         error:
           title: Error
-    Envelope_Token_:
-      title: Envelope[Token]
+    Envelope_ThirdPartyToken_:
+      title: Envelope[ThirdPartyToken]
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/Token'
+          $ref: '#/components/schemas/ThirdPartyToken'
         error:
           title: Error
     Envelope_Union_NodeGet__NodeGetIdle__:
@@ -6127,15 +6127,15 @@ components:
             $ref: '#/components/schemas/PermissionGet'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.users.schemas.Token__:
-      title: Envelope[list[simcore_service_webserver.users.schemas.Token]]
+    Envelope_list_simcore_service_webserver.users.schemas.ThirdPartyToken__:
+      title: Envelope[list[simcore_service_webserver.users.schemas.ThirdPartyToken]]
       type: object
       properties:
         data:
           title: Data
           type: array
           items:
-            $ref: '#/components/schemas/Token'
+            $ref: '#/components/schemas/ThirdPartyToken'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.wallets._groups_api.WalletGroupGet__:
@@ -7335,17 +7335,17 @@ components:
         user_id:
           title: User Id
           type: integer
-          description: Owner's identifier when registered in the user's database table
+          description: Owner's user id
         first_name:
           title: First Name
           maxLength: 255
           type: string
-          description: Owner first name
+          description: Owner's first name
         last_name:
           title: Last Name
           maxLength: 255
           type: string
-          description: Owner last name
+          description: Owner's last name
       additionalProperties: false
     PageLinks:
       title: PageLinks
@@ -7813,6 +7813,11 @@ components:
       - preferences
       type: object
       properties:
+        id:
+          title: Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
         first_name:
           title: First Name
           maxLength: 255
@@ -7821,11 +7826,6 @@ components:
           title: Last Name
           maxLength: 255
           type: string
-        id:
-          title: Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
         login:
           title: Login
           type: string
@@ -7924,6 +7924,8 @@ components:
         accessRights:
           title: Accessrights
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
         tags:
           title: Tags
           type: array
@@ -7989,6 +7991,8 @@ components:
         accessRights:
           title: Accessrights
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
         tags:
           title: Tags
           type: array
@@ -8203,6 +8207,8 @@ components:
         accessRights:
           title: Accessrights
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
         tags:
           title: Tags
           type: array
@@ -8400,6 +8406,8 @@ components:
         accessRights:
           title: Accessrights
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
         tags:
           title: Tags
           type: array
@@ -8486,6 +8494,8 @@ components:
         accessRights:
           title: Accessrights
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
         tags:
           title: Tags
           type: array
@@ -9677,8 +9687,8 @@ components:
           description: minimum Height of the textarea
           minimum: 0
       additionalProperties: false
-    Token:
-      title: Token
+    ThirdPartyToken:
+      title: ThirdPartyToken
       required:
       - service
       - token_key
