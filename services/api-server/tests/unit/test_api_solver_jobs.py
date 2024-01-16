@@ -341,3 +341,32 @@ async def test_stop_job(
     assert response.status_code == status.HTTP_200_OK
     status_ = JobStatus.parse_obj(response.json())
     assert status_.job_id == UUID(_job_id)
+
+
+async def test_get_solver_job_outputs(
+    client: AsyncClient,
+    mocked_webserver_service_api_base,
+    mocked_storage_service_api_base,
+    mocked_groups_extra_properties,
+    mocked_solver_job_outputs,
+    respx_mock_from_capture: Callable[
+        [list[respx.MockRouter], Path, list[SideEffectCallback]],
+        list[respx.MockRouter],
+    ],
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+
+    respx_mock = respx_mock_from_capture(
+        [mocked_webserver_service_api_base, mocked_storage_service_api_base],
+        project_tests_dir / "mocks" / "get_solver_outputs.json",
+        [],
+    )
+
+    _solver_key: Final[str] = "simcore/services/comp/isolve"
+    _version: Final[str] = "2.1.24"
+    _job_id: Final[str] = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
+    response = await client.get(
+        f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}/outputs",
+        auth=auth,
+    )
