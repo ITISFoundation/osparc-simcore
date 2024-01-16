@@ -310,7 +310,7 @@ def _try_assign_task_to_ec2_instance_type(
 ) -> bool:
     for instance in instances:
         if task_required_ec2_instance and (
-            task_required_ec2_instance != instance.instance_type
+            task_required_ec2_instance != instance.instance_type.name
         ):
             continue
         if instance.has_resources_for_task(task_required_resources):
