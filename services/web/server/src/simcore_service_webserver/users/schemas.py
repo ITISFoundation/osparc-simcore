@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from datetime import date
 from typing import Any, ClassVar, Literal
 from uuid import UUID
@@ -117,33 +116,6 @@ class ProfileGet(BaseModel):
         if isinstance(v, UserRole):
             return v.name.upper()
         return v
-
-
-#
-# helpers
-#
-
-
-def convert_user_db_to_schema(
-    row: Mapping[str, Any], prefix: Literal["users_", ""] = ""
-) -> dict[str, Any]:
-
-    # FIXME: remove this once and for all!
-
-    # NOTE: this type of functions will be replaced by pydantic.
-    assert prefix is not None  # nosec
-    data = {
-        "id": row[f"{prefix}id"],
-        "login": row[f"{prefix}email"],
-        "first_name": row.get(f"{prefix}first_name"),
-        "last_name": row.get(f"{prefix}last_name"),
-        "role": row[f"{prefix}role"].name.capitalize(),
-        "gravatar_id": gravatar_hash(row[f"{prefix}email"]),
-    }
-
-    if expires_at := row[f"{prefix}expires_at"]:
-        data["expires_at"] = expires_at
-    return data
 
 
 #
