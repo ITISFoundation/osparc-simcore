@@ -669,18 +669,8 @@ async def _scale_up_cluster(
             "service is pending due to missing resources, scaling up cluster now...",
             level=logging.INFO,
         )
-        # NOTE: notify the up-scaling progress started...
-        await auto_scaling_mode.progress_message_from_tasks(
-            app, unassigned_tasks, 0.001
-        )
         new_pending_instances = await _start_instances(
             app, needed_ec2_instances, unassigned_tasks, auto_scaling_mode
-        )
-        await auto_scaling_mode.log_message_from_tasks(
-            app,
-            unassigned_tasks,
-            f"{len(new_pending_instances)} new machines being started, please wait...",
-            level=logging.INFO,
         )
         cluster.pending_ec2s.extend(
             [NonAssociatedInstance(ec2_instance=i) for i in new_pending_instances]
