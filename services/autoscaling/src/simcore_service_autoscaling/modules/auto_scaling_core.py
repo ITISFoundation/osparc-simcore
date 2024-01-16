@@ -290,12 +290,13 @@ def _try_assign_task_to_ec2_instance(
         ):
             continue
         if instance.has_resources_for_task(task_required_resources):
-            _logger.info(
-                "%s",
-                f"assigning task with {task_required_resources=}, {task_required_ec2_instance=} to "
-                f"{instance.ec2_instance.id=},{instance.ec2_instance.type}: {instance.available_resources}/{instance.ec2_instance.resources}",
-            )
             instance.assign_task(task, task_required_resources)
+            _logger.debug(
+                "%s",
+                f"assigned task with {task_required_resources=}, {task_required_ec2_instance=} to "
+                f"{instance.ec2_instance.id=}:{instance.ec2_instance.type}, "
+                f"remaining resources:{instance.available_resources}/{instance.ec2_instance.resources}",
+            )
             return True
     return False
 
@@ -313,12 +314,13 @@ def _try_assign_task_to_ec2_instance_type(
         ):
             continue
         if instance.has_resources_for_task(task_required_resources):
-            _logger.info(
-                "%s",
-                f"assigning task with {task_required_resources=}, {task_required_ec2_instance=} to "
-                f"{instance.instance_type}: {instance.available_resources}/{instance.instance_type.resources}",
-            )
             instance.assign_task(task, task_required_resources)
+            _logger.debug(
+                "%s",
+                f"assigned task with {task_required_resources=}, {task_required_ec2_instance=} to "
+                f"{instance.instance_type}, "
+                f"remaining resources:{instance.available_resources}/{instance.instance_type.resources}",
+            )
             return True
     return False
 
@@ -367,7 +369,7 @@ async def _assign_tasks_to_current_cluster(
             assignment(task, task_required_ec2_instance, task_required_resources)
             for assignment in assignment_functions
         ):
-            _logger.info("assigned task to cluster")
+            _logger.debug("assigned task to cluster")
         else:
             unassigned_tasks.append(task)
 
@@ -421,7 +423,8 @@ async def _find_needed_instances(
                         AssignedTasksToInstanceType(
                             instance_type=defined_ec2,
                             assigned_tasks=[task],
-                            available_resources=defined_ec2.resources,
+                            available_resources=defined_ec2.resources
+                            - task_required_resources,
                         )
                     )
                 else:
@@ -435,7 +438,8 @@ async def _find_needed_instances(
                         AssignedTasksToInstanceType(
                             instance_type=best_ec2_instance,
                             assigned_tasks=[task],
-                            available_resources=best_ec2_instance.resources,
+                            available_resources=best_ec2_instance.resources
+                            - task_required_resources,
                         )
                     )
             except Ec2InstanceNotFoundError:
@@ -446,6 +450,14 @@ async def _find_needed_instances(
                 )
             except Ec2InstanceInvalidError:
                 _logger.exception("Unexpected error:")
+
+    _logger.info(
+        "found following needed instances: %s",
+        [
+            f"{i.instance_type.name=}:{i.instance_type.resources} with {len(i.assigned_tasks)} tasks"
+            for i in needed_new_instance_types_for_tasks
+        ],
+    )
 
     num_instances_per_type = collections.defaultdict(
         int,
@@ -679,19 +691,13 @@ async def _scale_up_cluster(
     return cluster
 
 
-async def _deactivate_empty_nodes(
-    app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
-) -> Cluster:
+async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     docker_client = get_docker_client(app)
     active_empty_instances: list[AssociatedInstance] = []
     active_non_empty_instances: list[AssociatedInstance] = []
     for instance in cluster.active_nodes:
         try:
-            node_used_resources = await auto_scaling_mode.compute_node_used_resources(
-                app,
-                instance,
-            )
-            if node_used_resources == Resources.create_as_empty():
+            if instance.available_resources == instance.ec2_instance.resources:
                 active_empty_instances.append(instance)
             else:
                 active_non_empty_instances.append(instance)
@@ -903,7 +909,7 @@ async def _autoscale_cluster(
         )
         # NOTE: we only scale down in case we did not just scale up. The swarm needs some time to adjust
         await auto_scaling_mode.try_retire_nodes(app)
-        cluster = await _deactivate_empty_nodes(app, cluster, auto_scaling_mode)
+        cluster = await _deactivate_empty_nodes(app, cluster)
         cluster = await _try_scale_down_cluster(app, cluster)
 
     return cluster
