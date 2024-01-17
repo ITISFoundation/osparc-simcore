@@ -123,7 +123,7 @@ async def test_list_service_usage(
     url = client.app.router["list_resource_usage_services"].url_for()
     resp = await client.get(f"{url}")
     await assert_status(resp, web.HTTPOk)
-    assert mock_list_usage_services.called
+    assert mock_list_usage_services.call_count == 1
 
     # list service usage with wallets as "accountant"
     url = (
@@ -133,7 +133,7 @@ async def test_list_service_usage(
     )
     resp = await client.get(f"{url}")
     await assert_status(resp, web.HTTPOk)
-    assert mock_list_usage_services.call_count == 1
+    assert mock_list_usage_services.call_count == 2
     assert mock_list_usage_services.call_args[1]["access_all_wallet_usage"] is True
 
     # Remove "write" permission on the wallet
@@ -154,7 +154,7 @@ async def test_list_service_usage(
     )
     resp = await client.get(f"{url}")
     await assert_status(resp, web.HTTPOk)
-    assert mock_list_usage_services.call_count == 2
+    assert mock_list_usage_services.call_count == 3
     assert mock_list_usage_services.call_args[1]["access_all_wallet_usage"] is False
 
 
