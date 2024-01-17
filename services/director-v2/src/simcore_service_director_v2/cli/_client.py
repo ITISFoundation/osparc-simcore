@@ -11,7 +11,9 @@ class ThinDV2LocalhostClient(BaseThinClient):
     BASE_ADDRESS: str = "http://localhost:8000"  # NOSONAR
 
     def __init__(self):
-        super().__init__(request_timeout=10, timeout=Timeout(5))
+        super().__init__(
+            total_retry_interval=10, default_http_client_timeout=Timeout(5)
+        )
 
     def _get_url(self, postfix: str) -> str:
         return f"{self.BASE_ADDRESS}/v2/dynamic_scheduler{postfix}"

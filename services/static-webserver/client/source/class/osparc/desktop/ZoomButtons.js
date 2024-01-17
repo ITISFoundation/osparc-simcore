@@ -28,7 +28,7 @@
  * </pre>
  */
 
-const ZOOM_BUTTON_SIZE = 24;
+const ZOOM_BUTTON_SIZE = 32;
 
 qx.Class.define("osparc.desktop.ZoomButtons", {
   extend: qx.ui.toolbar.ToolBar,
@@ -61,9 +61,12 @@ qx.Class.define("osparc.desktop.ZoomButtons", {
 
     __getZoomBtn: function(icon, tooltip) {
       const btn = new qx.ui.toolbar.Button(null, icon+"/20").set({
+        appearance: "form-button-outlined",
+        padding: [5, 5],
+        marginLeft: 10,
         width: ZOOM_BUTTON_SIZE,
         height: ZOOM_BUTTON_SIZE,
-        backgroundColor: "transparent"
+        maxHeight: ZOOM_BUTTON_SIZE
       });
       if (tooltip) {
         btn.setToolTipText(tooltip);

@@ -3,6 +3,7 @@ from typing import Optional, cast
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import GroupAtDB
+from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
 
 from ..errors import RepositoryError
@@ -74,7 +75,7 @@ class GroupsRepository(BaseRepository):
                 )
             ):
                 service_owners[row[users.c.primary_gid]] = (
-                    LowerCaseEmailStr(row[users.c.email])
+                    parse_obj_as(LowerCaseEmailStr, row[users.c.email])
                     if row[users.c.email]
                     else None
                 )

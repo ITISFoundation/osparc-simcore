@@ -48,35 +48,30 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
       switch (id) {
         case "separator":
           control = new qx.ui.toolbar.Separator().set({
+            width: 2,
             padding: 0,
-            margin: 0,
-            backgroundColor: "background-main-5"
+            margin: [7, 10, 7, 0],
+            backgroundColor: "default-button-disabled-background"
           });
           this._add(control);
           break;
         case "back-to-dashboard-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
-            font: "text-14",
-            backgroundColor: "background-main-4"
-          });
-          control.getContentElement().setStyles({
-            "border-radius": "0px"
+          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/14").set({
+            appearance: "fab-button",
+            alignY: "middle",
+            padding: [5, 16],
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
           });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.addListener("execute", () => this.fireEvent("backToDashboardPressed"));
           this._add(control);
           break;
         case "user-menu-button":
-          control = new osparc.navigation.UserMenuButton().set({
-            backgroundColor: "background-main-4"
-          });
+          control = new osparc.navigation.UserMenuButton();
           osparc.WatchDog.getInstance().bind("online", control, "backgroundColor", {
             converter: on => on ? "background-main-4" : "red"
           });
           control.getChildControl("label").exclude();
-          control.getMenu().set({
-            backgroundColor: "background-main-4"
-          });
           control.populateMenuCompact();
           this._add(control);
           break;
@@ -84,10 +79,8 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           control = new qx.ui.container.Stack();
 
           const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-up/14").set({
-            backgroundColor: "background-main-4"
-          });
-          collapseNavBarBtn.getContentElement().setStyles({
-            "border-radius": "0px"
+            appearance: "fab-button",
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
           });
           control.add(collapseNavBarBtn);
           collapseNavBarBtn.addListener("execute", () => {
@@ -96,10 +89,8 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           });
 
           const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14").set({
-            backgroundColor: "background-main-4"
-          });
-          expandNavBarBtn.getContentElement().setStyles({
-            "border-radius": "0px"
+            appearance: "fab-button",
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
           });
           control.add(expandNavBarBtn);
           expandNavBarBtn.addListener("execute", () => {
@@ -119,12 +110,23 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
       separator.exclude();
 
       const backToDashboardBtn = this.getChildControl("back-to-dashboard-button");
+      backToDashboardBtn.set({
+        marginRight: 10
+      });
       backToDashboardBtn.exclude();
 
       const userMenuButton = this.getChildControl("user-menu-button");
+      userMenuButton.set({
+        marginRight: 1,
+        marginTop: 3
+      });
       userMenuButton.exclude();
 
-      this.getChildControl("collapse-expand-stack");
+      const collapseExpandStack = this.getChildControl("collapse-expand-stack");
+      collapseExpandStack.set({
+        padding: 8,
+        marginRight: 4
+      });
     },
 
     __applyCollapsed: function(collapsed) {
