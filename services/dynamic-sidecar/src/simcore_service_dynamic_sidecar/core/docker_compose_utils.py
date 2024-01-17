@@ -6,6 +6,7 @@ run sequentially by this service
 
 """
 import logging
+from typing import Final
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
@@ -19,6 +20,15 @@ from .settings import ApplicationSettings
 from .utils import CommandResult, async_command
 
 _logger = logging.getLogger(__name__)
+
+
+_DOCKER_COMPOSE_CLI_ENV: Final[dict[str, str]] = {
+    # NOTE: TIMEOUT adjusted because of:
+    #   https://github.com/docker/compose/issues/3927
+    #   https://github.com/AzuraCast/AzuraCast/issues/3258
+    "DOCKER_CLIENT_TIMEOUT": "120",
+    "COMPOSE_HTTP_TIMEOUT": "120",
+}
 
 
 def _docker_compose_options_from_settings(settings: ApplicationSettings) -> str:
@@ -43,13 +53,7 @@ async def _compose_cli_command(
     This calls is intentionally verbose at DEBUG level
     """
 
-    env_vars: dict[str, str] = {
-        # NOTE: TIMEOUT adjusted because of:
-        #   https://github.com/docker/compose/issues/3927
-        #   https://github.com/AzuraCast/AzuraCast/issues/3258
-        "DOCKER_CLIENT_TIMEOUT": "120",
-        "COMPOSE_HTTP_TIMEOUT": "120",
-    }
+    env_vars = _DOCKER_COMPOSE_CLI_ENV
 
     _logger.debug("Runs '%s' with ENV=%s...\n%s", command, env_vars, yaml_content)
 

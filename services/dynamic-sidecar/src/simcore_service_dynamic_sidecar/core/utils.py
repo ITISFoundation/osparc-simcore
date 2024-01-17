@@ -126,7 +126,6 @@ async def async_command(
         stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
-        # NOTE that stdout/stderr together. Might want to separate them?
         env=env_vars,
     )
 
