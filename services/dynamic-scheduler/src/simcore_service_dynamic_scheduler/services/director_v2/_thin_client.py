@@ -1,7 +1,7 @@
 import datetime
 
 from fastapi import FastAPI, status
-from httpx import Response
+from httpx import Response, Timeout
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     RPCDynamicServiceCreate,
 )
@@ -32,7 +32,9 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
         super().__init__(
             total_retry_interval=DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S,
             base_url=settings.DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS.api_base_url,
-            default_http_client_timeout=DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S,
+            default_http_client_timeout=Timeout(
+                DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S
+            ),
             extra_allowed_method_names={"attach_lifespan_to"},
         )
 
