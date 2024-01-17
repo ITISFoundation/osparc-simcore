@@ -20,6 +20,7 @@ from servicelib.fastapi.http_client_thin import BaseHttpClientError
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.modules.db.repositories.users import UsersRepository
 
 from .....core.dynamic_services_settings import DynamicServicesSettings
 from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
@@ -193,6 +194,9 @@ class CreateSidecars(DynamicSchedulerEvent):
         # generate a new `run_id` to avoid resource collisions
         scheduler_data.run_id = RunID.create()
 
+        users_repo = get_repository(app, UsersRepository)
+        primary_group_id = await users_repo.get_primary_group_id(scheduler_data.user_id)
+
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
         dynamic_sidecar_service_spec_base: AioDockerServiceSpec = get_dynamic_sidecar_spec(
@@ -206,6 +210,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             allow_internet_access=allow_internet_access,
             metrics_collection_allowed=metrics_collection_allowed,
+            primary_group_id=primary_group_id,
         )
 
         catalog_client = CatalogClient.instance(app)

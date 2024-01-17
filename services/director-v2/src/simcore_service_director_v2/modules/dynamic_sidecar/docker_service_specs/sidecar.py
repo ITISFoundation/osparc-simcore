@@ -13,6 +13,7 @@ from models_library.docker import (
 )
 from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from models_library.users import GroupID
 from pydantic import ByteSize, parse_obj_as
 from servicelib.json_serialization import json_dumps
 
@@ -47,6 +48,7 @@ def _get_environment_variables(
     *,
     allow_internet_access: bool,
     metrics_collection_allowed: bool,
+    primary_group_id: GroupID,
 ) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
@@ -76,6 +78,7 @@ def _get_environment_variables(
         "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
+        "DY_SIDECAR_PRIMARY_GROUP_ID": f"{primary_group_id}",
         "DY_SIDECAR_RUN_ID": scheduler_data.run_id,
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
@@ -298,7 +301,7 @@ def _get_ports(
     return ports
 
 
-def get_dynamic_sidecar_spec(
+def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR0913
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
@@ -310,6 +313,7 @@ def get_dynamic_sidecar_spec(
     allow_internet_access: bool,
     hardware_info: HardwareInfo | None,
     metrics_collection_allowed: bool,
+    primary_group_id: GroupID,
 ) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -394,6 +398,7 @@ def get_dynamic_sidecar_spec(
                     app_settings,
                     allow_internet_access=allow_internet_access,
                     metrics_collection_allowed=metrics_collection_allowed,
+                    primary_group_id=primary_group_id,
                 ),
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,

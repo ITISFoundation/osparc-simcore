@@ -38,6 +38,9 @@ async def get_cached_frontend_index(request: web.Request):
 
 
 async def get_statics_json(request: web.Request):
+    # TODO: in the source of this we need to change how it is sent
+    # needs to be read from the product thingy!
+    # TODO: ask where and how to configure this one since is product related
     product_name = get_product_name(request)
 
     statics_json = request.app[APP_FRONTEND_CACHED_STATICS_JSON_KEY].get(
