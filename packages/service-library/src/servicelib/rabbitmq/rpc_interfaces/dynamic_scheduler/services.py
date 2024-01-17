@@ -15,13 +15,13 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
 
-# To avoid any side effects using the same timeout as the
-# aiohttp client that was calling into director-v2 from webserver
+# the webserver's director-v2 plugin internally uses a
+# 20 second default timeout for all HTTP calls
 DEFAULT_LEGACY_TIMEOUT_S: Final[NonNegativeInt] = 20
 
 # make sure RPC calls time out after the HTTP requests
 # from dynamic-scheduler to director-v2 time out
-_RPC_DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 20 + 1
+_RPC_DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = int(DEFAULT_LEGACY_TIMEOUT_S * 2)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
