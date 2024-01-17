@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from datetime import date
 from typing import Any, ClassVar, Literal
 from uuid import UUID
@@ -7,8 +6,8 @@ from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.groups import AllUsersGroups
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.emails import LowerCaseEmailStr
-from models_library.users import UserID
-from pydantic import BaseModel, Field, validator
+from models_library.users import FirstNameStr, LastNameStr, UserID
+from pydantic import BaseModel, Field, root_validator, validator
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
 
@@ -18,7 +17,7 @@ from ..utils import gravatar_hash
 #
 # TOKENS resource
 #
-class Token(BaseModel):
+class ThirdPartyToken(BaseModel):
     """
     Tokens used to access third-party services connected to osparc (e.g. pennsieve, scicrunch, etc)
     """
@@ -38,11 +37,7 @@ class Token(BaseModel):
         }
 
 
-class TokenID(BaseModel):
-    __root__: str = Field(..., description="toke identifier")
-
-
-class TokenCreate(Token):
+class TokenCreate(ThirdPartyToken):
     ...
 
 
@@ -51,9 +46,9 @@ class TokenCreate(Token):
 #
 
 
-class _ProfileCommon(BaseModel):
-    first_name: str | None = None
-    last_name: str | None = None
+class ProfileUpdate(BaseModel):
+    first_name: FirstNameStr | None = None
+    last_name: LastNameStr | None = None
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -64,12 +59,10 @@ class _ProfileCommon(BaseModel):
         }
 
 
-class ProfileUpdate(_ProfileCommon):
-    pass
-
-
-class ProfileGet(_ProfileCommon):
+class ProfileGet(BaseModel):
     id: UserID
+    first_name: FirstNameStr | None = None
+    last_name: LastNameStr | None = None
     login: LowerCaseEmailStr
     role: Literal["ANONYMOUS", "GUEST", "USER", "TESTER", "PRODUCT_OWNER", "ADMIN"]
     groups: AllUsersGroups | None = None
@@ -106,39 +99,23 @@ class ProfileGet(_ProfileCommon):
             ]
         }
 
+    @root_validator(pre=True)
+    @classmethod
+    def _auto_generate_gravatar(cls, values):
+        gravatar_id = values.get("gravatar_id")
+        email = values.get("login")
+        if not gravatar_id and email:
+            values["gravatar_id"] = gravatar_hash(email)
+        return values
+
     @validator("role", pre=True)
     @classmethod
-    def to_capitalize(cls, v):
+    def _to_upper_string(cls, v):
         if isinstance(v, str):
             return v.upper()
         if isinstance(v, UserRole):
             return v.name.upper()
         return v
-
-
-#
-# helpers
-#
-
-
-def convert_user_db_to_schema(
-    row: Mapping[str, Any], prefix: Literal["users_", ""] = ""
-) -> dict[str, Any]:
-    # NOTE: this type of functions will be replaced by pydantic.
-    assert prefix is not None  # nosec
-    parts = [*row[f"{prefix}name"].split("."), ""]
-    data = {
-        "id": row[f"{prefix}id"],
-        "login": row[f"{prefix}email"],
-        "first_name": parts[0],
-        "last_name": parts[1],
-        "role": row[f"{prefix}role"].name.capitalize(),
-        "gravatar_id": gravatar_hash(row[f"{prefix}email"]),
-    }
-
-    if expires_at := row[f"{prefix}expires_at"]:
-        data["expires_at"] = expires_at
-    return data
 
 
 #

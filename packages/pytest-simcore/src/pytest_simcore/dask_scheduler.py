@@ -75,7 +75,7 @@ async def dask_spec_local_cluster(
         scheduler_address = URL(cluster.scheduler_address)
         monkeypatch.setenv(
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
-            f"{scheduler_address}" or "invalid",
+            f"{scheduler_address or 'invalid'}",
         )
         yield cluster
 
@@ -95,7 +95,7 @@ async def dask_local_cluster_without_workers(
         scheduler_address = URL(cluster.scheduler_address)
         monkeypatch.setenv(
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
-            f"{scheduler_address}" or "invalid",
+            f"{scheduler_address or 'invalid'}",
         )
         yield cluster
 
