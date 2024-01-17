@@ -80,6 +80,8 @@ def closest_instance_policy(
         return 0
     # compute a score for all the instances that are above expectations
     # best is the exact ec2 instance
+    assert ec2_instance.resources.cpus > 0  # nosec
+    assert ec2_instance.resources.ram > 0  # nosec
     cpu_ratio = float(ec2_instance.resources.cpus - resources.cpus) / float(
         ec2_instance.resources.cpus
     )
