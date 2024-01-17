@@ -75,10 +75,12 @@ async def get_user_profile(
                     "last_name": row.users_last_name,
                     "login": row.users_email,
                     "role": row.users_role,
-                    "expiration_date": row.users_expires_at.date()
-                    if row.users_expires_at
-                    else None,
                 }
+
+                # NOTE: expirationDate null is not handled properly in front-end
+                if row.users_expires_at:
+                    user_profile["expiration_date"] = row.users_expires_at.date()
+
                 assert user_profile["id"] == user_id  # nosec
 
             if row.groups_type == GroupType.EVERYONE:
