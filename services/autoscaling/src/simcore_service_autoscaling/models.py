@@ -6,44 +6,33 @@ from dask_task_models_library.resource_constraints import DaskTaskResources
 from models_library.generated_models.docker_rest_api import Node
 
 
-@dataclass(kw_only=True, slots=True)
-class AssignedTasksToInstanceType:
-    instance_type: EC2InstanceType
-    assigned_tasks: list
-    available_resources: Resources
-
-    def has_resources_for_task(self, task_resources: Resources) -> bool:
-        return bool(self.available_resources >= task_resources)
-
-    def assign_task(self, task, task_resources: Resources) -> None:
-        self.assigned_tasks.append(task)
-        self.available_resources -= task_resources
-
-
-@dataclass(frozen=True, kw_only=True, slots=True)
-class _BaseInstance:
-    ec2_instance: EC2InstanceData
+@dataclass(frozen=True, slots=True, kw_only=True)
+class TaskAssignmentMixin:
     assigned_tasks: list = field(default_factory=list)
-    _available_resources: Resources = field(default_factory=Resources.create_as_empty)
-
-    def __post_init__(self) -> None:
-        if self._available_resources == Resources.create_as_empty():
-            object.__setattr__(
-                self, "_available_resources", self.ec2_instance.resources
-            )
-
-    def has_resources_for_task(self, task_resources: Resources) -> bool:
-        return bool(self._available_resources >= task_resources)
+    available_resources: Resources
 
     def assign_task(self, task, task_resources: Resources) -> None:
         self.assigned_tasks.append(task)
         object.__setattr__(
-            self, "_available_resources", self._available_resources - task_resources
+            self, "available_resources", self.available_resources - task_resources
         )
 
-    @property
-    def available_resources(self) -> Resources:
-        return self._available_resources
+    def has_resources_for_task(self, task_resources: Resources) -> bool:
+        return self.available_resources >= task_resources
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class AssignedTasksToInstanceType(TaskAssignmentMixin):
+    instance_type: EC2InstanceType
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _BaseInstance(TaskAssignmentMixin):
+    ec2_instance: EC2InstanceData
+
+    def __post_init__(self) -> None:
+        if self.available_resources == Resources.create_as_empty():
+            object.__setattr__(self, "available_resources", self.ec2_instance.resources)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
