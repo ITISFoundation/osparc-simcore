@@ -124,7 +124,7 @@ async def _assert_task_completes_once(
         started_task = start_exclusive_periodic_task(
             redis_client_sdk,
             _sleep_task,
-            interval=timedelta(seconds=1),
+            task_period=timedelta(seconds=1),
             task_name="long_running",
             sleep_interval=1,
             on_sleep_events=sleep_events,

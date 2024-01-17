@@ -11,7 +11,7 @@ import urllib.parse
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from pathlib import Path
-from pprint import pprint
+from pprint import pformat
 
 import pytest
 import redis.asyncio as aioredis
@@ -29,6 +29,7 @@ from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_api import submit_delete_project_task
 from simcore_service_webserver.users.api import (
@@ -45,7 +46,7 @@ async def _get_user_projects(client) -> list[ProjectDict]:
     assert resp.status == web.HTTPOk.status_code, payload
 
     projects, error = unwrap_envelope(payload)
-    assert not error, pprint(error)
+    assert not error, pformat(error)
 
     return projects
 
@@ -66,7 +67,7 @@ def _assert_same_projects(got: dict, expected: dict):
 
 
 def _is_user_authenticated(session: ClientSession) -> bool:
-    return "osparc.WEBAPI_SESSION" in [c.key for c in session.cookie_jar]
+    return DEFAULT_SESSION_COOKIE_NAME in [c.key for c in session.cookie_jar]
 
 
 @pytest.fixture

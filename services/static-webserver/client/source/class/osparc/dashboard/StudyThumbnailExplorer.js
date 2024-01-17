@@ -79,7 +79,9 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     __getThumbnailSuggestions: function() {
       const thumbnailSuggestions = new osparc.editor.ThumbnailSuggestions().set({
         minHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
-        maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT
+        maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
+        backgroundColor: "transparent",
+        padding: [3, 0]
       });
       return thumbnailSuggestions;
     },
@@ -138,7 +140,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
           const maxScale = 0.5;
           // eslint-disable-next-line no-underscore-dangle
           workbenchUIPreview._fitScaleToNodes(maxScale);
-        }, 50);
+        }, 300);
       });
       return workbenchUIPreview;
     },
@@ -170,7 +172,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
           // show the last preview by default
           if (previewsPerNodes && previewsPerNodes.length) {
             const thumbnails = thumbnailSuggestions.getChildren();
-            thumbnailSuggestions.thumbnailTapped(thumbnails[thumbnails.length-1]);
+            thumbnailSuggestions.thumbnailTapped(thumbnails[thumbnails.length - 1]);
           }
         })
         .catch(err => console.error(err));

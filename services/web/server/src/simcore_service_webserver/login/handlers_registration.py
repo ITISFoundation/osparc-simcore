@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, PositiveInt, SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.models.users import UserStatus
 
 from .._meta import API_VTAG
 from ..groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
@@ -48,8 +49,6 @@ from .settings import (
 )
 from .storage import AsyncpgStorage, ConfirmationTokenDict, get_plugin_storage
 from .utils import (
-    ACTIVE,
-    CONFIRMATION_PENDING,
     REGISTRATION,
     envelope_response,
     flash_response,
@@ -219,9 +218,9 @@ async def register(request: web.Request):
             email=registration.email,
             password=registration.password.get_secret_value(),
             status=(
-                CONFIRMATION_PENDING
+                UserStatus.CONFIRMATION_PENDING
                 if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
-                else ACTIVE
+                else UserStatus.ACTIVE
             ),
             expires_at=expires_at,
         )
@@ -381,7 +380,7 @@ async def register_phone(request: web.Request):
             twilo_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            user_name=get_user_name_from_email(registration.email),
+            first_name=get_user_name_from_email(registration.email),
         )
 
         message = MSG_2FA_CODE_SENT.format(
