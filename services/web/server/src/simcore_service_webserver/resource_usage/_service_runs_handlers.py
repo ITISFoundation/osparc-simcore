@@ -15,7 +15,15 @@ from models_library.rest_pagination import (
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, Extra, Field, Json, NonNegativeInt, validator
+from pydantic import (
+    BaseModel,
+    Extra,
+    Field,
+    Json,
+    NonNegativeInt,
+    parse_obj_as,
+    validator,
+)
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -62,7 +70,7 @@ class _ListServicesResourceUsagesQueryParams(BaseModel):
         default=0, description="index to the first item to return (pagination)"
     )
     wallet_id: WalletID | None = Field(default=None)
-    order_by: Json[OrderBy] | None = Field(  # pylint: disable=unsubscriptable-object
+    order_by: Json[OrderBy | None] = Field(  # pylint: disable=unsubscriptable-object
         default=None,
         description="Order by field (started_at|stopped_at|credit_cost) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "started_at", "direction": "desc"}',
@@ -75,11 +83,12 @@ class _ListServicesResourceUsagesQueryParams(BaseModel):
         example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
     )
 
-    @validator("order_by")
+    @validator("order_by", allow_reuse=True)
     @classmethod
     def validate_order_by_field(cls, v):
         if v.field not in {"started_at", "stopped_at", "credit_cost"}:
             raise ValueError(f"We do not support ordering by provided field {v.field}")
+        return v
 
     class Config:
         extra = Extra.forbid
@@ -109,8 +118,8 @@ async def list_resource_usage_services(request: web.Request):
         wallet_id=query_params.wallet_id,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=[query_params.order_by],
-        filters=query_params.filters,
+        order_by=parse_obj_as(OrderBy | None, query_params.order_by),
+        filters=parse_obj_as(ServiceResourceUsagesFilters | None, query_params.filters),
     )
 
     page = Page[dict[str, Any]].parse_obj(

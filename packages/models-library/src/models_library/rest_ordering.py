@@ -12,7 +12,7 @@ class OrderDirection(str, Enum):
 class OrderBy(BaseModel):
     """inspired by Google AIP https://google.aip.dev/132#ordering"""
 
-    field: IDStr
+    field: IDStr = Field()
     direction: OrderDirection = Field(default=OrderDirection.ASC)
 
     class Config:

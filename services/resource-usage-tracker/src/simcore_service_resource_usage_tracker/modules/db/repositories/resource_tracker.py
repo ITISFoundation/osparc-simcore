@@ -260,11 +260,13 @@ class ResourceTrackerRepository(BaseRepository):
                 )
             if started_from:
                 query = query.where(
-                    resource_tracker_service_runs.c.started_at >= started_from
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    >= started_from.date()
                 )
             if started_until:
                 query = query.where(
-                    resource_tracker_service_runs.c.started_at <= started_until
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    <= started_until.date()
                 )
 
             if order_by:
@@ -307,11 +309,13 @@ class ResourceTrackerRepository(BaseRepository):
                 )
             if started_from:
                 query = query.where(
-                    resource_tracker_service_runs.c.started_at >= started_from
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    >= started_from.date()
                 )
             if started_until:
                 query = query.where(
-                    resource_tracker_service_runs.c.started_at <= started_until
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    <= started_until.date()
                 )
             if service_run_status:
                 query = query.where(
