@@ -4,15 +4,13 @@ from dataclasses import dataclass
 from aws_library.ec2.models import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
+from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..models import (
-    AssignedTasksToInstance,
-    AssignedTasksToInstanceType,
-    AssociatedInstance,
-)
+from ..models import AssociatedInstance
+from ..utils import utils_docker
 
 
 @dataclass
@@ -41,32 +39,6 @@ class BaseAutoscaling(ABC):  # pragma: no cover
 
     @staticmethod
     @abstractmethod
-    def try_assigning_task_to_node(
-        task, instances_to_tasks: list[tuple[AssociatedInstance, list]]
-    ) -> bool:
-        ...
-
-    @staticmethod
-    @abstractmethod
-    async def try_assigning_task_to_instances(
-        app: FastAPI,
-        pending_task,
-        instances_to_tasks: list[AssignedTasksToInstance],
-        *,
-        notify_progress: bool
-    ) -> bool:
-        ...
-
-    @staticmethod
-    @abstractmethod
-    def try_assigning_task_to_instance_types(
-        pending_task,
-        instance_types_to_tasks: list[AssignedTasksToInstanceType],
-    ) -> bool:
-        ...
-
-    @staticmethod
-    @abstractmethod
     async def log_message_from_tasks(
         app: FastAPI, tasks: list, message: str, *, level: LogLevelInt
     ) -> None:
@@ -81,7 +53,7 @@ class BaseAutoscaling(ABC):  # pragma: no cover
 
     @staticmethod
     @abstractmethod
-    def get_max_resources_from_task(task) -> Resources:
+    def get_task_required_resources(task) -> Resources:
         ...
 
     @staticmethod
@@ -108,4 +80,20 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     async def compute_cluster_total_resources(
         app: FastAPI, instances: list[AssociatedInstance]
     ) -> Resources:
+        ...
+
+    @staticmethod
+    @abstractmethod
+    async def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
+        ...
+
+    @staticmethod
+    def is_instance_drained(instance: AssociatedInstance) -> bool:
+        return utils_docker.is_node_ready_and_available(
+            instance.node, Availability.drain
+        )
+
+    @staticmethod
+    @abstractmethod
+    async def try_retire_nodes(app: FastAPI) -> None:
         ...
