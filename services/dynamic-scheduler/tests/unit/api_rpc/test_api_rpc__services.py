@@ -401,7 +401,9 @@ async def test_stop_dynamic_service_serializes_generic_errors(
     simcore_user_agent: str,
     save_state: bool,
 ):
-    with pytest.raises(RPCServerError, match="while running 'stop_dynamic_service'"):
+    with pytest.raises(
+        RPCServerError, match="While running method  'stop_dynamic_service'"
+    ):
         await services.stop_dynamic_service(
             rpc_client,
             node_id=node_id,
