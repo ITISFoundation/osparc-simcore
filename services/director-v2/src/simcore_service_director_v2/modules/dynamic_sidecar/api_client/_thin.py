@@ -48,8 +48,8 @@ class ThinSidecarsClient(BaseThinClient):
         )
 
         super().__init__(
-            request_timeout=scheduler_settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S,
-            timeout=Timeout(
+            total_retry_interval=scheduler_settings.DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S,
+            default_http_client_timeout=Timeout(
                 scheduler_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
                 connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
             ),

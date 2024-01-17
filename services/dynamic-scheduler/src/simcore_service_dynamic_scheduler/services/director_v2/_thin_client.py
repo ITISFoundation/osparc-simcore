@@ -1,7 +1,7 @@
 import datetime
 
 from fastapi import FastAPI, status
-from httpx import Response, Timeout
+from httpx import Response
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     RPCDynamicServiceCreate,
 )
@@ -20,7 +20,7 @@ from servicelib.fastapi.http_client_thin import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
-    DEFAULT_LEGACY_TIMEOUT_S,
+    DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S,
 )
 
 from ...core.settings import ApplicationSettings
@@ -30,9 +30,9 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
     def __init__(self, app: FastAPI) -> None:
         settings: ApplicationSettings = app.state.settings
         super().__init__(
-            request_timeout=DEFAULT_LEGACY_TIMEOUT_S,
+            total_retry_interval=DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S,
             base_url=settings.DYNAMIC_SCHEDULER_DIRECTOR_V2_SETTINGS.api_base_url,
-            timeout=Timeout(10),
+            default_http_client_timeout=DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S,
             extra_allowed_method_names={"attach_lifespan_to"},
         )
 
@@ -86,7 +86,7 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
         save_state: bool,
         timeout: datetime.timedelta,
     ) -> Response:
-        @retry_on_errors(request_timeout_overwrite=timeout.total_seconds())
+        @retry_on_errors(total_retry_timeout_overwrite=timeout.total_seconds())
         @expect_status(status.HTTP_204_NO_CONTENT)
         async def _(
             self,  # NOTE: required by retry_on_errors
