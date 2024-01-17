@@ -11,7 +11,7 @@ import urllib.parse
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from pathlib import Path
-from pprint import pprint
+from pprint import pformat
 
 import pytest
 import redis.asyncio as aioredis
@@ -46,7 +46,7 @@ async def _get_user_projects(client) -> list[ProjectDict]:
     assert resp.status == web.HTTPOk.status_code, payload
 
     projects, error = unwrap_envelope(payload)
-    assert not error, pprint(error)
+    assert not error, pformat(error)
 
     return projects
 

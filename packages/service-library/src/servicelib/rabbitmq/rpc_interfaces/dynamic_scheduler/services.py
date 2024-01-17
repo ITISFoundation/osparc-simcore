@@ -15,9 +15,15 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
 
-# To avoid any side effects using the same timeout as the
-# aiohttp client that was calling into director-v2 from webserver
-_DEFAULT_LEGACY_TIMEOUT_S: Final[NonNegativeInt] = 20
+# the webserver's director-v2 plugin internally uses a
+# 20 second default timeout for all HTTP calls
+DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S: Final[NonNegativeInt] = 20
+
+# make sure RPC calls time out after the HTTP requests
+# from dynamic-scheduler to director-v2 time out
+_RPC_DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = int(
+    DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S * 2
+)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -28,7 +34,7 @@ async def get_service_status(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "get_service_status"),
         node_id=node_id,
-        timeout_s=_DEFAULT_LEGACY_TIMEOUT_S,
+        timeout_s=_RPC_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, NodeGetIdle | DynamicServiceGet | NodeGet)  # nosec
     return result
@@ -44,7 +50,7 @@ async def run_dynamic_service(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "run_dynamic_service"),
         rpc_dynamic_service_create=rpc_dynamic_service_create,
-        timeout_s=_DEFAULT_LEGACY_TIMEOUT_S,
+        timeout_s=_RPC_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, DynamicServiceGet | NodeGet)  # nosec
     return result

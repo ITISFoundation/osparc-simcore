@@ -14,7 +14,7 @@ from servicelib.background_task import periodic_task
 from servicelib.logging_utils import log_context
 
 from ..redis import get_redis_lock_manager_client
-from ..users.api import UserNameDict
+from ..users.api import FullNameDict
 from .exceptions import ProjectLockError
 
 _logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ async def lock_project(
     project_uuid: str | ProjectID,
     status: ProjectStatus,
     user_id: int,
-    user_name: UserNameDict,
+    user_fullname: FullNameDict,
 ) -> AsyncIterator[None]:
     """Context manager to lock and unlock a project by user_id
 
@@ -52,7 +52,7 @@ async def lock_project(
             blocking=False,
             token=ProjectLocked(
                 value=True,
-                owner=Owner(user_id=user_id, **user_name),
+                owner=Owner(user_id=user_id, **user_fullname),
                 status=status,
             ).json(),
         ):
@@ -62,7 +62,7 @@ async def lock_project(
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"with lock for {user_id=}:{user_name=}:{project_uuid=}:{status=}",
+            msg=f"with lock for {user_id=}:{user_fullname=}:{project_uuid=}:{status=}",
         ):
             async with periodic_task(
                 _auto_extend_project_lock,
