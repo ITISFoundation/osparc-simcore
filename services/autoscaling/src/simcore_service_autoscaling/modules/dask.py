@@ -191,29 +191,26 @@ async def get_worker_used_resources(
     """
 
     def _get_worker_used_resources(
-        dask_scheduler: distributed.Scheduler,
-    ) -> dict[str, dict]:
-        used_resources: dict[str, dict] = {}
+        dask_scheduler: distributed.Scheduler, *, worker_url: str
+    ) -> dict[str, float] | None:
         for worker_name, worker_state in dask_scheduler.workers.items():
+            if worker_url != worker_name:
+                continue
             if worker_state.status is distributed.Status.closing_gracefully:
                 # NOTE: when a worker was retired it is in this state
-                used_resources[worker_name] = {}
-            else:
-                used_resources[worker_name] = worker_state.used_resources
-        return used_resources
+                return {}
+            return worker_state.used_resources
+        return None
 
     async with _scheduler_client(url) as client:
         worker_url, _ = _dask_worker_from_ec2_instance(client, ec2_instance)
 
         # now get the used resources
-        used_resources_per_worker: dict[
-            str, dict[str, Any]
-        ] = await _wrap_client_async_routine(
+        worker_used_resources: dict[str, Any] | None = await _wrap_client_async_routine(
             client.run_on_scheduler(_get_worker_used_resources)
         )
-        if worker_url not in used_resources_per_worker:
+        if worker_used_resources is None:
             raise DaskWorkerNotFoundError(worker_host=worker_url, url=url)
-        worker_used_resources = used_resources_per_worker[worker_url]
         return Resources(
             cpus=worker_used_resources.get("CPU", 0),
             ram=parse_obj_as(ByteSize, worker_used_resources.get("RAM", 0)),
