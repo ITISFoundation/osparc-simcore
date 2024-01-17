@@ -8,7 +8,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.services import ServiceKey, ServiceVersion
-from simcore_service_resource_usage_tracker.core.errors import (
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
 )
 

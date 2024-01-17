@@ -22,6 +22,9 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CustomResourceUsageTrackerError,
+)
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -45,7 +48,6 @@ from simcore_service_resource_usage_tracker.models.resource_tracker_pricing_unit
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
-from ....core.errors import CustomResourceUsageTrackerError
 from ....models.resource_tracker_credit_transactions import (
     CreditTransactionCreate,
     CreditTransactionCreditsAndStatusUpdate,

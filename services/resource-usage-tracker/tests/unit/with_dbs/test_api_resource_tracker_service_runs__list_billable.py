@@ -50,6 +50,7 @@ def resource_tracker_setup_db(
     with postgres_db.connect() as con:
         con.execute(resource_tracker_service_runs.delete())
         con.execute(resource_tracker_credit_transactions.delete())
+        # Service run table
         result = con.execute(
             resource_tracker_service_runs.insert()
             .values(
@@ -71,7 +72,7 @@ def resource_tracker_setup_db(
                     user_id=_USER_ID,
                     service_run_id=_SERVICE_RUN_ID_2,
                     product_name="osparc",
-                    started_at=datetime.now(tz=timezone.utc) - timedelta(minutes=10),
+                    started_at=datetime.now(tz=timezone.utc) - timedelta(days=1),
                 )
             )
             .returning(resource_tracker_service_runs)
@@ -79,6 +80,7 @@ def resource_tracker_setup_db(
         row = result.first()
         assert row
 
+        # Transaction table
         result = con.execute(
             resource_tracker_credit_transactions.insert()
             .values(
@@ -152,8 +154,8 @@ async def test_rpc_list_service_runs_with_filtered_by__started_at(
         product_name="osparc",
         filters=ServiceResourceUsagesFilters(
             started_at=StartedAt(
-                from_=datetime.now(timezone.utc) - timedelta(minutes=50),
-                until=datetime.now(timezone.utc) - timedelta(minutes=40),
+                from_=datetime.now(timezone.utc) + timedelta(days=1),
+                until=datetime.now(timezone.utc) + timedelta(days=1),
             )
         ),
     )
@@ -167,8 +169,8 @@ async def test_rpc_list_service_runs_with_filtered_by__started_at(
         product_name="osparc",
         filters=ServiceResourceUsagesFilters(
             started_at=StartedAt(
-                from_=datetime.now(timezone.utc) - timedelta(minutes=15),
-                until=datetime.now(timezone.utc) - timedelta(minutes=5),
+                from_=datetime.now(timezone.utc),
+                until=datetime.now(timezone.utc),
             )
         ),
     )

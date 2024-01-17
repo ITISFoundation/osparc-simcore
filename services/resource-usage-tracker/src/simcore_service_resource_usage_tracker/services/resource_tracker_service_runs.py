@@ -8,8 +8,10 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CustomResourceUsageTrackerError,
+)
 
-from ..core.errors import CustomResourceUsageTrackerError
 from ..models.resource_tracker_service_runs import ServiceRunWithCreditsDB
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 

@@ -96,6 +96,9 @@ class StartedAt(BaseModel):
     from_: datetime | None = Field(None, alias="from")
     until: datetime | None = Field(None)
 
+    class Config:
+        allow_population_by_field_name = True
+
     @validator("from_", pre=True)
     @classmethod
     def parse_from_filter(cls, v):
@@ -106,9 +109,8 @@ class StartedAt(BaseModel):
             try:
                 from_ = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=timezone.utc)
             except Exception as exc:
-                raise ValueError(
-                    "'from' value must be provided in proper format <yyyy-mm-dd>."
-                ) from exc
+                msg = "'from' value must be provided in proper format <yyyy-mm-dd>."
+                raise ValueError(msg) from exc
             return from_
         return v
 
@@ -122,9 +124,8 @@ class StartedAt(BaseModel):
             try:
                 until = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=timezone.utc)
             except Exception as exc:
-                raise ValueError(
-                    "'until' value must be provided in proper format <yyyy-mm-dd>."
-                ) from exc
+                msg = "'until' value must be provided in proper format <yyyy-mm-dd>."
+                raise ValueError(msg) from exc
             return until
         return v
 

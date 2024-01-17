@@ -6,9 +6,8 @@ from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
-from simcore_service_resource_usage_tracker.core.errors import (
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
-    http404_error_handler,
 )
 
 from .._meta import (
@@ -25,6 +24,7 @@ from ..modules.db import setup as setup_db
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
 from ..resource_tracker import setup as setup_resource_tracker
+from .errors import http404_error_handler
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
