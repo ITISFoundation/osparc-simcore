@@ -9,9 +9,11 @@ from typing import Any, Final
 
 import distributed
 import pytest
+from arrow import utcnow
 from aws_library.ec2.models import Resources
 from faker import Faker
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pytest_simcore.helpers.utils_host import get_localhost_ip
 from simcore_service_autoscaling.core.errors import (
     DaskNoWorkersError,
     DaskSchedulerNotFoundError,
@@ -28,7 +30,7 @@ from simcore_service_autoscaling.modules.dask import (
     _scheduler_client,
     get_worker_still_has_results_in_memory,
     get_worker_used_resources,
-    list_processing_tasks,
+    list_processing_tasks_per_worker,
     list_unrunnable_tasks,
 )
 from tenacity import retry, stop_after_delay, wait_fixed
@@ -51,11 +53,12 @@ def scheduler_url(dask_spec_local_cluster: distributed.SpecCluster) -> AnyUrl:
 def dask_workers_config() -> dict[str, Any]:
     # NOTE: override of pytest-simcore dask_workers_config to have only 1 worker
     return {
-        "single-cpu-worker": {
+        "single-cpu_worker": {
             "cls": distributed.Worker,
             "options": {
                 "nthreads": 2,
                 "resources": {"CPU": 2, "RAM": 48e9},
+                "name": f"dask-sidecar_ip-{get_localhost_ip().replace('.', '-')}_{utcnow()}",
             },
         }
     }
@@ -107,21 +110,23 @@ async def test_list_processing_tasks(
         return x + y
 
     # there is nothing now
-    assert await list_processing_tasks(url=scheduler_url) == []
+    assert await list_processing_tasks_per_worker(url=scheduler_url) == {}
 
     # this function will be queued and executed as there are no specific resources needed
     future_queued_task = dask_spec_cluster_client.submit(_add_fct, 2, 5)
     assert future_queued_task
 
-    assert await list_processing_tasks(scheduler_url) == [
-        DaskTaskId(future_queued_task.key)
-    ]
+    assert await list_processing_tasks_per_worker(scheduler_url) == {
+        next(iter(dask_spec_cluster_client.scheduler_info()["workers"])): [
+            DaskTask(task_id=DaskTaskId(future_queued_task.key), required_resources={})
+        ]
+    }
 
     result = await future_queued_task.result(timeout=_REMOTE_FCT_SLEEP_TIME_S + 4)  # type: ignore
     assert result == 7
 
     # nothing processing anymore
-    assert await list_processing_tasks(url=scheduler_url) == []
+    assert await list_processing_tasks_per_worker(url=scheduler_url) == {}
 
 
 _DASK_SCHEDULER_REACTION_TIME_S: Final[int] = 4

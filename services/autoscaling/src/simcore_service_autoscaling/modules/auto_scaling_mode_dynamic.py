@@ -1,19 +1,12 @@
-from collections.abc import Iterable
-
 from aws_library.ec2.models import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
-from models_library.generated_models.docker_rest_api import Node, Task
+from models_library.generated_models.docker_rest_api import Availability, Node, Task
 from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import get_application_settings
-from ..models import (
-    AssignedTasksToInstance,
-    AssignedTasksToInstanceType,
-    AssociatedInstance,
-)
-from ..utils import dynamic_scaling as utils
+from ..models import AssociatedInstance
 from ..utils import utils_docker, utils_ec2
 from ..utils.rabbitmq import log_tasks_message, progress_tasks_message
 from .auto_scaling_mode_base import BaseAutoscaling
@@ -52,36 +45,6 @@ class DynamicAutoscaling(BaseAutoscaling):
         )
 
     @staticmethod
-    def try_assigning_task_to_node(
-        task, instances_to_tasks: Iterable[tuple[AssociatedInstance, list]]
-    ) -> bool:
-        return utils.try_assigning_task_to_node(task, instances_to_tasks)
-
-    @staticmethod
-    async def try_assigning_task_to_instances(
-        app: FastAPI,
-        pending_task,
-        instances_to_tasks: list[AssignedTasksToInstance],
-        *,
-        notify_progress: bool
-    ) -> bool:
-        return await utils.try_assigning_task_to_instances(
-            app,
-            pending_task,
-            instances_to_tasks,
-            notify_progress=notify_progress,
-        )
-
-    @staticmethod
-    def try_assigning_task_to_instance_types(
-        pending_task,
-        instance_types_to_tasks: list[AssignedTasksToInstanceType],
-    ) -> bool:
-        return utils.try_assigning_task_to_instance_types(
-            pending_task, instance_types_to_tasks
-        )
-
-    @staticmethod
     async def log_message_from_tasks(
         app: FastAPI, tasks: list, message: str, *, level: LogLevelInt
     ) -> None:
@@ -94,7 +57,7 @@ class DynamicAutoscaling(BaseAutoscaling):
         await progress_tasks_message(app, tasks, progress=progress)
 
     @staticmethod
-    def get_max_resources_from_task(task) -> Resources:
+    def get_task_required_resources(task) -> Resources:
         return utils_docker.get_max_resources_from_docker_task(task)
 
     @staticmethod
@@ -133,3 +96,15 @@ class DynamicAutoscaling(BaseAutoscaling):
         return await utils_docker.compute_cluster_total_resources(
             [i.node for i in instances]
         )
+
+    @staticmethod
+    async def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
+        assert app  # nosec
+        return utils_docker.is_node_ready_and_available(
+            instance.node, Availability.active
+        )
+
+    @staticmethod
+    async def try_retire_nodes(app: FastAPI) -> None:
+        assert app  # nosec
+        # nothing to do here

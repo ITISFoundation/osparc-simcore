@@ -40,6 +40,10 @@ services:
     ports:
       - 8786:8786
       - 8787:8787
+    deploy:
+      placement:
+        constraints:
+          - "node.role==manager"
 
 volumes:
   computational_shared_data:
