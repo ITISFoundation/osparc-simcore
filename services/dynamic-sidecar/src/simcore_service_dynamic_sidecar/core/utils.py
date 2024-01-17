@@ -113,7 +113,10 @@ def _close_transport(proc: Process):
 
 
 async def async_command(
-    command: str, timeout: float | None = None, pipe_as_input: str | None = None
+    command: str,
+    timeout: float | None = None,
+    pipe_as_input: str | None = None,
+    env_vars: dict[str, str] | None = None,
 ) -> CommandResult:
     """
     Does not raise Exception
@@ -124,6 +127,7 @@ async def async_command(
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
         # NOTE that stdout/stderr together. Might want to separate them?
+        env=env_vars,
     )
 
     if pipe_as_input:
