@@ -159,7 +159,9 @@ async def list_processing_tasks_per_worker(
         tasks_per_worker = defaultdict(list)
         for worker, tasks in worker_to_tasks.items():
             for task_id, required_resources in tasks:
-                tasks_per_worker[worker].append(DaskTask(task_id, required_resources))
+                tasks_per_worker[worker].append(
+                    DaskTask(task_id=task_id, required_resources=required_resources)
+                )
         return tasks_per_worker
 
 
@@ -200,7 +202,7 @@ async def get_worker_used_resources(
             if worker_state.status is distributed.Status.closing_gracefully:
                 # NOTE: when a worker was retired it is in this state
                 return {}
-            return worker_state.used_resources
+            return dict(worker_state.used_resources)
         return None
 
     async with _scheduler_client(url) as client:
