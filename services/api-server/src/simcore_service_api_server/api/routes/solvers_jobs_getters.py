@@ -189,7 +189,6 @@ async def get_job_outputs(
                 f"Job {project.uuid} does not have an associated wallet."
             )
         wallet_with_credits = await webserver_api.get_wallet(wallet_id=wallet.wallet_id)
-        assert wallet_with_credits is not None
         if wallet_with_credits.available_credits < 0.0:
             raise InsufficientCredits(
                 f"Wallet '{wallet_with_credits.name}' does not have any credits. Please add some before requesting solver ouputs"
