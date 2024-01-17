@@ -210,7 +210,7 @@ async def get_worker_used_resources(
 
         # now get the used resources
         worker_used_resources: dict[str, Any] | None = await _wrap_client_async_routine(
-            client.run_on_scheduler(_get_worker_used_resources)
+            client.run_on_scheduler(_get_worker_used_resources, worker_url=worker_url),
         )
         if worker_used_resources is None:
             raise DaskWorkerNotFoundError(worker_host=worker_url, url=url)
