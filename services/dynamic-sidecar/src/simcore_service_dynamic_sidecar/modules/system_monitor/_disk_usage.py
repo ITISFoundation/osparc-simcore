@@ -56,14 +56,14 @@ class DiskUsageMonitor:
             self._monitor, interval=timedelta(seconds=5), task_name="monitor_disk_usage"
         )
 
-    async def teardown(self) -> None:
+    async def shutdown(self) -> None:
         if self._monitor_task:
             await stop_periodic_task(self._monitor_task)
 
 
 def _get_monitored_paths(settings: ApplicationSettings) -> list[Path]:
     return [
-        Path("/"),  # root partition and tmp folder
+        Path("/"),  # root file system and /tmp usage mainly
         *settings.DY_SIDECAR_STATE_PATHS,
         settings.DY_SIDECAR_PATH_OUTPUTS,
         settings.DY_SIDECAR_PATH_INPUTS,

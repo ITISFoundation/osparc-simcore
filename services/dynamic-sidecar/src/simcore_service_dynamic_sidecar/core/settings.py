@@ -10,7 +10,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import DynamicServiceKey, RunID, ServiceVersion
-from models_library.users import UserID
+from models_library.users import GroupID, UserID
 from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -28,6 +28,16 @@ class ResourceTrackingSettings(BaseCustomSettings):
         default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
         description="each time the status of the service is propagated",
     )
+
+
+class SystemMonitorSettings(BaseCustomSettings):
+    DY_SIDECAR_SYSTEM_MONITOR_DISK_USAGE_ENABLED: bool = Field(
+        default=False, description="enabled/disabled disk usage monitoring"
+    )
+
+    @property
+    def is_enabled(self) -> bool:
+        return self.DY_SIDECAR_SYSTEM_MONITOR_DISK_USAGE_ENABLED
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -129,6 +139,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DY_SIDECAR_USER_ID: UserID
+    DY_SIDECAR_PRIMARY_GROUP_ID: GroupID
     DY_SIDECAR_PROJECT_ID: ProjectID
     DY_SIDECAR_NODE_ID: NodeID
     DY_SIDECAR_RUN_ID: RunID
@@ -137,6 +148,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_SERVICE_KEY: DynamicServiceKey | None = None
     DY_SIDECAR_SERVICE_VERSION: ServiceVersion | None = None
     DY_SIDECAR_PRODUCT_NAME: ProductName | None = None
+
+    SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(auto_default_from_env=True)
 
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 
