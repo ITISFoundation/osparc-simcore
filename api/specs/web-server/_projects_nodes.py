@@ -51,6 +51,7 @@ def create_node(project_id: str, body: NodeCreate):  # noqa: ARG001
 
 
 @router.get(
+    # issues with this endpoint https://github.com/ITISFoundation/osparc-simcore/issues/5245
     "/projects/{project_id}/nodes/{node_id}",
     response_model=Envelope[NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet],
 )
