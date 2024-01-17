@@ -26,10 +26,3 @@ def get_task_instance_restriction(task: DaskTask) -> str | None:
         task.required_resources
     )
     return instance_ec2_type
-
-
-def _compute_tasks_resources(tasks: list[DaskTask]) -> Resources:
-    return sum(
-        (resources_from_dask_task(t) for t in tasks),
-        Resources.create_as_empty(),
-    )
