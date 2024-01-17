@@ -138,7 +138,7 @@ async def list_processing_tasks_per_worker(
         DaskSchedulerNotFoundError
     """
 
-    def _list_tasks(
+    def _list_processing_tasks(
         dask_scheduler: distributed.Scheduler,
     ) -> dict[str, list[tuple[DaskTaskId, DaskTaskResources]]]:
         worker_to_processing_tasks = defaultdict(list)
@@ -152,13 +152,14 @@ async def list_processing_tasks_per_worker(
     async with _scheduler_client(url) as client:
         worker_to_tasks: dict[
             str, list[tuple[DaskTaskId, DaskTaskResources]]
-        ] = await _wrap_client_async_routine(client.run_on_scheduler(_list_tasks))
+        ] = await _wrap_client_async_routine(
+            client.run_on_scheduler(_list_processing_tasks)
+        )
         _logger.debug("found processing tasks: %s", worker_to_tasks)
-        tasks_per_worker = {}
+        tasks_per_worker = defaultdict(list)
         for worker, tasks in worker_to_tasks.items():
-            tasks_per_worker[worker] = [
-                DaskTask(task_id=t[0], required_resources=t[1]) for t in tasks
-            ]
+            for task_id, required_resources in tasks:
+                tasks_per_worker[worker].append(DaskTask(task_id, required_resources))
         return tasks_per_worker
 
 
