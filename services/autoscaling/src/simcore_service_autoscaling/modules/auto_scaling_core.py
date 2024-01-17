@@ -88,7 +88,7 @@ async def _analyze_current_cluster(
             active_nodes.append(
                 dataclasses.replace(
                     instance,
-                    _available_resources=instance.ec2_instance.resources
+                    available_resources=instance.ec2_instance.resources
                     - node_used_resources,
                 )
             )

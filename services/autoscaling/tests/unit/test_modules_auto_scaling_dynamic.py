@@ -900,7 +900,7 @@ async def test__deactivate_empty_nodes_does_not_drain_if_service_is_running_with
             AssociatedInstance(
                 node=host_node,
                 ec2_instance=fake_ec2_instance,
-                _available_resources=host_node_resources - node_used_resources,
+                available_resources=host_node_resources - node_used_resources,
             )
         ]
     )
