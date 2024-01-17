@@ -109,14 +109,15 @@ async def get_user_profile(
         app, user_id=user_id, product_name=product_name
     )
 
-    # NOTE: overcomes some of the front-end limitations regarding how null is handled.
-    # These are hacks ONLY HERE to make front-end work
+    # NOTE: Overcomes some limitations of the front-end
+    # regarding how null is handled.
+    #
     #  - expirationDate: strip if null
-    #  - first_name: use empty space
+    #  - first_name: use username
     #  - last_name: use empty space
     #
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/5244
-    #
+    # Remove this when https://github.com/ITISFoundation/osparc-simcore/issues/5244
+    # is resolved
     optional = {}
     if user_profile.get("expiration_date"):
         optional["expiration_date"] = user_profile["expiration_date"]
