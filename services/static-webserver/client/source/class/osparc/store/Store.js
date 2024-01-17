@@ -599,7 +599,10 @@ qx.Class.define("osparc.store.Store", {
               .then(orgMemberss => {
                 orgMemberss.forEach(orgMembers => {
                   orgMembers.forEach(orgMember => {
-                    orgMember["label"] = osparc.utils.Utils.firstsUp(orgMember["first_name"], orgMember["last_name"]);
+                    orgMember["label"] = osparc.utils.Utils.firstsUp(
+                      `${"first_name" in orgMember && orgMember["first_name"] != null ? orgMember["first_name"] : orgMember["login"]}`,
+                      `${orgMember["last_name"] ? orgMember["last_name"] : ""}`
+                    );
                     reachableMembers[orgMember["gid"]] = orgMember;
                   });
                 });
