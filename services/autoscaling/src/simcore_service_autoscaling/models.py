@@ -7,9 +7,9 @@ from models_library.generated_models.docker_rest_api import Node
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class TaskAssignmentMixin:
+class _TaskAssignmentMixin:
     assigned_tasks: list = field(default_factory=list)
-    available_resources: Resources
+    available_resources: Resources = field(default_factory=Resources.create_as_empty)
 
     def assign_task(self, task, task_resources: Resources) -> None:
         self.assigned_tasks.append(task)
@@ -18,16 +18,16 @@ class TaskAssignmentMixin:
         )
 
     def has_resources_for_task(self, task_resources: Resources) -> bool:
-        return self.available_resources >= task_resources
+        return bool(self.available_resources >= task_resources)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class AssignedTasksToInstanceType(TaskAssignmentMixin):
+class AssignedTasksToInstanceType(_TaskAssignmentMixin):
     instance_type: EC2InstanceType
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class _BaseInstance(TaskAssignmentMixin):
+class _BaseInstance(_TaskAssignmentMixin):
     ec2_instance: EC2InstanceData
 
     def __post_init__(self) -> None:
