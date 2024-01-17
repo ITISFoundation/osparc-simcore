@@ -973,7 +973,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     "hint": {
       style: state => ({
-        backgroundColor: "background-main-2",
+        backgroundColor: "window-popup-background",
         decorator: "hint",
         padding: 5
       })
