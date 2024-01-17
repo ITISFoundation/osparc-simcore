@@ -74,7 +74,7 @@ qx.Class.define("osparc.po.Invitations", {
       const invitationGroupBox = this.self().createGroupBox(this.tr("Create invitation"));
 
       const disclaimer = this.self().createHelpLabel(this.tr("There is no invitation required in this product/deployment.")).set({
-        textColor: "warning-yellow"
+        textColor: "info"
       });
       disclaimer.exclude();
       const config = osparc.store.Store.getInstance().get("config");
@@ -122,6 +122,9 @@ qx.Class.define("osparc.po.Invitations", {
       form.add(trialDays, this.tr("Trial Days"));
 
       const generateInvitationBtn = new osparc.ui.form.FetchButton(this.tr("Generate"));
+      generateInvitationBtn.set({
+        appearance: "form-button"
+      });
       generateInvitationBtn.addListener("execute", () => {
         if (!osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
           return;
@@ -180,6 +183,7 @@ qx.Class.define("osparc.po.Invitations", {
       });
 
       const copyInvitationBtn = new qx.ui.form.Button(this.tr("Copy invitation link"));
+      copyInvitationBtn.set({appearance: "form-button-outlined"});
       copyInvitationBtn.addListener("execute", () => {
         if (osparc.utils.Utils.copyTextToClipboard(respData["invitation_link"])) {
           copyInvitationBtn.setIcon("@FontAwesome5Solid/check/12");

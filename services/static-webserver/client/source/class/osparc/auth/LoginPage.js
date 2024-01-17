@@ -133,7 +133,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       this.getContentElement().setStyles({
         "background-image": backgroundImage,
         "background-repeat": "no-repeat",
-        "background-size": "auto 100%", // auto width, 85% height
+        "background-size": "contain", // auto width, 85% height
         "background-position": "0% 100%" // left bottom
       });
     },

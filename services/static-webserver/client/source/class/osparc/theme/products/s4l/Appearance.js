@@ -20,12 +20,7 @@ qx.Theme.define("osparc.theme.products.s4l.Appearance", {
 
   appearances: {
     "strong-button": {
-      include: "material-button",
-      style: state => ({
-        decorator: state.hovered || state.focused ? "strong-bordered-button" : "no-border",
-        backgroundColor: "strong-main",
-        textColor: "strong-text"
-      })
+      include: "form-button"
     }
   }
 });

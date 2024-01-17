@@ -3,6 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 
+import asyncio
+
 import aiohttp
 import pytest
 import tenacity
@@ -32,13 +34,15 @@ def traefik_endpoints(
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 async def traefik_service(
-    loop, traefik_endpoints: tuple[URL, URL, URL], docker_stack: dict
+    event_loop: asyncio.AbstractEventLoop,
+    traefik_endpoints: tuple[URL, URL, URL],
+    docker_stack: dict,
 ) -> tuple[URL, URL, URL]:
     traefik_api_endpoint, webserver_endpoint, apiserver_endpoint = traefik_endpoints
     await wait_till_traefik_responsive(traefik_api_endpoint)
-    yield traefik_endpoints
+    return traefik_endpoints
 
 
 # TODO: this can be used by ANY of the simcore services!

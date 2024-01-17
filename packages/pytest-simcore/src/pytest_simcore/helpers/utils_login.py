@@ -8,9 +8,10 @@ from simcore_service_webserver.db.models import UserRole, UserStatus
 from simcore_service_webserver.login._constants import MSG_LOGGED_IN
 from simcore_service_webserver.login._registration import create_invitation_token
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
+from simcore_service_webserver.security.api import clean_auth_policy_cache
 from yarl import URL
 
-from .rawdata_fakers import DEFAULT_PASSWORD, FAKE, random_user
+from .rawdata_fakers import DEFAULT_FAKER, DEFAULT_PASSWORD, random_user
 from .utils_assert import assert_status
 
 
@@ -29,6 +30,8 @@ class _UserInfoDictRequired(TypedDict, total=True):
 class UserInfoDict(_UserInfoDictRequired, total=False):
     created_at: datetime
     password_hash: str
+    first_name: str
+    last_name: str
 
 
 TEST_MARKS = re.compile(r"TEST (\w+):(.*)")
@@ -64,6 +67,8 @@ async def _insert_fake_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
 
     user = await db.create_user(params)
     user["raw_password"] = data["password"]
+    user.setdefault("first_name", None)
+    user.setdefault("last_name", None)
     return user
 
 
@@ -119,6 +124,12 @@ class LoggedUser(NewUser):
         )
         return self.user
 
+    async def __aexit__(self, *args):
+        # NOTE: cache key is based on an email. If the email is
+        # reused during the test, then it creates quite some noise
+        await clean_auth_policy_cache(self.client.app)
+        return await super().__aexit__(*args)
+
 
 class NewInvitation(NewUser):
     def __init__(
@@ -132,7 +143,7 @@ class NewInvitation(NewUser):
         assert client.app
         super().__init__(params=host, app=client.app)
         self.client = client
-        self.tag = f"Created by {guest_email or FAKE.email()}"
+        self.tag = f"Created by {guest_email or DEFAULT_FAKER.email()}"
         self.confirmation = None
         self.trial_days = trial_days
         self.extra_credits_in_usd = extra_credits_in_usd
