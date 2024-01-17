@@ -23,4 +23,7 @@ class RemoteMethodNotRegisteredError(BaseRPCError):
 
 
 class RPCServerError(BaseRPCError):
-    msg_template = "Raised '{exc_type}' while running '{method_name}' method: {msg}"
+    msg_template = (
+        "While running method '{method_name}' raised "
+        "'{exc_type}': '{exc_message}'\n{traceback}"
+    )
