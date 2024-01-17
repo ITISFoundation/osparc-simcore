@@ -116,7 +116,7 @@ def _assert_public_interface(
 
 
 def retry_on_errors(
-    request_timeout_overwrite: float | None = None,
+    total_retry_timeout_overwrite: float | None = None,
 ) -> Callable[..., Callable[..., Awaitable[Response]]]:
     """
     Will retry the request on `ConnectError` and `PoolTimeout`.
@@ -136,9 +136,9 @@ def retry_on_errors(
             try:
                 async for attempt in AsyncRetrying(
                     stop=stop_after_delay(
-                        request_timeout_overwrite
-                        if request_timeout_overwrite
-                        else zelf.request_timeout
+                        total_retry_timeout_overwrite
+                        if total_retry_timeout_overwrite
+                        else zelf.total_retry_interval
                     ),
                     wait=wait_exponential(min=1),
                     retry=retry_if_exception_type((ConnectError, PoolTimeout)),
@@ -194,14 +194,14 @@ class BaseThinClient(BaseHTTPApi):
     def __init__(
         self,
         *,
-        request_timeout: float,
+        total_retry_interval: float,
         base_url: URLTypes | None = None,
-        timeout: TimeoutTypes | None = None,
+        default_http_client_timeout: TimeoutTypes | None = None,
         extra_allowed_method_names: set[str] | None = None,
     ) -> None:
         _assert_public_interface(self, extra_allowed_method_names)
 
-        self.request_timeout: float = request_timeout
+        self.total_retry_interval: float = total_retry_interval
 
         client_args: dict[str, Any] = {
             # NOTE: the default httpx pool limit configurations look good
@@ -214,8 +214,8 @@ class BaseThinClient(BaseHTTPApi):
         }
         if base_url:
             client_args["base_url"] = base_url
-        if timeout:
-            client_args["timeout"] = timeout
+        if default_http_client_timeout:
+            client_args["timeout"] = default_http_client_timeout
 
         super().__init__(client=AsyncClient(**client_args))
 
