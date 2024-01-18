@@ -56,6 +56,3 @@ def setup_notifier(app: FastAPI):
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
-
-
-# TODO: add tests
