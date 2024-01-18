@@ -402,7 +402,7 @@ async def test_stop_dynamic_service_serializes_generic_errors(
     save_state: bool,
 ):
     with pytest.raises(
-        RPCServerError, match="While running method  'stop_dynamic_service'"
+        RPCServerError, match="While running method 'stop_dynamic_service'"
     ):
         await services.stop_dynamic_service(
             rpc_client,
