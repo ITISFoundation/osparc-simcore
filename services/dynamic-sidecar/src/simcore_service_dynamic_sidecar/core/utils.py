@@ -32,6 +32,12 @@ class CommandResult(NamedTuple):
     command: str
     elapsed: float | None
 
+    def as_log_message(self) -> str:
+        return (
+            f"'{self.command}' finished_ok='{self.success}' "
+            f"elapsed='{self.elapsed}'\n{self.message}"
+        )
+
 
 class _RegistryNotReachableError(Exception):
     pass

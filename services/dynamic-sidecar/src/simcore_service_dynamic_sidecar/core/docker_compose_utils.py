@@ -65,11 +65,7 @@ async def _compose_cli_command(
     )
 
     _logger.debug(
-        "Finished executing docker compose command '%s' finished_ok='%s' elapsed='%s'\n%s",
-        result.command,
-        result.success,
-        result.elapsed,
-        result.message,
+        "Finished executing docker compose command %s", result.as_log_message()
     )
     return result
 
