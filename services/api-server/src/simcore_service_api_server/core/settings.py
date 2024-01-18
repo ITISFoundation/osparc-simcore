@@ -159,7 +159,11 @@ class ApplicationSettings(BasicSettings):
         assert (
             dev_features_key in values
         ), f"{dev_features_key} should already have been validated. Did its name change?"
-        if values[dev_features_key] == False or v.strip() == "":
+        if values[dev_features_key] == False and v.strip() != "":
+            raise ValueError(
+                f"API_SERVER_DEV_HTTP_CALLS_LOGS_PATH can only be set in development mode ({dev_features_key}=1)"
+            )
+        if v.strip() == "":
             return None
         return Path(v)
 
