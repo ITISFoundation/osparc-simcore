@@ -39,3 +39,14 @@ class UsersRepo:
             return value
 
         raise UserNotFoundInRepoError
+
+    @staticmethod
+    async def get_primary_group_id(conn: SAConnection, user_id: int) -> int:
+        value: str | None = await conn.scalar(
+            sa.select(users.c.primary_gid).where(users.c.id == user_id)
+        )
+        if value:
+            assert isinstance(value, int)  # nosec
+            return value
+
+        raise UserNotFoundInRepoError
