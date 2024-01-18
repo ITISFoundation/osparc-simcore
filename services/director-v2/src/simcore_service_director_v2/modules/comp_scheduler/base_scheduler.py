@@ -551,7 +551,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
-    ) -> list:
+    ) -> list[list[tuple[NodeID, str]] | BaseException]:
         ...
 
     @abstractmethod
