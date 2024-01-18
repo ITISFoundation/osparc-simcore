@@ -11,6 +11,9 @@ from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services_utils import (
+    get_service_status_serialization_options,
+)
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
     NodeCreated,
@@ -183,9 +186,7 @@ async def get_node(request: web.Request) -> web.Response:
     )
 
     return envelope_json_response(
-        service_data.dict(by_alias=True)
-        if isinstance(service_data, DynamicServiceGet)
-        else service_data.dict()
+        service_data.dict(**get_service_status_serialization_options(service_data))
     )
 
 
