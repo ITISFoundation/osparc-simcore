@@ -87,6 +87,8 @@ async def load_products_on_startup(app: web.Application):
                     **dict(row.items()),
                     is_payment_enabled=payments.enabled,
                     credits_per_usd=payments.credits_per_usd,
+                    # TODO: pull this metric out of somewhere here! or just store it in the table of the product!
+                    is_dynamic_services_telemetry_enabled=False,
                 )
 
                 assert name in FRONTEND_APPS_AVAILABLE  # nosec

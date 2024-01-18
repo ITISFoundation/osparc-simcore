@@ -194,8 +194,11 @@ class CreateSidecars(DynamicSchedulerEvent):
         # generate a new `run_id` to avoid resource collisions
         scheduler_data.run_id = RunID.create()
 
+        # telemetry configuration
         users_repo = get_repository(app, UsersRepository)
         primary_group_id = await users_repo.get_primary_group_id(scheduler_data.user_id)
+
+        telemetry_enabled = True  # TODO: pull from somewhere!
 
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
@@ -210,6 +213,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             allow_internet_access=allow_internet_access,
             metrics_collection_allowed=metrics_collection_allowed,
+            telemetry_enabled=telemetry_enabled,
             primary_group_id=primary_group_id,
         )
 

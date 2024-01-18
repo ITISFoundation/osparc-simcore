@@ -48,6 +48,7 @@ def _get_environment_variables(
     *,
     allow_internet_access: bool,
     metrics_collection_allowed: bool,
+    telemetry_enabled: bool,
     primary_group_id: GroupID,
 ) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
@@ -81,6 +82,7 @@ def _get_environment_variables(
         "DY_SIDECAR_PRIMARY_GROUP_ID": f"{primary_group_id}",
         "DY_SIDECAR_RUN_ID": scheduler_data.run_id,
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
+        "DY_SIDECAR_SYSTEM_MONITOR_DISK_USAGE_ENABLED": f"{telemetry_enabled}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
         "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.json(),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
@@ -313,6 +315,7 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
     allow_internet_access: bool,
     hardware_info: HardwareInfo | None,
     metrics_collection_allowed: bool,
+    telemetry_enabled: bool,
     primary_group_id: GroupID,
 ) -> AioDockerServiceSpec:
     """
@@ -398,6 +401,7 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
                     app_settings,
                     allow_internet_access=allow_internet_access,
                     metrics_collection_allowed=metrics_collection_allowed,
+                    telemetry_enabled=telemetry_enabled,
                     primary_group_id=primary_group_id,
                 ),
                 "Hosts": [],

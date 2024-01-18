@@ -26,6 +26,7 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
     "DY_SIDECAR_SERVICE_VERSION",
     "DY_SIDECAR_STATE_EXCLUDE",
     "DY_SIDECAR_STATE_PATHS",
+    "DY_SIDECAR_SYSTEM_MONITOR_DISK_USAGE_ENABLED",
     "DY_SIDECAR_USER_ID",
     "DY_SIDECAR_USER_PREFERENCES_PATH",
     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS",
@@ -79,6 +80,7 @@ def test_dynamic_sidecar_env_vars(
         app_settings,
         allow_internet_access=False,
         metrics_collection_allowed=True,
+        telemetry_enabled=True,
         primary_group_id=42,
     )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)

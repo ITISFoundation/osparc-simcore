@@ -438,6 +438,7 @@ def test_get_dynamic_proxy_spec(
             has_quota_support=False,
             allow_internet_access=False,
             metrics_collection_allowed=True,
+            telemetry_enabled=True,
             primary_group_id=42,
         )
 
@@ -532,6 +533,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         has_quota_support=False,
         allow_internet_access=False,
         metrics_collection_allowed=True,
+        telemetry_enabled=True,
         primary_group_id=42,
     )
     assert dynamic_sidecar_spec
