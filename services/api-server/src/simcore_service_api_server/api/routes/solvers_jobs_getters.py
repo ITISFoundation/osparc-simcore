@@ -19,7 +19,6 @@ from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
 from starlette.background import BackgroundTask
-from test_services_rabbitmq import project_id
 
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams

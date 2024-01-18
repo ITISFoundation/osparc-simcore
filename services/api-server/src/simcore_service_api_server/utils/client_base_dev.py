@@ -22,9 +22,10 @@ class AsyncClientForDevelopmentOnly(httpx.AsyncClient):
 
     def __init__(self, capture_file: Path, **async_clint_kwargs):
         super().__init__(**async_clint_kwargs)
-        assert capture_file.name.endswith(  # nosec
-            ".json"
-        ), "The capture file should be a json file"
+        if capture_file.is_file():
+            assert capture_file.name.endswith(  # nosec
+                ".json"
+            ), "The capture file should be a json file"
         self._capture_file: Path = capture_file
 
     async def request(self, method: str, url: URLTypes, **kwargs):
