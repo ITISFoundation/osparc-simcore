@@ -51,7 +51,7 @@ class DirectorV2Client(
                 e.response.status_code  # pylint:disable=no-member # type: ignore
                 == status.HTTP_404_NOT_FOUND
             ):
-                return NodeGetIdle(service_state="idle", service_uuid=node_id)
+                return NodeGetIdle.from_node_id(node_id)
             raise
 
     async def run_dynamic_service(

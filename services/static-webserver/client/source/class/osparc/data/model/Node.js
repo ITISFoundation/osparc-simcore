@@ -1290,6 +1290,7 @@ qx.Class.define("osparc.data.model.Node", {
           break;
         }
         case "stopping":
+        case "unknown":
         case "starting":
         case "pulling": {
           status.setInteractive(serviceState);
