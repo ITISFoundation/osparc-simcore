@@ -1,7 +1,8 @@
 import os
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, BaseSettings, Field
+from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings
 
 DEPLOYMENTS = [
     "master",
@@ -16,10 +17,10 @@ DEPLOYMENTS = [
 
 class NewSettings(BaseSettings):
     OSPARC_DEPLOYMENT_TARGET: str
-    portainer_url: str = Field(..., env="PORTAINER_DOMAIN")
-    portainer_username: str = Field(..., env="PORTAINER_USER")
-    portainer_password: str = Field(..., env="PORTAINER_PASSWORD")
-    swarm_stack_name: str = Field(..., env="SWARM_STACK_NAME")
+    portainer_url: str = Field(..., validation_alias="PORTAINER_DOMAIN")
+    portainer_username: str = Field(..., validation_alias="PORTAINER_USER")
+    portainer_password: str = Field(..., validation_alias="PORTAINER_PASSWORD")
+    swarm_stack_name: str = Field(..., validation_alias="SWARM_STACK_NAME")
     portainer_endpoint_version: int
 
     @property
