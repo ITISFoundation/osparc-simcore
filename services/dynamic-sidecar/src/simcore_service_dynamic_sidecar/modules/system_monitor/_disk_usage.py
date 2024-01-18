@@ -7,6 +7,7 @@ from pathlib import Path
 import psutil
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
+from models_library.projects_nodes_io import NodeID
 from models_library.users import GroupID
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.utils import logged_gather
@@ -29,13 +30,17 @@ async def get_usage(path: Path) -> DiskUsage:
 class DiskUsageMonitor:
     app: FastAPI
     primary_group_id: GroupID
+    node_id: NodeID
     monitored_paths: list[Path]
     _monitor_task: asyncio.Task | None = None
     _last_usage: dict[Path, DiskUsage] = field(default_factory=dict)
 
     async def _publish_disk_usage(self, usage: dict[Path, DiskUsage]):
         await publish_disk_usage(
-            self.app, primary_group_id=self.primary_group_id, usage=usage
+            self.app,
+            primary_group_id=self.primary_group_id,
+            node_id=self.node_id,
+            usage=usage,
         )
 
     async def _monitor(self) -> None:
@@ -77,6 +82,7 @@ def setup_disk_usage(app: FastAPI) -> None:
         app.state.disk_usage_monitor = disk_usage_monitor = DiskUsageMonitor(
             app,
             primary_group_id=settings.DY_SIDECAR_PRIMARY_GROUP_ID,
+            node_id=settings.DY_SIDECAR_NODE_ID,
             monitored_paths=_get_monitored_paths(app),
         )
         await disk_usage_monitor.setup()

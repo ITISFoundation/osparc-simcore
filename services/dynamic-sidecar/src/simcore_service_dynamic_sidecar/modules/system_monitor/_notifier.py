@@ -8,7 +8,11 @@ from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_dynamic_sidecar.socketio import (
     SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
 )
-from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
+from models_library.api_schemas_dynamic_sidecar.telemetry import (
+    DiskUsage,
+    ServiceDiskUsage,
+)
+from models_library.projects_nodes_io import NodeID
 from models_library.users import GroupID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
@@ -22,21 +26,25 @@ class Notifier(SingletonInAppStateMixin):
         self._sio_manager = sio_manager
 
     async def notify_service_disk_usage(
-        self, primary_group_id: GroupID, usage: dict[Path, DiskUsage]
+        self, primary_group_id: GroupID, node_id: NodeID, usage: dict[Path, DiskUsage]
     ) -> None:
         await self._sio_manager.emit(
             SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
-            data=jsonable_encoder(usage),
+            data=jsonable_encoder(ServiceDiskUsage(node_id=node_id, usage=usage)),
             room=f"{primary_group_id}",
         )
 
 
 async def publish_disk_usage(
-    app: FastAPI, *, primary_group_id: GroupID, usage: dict[Path, DiskUsage]
+    app: FastAPI,
+    *,
+    primary_group_id: GroupID,
+    node_id: NodeID,
+    usage: dict[Path, DiskUsage],
 ) -> None:
     notifier: Notifier = Notifier.get_from_app_state(app)
     await notifier.notify_service_disk_usage(
-        primary_group_id=primary_group_id, usage=usage
+        primary_group_id=primary_group_id, node_id=node_id, usage=usage
     )
 
 

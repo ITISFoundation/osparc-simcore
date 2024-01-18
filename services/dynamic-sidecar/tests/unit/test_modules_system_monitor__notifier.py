@@ -17,7 +17,11 @@ from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_dynamic_sidecar.socketio import (
     SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
 )
-from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
+from models_library.api_schemas_dynamic_sidecar.telemetry import (
+    DiskUsage,
+    ServiceDiskUsage,
+)
+from models_library.projects_nodes_io import NodeID
 from models_library.users import GroupID
 from pydantic import ByteSize, NonNegativeInt, parse_obj_as
 from pytest_mock import MockerFixture
@@ -222,6 +226,7 @@ async def test_notifier_publish_message(
     app: FastAPI,
     primary_group_id: GroupID,
     usage: dict[Path, DiskUsage],
+    node_id: NodeID,
 ):
     # web server spy events
     server_connect = socketio_server_events["connect"]
@@ -255,13 +260,15 @@ async def test_notifier_publish_message(
         ]
 
         # server publishes a message
-        await publish_disk_usage(app, primary_group_id=primary_group_id, usage=usage)
+        await publish_disk_usage(
+            app, primary_group_id=primary_group_id, node_id=node_id, usage=usage
+        )
 
         # check that all clients received it
         for on_service_disk_usage_event in on_service_disk_usage_events:
             await _assert_call_count(on_service_disk_usage_event, call_count=1)
             on_service_disk_usage_event.assert_awaited_once_with(
-                jsonable_encoder(usage)
+                jsonable_encoder(ServiceDiskUsage(node_id=node_id, usage=usage))
             )
 
     await _assert_call_count(server_disconnect, call_count=number_of_clients)

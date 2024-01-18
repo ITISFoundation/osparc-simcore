@@ -9,6 +9,7 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
+from models_library.projects_nodes_io import NodeID
 from models_library.users import GroupID
 from psutil._common import sdiskusage
 from pydantic import ByteSize
@@ -37,7 +38,11 @@ def publish_disk_usage_spy(mocker: MockerFixture) -> Mock:
     mock = Mock()
 
     def __publish_disk_usage(
-        app: FastAPI, *, primary_group_id: GroupID, usage: dict[Path, DiskUsage]
+        app: FastAPI,
+        *,
+        primary_group_id: GroupID,
+        node_id: NodeID,
+        usage: dict[Path, DiskUsage],
     ) -> None:
         mock(usage)
 
@@ -74,11 +79,14 @@ async def _assert_monitor_triggers(
 
 
 async def test_disk_usage_monitor(
-    mock_disk_usage: Callable[[dict[str, ByteSize]], None], publish_disk_usage_spy: Mock
+    mock_disk_usage: Callable[[dict[str, ByteSize]], None],
+    publish_disk_usage_spy: Mock,
+    faker: Faker,
 ) -> None:
     disk_usage_monitor = DiskUsageMonitor(
         app=AsyncMock(),
         primary_group_id=42,
+        node_id=faker.uuid4(),
         monitored_paths=[Path("/"), Path("/tmp")],  # noqa: S108
     )
 
