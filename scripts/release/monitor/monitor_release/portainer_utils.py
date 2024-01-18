@@ -19,8 +19,7 @@ def get_bearer_token(settings: Settings):
         headers=headers,
         data=payload,
     )
-    bearer_token = response.json()["jwt"]
-    return bearer_token
+    return response.json()["jwt"]
 
 
 def get_services(settings: Settings, bearer_token):
@@ -32,8 +31,7 @@ def get_services(settings: Settings, bearer_token):
             "Content-Type": "application/json",
         },
     )
-    services = response.json()
-    return services
+    return response.json()
 
 
 def get_tasks(settings: Settings, bearer_token):
@@ -45,8 +43,7 @@ def get_tasks(settings: Settings, bearer_token):
             "Content-Type": "application/json",
         },
     )
-    tasks = response.json()
-    return tasks
+    return response.json()
 
 
 def get_containers(settings: Settings, bearer_token):
@@ -60,8 +57,7 @@ def get_containers(settings: Settings, bearer_token):
             "Content-Type": "application/json",
         },
     )
-    containers = response.json()
-    return containers
+    return response.json()
 
 
 def check_simcore_running_sidecars(settings: Settings, services):

@@ -81,7 +81,8 @@ def get_new_settings(env_file_path, deployment: str):
                 portainer_endpoint_version=1,
             )
         case _:
-            raise ValueError(f"Invalid {deployment=}")
+            msg = f"Invalid {deployment=}"
+            raise ValueError(msg)
 
     return settings
 
@@ -191,4 +192,5 @@ def get_settings(env_file, deployment: str) -> Settings:
             portainer_endpoint_version=1,
         )
     else:
-        raise ValueError("Invalid environment type provided.")
+        msg = "Invalid environment type provided."
+        raise ValueError(msg)
