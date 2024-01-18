@@ -12,6 +12,7 @@ from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.utils import logged_gather
 
 from ...core.settings import ApplicationSettings
+from ..mounted_fs import MountedVolumes
 from ._notifier import publish_disk_usage
 
 _logger = logging.getLogger(__name__)
@@ -61,12 +62,11 @@ class DiskUsageMonitor:
             await stop_periodic_task(self._monitor_task)
 
 
-def _get_monitored_paths(settings: ApplicationSettings) -> list[Path]:
+def _get_monitored_paths(app: FastAPI) -> list[Path]:
+    mounted_volumes: MountedVolumes = app.state.mounted_volumes
     return [
         Path("/"),  # root file system and /tmp usage mainly
-        *settings.DY_SIDECAR_STATE_PATHS,
-        settings.DY_SIDECAR_PATH_OUTPUTS,
-        settings.DY_SIDECAR_PATH_INPUTS,
+        *list(mounted_volumes.all_disk_paths_iter()),
     ]
 
 
@@ -77,7 +77,7 @@ def setup_disk_usage(app: FastAPI) -> None:
         app.state.disk_usage_monitor = disk_usage_monitor = DiskUsageMonitor(
             app,
             primary_group_id=settings.DY_SIDECAR_PRIMARY_GROUP_ID,
-            monitored_paths=_get_monitored_paths(settings),
+            monitored_paths=_get_monitored_paths(app),
         )
         await disk_usage_monitor.setup()
 
