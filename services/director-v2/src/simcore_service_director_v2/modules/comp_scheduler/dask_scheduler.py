@@ -132,6 +132,7 @@ class DaskScheduler(BaseCompScheduler):
                     for node_id, task in scheduled_tasks.items()
                 ),
                 return_exceptions=True,
+                # TODO: fix this. the problem comes from this swallowing of exceptions
             )
 
             # update the database so we do have the correct job_ids there
