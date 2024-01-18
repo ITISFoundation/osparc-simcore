@@ -52,11 +52,36 @@ def mock_rut_api_responses(
     return aioresponses_mocker
 
 
-@pytest.mark.parametrize("user_role", [(UserRole.USER)])
-async def test_list_service_usage(
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.PRODUCT_OWNER, web.HTTPOk),
+        (UserRole.ADMIN, web.HTTPOk),
+    ],
+)
+async def test_get_pricing_plan_user_role_access(
     client: TestClient,
     logged_user: UserInfoDict,
-    mock_rut_api_responses,
+    mock_rut_api_responses: AioResponsesMock,
+    user_role: UserRole,
+    expected: type[web.HTTPException],
+):
+    url = client.app.router["get_pricing_plan_unit"].url_for(
+        pricing_plan_id="1", pricing_unit_id="1"
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, expected)
+
+
+@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+async def test_get_pricing_plan(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mock_rut_api_responses: AioResponsesMock,
 ):
     # Get specific pricing plan unit
     url = client.app.router["get_pricing_plan_unit"].url_for(

@@ -1,9 +1,11 @@
 import logging
+from datetime import datetime, timezone
 from enum import auto
 from typing import Any, ClassVar, NamedTuple, TypeAlias
 
-from pydantic import BaseModel, PositiveInt, validator
+from pydantic import BaseModel, Field, PositiveInt, validator
 
+from .rest_filters import Filters
 from .utils.enums import StrAutoEnum
 
 _logger = logging.getLogger(__name__)
@@ -85,3 +87,48 @@ class PricingAndHardwareInfoTuple(NamedTuple):
 class PricingPlanAndUnitIdsTuple(NamedTuple):
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
+
+
+# Filtering for listing service runs/usages
+
+
+class StartedAt(BaseModel):
+    from_: datetime | None = Field(None, alias="from")
+    until: datetime | None = Field(None)
+
+    class Config:
+        allow_population_by_field_name = True
+
+    @validator("from_", pre=True)
+    @classmethod
+    def parse_from_filter(cls, v):
+        """Parse the filters field."""
+        if v:
+            if isinstance(v, datetime):
+                return v
+            try:
+                from_ = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            except Exception as exc:
+                msg = "'from' value must be provided in proper format <yyyy-mm-dd>."
+                raise ValueError(msg) from exc
+            return from_
+        return v
+
+    @validator("until", pre=True)
+    @classmethod
+    def parse_until_filter(cls, v):
+        """Parse the filters field."""
+        if v:
+            if isinstance(v, datetime):
+                return v
+            try:
+                until = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            except Exception as exc:
+                msg = "'until' value must be provided in proper format <yyyy-mm-dd>."
+                raise ValueError(msg) from exc
+            return until
+        return v
+
+
+class ServiceResourceUsagesFilters(Filters):
+    started_at: StartedAt

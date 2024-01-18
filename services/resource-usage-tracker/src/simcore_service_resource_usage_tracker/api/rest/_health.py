@@ -7,7 +7,7 @@ from fastapi.responses import PlainTextResponse
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.rabbitmq import RabbitMQClient
 
-from ..modules.rabbitmq import get_rabbitmq_client_from_request
+from ...modules.rabbitmq import get_rabbitmq_client_from_request
 
 logger = logging.getLogger(__name__)
 
@@ -30,5 +30,7 @@ async def healthcheck(
 ) -> str:
     if not rabbitmq_client.healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
+
+    # NOTE: check also redis?/postgres connections
 
     return f"{__name__}@{datetime.datetime.now(datetime.timezone.utc).isoformat()}"

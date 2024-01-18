@@ -218,7 +218,13 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mocked_setup_rabbitmq(mocker: MockerFixture):
-    return mocker.patch(
-        "simcore_service_resource_usage_tracker.core.application.setup_rabbitmq",
-        autospec=True,
+    return (
+        mocker.patch(
+            "simcore_service_resource_usage_tracker.core.application.setup_rabbitmq",
+            autospec=True,
+        ),
+        mocker.patch(
+            "simcore_service_resource_usage_tracker.core.application.setup_rpc_api_routes",
+            autospec=True,
+        ),
     )
