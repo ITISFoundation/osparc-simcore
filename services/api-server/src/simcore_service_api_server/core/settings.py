@@ -155,15 +155,15 @@ class ApplicationSettings(BasicSettings):
     @validator("API_SERVER_DEV_HTTP_CALLS_LOGS_PATH", pre=True)
     @classmethod
     def _enable_only_in_devel_mode(cls, v, values):
-        dev_features_key = "API_SERVER_DEV_FEATURES_ENABLED"
-        assert (
-            dev_features_key in values
-        ), f"{dev_features_key} should already have been validated. Did its name change?"
-        if values[dev_features_key] == False and v.strip() != "":
-            raise ValueError(
-                f"API_SERVER_DEV_HTTP_CALLS_LOGS_PATH can only be set in development mode ({dev_features_key}=1)"
-            )
-        if v.strip() == "":
+        v = v.strip()
+        if v != "" and not (
+            values
+            and (boot_mode := values.get("SC_BOOT_MODE"))
+            and boot_mode.is_devel_mode()
+        ):
+            msg = "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
+            raise ValueError(msg)
+        if v == "":
             return None
         return Path(v)
 
