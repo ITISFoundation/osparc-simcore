@@ -72,7 +72,8 @@ class RPCRouter:
                         raise RPCServerError(
                             method_name=func.__name__,
                             exc_type=f"{exc.__class__.__module__}.{exc.__class__.__name__}",
-                            msg=f"{formatted_traceback}",
+                            exc_message=f"{exc}",
+                            traceback=f"{formatted_traceback}",
                         ) from None
 
             self.routes[RPCMethodName(func.__name__)] = _wrapper

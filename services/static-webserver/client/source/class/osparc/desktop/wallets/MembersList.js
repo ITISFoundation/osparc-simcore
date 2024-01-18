@@ -221,7 +221,12 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
           const collaborator = osparc.utils.Utils.deepCloneObject(collab);
           if ("first_name" in collaborator) {
             collaborator["thumbnail"] = osparc.utils.Avatar.getUrl(collaborator["login"], 32);
-            collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
+            collaborator["name"] = osparc.utils.Utils.firstsUp(
+              `${"first_name" in collaborator && collaborator["first_name"] != null ?
+                collaborator["first_name"] : collaborator["login"]}`,
+              `${"last_name" in collaborator && collaborator["last_name"] != null ?
+                collaborator["last_name"] : ""}`
+            );
           }
           collaborator["accessRights"] = accessRights;
           let options = [];

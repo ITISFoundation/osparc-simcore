@@ -1,18 +1,24 @@
 import functools
 import logging
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, TypedDict
+from typing import Final, TypedDict
 
 from aiohttp import web
 from aiohttp_session import Session
 from pydantic import PositiveInt, validate_arguments
 from servicelib.aiohttp.typing_extension import Handler
 
-from .plugin import get_session
+from .api import get_session
 from .settings import SessionSettings, get_plugin_settings
 
-_SESSION_GRANTED_ACCESS_TOKENS_KEY = f"{__name__}._SESSION_GRANTED_ACCESS_TOKENS_KEY"
+_SESSION_GRANTED_ACCESS_TOKENS_KEY: Final = (
+    f"{__name__}._SESSION_GRANTED_ACCESS_TOKENS_KEY"
+)
+
+# Errors start in this code https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+_HTTP_400_BAD_REQUEST: Final = web.HTTPBadRequest.status_code
 
 _logger = logging.getLogger(__name__)
 
@@ -72,7 +78,7 @@ def on_success_grant_session_access_to(
 
             response = await handler(request)
 
-            if response.status < 400:  # success
+            if response.status < _HTTP_400_BAD_REQUEST:
                 settings: SessionSettings = get_plugin_settings(request.app)
                 with _access_tokens_cleanup_ctx(session) as access_tokens:
                     # NOTE: does NOT add up access counts but re-assigns to max_access_count
@@ -118,7 +124,7 @@ def session_access_required(
             # Access granted to this handler
             response = await handler(request)
 
-            if response.status < 400:  # success
+            if response.status < _HTTP_400_BAD_REQUEST:  # success
                 with _access_tokens_cleanup_ctx(session) as access_tokens:
                     if one_time_access:
                         # avoids future accesses by clearing all tokens
@@ -126,7 +132,7 @@ def session_access_required(
 
                     if remove_all_on_success:
                         # all access tokens removed
-                        access_tokens = {}
+                        access_tokens.clear()
 
             return response
 

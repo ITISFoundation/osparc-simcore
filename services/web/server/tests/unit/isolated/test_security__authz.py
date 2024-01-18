@@ -11,20 +11,30 @@
 import copy
 import json
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import jsondiff
 import pytest
+from aiocache.base import BaseCache
+from aiohttp import web
+from psycopg2 import DatabaseError
+from pytest_mock import MockerFixture
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.security._access_model import (
+from simcore_service_webserver.security._authz import AuthorizationPolicy
+from simcore_service_webserver.security._authz_access_model import (
     RoleBasedAccessModel,
     check_access,
 )
-from simcore_service_webserver.security._access_roles import ROLES_PERMISSIONS, UserRole
+from simcore_service_webserver.security._authz_access_roles import (
+    ROLES_PERMISSIONS,
+    UserRole,
+)
+from simcore_service_webserver.security._authz_db import AuthInfoDict
 
 
 @pytest.fixture
 def access_model() -> RoleBasedAccessModel:
-    def can_update_inputs(context):
+    def _can_update_inputs(context):
         current_data = context["current"]
         candidate_data = context["candidate"]
 
@@ -36,10 +46,7 @@ def access_model() -> RoleBasedAccessModel:
                     # can ONLY modify `inputs` fields set as ReadAndWrite
                     access = current_data["workbench"][node]["inputAccess"]
                     inputs = diffs["workbench"][node]["inputs"]
-                    for key in inputs:
-                        if access.get(key) != "ReadAndWrite":
-                            return False
-                    return True
+                    return all(access.get(key) == "ReadAndWrite" for key in inputs)
             except KeyError:
                 pass
             return False
@@ -55,7 +62,7 @@ def access_model() -> RoleBasedAccessModel:
                 "study.stop",
                 {
                     "name": "study.pipeline.node.inputs.update",
-                    "check": can_update_inputs,
+                    "check": _can_update_inputs,
                 },
             ]
         },
@@ -80,16 +87,10 @@ def access_model() -> RoleBasedAccessModel:
     }
 
     # RBAC: Role Based Access Control
-    rbac = RoleBasedAccessModel.from_rawdata(fake_roles_permissions)
-    return rbac
+    return RoleBasedAccessModel.from_rawdata(fake_roles_permissions)
 
 
 def test_unique_permissions():
-    # Limit for scalability. Test that unnecessary resources and/or actions are used
-    # Enforce reusable permission layouts
-    # TODO: limit the actions "read"
-    # TODO: limit the resouces "read"
-
     used = []
     for role in ROLES_PERMISSIONS:
         can = ROLES_PERMISSIONS[role].get("can", [])
@@ -211,6 +212,7 @@ async def test_async_checked_permissions(access_model: RoleBasedAccessModel):
     async def async_callback(context) -> bool:
         return context["response"]
 
+    assert access_model.roles[R.TESTER]
     access_model.roles[R.TESTER].check["study.edge.edit"] = async_callback
 
     assert not await access_model.can(
@@ -237,9 +239,84 @@ async def test_check_access_expressions(access_model: RoleBasedAccessModel):
 
     assert await check_access(access_model, R.USER, "study.stop & study.node.create")
 
-    # TODO: extend expression parser
-    # assert await check_access(access_model, R.USER,
-    #    "study.stop & (study.node.create|study.nodestree.uuid.read)")
 
-    # assert await check_access(access_model, R.TESTER,
-    #    "study.stop & study.node.create & study.nodestree.uuid.read")
+@pytest.fixture
+def mock_db(mocker: MockerFixture) -> MagicMock:
+
+    mocker.patch(
+        "simcore_service_webserver.security._authz.get_database_engine",
+        autospec=True,
+        return_value="FAKE-ENGINE",
+    )
+
+    users_db: dict[str, AuthInfoDict] = {
+        "foo@email.com": AuthInfoDict(id=1, role=UserRole.GUEST),
+        "bar@email.com": AuthInfoDict(id=55, role=UserRole.GUEST),
+    }
+
+    async def _fake_db(engine, email):
+        assert engine == "FAKE-ENGINE"
+
+        if "db-failure" in email:
+            raise DatabaseError
+
+        # inactive user or not found
+        return copy.deepcopy(users_db.get(email, None))
+
+    mock_db_fun = mocker.patch(
+        "simcore_service_webserver.security._authz.get_active_user_or_none",
+        autospec=True,
+        side_effect=_fake_db,
+    )
+
+    mock_db_fun.users_db = users_db
+    return mock_db_fun
+
+
+async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicMock):
+
+    app = web.Application()
+    authz_policy = AuthorizationPolicy(app, RoleBasedAccessModel([]))
+
+    # cache under test
+
+    # pylint: disable=no-member
+    autz_cache: BaseCache = authz_policy._get_auth_or_none.cache
+
+    assert not (await autz_cache.exists("_get_auth_or_none/foo@email.com"))
+    for _ in range(3):
+        got = await authz_policy._get_auth_or_none(email="foo@email.com")
+        assert mock_db.call_count == 1
+        assert got["id"] == 1
+
+    assert await autz_cache.exists("_get_auth_or_none/foo@email.com")
+
+    # new value in db
+    mock_db.users_db["foo@email.com"]["id"] = 2
+    assert (await autz_cache.get("_get_auth_or_none/foo@email.com"))["id"] == 1
+
+    # gets cache, db is NOT called
+    got = await authz_policy._get_auth_or_none(email="foo@email.com")
+    assert mock_db.call_count == 1
+    assert got["id"] == 1
+
+    # clear cache
+    await authz_policy.clear_cache()
+
+    # gets new value
+    got = await authz_policy._get_auth_or_none(email="foo@email.com")
+    assert mock_db.call_count == 2
+    assert got["id"] == 2
+
+    # other email has other key
+    assert not (await autz_cache.exists("_get_auth_or_none/bar@email.com"))
+
+    for _ in range(4):
+        # NOTE: None
+        assert await authz_policy._get_auth_or_none(email="bar@email.com")
+        assert await autz_cache.exists("_get_auth_or_none/bar@email.com")
+        assert mock_db.call_count == 3
+
+    # should raise web.HTTPServiceUnavailable on db failure
+    with pytest.raises(web.HTTPServiceUnavailable):
+        await authz_policy._get_auth_or_none(email="db-failure@email.com")

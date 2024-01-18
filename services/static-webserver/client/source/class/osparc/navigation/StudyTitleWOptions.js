@@ -22,7 +22,8 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.HBox(10).set({
-      alignY: "middle"
+      alignY: "middle",
+      alignX: "center"
     }));
 
     this.getChildControl("study-menu-button");

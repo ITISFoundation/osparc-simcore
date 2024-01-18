@@ -127,6 +127,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
         }
+        case "unknown":
         case "starting":
         case "connecting":
         case "pulling": {

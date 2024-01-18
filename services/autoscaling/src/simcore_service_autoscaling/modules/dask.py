@@ -1,5 +1,7 @@
 import contextlib
 import logging
+import re
+from collections import defaultdict
 from collections.abc import AsyncIterator, Coroutine
 from typing import Any, Final, TypeAlias
 
@@ -49,6 +51,61 @@ async def _scheduler_client(url: AnyUrl) -> AsyncIterator[distributed.Client]:
         raise DaskSchedulerNotFoundError(url=url) from exc
 
 
+DaskWorkerUrl: TypeAlias = str
+DaskWorkerDetails: TypeAlias = dict[str, Any]
+DASK_NAME_PATTERN: Final[re.Pattern] = re.compile(
+    r"^(?P<host_name>.+)_(?P<private_ip>ip-\d{1,3}-\d{1,3}-\d{1,3}-\d{1,3})[-_].*$"
+)
+
+
+def _dask_worker_from_ec2_instance(
+    client: distributed.Client, ec2_instance: EC2InstanceData
+) -> tuple[DaskWorkerUrl, DaskWorkerDetails]:
+    """
+    Raises:
+        Ec2InvalidDnsNameError
+        DaskNoWorkersError
+        DaskWorkerNotFoundError
+    """
+    node_hostname = node_host_name_from_ec2_private_dns(ec2_instance)
+    scheduler_info = client.scheduler_info()
+    assert client.scheduler  # nosec
+    if "workers" not in scheduler_info or not scheduler_info["workers"]:
+        raise DaskNoWorkersError(url=client.scheduler.address)
+    workers: dict[DaskWorkerUrl, DaskWorkerDetails] = scheduler_info["workers"]
+
+    _logger.debug("looking for %s in %s", f"{ec2_instance=}", f"{workers=}")
+
+    # dict is of type dask_worker_address: worker_details
+    def _find_by_worker_host(
+        dask_worker: tuple[DaskWorkerUrl, DaskWorkerDetails]
+    ) -> bool:
+        _, details = dask_worker
+        if match := re.match(DASK_NAME_PATTERN, details["name"]):
+            return bool(match.group("private_ip") == node_hostname)
+        return False
+
+    filtered_workers = dict(filter(_find_by_worker_host, workers.items()))
+    if not filtered_workers:
+        raise DaskWorkerNotFoundError(
+            worker_host=ec2_instance.aws_private_dns, url=client.scheduler.address
+        )
+    assert (
+        len(filtered_workers) == 1
+    ), f"returned workers {filtered_workers}, {node_hostname=}"  # nosec
+    return next(iter(filtered_workers.items()))
+
+
+async def is_worker_connected(
+    scheduler_url: AnyUrl, worker_ec2_instance: EC2InstanceData
+) -> bool:
+    with contextlib.suppress(DaskNoWorkersError, DaskWorkerNotFoundError):
+        async with _scheduler_client(scheduler_url) as client:
+            _dask_worker_from_ec2_instance(client, worker_ec2_instance)
+            return True
+    return False
+
+
 async def list_unrunnable_tasks(url: AnyUrl) -> list[DaskTask]:
     """
     Raises:
@@ -66,69 +123,46 @@ async def list_unrunnable_tasks(url: AnyUrl) -> list[DaskTask]:
         list_of_tasks: dict[
             DaskTaskId, DaskTaskResources
         ] = await _wrap_client_async_routine(client.run_on_scheduler(_list_tasks))
-        _logger.info("found unrunnable tasks: %s", list_of_tasks)
+        _logger.debug("found unrunnable tasks: %s", list_of_tasks)
         return [
             DaskTask(task_id=task_id, required_resources=task_resources)
             for task_id, task_resources in list_of_tasks.items()
         ]
 
 
-async def list_processing_tasks(url: AnyUrl) -> list[DaskTaskId]:
+async def list_processing_tasks_per_worker(
+    url: AnyUrl,
+) -> dict[DaskWorkerUrl, list[DaskTask]]:
     """
     Raises:
         DaskSchedulerNotFoundError
     """
+
+    def _list_processing_tasks(
+        dask_scheduler: distributed.Scheduler,
+    ) -> dict[str, list[tuple[DaskTaskId, DaskTaskResources]]]:
+        worker_to_processing_tasks = defaultdict(list)
+        for task_key, task_state in dask_scheduler.tasks.items():
+            if task_state.processing_on:
+                worker_to_processing_tasks[task_state.processing_on.address].append(
+                    (task_key, task_state.resource_restrictions)
+                )
+        return worker_to_processing_tasks
+
     async with _scheduler_client(url) as client:
-        processing_tasks = set()
-        if worker_to_processing_tasks := await _wrap_client_async_routine(
-            client.processing()
-        ):
-            _logger.info("cluster worker processing: %s", worker_to_processing_tasks)
-            for tasks in worker_to_processing_tasks.values():
-                processing_tasks |= set(tasks)
-
-        return list(processing_tasks)
-
-
-DaskWorkerUrl: TypeAlias = str
-DaskWorkerDetails: TypeAlias = dict[str, Any]
-
-
-def _dask_worker_from_ec2_instance(
-    client: distributed.Client, ec2_instance: EC2InstanceData
-) -> tuple[DaskWorkerUrl, DaskWorkerDetails]:
-    """
-    Raises:
-        Ec2InvalidDnsNameError
-        DaskNoWorkersError
-        DaskWorkerNotFoundError
-    """
-    node_hostname = node_host_name_from_ec2_private_dns(ec2_instance)
-    node_ip = node_ip_from_ec2_private_dns(ec2_instance)
-    scheduler_info = client.scheduler_info()
-    assert client.scheduler  # nosec
-    if "workers" not in scheduler_info or not scheduler_info["workers"]:
-        raise DaskNoWorkersError(url=client.scheduler.address)
-    workers: dict[DaskWorkerUrl, DaskWorkerDetails] = scheduler_info["workers"]
-
-    _logger.debug("looking for %s in %s", f"{ec2_instance=}", f"{workers=}")
-
-    # dict is of type dask_worker_address: worker_details
-    def _find_by_worker_host(
-        dask_worker: tuple[DaskWorkerUrl, DaskWorkerDetails]
-    ) -> bool:
-        _, details = dask_worker
-        return bool(details["host"] == node_ip) or bool(
-            node_hostname in details["name"]
+        worker_to_tasks: dict[
+            str, list[tuple[DaskTaskId, DaskTaskResources]]
+        ] = await _wrap_client_async_routine(
+            client.run_on_scheduler(_list_processing_tasks)
         )
-
-    filtered_workers = dict(filter(_find_by_worker_host, workers.items()))
-    if not filtered_workers:
-        raise DaskWorkerNotFoundError(
-            worker_host=ec2_instance.aws_private_dns, url=client.scheduler.address
-        )
-    assert len(filtered_workers) == 1  # nosec
-    return next(iter(filtered_workers.items()))
+        _logger.debug("found processing tasks: %s", worker_to_tasks)
+        tasks_per_worker = defaultdict(list)
+        for worker, tasks in worker_to_tasks.items():
+            for task_id, required_resources in tasks:
+                tasks_per_worker[worker].append(
+                    DaskTask(task_id=task_id, required_resources=required_resources)
+                )
+        return tasks_per_worker
 
 
 async def get_worker_still_has_results_in_memory(
@@ -160,25 +194,26 @@ async def get_worker_used_resources(
     """
 
     def _get_worker_used_resources(
-        dask_scheduler: distributed.Scheduler,
-    ) -> dict[str, dict]:
-        used_resources = {}
+        dask_scheduler: distributed.Scheduler, *, worker_url: str
+    ) -> dict[str, float] | None:
         for worker_name, worker_state in dask_scheduler.workers.items():
-            used_resources[worker_name] = worker_state.used_resources
-        return used_resources
+            if worker_url != worker_name:
+                continue
+            if worker_state.status is distributed.Status.closing_gracefully:
+                # NOTE: when a worker was retired it is in this state
+                return {}
+            return dict(worker_state.used_resources)
+        return None
 
     async with _scheduler_client(url) as client:
         worker_url, _ = _dask_worker_from_ec2_instance(client, ec2_instance)
 
         # now get the used resources
-        used_resources_per_worker: dict[
-            str, dict[str, Any]
-        ] = await _wrap_client_async_routine(
-            client.run_on_scheduler(_get_worker_used_resources)
+        worker_used_resources: dict[str, Any] | None = await _wrap_client_async_routine(
+            client.run_on_scheduler(_get_worker_used_resources, worker_url=worker_url),
         )
-        if worker_url not in used_resources_per_worker:
+        if worker_used_resources is None:
             raise DaskWorkerNotFoundError(worker_host=worker_url, url=url)
-        worker_used_resources = used_resources_per_worker[worker_url]
         return Resources(
             cpus=worker_used_resources.get("CPU", 0),
             ram=parse_obj_as(ByteSize, worker_used_resources.get("RAM", 0)),
@@ -203,3 +238,10 @@ async def compute_cluster_total_resources(
                 continue
 
         return Resources.create_as_empty()
+
+
+async def try_retire_nodes(url: AnyUrl) -> None:
+    async with _scheduler_client(url) as client:
+        await _wrap_client_async_routine(
+            client.retire_workers(close_workers=False, remove=False)
+        )

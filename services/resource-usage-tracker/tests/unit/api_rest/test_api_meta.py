@@ -11,8 +11,8 @@ from fastapi.testclient import TestClient
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_resource_usage_tracker._meta import API_VTAG
-from simcore_service_resource_usage_tracker.api._health import HealthCheckError
-from simcore_service_resource_usage_tracker.api._meta import _Meta
+from simcore_service_resource_usage_tracker.api.rest._health import HealthCheckError
+from simcore_service_resource_usage_tracker.api.rest._meta import _Meta
 
 
 def test_healthcheck(
@@ -34,7 +34,7 @@ def test_healthcheck(
     response = client.get("/")
     assert response.status_code == status.HTTP_200_OK
     assert response.text.startswith(
-        "simcore_service_resource_usage_tracker.api._health@"
+        "simcore_service_resource_usage_tracker.api.rest._health@"
     )
 
 

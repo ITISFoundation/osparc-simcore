@@ -39,7 +39,7 @@ class FakeThickClient(BaseThinClient):
     async def normal_timeout(self) -> Response:
         return await self.client.get("http://missing-host:1111")
 
-    @retry_on_errors(request_timeout_overwrite=_TIMEOUT_OVERWRITE)
+    @retry_on_errors(total_retry_timeout_overwrite=_TIMEOUT_OVERWRITE)
     async def overwritten_timeout(self) -> Response:
         return await self.client.get("http://missing-host:1111")
 
@@ -71,7 +71,7 @@ def request_timeout() -> int:
 
 @pytest.fixture
 async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
-    async with FakeThickClient(request_timeout=request_timeout) as client:
+    async with FakeThickClient(total_retry_interval=request_timeout) as client:
         yield client
 
 
@@ -95,7 +95,7 @@ async def test_retry_on_errors(
     test_url: AnyHttpUrl,
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
-    client = FakeThickClient(request_timeout=request_timeout)
+    client = FakeThickClient(total_retry_interval=request_timeout)
 
     with pytest.raises(ClientHttpError):
         await client.get_provided_url(test_url)
@@ -119,7 +119,7 @@ async def test_retry_on_errors_by_error_type(
                 request=Request(method="GET", url=test_url),
             )
 
-    client = ATestClient(request_timeout=request_timeout)
+    client = ATestClient(total_retry_interval=request_timeout)
 
     with pytest.raises(ClientHttpError):
         await client.raises_request_error()
@@ -145,7 +145,7 @@ async def test_retry_on_errors_raises_client_http_error(
             msg = "mock_http_error"
             raise HTTPError(msg)
 
-    client = ATestClient(request_timeout=request_timeout)
+    client = ATestClient(total_retry_interval=request_timeout)
 
     with pytest.raises(ClientHttpError):
         await client.raises_http_error()
@@ -159,21 +159,21 @@ async def test_methods_do_not_return_response(
             """this method will be ok even if no code is used"""
 
     # OK
-    OKTestClient(request_timeout=request_timeout)
+    OKTestClient(total_retry_interval=request_timeout)
 
     class FailWrongAnnotationTestClient(BaseThinClient):
         async def public_method_wrong_annotation(self) -> None:
             """this method will raise an error"""
 
     with pytest.raises(AssertionError, match="should return an instance"):
-        FailWrongAnnotationTestClient(request_timeout=request_timeout)
+        FailWrongAnnotationTestClient(total_retry_interval=request_timeout)
 
     class FailNoAnnotationTestClient(BaseThinClient):
         async def public_method_no_annotation(self):
             """this method will raise an error"""
 
     with pytest.raises(AssertionError, match="should return an instance"):
-        FailNoAnnotationTestClient(request_timeout=request_timeout)
+        FailNoAnnotationTestClient(total_retry_interval=request_timeout)
 
 
 async def test_expect_state_decorator(
@@ -197,7 +197,7 @@ async def test_expect_state_decorator(
     respx_mock.get(url_get_200_ok).mock(return_value=Response(codes.OK))
     respx_mock.get(get_wrong_state).mock(return_value=Response(codes.OK))
 
-    test_client = ATestClient(request_timeout=request_timeout)
+    test_client = ATestClient(total_retry_interval=request_timeout)
 
     # OK
     response = await test_client.get_200_ok()
@@ -218,7 +218,7 @@ async def test_retry_timeout_overwrite(
     request_timeout: int,
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
-    client = FakeThickClient(request_timeout=request_timeout)
+    client = FakeThickClient(total_retry_interval=request_timeout)
 
     caplog_info_level.clear()
     start = arrow.utcnow()

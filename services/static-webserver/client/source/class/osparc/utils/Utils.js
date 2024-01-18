@@ -837,7 +837,7 @@ qx.Class.define("osparc.utils.Utils", {
     firstsUp: function(...args) {
       const labels = [];
       args.forEach(arg => labels.push(qx.lang.String.firstUp(arg)));
-      return labels.join(" ");
+      return labels.length > 1 ? labels.join(" ") : labels[0];
     },
 
     onlyFirstsUp: function(word) {
