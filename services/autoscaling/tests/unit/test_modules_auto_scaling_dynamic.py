@@ -22,6 +22,7 @@ from fastapi import FastAPI
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerLabelKey,
+    StandardSimcoreDockerLabels,
 )
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -370,7 +371,7 @@ async def _assert_ec2_instances(
         assert "Instances" in reservation
         assert (
             len(reservation["Instances"]) == num_instances
-        ), f"created {num_instances} instances of {reservation['Instances'][0]['InstanceType'] if num_instances > 0 else 'n/a'}"
+        ), f"expected {num_instances}, found {len(reservation['Instances'])}"
         for instance in reservation["Instances"]:
             assert "InstanceType" in instance
             assert instance["InstanceType"] == instance_type
@@ -721,6 +722,7 @@ class _ScaleUpParams:
 async def test_cluster_scaling_up_starts_multiple_instances(
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
+    osparc_docker_label_keys: StandardSimcoreDockerLabels,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_service: Callable[
@@ -748,7 +750,8 @@ async def test_cluster_scaling_up_starts_multiple_instances(
                     int(scale_up_params.service_resources.cpus),
                     scale_up_params.service_resources.ram,
                 ),
-                service_monitored_labels,
+                service_monitored_labels
+                | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
                 "pending",
                 [
                     f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params.imposed_instance_type}"
@@ -798,11 +801,11 @@ async def test__deactivate_empty_nodes(
 ):
     # since we have no service running, we expect the passed node to be set to drain
     active_cluster = cluster(
-        active_nodes=[AssociatedInstance(host_node, fake_ec2_instance_data())]
+        active_nodes=[
+            AssociatedInstance(node=host_node, ec2_instance=fake_ec2_instance_data())
+        ]
     )
-    updated_cluster = await _deactivate_empty_nodes(
-        initialized_app, active_cluster, DynamicAutoscaling()
-    )
+    updated_cluster = await _deactivate_empty_nodes(initialized_app, active_cluster)
     assert not updated_cluster.active_nodes
     assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
     mock_docker_set_node_availability.assert_called_once_with(
@@ -834,11 +837,11 @@ async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missin
         "running",
     )
     active_cluster = cluster(
-        active_nodes=[AssociatedInstance(host_node, fake_ec2_instance_data())]
+        active_nodes=[
+            AssociatedInstance(node=host_node, ec2_instance=fake_ec2_instance_data())
+        ]
     )
-    updated_cluster = await _deactivate_empty_nodes(
-        initialized_app, active_cluster, DynamicAutoscaling()
-    )
+    updated_cluster = await _deactivate_empty_nodes(initialized_app, active_cluster)
     assert not updated_cluster.active_nodes
     assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
     mock_docker_set_node_availability.assert_called_once_with(
@@ -874,12 +877,34 @@ async def test__deactivate_empty_nodes_does_not_drain_if_service_is_running_with
     )
 
     # since we have no service running, we expect the passed node to be set to drain
+    assert host_node.Description
+    assert host_node.Description.Resources
+    assert host_node.Description.Resources.NanoCPUs
+    host_node_resources = Resources.parse_obj(
+        {
+            "ram": host_node.Description.Resources.MemoryBytes,
+            "cpus": host_node.Description.Resources.NanoCPUs / 10**9,
+        }
+    )
+    fake_ec2_instance = fake_ec2_instance_data(resources=host_node_resources)
+    fake_associated_instance = AssociatedInstance(
+        node=host_node, ec2_instance=fake_ec2_instance
+    )
+    node_used_resources = await DynamicAutoscaling().compute_node_used_resources(
+        initialized_app, fake_associated_instance
+    )
+    assert node_used_resources
+
     active_cluster = cluster(
-        active_nodes=[AssociatedInstance(host_node, fake_ec2_instance_data())]
+        active_nodes=[
+            AssociatedInstance(
+                node=host_node,
+                ec2_instance=fake_ec2_instance,
+                available_resources=host_node_resources - node_used_resources,
+            )
+        ]
     )
-    updated_cluster = await _deactivate_empty_nodes(
-        initialized_app, active_cluster, DynamicAutoscaling()
-    )
+    updated_cluster = await _deactivate_empty_nodes(initialized_app, active_cluster)
     assert updated_cluster == active_cluster
     mock_docker_set_node_availability.assert_not_called()
 
@@ -893,9 +918,13 @@ async def test__find_terminateable_nodes_with_no_hosts(
 ):
     # there is no node to terminate here since nothing is drained
     active_cluster = cluster(
-        active_nodes=[AssociatedInstance(host_node, fake_ec2_instance_data())],
+        active_nodes=[
+            AssociatedInstance(node=host_node, ec2_instance=fake_ec2_instance_data())
+        ],
         drained_nodes=[],
-        reserve_drained_nodes=[AssociatedInstance(host_node, fake_ec2_instance_data())],
+        reserve_drained_nodes=[
+            AssociatedInstance(node=host_node, ec2_instance=fake_ec2_instance_data())
+        ],
     )
     assert await _find_terminateable_instances(initialized_app, active_cluster) == []
 
@@ -921,8 +950,8 @@ def create_associated_instance(
             else datetime.timedelta(seconds=10)
         )
         return AssociatedInstance(
-            node,
-            fake_ec2_instance_data(
+            node=node,
+            ec2_instance=fake_ec2_instance_data(
                 launch_time=datetime.datetime.now(datetime.timezone.utc)
                 - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
                 - datetime.timedelta(
@@ -973,10 +1002,9 @@ async def test__activate_drained_nodes_with_no_tasks(
 ):
     # no tasks, does nothing and returns True
     empty_cluster = cluster()
-    still_pending_tasks, updated_cluster = await _activate_drained_nodes(
-        initialized_app, empty_cluster, [], DynamicAutoscaling()
+    updated_cluster = await _activate_drained_nodes(
+        initialized_app, empty_cluster, DynamicAutoscaling()
     )
-    assert not still_pending_tasks
     assert updated_cluster == empty_cluster
 
     active_cluster = cluster(
@@ -988,10 +1016,9 @@ async def test__activate_drained_nodes_with_no_tasks(
             create_associated_instance(drained_host_node, True)  # noqa: FBT003
         ],
     )
-    still_pending_tasks, updated_cluster = await _activate_drained_nodes(
-        initialized_app, active_cluster, [], DynamicAutoscaling()
+    updated_cluster = await _activate_drained_nodes(
+        initialized_app, active_cluster, DynamicAutoscaling()
     )
-    assert not still_pending_tasks
     assert updated_cluster == active_cluster
     mock_tag_node.assert_not_called()
 
@@ -1031,13 +1058,9 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
     cluster_without_drained_nodes = cluster(
         active_nodes=[create_associated_instance(host_node, True)]  # noqa: FBT003
     )
-    still_pending_tasks, updated_cluster = await _activate_drained_nodes(
-        initialized_app,
-        cluster_without_drained_nodes,
-        service_tasks,
-        DynamicAutoscaling(),
+    updated_cluster = await _activate_drained_nodes(
+        initialized_app, cluster_without_drained_nodes, DynamicAutoscaling()
     )
-    assert still_pending_tasks == service_tasks
     assert updated_cluster == cluster_without_drained_nodes
     mock_tag_node.assert_not_called()
 
@@ -1080,11 +1103,13 @@ async def test__activate_drained_nodes_with_drained_node(
             create_associated_instance(drained_host_node, True)  # noqa: FBT003
         ]
     )
-
-    still_pending_tasks, updated_cluster = await _activate_drained_nodes(
-        initialized_app, cluster_with_drained_nodes, service_tasks, DynamicAutoscaling()
+    cluster_with_drained_nodes.drained_nodes[0].assign_task(
+        service_tasks[0], Resources(cpus=int(host_cpu_count / 2 + 1), ram=ByteSize(0))
     )
-    assert not still_pending_tasks
+
+    updated_cluster = await _activate_drained_nodes(
+        initialized_app, cluster_with_drained_nodes, DynamicAutoscaling()
+    )
     assert updated_cluster.active_nodes == cluster_with_drained_nodes.drained_nodes
     assert drained_host_node.Spec
     mock_tag_node.assert_called_once_with(

@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     this._setLayout(new qx.ui.layout.VBox());
 
     const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar().set({
-      backgroundColor: "background-main-4"
+      backgroundColor: "tab_navigation_bar_background_color"
     });
 
     const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
@@ -237,12 +237,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       if (node.isParameter()) {
         view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
         view.set({
-          backgroundColor: "background-main-4",
+          backgroundColor: "navigation_bar_background_color",
           padding: 6
         });
       } else {
         view.getMainView().set({
-          backgroundColor: "background-main-4",
+          backgroundColor: "navigation_bar_background_color",
           padding: 6,
           paddingTop: 0,
           paddingBottom: 0
@@ -250,7 +250,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       }
       if (node.isFilePicker()) {
         view.getMainView().set({
-          backgroundColor: "background-main-2"
+          backgroundColor: "navigation_bar_background_color"
         });
       }
     },

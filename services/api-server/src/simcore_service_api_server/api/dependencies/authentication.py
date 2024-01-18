@@ -46,7 +46,7 @@ async def get_current_identity(
     if user_and_product is None:
         exc = _create_exception()
         raise exc
-    email = await users_repo.get_email_from_user_id(user_and_product.user_id)
+    email = await users_repo.get_active_user_email(user_and_product.user_id)
     if not email:
         exc = _create_exception()
         raise exc

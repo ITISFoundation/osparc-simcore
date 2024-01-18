@@ -2,12 +2,15 @@ from datetime import datetime
 
 from aiohttp import web
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from simcore_postgres_database.models.users import UserStatus
+from simcore_postgres_database.utils_users import UsersRepo
 
+from ..db.plugin import get_database_engine
 from ..products.api import Product
 from ..security.api import check_password, encrypt_password
 from ._constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
 from .storage import AsyncpgStorage, get_plugin_storage
-from .utils import USER, get_user_name_from_email, validate_user_status
+from .utils import validate_user_status
 
 
 async def get_user_by_email(app: web.Application, *, email: str) -> dict:
@@ -21,22 +24,19 @@ async def create_user(
     *,
     email: str,
     password: str,
-    status: str,
+    status: UserStatus,
     expires_at: datetime | None
 ) -> dict:
-    db: AsyncpgStorage = get_plugin_storage(app)
 
-    user: dict = await db.create_user(
-        {
-            "name": get_user_name_from_email(email),
-            "email": email,
-            "password_hash": encrypt_password(password),
-            "status": status,
-            "role": USER,
-            "expires_at": expires_at,
-        }
-    )
-    return user
+    async with get_database_engine(app).acquire() as conn:
+        user = await UsersRepo.new_user(
+            conn,
+            email=email,
+            password_hash=encrypt_password(password),
+            status=status,
+            expires_at=expires_at,
+        )
+    return dict(user.items())
 
 
 async def check_authorized_user_or_raise(

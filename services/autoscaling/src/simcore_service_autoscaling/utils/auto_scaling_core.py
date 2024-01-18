@@ -7,18 +7,13 @@ from aws_library.ec2.models import (
     EC2InstanceBootSpecific,
     EC2InstanceData,
     EC2InstanceType,
-    Resources,
 )
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import Ec2InstanceInvalidError, Ec2InvalidDnsNameError
 from ..core.settings import ApplicationSettings
-from ..models import (
-    AssignedTasksToInstance,
-    AssignedTasksToInstanceType,
-    AssociatedInstance,
-)
+from ..models import AssociatedInstance
 from ..modules.auto_scaling_mode_base import BaseAutoscaling
 from . import utils_docker
 
@@ -73,7 +68,9 @@ async def associate_ec2_instances_with_nodes(
             continue
 
         if node := next(iter(filter(_find_node_with_name, nodes)), None):
-            associated_instances.append(AssociatedInstance(node, instance_data))
+            associated_instances.append(
+                AssociatedInstance(node=node, ec2_instance=instance_data)
+            )
         else:
             non_associated_instances.append(instance_data)
     return associated_instances, non_associated_instances
@@ -115,68 +112,6 @@ def _instance_type_by_type_name(
     return bool(ec2_type.name == type_name)
 
 
-def _instance_type_map_by_type_name(
-    mapping: AssignedTasksToInstanceType, *, type_name: InstanceTypeType | None
-) -> bool:
-    return _instance_type_by_type_name(mapping.instance_type, type_name=type_name)
-
-
-def _instance_data_map_by_type_name(
-    mapping: AssignedTasksToInstance, *, type_name: InstanceTypeType | None
-) -> bool:
-    if type_name is None:
-        return True
-    return bool(mapping.instance.type == type_name)
-
-
-def filter_by_task_defined_instance(
-    instance_type_name: InstanceTypeType | None,
-    active_instances_to_tasks: list[AssignedTasksToInstance],
-    pending_instances_to_tasks: list[AssignedTasksToInstance],
-    drained_instances_to_tasks: list[AssignedTasksToInstance],
-    needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType],
-) -> tuple[
-    list[AssignedTasksToInstance],
-    list[AssignedTasksToInstance],
-    list[AssignedTasksToInstance],
-    list[AssignedTasksToInstanceType],
-]:
-    return (
-        list(
-            filter(
-                functools.partial(
-                    _instance_data_map_by_type_name, type_name=instance_type_name
-                ),
-                active_instances_to_tasks,
-            )
-        ),
-        list(
-            filter(
-                functools.partial(
-                    _instance_data_map_by_type_name, type_name=instance_type_name
-                ),
-                pending_instances_to_tasks,
-            )
-        ),
-        list(
-            filter(
-                functools.partial(
-                    _instance_data_map_by_type_name, type_name=instance_type_name
-                ),
-                drained_instances_to_tasks,
-            )
-        ),
-        list(
-            filter(
-                functools.partial(
-                    _instance_type_map_by_type_name, type_name=instance_type_name
-                ),
-                needed_new_instance_types_for_tasks,
-            )
-        ),
-    )
-
-
 def find_selected_instance_type_for_task(
     instance_type_name: InstanceTypeType,
     available_ec2_types: list[EC2InstanceType],
@@ -202,12 +137,13 @@ def find_selected_instance_type_for_task(
     selected_instance = filtered_instances[0]
 
     # check that the assigned resources and the machine resource fit
-    if auto_scaling_mode.get_max_resources_from_task(task) > Resources(
-        cpus=selected_instance.cpus, ram=selected_instance.ram
+    if (
+        auto_scaling_mode.get_task_required_resources(task)
+        > selected_instance.resources
     ):
         msg = (
             f"Task {task} requires more resources than the selected instance provides."
-            f" Asked for {selected_instance}, but task needs {auto_scaling_mode.get_max_resources_from_task(task)}. Please check!"
+            f" Asked for {selected_instance}, but task needs {auto_scaling_mode.get_task_required_resources(task)}. Please check!"
         )
         raise Ec2InstanceInvalidError(msg=msg)
 
