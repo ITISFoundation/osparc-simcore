@@ -69,6 +69,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CATALOG_DIRECTOR: DirectorSettings | None = Field(auto_default_from_env=True)
 
+    CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60
     CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE: PositiveInt = 5  # secs

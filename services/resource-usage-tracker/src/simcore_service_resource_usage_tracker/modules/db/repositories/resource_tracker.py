@@ -17,10 +17,14 @@ from models_library.resource_tracker import (
     ServiceRunId,
     ServiceRunStatus,
 )
+from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CustomResourceUsageTrackerError,
+)
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -44,7 +48,6 @@ from simcore_service_resource_usage_tracker.models.resource_tracker_pricing_unit
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
-from ....core.errors import CustomResourceUsageTrackerError
 from ....models.resource_tracker_credit_transactions import (
     CreditTransactionCreate,
     CreditTransactionCreditsAndStatusUpdate,
@@ -198,6 +201,9 @@ class ResourceTrackerRepository(BaseRepository):
         offset: int,
         limit: int,
         service_run_status: ServiceRunStatus | None = None,
+        started_from: datetime | None = None,
+        started_until: datetime | None = None,
+        order_by: OrderBy | None = None,
     ) -> list[ServiceRunWithCreditsDB]:
         async with self.db_engine.begin() as conn:
             query = (
@@ -239,7 +245,6 @@ class ResourceTrackerRepository(BaseRepository):
                     )
                 )
                 .where(resource_tracker_service_runs.c.product_name == product_name)
-                .order_by(resource_tracker_service_runs.c.started_at.desc())
                 .offset(offset)
                 .limit(limit)
             )
@@ -255,6 +260,27 @@ class ResourceTrackerRepository(BaseRepository):
                     resource_tracker_service_runs.c.service_run_status
                     == service_run_status
                 )
+            if started_from:
+                query = query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    >= started_from.date()
+                )
+            if started_until:
+                query = query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    <= started_until.date()
+                )
+
+            if order_by:
+                if order_by.direction == OrderDirection.ASC:
+                    query = query.order_by(sa.asc(order_by.field))
+                else:
+                    query = query.order_by(sa.desc(order_by.field))
+            else:
+                # Default ordering
+                query = query.order_by(
+                    resource_tracker_service_runs.c.started_at.desc()
+                )
 
             result = await conn.execute(query)
 
@@ -267,6 +293,8 @@ class ResourceTrackerRepository(BaseRepository):
         user_id: UserID | None,
         wallet_id: WalletID | None,
         service_run_status: ServiceRunStatus | None = None,
+        started_from: datetime | None = None,
+        started_until: datetime | None = None,
     ) -> PositiveInt:
         async with self.db_engine.begin() as conn:
             query = (
@@ -280,6 +308,16 @@ class ResourceTrackerRepository(BaseRepository):
             if wallet_id:
                 query = query.where(
                     resource_tracker_service_runs.c.wallet_id == wallet_id
+                )
+            if started_from:
+                query = query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    >= started_from.date()
+                )
+            if started_until:
+                query = query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    <= started_until.date()
                 )
             if service_run_status:
                 query = query.where(

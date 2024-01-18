@@ -164,7 +164,7 @@ async def test_get_state(
 
     # node not tracked any of the two directors
     result = await services.get_service_status(rpc_client, node_id=node_not_found)
-    assert result == NodeGetIdle(service_state="idle", service_uuid=node_not_found)
+    assert result == NodeGetIdle.from_node_id(node_not_found)
 
 
 @pytest.fixture
@@ -408,7 +408,9 @@ async def test_stop_dynamic_service_serializes_generic_errors(
     simcore_user_agent: str,
     save_state: bool,
 ):
-    with pytest.raises(RPCServerError, match="while running 'stop_dynamic_service'"):
+    with pytest.raises(
+        RPCServerError, match="While running method 'stop_dynamic_service'"
+    ):
         await services.stop_dynamic_service(
             rpc_client,
             node_id=node_id,

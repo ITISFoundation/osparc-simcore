@@ -324,6 +324,12 @@ qx.Class.define("osparc.utils.Utils", {
       return dateStr;
     },
 
+    formatDateYyyyMmDd(date) {
+      const offset = date.getTimezoneOffset();
+      const ret = new Date(date.getTime() - (offset*60*1000));
+      return ret.toISOString().split("T")[0]
+    },
+
     /**
       * @param value {Date Object} Date Object
       */
@@ -831,7 +837,7 @@ qx.Class.define("osparc.utils.Utils", {
     firstsUp: function(...args) {
       const labels = [];
       args.forEach(arg => labels.push(qx.lang.String.firstUp(arg)));
-      return labels.join(" ");
+      return labels.length > 1 ? labels.join(" ") : labels[0];
     },
 
     onlyFirstsUp: function(word) {

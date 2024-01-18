@@ -595,6 +595,7 @@ def cluster() -> Callable[..., Cluster]:
         return dataclasses.replace(
             Cluster(
                 active_nodes=[],
+                pending_nodes=[],
                 drained_nodes=[],
                 reserve_drained_nodes=[],
                 pending_ec2s=[],

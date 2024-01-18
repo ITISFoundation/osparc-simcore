@@ -1,0 +1,102 @@
+/*
+ * oSPARC - The SIMCORE frontend - https://osparc.io
+ * Copyright: 2023 IT'IS Foundation - https://itis.swiss
+ * License: MIT - https://opensource.org/licenses/MIT
+ * Authors: Ignacio Pascual (ignapas)
+ */
+
+qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
+  extend: qx.ui.container.Stack,
+  construct(paymentMethods) {
+    this.base(arguments);
+    this.__paymentMethods = paymentMethods;
+    const store = osparc.store.Store.getInstance();
+    store.getGroupsMe()
+      .then(personalGroup => {
+        this.__personalWallet = store.getWallets().find(wallet => wallet.getOwner() === personalGroup.gid)
+        this.__buildLayout()
+      });
+  },
+  events: {
+    "completed": "qx.event.type.Event"
+  },
+  members: {
+    __buildLayout() {
+      this.removeAll();
+      this.__form = new osparc.desktop.credits.BuyCreditsForm(this.__paymentMethods);
+      this.__form.addListener("submit", e => {
+        const { amountDollars: priceDollars, osparcCredits, paymentMethodId } = e.getData();
+        const params = {
+          url: {
+            walletId: this.__personalWallet.getWalletId()
+          },
+          data: {
+            priceDollars,
+            osparcCredits
+          }
+        };
+        this.__form.setFetching(true);
+        if (paymentMethodId) {
+          params.url.paymentMethodId = paymentMethodId;
+          osparc.data.Resources.fetch("payments", "payWithPaymentMethod", params)
+            .then(data => {
+              const { paymentId } = data
+              osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentCompleted", wsData => {
+                const paymentData = JSON.parse(wsData);
+                if (paymentId === paymentData.paymentId) {
+                  this.__paymentCompleted(paymentData)
+                  this.__form.setFetching(false);
+                }
+              });
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.FlashMessenger.logAs(err.message, "ERROR");
+              this.__form.setFetching(false);
+            })
+        } else {
+          osparc.data.Resources.fetch("payments", "startPayment", params)
+            .then(data => {
+              const { paymentId, paymentFormUrl } = data;
+              this.__iframe = new qx.ui.embed.Iframe(paymentFormUrl);
+              this.add(this.__iframe);
+              osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentCompleted", wsData => {
+                const paymentData = JSON.parse(wsData);
+                if (paymentId === paymentData.paymentId) {
+                  this.__paymentCompleted(paymentData);
+                }
+              });
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.FlashMessenger.logAs(err.message, "ERROR");
+            })
+            .finally(() => this.__form.setFetching(false));
+        }
+      });
+      this.__form.addListener("cancel", () => this.fireEvent("completed"));
+      this.add(this.__form);
+    },
+    __paymentCompleted(paymentData) {
+      if (paymentData && paymentData.completedStatus) {
+        const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData.completedStatus);
+        switch (paymentData.completedStatus) {
+          case "SUCCESS":
+            osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+            break;
+          case "PENDING":
+            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+            break;
+          case "CANCELED":
+          case "FAILED":
+            osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            break;
+          default:
+            console.error("completedStatus unknown");
+            break;
+        }
+      }
+      this.fireEvent("completed");
+    }
+  }
+});

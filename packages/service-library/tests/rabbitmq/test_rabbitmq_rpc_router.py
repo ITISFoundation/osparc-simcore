@@ -96,6 +96,8 @@ async def test_exposed_methods(
             router_namespace,
             RPCMethodName(raising_unexpected_error.__name__),
         )
+    assert "This is not good!" in f"{exc_info.value}"
+    assert "builtins.ValueError" in f"{exc_info.value}"
 
     # This error was classified int he interface
     with pytest.raises(MyBaseError) as exc_info:

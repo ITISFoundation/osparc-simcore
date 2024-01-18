@@ -90,9 +90,13 @@ class SimcoreEC2API:
                     list_instances.append(
                         EC2InstanceType(
                             name=instance["InstanceType"],
-                            cpus=instance["VCpuInfo"]["DefaultVCpus"],
-                            ram=ByteSize(
-                                int(instance["MemoryInfo"]["SizeInMiB"]) * 1024 * 1024
+                            resources=Resources(
+                                cpus=instance["VCpuInfo"]["DefaultVCpus"],
+                                ram=ByteSize(
+                                    int(instance["MemoryInfo"]["SizeInMiB"])
+                                    * 1024
+                                    * 1024
+                                ),
                             ),
                         )
                     )
@@ -173,9 +177,7 @@ class SimcoreEC2API:
                     tags=parse_obj_as(
                         EC2Tags, {tag["Key"]: tag["Value"] for tag in instance["Tags"]}
                     ),
-                    resources=Resources(
-                        cpus=instance_config.type.cpus, ram=instance_config.type.ram
-                    ),
+                    resources=instance_config.type.resources,
                 )
                 for instance in instances["Reservations"][0]["Instances"]
             ]
@@ -234,10 +236,7 @@ class SimcoreEC2API:
                         else None,
                         type=instance["InstanceType"],
                         state=instance["State"]["Name"],
-                        resources=Resources(
-                            cpus=ec2_instance_types[0].cpus,
-                            ram=ec2_instance_types[0].ram,
-                        ),
+                        resources=ec2_instance_types[0].resources,
                         tags=parse_obj_as(
                             EC2Tags,
                             {tag["Key"]: tag["Value"] for tag in instance["Tags"]},

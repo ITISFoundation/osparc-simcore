@@ -127,7 +127,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         appearance: "strong-button",
         font: "text-14",
         alignX: "right",
-        height: 35,
+        minHeight: 35,
+        maxHeight: 35,
         width: 70,
         center: true,
         enabled: false

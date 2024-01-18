@@ -1,3 +1,4 @@
+import logging
 from contextlib import AsyncExitStack
 from functools import partial
 
@@ -6,14 +7,18 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     RPCDynamicServiceCreate,
 )
-from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.api_schemas_webserver.projects_nodes import (
+    NodeGet,
+    NodeGetIdle,
+    NodeGetUnknown,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
 from models_library.users import UserID
 from pydantic.types import NonNegativeFloat, PositiveInt
 from servicelib.progress_bar import ProgressBarData
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import RabbitMQClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
 from servicelib.utils import logged_gather
 
@@ -22,13 +27,19 @@ from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from ..users.api import get_user
 from .settings import DynamicSchedulerSettings, get_plugin_settings
 
+_logger = logging.getLogger(__name__)
+
 
 async def get_dynamic_service(
     app: web.Application, *, node_id: NodeID
-) -> NodeGetIdle | DynamicServiceGet | NodeGet:
-    return await services.get_service_status(
-        get_rabbitmq_rpc_client(app), node_id=node_id
-    )
+) -> NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet:
+    try:
+        return await services.get_service_status(
+            get_rabbitmq_rpc_client(app), node_id=node_id
+        )
+    except RPCServerError as e:
+        _logger.debug("Responding state unknown. Received error: %s", e)
+        return NodeGetUnknown.from_node_id(node_id)
 
 
 async def run_dynamic_service(

@@ -116,7 +116,7 @@ async def resend_2fa_code(request: web.Request):
                 twilo_auth=settings.LOGIN_TWILIO,
                 twilio_messaging_sid=product.twilio_messaging_sid,
                 twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-                user_name=user["name"],
+                first_name=user["first_name"] or user["name"],
             )
 
             response = envelope_response(
@@ -136,7 +136,7 @@ async def resend_2fa_code(request: web.Request):
                 user_email=user["email"],
                 support_email=product.support_email,
                 code=code,
-                user_name=user["name"],
+                first_name=user["first_name"] or user["name"],
             )
 
             response = envelope_response(

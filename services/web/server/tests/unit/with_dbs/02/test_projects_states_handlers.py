@@ -37,6 +37,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
@@ -60,8 +61,8 @@ API_PREFIX = f"/{API_VTAG}"
 
 @pytest.fixture
 def app_environment(
-    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
-) -> dict[str, str]:
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
     # disable the garbage collector
     monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
     return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
@@ -86,7 +87,8 @@ async def _list_projects(
     client: TestClient,
     expected: type[web.HTTPException],
     query_parameters: dict | None = None,
-) -> list[dict[str, Any]]:
+) -> list[ProjectDict]:
+
     assert client.app
 
     # GET /v0/projects
@@ -101,8 +103,8 @@ async def _list_projects(
 
 
 async def _replace_project(
-    client: TestClient, project_update: dict, expected: type[web.HTTPException]
-) -> dict:
+    client: TestClient, project_update: ProjectDict, expected: type[web.HTTPException]
+) -> ProjectDict:
     assert client.app
 
     # PUT /v0/projects/{project_id}
@@ -139,7 +141,7 @@ async def _connect_websocket(
 async def _open_project(
     client: TestClient,
     client_id: str,
-    project: dict,
+    project: ProjectDict,
     expected: type[web.HTTPException] | list[type[web.HTTPException]],
 ) -> tuple[dict, dict]:
     assert client.app
@@ -1173,8 +1175,8 @@ async def test_open_shared_project_2_users_locked(
     # now the expected result is that the project is locked and opened by client 1
     owner1 = Owner(
         user_id=logged_user["id"],
-        first_name=([*logged_user["name"].split("."), ""])[0],
-        last_name=([*logged_user["name"].split("."), ""])[1],
+        first_name=logged_user.get("first_name", None),
+        last_name=logged_user.get("last_name", None),
     )
     expected_project_state_client_1.locked.value = True
     expected_project_state_client_1.locked.status = ProjectStatus.OPENED
@@ -1275,8 +1277,8 @@ async def test_open_shared_project_2_users_locked(
         expected_project_state_client_2.locked.status = ProjectStatus.OPENED
         owner2 = Owner(
             user_id=PositiveIntWithExclusiveMinimumRemoved(user_2["id"]),
-            first_name=([*user_2["name"].split("."), ""])[0],
-            last_name=([*user_2["name"].split("."), ""])[1],
+            first_name=user_2.get("first_name", None),
+            last_name=user_2.get("last_name", None),
         )
         expected_project_state_client_2.locked.owner = owner2
         expected_project_state_client_1.locked.value = True
@@ -1381,7 +1383,7 @@ async def test_open_shared_project_at_same_time(
                 assert project_status.locked.value
                 assert project_status.locked.owner
                 assert project_status.locked.owner.first_name in [
-                    c["user"]["name"] for c in clients
+                    c["user"]["first_name"] for c in clients
                 ]
 
         assert num_assertions == NUMBER_OF_ADDITIONAL_CLIENTS

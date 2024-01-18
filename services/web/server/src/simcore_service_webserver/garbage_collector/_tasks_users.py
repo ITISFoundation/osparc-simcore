@@ -66,7 +66,7 @@ async def _update_expired_users(app: web.Application):
     if updated := await update_expired_users(engine):
         # expired users might be cached in the auth. If so, any request
         # with this user-id will get thru producing unexpected side-effects
-        clean_auth_policy_cache(app)
+        await clean_auth_policy_cache(app)
 
         # broadcast force logout of user_id
         for user_id in updated:

@@ -100,7 +100,7 @@ from ..socketio.messages import (
     send_messages,
 )
 from ..storage import api as storage_api
-from ..users.api import UserNameDict, get_user, get_user_name, get_user_role
+from ..users.api import FullNameDict, get_user, get_user_fullname, get_user_role
 from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
     PreferredWalletIdFrontendUserPreference,
@@ -941,7 +941,7 @@ async def try_open_project_for_user(
             project_uuid,
             ProjectStatus.OPENING,
             user_id,
-            await get_user_name(app, user_id),
+            await get_user_fullname(app, user_id),
             notify_users=False,
         ):
             with managed_resource(user_id, client_session_id, app) as user_session:
@@ -1110,8 +1110,8 @@ async def _get_project_lock_state(
         f"{project_uuid=}",
         f"{set_user_ids=}",
     )
-    usernames: list[UserNameDict] = [
-        await get_user_name(app, uid) for uid in set_user_ids
+    usernames: list[FullNameDict] = [
+        await get_user_fullname(app, uid) for uid in set_user_ids
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
     if set_user_ids.issubset({user_id}):
@@ -1383,7 +1383,7 @@ async def remove_project_dynamic_services(
     simcore_user_agent: str,
     *,
     notify_users: bool = True,
-    user_name: UserNameDict | None = None,
+    user_name: FullNameDict | None = None,
 ) -> None:
     """
 
@@ -1399,7 +1399,7 @@ async def remove_project_dynamic_services(
         user_id,
     )
 
-    user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
+    user_name_data: FullNameDict = user_name or await get_user_fullname(app, user_id)
 
     user_role: UserRole | None = None
     try:
@@ -1445,7 +1445,7 @@ async def remove_project_dynamic_services(
 
 async def notify_project_state_update(
     app: web.Application,
-    project: dict,
+    project: ProjectDict,
     notify_only_user: int | None = None,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
@@ -1521,7 +1521,7 @@ async def lock_with_notification(
     project_uuid: str,
     status: ProjectStatus,
     user_id: int,
-    user_name: UserNameDict,
+    user_name: FullNameDict,
     *,
     notify_users: bool = True,
 ):

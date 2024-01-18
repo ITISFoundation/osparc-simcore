@@ -91,11 +91,32 @@ class NodeGetIdle(OutputSchema):
     service_state: Literal["idle"]
     service_uuid: NodeID
 
+    @classmethod
+    def from_node_id(cls, node_id: NodeID) -> "NodeGetIdle":
+        return cls(service_state="idle", service_uuid=node_id)
+
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 "service_state": "idle",
+            }
+        }
+
+
+class NodeGetUnknown(OutputSchema):
+    service_state: Literal["unknown"]
+    service_uuid: NodeID
+
+    @classmethod
+    def from_node_id(cls, node_id: NodeID) -> "NodeGetUnknown":
+        return cls(service_state="unknown", service_uuid=node_id)
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "service_state": "unknown",
             }
         }
 

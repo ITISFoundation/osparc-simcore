@@ -24,8 +24,9 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         radius: 4,
         backgroundColor: "material-button-background",
-        transitionProperty: ["all"],
-        transitionDuration: "0s",
+        transitionProperty: ["background-color", "border-color", "opacity"],
+        transitionDuration: "0.25s",
+        transitionTimingFunction: "ease-in-out",
         shadowColor: "transparent"
       }
     },
@@ -58,7 +59,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     "form-input-disabled": {
       include: "form-input",
       style: {
-        color: "default-button-text-disabled"
+        color: "text-disabled"
       }
     },
 
@@ -121,7 +122,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     "window-small-cap-maximized": {
       include: "service-window-maximized",
       style: {
-        width: 0,
+        width: 1,
         transitionProperty: "opacity",
         transitionDuration: "0.05s",
         transitionTimingFunction: "ease-in"
@@ -341,70 +342,68 @@ qx.Theme.define("osparc.theme.Decoration", {
         color: "text"
       }
     },
+    "tab-button": {
+      style: {
+        style: "solid",
+        width: [0, 0, 2, 0],
+        color: "transparent",
+        radius: [3, 3, 0, 0]
+      }
+    },
+    "tab-button-selected": {
+      style: {
+        style: "solid",
+        width: [0, 0, 2, 0],
+        color: "default-button-focus",
+        radius: [3, 3, 0, 0]
+      }
+    },
+
+    // Button types
     "form-button": {
+      include: "material-button",
       style: {
         style: "solid",
         width: 1,
         color: "default-button",
-        radius: 5
+        radius: 5,
+        backgroundColor: "default-button"
       }
     },
-    "form-button-left": {
+    "fab-button": {
       include: "form-button",
       style: {
-        width: [1, 1, 1, 1],
-        radius: [5, 0, 0, 5]
-      }
-    },
-    "form-button-middle": {
-      include: "form-button",
-      style: {
-        width: [1, 0],
-        radius: 0
-      }
-    },
-    "form-button-right": {
-      include: "form-button",
-      style: {
-        width: [1, 1, 1, 0],
-        radius: [0, 5, 5, 0]
+        style: "solid",
+        width: 1,
+        radius: 5,
+        color: "fab-background",
+        backgroundColor: "fab-background",
+        shadowSpreadRadius: 0,
+        shadowBlurRadius: 3,
+        shadowLength: 0,
+        shadowColor: "box-shadow"
       }
     },
     "form-button-outlined": {
       include: "form-button",
       style: {
         color: "default-button",
-        backgroundColor: "transparent"
+        backgroundColor: "default-button-background"
       }
     },
-    "form-button-danger": {
-      include:"form-button-outlined",
+    "text-button": {
       style: {
-        color: "error",
-        width: 1,
-        style: "solid"
+        width: 0,
+        radius: 0
       }
     },
-    "form-button-danger-hover": {
-      include:"form-button-outlined",
-      style: {
-        color: "error",
-        width: 1,
-        style: "solid"
-      }
-    },
+
+    // Button States
     "form-button-hovered": {
       include: "form-button",
       style: {
         color: "default-button-hover",
         backgroundColor: "default-button-hover-background"
-      }
-    },
-    "form-button-checked": {
-      include: "form-button",
-      style: {
-        color: "default-button-disabled",
-        backgroundColor: "default-button-disabled-background"
       }
     },
     "form-button-hovered-checked": {
@@ -414,32 +413,11 @@ qx.Theme.define("osparc.theme.Decoration", {
         backgroundColor: "default-button"
       }
     },
-    "form-button-hovered-right": {
-      include: "form-button-right",
+    "form-button-checked": {
+      include: "form-button",
       style: {
-        color: "default-button-hover",
-        backgroundColor: "default-button-hover-background"
-      }
-    },
-    "form-button-checked-right": {
-      include: "form-button-right",
-      style: {
-        color: "default-button",
-        backgroundColor: "default-button"
-      }
-    },
-    "form-button-hovered-left": {
-      include: "form-button-left",
-      style: {
-        color: "default-button-hover",
-        backgroundColor: "default-button-hover-background"
-      }
-    },
-    "form-button-checked-left": {
-      include: "form-button-left",
-      style: {
-        color: "default-button",
-        backgroundColor: "default-button"
+        color: "default-button-disabled",
+        backgroundColor: "default-button-disabled-background"
       }
     },
     "form-button-focused": {
@@ -456,7 +434,6 @@ qx.Theme.define("osparc.theme.Decoration", {
         backgroundColor: "default-button-focus-background"
       }
     },
-
     "form-button-disabled": {
       include: "form-button",
       style: {
@@ -464,30 +441,120 @@ qx.Theme.define("osparc.theme.Decoration", {
         backgroundColor: "transparent"
       }
     },
-    "text-button": {
+
+    // Split buttons
+    // Middle
+    "form-button-outlined-middle": {
+      include: "form-button-outlined",
       style: {
-        width: 0,
+        width: [1, 0],
         radius: 0
       }
     },
 
+    // Right
+    "form-button-outlined-right": {
+      include: "form-button-outlined",
+      style: {
+        width: [1, 1, 1, 1],
+        radius: [0, 5, 5, 0]
+      }
+    },
+    "form-button-outlined-hovered-right": {
+      include: "form-button-outlined-right",
+      style: {
+        color: "default-button-hover",
+        backgroundColor: "default-button-hover-background"
+      }
+    },
+    "form-button-outlined-checked-right": {
+      include: "form-button-outlined-right",
+      style: {
+        color: "default-button",
+        backgroundColor: "default-button"
+      }
+    },
+
+    // Left
+    "form-button-outlined-left": {
+      include: "form-button-outlined",
+      style: {
+        width: [1, 0, 1, 1],
+        radius: [5, 0, 0, 5]
+      }
+    },
+    "form-button-outlined-hovered-left": {
+      include: "form-button-outlined-left",
+      style: {
+        color: "default-button-hover",
+        backgroundColor: "default-button-hover-background"
+      }
+    },
+    "form-button-outlined-checked-left": {
+      include: "form-button-outlined-left",
+      style: {
+        color: "default-button",
+        backgroundColor: "default-button"
+      }
+    },
+
+    // Delete button
+    "form-button-danger": {
+      include:"form-button-outlined",
+      style: {
+        color: "error",
+        width: 1,
+        style: "solid"
+      }
+    },
+    "form-button-danger-hover": {
+      include:"form-button-outlined",
+      style: {
+        color: "error",
+        width: 1,
+        style: "solid"
+      }
+    },
+
     "toolbar-button": {
-      include: "form-button"
+      include: "form-button-outlined"
     },
 
     "toolbar-button-hovered": {
-      include: "form-button",
+      include: "form-button-outlined",
       style: {
         backgroundColor: "default-button-hover-background"
       }
     },
 
-    "fab-button": {
-      include: "form-button",
+    "selected-light": {
+      include: "material-button",
       style: {
+        style: "solid",
         width: 1,
-        color: "transparent",
-        backgroundColor: "background-card-overlay"
+        color: "background-selected-dark",
+        backgroundColor: "background-selected"
+      }
+    },
+
+    "selected-dark": {
+      include: "material-button",
+      style: {
+        style: "solid",
+        width: 1,
+        color: "background-selected-dark",
+        backgroundColor: "background-selected-dark"
+      }
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Appmotion
+    ---------------------------------------------------------------------------
+    */
+    "appmotion-buy-credits-input": {
+      style: {
+        radius: 8
       }
     }
   }

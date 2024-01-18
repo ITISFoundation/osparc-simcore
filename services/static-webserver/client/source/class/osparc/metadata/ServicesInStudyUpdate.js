@@ -176,7 +176,8 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       });
 
       const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14").set({
-        backgroundColor: "strong-main",
+        appearance: "form-button",
+        padding: [2, 5],
         visibility: "excluded"
       });
       this._servicesGrid.add(updateAllButton, {
@@ -256,7 +257,8 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           }
           if (isUpdatable) {
             updateButton.set({
-              backgroundColor: "strong-main",
+              appearance: "form-button-outlined",
+              padding: [2, 5],
               label: this.tr("Update")
             });
           }

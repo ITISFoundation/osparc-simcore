@@ -5,6 +5,7 @@
 # pylint: disable=too-many-statements
 
 
+import json
 from collections.abc import Iterator
 from typing import cast
 
@@ -12,67 +13,59 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.api_schemas_resource_usage_tracker.service_runs import (
+    ServiceRunGet,
+    ServiceRunPage,
+)
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.models import UserRole
 
-_SERVICE_RUN_GET: dict = {
-    "items": [
-        {
-            "service_run_id": "comp_1_5c2110be-441b-11ee-a0e8-02420a000040_1",
-            "wallet_id": 1,
-            "wallet_name": "the super wallet!",
-            "user_id": 1,
-            "project_id": "5c2110be-441b-11ee-a0e8-02420a000040",
-            "project_name": "osparc",
-            "node_id": "3d2133f4-aba4-4364-9f7a-9377dea1221f",
-            "node_name": "sleeper",
-            "service_key": "simcore/services/comp/itis/sleeper",
-            "service_version": "2.0.2",
-            "service_type": "DYNAMIC_SERVICE",
-            "service_resources": {
-                "container": {
-                    "image": "simcore/services/comp/itis/sleeper:2.0.2",
-                    "resources": {
-                        "CPU": {"limit": 0.1, "reservation": 0.1},
-                        "RAM": {"limit": 2147483648, "reservation": 2147483648},
-                    },
-                    "boot_modes": ["CPU"],
-                }
-            },
-            "started_at": "2023-08-26T14:18:17.600493+00:00",
-            "stopped_at": "2023-08-26T14:18:19.358355+00:00",
-            "service_run_status": "SUCCESS",
-        }
+_SERVICE_RUN_GET = ServiceRunPage(
+    items=[
+        ServiceRunGet(
+            **{
+                "service_run_id": "comp_1_5c2110be-441b-11ee-a0e8-02420a000040_1",
+                "wallet_id": 1,
+                "wallet_name": "the super wallet!",
+                "user_id": 1,
+                "project_id": "5c2110be-441b-11ee-a0e8-02420a000040",
+                "project_name": "osparc",
+                "node_id": "3d2133f4-aba4-4364-9f7a-9377dea1221f",
+                "node_name": "sleeper",
+                "service_key": "simcore/services/comp/itis/sleeper",
+                "service_version": "2.0.2",
+                "service_type": "DYNAMIC_SERVICE",
+                "service_resources": {
+                    "container": {
+                        "image": "simcore/services/comp/itis/sleeper:2.0.2",
+                        "resources": {
+                            "CPU": {"limit": 0.1, "reservation": 0.1},
+                            "RAM": {"limit": 2147483648, "reservation": 2147483648},
+                        },
+                        "boot_modes": ["CPU"],
+                    }
+                },
+                "started_at": "2023-08-26T14:18:17.600493+00:00",
+                "stopped_at": "2023-08-26T14:18:19.358355+00:00",
+                "service_run_status": "SUCCESS",
+            }
+        )
     ],
-    "total": 1,
-    "limit": 1,
-    "offset": 0,
-    "links": {
-        "first": "/api/v1/users?limit=1&offset=0",
-        "last": "/api/v1/users?limit=1&offset=0",
-        "self": "/api/v1/users?limit=1&offset=0",
-        "next": "/api/v1/users?limit=1&offset=0",
-        "prev": "/api/v1/users?limit=1&offset=0",
-    },
-}
+    total=1,
+)
 
 
 @pytest.fixture
 def mock_list_usage_services(mocker: MockerFixture) -> tuple:
-    mock_list_with_wallets = mocker.patch(
-        "simcore_service_webserver.resource_usage._service_runs_api.resource_tracker_client.list_service_runs_by_user_and_product",
+    mock_list_usage = mocker.patch(
+        "simcore_service_webserver.resource_usage._service_runs_api.service_runs.get_service_run_page",
         spec=True,
         return_value=_SERVICE_RUN_GET,
     )
-    mock_list_without_wallets = mocker.patch(
-        "simcore_service_webserver.resource_usage._service_runs_api.resource_tracker_client.list_service_runs_by_user_and_product_and_wallet",
-        spec=True,
-        return_value=_SERVICE_RUN_GET,
-    )
-    return mock_list_with_wallets, mock_list_without_wallets
+    return mock_list_usage
 
 
 @pytest.fixture()
@@ -95,6 +88,30 @@ def setup_wallets_db(
         con.execute(wallets.delete())
 
 
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.PRODUCT_OWNER, web.HTTPOk),
+        (UserRole.ADMIN, web.HTTPOk),
+    ],
+)
+async def test_list_service_usage_user_role_access(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    setup_wallets_db,
+    mock_list_usage_services,
+    user_role: UserRole,
+    expected: type[web.HTTPException],
+):
+    url = client.app.router["list_resource_usage_services"].url_for()
+    resp = await client.get(f"{url}")
+    await assert_status(resp, expected)
+
+
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
 async def test_list_service_usage(
     client: TestClient,
@@ -106,7 +123,7 @@ async def test_list_service_usage(
     url = client.app.router["list_resource_usage_services"].url_for()
     resp = await client.get(f"{url}")
     await assert_status(resp, web.HTTPOk)
-    assert mock_list_usage_services[0].called
+    assert mock_list_usage_services.call_count == 1
 
     # list service usage with wallets as "accountant"
     url = (
@@ -116,8 +133,8 @@ async def test_list_service_usage(
     )
     resp = await client.get(f"{url}")
     await assert_status(resp, web.HTTPOk)
-    assert mock_list_usage_services[1].call_count == 1
-    assert mock_list_usage_services[1].call_args[1]["access_all_wallet_usage"] is True
+    assert mock_list_usage_services.call_count == 2
+    assert mock_list_usage_services.call_args[1]["access_all_wallet_usage"] is True
 
     # Remove "write" permission on the wallet
     url = client.app.router["update_wallet_group"].url_for(
@@ -137,5 +154,147 @@ async def test_list_service_usage(
     )
     resp = await client.get(f"{url}")
     await assert_status(resp, web.HTTPOk)
-    assert mock_list_usage_services[1].call_count == 2
-    assert mock_list_usage_services[1].call_args[1]["access_all_wallet_usage"] is False
+    assert mock_list_usage_services.call_count == 3
+    assert mock_list_usage_services.call_args[1]["access_all_wallet_usage"] is False
+
+
+@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+async def test_list_service_usage_with_order_by_query_param(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    setup_wallets_db,
+    mock_list_usage_services,
+):
+    # without any additional query parameter
+    url = client.app.router["list_resource_usage_services"].url_for()
+    resp = await client.get(f"{url}")
+    await assert_status(resp, web.HTTPOk)
+    assert mock_list_usage_services.called
+
+    # with order by query parameter
+    _filter = {"field": "started_at", "direction": "desc"}
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(order_by=json.dumps(_filter))
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, web.HTTPOk)
+    assert mock_list_usage_services.called
+
+    # with order by query parameter
+    _filter = {"field": "started_at", "direction": "asc"}
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(order_by=json.dumps(_filter))
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, web.HTTPOk)
+    assert mock_list_usage_services.called
+
+    # with non-supported field in order by query parameter
+    _filter = {"field": "non-supported", "direction": "desc"}
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(order_by=json.dumps(_filter))
+    )
+    resp = await client.get(f"{url}")
+    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    assert mock_list_usage_services.called
+    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["errors"][0]["message"].startswith(
+        "We do not support ordering by provided field"
+    )
+
+    # with non-parsable field in order by query parameter
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(order_by=",invalid json")
+    )
+    resp = await client.get(f"{url}")
+    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    assert mock_list_usage_services.called
+    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["errors"][0]["message"].startswith("Invalid JSON")
+
+    # with order by without direction
+    _filter = {"field": "started_at"}
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(order_by=json.dumps(_filter))
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, web.HTTPOk)
+    assert mock_list_usage_services.called
+
+    # with wrong direction
+    _filter = {"field": "non-supported", "direction": "wrong"}
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(order_by=json.dumps(_filter))
+    )
+    resp = await client.get(f"{url}")
+    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    assert mock_list_usage_services.called
+    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["errors"][0]["message"].startswith(
+        "value is not a valid enumeration member"
+    )
+
+    # without field
+    _filter = {"direction": "asc"}
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(order_by=json.dumps(_filter))
+    )
+    resp = await client.get(f"{url}")
+    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    assert mock_list_usage_services.called
+    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["errors"][0]["message"].startswith("field required")
+
+
+@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+async def test_list_service_usage_with_filters_query_param(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    setup_wallets_db,
+    mock_list_usage_services,
+):
+    # with unable to decode filter query parameter
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(filters='{"test"}')
+    )
+    resp = await client.get(f"{url}")
+    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["errors"][0]["message"].startswith("Invalid JSON")
+
+    # with correct filter query parameter
+    _filter = {"started_at": {"from": "2023-12-01", "until": "2024-01-01"}}
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(filters=json.dumps(_filter))
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, web.HTTPOk)
+    assert mock_list_usage_services.called
+
+    # with only one started_at filter query parameter
+    _filter = {"started_at": {"until": "2023-12-02"}}
+    url = (
+        client.app.router["list_resource_usage_services"]
+        .url_for()
+        .with_query(filters=json.dumps(_filter))
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, web.HTTPOk)

@@ -1,12 +1,5 @@
-""" Users table
-
-    - List of users in the framework
-    - Users they have a role within the framework that provides
-    them different access levels to it
-"""
 from enum import Enum
 from functools import total_ordering
-from typing import Final, NamedTuple
 
 import sqlalchemy as sa
 
@@ -78,32 +71,47 @@ users = sa.Table(
     metadata,
     sa.Column(
         "id",
-        sa.BigInteger,
+        sa.BigInteger(),
         nullable=False,
-        doc="Primary key for user identifier",
+        doc="Primary key index for user identifier",
     ),
     sa.Column(
         "name",
-        sa.String,
+        sa.String(),
         nullable=False,
-        doc="Display name. NOTE: this is NOT a user name since uniqueness is NOT guaranteed",
+        doc="username is a unique short user friendly identifier e.g. pcrespov, sanderegg, GitHK, ...",
+    ),
+    sa.Column(
+        "first_name",
+        sa.String(),
+        doc="User's first name",
+    ),
+    sa.Column(
+        "last_name",
+        sa.String(),
+        doc="User's last/family name",
     ),
     sa.Column(
         "email",
-        sa.String,
+        sa.String(),
         nullable=False,
-        doc="User email is used as username since it is a unique human-readable identifier",
+        doc="Validated email",
     ),
     sa.Column(
         "phone",
-        sa.String,
+        sa.String(),
         nullable=True,  # since 2FA can be configured optional
         doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication",
     ),
-    sa.Column("password_hash", sa.String, nullable=False),
+    sa.Column(
+        "password_hash",
+        sa.String(),
+        nullable=False,
+        doc="Hashed password",
+    ),
     sa.Column(
         "primary_gid",
-        sa.BigInteger,
+        sa.BigInteger(),
         sa.ForeignKey(
             "groups.gid",
             name="fk_users_gid_groups",
@@ -150,6 +158,7 @@ users = sa.Table(
     ),
     # ---------------------------
     sa.PrimaryKeyConstraint("id", name="user_pkey"),
+    sa.UniqueConstraint("name", name="user_name_ukey"),
     sa.UniqueConstraint("email", name="user_login_key"),
     sa.UniqueConstraint(
         "phone",
@@ -157,50 +166,6 @@ users = sa.Table(
         # NOTE: that cannot use same phone for two user accounts
     ),
 )
-
-
-class FullNameTuple(NamedTuple):
-    first_name: str
-    last_name: str
-
-
-class UserNameConverter:
-    """Helper functions to convert full-name to name in both directions"""
-
-    #
-    # CONVENTION: Instead of having first and last name in the database
-    # we collapse it in the column name as 'first_name.lastname'.
-    #
-    # NOTE: there is a plan to change this https://github.com/ITISFoundation/osparc-simcore/issues/1574
-    SEPARATOR: Final[str] = "."
-    TOKEN: Final[str] = "#"
-
-    @classmethod
-    def get_full_name(cls, name: str) -> FullNameTuple:
-        """Parses value from users.name and returns separated full and last name in a tuple"""
-        first_name, last_name = name, ""
-
-        if cls.SEPARATOR in name:
-            first_name, last_name = name.split(cls.SEPARATOR, maxsplit=1)
-
-        return FullNameTuple(
-            first_name.replace(cls.TOKEN, cls.SEPARATOR),
-            last_name.replace(cls.TOKEN, cls.SEPARATOR),
-        )
-
-    @classmethod
-    def _safe_string(cls, value: str) -> str:
-        # removes any possible token in value (unlikely)
-        value = value.replace(cls.TOKEN, "")
-        # substitutes matching separators symbol with an alternative
-        return value.replace(cls.SEPARATOR, cls.TOKEN)
-
-    @classmethod
-    def get_name(cls, first_name: str, last_name: str) -> str:
-        """Composes value for users.name column"""
-        return (
-            cls._safe_string(first_name) + cls.SEPARATOR + cls._safe_string(last_name)
-        )
 
 
 # ------------------------ TRIGGERS
@@ -228,7 +193,7 @@ BEGIN
         INSERT INTO "groups" ("name", "description", "type") VALUES (NEW.name, 'primary group', 'PRIMARY') RETURNING gid INTO group_id;
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, group_id);
         UPDATE "users" SET "primary_gid" = group_id WHERE "id" = NEW.id;
-        -- set everyone goup
+        -- set everyone group
         INSERT INTO "user_to_groups" ("uid", "gid") VALUES (NEW.id, (SELECT "gid" FROM "groups" WHERE "type" = 'EVERYONE'));
     ELSIF TG_OP = 'UPDATE' THEN
         UPDATE "groups" SET "name" = NEW.name WHERE "gid" = NEW.primary_gid;
@@ -240,7 +205,11 @@ END; $$ LANGUAGE 'plpgsql';
 """
 )
 
-sa.event.listen(users, "after_create", set_user_groups_procedure)
+sa.event.listen(
+    users,
+    "after_create",
+    set_user_groups_procedure,
+)
 sa.event.listen(
     users,
     "after_create",
