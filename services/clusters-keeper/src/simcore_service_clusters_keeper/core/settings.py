@@ -221,7 +221,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX: str = Field(
         ...,
-        description="optionally set a prefix to all machines created (useful for testing)",
+        description="set a prefix to all machines created (useful for testing)",
     )
 
     CLUSTERS_KEEPER_RABBITMQ: RabbitSettings | None = Field(auto_default_from_env=True)
