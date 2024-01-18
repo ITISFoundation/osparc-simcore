@@ -152,17 +152,16 @@ class ApplicationSettings(BasicSettings):
         """If True, debug tracebacks should be returned on errors."""
         return self.SC_BOOT_MODE is not None and self.SC_BOOT_MODE.is_devel_mode()
 
-    @validator("API_SERVER_DEV_HTTP_CALLS_LOGS_PATH")
+    @validator("API_SERVER_DEV_HTTP_CALLS_LOGS_PATH", pre=True)
     @classmethod
     def _enable_only_in_devel_mode(cls, v, values):
-        if v and not (
-            values
-            and (boot_mode := values.get("SC_BOOT_MODE"))
-            and boot_mode.is_devel_mode()
-        ):
-            msg = "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
-            raise ValueError(msg)
-        return v
+        dev_features_key = "API_SERVER_DEV_FEATURES_ENABLED"
+        assert (
+            dev_features_key in values
+        ), f"{dev_features_key} should already have been validated. Did its name change?"
+        if values[dev_features_key] == False or v.strip() == "":
+            return None
+        return Path(v)
 
 
 __all__: tuple[str, ...] = (
