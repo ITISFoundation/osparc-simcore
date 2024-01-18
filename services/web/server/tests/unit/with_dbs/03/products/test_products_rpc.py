@@ -95,4 +95,5 @@ async def test_get_credit_amount(
         )
     exc = exc_info.value
     assert exc.method_name == "get_credit_amount"
-    assert exc.msg
+    assert exc.exc_message
+    assert exc.traceback
