@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+from typing import Final
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
@@ -15,16 +17,37 @@ DEPLOYMENTS = [
 ]
 
 
+_SECRETS_CONFIG_FILE_NAME: Final[str] = "repo.config"
+
+
+def get_configs(top_folder: Path) -> list[Path]:
+    return list(top_folder.rglob(_SECRETS_CONFIG_FILE_NAME))
+
+
+def get_deployment_name_or_none(repo_config: Path) -> str | None:
+    if repo_config.name == "repo.config":
+        return repo_config.parent.name
+    return None
+
+
+
 class NewSettings(BaseSettings):
     OSPARC_DEPLOYMENT_TARGET: str
-    portainer_url: str = Field(..., validation_alias="PORTAINER_DOMAIN")
+    PORTAINER_DOMAIN: str
+
     portainer_username: str = Field(..., validation_alias="PORTAINER_USER")
     portainer_password: str = Field(..., validation_alias="PORTAINER_PASSWORD")
     swarm_stack_name: str = Field(..., validation_alias="SWARM_STACK_NAME")
     portainer_endpoint_version: int
 
     @property
+    def portainer_url(self):
+        # TODO: pydantic HttpUrl?
+        return f"https://{self.PORTAINER_DOMAIN}"
+
+    @property
     def starts_with(self) -> str:
+        # prefixes of the services in that deploy
         return {
             "master": "master-simcore_master",
             "dalco-staging": "staging-simcore_staging",
@@ -37,6 +60,16 @@ class NewSettings(BaseSettings):
 
 
 def get_new_settings(env_file_path, deployment: str):
+    ...
+
+# {
+#     "osparc-master.speag.com": 1,
+#     "osparc-staging.speag.com": 1,
+#     "tip.itis.swiss": 1,
+#     "sim4life.io": 1
+# }
+
+
 
     match deployment:
         case "master":
