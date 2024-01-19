@@ -23,5 +23,4 @@ def setup_system_monitor(app: FastAPI) -> None:
         setup_notifier(app)
 
         with log_context(_logger, logging.INFO, "setup disk monitor"):
-            if settings.DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE:
-                setup_disk_usage(app)
+            setup_disk_usage(app)
