@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import pytest
 from pydantic import Field, ValidationError
@@ -47,7 +47,7 @@ def model_classes_factory() -> Callable:
             POSTGRES_MINSIZE: int = Field(1, ge=1)
             POSTGRES_MAXSIZE: int = Field(50, ge=1)
 
-            POSTGRES_CLIENT_NAME: Optional[str] = Field(
+            POSTGRES_CLIENT_NAME: str | None = Field(
                 None,
                 env=["HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"],
             )
@@ -60,7 +60,7 @@ def model_classes_factory() -> Callable:
             WEBSERVER_POSTGRES: _FakePostgresSettings
 
         class S2(BaseCustomSettings):
-            WEBSERVER_POSTGRES_NULLABLE_OPTIONAL: Optional[_FakePostgresSettings]
+            WEBSERVER_POSTGRES_NULLABLE_OPTIONAL: _FakePostgresSettings | None
 
         class S3(BaseCustomSettings):
             # cannot be disabled!!
@@ -70,24 +70,23 @@ def model_classes_factory() -> Callable:
 
         class S4(BaseCustomSettings):
             # defaults enabled but if cannot be resolved, it disables
-            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV: Optional[
-                _FakePostgresSettings
-            ] = Field(auto_default_from_env=True)
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV: _FakePostgresSettings | None = (
+                Field(auto_default_from_env=True)
+            )
 
         class S5(BaseCustomSettings):
             # defaults disabled but only explicit enabled
-            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL: Optional[
-                _FakePostgresSettings
-            ] = None
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL: _FakePostgresSettings | None = (
+                None
+            )
 
-        _classes = (
+        return (
             S1,
             S2,
             S3,
             S4,
             S5,
         )
-        return _classes
 
     return _create_classes
 
@@ -110,21 +109,21 @@ def test_parse_from_empty_envs(model_classes_factory: Callable):
     S1, S2, S3, S4, S5 = model_classes_factory()
 
     with pytest.raises(ValidationError):
-        s1 = S1()
+        S1()
 
     s2 = S2()
-    assert s2.WEBSERVER_POSTGRES_NULLABLE_OPTIONAL == None
+    assert s2.WEBSERVER_POSTGRES_NULLABLE_OPTIONAL is None
 
     with pytest.raises(DefaultFromEnvFactoryError):
         # NOTE: cannot hae a default or assignment
-        s3 = S3()
+        S3()
 
     # auto default factory resolves to None (because is nullable)
     s4 = S4()
-    assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV == None
+    assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV is None
 
     s5 = S5()
-    assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL == None
+    assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is None
 
 
 def test_parse_from_individual_envs(monkeypatch, model_classes_factory):
@@ -319,7 +318,7 @@ def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
             POSTGRES_CLIENT_NAME=client-name
         """
 
-    with monkeypatch.context() as patch:
+    with monkeypatch.context():
         setenvs_from_envfile(
             monkeypatch,
             ENV_FILE.format("WEBSERVER_POSTGRES"),
@@ -352,7 +351,7 @@ def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
             }
         }
 
-    with monkeypatch.context() as patch:
+    with monkeypatch.context():
         setenvs_from_envfile(
             monkeypatch,
             ENV_FILE.format("WEBSERVER_POSTGRES_NULLABLE_OPTIONAL"),
@@ -369,7 +368,7 @@ def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
             }
         }
 
-    with monkeypatch.context() as patch:
+    with monkeypatch.context():
         setenvs_from_envfile(
             monkeypatch,
             ENV_FILE.format("WEBSERVER_POSTGRES_DEFAULT_ENV"),
@@ -386,7 +385,7 @@ def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
             }
         }
 
-    with monkeypatch.context() as patch:
+    with monkeypatch.context():
         setenvs_from_envfile(
             monkeypatch,
             ENV_FILE.format("WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV"),
@@ -403,7 +402,7 @@ def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
             }
         }
 
-    with monkeypatch.context() as patch:
+    with monkeypatch.context():
         setenvs_from_envfile(
             monkeypatch,
             ENV_FILE.format("WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL"),

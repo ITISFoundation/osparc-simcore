@@ -13,7 +13,8 @@ class MixinLoggingSettings:
         try:
             getattr(logging, value.upper())
         except AttributeError as err:
-            raise ValueError(f"{value.upper()} is not a valid level") from err
+            msg = f"{value.upper()} is not a valid level"
+            raise ValueError(msg) from err
         return value.upper()
 
     @cached_property

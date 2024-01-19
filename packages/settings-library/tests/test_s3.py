@@ -31,4 +31,4 @@ def test_regression(
     monkeypatch.setenv("S3_SECURE", secure)
 
     s3_settings = S3Settings()
-    assert s3_settings.S3_ENDPOINT == expected
+    assert expected == s3_settings.S3_ENDPOINT

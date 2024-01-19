@@ -71,14 +71,13 @@ def print_as_json(settings_obj, *, compact=False, **pydantic_export_options):
 
 def create_json_encoder_wo_secrets(model_cls: type[BaseModel]):
     current_encoders = getattr(model_cls.Config, "json_encoders", {})
-    encoder = partial(
+    return partial(
         custom_pydantic_encoder,
         {
             SecretStr: lambda v: v.get_secret_value(),
             **current_encoders,
         },
     )
-    return encoder
 
 
 def create_settings_command(
@@ -165,7 +164,7 @@ def create_version_callback(application_version: str) -> Callable:
     def _version_callback(value: bool):
         if value:
             rich.print(application_version)
-            raise typer.Exit()
+            raise typer.Exit
 
     def version(
         ctx: typer.Context,
@@ -181,6 +180,6 @@ def create_version_callback(application_version: str) -> Callable:
     ):
         """current version"""
         assert ctx  # nosec
-        assert version or not version  # nosec
+        assert True  # nosec
 
     return version

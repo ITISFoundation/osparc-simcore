@@ -5,7 +5,8 @@
 
 import inspect
 import json
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 import settings_library.base
@@ -103,7 +104,7 @@ def test_create_settings_class(
 
     assert M.__fields__["VALUE_NULLABLE_DEFAULT_ENV"].default_factory
 
-    assert M.__fields__["VALUE_NULLABLE_DEFAULT_ENV"].get_default() == None
+    assert M.__fields__["VALUE_NULLABLE_DEFAULT_ENV"].get_default() is None
 
     assert M.__fields__["VALUE_DEFAULT_ENV"].default_factory
 
@@ -164,7 +165,7 @@ def test_create_settings_class_without_environ_fails(
     M2_outside_context = create_settings_class("M2")
 
     with pytest.raises(ValidationError) as err_info:
-        instance = M2_outside_context.create_from_envs()
+        M2_outside_context.create_from_envs()
 
     assert err_info.value.errors()[0] == {
         "loc": ("VALUE_DEFAULT_ENV", "S_VALUE"),
@@ -205,8 +206,8 @@ def test_auto_default_to_none_logs_a_warning(
         VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(auto_default_from_env=True)
 
     instance = SettingsClass.create_from_envs()
-    assert instance.VALUE_NULLABLE_DEFAULT_NULL == None
-    assert instance.VALUE_NULLABLE_DEFAULT_ENV == None
+    assert instance.VALUE_NULLABLE_DEFAULT_NULL is None
+    assert instance.VALUE_NULLABLE_DEFAULT_ENV is None
 
     # Defaulting to None also logs a warning
     assert logger_warn.call_count == 1
@@ -227,8 +228,8 @@ def test_auto_default_to_not_none(
             VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(auto_default_from_env=True)
 
         instance = SettingsClass.create_from_envs()
-        assert instance.VALUE_NULLABLE_DEFAULT_NULL == None
-        assert instance.VALUE_NULLABLE_DEFAULT_ENV == S(S_VALUE=123)
+        assert instance.VALUE_NULLABLE_DEFAULT_NULL is None
+        assert S(S_VALUE=123) == instance.VALUE_NULLABLE_DEFAULT_ENV
 
 
 def test_how_settings_parse_null_environs(monkeypatch: MonkeyPatch):
