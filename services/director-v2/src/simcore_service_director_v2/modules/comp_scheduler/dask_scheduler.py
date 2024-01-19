@@ -132,11 +132,15 @@ class DaskScheduler(BaseCompScheduler):
             )
 
             # update the database so we do have the correct job_ids there
-            for task_sents in results:
-                for task in task_sents:
-                    await comp_tasks_repo.update_project_task_job_id(
+            await asyncio.gather(
+                *(
+                    comp_tasks_repo.update_project_task_job_id(
                         project_id, task.node_id, task.job_id
                     )
+                    for task_sents in results
+                    for task in task_sents
+                )
+            )
 
     async def _get_tasks_status(
         self,
