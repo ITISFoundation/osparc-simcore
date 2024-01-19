@@ -105,7 +105,7 @@ class DaskScheduler(BaseCompScheduler):
         project_id: ProjectID,
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
-    ) -> list[list[tuple[NodeID, str]] | BaseException]:
+    ) -> None:
         """
         Raises:
 
@@ -136,16 +136,11 @@ class DaskScheduler(BaseCompScheduler):
             )
 
             # update the database so we do have the correct job_ids there
-            # for task_sents in result
-            await asyncio.gather(
-                *[
-                    comp_tasks_repo.update_project_task_job_id(
-                        project_id, tasks_sent[0][0], tasks_sent[0][1]
+            for task_sents in results:
+                for task in task_sents:
+                    await comp_tasks_repo.update_project_task_job_id(
+                        project_id, task.node_id, task.job_id
                     )
-                    for tasks_sent in results
-                ]
-            )
-            return results
 
     async def _get_tasks_status(
         self,

@@ -210,6 +210,7 @@ class DaskClient:
           - ComputationalBackendNotConnectedError when scheduler is not connected/running
           - MissingComputationalResourcesError (only for internal cluster)
           - InsuficientComputationalResourcesError (only for internal cluster)
+          - TaskSchedulingError
           - PortsValidationError (not sure when this happens - node ports)
           - S3InvalidStore (node ports, invalid S3 store)
           - NodeportsException (node ports, generic exception)
