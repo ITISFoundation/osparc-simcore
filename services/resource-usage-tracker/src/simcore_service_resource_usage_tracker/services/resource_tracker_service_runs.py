@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+from uuid import uuid4
+
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunGet,
     ServiceRunPage,
@@ -125,3 +128,59 @@ async def list_service_runs(
         )
 
     return ServiceRunPage(service_runs_api_model, total_service_runs)
+
+
+async def export_service_runs(
+    user_id: UserID,
+    product_name: ProductName,
+    resource_tracker_repo: ResourceTrackerRepository,
+    wallet_id: WalletID | None = None,
+    access_all_wallet_usage: bool = False,
+    order_by: OrderBy | None = None,  # noqa: ARG001
+    filters: ServiceResourceUsagesFilters | None = None,  # noqa: ARG001
+) -> str:
+    started_from = None
+    started_until = None
+    if filters:
+        started_from = filters.started_at.from_
+        started_until = filters.started_at.until
+
+    # Create S3 key name
+    s3_bucket = "simcore-db-exports"
+    file_name = f"{datetime.now(tz=timezone.utc).date()}__{uuid4()}.csv"
+    s3_key = f"resource-usage-tracker-service-runs/{file_name}"
+
+    # Export CSV to S3
+    await resource_tracker_repo.export_service_runs_table_to_s3(
+        product_name=product_name,
+        s3_key=s3_key,
+        user_id=user_id if access_all_wallet_usage is False else None,
+        wallet_id=wallet_id,
+        started_from=started_from,
+        started_until=started_until,
+        order_by=order_by,
+    )
+
+    # Create presigned S3 link
+    s3 = boto3.client(
+        "s3",
+        config=Config(signature_version="s3v4"),
+        aws_access_key_id="test",
+        aws_secret_access_key="test",
+    )
+    # Generate the URL to get 'key-name' from 'bucket-name'
+    url = s3.generate_presigned_url(
+        ClientMethod="get_object",
+        Params={
+            "Bucket": "matus-testing",
+            "Key": "test-5.csv",
+            "ResponseContentDisposition": "attachment",
+        },
+        ExpiresIn=3600,  # one hour in seconds, increase if needed
+    )
+    # Use the URL to perform the GET operation. You can use any method you like
+    # to send the GET, but we will use requests here to keep things simple.
+    response = requests.get(url)
+
+    # return the link
+    return "link"
