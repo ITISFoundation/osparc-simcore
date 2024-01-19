@@ -16,7 +16,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any
+from typing import Any, TypeAlias
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -36,6 +36,7 @@ from dask_task_models_library.resource_constraints import (
 from distributed.scheduler import TaskStateState as DaskSchedulerTaskState
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.clusters import ClusterDetails, Scheduler
+from models_library.basic_types import IDStr
 from models_library.clusters import ClusterAuthentication, ClusterID, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -94,6 +95,14 @@ _DASK_DEFAULT_TIMEOUT_S = 1
 
 
 _UserCallbackInSepThread = Callable[[], None]
+
+DaskJobID: TypeAlias = IDStr
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class PublishedComputationTask:
+    node_id: NodeID
+    job_id: DaskJobID
 
 
 @dataclass
@@ -191,9 +200,23 @@ class DaskClient:
         remote_fct: ContainerRemoteFct | None = None,
         metadata: RunMetadataDict,
         hardware_info: HardwareInfo,
-    ) -> list[tuple[NodeID, str]]:
+    ) -> list[PublishedComputationTask]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
-        function that runs container will be started."""
+        function that runs container will be started.
+
+        Raises:
+          - ComputationalBackendNoS3AccessError when storage is not accessible
+          - ComputationalSchedulerChangedError when expected scheduler changed
+          - ComputationalBackendNotConnectedError when scheduler is not connected/running
+          - MissingComputationalResourcesError (only for internal cluster)
+          - InsuficientComputationalResourcesError (only for internal cluster)
+          - PortsValidationError (not sure when this happens - node ports)
+          - S3InvalidStore (node ports, invalid S3 store)
+          - NodeportsException (node ports, generic exception)
+          - StorageServerIssue storage server is not responding
+          - ClientResponseError
+          - ValidationError
+        """
 
         def _comp_sidecar_fct(
             *,
@@ -215,7 +238,7 @@ class DaskClient:
 
         if remote_fct is None:
             remote_fct = _comp_sidecar_fct
-        list_of_node_id_to_job_id: list[tuple[NodeID, str]] = []
+        list_of_node_id_to_job_id: list[PublishedComputationTask] = []
         for node_id, node_image in tasks.items():
             job_id = dask_utils.generate_dask_job_id(
                 service_key=node_image.name,
@@ -345,7 +368,9 @@ class DaskClient:
                 # NOTE: the callback is running in a secondary thread, and takes a future as arg
                 task_future.add_done_callback(lambda _: callback())
 
-                list_of_node_id_to_job_id.append((node_id, job_id))
+                list_of_node_id_to_job_id.append(
+                    PublishedComputationTask(node_id=node_id, job_id=DaskJobID(job_id))
+                )
                 await dask_utils.wrap_client_async_routine(
                     self.backend.client.publish_dataset(task_future, name=job_id)
                 )
