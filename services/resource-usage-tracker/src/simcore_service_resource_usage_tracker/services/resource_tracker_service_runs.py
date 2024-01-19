@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
+from aws_library.s3.client import SimcoreS3API
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunGet,
     ServiceRunPage,
@@ -10,7 +11,7 @@ from models_library.resource_tracker import ServiceResourceUsagesFilters
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import PositiveInt
+from pydantic import AnyUrl, PositiveInt
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
 )
@@ -131,6 +132,7 @@ async def list_service_runs(
 
 
 async def export_service_runs(
+    s3_client: SimcoreS3API,
     user_id: UserID,
     product_name: ProductName,
     resource_tracker_repo: ResourceTrackerRepository,
@@ -138,7 +140,7 @@ async def export_service_runs(
     access_all_wallet_usage: bool = False,
     order_by: OrderBy | None = None,  # noqa: ARG001
     filters: ServiceResourceUsagesFilters | None = None,  # noqa: ARG001
-) -> str:
+) -> AnyUrl:
     started_from = None
     started_until = None
     if filters:
@@ -146,14 +148,14 @@ async def export_service_runs(
         started_until = filters.started_at.until
 
     # Create S3 key name
-    s3_bucket = "simcore-db-exports"
+    s3_bucket_name = "simcore-db-exports"
     file_name = f"{datetime.now(tz=timezone.utc).date()}__{uuid4()}.csv"
-    s3_key = f"resource-usage-tracker-service-runs/{file_name}"
+    s3_object_key = f"resource-usage-tracker-service-runs/{file_name}"
 
     # Export CSV to S3
     await resource_tracker_repo.export_service_runs_table_to_s3(
         product_name=product_name,
-        s3_key=s3_key,
+        s3_key=s3_object_key,
         user_id=user_id if access_all_wallet_usage is False else None,
         wallet_id=wallet_id,
         started_from=started_from,
@@ -162,25 +164,7 @@ async def export_service_runs(
     )
 
     # Create presigned S3 link
-    s3 = boto3.client(
-        "s3",
-        config=Config(signature_version="s3v4"),
-        aws_access_key_id="test",
-        aws_secret_access_key="test",
+    generated_url: AnyUrl = await s3_client.generate_presigned_url(
+        bucket_name=s3_bucket_name, object_key=s3_object_key, expiration_secs=7200
     )
-    # Generate the URL to get 'key-name' from 'bucket-name'
-    url = s3.generate_presigned_url(
-        ClientMethod="get_object",
-        Params={
-            "Bucket": "matus-testing",
-            "Key": "test-5.csv",
-            "ResponseContentDisposition": "attachment",
-        },
-        ExpiresIn=3600,  # one hour in seconds, increase if needed
-    )
-    # Use the URL to perform the GET operation. You can use any method you like
-    # to send the GET, but we will use requests here to keep things simple.
-    response = requests.get(url)
-
-    # return the link
-    return "link"
+    return generated_url

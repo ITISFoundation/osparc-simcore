@@ -23,6 +23,7 @@ from ..api.rpc.routes import setup_rpc_api_routes
 from ..modules.db import setup as setup_db
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
+from ..modules.s3 import setup as setup_s3
 from ..resource_tracker import setup as setup_resource_tracker
 from .errors import http404_error_handler
 from .settings import ApplicationSettings
@@ -62,6 +63,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_db(app)
     setup_redis(app)
     setup_rabbitmq(app)
+    setup_s3(app)
 
     setup_resource_tracker(app)
     setup_rpc_api_routes(app)
