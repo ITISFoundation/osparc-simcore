@@ -71,8 +71,8 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
 fi
 
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-  # NOTE: production does NOT pre-installs ptvsd
-  pip install --no-cache-dir ptvsd
+  # NOTE: production does NOT pre-installs debugpy
+  pip install --no-cache-dir debugpy
 fi
 
 # Appends docker group if socket is mounted

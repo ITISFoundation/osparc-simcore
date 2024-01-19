@@ -5,7 +5,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     ports:
-      - "5672:5672"
+      # - "5672:5672"
       - "15672:15672"
       - "15692"
     environment:
@@ -23,8 +23,8 @@ services:
     image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
-    ports:
-      - "6379:6379"
+    # ports:
+    #   - "6379:6379"
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -32,24 +32,6 @@ services:
       retries: 50
     volumes:
       - redis-data:/data
-
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
-    ports:
-      - "18081:8081"
-    environment:
-      - >-
-        REDIS_HOSTS=
-        resources:${REDIS_HOST}:${REDIS_PORT}:0,
-        locks:${REDIS_HOST}:${REDIS_PORT}:1,
-        validation_codes:${REDIS_HOST}:${REDIS_PORT}:2,
-        scheduled_maintenance:${REDIS_HOST}:${REDIS_PORT}:3,
-        user_notifications:${REDIS_HOST}:${REDIS_PORT}:4,
-        announcements:${REDIS_HOST}:${REDIS_PORT}:5,
-        distributed_identifiers:${REDIS_HOST}:${REDIS_PORT}:6
-      # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
 
   autoscaling:
     image: local/autoscaling:development
@@ -65,5 +47,9 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - ../../:/devel/services/autoscaling
       - ../../../../packages:/devel/packages
+    deploy:
+      placement:
+        constraints:
+          - "node.role==manager"
 volumes:
   redis-data:

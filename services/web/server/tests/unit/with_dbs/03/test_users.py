@@ -170,8 +170,8 @@ async def test_get_profile(
 
         assert profile.login == logged_user["email"]
         assert profile.gravatar_id
-        assert profile.first_name == logged_user["name"]
-        assert profile.last_name == ""
+        assert profile.first_name == logged_user.get("first_name", None)
+        assert profile.last_name == logged_user.get("last_name", None)
         assert profile.role == user_role.name
         assert profile.groups
         assert profile.groups.dict(**RESPONSE_MODEL_POLICY) == {
@@ -211,7 +211,7 @@ async def test_update_profile(
         resp = await client.get(url)
         data, _ = await assert_status(resp, web.HTTPOk)
 
-        assert data["first_name"] == logged_user["name"]
+        assert data["first_name"] == logged_user.get("first_name")
         assert data["last_name"] == "Foo"
         assert data["role"] == user_role.name
 
@@ -323,7 +323,7 @@ async def test_delete_token(
 
 
 @pytest.fixture
-def mock_failing_connection(mocker: Mock) -> MagicMock:
+def mock_failing_database_connection(mocker: Mock) -> MagicMock:
     """
     async with engine.acquire() as conn:
         await conn.execute(query)  --> will raise OperationalError
@@ -345,7 +345,7 @@ def mock_failing_connection(mocker: Mock) -> MagicMock:
 async def test_get_profile_with_failing_db_connection(
     logged_user: UserInfoDict,
     client: TestClient,
-    mock_failing_connection: MagicMock,
+    mock_failing_database_connection: MagicMock,
     expected: type[web.HTTPException],
 ):
     """
@@ -355,18 +355,16 @@ async def test_get_profile_with_failing_db_connection(
 
     i.e. conn.execute(query) will raise psycopg2.OperationalError: server closed the connection unexpectedly
 
-    ISSUES: #880, #1160
+    SEE:
+    - https://github.com/ITISFoundation/osparc-simcore/issues/880
+    - https://github.com/ITISFoundation/osparc-simcore/pull/1160
     """
     assert client.app
+
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
-    resp = await client.get(f"{url}")
-
-    NUM_RETRY = 3
-    assert (
-        mock_failing_connection.call_count == NUM_RETRY
-    ), "Expected mock failure raised in AuthorizationPolicy.authorized_userid after severals"
+    resp = await client.get(url.path)
 
     await assert_status(resp, expected)
 

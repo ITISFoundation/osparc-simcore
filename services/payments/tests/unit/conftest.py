@@ -24,7 +24,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.rawdata_fakers import random_payment_method_data
+from pytest_simcore.helpers.rawdata_fakers import random_payment_method_view
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import load_dotenv
 from respx import MockRouter
@@ -264,7 +264,7 @@ def mock_payments_methods_routes(
             pm_id = faker.uuid4()
             _payment_methods[pm_id] = PaymentMethodInfoTuple(
                 init=InitPaymentMethod.parse_raw(request.content),
-                get=GetPaymentMethod(**random_payment_method_data(id=pm_id)),
+                get=GetPaymentMethod(**random_payment_method_view(id=pm_id)),
             )
 
             return httpx.Response(
