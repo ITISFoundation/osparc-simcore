@@ -3,12 +3,13 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import inspect
 import json
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import pytest
 import settings_library.base
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.fields import Field
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
@@ -62,13 +63,13 @@ def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
             VALUE_DEFAULT: S = S(S_VALUE=42)
             VALUE_CONFUSING: S = None  # type: ignore
 
-            VALUE_NULLABLE_REQUIRED: Optional[S] = ...  # type: ignore
-            VALUE_NULLABLE_OPTIONAL: Optional[S]
+            VALUE_NULLABLE_REQUIRED: S | None = ...  # type: ignore
+            VALUE_NULLABLE_OPTIONAL: S | None
 
-            VALUE_NULLABLE_DEFAULT_VALUE: Optional[S] = S(S_VALUE=42)
-            VALUE_NULLABLE_DEFAULT_NULL: Optional[S] = None
+            VALUE_NULLABLE_DEFAULT_VALUE: S | None = S(S_VALUE=42)
+            VALUE_NULLABLE_DEFAULT_NULL: S | None = None
 
-            VALUE_NULLABLE_DEFAULT_ENV: Optional[S] = Field(auto_default_from_env=True)
+            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(auto_default_from_env=True)
             VALUE_DEFAULT_ENV: S = Field(auto_default_from_env=True)
 
         class M2(BaseCustomSettings):
@@ -78,10 +79,10 @@ def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
             #
 
             # defaults disabled but only explicit enabled
-            VALUE_NULLABLE_DEFAULT_NULL: Optional[S] = None
+            VALUE_NULLABLE_DEFAULT_NULL: S | None = None
 
             # defaults enabled but if not exists, it disables
-            VALUE_NULLABLE_DEFAULT_ENV: Optional[S] = Field(auto_default_from_env=True)
+            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(auto_default_from_env=True)
 
             # cannot be disabled
             VALUE_DEFAULT_ENV: S = Field(auto_default_from_env=True)
@@ -200,8 +201,8 @@ def test_auto_default_to_none_logs_a_warning(
     S = create_settings_class("S")
 
     class SettingsClass(BaseCustomSettings):
-        VALUE_NULLABLE_DEFAULT_NULL: Optional[S] = None
-        VALUE_NULLABLE_DEFAULT_ENV: Optional[S] = Field(auto_default_from_env=True)
+        VALUE_NULLABLE_DEFAULT_NULL: S | None = None
+        VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(auto_default_from_env=True)
 
     instance = SettingsClass.create_from_envs()
     assert instance.VALUE_NULLABLE_DEFAULT_NULL == None
@@ -222,8 +223,8 @@ def test_auto_default_to_not_none(
         S = create_settings_class("S")
 
         class SettingsClass(BaseCustomSettings):
-            VALUE_NULLABLE_DEFAULT_NULL: Optional[S] = None
-            VALUE_NULLABLE_DEFAULT_ENV: Optional[S] = Field(auto_default_from_env=True)
+            VALUE_NULLABLE_DEFAULT_NULL: S | None = None
+            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(auto_default_from_env=True)
 
         instance = SettingsClass.create_from_envs()
         assert instance.VALUE_NULLABLE_DEFAULT_NULL == None
@@ -260,12 +261,12 @@ def test_how_settings_parse_null_environs(monkeypatch: MonkeyPatch):
     }
 
     class SettingsClass(BaseCustomSettings):
-        VALUE_TO_NOTHING: Optional[str]
-        VALUE_TO_WORD_NULL: Optional[str]
-        VALUE_TO_WORD_NONE: Optional[str]
-        VALUE_TO_ZERO: Optional[str]
+        VALUE_TO_NOTHING: str | None
+        VALUE_TO_WORD_NULL: str | None
+        VALUE_TO_WORD_NONE: str | None
+        VALUE_TO_ZERO: str | None
 
-        INT_VALUE_TO_ZERO: Optional[int]
+        INT_VALUE_TO_ZERO: int | None
 
     instance = SettingsClass.create_from_envs()
 
@@ -278,7 +279,7 @@ def test_how_settings_parse_null_environs(monkeypatch: MonkeyPatch):
     )
 
     class SettingsClassExt(SettingsClass):
-        INT_VALUE_TO_NOTHING: Optional[int]
+        INT_VALUE_TO_NOTHING: int | None
 
     with pytest.raises(ValidationError) as err_info:
         SettingsClassExt.create_from_envs()
@@ -289,3 +290,37 @@ def test_how_settings_parse_null_environs(monkeypatch: MonkeyPatch):
         "msg": "value is not a valid integer",
         "type": "type_error.integer",
     }
+
+
+def test_issubclass_type_error_with_pydantic_models():
+    # There is a problem
+    #
+    # TypeError: issubclass() arg 1 must be a class
+    #
+    # SEE https://github.com/pydantic/pydantic/issues/545
+    #
+    # >> issubclass(dict, BaseSettings)
+    # False
+    # >> issubclass(dict[str, str], BaseSettings)
+    # Traceback (most recent call last):
+    # File "<string>", line 1, in <module>
+    # File "/home/crespo/.pyenv/versions/3.10.13/lib/python3.10/abc.py", line 123, in __subclasscheck__
+    #     return _abc_subclasscheck(cls, subclass)
+    # TypeError: issubclass() arg 1 must be a class
+    #
+
+    assert not inspect.isclass(dict, BaseSettings)
+
+    assert not issubclass(dict, BaseSettings)
+
+    # NOTE: this should fail when fixed!
+    with pytest.raises(TypeError):
+        issubclass(dict[str, str], BaseSettings)
+
+    # here reproduces the problem with our settings
+    # that occurred to ANE and PC
+    class SomeSettings(BaseCustomSettings):
+        FOO: dict[str, str] | None = Field(default=None)
+
+    SomeSettings(FOO={})
+    assert SomeSettings(FOO=None) == SomeSettings()
