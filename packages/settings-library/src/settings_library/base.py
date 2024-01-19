@@ -3,7 +3,14 @@ from collections.abc import Sequence
 from functools import cached_property
 from typing import Final, get_args, get_origin
 
-from pydantic import BaseConfig, BaseSettings, Extra, ValidationError, validator
+from pydantic import (
+    BaseConfig,
+    BaseSettings,
+    ConfigError,
+    Extra,
+    ValidationError,
+    validator,
+)
 from pydantic.error_wrappers import ErrorList, ErrorWrapper
 from pydantic.fields import ModelField, Undefined
 
@@ -107,11 +114,11 @@ class BaseCustomSettings(BaseSettings):
 
             elif is_not_composed and issubclass(field_type, BaseSettings):
                 msg = f"{cls}.{field.name} of type {field_type} must inherit from BaseCustomSettings"
-                raise ValueError(msg)
+                raise ConfigError(msg)
 
             elif auto_default_from_env:
                 msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclassesbut field {cls}.{field.name} is {field_type} "
-                raise ValueError(msg)
+                raise ConfigError(msg)
 
     @classmethod
     def create_from_envs(cls, **overrides):
