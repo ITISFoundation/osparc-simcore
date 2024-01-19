@@ -10,6 +10,7 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 from models_library.projects_nodes_io import NodeID
 from models_library.users import GroupID
 from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 
 from ...core.settings import ApplicationSettings
@@ -77,19 +78,23 @@ def _get_monitored_paths(app: FastAPI) -> list[Path]:
 
 def setup_disk_usage(app: FastAPI) -> None:
     async def on_startup() -> None:
-        settings: ApplicationSettings = app.state.settings
+        with log_context(_logger, logging.INFO, "setup disk monitor"):
+            settings: ApplicationSettings = app.state.settings
 
-        app.state.disk_usage_monitor = disk_usage_monitor = DiskUsageMonitor(
-            app,
-            primary_group_id=settings.DY_SIDECAR_PRIMARY_GROUP_ID,
-            node_id=settings.DY_SIDECAR_NODE_ID,
-            monitored_paths=_get_monitored_paths(app),
-        )
-        await disk_usage_monitor.setup()
+            app.state.disk_usage_monitor = disk_usage_monitor = DiskUsageMonitor(
+                app,
+                primary_group_id=settings.DY_SIDECAR_PRIMARY_GROUP_ID,
+                node_id=settings.DY_SIDECAR_NODE_ID,
+                monitored_paths=_get_monitored_paths(app),
+            )
+            await disk_usage_monitor.setup()
 
     async def on_shutdown() -> None:
-        if disk_usage_monitor := getattr(app.state, "disk_usage_monitor"):  # noqa: B009
-            await disk_usage_monitor.shutdown()
+        with log_context(_logger, logging.INFO, "shutdown disk monitor"):
+            if disk_usage_monitor := getattr(  # noqa: B009
+                app.state, "disk_usage_monitor"
+            ):
+                await disk_usage_monitor.shutdown()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
