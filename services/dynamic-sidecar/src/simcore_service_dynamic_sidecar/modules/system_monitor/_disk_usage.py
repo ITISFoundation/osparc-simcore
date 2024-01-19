@@ -32,6 +32,7 @@ class DiskUsageMonitor:
     app: FastAPI
     primary_group_id: GroupID
     node_id: NodeID
+    interval: timedelta
     monitored_paths: list[Path]
     _monitor_task: asyncio.Task | None = None
     _last_usage: dict[Path, DiskUsage] = field(default_factory=dict)
@@ -60,7 +61,7 @@ class DiskUsageMonitor:
 
     async def setup(self) -> None:
         self._monitor_task = start_periodic_task(
-            self._monitor, interval=timedelta(seconds=5), task_name="monitor_disk_usage"
+            self._monitor, interval=self.interval, task_name="monitor_disk_usage"
         )
 
     async def shutdown(self) -> None:
@@ -85,6 +86,7 @@ def setup_disk_usage(app: FastAPI) -> None:
                 app,
                 primary_group_id=settings.DY_SIDECAR_PRIMARY_GROUP_ID,
                 node_id=settings.DY_SIDECAR_NODE_ID,
+                interval=settings.DYNAMIC_SIDECAR_TELEMETRY_DISK_USAGE_MONITOR_INTERVAL,
                 monitored_paths=_get_monitored_paths(app),
             )
             await disk_usage_monitor.setup()

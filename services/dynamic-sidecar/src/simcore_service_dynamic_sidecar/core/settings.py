@@ -91,6 +91,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     )
 
+    DYNAMIC_SIDECAR_TELEMETRY_DISK_USAGE_MONITOR_INTERVAL: timedelta = Field(
+        default=timedelta(seconds=5),
+        description="time between checks for disk usage",
+    )
+
     DEBUG: bool = Field(
         default=False,
         description="If set to True the application will boot into debug mode",
