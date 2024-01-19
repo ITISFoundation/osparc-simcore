@@ -1,3 +1,5 @@
+# pylint: disable=R0904
+
 import json
 import logging
 import urllib.parse
@@ -475,7 +477,7 @@ class AuthSession:
     async def get_product_price(self) -> NonNegativeDecimal | None:
         with _handle_webserver_api_errors():
             response = await self.client.get(
-                f"/credits-price",
+                "/credits-price",
                 cookies=self.session_cookies,
             )
             response.raise_for_status()

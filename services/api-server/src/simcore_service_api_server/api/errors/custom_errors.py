@@ -21,12 +21,11 @@ async def custom_error_handler(_: Request, exc: CustomBaseError):
         return JSONResponse(
             status_code=status.HTTP_402_PAYMENT_REQUIRED, content=f"{exc}"
         )
-    elif isinstance(exc, MissingWallet):
+    if isinstance(exc, MissingWallet):
         return JSONResponse(
             status_code=status.HTTP_424_FAILED_DEPENDENCY, content=f"{exc}"
         )
-    else:
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content="Encountered unspecified error",
-        )
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content="Encountered unspecified error",
+    )
