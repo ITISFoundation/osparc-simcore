@@ -817,7 +817,7 @@ class BaseCompScheduler(ABC):
                 optional_stopped=arrow.utcnow().datetime,
             )
             comp_tasks[NodeIDStr(f"{exc.node_id}")].state = RunningState.FAILED
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             _logger.exception(
                 "Unexpected error for %s with %s on %s happened when scheduling %s:",
                 f"{user_id=}",
