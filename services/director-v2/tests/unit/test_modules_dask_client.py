@@ -679,7 +679,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         dask_client,
         expected_status=DaskClientTaskState.SUCCESS,
     )
-    assert node_id in image_params.fake_tasks
+    assert published_computation_task[0].node_id in image_params.fake_tasks
     # creating a new future shows that it is not done????
     assert not distributed.Future(published_computation_task[0].job_id).done()
 
@@ -691,7 +691,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     assert published_computation_task[0].job_id in list_of_persisted_datasets
     assert list_of_persisted_datasets[0] == published_computation_task[0].job_id
     # get the persisted future from the scheduler back
-    task_future = await dask_client.backend.client.get_dataset(name=published_computation_task.job_id)  # type: ignore
+    task_future = await dask_client.backend.client.get_dataset(name=published_computation_task[0].job_id)  # type: ignore
     assert task_future
     assert isinstance(task_future, distributed.Future)
     assert task_future.key == published_computation_task[0].job_id
