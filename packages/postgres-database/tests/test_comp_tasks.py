@@ -55,7 +55,7 @@ async def task(
         db_notification_queue.empty()
     ), "database triggered change although it should only trigger on updates!"
 
-    yield task
+    return task
 
 
 async def _assert_notification_queue_status(
@@ -65,7 +65,7 @@ async def _assert_notification_queue_status(
         assert not notification_queue.empty()
 
     tasks = []
-    for n in range(num_exp_messages):
+    for _ in range(num_exp_messages):
         msg = await notification_queue.get()
 
         assert msg, "notification msg from postgres is empty!"

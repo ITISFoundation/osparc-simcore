@@ -3,7 +3,8 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -54,12 +55,11 @@ async def other_user(
     create_fake_user: Callable[[SAConnection, RowProxy, Any], RowProxy],
     connection: SAConnection,
 ) -> RowProxy:
-    user_ = await create_fake_user(
+    return await create_fake_user(
         connection,
         status=UserStatus.ACTIVE,
         role=UserRole.USER,
     )
-    return user_
 
 
 async def test_tags_access_with_primary_groups(
@@ -274,7 +274,7 @@ async def test_tags_repo_list_and_get(
     assert listed_tags == prev_listed_tags
 
     # (5) add a global tag
-    tag_id = await create_tag(
+    await create_tag(
         conn,
         name="TG",
         description="tag for EVERYBODY",

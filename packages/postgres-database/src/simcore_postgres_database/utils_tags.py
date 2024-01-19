@@ -70,33 +70,30 @@ class TagsRepo:
         access_condition,
         tag_id: int,
     ):
-        j = user_to_groups.join(
+        return user_to_groups.join(
             tags_to_groups,
             (user_to_groups.c.uid == self.user_id)
             & (user_to_groups.c.gid == tags_to_groups.c.group_id)
             & (access_condition)
             & (tags_to_groups.c.tag_id == tag_id),
         )
-        return j
 
     def _join_user_to_given_tag(self, access_condition, tag_id: int):
-        j = self._join_user_groups_tag(
+        return self._join_user_groups_tag(
             access_condition=access_condition,
             tag_id=tag_id,
         ).join(tags)
-        return j
 
     def _join_user_to_tags(
         self,
         access_condition,
     ):
-        j = user_to_groups.join(
+        return user_to_groups.join(
             tags_to_groups,
             (user_to_groups.c.uid == self.user_id)
             & (user_to_groups.c.gid == tags_to_groups.c.group_id)
             & (access_condition),
         ).join(tags)
-        return j
 
     async def access_count(
         self,
@@ -120,7 +117,8 @@ class TagsRepo:
             access.append(tags_to_groups.c.delete == delete)
 
         if not access:
-            raise ValueError("Undefined access")
+            msg = "Undefined access"
+            raise ValueError(msg)
 
         j = self._join_user_groups_tag(
             access_condition=functools.reduce(sa.and_, access),
@@ -183,7 +181,7 @@ class TagsRepo:
     async def list(self, conn: SAConnection) -> list[TagDict]:
         select_stmt = (
             sa.select(*_COLUMNS)
-            .select_from(self._join_user_to_tags(tags_to_groups.c.read == True))
+            .select_from(self._join_user_to_tags(tags_to_groups.c.read is True))
             .order_by(tags.c.id)
         )
 
@@ -191,15 +189,14 @@ class TagsRepo:
 
     async def get(self, conn: SAConnection, tag_id: int) -> TagDict:
         select_stmt = sa.select(*_COLUMNS).select_from(
-            self._join_user_to_given_tag(tags_to_groups.c.read == True, tag_id=tag_id)
+            self._join_user_to_given_tag(tags_to_groups.c.read is True, tag_id=tag_id)
         )
 
         result = await conn.execute(select_stmt)
         row = await result.first()
         if not row:
-            raise TagNotFoundError(
-                f"{tag_id=} not found: either no access or does not exists"
-            )
+            msg = f"{tag_id=} not found: either no access or does not exists"
+            raise TagNotFoundError(msg)
         return TagDict(row.items())  # type: ignore
 
     async def update(
@@ -223,7 +220,7 @@ class TagsRepo:
             .where(tags.c.id == tag_id)
             .where(
                 (tags.c.id == tags_to_groups.c.tag_id)
-                & (tags_to_groups.c.write == True)
+                & (tags_to_groups.c.write is True)
             )
             .where(
                 (tags_to_groups.c.group_id == user_to_groups.c.gid)
@@ -236,9 +233,8 @@ class TagsRepo:
         result = await conn.execute(update_stmt)
         row = await result.first()
         if not row:
-            raise TagOperationNotAllowed(
-                f"{tag_id=} not updated: either no access or not found"
-            )
+            msg = f"{tag_id=} not updated: either no access or not found"
+            raise TagOperationNotAllowed(msg)
 
         return TagDict(row.items())  # type: ignore
 
@@ -247,7 +243,7 @@ class TagsRepo:
             tags.delete()
             .where(tags.c.id == tag_id)
             .where(
-                (tags_to_groups.c.tag_id == tag_id) & (tags_to_groups.c.delete == True)
+                (tags_to_groups.c.tag_id == tag_id) & (tags_to_groups.c.delete is True)
             )
             .where(
                 (tags_to_groups.c.group_id == user_to_groups.c.gid)
@@ -258,6 +254,5 @@ class TagsRepo:
 
         deleted = await conn.scalar(delete_stmt)
         if not deleted:
-            raise TagOperationNotAllowed(
-                f"Could not delete {tag_id=}. Not found or insuficient access."
-            )
+            msg = f"Could not delete {tag_id=}. Not found or insuficient access."
+            raise TagOperationNotAllowed(msg)

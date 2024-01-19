@@ -4,7 +4,7 @@
 # pylint: disable=no-value-for-parameter
 
 
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 import sqlalchemy as sa
@@ -36,7 +36,7 @@ def make_table() -> Callable:
             )
 
             for n, consumable in enumerate(service["consumes"]):
-                filetype, port, *_ = consumable.split(":") + ["input_1"]
+                filetype, port, *_ = [*consumable.split(":"), "input_1"]
 
                 result: ResultProxy = await connection.execute(
                     services_consume_filetypes.insert().values(
@@ -67,7 +67,7 @@ async def connection(
 
     # EXTENDS
     await make_table(connection)
-    yield connection
+    return connection
 
 
 async def test_check_constraint(connection: SAConnection):
