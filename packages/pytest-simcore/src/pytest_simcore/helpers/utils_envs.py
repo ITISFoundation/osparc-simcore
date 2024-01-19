@@ -17,13 +17,6 @@ from .typing_env import EnvVarsDict, EnvVarsList
 #
 
 
-def delenvs_from_dict(monkeypatch: pytest.MonkeyPatch, envs: EnvVarsList):
-    for var in envs:
-        assert isinstance(var, str)
-        assert var is not None  # None keys cannot be is defined w/o value
-        monkeypatch.delenv(var)
-
-
 def setenvs_from_dict(
     monkeypatch: pytest.MonkeyPatch, envs: EnvVarsDict
 ) -> EnvVarsDict:
@@ -57,6 +50,18 @@ def load_dotenv(envfile_content_or_path: Path | str, **options) -> EnvVarsDict:
     return {k: v or "" for k, v in dotenv.dotenv_values(**kwargs).items()}
 
 
+def delenvs_from_dict(
+    monkeypatch: pytest.MonkeyPatch,
+    envs: EnvVarsList,
+    *,
+    raising: bool = True,
+) -> None:
+    for key in envs:
+        assert isinstance(key, str)
+        assert key is not None  # None keys cannot be is defined w/o value
+        monkeypatch.delenv(key, raising)
+
+
 #
 # monkeypath using envfiles ('.env' and also denoted as dotfiles)
 #
@@ -76,7 +81,8 @@ def setenvs_from_envfile(
 def delenvs_from_envfile(
     monkeypatch: pytest.MonkeyPatch,
     content_or_path: str | Path,
-    raising: bool,
+    *,
+    raising: bool = True,
     **dotenv_kwags,
 ) -> EnvVarsDict:
     """Batch monkeypatch.delenv(...) on all env vars in an envfile"""
