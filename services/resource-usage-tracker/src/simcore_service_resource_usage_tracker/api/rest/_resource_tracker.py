@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     CreditTransactionCreated,
@@ -19,12 +19,14 @@ from models_library.products import ProductName
 from models_library.resource_tracker import CreditTransactionId
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import AnyUrl
 from simcore_service_resource_usage_tracker.api.rest.dependencies import get_repository
 from simcore_service_resource_usage_tracker.modules.db.repositories.resource_tracker import (
     ResourceTrackerRepository,
 )
 
 from ...models.pagination import LimitOffsetPage, LimitOffsetParamsWithDefault
+from ...modules.s3 import get_s3_client
 from ...services import (
     resource_tracker_credit_transactions,
     resource_tracker_pricing_plans,
@@ -75,6 +77,33 @@ async def list_usage_services(
         usage_services_page.items,
         total=usage_services_page.total,
         params=page_params,
+    )
+
+
+@router.get(
+    "/services/-/usages/presigned-link",
+    response_model=AnyUrl,
+    operation_id="get_usages_presigned_link",
+    description="Return presigned-link",
+    tags=["usages"],
+)
+async def get_usages_presigned_link(
+    request: Request,
+    user_id: UserID,
+    product_name: ProductName,
+    resource_tracker_repo: Annotated[
+        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
+    ],
+    wallet_id: Annotated[WalletID | None, Query()] = None,
+    access_all_wallet_usage: Annotated[bool, Query()] = False,
+):
+    return await resource_tracker_service_runs.export_service_runs(
+        s3_client=get_s3_client(request.app),
+        user_id=user_id,
+        product_name=product_name,
+        resource_tracker_repo=resource_tracker_repo,
+        wallet_id=wallet_id,
+        access_all_wallet_usage=access_all_wallet_usage,
     )
 
 

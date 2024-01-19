@@ -57,7 +57,7 @@ class SimcoreS3API:
         bucket_name: S3BucketName,
         object_key: str,
         expiration_secs: int,
-    ) -> str:
+    ) -> AnyUrl:
         try:
             # NOTE: ensure the bucket/object exists, this will raise if not
             await self.client.head_bucket(Bucket=bucket_name)

@@ -488,6 +488,8 @@ types-aiobotocore==2.9.1
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 types-aiobotocore-ec2==2.9.1
     # via types-aiobotocore
+types-aiobotocore-s3==2.9.1
+    # via types-aiobotocore
 types-awscrt==0.20.0
     # via botocore-stubs
 types-python-dateutil==2.8.19.20240106
@@ -504,6 +506,7 @@ typing-extensions==4.9.0
     #   typer
     #   types-aiobotocore
     #   types-aiobotocore-ec2
+    #   types-aiobotocore-s3
     #   uvicorn
 tzdata==2023.4
     # via pandas

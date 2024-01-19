@@ -296,7 +296,7 @@ class ResourceTrackerRepository(BaseRepository):
         started_from: datetime | None = None,
         started_until: datetime | None = None,
         order_by: OrderBy | None = None,
-    ) -> str:
+    ):
         async with self.db_engine.begin() as conn:
             query = (
                 sa.select(
@@ -373,8 +373,6 @@ class ResourceTrackerRepository(BaseRepository):
                 row[1],
                 row[2],
             )
-
-        return "test"
 
     async def total_service_runs_by_product_and_user_and_wallet(
         self,

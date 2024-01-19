@@ -6,6 +6,7 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunGet,
     ServiceRunPage,
 )
+from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
 from models_library.resource_tracker import ServiceResourceUsagesFilters
 from models_library.rest_ordering import OrderBy
@@ -148,7 +149,7 @@ async def export_service_runs(
         started_until = filters.started_at.until
 
     # Create S3 key name
-    s3_bucket_name = "simcore-db-exports"
+    s3_bucket_name = S3BucketName("simcore-db-exports")
     file_name = f"{datetime.now(tz=timezone.utc).date()}__{uuid4()}.csv"
     s3_object_key = f"resource-usage-tracker-service-runs/{file_name}"
 
@@ -164,7 +165,7 @@ async def export_service_runs(
     )
 
     # Create presigned S3 link
-    generated_url: AnyUrl = await s3_client.generate_presigned_url(
+    generated_url: AnyUrl = await s3_client.create_presigned_link(
         bucket_name=s3_bucket_name, object_key=s3_object_key, expiration_secs=7200
     )
     return generated_url
