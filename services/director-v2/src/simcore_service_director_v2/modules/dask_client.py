@@ -16,19 +16,25 @@ from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from http.client import HTTPException
-from typing import Any, TypeAlias
+from typing import Any
 
 import distributed
+from aiohttp import ClientResponseError
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import (
     TaskCancelEventName,
+    TaskInputData,
     TaskOutputData,
+    TaskOutputDataSchema,
 )
 from dask_task_models_library.container_tasks.protocol import (
+    ContainerEnvsDict,
+    ContainerLabelsDict,
     ContainerRemoteFct,
     ContainerTaskParameters,
     LogFileUploadURL,
+    TaskOwner,
 )
 from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
@@ -36,16 +42,16 @@ from dask_task_models_library.resource_constraints import (
 from distributed.scheduler import TaskStateState as DaskSchedulerTaskState
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.clusters import ClusterDetails, Scheduler
-from models_library.basic_types import IDStr
 from models_library.clusters import ClusterAuthentication, ClusterID, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import ValidationError, parse_obj_as
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import log_catch
 from settings_library.s3 import S3Settings
+from simcore_sdk.node_ports_common.exceptions import NodeportsException
 from simcore_sdk.node_ports_v2 import FileLinkType
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -56,11 +62,12 @@ from ..core.errors import (
     ComputationalBackendNoS3AccessError,
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
+    TaskSchedulingError,
 )
 from ..core.settings import AppSettings, ComputationalBackendSettings
 from ..models.comp_runs import RunMetadataDict
 from ..models.comp_tasks import Image
-from ..models.dask_subsystem import DaskClientTaskState
+from ..models.dask_subsystem import DaskClientTaskState, DaskJobID, DaskResources
 from ..modules.storage import StorageClient
 from ..utils import dask as dask_utils
 from ..utils.dask_client_utils import (
@@ -95,8 +102,6 @@ _DASK_DEFAULT_TIMEOUT_S = 1
 
 
 _UserCallbackInSepThread = Callable[[], None]
-
-DaskJobID: TypeAlias = IDStr
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -189,6 +194,90 @@ class DaskClient:
             for dask_sub, handler in _event_consumer_map
         ]
 
+    async def _publish_in_dask(  # noqa: PLR0913 # pylint: disable=too-many-arguments
+        self,
+        *,
+        remote_fct: ContainerRemoteFct | None = None,
+        node_image: Image,
+        input_data: TaskInputData,
+        output_data_keys: TaskOutputDataSchema,
+        log_file_url: AnyUrl,
+        task_envs: ContainerEnvsDict,
+        task_labels: ContainerLabelsDict,
+        task_owner: TaskOwner,
+        s3_settings: S3Settings | None,
+        dask_resources: DaskResources,
+        node_id: NodeID,
+        job_id: DaskJobID,
+        callback: _UserCallbackInSepThread,
+    ) -> PublishedComputationTask:
+        def _comp_sidecar_fct(
+            *,
+            task_parameters: ContainerTaskParameters,
+            docker_auth: DockerBasicAuth,
+            log_file_url: LogFileUploadURL,
+            s3_settings: S3Settings | None,
+        ) -> TaskOutputData:
+            """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
+            Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
+            from simcore_service_dask_sidecar.tasks import run_computational_sidecar
+
+            return run_computational_sidecar(
+                task_parameters=task_parameters,
+                docker_auth=docker_auth,
+                log_file_url=log_file_url,
+                s3_settings=s3_settings,
+            )
+
+        if remote_fct is None:
+            remote_fct = _comp_sidecar_fct
+        try:
+            assert self.app.state  # nosec
+            assert self.app.state.settings  # nosec
+            settings: AppSettings = self.app.state.settings
+            task_future = self.backend.client.submit(
+                remote_fct,
+                task_parameters=ContainerTaskParameters(
+                    image=node_image.name,
+                    tag=node_image.tag,
+                    input_data=input_data,
+                    output_data_keys=output_data_keys,
+                    command=node_image.command,
+                    envs=task_envs,
+                    labels=task_labels,
+                    boot_mode=node_image.boot_mode,
+                    task_owner=task_owner,
+                ),
+                docker_auth=DockerBasicAuth(
+                    server_address=settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
+                    username=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
+                    password=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
+                ),
+                log_file_url=log_file_url,
+                s3_settings=s3_settings,
+                key=job_id,
+                resources=dask_resources,
+                retries=0,
+            )
+            # NOTE: the callback is running in a secondary thread, and takes a future as arg
+            task_future.add_done_callback(lambda _: callback())
+
+            await dask_utils.wrap_client_async_routine(
+                self.backend.client.publish_dataset(task_future, name=job_id)
+            )
+
+            _logger.debug(
+                "Dask task %s started [%s]",
+                f"{task_future.key=}",
+                f"{node_image.command=}",
+            )
+            return PublishedComputationTask(node_id=node_id, job_id=DaskJobID(job_id))
+        except Exception:
+            # Dask raises a base Exception here in case of connection error, this will raise a more precise one
+            dask_utils.check_scheduler_status(self.backend.client)
+            # if the connection is good, then the problem is different, so we re-raise
+            raise
+
     async def send_computation_tasks(
         self,
         *,
@@ -210,35 +299,9 @@ class DaskClient:
           - ComputationalBackendNotConnectedError when scheduler is not connected/running
           - MissingComputationalResourcesError (only for internal cluster)
           - InsuficientComputationalResourcesError (only for internal cluster)
-          - TaskSchedulingError
-          - PortsValidationError (not sure when this happens - node ports)
-          - S3InvalidStore (node ports, invalid S3 store)
-          - NodeportsException (node ports, generic exception)
-          - StorageServerIssue storage server is not responding
-          - ClientResponseError
-          - ValidationError
+          - TaskSchedulingError when any other error happens
         """
 
-        def _comp_sidecar_fct(
-            *,
-            task_parameters: ContainerTaskParameters,
-            docker_auth: DockerBasicAuth,
-            log_file_url: LogFileUploadURL,
-            s3_settings: S3Settings | None,
-        ) -> TaskOutputData:
-            """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
-            Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
-            from simcore_service_dask_sidecar.tasks import run_computational_sidecar
-
-            return run_computational_sidecar(
-                task_parameters=task_parameters,
-                docker_auth=docker_auth,
-                log_file_url=log_file_url,
-                s3_settings=s3_settings,
-            )
-
-        if remote_fct is None:
-            remote_fct = _comp_sidecar_fct
         list_of_node_id_to_job_id: list[PublishedComputationTask] = []
         for node_id, node_image in tasks.items():
             job_id = dask_utils.generate_dask_job_id(
@@ -292,100 +355,74 @@ class DaskClient:
                 except HTTPException as err:
                     raise ComputationalBackendNoS3AccessError from err
 
-            # This instance is created only once so it can be reused in calls below
-            node_ports = await dask_utils.create_node_ports(
-                db_engine=self.app.state.engine,
-                user_id=user_id,
-                project_id=project_id,
-                node_id=node_id,
-            )
-            # NOTE: for download there is no need to go with S3 links
-            input_data = await dask_utils.compute_input_data(
-                project_id=project_id,
-                node_id=node_id,
-                node_ports=node_ports,
-                file_link_type=FileLinkType.PRESIGNED,
-            )
-            output_data_keys = await dask_utils.compute_output_data_schema(
-                user_id=user_id,
-                project_id=project_id,
-                node_id=node_id,
-                node_ports=node_ports,
-                file_link_type=self.tasks_file_link_type,
-            )
-            log_file_url = await dask_utils.compute_service_log_file_upload_link(
-                user_id,
-                project_id,
-                node_id,
-                file_link_type=self.tasks_file_link_type,
-            )
-            task_labels = dask_utils.compute_task_labels(
-                user_id=user_id,
-                project_id=project_id,
-                node_id=node_id,
-                run_metadata=metadata,
-                node_requirements=node_image.node_requirements,
-            )
-            task_envs = await dask_utils.compute_task_envs(
-                self.app,
-                user_id=user_id,
-                project_id=project_id,
-                node_id=node_id,
-                node_image=node_image,
-                metadata=metadata,
-            )
-            task_owner = dask_utils.compute_task_owner(
-                user_id, project_id, node_id, metadata.get("project_metadata", {})
-            )
-
             try:
-                assert self.app.state  # nosec
-                assert self.app.state.settings  # nosec
-                settings: AppSettings = self.app.state.settings
-                task_future = self.backend.client.submit(
-                    remote_fct,
-                    task_parameters=ContainerTaskParameters(
-                        image=node_image.name,
-                        tag=node_image.tag,
+                # This instance is created only once so it can be reused in calls below
+                node_ports = await dask_utils.create_node_ports(
+                    db_engine=self.app.state.engine,
+                    user_id=user_id,
+                    project_id=project_id,
+                    node_id=node_id,
+                )
+                # NOTE: for download there is no need to go with S3 links
+                input_data = await dask_utils.compute_input_data(
+                    project_id=project_id,
+                    node_id=node_id,
+                    node_ports=node_ports,
+                    file_link_type=FileLinkType.PRESIGNED,
+                )
+                output_data_keys = await dask_utils.compute_output_data_schema(
+                    user_id=user_id,
+                    project_id=project_id,
+                    node_id=node_id,
+                    node_ports=node_ports,
+                    file_link_type=self.tasks_file_link_type,
+                )
+                log_file_url = await dask_utils.compute_service_log_file_upload_link(
+                    user_id,
+                    project_id,
+                    node_id,
+                    file_link_type=self.tasks_file_link_type,
+                )
+                task_labels = dask_utils.compute_task_labels(
+                    user_id=user_id,
+                    project_id=project_id,
+                    node_id=node_id,
+                    run_metadata=metadata,
+                    node_requirements=node_image.node_requirements,
+                )
+                task_envs = await dask_utils.compute_task_envs(
+                    self.app,
+                    user_id=user_id,
+                    project_id=project_id,
+                    node_id=node_id,
+                    node_image=node_image,
+                    metadata=metadata,
+                )
+                task_owner = dask_utils.compute_task_owner(
+                    user_id, project_id, node_id, metadata.get("project_metadata", {})
+                )
+                list_of_node_id_to_job_id.append(
+                    await self._publish_in_dask(
+                        remote_fct=remote_fct,
+                        node_image=node_image,
                         input_data=input_data,
                         output_data_keys=output_data_keys,
-                        command=node_image.command,
-                        envs=task_envs,
-                        labels=task_labels,
-                        boot_mode=node_image.boot_mode,
+                        log_file_url=log_file_url,
+                        task_envs=task_envs,
+                        task_labels=task_labels,
                         task_owner=task_owner,
-                    ),
-                    docker_auth=DockerBasicAuth(
-                        server_address=settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
-                        username=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
-                        password=settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_PW,
-                    ),
-                    log_file_url=log_file_url,
-                    s3_settings=s3_settings,
-                    key=job_id,
-                    resources=dask_resources,
-                    retries=0,
+                        s3_settings=s3_settings,
+                        dask_resources=dask_resources,
+                        node_id=node_id,
+                        job_id=job_id,
+                        callback=callback,
+                    )
                 )
-                # NOTE: the callback is running in a secondary thread, and takes a future as arg
-                task_future.add_done_callback(lambda _: callback())
+            except (NodeportsException, ValidationError, ClientResponseError) as exc:
+                raise TaskSchedulingError(
+                    project_id=project_id, node_id=node_id, msg={exc}
+                ) from exc
 
-                list_of_node_id_to_job_id.append(
-                    PublishedComputationTask(node_id=node_id, job_id=DaskJobID(job_id))
-                )
-                await dask_utils.wrap_client_async_routine(
-                    self.backend.client.publish_dataset(task_future, name=job_id)
-                )
-
-                _logger.debug(
-                    "Dask task %s started [%s]",
-                    f"{task_future.key=}",
-                    f"{node_image.command=}",
-                )
-            except Exception:
-                # Dask raises a base Exception here in case of connection error, this will raise a more precise one
-                dask_utils.check_scheduler_status(self.backend.client)
-                # if the connection is good, then the problem is different, so we re-raise
-                raise
         return list_of_node_id_to_job_id
 
     async def get_tasks_status(self, job_ids: list[str]) -> list[DaskClientTaskState]:

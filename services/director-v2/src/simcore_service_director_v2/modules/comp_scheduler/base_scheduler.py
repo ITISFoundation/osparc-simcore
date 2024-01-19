@@ -734,23 +734,6 @@ class BaseCompScheduler(ABC):
                 scheduled_tasks=tasks_ready_to_start,
                 pipeline_params=pipeline_params,
             )
-        except TaskSchedulingError as exc:
-            _logger.exception(
-                "Project '%s''s task '%s' could not be scheduled",
-                exc.project_id,
-                exc.node_id,
-            )
-            await CompTasksRepository.instance(
-                self.db_engine
-            ).update_project_tasks_state(
-                project_id,
-                [exc.node_id],
-                RunningState.FAILED,
-                exc.get_errors(),
-                optional_progress=1.0,
-                optional_stopped=arrow.utcnow().datetime,
-            )
-            comp_tasks[NodeIDStr(f"{exc.node_id}")].state = RunningState.FAILED
         except (
             ComputationalBackendNotConnectedError,
             ComputationalSchedulerChangedError,
@@ -790,8 +773,10 @@ class BaseCompScheduler(ABC):
                 list(tasks_ready_to_start.keys()),
                 RunningState.WAITING_FOR_CLUSTER,
             )
-            for task in comp_tasks.values():
-                task.state = RunningState.WAITING_FOR_CLUSTER
+            for task in tasks_ready_to_start:
+                comp_tasks[
+                    NodeIDStr(f"{task}")
+                ].state = RunningState.WAITING_FOR_CLUSTER
         except ClustersKeeperNotAvailableError:
             _logger.exception("Unexpected error while starting tasks:")
             await publish_project_log(
@@ -811,8 +796,25 @@ class BaseCompScheduler(ABC):
                 optional_progress=1.0,
                 optional_stopped=arrow.utcnow().datetime,
             )
-            for task in comp_tasks.values():
-                task.state = RunningState.FAILED
+            for task in tasks_ready_to_start:
+                comp_tasks[NodeIDStr(f"{task}")].state = RunningState.FAILED
+        except TaskSchedulingError as exc:
+            _logger.exception(
+                "Project '%s''s task '%s' could not be scheduled",
+                exc.project_id,
+                exc.node_id,
+            )
+            await CompTasksRepository.instance(
+                self.db_engine
+            ).update_project_tasks_state(
+                project_id,
+                [exc.node_id],
+                RunningState.FAILED,
+                exc.get_errors(),
+                optional_progress=1.0,
+                optional_stopped=arrow.utcnow().datetime,
+            )
+            comp_tasks[NodeIDStr(f"{exc.node_id}")].state = RunningState.FAILED
         except Exception:
             _logger.exception(
                 "Unexpected error for %s with %s on %s happened when scheduling %s:",
@@ -830,8 +832,8 @@ class BaseCompScheduler(ABC):
                 optional_progress=1.0,
                 optional_stopped=arrow.utcnow().datetime,
             )
-            for task in comp_tasks.values():
-                task.state = RunningState.FAILED
+            for task in tasks_ready_to_start:
+                comp_tasks[NodeIDStr(f"{task}")].state = RunningState.FAILED
 
         return comp_tasks
 
