@@ -312,12 +312,11 @@ def test_issubclass_type_error_with_pydantic_models():
     assert inspect.isclass(dict[str, str])
     assert not issubclass(dict, BaseSettings)
 
-    # NOTE: this should fail when fixed!
+    # NOTE: this should be fixed by pydantic at some point. When this happens, this test will fail
     with pytest.raises(TypeError):
         issubclass(dict[str, str], BaseSettings)
 
-    # here reproduces the problem with our settings
-    # that occurred to ANE and PC
+    # here reproduces the problem with our settings that ANE and PC had
     class SettingsClassThatFailed(BaseCustomSettings):
         FOO: dict[str, str] | None = Field(default=None)
 
