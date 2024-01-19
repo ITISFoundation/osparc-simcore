@@ -198,7 +198,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         users_repo = get_repository(app, UsersRepository)
         primary_group_id = await users_repo.get_primary_group_id(scheduler_data.user_id)
 
-        telemetry_enabled = True  # TODO: pull from somewhere!
+        telemetry_enabled = True  # TODO: finish fetching the config
 
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
