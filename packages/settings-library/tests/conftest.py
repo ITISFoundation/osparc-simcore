@@ -10,7 +10,6 @@ import settings_library
 from dotenv import dotenv_values
 from pydantic.fields import Field
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import delenvs_from_dict
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt
 from settings_library.postgres import PostgresSettings
@@ -46,14 +45,6 @@ def project_tests_data_folder(project_tests_dir: Path) -> Path:
     dir_path = project_tests_dir / "data"
     assert dir_path.exists()
     return dir_path
-
-
-@pytest.fixture
-def all_env_devel_undefined(
-    monkeypatch: pytest.MonkeyPatch, env_devel_dict: EnvVarsDict
-):
-    """Ensures that all env vars in .env-devel are undefined in the environment"""
-    delenvs_from_dict(monkeypatch, env_devel_dict, raising=False)
 
 
 @pytest.fixture
