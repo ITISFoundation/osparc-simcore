@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 
 from collections.abc import Callable
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
@@ -87,6 +88,7 @@ async def test_disk_usage_monitor(
         app=AsyncMock(),
         primary_group_id=42,
         node_id=faker.uuid4(),
+        interval=timedelta(seconds=5),
         monitored_paths=[Path("/"), Path("/tmp")],  # noqa: S108
     )
 
