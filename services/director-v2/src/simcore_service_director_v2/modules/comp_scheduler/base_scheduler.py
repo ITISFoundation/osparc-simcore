@@ -698,7 +698,7 @@ class BaseCompScheduler(ABC):
         tasks_to_stop = [t for t in comp_tasks.values() if t.state in PROCESSING_STATES]
         await self._stop_tasks(user_id, tasks_to_stop, pipeline_params)
 
-    async def _schedule_tasks_to_start(
+    async def _schedule_tasks_to_start(  # noqa: C901
         self,
         user_id: UserID,
         project_id: ProjectID,
