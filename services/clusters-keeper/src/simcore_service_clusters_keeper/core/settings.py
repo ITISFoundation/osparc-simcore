@@ -219,6 +219,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True
     )
 
+    CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX: str = Field(
+        ...,
+        description="set a prefix to all machines created (useful for testing)",
+    )
+
     CLUSTERS_KEEPER_RABBITMQ: RabbitSettings | None = Field(auto_default_from_env=True)
 
     CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True

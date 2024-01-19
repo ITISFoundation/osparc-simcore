@@ -100,6 +100,7 @@ def app_environment(
             "CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID": faker.pystr(),
             "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY": faker.pystr(),
             "CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES": "{}",
+            "CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
