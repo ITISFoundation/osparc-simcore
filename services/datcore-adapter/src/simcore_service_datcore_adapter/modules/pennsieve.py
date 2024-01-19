@@ -4,7 +4,7 @@ import typing
 from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
-from typing import Any, Final, Optional, TypedDict, cast
+from typing import Any, Final, TypedDict, cast
 
 import boto3
 from aiocache import SimpleMemoryCache
@@ -128,8 +128,8 @@ class PennsieveApiClient(BaseServiceClientApi):
         api_secret: str,
         method: str,
         path: str,
-        params: Optional[dict[str, Any]] = None,
-        json: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        json: dict[str, Any] | None = None,
     ) -> Any:
         response = await self.client.request(
             method,
@@ -181,7 +181,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         page_size: int,
         cursor: str,
     ) -> dict[str, Any]:
-        return cast(
+        package = cast(
             dict[str, Any],
             await self._request(
                 api_key,
@@ -195,6 +195,10 @@ class PennsieveApiClient(BaseServiceClientApi):
                 },
             ),
         )
+        package["packages"] = [
+            f for f in package["packages"] if f["content"]["state"] != "DELETED"
+        ]
+        return package
 
     async def _get_package(
         self, api_key: str, api_secret: str, package_id: str
