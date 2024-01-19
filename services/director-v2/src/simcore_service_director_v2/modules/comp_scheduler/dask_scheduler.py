@@ -106,10 +106,6 @@ class DaskScheduler(BaseCompScheduler):
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
     ) -> None:
-        """
-        Raises:
-
-        """
         # now transfer the pipeline to the dask scheduler
         async with _cluster_dask_client(user_id, pipeline_params, self) as client:
             # Change the tasks state to PENDING
