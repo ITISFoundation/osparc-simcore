@@ -104,7 +104,9 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
 
     @classmethod
-    async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+    async def action(  # pylint:disable=too-many-statements
+        cls, app: FastAPI, scheduler_data: SchedulerData
+    ) -> None:
         # instrumentation
         message = InstrumentationRabbitMessage(
             metrics="service_started",
