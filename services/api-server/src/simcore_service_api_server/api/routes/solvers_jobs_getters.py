@@ -169,7 +169,6 @@ async def get_job_outputs(
     job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     db_engine: Annotated[Engine, Depends(get_db_engine)],
-    product_name: Annotated[str, Depends(get_product_name)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
@@ -180,8 +179,8 @@ async def get_job_outputs(
     node_ids = list(project.workbench.keys())
     assert len(node_ids) == 1  # nosec
 
-    product = await webserver_api.get_product(product_name=product_name)
-    if product.is_payment_enabled:
+    product_price = await webserver_api.get_product_price()
+    if product_price is not None:
         wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
         if wallet is None:
             raise MissingWallet(
