@@ -2,20 +2,53 @@
 
 """
 
+import aiohttp_security.api
 import passlib.hash
 from aiohttp import web
-from aiohttp_security.api import (
-    AUTZ_KEY,
-    authorized_userid,
-    check_permission,
-    forget,
-    is_anonymous,
-    remember,
-)
-from simcore_postgres_database.models.users import UserRole
+from models_library.users import UserID
 
-from ._access_model import RoleBasedAccessModel
-from ._authorization import AuthorizationPolicy
+from ._authz import AuthorizationPolicy
+from ._authz_access_model import OptionalContext, RoleBasedAccessModel
+from ._identity import forget_identity, remember_identity
+
+
+def get_access_model(app: web.Application) -> RoleBasedAccessModel:
+    autz_policy: AuthorizationPolicy = app[aiohttp_security.api.AUTZ_KEY]
+    return autz_policy.access_model
+
+
+async def clean_auth_policy_cache(app: web.Application) -> None:
+    autz_policy: AuthorizationPolicy = app[aiohttp_security.api.AUTZ_KEY]
+    await autz_policy.clear_cache()
+
+
+async def check_permission(
+    request: web.Request, permission: str, *, context: OptionalContext = None
+) -> None:
+    """Checker that passes only to authoraised users with given permission.
+
+    Raises:
+        web.HTTPUnauthorized: If user is not authorized
+        web.HTTPForbidden: If user is authorized and does not have permission
+    """
+    await aiohttp_security.api.check_permission(request, permission, context)
+
+
+async def authorized_userid(request: web.Request) -> UserID | None:
+    return await aiohttp_security.api.authorized_userid(request)
+
+
+async def is_anonymous(request: web.Request) -> bool:
+    """
+    User is considered anonymous if there is not identityin request.
+    """
+    yes: bool = await aiohttp_security.api.is_anonymous(request)
+    return yes
+
+
+#
+# utils (i.e. independent from setup)
+#
 
 
 def encrypt_password(password: str) -> str:
@@ -28,25 +61,16 @@ def check_password(password: str, password_hash: str) -> bool:
     return is_valid
 
 
-def get_access_model(app: web.Application) -> RoleBasedAccessModel:
-    autz_policy: AuthorizationPolicy = app[AUTZ_KEY]
-    return autz_policy.access_model
-
-
-def clean_auth_policy_cache(app: web.Application) -> None:
-    autz_policy: AuthorizationPolicy = app[AUTZ_KEY]
-    autz_policy.timed_cache.clear()
+assert forget_identity  # nosec
+assert remember_identity  # nosec
 
 
 __all__: tuple[str, ...] = (
     "authorized_userid",
     "check_permission",
     "encrypt_password",
-    "forget",
+    "forget_identity",
     "get_access_model",
     "is_anonymous",
-    "remember",
-    "UserRole",
+    "remember_identity",
 )
-
-# nopycln: file

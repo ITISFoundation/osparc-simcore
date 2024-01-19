@@ -594,8 +594,8 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
                                 "value": False,
                                 "owner": {
                                     "user_id": logged_user["id"],
-                                    "first_name": logged_user["name"],
-                                    "last_name": "",
+                                    "first_name": logged_user.get("first_name", None),
+                                    "last_name": logged_user.get("last_name", None),
                                 },
                                 "status": "OPENED",
                             },

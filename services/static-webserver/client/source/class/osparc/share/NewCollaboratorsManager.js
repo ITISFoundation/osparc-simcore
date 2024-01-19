@@ -71,7 +71,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         alignX: "right"
       }));
       const shareButton = this.__shareButton = new osparc.ui.form.FetchButton(this.tr("Share")).set({
-        appearance: "strong-button"
+        appearance: "form-button"
       });
       shareButton.addListener("execute", () => this.__shareClicked(), this);
       buttons.add(shareButton);

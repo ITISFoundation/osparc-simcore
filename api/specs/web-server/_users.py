@@ -24,7 +24,7 @@ from simcore_service_webserver.users.schemas import (
     PermissionGet,
     ProfileGet,
     ProfileUpdate,
-    Token,
+    ThirdPartyToken,
     TokenCreate,
 )
 
@@ -60,7 +60,7 @@ async def set_frontend_preference(
 
 @router.get(
     "/me/tokens",
-    response_model=Envelope[list[Token]],
+    response_model=Envelope[list[ThirdPartyToken]],
 )
 async def list_tokens():
     ...
@@ -68,7 +68,7 @@ async def list_tokens():
 
 @router.post(
     "/me/tokens",
-    response_model=Envelope[Token],
+    response_model=Envelope[ThirdPartyToken],
     status_code=status.HTTP_201_CREATED,
 )
 async def create_token(_token: TokenCreate):
@@ -77,7 +77,7 @@ async def create_token(_token: TokenCreate):
 
 @router.get(
     "/me/tokens/{service}",
-    response_model=Envelope[Token],
+    response_model=Envelope[ThirdPartyToken],
 )
 async def get_token(_params: Annotated[_TokenPathParams, Depends()]):
     ...

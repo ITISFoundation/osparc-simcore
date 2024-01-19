@@ -3,7 +3,7 @@ info:
   title: simcore-service-webserver
   description: ' Main service with an interface (http-API & websockets) to the web
     front-end'
-  version: 0.37.0
+  version: 0.37.1
 servers:
 - url: ''
   description: webserver
@@ -2119,11 +2119,6 @@ paths:
           type: string
         name: search
         in: query
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Body_list_projects'
       responses:
         '200':
           description: Successful Response
@@ -2436,7 +2431,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Union_NodeGet__NodeGetIdle__'
+                $ref: '#/components/schemas/Envelope_Union_NodeGetIdle__NodeGetUnknown__RunningDynamicServiceDetails__NodeGet__'
     delete:
       tags:
       - projects
@@ -3089,6 +3084,34 @@ paths:
         are taken from context, optionally wallet_id parameter might be provided).
       operationId: list_resource_usage_services
       parameters:
+      - description: Order by field (started_at|stopped_at|credit_cost) and direction
+          (asc|desc). The default sorting order is ascending.
+        required: false
+        schema:
+          title: Order By
+          type: string
+          description: Order by field (started_at|stopped_at|credit_cost) and direction
+            (asc|desc). The default sorting order is ascending.
+          format: json-string
+        example: '{"field": "started_at", "direction": "desc"}'
+        name: order_by
+        in: query
+      - description: Filters to process on the resource usages list, encoded as JSON.
+          Currently supports the filtering of 'started_at' field with 'from' and 'until'
+          parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is
+          inclusive.
+        required: false
+        schema:
+          title: Filters
+          type: string
+          description: Filters to process on the resource usages list, encoded as
+            JSON. Currently supports the filtering of 'started_at' field with 'from'
+            and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range
+            specified is inclusive.
+          format: json-string
+        example: '{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}'
+        name: filters
+        in: query
       - required: false
         schema:
           title: Wallet Id
@@ -3662,7 +3685,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users.schemas.Token__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users.schemas.ThirdPartyToken__'
     post:
       tags:
       - user
@@ -3680,7 +3703,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Token_'
+                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
   /v0/me/tokens/{service}:
     get:
       tags:
@@ -3700,7 +3723,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Token_'
+                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
     delete:
       tags:
       - user
@@ -4532,15 +4555,15 @@ components:
         read:
           title: Read
           type: boolean
-          description: gives read access
+          description: has read access
         write:
           title: Write
           type: boolean
-          description: gives write access
+          description: has write access
         delete:
           title: Delete
           type: boolean
-          description: gives deletion rights
+          description: has deletion rights
       additionalProperties: false
     AccountRequestInfo:
       title: AccountRequestInfo
@@ -4808,17 +4831,6 @@ components:
           description: Link to the status
           format: uri
       additionalProperties: false
-    Body_list_projects:
-      title: Body_list_projects
-      type: object
-      properties:
-        order_by:
-          title: Order By
-          type: array
-          items:
-            $ref: '#/components/schemas/ProjectOrderBy'
-        filters:
-          $ref: '#/components/schemas/ProjectListFilters'
     Body_service_submission:
       title: Body_service_submission
       required:
@@ -5702,23 +5714,26 @@ components:
           $ref: '#/components/schemas/TaskStatus'
         error:
           title: Error
-    Envelope_Token_:
-      title: Envelope[Token]
+    Envelope_ThirdPartyToken_:
+      title: Envelope[ThirdPartyToken]
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/Token'
+          $ref: '#/components/schemas/ThirdPartyToken'
         error:
           title: Error
-    Envelope_Union_NodeGet__NodeGetIdle__:
-      title: Envelope[Union[NodeGet, NodeGetIdle]]
+    Envelope_Union_NodeGetIdle__NodeGetUnknown__RunningDynamicServiceDetails__NodeGet__:
+      title: Envelope[Union[NodeGetIdle, NodeGetUnknown, RunningDynamicServiceDetails,
+        NodeGet]]
       type: object
       properties:
         data:
           title: Data
           anyOf:
-          - $ref: '#/components/schemas/NodeGet'
           - $ref: '#/components/schemas/NodeGetIdle'
+          - $ref: '#/components/schemas/NodeGetUnknown'
+          - $ref: '#/components/schemas/RunningDynamicServiceDetails'
+          - $ref: '#/components/schemas/NodeGet'
         error:
           title: Error
     Envelope_Union_PricingUnitGet__NoneType__:
@@ -6127,15 +6142,15 @@ components:
             $ref: '#/components/schemas/PermissionGet'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.users.schemas.Token__:
-      title: Envelope[list[simcore_service_webserver.users.schemas.Token]]
+    Envelope_list_simcore_service_webserver.users.schemas.ThirdPartyToken__:
+      title: Envelope[list[simcore_service_webserver.users.schemas.ThirdPartyToken]]
       type: object
       properties:
         data:
           title: Data
           type: array
           items:
-            $ref: '#/components/schemas/Token'
+            $ref: '#/components/schemas/ThirdPartyToken'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.wallets._groups_api.WalletGroupGet__:
@@ -7227,6 +7242,28 @@ components:
           title: Serviceuuid
           type: string
           format: uuid
+      example:
+        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        service_state: idle
+    NodeGetUnknown:
+      title: NodeGetUnknown
+      required:
+      - serviceState
+      - serviceUuid
+      type: object
+      properties:
+        serviceState:
+          title: Servicestate
+          enum:
+          - unknown
+          type: string
+        serviceUuid:
+          title: Serviceuuid
+          type: string
+          format: uuid
+      example:
+        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        service_state: unknown
     NodeRetrieve:
       title: NodeRetrieve
       type: object
@@ -7314,13 +7351,6 @@ components:
       - WALLET_SHARED
       type: string
       description: An enumeration.
-    OrderDirection:
-      title: OrderDirection
-      enum:
-      - asc
-      - desc
-      type: string
-      description: An enumeration.
     Owner:
       title: Owner
       required:
@@ -7332,15 +7362,17 @@ components:
         user_id:
           title: User Id
           type: integer
-          description: Owner's identifier when registered in the user's database table
+          description: Owner's user id
         first_name:
           title: First Name
+          maxLength: 255
           type: string
-          description: Owner first name
+          description: Owner's first name
         last_name:
           title: Last Name
+          maxLength: 255
           type: string
-          description: Owner last name
+          description: Owner's last name
       additionalProperties: false
     PageLinks:
       title: PageLinks
@@ -7808,17 +7840,19 @@ components:
       - preferences
       type: object
       properties:
-        first_name:
-          title: First Name
-          type: string
-        last_name:
-          title: Last Name
-          type: string
         id:
           title: Id
           exclusiveMinimum: true
           type: integer
           minimum: 0
+        first_name:
+          title: First Name
+          maxLength: 255
+          type: string
+        last_name:
+          title: Last Name
+          maxLength: 255
+          type: string
         login:
           title: Login
           type: string
@@ -7855,9 +7889,11 @@ components:
       properties:
         first_name:
           title: First Name
+          maxLength: 255
           type: string
         last_name:
           title: Last Name
+          maxLength: 255
           type: string
       example:
         first_name: Pedro
@@ -7915,6 +7951,8 @@ components:
         accessRights:
           title: Accessrights
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
         tags:
           title: Tags
           type: array
@@ -7980,6 +8018,8 @@ components:
         accessRights:
           title: Accessrights
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
         tags:
           title: Tags
           type: array
@@ -8120,27 +8160,6 @@ components:
           format: uri
         results:
           $ref: '#/components/schemas/ExtractedResults'
-    ProjectListFilters:
-      title: ProjectListFilters
-      type: object
-      properties:
-        tags:
-          title: Tags
-          type: array
-          items:
-            exclusiveMinimum: true
-            type: integer
-            minimum: 0
-        classifiers:
-          title: Classifiers
-          type: array
-          items:
-            type: string
-      additionalProperties: false
-      description: 'inspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.
-
-        Encoded as JSON. Each available filter can have its own logic (should be well
-        documented)'
     ProjectListItem:
       title: ProjectListItem
       required:
@@ -8194,6 +8213,8 @@ components:
         accessRights:
           title: Accessrights
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
         tags:
           title: Tags
           type: array
@@ -8300,19 +8321,6 @@ components:
             - type: integer
             - type: number
             - type: string
-    ProjectOrderBy:
-      title: ProjectOrderBy
-      type: object
-      properties:
-        field:
-          title: Field
-          type: string
-        direction:
-          allOf:
-          - $ref: '#/components/schemas/OrderDirection'
-          default: desc
-      additionalProperties: false
-      description: inspired by Google AIP https://google.aip.dev/132#ordering
     ProjectOutputGet:
       title: ProjectOutputGet
       required:
@@ -8391,6 +8399,8 @@ components:
         accessRights:
           title: Accessrights
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
         tags:
           title: Tags
           type: array
@@ -8477,6 +8487,8 @@ components:
         accessRights:
           title: Accessrights
           type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccessRights'
         tags:
           title: Tags
           type: array
@@ -8774,6 +8786,90 @@ components:
           - type: integer
           - type: number
           - type: string
+    RunningDynamicServiceDetails:
+      title: RunningDynamicServiceDetails
+      required:
+      - service_key
+      - service_version
+      - user_id
+      - project_id
+      - service_uuid
+      - service_host
+      - service_port
+      - service_state
+      type: object
+      properties:
+        service_key:
+          title: Service Key
+          pattern: ^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+          description: distinctive name for the node based on the docker registry
+            path
+        service_version:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+          description: semantic version number of the node
+        user_id:
+          title: User Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        project_id:
+          title: Project Id
+          type: string
+          format: uuid
+        service_uuid:
+          title: Service Uuid
+          type: string
+          format: uuid
+        service_basepath:
+          title: Service Basepath
+          type: string
+          description: predefined path where the dynamic service should be served.
+            If empty, the service shall use the root endpoint.
+          format: path
+        boot_type:
+          allOf:
+          - $ref: '#/components/schemas/ServiceBootType'
+          description: Describes how the dynamic services was started (legacy=V0,
+            modern=V2).Since legacy services do not have this label it defaults to
+            V0.
+          default: V0
+        service_host:
+          title: Service Host
+          type: string
+          description: the service swarm internal host name
+        service_port:
+          title: Service Port
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          type: integer
+          description: the service swarm internal port
+          maximum: 65535
+          minimum: 0
+        published_port:
+          title: Published Port
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          type: integer
+          description: the service swarm published port if any
+          deprecated: true
+          maximum: 65535
+          minimum: 0
+        entry_point:
+          title: Entry Point
+          type: string
+          description: if empty the service entrypoint is on the root endpoint.
+          deprecated: true
+        service_state:
+          allOf:
+          - $ref: '#/components/schemas/ServiceState'
+          description: service current state
+        service_message:
+          title: Service Message
+          type: string
+          description: additional information related to service state
     RunningState:
       title: RunningState
       enum:
@@ -8820,6 +8916,13 @@ components:
           items:
             $ref: '#/components/schemas/Structure'
       additionalProperties: false
+    ServiceBootType:
+      title: ServiceBootType
+      enum:
+      - V0
+      - V2
+      type: string
+      description: An enumeration.
     ServiceGroupAccessRights:
       title: ServiceGroupAccessRights
       type: object
@@ -9668,8 +9771,8 @@ components:
           description: minimum Height of the textarea
           minimum: 0
       additionalProperties: false
-    Token:
-      title: Token
+    ThirdPartyToken:
+      title: ThirdPartyToken
       required:
       - service
       - token_key

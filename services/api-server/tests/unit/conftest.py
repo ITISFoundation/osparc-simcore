@@ -134,7 +134,7 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
         return_value=UserAndProductTuple(user_id=faker.pyint(), product_name="osparc"),
     )
     mocker.patch(
-        "simcore_service_api_server.db.repositories.users.UsersRepository.get_email_from_user_id",
+        "simcore_service_api_server.db.repositories.users.UsersRepository.get_active_user_email",
         autospec=True,
         return_value=faker.email(),
     )

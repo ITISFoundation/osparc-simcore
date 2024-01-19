@@ -16,13 +16,13 @@ def permission_required(permissions: str):
     raises HTTPForbidden.
     """
 
-    def decorator(handler: Handler):
+    def _decorator(handler: Handler):
         @wraps(handler)
-        async def wrapped(request: web.Request):
+        async def _wrapped(request: web.Request):
             await check_permission(request, permissions)
-            ret = await handler(request)
-            return ret
 
-        return wrapped
+            return await handler(request)
 
-    return decorator
+        return _wrapped
+
+    return _decorator

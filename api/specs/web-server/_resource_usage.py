@@ -9,6 +9,8 @@ This OAS are the source of truth
 # pylint: disable=too-many-arguments
 
 
+from typing import Annotated
+
 from _common import assert_handler_signature_against_model
 from fastapi import APIRouter, Query
 from models_library.api_schemas_webserver.resource_usage import (
@@ -19,13 +21,13 @@ from models_library.generics import Envelope
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.wallets import WalletID
-from pydantic import NonNegativeInt
+from pydantic import Json, NonNegativeInt
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.resource_usage._pricing_plans_handlers import (
     _GetPricingPlanUnitPathParams,
 )
 from simcore_service_webserver.resource_usage._service_runs_handlers import (
-    _ListServicesResourceUsagesPathParams,
+    _ListServicesResourceUsagesQueryParams,
 )
 
 router = APIRouter(prefix=f"/{API_VTAG}")
@@ -43,7 +45,21 @@ router = APIRouter(prefix=f"/{API_VTAG}")
     tags=["usage"],
 )
 async def list_resource_usage_services(
-    wallet_id: WalletID = Query(None),
+    order_by: Annotated[
+        Json | None,
+        Query(
+            description="Order by field (started_at|stopped_at|credit_cost) and direction (asc|desc). The default sorting order is ascending.",
+            example='{"field": "started_at", "direction": "desc"}',
+        ),
+    ] = None,
+    filters: Annotated[
+        Json | None,
+        Query(
+            description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is inclusive.",
+            example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
+        ),
+    ] = None,
+    wallet_id: Annotated[WalletID | None, Query] = None,
     limit: int = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
 ):
@@ -51,7 +67,7 @@ async def list_resource_usage_services(
 
 
 assert_handler_signature_against_model(
-    list_resource_usage_services, _ListServicesResourceUsagesPathParams
+    list_resource_usage_services, _ListServicesResourceUsagesQueryParams
 )
 
 

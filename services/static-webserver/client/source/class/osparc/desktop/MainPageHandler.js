@@ -97,7 +97,11 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
         lockedBy = studyData["state"]["locked"]["owner"];
       }
       if (locked && lockedBy["user_id"] !== osparc.auth.Data.getInstance().getUserId()) {
-        const msg = qx.locale.Manager.tr("Study is already open by ") + lockedBy["first_name"];
+        const msg = `${qx.locale.Manager.tr("Study is already open by ")} ${
+          "first_name" in lockedBy && lockedBy["first_name"] != null ?
+            lockedBy["first_name"] :
+            qx.locale.Manager.tr("another user.")
+        }`;
         throw new Error(msg);
       }
       const store = osparc.store.Store.getInstance();

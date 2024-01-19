@@ -11,12 +11,12 @@ from sqlalchemy import and_, literal_column
 from ..db.models import tokens
 from ..db.plugin import get_database_engine
 from .exceptions import TokenNotFoundError
-from .schemas import Token, TokenCreate
+from .schemas import ThirdPartyToken, TokenCreate
 
 
 async def create_token(
     app: web.Application, user_id: UserID, token: TokenCreate
-) -> Token:
+) -> ThirdPartyToken:
     async with get_database_engine(app).acquire() as conn:
         await conn.execute(
             tokens.insert().values(
@@ -28,17 +28,19 @@ async def create_token(
         return token
 
 
-async def list_tokens(app: web.Application, user_id: UserID) -> list[Token]:
-    user_tokens: list[Token] = []
+async def list_tokens(app: web.Application, user_id: UserID) -> list[ThirdPartyToken]:
+    user_tokens: list[ThirdPartyToken] = []
     async with get_database_engine(app).acquire() as conn:
         async for row in conn.execute(
             sa.select(tokens.c.token_data).where(tokens.c.user_id == user_id)
         ):
-            user_tokens.append(Token.construct(**row["token_data"]))
+            user_tokens.append(ThirdPartyToken.construct(**row["token_data"]))
         return user_tokens
 
 
-async def get_token(app: web.Application, user_id: UserID, service_id: str) -> Token:
+async def get_token(
+    app: web.Application, user_id: UserID, service_id: str
+) -> ThirdPartyToken:
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             sa.select(tokens.c.token_data).where(
@@ -46,13 +48,13 @@ async def get_token(app: web.Application, user_id: UserID, service_id: str) -> T
             )
         )
         if row := await result.first():
-            return Token.construct(**row["token_data"])
+            return ThirdPartyToken.construct(**row["token_data"])
         raise TokenNotFoundError(service_id=service_id)
 
 
 async def update_token(
     app: web.Application, user_id: UserID, service_id: str, token_data: dict[str, str]
-) -> Token:
+) -> ThirdPartyToken:
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             sa.select(tokens.c.token_data, tokens.c.token_id).where(
@@ -76,7 +78,7 @@ async def update_token(
         assert resp.rowcount == 1  # nosec
         updated_token = await resp.fetchone()
         assert updated_token  # nosec
-        return Token.construct(**updated_token["token_data"])
+        return ThirdPartyToken.construct(**updated_token["token_data"])
 
 
 async def delete_token(app: web.Application, user_id: UserID, service_id: str) -> None:

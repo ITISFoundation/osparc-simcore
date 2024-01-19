@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io web API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.5.0"
+    "version": "0.5.1"
   },
   "paths": {
     "/v0/meta": {
@@ -1588,11 +1588,15 @@
         "properties": {
           "first_name": {
             "title": "First Name",
+            "maxLength": 255,
+            "minLength": 1,
             "type": "string",
             "example": "James"
           },
           "last_name": {
             "title": "Last Name",
+            "maxLength": 255,
+            "minLength": 1,
             "type": "string",
             "example": "Maxwell"
           },
@@ -1648,11 +1652,15 @@
         "properties": {
           "first_name": {
             "title": "First Name",
+            "maxLength": 255,
+            "minLength": 1,
             "type": "string",
             "example": "James"
           },
           "last_name": {
             "title": "Last Name",
+            "maxLength": 255,
+            "minLength": 1,
             "type": "string",
             "example": "Maxwell"
           }
