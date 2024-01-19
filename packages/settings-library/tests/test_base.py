@@ -309,8 +309,7 @@ def test_issubclass_type_error_with_pydantic_models():
     # TypeError: issubclass() arg 1 must be a class
     #
 
-    assert not inspect.isclass(dict, BaseSettings)
-
+    assert inspect.isclass(dict[str, str])
     assert not issubclass(dict, BaseSettings)
 
     # NOTE: this should fail when fixed!
@@ -319,8 +318,8 @@ def test_issubclass_type_error_with_pydantic_models():
 
     # here reproduces the problem with our settings
     # that occurred to ANE and PC
-    class SomeSettings(BaseCustomSettings):
+    class SettingsClassThatFailed(BaseCustomSettings):
         FOO: dict[str, str] | None = Field(default=None)
 
-    SomeSettings(FOO={})
-    assert SomeSettings(FOO=None) == SomeSettings()
+    SettingsClassThatFailed(FOO={})
+    assert SettingsClassThatFailed(FOO=None) == SettingsClassThatFailed()
