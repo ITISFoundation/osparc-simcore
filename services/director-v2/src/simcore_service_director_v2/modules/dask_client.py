@@ -420,7 +420,7 @@ class DaskClient:
                 )
             except (NodeportsException, ValidationError, ClientResponseError) as exc:
                 raise TaskSchedulingError(
-                    project_id=project_id, node_id=node_id, msg={exc}
+                    project_id=project_id, node_id=node_id, msg=f"{exc}"
                 ) from exc
 
         return list_of_node_id_to_job_id
