@@ -662,7 +662,7 @@ class BaseCompScheduler(ABC):
                 user_id, project_id, iteration, RunningState.ABORTED
             )
             self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
-        except DaskClientAcquisisitonError:
+        except (DaskClientAcquisisitonError, ClustersKeeperNotAvailableError):
             _logger.exception(
                 "Unexpected error while connecting with computational backend, aborting pipeline"
             )
@@ -800,6 +800,7 @@ class BaseCompScheduler(ABC):
             )
             for task in tasks_ready_to_start:
                 comp_tasks[NodeIDStr(f"{task}")].state = RunningState.FAILED
+            raise
         except TaskSchedulingError as exc:
             _logger.exception(
                 "Project '%s''s task '%s' could not be scheduled",
@@ -817,7 +818,7 @@ class BaseCompScheduler(ABC):
                 optional_stopped=arrow.utcnow().datetime,
             )
             comp_tasks[NodeIDStr(f"{exc.node_id}")].state = RunningState.FAILED
-        except Exception:  # pylint: disable=broad-exception-caught
+        except Exception:
             _logger.exception(
                 "Unexpected error for %s with %s on %s happened when scheduling %s:",
                 f"{user_id=}",
@@ -836,6 +837,7 @@ class BaseCompScheduler(ABC):
             )
             for task in tasks_ready_to_start:
                 comp_tasks[NodeIDStr(f"{task}")].state = RunningState.FAILED
+            raise
 
         return comp_tasks
 
