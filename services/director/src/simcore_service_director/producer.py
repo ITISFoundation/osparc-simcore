@@ -292,6 +292,11 @@ async def _create_docker_service_params(
                 f"traefik.http.routers.{service_name}.middlewares"
             ] += f", {service_name}_stripprefixregex"
 
+    generic_resource_kinds: List[str] = []
+    replacement_constraints: Optional[
+        Dict[str, str]
+    ] = config.DIRECTOR_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES
+
     for param in service_parameters_labels:
         _check_setting_correctness(param)
         # replace %service_uuid% by the given uuid
@@ -319,7 +324,27 @@ async def _create_docker_service_params(
                     "NanoCPUs"
                 ] = param["value"]["cpu_reservation"]
             # REST-API compatible
+            if (
+                replacement_constraints
+                and "Reservations" in param["value"]
+                and "GenericResources" in param["value"]["Reservations"]
+            ):
+                # Use placement constraints in place of generic resources, for details
+                # see https://github.com/ITISFoundation/osparc-simcore/issues/5250
+                # removing them form here
+                generic_resources: List = param["value"]["Reservations"][
+                    "GenericResources"
+                ]
+
+                generic_resource_kinds = [
+                    x["DiscreteResourceSpec"]["Kind"] for x in generic_resources
+                ]
+
+                # remove all generic resources
+                param["value"]["Reservations"]["GenericResources"] = []
+
             if "Limits" in param["value"] or "Reservations" in param["value"]:
+                # here try to filter them out if enabled, only keep CPU and RAM
                 docker_params["task_template"]["Resources"].update(param["value"])
 
             # ensure strictness of reservations/limits (e.g. reservations = limits)
@@ -376,6 +401,20 @@ async def _create_docker_service_params(
                 docker_params["task_template"]["ContainerSpec"]["Mounts"].extend(
                     mount_settings
                 )
+
+    if replacement_constraints:
+        # add placement constraints based on the found generic generic resource kinds that
+        # were specified
+        for generic_resource_kind in generic_resource_kinds:
+            if generic_resource_kind not in replacement_constraints:
+                msg = (
+                    "Since replacement placement constraints are enabled, "
+                    f"{generic_resource_kind} must be present inside {replacement_constraints}"
+                )
+                raise ValueError(msg)
+            docker_params["task_template"]["Placement"]["Constraints"] += [
+                replacement_constraints[generic_resource_kind]
+            ]
 
     # attach the service to the swarm network dedicated to services
     try:

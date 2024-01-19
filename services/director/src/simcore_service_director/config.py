@@ -1,6 +1,7 @@
 """Director service configuration
 """
 
+import json
 import logging
 import os
 from distutils.util import strtobool
@@ -59,6 +60,29 @@ DIRECTOR_REGISTRY_CACHING_TTL: int = int(
 DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: str = os.environ.get(
     "DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS", ""
 )
+
+
+def _parse_placement_replacements() -> Optional[Dict[str, str]]:
+    result: Optional[Dict[str, str]] = None
+    str_env_var: Optional[str] = os.environ.get(
+        "DIRECTOR_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES", None
+    )
+    if str_env_var:
+        result = json.loads(str_env_var)
+        assert isinstance(result, dict)  # nosec
+        if len(result) == 0:
+            msg = (
+                "Cannot provide and empty constraints replacement "
+                f"constraints mapping: '{result}'"
+            )
+            raise ValueError(msg)
+
+    return result
+
+
+DIRECTOR_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES: Optional[
+    Dict[str, str]
+] = _parse_placement_replacements()
 
 # for passing self-signed certificate to spawned services
 DIRECTOR_SELF_SIGNED_SSL_SECRET_ID: str = os.environ.get(
@@ -139,7 +163,7 @@ MONITORING_ENABLED: bool = strtobool(os.environ.get("MONITORING_ENABLED", "False
 # tracing
 TRACING_ENABLED: bool = strtobool(os.environ.get("TRACING_ENABLED", "True"))
 TRACING_ZIPKIN_ENDPOINT: str = os.environ.get(
-    "TRACING_ZIPKIN_ENDPOINT", "http://jaeger:9411" # NOSONAR
+    "TRACING_ZIPKIN_ENDPOINT", "http://jaeger:9411"  # NOSONAR
 )
 
 # resources: not taken from servicelib.resources since the director uses a fixed hash of that library
