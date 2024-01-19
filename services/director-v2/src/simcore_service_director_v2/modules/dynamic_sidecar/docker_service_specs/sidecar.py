@@ -82,7 +82,7 @@ def _get_environment_variables(
         "DY_SIDECAR_PRIMARY_GROUP_ID": f"{primary_group_id}",
         "DY_SIDECAR_RUN_ID": scheduler_data.run_id,
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
-        "DY_SIDECAR_SYSTEM_MONITOR_DISK_USAGE_ENABLED": f"{telemetry_enabled}",
+        "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": f"{telemetry_enabled}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
         "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.json(),
         "DY_SIDECAR_STATE_PATHS": json_dumps(

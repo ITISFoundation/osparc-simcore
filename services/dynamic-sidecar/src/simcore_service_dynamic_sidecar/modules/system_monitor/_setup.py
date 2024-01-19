@@ -15,7 +15,7 @@ def setup_system_monitor(app: FastAPI) -> None:
     with log_context(_logger, logging.INFO, "setup system monitor"):
         settings: SystemMonitorSettings = app.state.settings.SYSTEM_MONITOR_SETTINGS
 
-        if not settings.is_enabled:
+        if not settings.DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE:
             _logger.warning("system monitor disabled")
             return
 
@@ -23,5 +23,5 @@ def setup_system_monitor(app: FastAPI) -> None:
         setup_notifier(app)
 
         with log_context(_logger, logging.INFO, "setup disk monitor"):
-            if settings.DY_SIDECAR_SYSTEM_MONITOR_DISK_USAGE_ENABLED:
+            if settings.DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE:
                 setup_disk_usage(app)

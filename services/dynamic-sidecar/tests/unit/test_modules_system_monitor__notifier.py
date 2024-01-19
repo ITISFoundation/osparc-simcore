@@ -54,7 +54,7 @@ def mock_environment(
     rabbit_service: RabbitSettings,
 ) -> EnvVarsDict:
     setenvs_from_dict(
-        monkeypatch, {"DY_SIDECAR_SYSTEM_MONITOR_DISK_USAGE_ENABLED": "true"}
+        monkeypatch, {"DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": "true"}
     )
     return mock_environment
 

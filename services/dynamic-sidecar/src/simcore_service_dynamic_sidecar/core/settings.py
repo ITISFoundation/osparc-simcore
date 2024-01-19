@@ -31,13 +31,9 @@ class ResourceTrackingSettings(BaseCustomSettings):
 
 
 class SystemMonitorSettings(BaseCustomSettings):
-    DY_SIDECAR_SYSTEM_MONITOR_DISK_USAGE_ENABLED: bool = Field(
+    DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE: bool = Field(
         default=False, description="enabled/disabled disk usage monitoring"
     )
-
-    @property
-    def is_enabled(self) -> bool:
-        return self.DY_SIDECAR_SYSTEM_MONITOR_DISK_USAGE_ENABLED
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
