@@ -196,7 +196,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __confirmUpdate: function() {
       this.__openButton.setLabel("Update");
       this.__openButton.addListenerOnce("tap", () => {
-        const msg = this.tr("Some of your services are outdated. For imploved performance please update to the latest version.");
+        const msg = this.tr("Several of your services appear to be outdated, which may affect their performance. To enhance functionality and ensure optimal performance, we recommend updating to the latest version.");
         const win = new osparc.ui.window.Confirmation(msg).set({
           confirmText: this.tr("Update"),
           confirmAction: "create"
