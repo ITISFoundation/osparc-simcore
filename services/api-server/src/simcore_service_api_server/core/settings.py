@@ -155,6 +155,8 @@ class ApplicationSettings(BasicSettings):
     @validator("API_SERVER_DEV_HTTP_CALLS_LOGS_PATH", pre=True)
     @classmethod
     def _enable_only_in_devel_mode(cls, v, values):
+        if v is None:
+            return None
         v = v.strip()
         if v != "" and not (
             values

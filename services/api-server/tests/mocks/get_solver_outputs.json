@@ -1,237 +1,251 @@
 [
-  {
-    "name": "GET /projects/3279400c-1893-4efa-8c37-0d9d416457f1",
-    "description": "<Request('GET', 'http://webserver:8080/v0/projects/3279400c-1893-4efa-8c37-0d9d416457f1')>",
-    "method": "GET",
-    "host": "webserver",
-    "path": {
-      "path": "/v0/projects/{project_id}",
-      "path_parameters": [
-        {
-          "in": "path",
-          "name": "project_id",
-          "required": true,
-          "schema": {
-            "title": "Project Id",
-            "type": "str",
-            "pattern": null,
-            "format": "uuid",
-            "exclusiveMinimum": null,
-            "minimum": null,
-            "anyOf": null,
-            "allOf": null,
-            "oneOf": null
-          },
-          "response_value": "projects"
-        }
-      ]
-    },
-    "query": null,
-    "request_payload": null,
-    "response_body": {
-      "data": {
-        "uuid": "3279400c-1893-4efa-8c37-0d9d416457f1",
-        "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/3279400c-1893-4efa-8c37-0d9d416457f1",
-        "description": "Study associated to solver job:\n{\n  \"id\": \"3279400c-1893-4efa-8c37-0d9d416457f1\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/3279400c-1893-4efa-8c37-0d9d416457f1\",\n  \"inputs_checksum\": \"38b1ad778bdee07fc68304be827bfdb5f0516031304f27a2afad5a5c37187829\",\n  \"created_at\": \"2024-01-16T12:18:38.439101+00:00\"\n}",
-        "thumbnail": "https://via.placeholder.com/170x120.png",
-        "creationDate": "2024-01-16T12:18:38.493Z",
-        "lastChangeDate": "2024-01-16T12:18:55.203Z",
-        "workbench": {
-          "6e7a4a9e-3575-500f-a0b6-fac0445be8d5": {
-            "key": "simcore/services/comp/itis/sleeper",
-            "version": "2.0.2",
-            "label": "sleeper",
-            "progress": 100.0,
-            "runHash": "a580e5b18fee5d7e9da7edef68e59302bbb5177074c9849f56e31af15b040b8f",
-            "inputs": {
-              "input_1": {
-                "store": 0,
-                "path": "api/2c7ee59c-5461-363d-8504-ce5a9b52d773/input.txt",
-                "label": "input.txt",
-                "eTag": "eccbc87e4b5ce2fe28308fd9f2a7baf3"
-              },
-              "input_2": 3,
-              "input_3": false,
-              "input_4": 4
-            },
-            "inputsUnits": {},
-            "inputNodes": [],
-            "outputs": {
-              "output_1": {
-                "store": 0,
-                "path": "3279400c-1893-4efa-8c37-0d9d416457f1/6e7a4a9e-3575-500f-a0b6-fac0445be8d5/single_number.txt",
-                "eTag": "eccbc87e4b5ce2fe28308fd9f2a7baf3"
-              },
-              "output_2": 5
-            },
-            "state": {
-              "modified": false,
-              "dependencies": [],
-              "currentStatus": "SUCCESS",
-              "progress": 1.0
-            }
-          }
-        },
-        "prjOwner": "bisgaard@itis.swiss",
-        "accessRights": {
-          "3": {
-            "read": true,
-            "write": true,
-            "delete": true
-          }
-        },
-        "tags": [],
-        "classifiers": [],
-        "state": {
-          "locked": {
-            "value": false,
-            "status": "CLOSED"
-          },
-          "state": {
-            "value": "SUCCESS"
-          }
-        },
-        "ui": {
-          "workbench": {
-            "6e7a4a9e-3575-500f-a0b6-fac0445be8d5": {
-              "position": {
-                "x": 633,
-                "y": 229
-              }
-            }
-          },
-          "slideshow": {},
-          "currentNodeId": "6e7a4a9e-3575-500f-a0b6-fac0445be8d5",
-          "annotations": {}
-        },
-        "quality": {},
-        "dev": {}
-      }
-    },
-    "status_code": 200
+ {
+  "name": "GET /projects/0f5f114f-c2bf-4807-914f-2f4df2604223",
+  "description": "<Request('GET', 'http://webserver:8080/v0/projects/0f5f114f-c2bf-4807-914f-2f4df2604223')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "projects"
+    }
+   ]
   },
-  {
-    "name": "GET /projects/3279400c-1893-4efa-8c37-0d9d416457f1/wallet",
-    "description": "<Request('GET', 'http://webserver:8080/v0/projects/3279400c-1893-4efa-8c37-0d9d416457f1/wallet')>",
-    "method": "GET",
-    "host": "webserver",
-    "path": {
-      "path": "/v0/projects/{project_id}/wallet",
-      "path_parameters": [
-        {
-          "in": "path",
-          "name": "project_id",
-          "required": true,
-          "schema": {
-            "title": "Project Id",
-            "type": "str",
-            "pattern": null,
-            "format": "uuid",
-            "exclusiveMinimum": null,
-            "minimum": null,
-            "anyOf": null,
-            "allOf": null,
-            "oneOf": null
-          },
-          "response_value": "projects"
-        }
-      ]
-    },
-    "query": null,
-    "request_payload": null,
-    "response_body": {
-      "data": null
-    },
-    "status_code": 200
-  },
-  {
-    "name": "POST /simcore-s3/files/metadata:search",
-    "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?user_id=1&startswith=api/7cf771db-3ee9-319e-849f-53db0076fc93&access_right=read')>",
-    "method": "POST",
-    "host": "storage",
-    "path": {
-      "path": "/v0/simcore-s3/files/metadata:search",
-      "path_parameters": []
-    },
-    "query": "user_id=1&startswith=api/7cf771db-3ee9-319e-849f-53db0076fc93&access_right=read",
-    "request_payload": null,
-    "response_body": {
-      "data": []
-    },
-    "status_code": 200
-  },
-  {
-    "name": "POST /files/3279400c-1893-4efa-8c37-0d9d416457f1%2F6e7a4a9e-3575-500f-a0b6-fac0445be8d5%2Fsingle_number.txt:soft-copy",
-    "description": "<Request('POST', 'http://storage:8080/v0/files/3279400c-1893-4efa-8c37-0d9d416457f1%2F6e7a4a9e-3575-500f-a0b6-fac0445be8d5%2Fsingle_number.txt:soft-copy?user_id=1')>",
-    "method": "POST",
-    "host": "storage",
-    "path": {
-      "path": "/v0/files/{file_id}:soft-copy",
-      "path_parameters": [
-        {
-          "in": "path",
-          "name": "file_id",
-          "required": true,
-          "schema": {
-            "title": "File Id",
-            "type": null,
-            "pattern": null,
-            "format": null,
-            "exclusiveMinimum": null,
-            "minimum": null,
-            "anyOf": [
-              {
-                "title": null,
-                "type": "str",
-                "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$",
-                "format": null,
-                "exclusiveMinimum": null,
-                "minimum": null,
-                "anyOf": null,
-                "allOf": null,
-                "oneOf": null
-              },
-              {
-                "title": null,
-                "type": "str",
-                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$",
-                "format": null,
-                "exclusiveMinimum": null,
-                "minimum": null,
-                "anyOf": null,
-                "allOf": null,
-                "oneOf": null
-              }
-            ],
-            "allOf": null,
-            "oneOf": null
-          },
-          "response_value": "files"
-        }
-      ]
-    },
-    "query": "user_id=1",
-    "request_payload": {
-      "link_id": "api/7cf771db-3ee9-319e-849f-53db0076fc93/single_number.txt"
-    },
-    "response_body": {
-      "data": {
-        "file_uuid": "api/7cf771db-3ee9-319e-849f-53db0076fc93/single_number.txt",
-        "location_id": 0,
-        "project_name": null,
-        "node_name": null,
-        "file_name": "single_number.txt",
-        "file_id": "api/7cf771db-3ee9-319e-849f-53db0076fc93/single_number.txt",
-        "created_at": "2024-01-16T12:18:40.394043",
-        "last_modified": "2024-01-16T12:18:54+00:00",
-        "file_size": 1,
-        "entity_tag": "eccbc87e4b5ce2fe28308fd9f2a7baf3",
-        "is_soft_link": true,
-        "is_directory": false,
-        "sha256_checksum": null
+  "query": null,
+  "request_payload": null,
+  "response_body": {
+   "data": {
+    "uuid": "0f5f114f-c2bf-4807-914f-2f4df2604223",
+    "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/0f5f114f-c2bf-4807-914f-2f4df2604223",
+    "description": "Study associated to solver job:\n{\n  \"id\": \"0f5f114f-c2bf-4807-914f-2f4df2604223\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2/jobs/0f5f114f-c2bf-4807-914f-2f4df2604223\",\n  \"inputs_checksum\": \"88e3aa0cf82491572d5978fa359bad9d100ef247492020efb4dbcc9c5ee09b45\",\n  \"created_at\": \"2024-01-18T12:33:56.883048+00:00\"\n}",
+    "thumbnail": "https://via.placeholder.com/170x120.png",
+    "creationDate": "2024-01-18T12:33:56.952Z",
+    "lastChangeDate": "2024-01-18T12:34:13.002Z",
+    "workbench": {
+     "df42d273-b6f0-509c-bfb5-4abbc5bb0581": {
+      "key": "simcore/services/comp/itis/sleeper",
+      "version": "2.0.2",
+      "label": "sleeper",
+      "progress": 100.0,
+      "runHash": "10042fe8aa6ba3140532ba27dbbb1ba6c25d3e60a75c1d142f55a53dbecb5ead",
+      "inputs": {
+       "input_1": {
+        "store": 0,
+        "path": "api/45c97ed8-191d-300c-89be-c5f83148a391/input.txt",
+        "label": "input.txt",
+        "eTag": "eccbc87e4b5ce2fe28308fd9f2a7baf3"
+       },
+       "input_2": 3,
+       "input_3": false,
+       "input_4": 4
       },
-      "error": null
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {
+       "output_1": {
+        "store": 0,
+        "path": "0f5f114f-c2bf-4807-914f-2f4df2604223/df42d273-b6f0-509c-bfb5-4abbc5bb0581/single_number.txt",
+        "eTag": "c81e728d9d4c2f636f067f89cc14862c"
+       },
+       "output_2": 6
+      },
+      "state": {
+       "modified": false,
+       "dependencies": [],
+       "currentStatus": "SUCCESS",
+       "progress": 1.0
+      }
+     }
     },
-    "status_code": 200
-  }
+    "prjOwner": "bisgaard@itis.swiss",
+    "accessRights": {
+     "3": {
+      "read": true,
+      "write": true,
+      "delete": true
+     }
+    },
+    "tags": [],
+    "classifiers": [],
+    "state": {
+     "locked": {
+      "value": false,
+      "status": "CLOSED"
+     },
+     "state": {
+      "value": "SUCCESS"
+     }
+    },
+    "ui": {
+     "workbench": {
+      "df42d273-b6f0-509c-bfb5-4abbc5bb0581": {
+       "position": {
+        "x": 633,
+        "y": 229
+       }
+      }
+     },
+     "slideshow": {},
+     "currentNodeId": "df42d273-b6f0-509c-bfb5-4abbc5bb0581",
+     "annotations": {}
+    },
+    "quality": {},
+    "dev": {}
+   }
+  },
+  "status_code": 200
+ },
+ {
+  "name": "GET /credits-price",
+  "description": "<Request('GET', 'http://webserver:8080/v0/credits-price')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/credits-price",
+   "path_parameters": []
+  },
+  "query": null,
+  "request_payload": null,
+  "response_body": {
+   "data": {
+    "productName": "osparc",
+    "usdPerCredit": 10.0
+   }
+  },
+  "status_code": 200
+ },
+ {
+  "name": "GET /projects/0f5f114f-c2bf-4807-914f-2f4df2604223/wallet",
+  "description": "<Request('GET', 'http://webserver:8080/v0/projects/0f5f114f-c2bf-4807-914f-2f4df2604223/wallet')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}/wallet",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "projects"
+    }
+   ]
+  },
+  "query": null,
+  "request_payload": null,
+  "response_body": {
+   "data": {
+    "walletId": 1,
+    "name": "Bisgaard Credits",
+    "description": "Credits purchased by Bisgaard end up in here",
+    "owner": 3,
+    "thumbnail": null,
+    "status": "ACTIVE",
+    "created": "2024-01-18T09:32:58.042380+00:00",
+    "modified": "2024-01-18T09:32:58.042380+00:00"
+   }
+  },
+  "status_code": 200
+ },
+ {
+  "name": "GET /wallets/1",
+  "description": "<Request('GET', 'http://webserver:8080/v0/wallets/1')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/wallets/{wallet_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "wallet_id",
+     "required": true,
+     "schema": {
+      "title": "Wallet Id",
+      "type": "int",
+      "pattern": null,
+      "format": null,
+      "exclusiveMinimum": true,
+      "minimum": 0,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "wallets"
+    }
+   ]
+  },
+  "query": null,
+  "request_payload": null,
+  "response_body": {
+   "data": {
+    "walletId": 1,
+    "name": "Bisgaard Credits",
+    "description": "Credits purchased by Bisgaard end up in here",
+    "owner": 3,
+    "thumbnail": null,
+    "status": "ACTIVE",
+    "created": "2024-01-18T09:32:58.042380+00:00",
+    "modified": "2024-01-18T09:32:58.042380+00:00",
+    "availableCredits": 0.0
+   }
+  },
+  "status_code": 200
+ },
+ {
+  "name": "POST /simcore-s3/files/metadata:search",
+  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?user_id=1&startswith=api/4ea24645-fd8c-339b-9621-ae045d45d94d&access_right=read')>",
+  "method": "POST",
+  "host": "storage",
+  "path": {
+   "path": "/v0/simcore-s3/files/metadata:search",
+   "path_parameters": []
+  },
+  "query": "user_id=1&startswith=api/4ea24645-fd8c-339b-9621-ae045d45d94d&access_right=read",
+  "request_payload": null,
+  "response_body": {
+   "data": [
+    {
+     "file_uuid": "api/4ea24645-fd8c-339b-9621-ae045d45d94d/single_number.txt",
+     "location_id": 0,
+     "project_name": null,
+     "node_name": null,
+     "file_name": "single_number.txt",
+     "file_id": "api/4ea24645-fd8c-339b-9621-ae045d45d94d/single_number.txt",
+     "created_at": "2024-01-18T12:33:58.399872",
+     "last_modified": "2024-01-18T12:34:12+00:00",
+     "file_size": 1,
+     "entity_tag": "c81e728d9d4c2f636f067f89cc14862c",
+     "is_soft_link": true,
+     "is_directory": false,
+     "sha256_checksum": null
+    }
+   ]
+  },
+  "status_code": 200
+ }
 ]

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Callable, Final
 from uuid import UUID
@@ -10,6 +11,8 @@ from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
+from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
+from models_library.generics import Envelope
 from pydantic import parse_obj_as
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobStatus
@@ -343,6 +346,10 @@ async def test_stop_job(
     assert status_.job_id == UUID(_job_id)
 
 
+@pytest.mark.parametrize(
+    "sufficient_credits,expected_status_code",
+    [(True, 200), (False, 403)],
+)
 async def test_get_solver_job_outputs(
     client: AsyncClient,
     mocked_webserver_service_api_base,
@@ -355,12 +362,36 @@ async def test_get_solver_job_outputs(
     ],
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
+    sufficient_credits: bool,
+    expected_status_code: int,
 ):
+    def _sf(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        return capture.response_body
+
+    def _wallet_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ):
+        wallet = parse_obj_as(
+            Envelope[WalletGetWithAvailableCredits], capture.response_body
+        ).data
+        assert wallet is not None
+        wallet.available_credits = (
+            Decimal(10.0) if sufficient_credits else Decimal(-10.0)
+        )
+        envelope = Envelope[WalletGetWithAvailableCredits]()
+        envelope.data = wallet
+        return jsonable_encoder(envelope)
 
     respx_mock = respx_mock_from_capture(
         [mocked_webserver_service_api_base, mocked_storage_service_api_base],
         project_tests_dir / "mocks" / "get_solver_outputs.json",
-        [],
+        [_sf, _sf, _sf, _wallet_side_effect, _sf],
     )
 
     _solver_key: Final[str] = "simcore/services/comp/isolve"
@@ -370,3 +401,5 @@ async def test_get_solver_job_outputs(
         f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}/outputs",
         auth=auth,
     )
+
+    assert response.status_code == expected_status_code
