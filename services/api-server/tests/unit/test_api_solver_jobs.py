@@ -348,7 +348,7 @@ async def test_stop_job(
 
 @pytest.mark.parametrize(
     "sufficient_credits,expected_status_code",
-    [(True, 200), (False, 403)],
+    [(True, 200), (False, 402)],
 )
 async def test_get_solver_job_outputs(
     client: AsyncClient,

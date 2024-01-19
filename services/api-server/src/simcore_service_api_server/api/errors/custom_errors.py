@@ -1,4 +1,7 @@
-from fastapi import HTTPException, status
+from urllib.request import Request
+
+from fastapi import status
+from starlette.responses import JSONResponse
 
 
 class CustomBaseError(Exception):
@@ -13,17 +16,17 @@ class MissingWallet(CustomBaseError):
     pass
 
 
-async def custom_error_handler(exc: CustomBaseError):
+async def custom_error_handler(_: Request, exc: CustomBaseError):
     if isinstance(exc, InsufficientCredits):
-        return HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED, detail=f"{exc}"
+        return JSONResponse(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED, content=f"{exc}"
         )
     elif isinstance(exc, MissingWallet):
-        return HTTPException(
-            status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=f"{exc}"
+        return JSONResponse(
+            status_code=status.HTTP_424_FAILED_DEPENDENCY, content=f"{exc}"
         )
     else:
-        return HTTPException(
+        return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Encountered unspecified error",
+            content="Encountered unspecified error",
         )
