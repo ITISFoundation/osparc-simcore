@@ -90,9 +90,8 @@ class BaseCustomSettings(BaseSettings):
             if args := get_args(field_type):
                 field_type = next(a for a in args if a != type(None))
 
-            if auto_default_from_env:
-                if issubclass(field_type, BaseCustomSettings):
-
+            if issubclass(field_type, BaseCustomSettings):
+                if auto_default_from_env:
                     assert field.field_info.default is Undefined
                     assert field.field_info.default_factory is None
 
@@ -100,13 +99,14 @@ class BaseCustomSettings(BaseSettings):
                     field.default_factory = create_settings_from_env(field)
                     field.default = None
                     field.required = False  # has a default now
-                else:
-                    msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclassesbut field {cls}.{field.name} is {field_type} "
-                    raise ValueError(msg)
 
-                if issubclass(field_type, BaseSettings):
-                    msg = f"{cls}.{field.name} of type {field_type} must inherit from BaseCustomSettings"
-                    raise ValueError(msg)
+            elif issubclass(field_type, BaseSettings):
+                msg = f"{cls}.{field.name} of type {field_type} must inherit from BaseCustomSettings"
+                raise ValueError(msg)
+
+            elif auto_default_from_env:
+                msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclassesbut field {cls}.{field.name} is {field_type} "
+                raise ValueError(msg)
 
     @classmethod
     def create_from_envs(cls, **overrides):
