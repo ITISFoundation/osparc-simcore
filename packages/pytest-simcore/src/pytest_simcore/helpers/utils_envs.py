@@ -3,14 +3,13 @@
 """
 
 import os
-from copy import deepcopy
 from io import StringIO
 from pathlib import Path
 
 import dotenv
 import pytest
 
-from .typing_env import EnvVarsDict, EnvVarsList
+from .typing_env import EnvVarsDict, EnvVarsIterable
 
 #
 # monkeypatch using dict
@@ -18,22 +17,28 @@ from .typing_env import EnvVarsDict, EnvVarsList
 
 
 def setenvs_from_dict(
-    monkeypatch: pytest.MonkeyPatch, envs: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, envs: dict[str, str | bool]
 ) -> EnvVarsDict:
+    env_vars = {}
+
     for key, value in envs.items():
         assert isinstance(key, str)
-        assert (
-            value is not None
-        ), f"{key=},{value=}"  # None keys cannot be is defined w/o value
-        converted_value = value
-        if isinstance(value, bool):
-            converted_value = f"{'true' if value else 'false'}"
-        assert isinstance(
-            converted_value, str
-        ), f"client MUST explicitly stringify values since some cannot be done automatically e.g. json-like values. problematic {key=},{value=}"
+        assert value is not None, f"{key=},{value=}"
 
-        monkeypatch.setenv(key, converted_value)
-    return deepcopy(envs)
+        v = value
+
+        if isinstance(value, bool):
+            v = "true" if value else "false"
+
+        assert isinstance(v, str), (
+            "caller MUST explicitly stringify values since some cannot be done automatically"
+            f"e.g. json-like values. Check {key=},{value=}"
+        )
+
+        monkeypatch.setenv(key, v)
+        env_vars[key] = v
+
+    return env_vars
 
 
 def load_dotenv(envfile_content_or_path: Path | str, **options) -> EnvVarsDict:
@@ -52,13 +57,12 @@ def load_dotenv(envfile_content_or_path: Path | str, **options) -> EnvVarsDict:
 
 def delenvs_from_dict(
     monkeypatch: pytest.MonkeyPatch,
-    envs: EnvVarsList,
+    envs: EnvVarsIterable,
     *,
     raising: bool = True,
 ) -> None:
     for key in envs:
         assert isinstance(key, str)
-        assert key is not None  # None keys cannot be is defined w/o value
         monkeypatch.delenv(key, raising)
 
 
