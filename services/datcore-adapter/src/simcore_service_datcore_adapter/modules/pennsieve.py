@@ -181,7 +181,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         page_size: int,
         cursor: str,
     ) -> dict[str, Any]:
-        package = cast(
+        packages = cast(
             dict[str, Any],
             await self._request(
                 api_key,
@@ -195,10 +195,10 @@ class PennsieveApiClient(BaseServiceClientApi):
                 },
             ),
         )
-        package["packages"] = [
-            f for f in package["packages"] if f["content"]["state"] != "DELETED"
+        packages["packages"] = [
+            f for f in packages["packages"] if f["content"]["state"] != "DELETED"
         ]
-        return package
+        return packages
 
     async def _get_package(
         self, api_key: str, api_secret: str, package_id: str
