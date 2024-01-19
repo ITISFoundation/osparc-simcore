@@ -305,6 +305,10 @@ def compute_task_labels(
     run_metadata: RunMetadataDict,
     node_requirements: NodeRequirements,
 ) -> ContainerLabelsDict:
+    """
+    Raises:
+        ValidationError
+    """
     product_name = run_metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
     standard_simcore_labels = StandardSimcoreDockerLabels.construct(
         user_id=user_id,
