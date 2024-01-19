@@ -899,7 +899,7 @@ async def test_tag_node_out_of_sequence_error(
             'image: itisfoundation/simcore/services/dynamic/service:23.5.5\nversion: \'"3.8"\'\n"'
             " > /docker-pull.compose.yml"
             " && "
-            'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --file=/docker-pull.compose.yml pull --ignore-pull-failures" > /docker-pull-script.sh'
+            'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --project-name=autoscaleprepull --file=/docker-pull.compose.yml pull --ignore-pull-failures" > /docker-pull-script.sh'
             " && "
             "chmod +x /docker-pull-script.sh"
             " && "

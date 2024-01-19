@@ -170,8 +170,8 @@ async def test_get_profile(
 
         assert profile.login == logged_user["email"]
         assert profile.gravatar_id
-        assert profile.first_name == logged_user["name"]
-        assert profile.last_name == ""
+        assert profile.first_name == logged_user.get("first_name", None)
+        assert profile.last_name == logged_user.get("last_name", None)
         assert profile.role == user_role.name
         assert profile.groups
         assert profile.groups.dict(**RESPONSE_MODEL_POLICY) == {
@@ -211,7 +211,7 @@ async def test_update_profile(
         resp = await client.get(url)
         data, _ = await assert_status(resp, web.HTTPOk)
 
-        assert data["first_name"] == logged_user["name"]
+        assert data["first_name"] == logged_user.get("first_name")
         assert data["last_name"] == "Foo"
         assert data["role"] == user_role.name
 

@@ -1,36 +1,46 @@
-from typing import Annotated
-
-from fastapi import Depends, Query
-from models_library.api_schemas_resource_usage_tracker.service_runs import ServiceRunGet
+from models_library.api_schemas_resource_usage_tracker.service_runs import (
+    ServiceRunGet,
+    ServiceRunPage,
+)
 from models_library.products import ProductName
+from models_library.resource_tracker import ServiceResourceUsagesFilters
+from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
-
-from ..api.dependencies import get_repository
-from ..core.errors import CustomResourceUsageTrackerError
-from ..models.pagination import LimitOffsetParamsWithDefault
-from ..models.resource_tracker_service_runs import (
-    ServiceRunPage,
-    ServiceRunWithCreditsDB,
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CustomResourceUsageTrackerError,
 )
+
+from ..models.resource_tracker_service_runs import ServiceRunWithCreditsDB
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 
 async def list_service_runs(
     user_id: UserID,
     product_name: ProductName,
-    page_params: Annotated[LimitOffsetParamsWithDefault, Depends()],
-    resource_tracker_repo: Annotated[
-        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
-    ],
-    wallet_id: WalletID = Query(None),
-    access_all_wallet_usage: bool = Query(None),
+    resource_tracker_repo: ResourceTrackerRepository,
+    limit: int = 20,
+    offset: int = 0,
+    wallet_id: WalletID | None = None,
+    access_all_wallet_usage: bool = False,
+    order_by: OrderBy | None = None,  # noqa: ARG001
+    filters: ServiceResourceUsagesFilters | None = None,  # noqa: ARG001
 ) -> ServiceRunPage:
+    started_from = None
+    started_until = None
+    if filters:
+        started_from = filters.started_at.from_
+        started_until = filters.started_at.until
+
     # Situation when we want to see all usage of a specific user
-    if wallet_id is None and access_all_wallet_usage is None:
+    if wallet_id is None and access_all_wallet_usage is False:
         total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(
-            product_name, user_id=user_id, wallet_id=None
+            product_name,
+            user_id=user_id,
+            wallet_id=None,
+            started_from=started_from,
+            started_until=started_until,
         )
         service_runs_db_model: list[
             ServiceRunWithCreditsDB
@@ -38,13 +48,20 @@ async def list_service_runs(
             product_name,
             user_id=user_id,
             wallet_id=None,
-            offset=page_params.offset,
-            limit=page_params.limit,
+            offset=offset,
+            limit=limit,
+            started_from=started_from,
+            started_until=started_until,
+            order_by=order_by,
         )
     # Situation when accountant user can see all users usage of the wallet
     elif wallet_id and access_all_wallet_usage is True:
         total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
-            product_name, user_id=None, wallet_id=wallet_id
+            product_name,
+            user_id=None,
+            wallet_id=wallet_id,
+            started_from=started_from,
+            started_until=started_until,
         )
         service_runs_db_model: list[  # type: ignore[no-redef]
             ServiceRunWithCreditsDB
@@ -52,13 +69,20 @@ async def list_service_runs(
             product_name,
             user_id=None,
             wallet_id=wallet_id,
-            offset=page_params.offset,
-            limit=page_params.limit,
+            offset=offset,
+            limit=limit,
+            started_from=started_from,
+            started_until=started_until,
+            order_by=order_by,
         )
     # Situation when regular user can see only his usage of the wallet
     elif wallet_id and access_all_wallet_usage is False:
         total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(  # type: ignore[no-redef]
-            product_name, user_id=user_id, wallet_id=wallet_id
+            product_name,
+            user_id=user_id,
+            wallet_id=wallet_id,
+            started_from=started_from,
+            started_until=started_until,
         )
         service_runs_db_model: list[  # type: ignore[no-redef]
             ServiceRunWithCreditsDB
@@ -66,8 +90,11 @@ async def list_service_runs(
             product_name,
             user_id=user_id,
             wallet_id=wallet_id,
-            offset=page_params.offset,
-            limit=page_params.limit,
+            offset=offset,
+            limit=limit,
+            started_from=started_from,
+            started_until=started_until,
+            order_by=order_by,
         )
     else:
         msg = "wallet_id and access_all_wallet_usage parameters must be specified together"

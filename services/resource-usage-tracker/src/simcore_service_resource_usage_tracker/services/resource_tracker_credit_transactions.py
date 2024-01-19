@@ -14,7 +14,7 @@ from models_library.resource_tracker import (
 from models_library.wallets import WalletID
 from servicelib.rabbitmq import RabbitMQClient
 
-from ..api.dependencies import get_repository
+from ..api.rest.dependencies import get_repository
 from ..models.resource_tracker_credit_transactions import CreditTransactionCreate
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 from ..modules.rabbitmq import get_rabbitmq_client_from_request

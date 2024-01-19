@@ -39,7 +39,7 @@ qx.Class.define("osparc.filter.OrganizationsAndMembers", {
     addOption: function(group) {
       let name = "";
       if ("first_name" in group) {
-        name = group["first_name"] + " " + group["last_name"];
+        name = `${group["first_name"]} ${"last_name" in group && group["last_name"] != null ? group["last_name"] : ""}`;
       } else {
         name = group["label"];
       }

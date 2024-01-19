@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import NamedTuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, PositiveInt
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
@@ -30,3 +31,8 @@ class ServiceRunGet(BaseModel):
     # Cost in credits
     credit_cost: Decimal | None
     transaction_status: CreditTransactionStatus | None
+
+
+class ServiceRunPage(NamedTuple):
+    items: list[ServiceRunGet]
+    total: PositiveInt

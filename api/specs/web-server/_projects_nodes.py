@@ -6,12 +6,14 @@
 
 from _common import assert_handler_signature_against_model
 from fastapi import APIRouter, status
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
     NodeCreated,
     NodeGet,
     NodeGetIdle,
+    NodeGetUnknown,
     NodeRetrieve,
     NodeRetrieved,
     ServiceResourcesDict,
@@ -44,20 +46,17 @@ router = APIRouter(
     response_model=Envelope[NodeCreated],
     status_code=status.HTTP_201_CREATED,
 )
-def create_node(project_id: str, body: NodeCreate):
+def create_node(project_id: str, body: NodeCreate):  # noqa: ARG001
     ...
 
 
 @router.get(
+    # issues with this endpoint https://github.com/ITISFoundation/osparc-simcore/issues/5245
     "/projects/{project_id}/nodes/{node_id}",
-    response_model=Envelope[NodeGet | NodeGetIdle],
-    # responses={"idle": {"model": NodeGetIdle}}, TODO: check this variant
+    response_model=Envelope[NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet],
 )
-def get_node(
-    project_id: str,
-    node_id: str,
-):
-    pass
+def get_node(project_id: str, node_id: str):  # noqa: ARG001
+    ...
 
 
 @router.delete(
@@ -65,15 +64,17 @@ def get_node(
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_node(project_id: str, node_id: str):
-    pass
+def delete_node(project_id: str, node_id: str):  # noqa: ARG001
+    ...
 
 
 @router.post(
     "/projects/{project_id}/nodes/{node_id}:retrieve",
     response_model=Envelope[NodeRetrieved],
 )
-def retrieve_node(project_id: str, node_id: str, _retrieve: NodeRetrieve):
+def retrieve_node(
+    project_id: str, node_id: str, _retrieve: NodeRetrieve  # noqa: ARG001
+):
     ...
 
 
@@ -82,7 +83,7 @@ def retrieve_node(project_id: str, node_id: str, _retrieve: NodeRetrieve):
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-def start_node(project_id: str, node_id: str):
+def start_node(project_id: str, node_id: str):  # noqa: ARG001
     ...
 
 
@@ -90,7 +91,7 @@ def start_node(project_id: str, node_id: str):
     "/projects/{project_id}/nodes/{node_id}:stop",
     response_model=Envelope[TaskGet],
 )
-def stop_node(project_id: str, node_id: str):
+def stop_node(project_id: str, node_id: str):  # noqa: ARG001
     ...
 
 
@@ -99,7 +100,7 @@ def stop_node(project_id: str, node_id: str):
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def restart_node(project_id: str, node_id: str):
+def restart_node(project_id: str, node_id: str):  # noqa: ARG001
     """Note that it has only effect on nodes associated to dynamic services"""
 
 
@@ -112,16 +113,18 @@ def restart_node(project_id: str, node_id: str):
     "/projects/{project_id}/nodes/{node_id}/resources",
     response_model=Envelope[ServiceResourcesDict],
 )
-def get_node_resources(project_id: str, node_id: str):
-    pass
+def get_node_resources(project_id: str, node_id: str):  # noqa: ARG001
+    ...
 
 
 @router.put(
     "/projects/{project_id}/nodes/{node_id}/resources",
     response_model=Envelope[ServiceResourcesDict],
 )
-def replace_node_resources(project_id: str, node_id: str, _new: ServiceResourcesDict):
-    pass
+def replace_node_resources(
+    project_id: str, node_id: str, _new: ServiceResourcesDict  # noqa: ARG001
+):
+    ...
 
 
 #
@@ -134,7 +137,9 @@ def replace_node_resources(project_id: str, node_id: str, _new: ServiceResources
     response_model=Envelope[_ProjectGroupAccess],
     summary="Check whether provided group has access to the project services",
 )
-async def get_project_services_access_for_gid(project_id: ProjectID, for_gid: GroupID):
+async def get_project_services_access_for_gid(
+    project_id: ProjectID, for_gid: GroupID  # noqa: ARG001
+):
     ...
 
 
@@ -153,7 +158,7 @@ assert_handler_signature_against_model(
     response_model=Envelope[list[_ProjectNodePreview]],
     summary="Lists all previews in the node's project",
 )
-async def list_project_nodes_previews(project_id: ProjectID):
+async def list_project_nodes_previews(project_id: ProjectID):  # noqa: ARG001
     ...
 
 
@@ -166,7 +171,9 @@ assert_handler_signature_against_model(list_project_nodes_previews, ProjectPathP
     summary="Gets a give node's preview",
     responses={status.HTTP_404_NOT_FOUND: {"description": "Node has no preview"}},
 )
-async def get_project_node_preview(project_id: ProjectID, node_id: NodeID):
+async def get_project_node_preview(
+    project_id: ProjectID, node_id: NodeID  # noqa: ARG001
+):
     ...
 
 

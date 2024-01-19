@@ -42,7 +42,7 @@ from ..login.decorators import login_required
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_permission
 from ..security.decorators import permission_required
-from ..users.api import get_user_name
+from ..users.api import get_user_fullname
 from . import _crud_api_create, _crud_api_read, projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
@@ -516,7 +516,7 @@ async def delete_project(request: web.Request):
             )
         if project_users:
             other_user_names = {
-                await get_user_name(request.app, uid) for uid in project_users
+                await get_user_fullname(request.app, uid) for uid in project_users
             }
             raise web.HTTPForbidden(
                 reason=f"Project is open by {other_user_names}. "
