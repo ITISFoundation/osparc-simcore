@@ -12,7 +12,7 @@ This OAS are the source of truth
 from typing import Annotated
 
 from _common import assert_handler_signature_against_model
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, status
 from models_library.api_schemas_webserver.resource_usage import (
     PricingUnitGet,
     ServiceRunGet,
@@ -28,6 +28,7 @@ from simcore_service_webserver.resource_usage._pricing_plans_handlers import (
 )
 from simcore_service_webserver.resource_usage._service_runs_handlers import (
     _ListServicesResourceUsagesQueryParams,
+    _ListServicesResourceUsagesQueryParamsWithPagination,
 )
 
 router = APIRouter(prefix=f"/{API_VTAG}")
@@ -62,6 +63,40 @@ async def list_resource_usage_services(
     wallet_id: Annotated[WalletID | None, Query] = None,
     limit: int = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
+):
+    ...
+
+
+assert_handler_signature_against_model(
+    list_resource_usage_services, _ListServicesResourceUsagesQueryParamsWithPagination
+)
+
+
+@router.get(
+    "/services/-/resource-usages:export",
+    responses={
+        status.HTTP_302_FOUND: {
+            "description": "redirection to download link",
+        }
+    },
+    tags=["usage"],
+)
+async def export_resource_usage_services(
+    order_by: Annotated[
+        Json | None,
+        Query(
+            description="Order by field (started_at|stopped_at|credit_cost) and direction (asc|desc). The default sorting order is ascending.",
+            example='{"field": "started_at", "direction": "desc"}',
+        ),
+    ] = None,
+    filters: Annotated[
+        Json | None,
+        Query(
+            description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is inclusive.",
+            example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
+        ),
+    ] = None,
+    wallet_id: Annotated[WalletID | None, Query] = None,
 ):
     ...
 

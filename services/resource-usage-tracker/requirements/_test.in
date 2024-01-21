@@ -17,6 +17,7 @@ docker
 faker
 httpx
 fakeredis[lua]
+moto[s3]
 pytest
 pytest-asyncio
 pytest-cov

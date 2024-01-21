@@ -64,9 +64,10 @@ pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-ruff==0.1.13
+ruff==0.1.14
     # via -r requirements/../../../requirements/devenv.txt
 tomli==2.0.1
     # via

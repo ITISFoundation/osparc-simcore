@@ -1,7 +1,7 @@
+import asyncio
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from aws_library.s3.client import SimcoreS3API
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunGet,
     ServiceRunPage,
@@ -16,6 +16,7 @@ from pydantic import AnyUrl, PositiveInt
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
 )
+from simcore_service_resource_usage_tracker.modules.s3 import S3Client
 
 from ..models.resource_tracker_service_runs import ServiceRunWithCreditsDB
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
@@ -133,7 +134,8 @@ async def list_service_runs(
 
 
 async def export_service_runs(
-    s3_client: SimcoreS3API,
+    # s3_client: SimcoreS3API,
+    s3_client: S3Client,
     user_id: UserID,
     product_name: ProductName,
     resource_tracker_repo: ResourceTrackerRepository,
@@ -149,7 +151,7 @@ async def export_service_runs(
         started_until = filters.started_at.until
 
     # Create S3 key name
-    s3_bucket_name = S3BucketName("simcore-db-exports")
+    s3_bucket_name = S3BucketName("matus-testing")  # MD: parametrize bucket name
     file_name = f"{datetime.now(tz=timezone.utc).date()}__{uuid4()}.csv"
     s3_object_key = f"resource-usage-tracker-service-runs/{file_name}"
 
@@ -165,7 +167,11 @@ async def export_service_runs(
     )
 
     # Create presigned S3 link
-    generated_url: AnyUrl = await s3_client.create_presigned_link(
-        bucket_name=s3_bucket_name, object_key=s3_object_key, expiration_secs=7200
+    # generated_url: AnyUrl = await s3_client.create_presigned_link(
+    #     bucket_name=s3_bucket_name, object_key=s3_object_key, expiration_secs=7200
+    # )
+    generated_url = await asyncio.get_event_loop().run_in_executor(
+        None, s3_client.generate_presigned_url, s3_bucket_name, s3_object_key
     )
+    print(generated_url)
     return generated_url

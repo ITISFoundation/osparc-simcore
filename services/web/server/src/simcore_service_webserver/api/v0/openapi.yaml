@@ -3142,6 +3142,57 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__'
+  /v0/services/-/resource-usages:export:
+    get:
+      tags:
+      - usage
+      summary: Export Resource Usage Services
+      operationId: export_resource_usage_services
+      parameters:
+      - description: Order by field (started_at|stopped_at|credit_cost) and direction
+          (asc|desc). The default sorting order is ascending.
+        required: false
+        schema:
+          title: Order By
+          type: string
+          description: Order by field (started_at|stopped_at|credit_cost) and direction
+            (asc|desc). The default sorting order is ascending.
+          format: json-string
+        example: '{"field": "started_at", "direction": "desc"}'
+        name: order_by
+        in: query
+      - description: Filters to process on the resource usages list, encoded as JSON.
+          Currently supports the filtering of 'started_at' field with 'from' and 'until'
+          parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is
+          inclusive.
+        required: false
+        schema:
+          title: Filters
+          type: string
+          description: Filters to process on the resource usages list, encoded as
+            JSON. Currently supports the filtering of 'started_at' field with 'from'
+            and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range
+            specified is inclusive.
+          format: json-string
+        example: '{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}'
+        name: filters
+        in: query
+      - required: false
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '302':
+          description: redirection to download link
   /v0/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}:
     get:
       tags:

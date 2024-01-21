@@ -47,7 +47,7 @@ class SimcoreS3API:
 
     async def ping(self) -> bool:
         try:
-            await self.client.describe_account_attributes()
+            await self.client.list_buckets()
             return True
         except Exception:  # pylint: disable=broad-except
             return False

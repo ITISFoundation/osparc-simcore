@@ -353,15 +353,17 @@ class ResourceTrackerRepository(BaseRepository):
                     resource_tracker_service_runs.c.started_at.desc()
                 )
 
-            compiled_query = str(
-                query.compile(compile_kwargs={"literal_binds": True})
-            ).replace("\n", "")
+            compiled_query = (
+                str(query.compile(compile_kwargs={"literal_binds": True}))
+                .replace("\n", "")
+                .replace("'", "''")
+            )
 
             result = await conn.execute(
                 sa.DDL(
                     f"""
                 SELECT * from aws_s3.query_export_to_s3('{compiled_query}',
-                aws_commons.create_s3_uri('simcore-db-exports', '{s3_key}', 'us-east-1'), 'format csv, HEADER true');
+                aws_commons.create_s3_uri('matus-testing', '{s3_key}', 'us-east-1'), 'format csv, HEADER true');
                 """  # noqa: S608
                 )
             )
