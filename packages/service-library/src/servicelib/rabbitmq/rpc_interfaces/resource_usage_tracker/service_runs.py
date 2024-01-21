@@ -65,7 +65,7 @@ async def export_service_runs(
     order_by: OrderBy | None = None,
     filters: ServiceResourceUsagesFilters | None = None
 ) -> AnyUrl:
-    result = await rabbitmq_rpc_client.request(
+    result: AnyUrl = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "export_service_runs"),
         user_id=user_id,

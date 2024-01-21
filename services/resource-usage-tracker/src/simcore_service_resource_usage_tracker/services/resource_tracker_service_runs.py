@@ -170,7 +170,7 @@ async def export_service_runs(
     # generated_url: AnyUrl = await s3_client.create_presigned_link(
     #     bucket_name=s3_bucket_name, object_key=s3_object_key, expiration_secs=7200
     # )
-    generated_url = await asyncio.get_event_loop().run_in_executor(
+    generated_url: AnyUrl = await asyncio.get_event_loop().run_in_executor(
         None, s3_client.generate_presigned_url, s3_bucket_name, s3_object_key
     )
     print(generated_url)

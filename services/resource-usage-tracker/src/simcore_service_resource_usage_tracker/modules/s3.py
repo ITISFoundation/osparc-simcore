@@ -2,10 +2,10 @@ import logging
 from typing import cast
 
 import boto3
-from aws_library.s3.client import SimcoreS3API
 from aws_library.s3.errors import S3NotConnectedError
 from botocore.config import Config
 from fastapi import FastAPI
+from pydantic import AnyUrl, parse_obj_as
 from settings_library.s3 import S3Settings
 
 from ..core.errors import ConfigurationError
@@ -45,7 +45,7 @@ class S3Client:
         except Exception as e:
             print(f"Failed to close S3 client: {str(e)}")
 
-    def generate_presigned_url(self, bucket, key, expiration=3600):
+    def generate_presigned_url(self, bucket, key, expiration=3600) -> AnyUrl:
         """
         Generate a pre-signed URL for the specified S3 object.
 
@@ -63,7 +63,7 @@ class S3Client:
             },
             ExpiresIn=expiration,
         )
-        return url
+        return cast(AnyUrl, parse_obj_as(AnyUrl, url))
 
 
 def setup(app: FastAPI) -> None:
@@ -90,7 +90,7 @@ def setup(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-def get_s3_client(app: FastAPI) -> SimcoreS3API:
+def get_s3_client(app: FastAPI) -> S3Client:
     if not app.state.s3_client:
         raise ConfigurationError(
             msg="S3 client is not available. Please check the configuration."

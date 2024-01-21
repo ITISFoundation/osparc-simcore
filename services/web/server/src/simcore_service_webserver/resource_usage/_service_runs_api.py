@@ -66,7 +66,7 @@ async def export_usage_services(
         access_all_wallet_usage = wallet.write is True
 
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await service_runs.export_service_runs(
+    download_url: AnyUrl = await service_runs.export_service_runs(
         rpc_client,
         user_id=user_id,
         product_name=product_name,
@@ -75,3 +75,4 @@ async def export_usage_services(
         order_by=order_by,
         filters=filters,
     )
+    return download_url
