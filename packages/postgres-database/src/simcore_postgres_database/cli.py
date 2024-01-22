@@ -11,6 +11,7 @@ import json.decoder
 import logging
 import os
 from logging.config import fileConfig
+from pathlib import Path
 
 import alembic.command
 import click
@@ -112,12 +113,10 @@ def discover(**cli_inputs) -> dict | None:
             click.echo(f"ping {test.__name__}: {hide_url_pass(url)} ...")
             raise_if_not_responsive(url, verbose=False)
 
-            print("Saving config ")
             click.echo(f"Saving config at {DISCOVERED_CACHE}: {hide_dict_pass(cfg)}")
-            with open(DISCOVERED_CACHE, "w") as fh:
+            with Path(DISCOVERED_CACHE).open("w") as fh:
                 json.dump(cfg, fh, sort_keys=True, indent=4)
 
-            print("Saving config at ")
             click.secho(
                 f"{test.__name__} succeeded: {hide_url_pass(url)} is online",
                 blink=False,
@@ -127,7 +126,7 @@ def discover(**cli_inputs) -> dict | None:
 
             return cfg
 
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception as err:  # pylint: disable=broad-except  # noqa: PERF203
             inline_msg = str(err).replace("\n", ". ")
             click.echo(f"<- {test.__name__} failed : {inline_msg}")
 
