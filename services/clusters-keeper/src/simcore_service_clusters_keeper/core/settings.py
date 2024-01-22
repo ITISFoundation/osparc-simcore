@@ -256,9 +256,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="defines the image tag to use for the computational backend sidecar image (NOTE: it currently defaults to use itisfoundation organisation in Dockerhub)",
     )
 
-    CLUSTERS_KEEPER_DASK_NTHREADS: str = Field(
+    CLUSTERS_KEEPER_DASK_NTHREADS: NonNegativeInt = Field(
         ...,
-        description="overrides the default number of threads in the dask-sidecars, leaving it empty will use the defaults (see description in dask-sidecar)",
+        description="overrides the default number of threads in the dask-sidecars, setting it to 0 will use the default (see description in dask-sidecar)",
     )
 
     SWARM_STACK_NAME: str = Field(
