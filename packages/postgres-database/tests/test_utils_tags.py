@@ -15,7 +15,7 @@ from simcore_postgres_database.models.tags import tags_to_groups
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
-    TagOperationNotAllowed,
+    TagOperationNotAllowedError,
     TagsRepo,
 )
 
@@ -407,7 +407,7 @@ async def test_tags_repo_update(
         ),
     ]
 
-    with pytest.raises(TagOperationNotAllowed):
+    with pytest.raises(TagOperationNotAllowedError):
         await tags_repo.update(conn, tag_id=readonly_tid, description="modified")
 
     assert await tags_repo.update(
@@ -422,7 +422,7 @@ async def test_tags_repo_update(
         "delete": False,
     }
 
-    with pytest.raises(TagOperationNotAllowed):
+    with pytest.raises(TagOperationNotAllowedError):
         await tags_repo.update(conn, tag_id=other_tid, description="modified")
 
 
@@ -467,7 +467,7 @@ async def test_tags_repo_delete(
     ]
 
     # cannot delete
-    with pytest.raises(TagOperationNotAllowed):
+    with pytest.raises(TagOperationNotAllowedError):
         await tags_repo.delete(conn, tag_id=readonly_tid)
 
     # can delete
@@ -478,7 +478,7 @@ async def test_tags_repo_delete(
         await tags_repo.get(conn, tag_id=delete_tid)
 
     # cannot delete
-    with pytest.raises(TagOperationNotAllowed):
+    with pytest.raises(TagOperationNotAllowedError):
         await tags_repo.delete(conn, tag_id=other_tid)
 
 

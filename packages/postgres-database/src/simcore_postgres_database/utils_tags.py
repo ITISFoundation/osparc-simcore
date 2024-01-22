@@ -24,7 +24,7 @@ class TagNotFoundError(BaseTagError):
     pass
 
 
-class TagOperationNotAllowed(BaseTagError):  # maps to AccessForbidden
+class TagOperationNotAllowedError(BaseTagError):  # maps to AccessForbidden
     pass
 
 
@@ -234,7 +234,7 @@ class TagsRepo:
         row = await result.first()
         if not row:
             msg = f"{tag_id=} not updated: either no access or not found"
-            raise TagOperationNotAllowed(msg)
+            raise TagOperationNotAllowedError(msg)
 
         return TagDict(row.items())  # type: ignore
 
@@ -256,4 +256,4 @@ class TagsRepo:
         deleted = await conn.scalar(delete_stmt)
         if not deleted:
             msg = f"Could not delete {tag_id=}. Not found or insuficient access."
-            raise TagOperationNotAllowed(msg)
+            raise TagOperationNotAllowedError(msg)

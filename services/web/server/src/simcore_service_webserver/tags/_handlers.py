@@ -16,7 +16,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_tags import (
     TagDict,
     TagNotFoundError,
-    TagOperationNotAllowed,
+    TagOperationNotAllowedError,
     TagsRepo,
 )
 
@@ -35,7 +35,7 @@ def _handle_tags_exceptions(handler: Handler):
         except TagNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-        except TagOperationNotAllowed as exc:
+        except TagOperationNotAllowedError as exc:
             raise web.HTTPUnauthorized(reason=f"{exc}") from exc
 
     return wrapper
