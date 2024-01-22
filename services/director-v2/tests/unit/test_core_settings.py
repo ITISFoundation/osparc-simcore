@@ -216,7 +216,10 @@ def test_services_custom_constraints_default_empty_list(
     project_env_devel_environment: EnvVarsDict,
 ) -> None:
     settings = AppSettings.create_from_envs()
-    assert [] == settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+    assert (
+        []
+        == settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+    )
 
 
 def test_class_dynamicsidecarsettings_in_development(
