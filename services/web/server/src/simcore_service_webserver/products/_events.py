@@ -7,6 +7,9 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from pydantic import ValidationError
 from servicelib.exceptions import InvalidConfig
+from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraPropertiesRepo,
+)
 from simcore_postgres_database.utils_products import (
     get_default_product_name,
     get_or_create_product_group,
@@ -83,12 +86,18 @@ async def load_products_on_startup(app: web.Application):
                 payments = await get_product_payment_fields(
                     connection, product_name=row.name
                 )
+
+                group_properties = (
+                    await GroupExtraPropertiesRepo.get_aggregated_properties_for_group(
+                        connection, product_name=row.name
+                    )
+                )
+
                 app_products[name] = Product(
                     **dict(row.items()),
                     is_payment_enabled=payments.enabled,
                     credits_per_usd=payments.credits_per_usd,
-                    # TODO: finish fetching the config
-                    is_dynamic_services_telemetry_enabled=False,
+                    is_dynamic_services_telemetry_enabled=group_properties.enable_telemetry,
                 )
 
                 assert name in FRONTEND_APPS_AVAILABLE  # nosec
