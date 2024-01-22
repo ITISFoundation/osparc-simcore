@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 import aiopg.sa.exc
 import pytest

@@ -2,7 +2,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-from typing import AsyncIterable, Awaitable, Callable
+from collections.abc import AsyncIterable, Awaitable, Callable
 
 import pytest
 import sqlalchemy as sa
@@ -15,7 +15,7 @@ from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_postgres_database.models.users import users
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def user_id(pg_engine: Engine) -> AsyncIterable[int]:
     async with pg_engine.acquire() as conn:
         # a 'me' user

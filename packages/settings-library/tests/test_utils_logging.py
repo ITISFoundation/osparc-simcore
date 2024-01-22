@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from pydantic import Field, validator
 from settings_library.base import BaseCustomSettings
@@ -15,7 +14,7 @@ def test_mixin_logging(monkeypatch):
 
     class Settings(BaseCustomSettings, MixinLoggingSettings):
         # DOCKER
-        SC_BOOT_MODE: Optional[BootMode]
+        SC_BOOT_MODE: BootMode | None
 
         # LOGGING
         LOG_LEVEL: str = Field(

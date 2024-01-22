@@ -4,7 +4,6 @@
 from copy import deepcopy
 
 import pytest
-from pytest import MonkeyPatch
 from settings_library.docker_registry import RegistrySettings
 
 MOCKED_BASE_REGISTRY_ENV_VARS: dict[str, str] = {
@@ -21,7 +20,7 @@ def _add_parameter_to_env(env: dict[str, str], key: str, value: str) -> dict[str
     return registry_env
 
 
-def _mock_env_vars(monkeypatch: MonkeyPatch, env_vars: dict[str, str]) -> None:
+def _mock_env_vars(monkeypatch: pytest.MonkeyPatch, env_vars: dict[str, str]) -> None:
     for key, value in env_vars.items():
         monkeypatch.setenv(key, value)
 
@@ -33,7 +32,7 @@ def _mock_env_vars(monkeypatch: MonkeyPatch, env_vars: dict[str, str]) -> None:
         ("REGISTRY_URL", "some_prod_url"),
     ],
 )
-def test_model_ok(env_key: str, env_var: str, monkeypatch: MonkeyPatch) -> None:
+def test_model_ok(env_key: str, env_var: str, monkeypatch: pytest.MonkeyPatch) -> None:
     registry_env_vars = _add_parameter_to_env(
         MOCKED_BASE_REGISTRY_ENV_VARS, env_key, env_var
     )
@@ -44,7 +43,7 @@ def test_model_ok(env_key: str, env_var: str, monkeypatch: MonkeyPatch) -> None:
     assert registry_settings.resolved_registry_url == env_var
 
 
-def test_registry_path_none_string(monkeypatch: MonkeyPatch) -> None:
+def test_registry_path_none_string(monkeypatch: pytest.MonkeyPatch) -> None:
     registry_env_vars = _add_parameter_to_env(
         MOCKED_BASE_REGISTRY_ENV_VARS, "REGISTRY_PATH", "None"
     )
