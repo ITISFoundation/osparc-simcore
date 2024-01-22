@@ -155,7 +155,7 @@ async def list_tags(request: web.Request):
 
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
-        tags = await repo.list(conn)
+        tags = await repo.list_all(conn)
         return envelope_json_response(
             [TagGet.from_db(t).dict(by_alias=True) for t in tags]
         )

@@ -329,7 +329,7 @@ def test_trial_queries_for_service_metadata(
             services_latest.c.key.like("simcore/services/dynamic/%%")
             & services_meta_data.c.classifiers.contains(["osparc"])
             & (services_access_rights.c.gid == 1)
-            & (services_access_rights.c.execute_access is True)
+            & (services_access_rights.c.execute_access == True)  # noqa: E712
         )
 
         for n, query in enumerate([query1, query2, query3]):

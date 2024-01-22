@@ -218,7 +218,7 @@ async def test_tags_repo_list_and_get(
     tags_repo = TagsRepo(user_id=user.id)
 
     # (1) no tags
-    listed_tags = await tags_repo.list(conn)
+    listed_tags = await tags_repo.list_all(conn)
     assert not listed_tags
 
     # (2) one tag
@@ -235,7 +235,7 @@ async def test_tags_repo_list_and_get(
         )
     ]
 
-    listed_tags = await tags_repo.list(conn)
+    listed_tags = await tags_repo.list_all(conn)
     assert listed_tags
     assert [t["id"] for t in listed_tags] == expected_tags_ids
 
@@ -253,7 +253,7 @@ async def test_tags_repo_list_and_get(
         )
     )
 
-    listed_tags = await tags_repo.list(conn)
+    listed_tags = await tags_repo.list_all(conn)
     assert {t["id"] for t in listed_tags} == set(expected_tags_ids)
 
     # (4) add another tag from a differnt user
@@ -270,7 +270,7 @@ async def test_tags_repo_list_and_get(
 
     # same as before
     prev_listed_tags = listed_tags
-    listed_tags = await tags_repo.list(conn)
+    listed_tags = await tags_repo.list_all(conn)
     assert listed_tags == prev_listed_tags
 
     # (5) add a global tag
@@ -285,7 +285,7 @@ async def test_tags_repo_list_and_get(
         delete=False,
     )
 
-    listed_tags = await tags_repo.list(conn)
+    listed_tags = await tags_repo.list_all(conn)
     assert listed_tags == [
         {
             "id": 1,
@@ -317,7 +317,7 @@ async def test_tags_repo_list_and_get(
     ]
 
     other_repo = TagsRepo(user_id=other_user.id)
-    assert await other_repo.list(conn) == [
+    assert await other_repo.list_all(conn) == [
         {
             "id": 3,
             "name": "T3",
