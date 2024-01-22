@@ -116,4 +116,8 @@ class ApplicationSettings(MinimalApplicationSettings):
         description="Heartbeat couter limit when RUT considers service as unhealthy.",
     )
     RESOURCE_USAGE_TRACKER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+    RESOURCE_USAGE_TRACKER_S3_ENABLED: bool = Field(
+        default=False,
+        description="Possibility to disable S3 connection.",
+    )
     RESOURCE_USAGE_TRACKER_S3: S3Settings | None = Field(auto_default_from_env=True)

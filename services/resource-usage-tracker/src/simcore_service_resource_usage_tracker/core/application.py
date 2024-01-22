@@ -63,7 +63,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_db(app)
     setup_redis(app)
     setup_rabbitmq(app)
-    setup_s3(app)
+    if settings.RESOURCE_USAGE_TRACKER_S3_ENABLED:
+        setup_s3(app)
 
     setup_resource_tracker(app)
     setup_rpc_api_routes(app)
