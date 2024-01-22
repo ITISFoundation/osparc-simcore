@@ -9,10 +9,6 @@ from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
 from servicelib.logging_utils import config_all_loggers
-from simcore_service_api_server.api.errors.custom_errors import (
-    CustomBaseError,
-    custom_error_handler,
-)
 from simcore_service_api_server.api.errors.log_handling_error import (
     log_handling_error_handler,
 )
@@ -23,6 +19,7 @@ from starlette import status
 from starlette.exceptions import HTTPException
 
 from .._meta import API_VERSION, API_VTAG
+from ..api.errors.custom_errors import CustomBaseError, custom_error_handler
 from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
