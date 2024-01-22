@@ -13,7 +13,6 @@ The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 import asyncio
 import datetime
 import logging
-import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Final
@@ -551,7 +550,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
-    ) -> list:
+    ) -> None:
         ...
 
     @abstractmethod
@@ -663,7 +662,7 @@ class BaseCompScheduler(ABC):
                 user_id, project_id, iteration, RunningState.ABORTED
             )
             self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
-        except DaskClientAcquisisitonError:
+        except (DaskClientAcquisisitonError, ClustersKeeperNotAvailableError):
             _logger.exception(
                 "Unexpected error while connecting with computational backend, aborting pipeline"
             )
@@ -692,12 +691,14 @@ class BaseCompScheduler(ABC):
     ) -> None:
         # get any running task and stop them
         comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
-        await comp_tasks_repo.mark_project_published_tasks_as_aborted(project_id)
+        await comp_tasks_repo.mark_project_published_waiting_for_cluster_tasks_as_aborted(
+            project_id
+        )
         # stop any remaining running task, these are already submitted
         tasks_to_stop = [t for t in comp_tasks.values() if t.state in PROCESSING_STATES]
         await self._stop_tasks(user_id, tasks_to_stop, pipeline_params)
 
-    async def _schedule_tasks_to_start(
+    async def _schedule_tasks_to_start(  # noqa: C901
         self,
         user_id: UserID,
         project_id: ProjectID,
@@ -729,77 +730,32 @@ class BaseCompScheduler(ABC):
             return comp_tasks
 
         try:
-            results = await self._start_tasks(
+            await self._start_tasks(
                 user_id=user_id,
                 project_id=project_id,
                 scheduled_tasks=tasks_ready_to_start,
                 pipeline_params=pipeline_params,
             )
+        except (
+            ComputationalBackendNotConnectedError,
+            ComputationalSchedulerChangedError,
+        ):
+            _logger.exception(
+                "Issue with computational backend. Tasks are set back "
+                "to WAITING_FOR_CLUSTER state until scheduler comes back!",
+            )
+            await CompTasksRepository.instance(
+                self.db_engine
+            ).update_project_tasks_state(
+                project_id,
+                list(tasks_ready_to_start.keys()),
+                RunningState.WAITING_FOR_CLUSTER,
+            )
+            for task in tasks_ready_to_start:
+                comp_tasks[
+                    NodeIDStr(f"{task}")
+                ].state = RunningState.WAITING_FOR_CLUSTER
 
-            # Handling errors raised when _start_tasks(...)
-            for r, t in zip(results, tasks_ready_to_start, strict=True):
-                if isinstance(r, TaskSchedulingError):
-                    _logger.error(
-                        "Project '%s''s task '%s' could not be scheduled due to the following: %s",
-                        r.project_id,
-                        r.node_id,
-                        f"{r}",
-                    )
-
-                    await CompTasksRepository.instance(
-                        self.db_engine
-                    ).update_project_tasks_state(
-                        project_id,
-                        [r.node_id],
-                        RunningState.FAILED,
-                        r.get_errors(),
-                        optional_progress=1.0,
-                        optional_stopped=arrow.utcnow().datetime,
-                    )
-                    comp_tasks[NodeIDStr(f"{t}")].state = RunningState.FAILED
-                elif isinstance(
-                    r,
-                    ComputationalBackendNotConnectedError
-                    | ComputationalSchedulerChangedError,
-                ):
-                    _logger.error(
-                        "Issue with computational backend: %s. Tasks are set back "
-                        "to WAITING_FOR_CLUSTER state until scheduler comes back!",
-                        r,
-                    )
-                    # we should try re-connecting.
-                    # in the meantime we cannot schedule tasks on the scheduler,
-                    # let's put these tasks back to WAITING_FOR_CLUSTER, so they might be re-submitted later
-                    await CompTasksRepository.instance(
-                        self.db_engine
-                    ).update_project_tasks_state(
-                        project_id,
-                        list(tasks_ready_to_start.keys()),
-                        RunningState.WAITING_FOR_CLUSTER,
-                    )
-                    comp_tasks[
-                        NodeIDStr(f"{t}")
-                    ].state = RunningState.WAITING_FOR_CLUSTER
-                elif isinstance(r, Exception):
-                    _logger.error(
-                        "Unexpected error for %s with %s on %s happened when scheduling %s:\n%s\n%s",
-                        f"{user_id=}",
-                        f"{project_id=}",
-                        f"{pipeline_params.cluster_id=}",
-                        f"{tasks_ready_to_start.keys()=}",
-                        f"{r}",
-                        "".join(traceback.format_tb(r.__traceback__)),
-                    )
-                    await CompTasksRepository.instance(
-                        self.db_engine
-                    ).update_project_tasks_state(
-                        project_id,
-                        [t],
-                        RunningState.FAILED,
-                        optional_progress=1.0,
-                        optional_stopped=arrow.utcnow().datetime,
-                    )
-                    comp_tasks[NodeIDStr(f"{t}")].state = RunningState.FAILED
         except ComputationalBackendOnDemandNotReadyError as exc:
             _logger.info(
                 "The on demand computational backend is not ready yet: %s", exc
@@ -819,8 +775,10 @@ class BaseCompScheduler(ABC):
                 list(tasks_ready_to_start.keys()),
                 RunningState.WAITING_FOR_CLUSTER,
             )
-            for task in comp_tasks.values():
-                task.state = RunningState.WAITING_FOR_CLUSTER
+            for task in tasks_ready_to_start:
+                comp_tasks[
+                    NodeIDStr(f"{task}")
+                ].state = RunningState.WAITING_FOR_CLUSTER
         except ClustersKeeperNotAvailableError:
             _logger.exception("Unexpected error while starting tasks:")
             await publish_project_log(
@@ -840,8 +798,46 @@ class BaseCompScheduler(ABC):
                 optional_progress=1.0,
                 optional_stopped=arrow.utcnow().datetime,
             )
-            for task in comp_tasks.values():
-                task.state = RunningState.FAILED
+            for task in tasks_ready_to_start:
+                comp_tasks[NodeIDStr(f"{task}")].state = RunningState.FAILED
+            raise
+        except TaskSchedulingError as exc:
+            _logger.exception(
+                "Project '%s''s task '%s' could not be scheduled",
+                exc.project_id,
+                exc.node_id,
+            )
+            await CompTasksRepository.instance(
+                self.db_engine
+            ).update_project_tasks_state(
+                project_id,
+                [exc.node_id],
+                RunningState.FAILED,
+                exc.get_errors(),
+                optional_progress=1.0,
+                optional_stopped=arrow.utcnow().datetime,
+            )
+            comp_tasks[NodeIDStr(f"{exc.node_id}")].state = RunningState.FAILED
+        except Exception:
+            _logger.exception(
+                "Unexpected error for %s with %s on %s happened when scheduling %s:",
+                f"{user_id=}",
+                f"{project_id=}",
+                f"{pipeline_params.cluster_id=}",
+                f"{tasks_ready_to_start.keys()=}",
+            )
+            await CompTasksRepository.instance(
+                self.db_engine
+            ).update_project_tasks_state(
+                project_id,
+                list(tasks_ready_to_start.keys()),
+                RunningState.FAILED,
+                optional_progress=1.0,
+                optional_stopped=arrow.utcnow().datetime,
+            )
+            for task in tasks_ready_to_start:
+                comp_tasks[NodeIDStr(f"{task}")].state = RunningState.FAILED
+            raise
 
         return comp_tasks
 

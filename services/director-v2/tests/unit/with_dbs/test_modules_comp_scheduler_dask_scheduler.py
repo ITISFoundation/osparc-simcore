@@ -72,6 +72,10 @@ from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
 from simcore_service_director_v2.modules.comp_scheduler.dask_scheduler import (
     DaskScheduler,
 )
+from simcore_service_director_v2.modules.dask_client import (
+    DaskJobID,
+    PublishedComputationTask,
+)
 from simcore_service_director_v2.utils.comp_scheduler import COMPLETED_STATES
 from simcore_service_director_v2.utils.dask_client_utils import TaskHandlers
 from starlette.testclient import TestClient
@@ -564,11 +568,14 @@ def _mock_send_computation_tasks(
 
     async def _send_computation_tasks(
         *args, tasks: dict[NodeID, Image], **kwargs
-    ) -> list[tuple[NodeID, str]]:
+    ) -> list[PublishedComputationTask]:
         for node_id in tasks:
             assert NodeID(f"{node_id}") in node_id_to_job_id_map
         return [
-            (NodeID(f"{node_id}"), node_id_to_job_id_map[NodeID(f"{node_id}")])
+            PublishedComputationTask(
+                node_id=NodeID(f"{node_id}"),
+                job_id=DaskJobID(node_id_to_job_id_map[NodeID(f"{node_id}")]),
+            )
             for node_id in tasks
         ]  # type: ignore
 
