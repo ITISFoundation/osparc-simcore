@@ -41,10 +41,17 @@ DEFAULT_DB = "simcoredb"
 
 log = logging.getLogger("root")
 
-if __name__ == "__main__":
-    # swallows up all log messages from tests
-    # only enable it during cli invocation
-    fileConfig(DEFAULT_INI)
+
+class PostgresNotFoundError(RuntimeError):
+    def __init__(self) -> None:
+        super().__init__("Postgres db was not discover")
+
+
+class DiscoverConfigMissingError(ValueError):
+    def __init__(self, extra="") -> None:
+        super().__init__(
+            f"Missing discovery config file {extra}. Check for errors in discovery logs to find more details"
+        )
 
 
 @click.group()
@@ -157,16 +164,14 @@ def upgrade_and_close():
     for attempt in Retrying(wait=wait_fixed(5), after=after_log(log, logging.ERROR)):
         with attempt:
             if not discover.callback():
-                msg = "Postgres db was not discover"
-                raise Exception(msg)  # pylint: disable=broad-exception-raised
+                raise PostgresNotFoundError
 
-    # FIXME: if database is not stampped!?
     try:
         info.callback()
         upgrade.callback(revision="head")
         info.callback()
     except Exception:  # pylint: disable=broad-except
-        log.exception("Unable to upgrade")
+        log.exception("Unable to upgrade to head. Skipping ...")
 
     click.echo("I did my job here. Bye!")
 
@@ -194,8 +199,8 @@ def review(message):
             rev_id=None,
         )
     else:
-        msg = "Missing config"
-        raise ValueError(msg)
+        msg = "while auto-generating new review"
+        raise DiscoverConfigMissingError(extra=msg)
 
 
 @main.command()
@@ -219,8 +224,8 @@ def upgrade(revision):
     if config:
         alembic.command.upgrade(config, revision, sql=False, tag=None)
     else:
-        msg = "Missing config"
-        raise ValueError(msg)
+        msg = "while upgrading"
+        raise DiscoverConfigMissingError(extra=msg)
 
 
 @main.command()
@@ -244,8 +249,8 @@ def downgrade(revision):
     if config:
         alembic.command.downgrade(config, str(revision), sql=False, tag=None)
     else:
-        msg = "Missing config"
-        raise ValueError(msg)
+        msg = "while downgrading"
+        raise DiscoverConfigMissingError(extra=msg)
 
 
 @main.command()
@@ -257,5 +262,11 @@ def stamp(revision):
     if config:
         alembic.command.stamp(config, revision, sql=False, tag=None)
     else:
-        msg = "Missing config"
-        raise ValueError(msg)
+        msg = "while stamping"
+        raise DiscoverConfigMissingError(extra=msg)
+
+
+if __name__ == "__main__":
+    # swallows up all log messages from tests
+    # only enable it during cli invocation
+    fileConfig(DEFAULT_INI)
