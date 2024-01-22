@@ -18,16 +18,6 @@ async-timeout==4.0.3
     # via
     #   -c requirements/_base.txt
     #   redis
-boto3==1.33.13
-    # via
-    #   -c requirements/_base.txt
-    #   moto
-botocore==1.33.13
-    # via
-    #   -c requirements/_base.txt
-    #   boto3
-    #   moto
-    #   s3transfer
 certifi==2023.11.17
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -35,8 +25,6 @@ certifi==2023.11.17
     #   httpcore
     #   httpx
     #   requests
-cffi==1.16.0
-    # via cryptography
 charset-normalizer==3.3.2
     # via
     #   -c requirements/_base.txt
@@ -45,10 +33,6 @@ coverage==7.4.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==41.0.7
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   moto
 docker==7.0.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.0
@@ -56,7 +40,7 @@ exceptiongroup==1.2.0
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==22.4.0
+faker==22.2.0
     # via -r requirements/_test.in
 fakeredis==2.20.1
     # via -r requirements/_test.in
@@ -86,15 +70,6 @@ idna==3.6
     #   requests
 iniconfig==2.0.0
     # via pytest
-jinja2==3.1.3
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   moto
-jmespath==1.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   boto3
-    #   botocore
 lupa==2.0
     # via fakeredis
 mako==1.3.0
@@ -105,11 +80,7 @@ mako==1.3.0
 markupsafe==2.1.3
     # via
     #   -c requirements/_base.txt
-    #   jinja2
     #   mako
-    #   werkzeug
-moto==4.2.13
-    # via -r requirements/_test.in
 mypy==1.8.0
     # via sqlalchemy
 mypy-extensions==1.0.0
@@ -122,10 +93,6 @@ packaging==23.2
     #   pytest-sugar
 pluggy==1.3.0
     # via pytest
-py-partiql-parser==0.5.0
-    # via moto
-pycparser==2.21
-    # via cffi
 pytest==7.4.4
     # via
     #   -r requirements/_test.in
@@ -146,19 +113,11 @@ pytest-sugar==0.9.7
 python-dateutil==2.8.2
     # via
     #   -c requirements/_base.txt
-    #   botocore
     #   faker
-    #   moto
 python-dotenv==1.0.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-pyyaml==6.0.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   moto
-    #   responses
 redis==5.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -168,19 +127,11 @@ requests==2.31.0
     # via
     #   -c requirements/_base.txt
     #   docker
-    #   moto
     #   requests-mock
-    #   responses
 requests-mock==1.11.0
     # via -r requirements/_test.in
-responses==0.24.1
-    # via moto
 respx==0.20.2
     # via -r requirements/_test.in
-s3transfer==0.8.2
-    # via
-    #   -c requirements/_base.txt
-    #   boto3
 six==1.16.0
     # via
     #   -c requirements/_base.txt
@@ -220,11 +171,5 @@ urllib3==2.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
-    #   botocore
     #   docker
     #   requests
-    #   responses
-werkzeug==3.0.1
-    # via moto
-xmltodict==0.13.0
-    # via moto

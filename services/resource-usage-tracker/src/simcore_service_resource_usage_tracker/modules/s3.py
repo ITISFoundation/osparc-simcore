@@ -33,7 +33,7 @@ class S3Client:
         try:
             self.s3_client.list_buckets()
             return True
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"Failed to ping S3: {str(e)}")
             return False
 
@@ -42,7 +42,7 @@ class S3Client:
             # Close the S3 client
             self.s3_client.meta.client.close()
             print("S3 client closed.")
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"Failed to close S3 client: {str(e)}")
 
     def generate_presigned_url(self, bucket, key, expiration=3600) -> AnyUrl:
