@@ -52,7 +52,7 @@ class SimcoreS3API:
         except Exception:  # pylint: disable=broad-except
             return False
 
-    async def create_presigned_link(
+    async def create_presigned_download_link(
         self,
         bucket_name: S3BucketName,
         object_key: str,
@@ -62,7 +62,7 @@ class SimcoreS3API:
             # NOTE: ensure the bucket/object exists, this will raise if not
             await self.client.head_bucket(Bucket=bucket_name)
             generated_link = await self.client.generate_presigned_url(
-                "put_object",
+                "get_object",
                 Params={"Bucket": bucket_name, "Key": object_key},
                 ExpiresIn=expiration_secs,
             )
