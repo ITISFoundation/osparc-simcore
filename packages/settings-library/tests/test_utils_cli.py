@@ -151,7 +151,7 @@ def test_settings_as_json_schema(
     print(result.stdout)
 
     # reuse resulting json to build settings
-    settings_schema: dict = json.loads(result.stdout)
+    json.loads(result.stdout)
 
 
 def test_cli_default_settings_envs(
@@ -163,9 +163,7 @@ def test_cli_default_settings_envs(
     monkeypatch: pytest.MonkeyPatch,
 ):
     with monkeypatch.context() as patch:
-        mocked_envs_1: EnvVarsDict = setenvs_from_envfile(
-            patch, fake_granular_env_file_content
-        )
+        setenvs_from_envfile(patch, fake_granular_env_file_content)
 
         cli_settings_output = cli_runner.invoke(
             cli,
@@ -177,7 +175,7 @@ def test_cli_default_settings_envs(
 
     # now let's use these as env vars
     with monkeypatch.context() as patch:
-        mocked_envs_2: EnvVarsDict = setenvs_from_envfile(
+        setenvs_from_envfile(
             patch,
             cli_settings_output,
         )
@@ -211,9 +209,7 @@ def test_cli_compact_settings_envs(
     monkeypatch: pytest.MonkeyPatch,
 ):
     with monkeypatch.context() as patch:
-        mocked_envs_1: EnvVarsDict = setenvs_from_envfile(
-            patch, fake_granular_env_file_content
-        )
+        setenvs_from_envfile(patch, fake_granular_env_file_content)
 
         settings_1 = fake_settings_class()
 
@@ -379,7 +375,7 @@ def test_cli_settings_exclude_unset_as_json(
     monkeypatch: pytest.MonkeyPatch,
 ):
     # minimal envfile
-    mocked_envs: EnvVarsDict = setenvs_from_envfile(
+    setenvs_from_envfile(
         monkeypatch,
         """
         # these are required

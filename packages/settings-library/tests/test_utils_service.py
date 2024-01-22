@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 from functools import cached_property
-from typing import Optional
 
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
@@ -16,11 +15,11 @@ def test_mixing_service_settings_usage(monkeypatch):
     class MySettings(BaseCustomSettings, MixinServiceSettings):
         MY_HOST: str = "example.com"
         MY_PORT: PortInt = 8000
-        MY_VTAG: Optional[VersionTag] = None
+        MY_VTAG: VersionTag | None = None
 
         # optional
-        MY_USER: Optional[str]
-        MY_PASSWORD: Optional[SecretStr]
+        MY_USER: str | None
+        MY_PASSWORD: SecretStr | None
 
         @cached_property
         def api_base_url(self) -> str:

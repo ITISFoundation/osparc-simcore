@@ -14,7 +14,6 @@ import respx
 import simcore_service_datcore_adapter
 from asgi_lifespan import LifespanManager
 from fastapi.applications import FastAPI
-from pytest import MonkeyPatch
 from pytest_mock import MockFixture
 from simcore_service_datcore_adapter.modules.pennsieve import (
     PennsieveAuthorizationHeaders,
@@ -75,7 +74,7 @@ def client(minimal_app: FastAPI) -> TestClient:
 
 
 @pytest.fixture
-def app_envs(monkeypatch: MonkeyPatch):
+def app_envs(monkeypatch: pytest.MonkeyPatch):
     # disable tracing as together with LifespanManager, it does not remove itself nicely
     ...
 
@@ -227,7 +226,7 @@ def pennsieve_random_fake_datasets(
 
 
 @pytest.fixture
-def disable_aiocache(monkeypatch: MonkeyPatch):
+def disable_aiocache(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("AIOCACHE_DISABLE", "1")
 
 

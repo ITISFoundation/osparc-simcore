@@ -9,7 +9,6 @@ from typing import Any, Awaitable, Callable
 import pytest
 from aiohttp.test_utils import TestClient
 from pydantic import ByteSize, parse_obj_as
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -33,7 +32,7 @@ API_PREFIX = "/" + api_version_prefix
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(
         monkeypatch,

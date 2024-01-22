@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import validator
 
 from .base import BaseCustomSettings
@@ -10,7 +8,7 @@ class S3Settings(BaseCustomSettings):
     S3_ENDPOINT: str
     S3_ACCESS_KEY: str
     S3_SECRET_KEY: str
-    S3_ACCESS_TOKEN: Optional[str] = None
+    S3_ACCESS_TOKEN: str | None = None
     S3_BUCKET_NAME: str
     S3_REGION: str = "us-east-1"
 

@@ -19,7 +19,6 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingMessageType,
     RabbitResourceTrackingStartedMessage,
 )
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -45,7 +44,7 @@ from tenacity.wait import wait_fixed
 
 
 @pytest.fixture()
-def mock_env(monkeypatch: MonkeyPatch) -> EnvVarsDict:
+def mock_env(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
 
     Do override/extend this fixture to change configurations
