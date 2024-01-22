@@ -7,9 +7,9 @@ import passlib.hash
 from aiohttp import web
 from models_library.users import UserID
 
-from ._authz import AuthorizationPolicy
 from ._authz_access_model import OptionalContext, RoleBasedAccessModel
-from ._identity import forget_identity, remember_identity
+from ._authz_policy import AuthorizationPolicy
+from ._identity_api import forget_identity, remember_identity
 
 
 def get_access_model(app: web.Application) -> RoleBasedAccessModel:

@@ -20,7 +20,6 @@ from aiohttp import web
 from psycopg2 import DatabaseError
 from pytest_mock import MockerFixture
 from simcore_service_webserver.projects.models import ProjectDict
-from simcore_service_webserver.security._authz import AuthorizationPolicy
 from simcore_service_webserver.security._authz_access_model import (
     RoleBasedAccessModel,
     check_access,
@@ -30,6 +29,7 @@ from simcore_service_webserver.security._authz_access_roles import (
     UserRole,
 )
 from simcore_service_webserver.security._authz_db import AuthInfoDict
+from simcore_service_webserver.security._authz_policy import AuthorizationPolicy
 
 
 @pytest.fixture
