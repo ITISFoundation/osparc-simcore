@@ -88,6 +88,13 @@ class JobConcurrencyLimitFrontendUserPreference(FrontendUserPreference):
     value: int | None = 1
 
 
+class TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference(
+    FrontendUserPreference
+):
+    preference_identifier = "lowDiskSpaceThreshold"
+    value: int = 5  # in gigabytes
+
+
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ConfirmationBackToDashboardFrontendUserPreference,
     ConfirmationDeleteStudyFrontendUserPreference,
@@ -105,7 +112,14 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     UserInactivityThresholdFrontendUserPreference,
     JobConcurrencyLimitFrontendUserPreference,
     AllowMetricsCollectionFrontendUserPreference,
+    TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
 ]
+
+
+def get_preference_identifier(
+    preference_class: type[FrontendUserPreference],
+) -> PreferenceIdentifier:
+    return preference_class.__fields__["preference_identifier"].default
 
 
 def get_preference_identifier_to_preference_name_map() -> (

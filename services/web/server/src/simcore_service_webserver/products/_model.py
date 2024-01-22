@@ -94,11 +94,6 @@ class Product(BaseModel):
         description="True if this product offers credits",
     )
 
-    is_dynamic_services_telemetry_enabled: bool = Field(
-        default=False,
-        description="True if the product will receive usage statistics for dynamic services",
-    )
-
     credits_per_usd: NonNegativeDecimal | None = Field(
         default=None,
         description="Price of the credits in this product given in credit/USD. None for free product.",
