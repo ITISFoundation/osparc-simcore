@@ -107,28 +107,28 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 		$(CURDIR)/tests/sleepers/sleepers.py
 
 
+# Define the file where user input will be saved
+USER_INPUT_FILE := .e2e-playwright-env.txt
 
-.PHONY: test-dev
-test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
-	# WARNING:
-	#   - do not forget to build latest changes images
-	#   - this test can be affected by existing docker volumes in your host machine
-	#
-	# running unit tests
-	@pytest --keep-docker-up \
-	-vv \
-	--color=yes \
-	--failed-first \
-	--durations=10 \
-	--asyncio-mode=auto \
-	--pdb \
-	$(CURDIR)
+# Prompt the user for input and save it to a file
+$(USER_INPUT_FILE):
+	@read -p "Enter your product URL: " PRODUCT_URL; \
+	read -p "Enter your username: " USER_NAME; \
+	read -s -p "Enter your password: " PASSWORD; \
+	echo "$$PRODUCT_URL $$USER_NAME $$PASSWORD" > $(USER_INPUT_FILE)
+
+# Read user input from the file and run the test
+test-sleepers-anywhere: _check_venv_active $(USER_INPUT_FILE)
+	@IFS=' ' read -r PRODUCT_URL USER_NAME PASSWORD < $(USER_INPUT_FILE); \
+	pytest -s tests/sleepers/sleepers.py \
+		--color=yes \
+		--product-url=$$PRODUCT_URL \
+		--user-name=$$USER_NAME \
+		--password=$$PASSWORD \
+		--num-sleepers=24 \
+		--browser chromium \
+		--headed
 
 
-.PHONY: test-ci
-test-ci: ## runs ci tests (i.e. w/o debug tools and with code coverage)
-	@pytest \
-	-vv \
-	--color=yes \
-	--durations=10 \
-	$(CURDIR)
+clean:
+	@rm -rf $(USER_INPUT_FILE)
