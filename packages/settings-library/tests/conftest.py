@@ -4,7 +4,6 @@
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 import pytest
 import settings_library
@@ -97,13 +96,9 @@ def fake_settings_class() -> type[BaseCustomSettings]:
 
         # NOTE: by convention, an addon is disabled when APP_ADDON=None, so we make this
         # entry nullable as well
-        APP_OPTIONAL_ADDON: Optional[_ModuleSettings] = Field(
-            auto_default_from_env=True
-        )
+        APP_OPTIONAL_ADDON: _ModuleSettings | None = Field(auto_default_from_env=True)
 
         # NOTE: example of a group that cannot be disabled (not nullable)
-        APP_REQUIRED_PLUGIN: Optional[PostgresSettings] = Field(
-            auto_default_from_env=True
-        )
+        APP_REQUIRED_PLUGIN: PostgresSettings | None = Field(auto_default_from_env=True)
 
     return _ApplicationSettings
