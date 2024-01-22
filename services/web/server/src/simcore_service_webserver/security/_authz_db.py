@@ -9,7 +9,7 @@ from pydantic import parse_obj_as
 from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import UserStatus, users
-from ._identity_policy import IdentityStr
+from ._identity_api import IdentityStr
 
 _logger = logging.getLogger(__name__)
 
