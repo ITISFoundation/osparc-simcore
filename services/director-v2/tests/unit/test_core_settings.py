@@ -14,6 +14,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.egress_proxy imp
 )
 from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     DynamicSidecarSettings,
+    PlacementSettings,
     RCloneSettings,
 )
 from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
@@ -258,3 +259,15 @@ def test_class_dynamicsidecarsettings_in_production(
 def test_envoy_log_level():
     for enum in (EnvoyLogLevel("WARNING"), EnvoyLogLevel.WARNING):
         assert enum.to_log_level() == "warning"
+
+
+def test_placement_settings(monkeypatch: pytest.MonkeyPatch):
+    assert PlacementSettings()
+
+    monkeypatch.setenv(
+        "DIRECTOR_V2_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES", "{}"
+    )
+    with pytest.raises(
+        ValidationError, match="empty placement replacement constraints"
+    ):
+        PlacementSettings()

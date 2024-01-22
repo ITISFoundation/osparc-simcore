@@ -281,7 +281,7 @@ def _add_compose_destination_containers_to_settings_entries(
         item: SimcoreServiceSettingLabelEntry,
     ) -> SimcoreServiceSettingLabelEntry:
         # pylint: disable=protected-access
-        item._destination_containers = destination_containers
+        item._destination_containers = destination_containers  # noqa: SLF001
         return item
 
     return [_inject_destination_container(x) for x in settings]
@@ -290,6 +290,8 @@ def _add_compose_destination_containers_to_settings_entries(
 def _merge_resources_in_settings(
     settings: deque[SimcoreServiceSettingLabelEntry],
     service_resources: ServiceResourcesDict,
+    *,
+    skip_generic_resources: bool,
 ) -> deque[SimcoreServiceSettingLabelEntry]:
     """All oSPARC services which have defined resource requirements will be added"""
     log.debug("MERGING\n%s\nAND\n%s", f"{settings=}", f"{service_resources}")
@@ -338,6 +340,9 @@ def _merge_resources_in_settings(
                     "MemoryBytes"
                 ] += resource_value.reservation
             else:  # generic resources
+                if skip_generic_resources:
+                    # NOTE: placement constraints will be used in favour of generic resources
+                    continue
                 generic_resource = {
                     "DiscreteResourceSpec": {
                         "Kind": resource_name,
@@ -383,7 +388,9 @@ def _patch_target_service_into_env_vars(
             list_of_env_vars = entry.value if entry.value else []
 
             # pylint: disable=protected-access
-            destination_containers: list[str] = entry._destination_containers
+            destination_containers: list[
+                str
+            ] = entry._destination_containers  # noqa: SLF001
 
             # transforms settings defined environment variables
             # from `ENV_VAR=PAYLOAD`
@@ -459,10 +466,12 @@ async def get_labels_for_involved_services(
 
 async def merge_settings_before_use(
     director_v0_client: DirectorV0Client,
+    *,
     service_key: str,
     service_tag: str,
     service_user_selection_boot_options: dict[EnvVarKey, str],
     service_resources: ServiceResourcesDict,
+    skip_generic_resources: bool,
 ) -> SimcoreServiceSettingsLabel:
     labels_for_involved_services = await get_labels_for_involved_services(
         director_v0_client=director_v0_client,
@@ -501,7 +510,9 @@ async def merge_settings_before_use(
             )
         )
 
-    settings = _merge_resources_in_settings(settings, service_resources)
+    settings = _merge_resources_in_settings(
+        settings, service_resources, skip_generic_resources=skip_generic_resources
+    )
     settings = _patch_target_service_into_env_vars(settings)
 
     return SimcoreServiceSettingsLabel.parse_obj(settings)

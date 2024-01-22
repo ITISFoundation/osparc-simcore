@@ -20,8 +20,11 @@ from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
-from ....core.settings import AppSettings, PlacementConstraintStr
+from ....core.dynamic_services_settings.sidecar import (
+    DynamicSidecarSettings,
+    PlacementConstraintStr,
+)
+from ....core.settings import AppSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
@@ -361,8 +364,11 @@ def get_dynamic_sidecar_spec(
         | standard_simcore_docker_labels
     )
 
+    placement_settings = (
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
+    )
     placement_constraints = deepcopy(
-        app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+        placement_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
     )
     # if service has a pricing plan apply constraints for autoscaling
     if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
@@ -373,6 +379,23 @@ def get_dynamic_sidecar_spec(
                 f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ec2_instance_type}",
             )
         )
+    if placement_settings.use_generic_resources_instead_of_placement_constraints:
+        replacement_constraints: dict[
+            str, PlacementConstraintStr
+        ] | None = (
+            placement_settings.DIRECTOR_V2_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES
+        )
+        if replacement_constraints:
+            for resource_name in scheduler_data.service_resources:
+                if resource_name not in {"CPU", "RAM"}:
+                    if resource_name not in replacement_constraints:
+                        msg = (
+                            "Since replacement placement constraints are enabled, "
+                            f"{resource_name} must be present inside {replacement_constraints=}"
+                        )
+                        raise ValueError(msg)
+
+                    placement_constraints.append(replacement_constraints[resource_name])
 
     #  -----------
     create_service_params = {

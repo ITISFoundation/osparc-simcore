@@ -1,10 +1,10 @@
 import logging
+import re
 from enum import Enum
 from pathlib import Path
-from typing import Final
 
 from models_library.basic_types import BootModeEnum, PortInt
-from pydantic import Field, NonNegativeInt, PositiveInt, validator
+from pydantic import ConstrainedStr, Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -13,8 +13,6 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from ...constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 _logger = logging.getLogger(__name__)
-
-_MINUTE: Final[NonNegativeInt] = 60
 
 
 class VFSCacheMode(str, Enum):
@@ -50,6 +48,55 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
         return v
 
 
+class PlacementConstraintStr(ConstrainedStr):
+    strip_whitespace = True
+    regex = re.compile(
+        r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
+    )
+
+
+class PlacementSettings(BaseCustomSettings):
+    # This is just a service placement constraint, see
+    # https://docs.docker.com/engine/swarm/services/#control-service-placement.
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[PlacementConstraintStr] = Field(
+        default_factory=list,
+        example='["node.labels.region==east", "one!=yes"]',
+    )
+
+    DIRECTOR_V2_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES: dict[
+        str,
+        PlacementConstraintStr,
+    ] | None = Field(
+        default=None,
+        description=(
+            "Use placement constraints in place of generic resources, for details "
+            "see https://github.com/ITISFoundation/osparc-simcore/issues/5250 "
+            "When `None` (default), uses generic resources"
+        ),
+        example='{"AIRAM": "node.labels.CUSTOM==CUSTOM_VALUE"}',
+    )
+
+    @property
+    def use_generic_resources_instead_of_placement_constraints(self) -> bool:
+        return (
+            self.DIRECTOR_V2_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES
+            is None
+        )
+
+    @validator("DIRECTOR_V2_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES")
+    @classmethod
+    def no_empty_placement_constraints_mapping_allowed(
+        cls, value: dict | None
+    ) -> dict | None:
+        if value is not None and len(value) == 0:
+            msg = (
+                "Cannot provide and empty placement replacement constraints "
+                f"mapping: '{value}'"
+            )
+            raise ValueError(msg)
+        return value
+
+
 class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_SC_BOOT_MODE: BootModeEnum = Field(
         ...,
@@ -72,6 +119,10 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+
+    DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: PlacementSettings = Field(
+        auto_default_from_env=True
+    )
 
     #
     # DEVELOPMENT ONLY config
@@ -126,3 +177,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     def _validate_log_level(cls, value) -> str:
         log_level: str = cls.validate_log_level(value)
         return log_level
+
+
+# DIRECTOR_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES = '{"VRAM": "node.labels.CUSTOM==CUSTOM_VALUE"}'
+# DIRECTOR_V2_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES= '{"VRAM": "node.labels.CUSTOM==CUSTOM_VALUE"}'

@@ -26,7 +26,10 @@ from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySetting
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from .....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
+from .....core.dynamic_services_settings.sidecar import (
+    DynamicSidecarSettings,
+    PlacementSettings,
+)
 from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DockerStatus,
@@ -125,6 +128,10 @@ class CreateSidecars(DynamicSchedulerEvent):
         dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
+        dynamic_services_placement_settings: PlacementSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
+        )
+
         # the dynamic-sidecar should merge all the settings, especially:
         # resources and placement derived from all the images in
         # the provided docker-compose spec
@@ -152,6 +159,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_tag=scheduler_data.version,
             service_user_selection_boot_options=boot_options,
             service_resources=scheduler_data.service_resources,
+            skip_generic_resources=dynamic_services_placement_settings.use_generic_resources_instead_of_placement_constraints,
         )
 
         groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
