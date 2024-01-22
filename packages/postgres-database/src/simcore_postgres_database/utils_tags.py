@@ -181,9 +181,7 @@ class TagsRepo:
     async def list_all(self, conn: SAConnection) -> list[TagDict]:
         select_stmt = (
             sa.select(*_COLUMNS)
-            .select_from(
-                self._join_user_to_tags(tags_to_groups.c.read == True)  # noqa: E712
-            )
+            .select_from(self._join_user_to_tags(sa.tags_to_groups.c.read.is_(True)))
             .order_by(tags.c.id)
         )
 
@@ -191,9 +189,7 @@ class TagsRepo:
 
     async def get(self, conn: SAConnection, tag_id: int) -> TagDict:
         select_stmt = sa.select(*_COLUMNS).select_from(
-            self._join_user_to_given_tag(
-                tags_to_groups.c.read == True, tag_id=tag_id  # noqa: E712
-            )
+            self._join_user_to_given_tag(tags_to_groups.c.read.is_(True), tag_id=tag_id)
         )
 
         result = await conn.execute(select_stmt)
@@ -224,7 +220,7 @@ class TagsRepo:
             .where(tags.c.id == tag_id)
             .where(
                 (tags.c.id == tags_to_groups.c.tag_id)
-                & (tags_to_groups.c.write == True)  # noqa: E712
+                & (tags_to_groups.c.write.is_(True))
             )
             .where(
                 (tags_to_groups.c.group_id == user_to_groups.c.gid)
@@ -248,7 +244,7 @@ class TagsRepo:
             .where(tags.c.id == tag_id)
             .where(
                 (tags_to_groups.c.tag_id == tag_id)
-                & (tags_to_groups.c.delete == True)  # noqa: E712
+                & (tags_to_groups.c.delete.is_(True))
             )
             .where(
                 (tags_to_groups.c.group_id == user_to_groups.c.gid)
