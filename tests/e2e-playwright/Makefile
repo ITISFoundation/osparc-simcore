@@ -125,7 +125,7 @@ test-sleepers-anywhere: _check_venv_active $(USER_INPUT_FILE)
 	@IFS=' ' read -r PRODUCT_URL USER_NAME PASSWORD NUM_SLEEPERS BILLABLE < $(USER_INPUT_FILE); \
 	BILLABLE_FLAG=""; \
     if [ "$$BILLABLE" = "y" ]; then \
-        BILLABLE_FLAG="--billable"; \
+        BILLABLE_FLAG="--product-billable"; \
     fi; \
 	pytest -s tests/sleepers/sleepers.py \
 		--color=yes \
