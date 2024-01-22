@@ -174,8 +174,11 @@ def test_services_custom_constraints(
 ) -> None:
     monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
     settings = AppSettings.create_from_envs()
-    assert isinstance(settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS, list)
-    assert expected == settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+    custom_constraints = (
+        settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+    )
+    assert isinstance(custom_constraints, list)
+    assert expected == custom_constraints
 
 
 @pytest.mark.parametrize(
