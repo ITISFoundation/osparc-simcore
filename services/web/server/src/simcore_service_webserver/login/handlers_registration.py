@@ -207,7 +207,7 @@ async def register(request: web.Request):
     #  get authorized user or create new
     user = await _auth_api.get_user_by_email(request.app, email=registration.email)
     if user:
-        await _auth_api.check_authorized_user_or_raise(
+        await _auth_api.check_authorized_user_credentials_or_raise(
             user,
             password=registration.password.get_secret_value(),
             product=product,

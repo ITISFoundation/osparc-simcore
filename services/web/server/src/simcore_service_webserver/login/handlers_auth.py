@@ -26,7 +26,11 @@ from ._2fa import (
     mask_phone_number,
     send_sms_code,
 )
-from ._auth_api import check_authorized_user_or_raise, get_user_by_email
+from ._auth_api import (
+    check_authorized_user_credentials_or_raise,
+    check_authorized_user_in_product_or_raise,
+    get_user_by_email,
+)
 from ._constants import (
     CODE_2FA_CODE_REQUIRED,
     CODE_PHONE_NUMBER_REQUIRED,
@@ -92,10 +96,13 @@ async def login(request: web.Request):
     )
     login_ = await parse_request_body_as(LoginBody, request)
 
-    user = await check_authorized_user_or_raise(
+    user = await check_authorized_user_credentials_or_raise(
         user=await get_user_by_email(request.app, email=login_.email),
         password=login_.password.get_secret_value(),
         product=product,
+    )
+    await check_authorized_user_in_product_or_raise(
+        request.app, user=user, product=product
     )
 
     # Some roles have login privileges
