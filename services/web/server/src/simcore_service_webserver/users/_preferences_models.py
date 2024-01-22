@@ -119,7 +119,10 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
 def get_preference_identifier(
     preference_class: type[FrontendUserPreference],
 ) -> PreferenceIdentifier:
-    return preference_class.__fields__["preference_identifier"].default
+    preference_identifier: PreferenceIdentifier = preference_class.__fields__[
+        "preference_identifier"
+    ].default
+    return preference_identifier
 
 
 def get_preference_identifier_to_preference_name_map() -> (

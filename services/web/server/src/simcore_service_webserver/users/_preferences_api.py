@@ -87,7 +87,7 @@ async def get_frontend_user_preferences_aggregation(
             )
         )
 
-    is_telemetry_enabled = group_extra_properties.enable_telemetry
+    is_telemetry_enabled: bool = group_extra_properties.enable_telemetry
 
     low_disk_warning_identifier = get_preference_identifier(
         TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference

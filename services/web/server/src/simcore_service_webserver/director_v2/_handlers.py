@@ -17,9 +17,13 @@ from servicelib.common_headers import (
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraPropertiesRepo,
+)
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
+from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
 from ..products import api as products_api
 from ..security.decorators import permission_required
@@ -82,6 +86,13 @@ async def start_computation(request: web.Request) -> web.Response:
         simcore_user_agent = request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         )
+
+        async with get_database_engine(request.app).acquire() as conn:
+            group_properties = (
+                await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+                    conn, user_id=req_ctx.user_id, product_name=req_ctx.product_name
+                )
+            )
 
         # Get wallet information
         product = products_api.get_current_product(request)
