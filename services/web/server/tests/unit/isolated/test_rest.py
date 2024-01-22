@@ -79,7 +79,7 @@ def mock_user_logged_in(mocker: MockerFixture) -> UserID:
     # patches @login_required decorator
     # NOTE: that these tests have no database!
     mocker.patch(
-        "simcore_service_webserver.login.decorators.check_authorized",
+        "simcore_service_webserver.login.decorators.get_user_id_or_raise_if_unauthorized",
         spec=True,
         return_value=user_id,
     )
