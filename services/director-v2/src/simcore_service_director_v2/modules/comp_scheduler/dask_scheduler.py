@@ -30,7 +30,7 @@ from ...core.errors import (
 from ...models.comp_runs import RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...models.dask_subsystem import DaskClientTaskState
-from ...modules.dask_client import DaskClient
+from ...modules.dask_client import DaskClient, PublishedComputationTask
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
@@ -105,7 +105,7 @@ class DaskScheduler(BaseCompScheduler):
         project_id: ProjectID,
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
-    ) -> list:
+    ) -> None:
         # now transfer the pipeline to the dask scheduler
         async with _cluster_dask_client(user_id, pipeline_params, self) as client:
             # Change the tasks state to PENDING
@@ -116,9 +116,7 @@ class DaskScheduler(BaseCompScheduler):
                 RunningState.PENDING,
             )
             # each task is started independently
-            results: list[
-                list[tuple[NodeID, str]] | BaseException
-            ] = await asyncio.gather(
+            results: list[list[PublishedComputationTask]] = await asyncio.gather(
                 *(
                     client.send_computation_tasks(
                         user_id=user_id,
@@ -131,20 +129,18 @@ class DaskScheduler(BaseCompScheduler):
                     )
                     for node_id, task in scheduled_tasks.items()
                 ),
-                return_exceptions=True,
             )
 
             # update the database so we do have the correct job_ids there
             await asyncio.gather(
-                *[
+                *(
                     comp_tasks_repo.update_project_task_job_id(
-                        project_id, tasks_sent[0][0], tasks_sent[0][1]
+                        project_id, task.node_id, task.job_id
                     )
-                    for tasks_sent in results
-                    if not isinstance(tasks_sent, BaseException)
-                ]
+                    for task_sents in results
+                    for task in task_sents
+                )
             )
-            return results
 
     async def _get_tasks_status(
         self,
