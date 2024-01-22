@@ -181,7 +181,7 @@ class TagsRepo:
     async def list_all(self, conn: SAConnection) -> list[TagDict]:
         select_stmt = (
             sa.select(*_COLUMNS)
-            .select_from(self._join_user_to_tags(sa.tags_to_groups.c.read.is_(True)))
+            .select_from(self._join_user_to_tags(tags_to_groups.c.read.is_(True)))
             .order_by(tags.c.id)
         )
 
