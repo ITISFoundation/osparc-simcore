@@ -3,24 +3,28 @@ from pathlib import Path
 from typing import Final
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl, TypeAdapter, model_validator
 from pydantic_settings import BaseSettings
 
-DEPLOYMENTS = [
-    "master",
-    "dalco-staging",
-    "dalco-production",
-    "tip-production",
-    "aws-zmt-production",
-    "aws-nih-production",
-    "aws-staging",
-]
+from .models import Deployment
 
+# NOTE: this mapping suggests that this script might be rather living a in a
+# different repo
+#
+_DEPLOYMENTS_MAP = {
+    Deployment.master: "osparc-master.speag.com",
+    Deployment.aws_staging: "osparc-staging.io",
+    Deployment.dalco_staging: "osparc-staging.speag.com",
+    Deployment.aws_nih_production: "osparc.io",
+    Deployment.dalco_production: "osparc.speag.com",
+    Deployment.tip_production: "tip.itis.swiss",
+    Deployment.aws_zmt_production: "sim4life.io",
+}
 
 _SECRETS_CONFIG_FILE_NAME: Final[str] = "repo.config"
 
 
-def get_configs(top_folder: Path) -> list[Path]:
+def get_repo_configs_paths(top_folder: Path) -> list[Path]:
     return list(top_folder.rglob(_SECRETS_CONFIG_FILE_NAME))
 
 
@@ -30,8 +34,7 @@ def get_deployment_name_or_none(repo_config: Path) -> str | None:
     return None
 
 
-
-class NewSettings(BaseSettings):
+class ReleaseSettings(BaseSettings):
     OSPARC_DEPLOYMENT_TARGET: str
     PORTAINER_DOMAIN: str
 
@@ -39,80 +42,70 @@ class NewSettings(BaseSettings):
     portainer_password: str = Field(..., validation_alias="PORTAINER_PASSWORD")
     swarm_stack_name: str = Field(..., validation_alias="SWARM_STACK_NAME")
     portainer_endpoint_version: int
+    starts_with: str
+    portainer_url: HttpUrl
 
-    @property
-    def portainer_url(self):
-        # TODO: pydantic HttpUrl?
-        return f"https://{self.PORTAINER_DOMAIN}"
-
-    @property
-    def starts_with(self) -> str:
-        # prefixes of the services in that deploy
-        return {
-            "master": "master-simcore_master",
-            "dalco-staging": "staging-simcore_staging",
-            "dalco-production": "production-simcore_production",
-            "tip-production": "production-simcore_production",
-            "aws-staging": "staging-simcore_staging",
-            "aws-nih-production": "production-simcore_production",
-            "aws-zmt-production": "staging-simcore_staging",
-        }[self.OSPARC_DEPLOYMENT_TARGET]
+    @model_validator(mode="after")
+    def deduce_portainer_url(self):
+        self.portainer_url = TypeAdapter(HttpUrl).validate_python(
+            f"https://{self.PORTAINER_DOMAIN}"
+        )
+        return self
 
 
-def get_new_settings(env_file_path, deployment: str):
-    ...
+def get_release_settings(env_file_path: Path, deployment: Deployment):
 
-# {
-#     "osparc-master.speag.com": 1,
-#     "osparc-staging.speag.com": 1,
-#     "tip.itis.swiss": 1,
-#     "sim4life.io": 1
-# }
+    deployment_name = get_deployment_name_or_none(env_file_path)
+    if deployment_name is None:
+        msg = f"{env_file_path=} cannot be matched to any deployment"
+        raise ValueError(msg)
 
-
+    if _DEPLOYMENTS_MAP.get(deployment) != deployment_name:
+        msg = f"{env_file_path=} cannot be matched to {deployment=}"
+        raise ValueError(msg)
 
     match deployment:
-        case "master":
-            settings = NewSettings(
-                _enf_file=env_file_path,
-                _env_prefix="MASTER_",
+        case Deployment.master:
+            settings = ReleaseSettings(
+                _enf_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
+                starts_with="master-simcore_master",
             )
-        case "dalco-staging":
-            settings = NewSettings(
-                _enf_file=env_file_path,
-                _env_prefix="DALCO_STAGING_",
+        case Deployment.dalco_staging:
+            settings = ReleaseSettings(
+                _enf_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
+                starts_with="staging-simcore_staging",
             )
-        case "dalco-production":
-            settings = NewSettings(
-                _enf_file=env_file_path,
-                _env_prefix="TIP_PRODUCTION_",
+        case Deployment.dalco_production:
+            settings = ReleaseSettings(
+                _enf_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
+                starts_with="production-simcore_production",
             )
-        case "tip-production":
-            settings = NewSettings(
-                _enf_file=env_file_path,
-                _env_prefix="MASTER",
+        case Deployment.tip_production:
+            settings = ReleaseSettings(
+                _enf_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=2,
+                starts_with="production-simcore_production",
             )
-        case "aws-staging":
-            settings = NewSettings(
-                _enf_file=env_file_path,
-                _env_prefix="MASTER",
+        case Deployment.aws_staging:
+            settings = ReleaseSettings(
+                _enf_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=2,
+                starts_with="staging-simcore_staging",
             )
-        case "aws-nih-production":
-            settings = NewSettings(
-                _enf_file=env_file_path,
-                _env_prefix="MASTER",
+        case Deployment.aws_nih_production:
+            settings = ReleaseSettings(
+                _enf_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=2,
+                starts_with="production-simcore_production",
             )
-        case "aws-zmt-production":
-            settings = NewSettings(
-                _enf_file=env_file_path,
-                _env_prefix="MASTER",
+        case Deployment.aws_zmt_production:
+            settings = ReleaseSettings(
+                _enf_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
+                starts_with="staging-simcore_staging",
             )
         case _:
             msg = f"Invalid {deployment=}"
@@ -121,7 +114,7 @@ def get_new_settings(env_file_path, deployment: str):
     return settings
 
 
-class Settings(BaseModel):
+class LegacySettings(BaseModel):
     portainer_url: str
     portainer_username: str
     portainer_password: str
@@ -130,7 +123,7 @@ class Settings(BaseModel):
     portainer_endpoint_version: int
 
 
-def get_settings(env_file, deployment: str) -> Settings:
+def get_settings(env_file, deployment: str) -> LegacySettings:
     # pylint: disable=too-many-return-statements
     load_dotenv(env_file)
 
@@ -139,7 +132,7 @@ def get_settings(env_file, deployment: str) -> Settings:
         portainer_username = os.getenv("MASTER_PORTAINER_USERNAME")
         portainer_password = os.getenv("MASTER_PORTAINER_PASSWORD")
 
-        return Settings(
+        return LegacySettings(
             portainer_url=portainer_url,
             portainer_username=portainer_username,
             portainer_password=portainer_password,
@@ -152,7 +145,7 @@ def get_settings(env_file, deployment: str) -> Settings:
         portainer_username = os.getenv("DALCO_STAGING_PORTAINER_USERNAME")
         portainer_password = os.getenv("DALCO_STAGING_PORTAINER_PASSWORD")
 
-        return Settings(
+        return LegacySettings(
             portainer_url=portainer_url,
             portainer_username=portainer_username,
             portainer_password=portainer_password,
@@ -165,7 +158,7 @@ def get_settings(env_file, deployment: str) -> Settings:
         portainer_username = os.getenv("DALCO_PRODUCTION_PORTAINER_USERNAME")
         portainer_password = os.getenv("DALCO_PRODUCTION_PORTAINER_PASSWORD")
 
-        return Settings(
+        return LegacySettings(
             portainer_url=portainer_url,
             portainer_username=portainer_username,
             portainer_password=portainer_password,
@@ -178,7 +171,7 @@ def get_settings(env_file, deployment: str) -> Settings:
         portainer_username = os.getenv("TIP_PRODUCTION_PORTAINER_USERNAME")
         portainer_password = os.getenv("TIP_PRODUCTION_PORTAINER_PASSWORD")
 
-        return Settings(
+        return LegacySettings(
             portainer_url=portainer_url,
             portainer_username=portainer_username,
             portainer_password=portainer_password,
@@ -191,7 +184,7 @@ def get_settings(env_file, deployment: str) -> Settings:
         portainer_username = os.getenv("AWS_STAGING_PORTAINER_USERNAME")
         portainer_password = os.getenv("AWS_STAGING_PORTAINER_PASSWORD")
 
-        return Settings(
+        return LegacySettings(
             portainer_url=portainer_url,
             portainer_username=portainer_username,
             portainer_password=portainer_password,
@@ -204,7 +197,7 @@ def get_settings(env_file, deployment: str) -> Settings:
         portainer_username = os.getenv("AWS_NIH_PRODUCTION_PORTAINER_USERNAME")
         portainer_password = os.getenv("AWS_NIH_PRODUCTION_PORTAINER_PASSWORD")
 
-        return Settings(
+        return LegacySettings(
             portainer_url=portainer_url,
             portainer_username=portainer_username,
             portainer_password=portainer_password,
@@ -217,7 +210,7 @@ def get_settings(env_file, deployment: str) -> Settings:
         portainer_username = os.getenv("AWS_ZMT_PRODUCTION_PORTAINER_USERNAME")
         portainer_password = os.getenv("AWS_ZMT_PRODUCTION_PORTAINER_PASSWORD")
 
-        return Settings(
+        return LegacySettings(
             portainer_url=portainer_url,
             portainer_username=portainer_username,
             portainer_password=portainer_password,
