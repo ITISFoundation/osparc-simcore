@@ -11,7 +11,6 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from faker import Faker
-from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_webserver.application_settings import setup_settings
@@ -107,7 +106,7 @@ def test_create_permalink(fake_get_project_request: web.Request, is_public: bool
 
 @pytest.fixture(params=[True, False])
 def valid_project_kwargs(
-    request: FixtureRequest, fake_get_project_request: web.Request
+    request: pytest.FixtureRequest, fake_get_project_request: web.Request
 ):
     return dict(
         project_uuid=fake_get_project_request.match_info["project_uuid"],

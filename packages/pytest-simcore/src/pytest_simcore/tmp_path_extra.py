@@ -12,11 +12,12 @@
 from pathlib import Path
 
 import pytest
-from pytest import FixtureRequest, TempPathFactory
 
 
 @pytest.fixture(scope="module")
-def temp_folder(request: FixtureRequest, tmp_path_factory: TempPathFactory) -> Path:
+def temp_folder(
+    request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory
+) -> Path:
     """Module scoped temporary folder"""
     prefix = __name__.replace(".", "_")
     return tmp_path_factory.mktemp(

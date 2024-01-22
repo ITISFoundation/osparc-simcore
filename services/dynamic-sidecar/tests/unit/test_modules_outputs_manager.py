@@ -16,7 +16,6 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.services import RunID
 from pydantic import PositiveFloat
-from pytest import FixtureRequest
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_sdk.node_ports_common.exceptions import S3TransferError
@@ -55,7 +54,7 @@ class ToggleErrorRaising:
 
 
 @pytest.fixture(params=[0.01])
-def upload_duration(request: FixtureRequest) -> PositiveFloat:
+def upload_duration(request: pytest.FixtureRequest) -> PositiveFloat:
     return request.param
 
 
@@ -83,7 +82,7 @@ def mock_upload_outputs(
         _MockError(error_class=S3TransferError, message="mocked_s3transfererror"),
     ]
 )
-def mock_error(request: FixtureRequest) -> _MockError:
+def mock_error(request: pytest.FixtureRequest) -> _MockError:
     return request.param
 
 
@@ -108,7 +107,7 @@ def mock_upload_outputs_raises_error(
 
 
 @pytest.fixture(params=[1, 4, 10])
-def port_keys(request: FixtureRequest) -> list[str]:
+def port_keys(request: pytest.FixtureRequest) -> list[str]:
     return [f"port_{i}" for i in range(request.param)]
 
 

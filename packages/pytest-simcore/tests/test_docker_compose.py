@@ -3,12 +3,11 @@
 from textwrap import dedent
 
 import pytest
-from pytest import FixtureRequest
 from pytest_simcore.docker_compose import _escape_cpus
 
 
 @pytest.fixture(params=[0.1, 1, 1.0, 100.2313131231])
-def number_of_cpus(request: FixtureRequest) -> float:
+def number_of_cpus(request: pytest.FixtureRequest) -> float:
     return request.param
 
 

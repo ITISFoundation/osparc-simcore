@@ -6,7 +6,6 @@ from typing import Any, Callable, Iterator, cast
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
-from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_postgres_database.models.groups import groups
@@ -107,7 +106,7 @@ def give_internet_to_group(
 
 
 @pytest.fixture(params=[True, False])
-def with_internet_access(request: FixtureRequest) -> bool:
+def with_internet_access(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 

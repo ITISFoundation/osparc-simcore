@@ -11,7 +11,6 @@ from fastapi import FastAPI, status
 from httpx import HTTPError, Response
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest import LogCaptureFixture
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.http_client_thin import ClientHttpError, UnexpectedStatusError
@@ -122,7 +121,7 @@ async def test_is_healthy_times_out(
     raise_request_timeout: None,
     sidecars_client: SidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
-    caplog_info_level: LogCaptureFixture,
+    caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
     assert await sidecars_client.is_healthy(dynamic_sidecar_endpoint) is False
     # check if the right amount of messages was captured by the logs

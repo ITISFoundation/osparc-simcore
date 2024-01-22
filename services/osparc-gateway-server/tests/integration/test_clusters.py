@@ -6,7 +6,6 @@ from typing import Any, Awaitable, Callable
 
 import pytest
 from _dask_helpers import DaskGatewayServer
-from _pytest.fixtures import FixtureRequest
 from aiodocker import Docker
 from dask_gateway import Gateway
 from faker import Faker
@@ -25,7 +24,7 @@ def minimal_config(
     docker_swarm,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
-    request: FixtureRequest,
+    request: pytest.FixtureRequest,
 ):
     monkeypatch.setenv("GATEWAY_WORKERS_NETWORK", faker.pystr())
     monkeypatch.setenv("GATEWAY_SERVER_NAME", get_localhost_ip())

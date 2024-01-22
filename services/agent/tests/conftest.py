@@ -15,7 +15,6 @@ from models_library.basic_types import BootModeEnum
 from models_library.services import RunID
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
-from pytest import LogCaptureFixture
 from settings_library.r_clone import S3Provider
 from simcore_service_agent.core.settings import ApplicationSettings
 
@@ -182,7 +181,9 @@ def settings(env: None) -> ApplicationSettings:
 
 
 @pytest.fixture()
-def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+def caplog_info_debug(
+    caplog: pytest.LogCaptureFixture,
+) -> Iterable[pytest.LogCaptureFixture]:
     with caplog.at_level(logging.DEBUG):
         yield caplog
 
