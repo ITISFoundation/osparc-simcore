@@ -177,7 +177,3 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     def _validate_log_level(cls, value) -> str:
         log_level: str = cls.validate_log_level(value)
         return log_level
-
-
-# DIRECTOR_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES = '{"VRAM": "node.labels.CUSTOM==CUSTOM_VALUE"}'
-# DIRECTOR_V2_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES= '{"VRAM": "node.labels.CUSTOM==CUSTOM_VALUE"}'
