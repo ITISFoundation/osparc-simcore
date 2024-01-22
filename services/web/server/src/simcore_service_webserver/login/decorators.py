@@ -2,9 +2,10 @@ import functools
 import inspect
 
 from aiohttp import web
-from aiohttp_security.api import check_authorized
 from servicelib.aiohttp.typing_extension import HandlerAnyReturn
 from servicelib.request_keys import RQT_USERID_KEY
+
+from ..security.api import get_user_id_or_raise_if_unauthorized
 
 
 def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
@@ -46,7 +47,7 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
         """
         # WARNING: note that check_authorized is patched in some tests.
         # Careful when changing the function signature
-        request[RQT_USERID_KEY] = await check_authorized(request)
+        request[RQT_USERID_KEY] = await get_user_id_or_raise_if_unauthorized(request)
 
         return await handler(request)
 

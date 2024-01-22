@@ -42,8 +42,21 @@ async def is_anonymous(request: web.Request) -> bool:
     """
     User is considered anonymous if there is not identityin request.
     """
-    yes: bool = await aiohttp_security.api.is_anonymous(request)
-    return yes
+    is_user_id_none: bool = await aiohttp_security.api.is_anonymous(request)
+    return is_user_id_none
+
+
+async def get_user_id_or_raise_if_unauthorized(request: web.Request) -> UserID:
+    """
+    Raises:
+        web.HTTPUnauthorized: for anonymous user (i.e. user_id is None)
+
+    """
+    userid = await aiohttp_security.api.authorized_userid(request)
+
+    if userid is None:
+        raise web.HTTPUnauthorized
+    return userid
 
 
 #
