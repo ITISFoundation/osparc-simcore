@@ -110,22 +110,30 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 # Define the file where user input will be saved
 USER_INPUT_FILE := .e2e-playwright-env.txt
 
-# Prompt the user for input and save it to a file
+
+# Prompt the user for input and store it into variables
 $(USER_INPUT_FILE):
-	@read -p "Enter your product URL: " PRODUCT_URL; \
-	read -p "Enter your username: " USER_NAME; \
-	read -s -p "Enter your password: " PASSWORD; \
-	echo "$$PRODUCT_URL $$USER_NAME $$PASSWORD" > $(USER_INPUT_FILE)
+		@read -p "Enter your product URL: " PRODUCT_URL; \
+		read -p "Is the product billable [y/n]: " BILLABLE; \
+		read -p "Enter your username: " USER_NAME; \
+		read -s -p "Enter your password: " PASSWORD; echo ""; \
+		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
+		echo "$$PRODUCT_URL $$USER_NAME $$PASSWORD $$NUM_SLEEPERS $$BILLABLE" > $(USER_INPUT_FILE)
 
 # Read user input from the file and run the test
 test-sleepers-anywhere: _check_venv_active $(USER_INPUT_FILE)
-	@IFS=' ' read -r PRODUCT_URL USER_NAME PASSWORD < $(USER_INPUT_FILE); \
+	@IFS=' ' read -r PRODUCT_URL USER_NAME PASSWORD NUM_SLEEPERS BILLABLE < $(USER_INPUT_FILE); \
+	BILLABLE_FLAG=""; \
+    if [ "$$BILLABLE" = "y" ]; then \
+        BILLABLE_FLAG="--billable"; \
+    fi; \
 	pytest -s tests/sleepers/sleepers.py \
 		--color=yes \
 		--product-url=$$PRODUCT_URL \
 		--user-name=$$USER_NAME \
 		--password=$$PASSWORD \
-		--num-sleepers=24 \
+		--num-sleepers=$$NUM_SLEEPERS \
+		$$BILLABLE_FLAG \
 		--browser chromium \
 		--headed
 
