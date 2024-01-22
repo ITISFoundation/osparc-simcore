@@ -298,4 +298,5 @@ async def test_rowproxy(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[st
     assert set(row_as_tuple) == set(row_as_dict.values())
 
     # to list[dict]: warning ... sometimes rows are None when in first() or fetchone()...
-    [dict(row.items()) for row in rows if row]
+    list_of_dicts = [dict(row.items()) for row in rows if row]
+    assert list_of_dicts
