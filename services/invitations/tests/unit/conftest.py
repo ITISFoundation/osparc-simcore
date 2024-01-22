@@ -10,7 +10,7 @@ import simcore_service_invitations
 from cryptography.fernet import Fernet
 from faker import Faker
 from models_library.products import ProductName
-from pytest import FixtureRequest, MonkeyPatch
+from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_invitations.services.invitations import InvitationInputs
@@ -62,7 +62,7 @@ def fake_password(faker: Faker) -> str:
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     secret_key: str,
     fake_user_name: str,
     fake_password: str,

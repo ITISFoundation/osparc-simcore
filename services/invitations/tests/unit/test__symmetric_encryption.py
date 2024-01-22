@@ -3,8 +3,8 @@ import json
 import os
 from urllib.parse import parse_qsl, urlparse
 
+import pytest
 from cryptography.fernet import Fernet, InvalidToken
-from pytest import MonkeyPatch
 from starlette.datastructures import URL
 
 
@@ -49,7 +49,7 @@ def consume(url):
         raise
 
 
-def test_encrypt_and_decrypt(monkeypatch: MonkeyPatch):
+def test_encrypt_and_decrypt(monkeypatch: pytest.MonkeyPatch):
     secret_key = Fernet.generate_key()
     monkeypatch.setenv("SECRET_KEY", secret_key.decode())
 

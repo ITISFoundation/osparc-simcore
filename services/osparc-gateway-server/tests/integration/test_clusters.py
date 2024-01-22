@@ -7,7 +7,6 @@ from typing import Any, Awaitable, Callable
 import pytest
 from _dask_helpers import DaskGatewayServer
 from _pytest.fixtures import FixtureRequest
-from _pytest.monkeypatch import MonkeyPatch
 from aiodocker import Docker
 from dask_gateway import Gateway
 from faker import Faker
@@ -24,7 +23,7 @@ from tenacity.wait import wait_fixed
 )
 def minimal_config(
     docker_swarm,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
     request: FixtureRequest,
 ):

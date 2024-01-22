@@ -6,7 +6,7 @@ from typing import Any, Callable, Iterator, cast
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
-from pytest import FixtureRequest, MonkeyPatch
+from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_postgres_database.models.groups import groups
@@ -29,7 +29,7 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def mock_env(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
     postgres_db: sa.engine.Engine,

@@ -16,7 +16,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.services import RunID
 from pydantic import PositiveFloat
-from pytest import FixtureRequest, MonkeyPatch
+from pytest import FixtureRequest
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_sdk.node_ports_common.exceptions import S3TransferError
@@ -353,7 +353,7 @@ async def test_port_key_tracker_workflow(
 
 
 async def test_regression_io_log_redirect_cb(
-    mock_environment: EnvVarsDict, monkeypatch: MonkeyPatch, faker: Faker
+    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
 ):
     for mock_empty_str in (
         "RABBIT_HOST",

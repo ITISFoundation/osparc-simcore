@@ -11,7 +11,7 @@ from fastapi import FastAPI, status
 from httpx import HTTPError, Response
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
-from pytest import LogCaptureFixture, MonkeyPatch
+from pytest import LogCaptureFixture
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.http_client_thin import ClientHttpError, UnexpectedStatusError
@@ -37,7 +37,7 @@ def dynamic_sidecar_endpoint() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mock_env(monkeypatch: MonkeyPatch, mock_env: EnvVarsDict) -> None:
+def mock_env(monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict) -> None:
     monkeypatch.setenv("S3_ACCESS_KEY", "")
     monkeypatch.setenv("S3_SECRET_KEY", "")
     monkeypatch.setenv("S3_BUCKET_NAME", "")
@@ -74,7 +74,7 @@ def request_timeout() -> int:
 
 @pytest.fixture
 def raise_request_timeout(
-    monkeypatch: MonkeyPatch, request_timeout: int, mock_env: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, request_timeout: int, mock_env: EnvVarsDict
 ) -> None:
     monkeypatch.setenv("DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S", f"{request_timeout}")
 

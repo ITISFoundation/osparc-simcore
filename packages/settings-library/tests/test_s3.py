@@ -2,12 +2,11 @@
 # pylint:disable=unused-argument
 
 import pytest
-from pytest import MonkeyPatch
 from settings_library.s3 import S3Settings
 
 
 @pytest.fixture
-def base_env(monkeypatch: MonkeyPatch) -> None:
+def base_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("S3_ACCESS_KEY", "mocked")
     monkeypatch.setenv("S3_SECRET_KEY", "mocked")
     monkeypatch.setenv("S3_BUCKET_NAME", "mocked")
@@ -25,7 +24,11 @@ def base_env(monkeypatch: MonkeyPatch) -> None:
     ],
 )
 def test_regression(
-    monkeypatch: MonkeyPatch, endpoint: str, secure: str, expected: str, base_env: None
+    monkeypatch: pytest.MonkeyPatch,
+    endpoint: str,
+    secure: str,
+    expected: str,
+    base_env: None,
 ) -> None:
     monkeypatch.setenv("S3_ENDPOINT", endpoint)
     monkeypatch.setenv("S3_SECURE", secure)

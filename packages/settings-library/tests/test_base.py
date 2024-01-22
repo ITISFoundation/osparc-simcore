@@ -12,7 +12,6 @@ import pytest
 import settings_library.base
 from pydantic import BaseModel, BaseSettings, ValidationError
 from pydantic.fields import Field
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
 from settings_library.base import (
@@ -113,7 +112,7 @@ def test_create_settings_class(
 
 
 def test_create_settings_class_with_environment(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     create_settings_class: Callable[[str], type[BaseCustomSettings]],
 ):
     # create class within one context
@@ -175,7 +174,7 @@ def test_create_settings_class_without_environ_fails(
 
 
 def test_create_settings_class_with_environ_passes(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     create_settings_class: Callable[[str], type[BaseCustomSettings]],
 ):
     # now defining S_VALUE
@@ -215,7 +214,7 @@ def test_auto_default_to_none_logs_a_warning(
 
 
 def test_auto_default_to_not_none(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     create_settings_class: Callable[[str], type[BaseCustomSettings]],
 ):
     with monkeypatch.context() as patch:
@@ -232,7 +231,7 @@ def test_auto_default_to_not_none(
         assert S(S_VALUE=123) == instance.VALUE_NULLABLE_DEFAULT_ENV
 
 
-def test_how_settings_parse_null_environs(monkeypatch: MonkeyPatch):
+def test_how_settings_parse_null_environs(monkeypatch: pytest.MonkeyPatch):
     #
     # We were wondering how nullable fields (i.e. those marked as Optional[.]) can
     # be defined in the envfile. Here we test different options

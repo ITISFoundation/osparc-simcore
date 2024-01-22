@@ -97,7 +97,7 @@ def model_classes_factory() -> Callable:
 #       Pay attention how the defaults of SubSettings are automaticaly captured from env vars
 #       at construction time.
 #
-# NOTE: monkeypatching envs using envfile text gets the tests closer
+# NOTE: pytest.MonkeyPatching envs using envfile text gets the tests closer
 #       to the real use case where .env/.env-devel
 #       files are used to setup envs. Quotes formatting in
 #       those files can sometimes be challenging for parsers

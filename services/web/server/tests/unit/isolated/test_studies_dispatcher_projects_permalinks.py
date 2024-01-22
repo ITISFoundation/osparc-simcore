@@ -11,7 +11,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from faker import Faker
-from pytest import FixtureRequest, MonkeyPatch
+from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_webserver.application_settings import setup_settings
@@ -26,7 +26,7 @@ from simcore_service_webserver.studies_dispatcher.settings import get_plugin_set
 
 @pytest.fixture
 def app_environment(
-    env_devel_dict: EnvVarsDict, monkeypatch: MonkeyPatch
+    env_devel_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     # remove
     for env in ("WEBSERVER_STUDIES_DISPATCHER", "WEBSERVER_STUDIES_ACCESS_ENABLED"):
