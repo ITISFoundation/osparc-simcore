@@ -64,6 +64,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_redis(app)
     setup_rabbitmq(app)
     if settings.RESOURCE_USAGE_TRACKER_S3_ENABLED:
+        # Needed for CSV export functionality
         setup_s3(app)
 
     setup_resource_tracker(app)

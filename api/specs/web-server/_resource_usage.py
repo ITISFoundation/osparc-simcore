@@ -74,6 +74,7 @@ assert_handler_signature_against_model(
 
 @router.get(
     "/services/-/resource-usages:export",
+    status_code=status.HTTP_302_FOUND,
     responses={
         status.HTTP_302_FOUND: {
             "description": "redirection to download link",

@@ -165,7 +165,7 @@ async def export_service_runs(
     )
 
     # Create presigned S3 link
-    generated_url: AnyUrl = await s3_client.create_presigned_link(
+    generated_url: AnyUrl = await s3_client.create_presigned_download_link(
         bucket_name=s3_bucket_name, object_key=s3_object_key, expiration_secs=7200
     )
     return generated_url
