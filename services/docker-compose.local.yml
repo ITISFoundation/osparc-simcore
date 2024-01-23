@@ -132,6 +132,9 @@ services:
   dask-sidecar:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+    # ports:
+      # dashboard UI currently disabled because of dnsrr mode
+      # - "8788:8787"
 
   dask-scheduler:
     environment:
