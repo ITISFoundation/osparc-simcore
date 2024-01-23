@@ -259,7 +259,7 @@ projects_vc_branches = sa.Table(
             onupdate="CASCADE",
         ),
         nullable=True,
-        doc="Points to the head commit of this branch" "Null heads are detached",
+        doc="Points to the head commit of this branchNull heads are detached",
     ),
     sa.Column("name", sa.String, default="main", doc="Branch display name"),
     sa.Column(

@@ -99,8 +99,6 @@ def test_node_with_thumbnail(minimal_service_common_data: dict[str, Any]):
         "simcore/services/comp/usf-simrun",
         "simcore/services/dynamic/3d-viewer",
         "simcore/services/dynamic/3d-viewer-gpu",
-        "simcore/services/dynamic/3d-viewer",
-        "simcore/services/dynamic/3d-viewer-gpu",
         "simcore/services/dynamic/bornstein-viewer",
         "simcore/services/dynamic/btl-pc",
         "simcore/services/dynamic/cc-0d-viewer",

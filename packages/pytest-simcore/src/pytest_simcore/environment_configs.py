@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from .helpers.typing_env import EnvVarsDict
-from .helpers.utils_envs import load_dotenv, setenvs_from_dict
+from .helpers.utils_envs import delenvs_from_dict, load_dotenv, setenvs_from_dict
 
 
 @pytest.fixture(scope="session")
@@ -23,3 +23,16 @@ def mock_env_devel_environment(
     env_devel_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     return setenvs_from_dict(monkeypatch, env_devel_dict)
+
+
+@pytest.fixture
+def all_env_devel_undefined(
+    monkeypatch: pytest.MonkeyPatch, env_devel_dict: EnvVarsDict
+):
+    """Ensures that all env vars in .env-devel are undefined in the test environment
+
+    NOTE: this is useful to have a clean starting point and avoid
+    the environment to influence your test. I found this situation
+    when some script was accidentaly injecting the entire .env-devel in the environment
+    """
+    delenvs_from_dict(monkeypatch, env_devel_dict, raising=False)

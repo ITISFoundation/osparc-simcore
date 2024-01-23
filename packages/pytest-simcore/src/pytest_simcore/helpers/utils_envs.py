@@ -3,44 +3,42 @@
 """
 
 import os
-from copy import deepcopy
 from io import StringIO
 from pathlib import Path
 
 import dotenv
 import pytest
 
-from .typing_env import EnvVarsDict, EnvVarsList
+from .typing_env import EnvVarsDict, EnvVarsIterable
 
 #
 # monkeypatch using dict
 #
 
 
-def delenvs_from_dict(monkeypatch: pytest.MonkeyPatch, envs: EnvVarsList):
-    for var in envs:
-        assert isinstance(var, str)
-        assert var is not None  # None keys cannot be is defined w/o value
-        monkeypatch.delenv(var)
-
-
 def setenvs_from_dict(
-    monkeypatch: pytest.MonkeyPatch, envs: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, envs: dict[str, str | bool]
 ) -> EnvVarsDict:
+    env_vars = {}
+
     for key, value in envs.items():
         assert isinstance(key, str)
-        assert (
-            value is not None
-        ), f"{key=},{value=}"  # None keys cannot be is defined w/o value
-        converted_value = value
-        if isinstance(value, bool):
-            converted_value = f"{'true' if value else 'false'}"
-        assert isinstance(
-            converted_value, str
-        ), f"client MUST explicitly stringify values since some cannot be done automatically e.g. json-like values. problematic {key=},{value=}"
+        assert value is not None, f"{key=},{value=}"
 
-        monkeypatch.setenv(key, converted_value)
-    return deepcopy(envs)
+        v = value
+
+        if isinstance(value, bool):
+            v = "true" if value else "false"
+
+        assert isinstance(v, str), (
+            "caller MUST explicitly stringify values since some cannot be done automatically"
+            f"e.g. json-like values. Check {key=},{value=}"
+        )
+
+        monkeypatch.setenv(key, v)
+        env_vars[key] = v
+
+    return env_vars
 
 
 def load_dotenv(envfile_content_or_path: Path | str, **options) -> EnvVarsDict:
@@ -55,6 +53,17 @@ def load_dotenv(envfile_content_or_path: Path | str, **options) -> EnvVarsDict:
         kwargs["stream"] = StringIO(envfile_content_or_path)
 
     return {k: v or "" for k, v in dotenv.dotenv_values(**kwargs).items()}
+
+
+def delenvs_from_dict(
+    monkeypatch: pytest.MonkeyPatch,
+    envs: EnvVarsIterable,
+    *,
+    raising: bool = True,
+) -> None:
+    for key in envs:
+        assert isinstance(key, str)
+        monkeypatch.delenv(key, raising)
 
 
 #
@@ -76,7 +85,8 @@ def setenvs_from_envfile(
 def delenvs_from_envfile(
     monkeypatch: pytest.MonkeyPatch,
     content_or_path: str | Path,
-    raising: bool,
+    *,
+    raising: bool = True,
     **dotenv_kwags,
 ) -> EnvVarsDict:
     """Batch monkeypatch.delenv(...) on all env vars in an envfile"""

@@ -22,7 +22,6 @@ from models_library.clusters import (
     SimpleAuthentication,
 )
 from pydantic import SecretStr
-from pytest import MonkeyPatch
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.utils_cli import create_json_encoder_wo_secrets
@@ -42,7 +41,7 @@ def minimal_dask_config(
     disable_postgres: None,
     mock_env: EnvVarsDict,
     project_env_devel_environment: dict[str, Any],
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")
@@ -55,7 +54,7 @@ def minimal_dask_config(
 
 
 def test_dask_clients_pool_missing_raises_configuration_error(
-    minimal_dask_config: None, monkeypatch: MonkeyPatch
+    minimal_dask_config: None, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
     settings = AppSettings.create_from_envs()
@@ -116,7 +115,9 @@ def fake_clusters(faker: Faker) -> Callable[[int], list[Cluster]]:
 
 @pytest.fixture()
 def default_scheduler_set_as_osparc_gateway(
-    local_dask_gateway_server: DaskGatewayServer, monkeypatch: MonkeyPatch, faker: Faker
+    local_dask_gateway_server: DaskGatewayServer,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ) -> Callable:
     def creator():
         monkeypatch.setenv(
@@ -136,7 +137,7 @@ def default_scheduler_set_as_osparc_gateway(
 
 @pytest.fixture()
 def default_scheduler_set_as_dask_scheduler(
-    dask_spec_local_cluster: SpecCluster, monkeypatch: MonkeyPatch
+    dask_spec_local_cluster: SpecCluster, monkeypatch: pytest.MonkeyPatch
 ) -> Callable:
     def creator():
         monkeypatch.setenv(

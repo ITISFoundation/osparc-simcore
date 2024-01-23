@@ -2,13 +2,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from pytest import MonkeyPatch
+import pytest
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.twilio import TwilioSettings
 
 
 def test_twilio_settings_within_envdevel(
-    mock_env_devel_environment: dict[str, str], monkeypatch: MonkeyPatch
+    mock_env_devel_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ):
     # adds twilio credentials
     with monkeypatch.context() as patch:
@@ -25,7 +25,7 @@ def test_twilio_settings_within_envdevel(
 
 
 def test_twilio_settings_with_country_codes(
-    mock_env_devel_environment: dict[str, str], monkeypatch: MonkeyPatch
+    mock_env_devel_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ):
 
     # defaults

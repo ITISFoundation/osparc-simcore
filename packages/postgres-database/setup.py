@@ -30,29 +30,29 @@ MIGRATION_REQUIREMENTS = tuple(
 TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 
-SETUP = dict(
-    name="simcore-postgres-database",
-    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
-    author="Pedro Crespo (pcrespov)",
-    description="Database models served by the simcore 'postgres' core service",
+SETUP = {
+    "name": "simcore-postgres-database",
+    "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
+    "author": "Pedro Crespo (pcrespov)",
+    "description": "Database models served by the simcore 'postgres' core service",
     # Get tags from https://pypi.org/classifiers/
-    classifiers=[
+    "classifiers": [
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3.10",
     ],
-    long_description=Path(CURRENT_DIR / "README.md").read_text(),
-    license="MIT license",
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
-    test_suite="tests",
-    install_requires=INSTALL_REQUIREMENTS,
-    tests_require=TEST_REQUIREMENTS,
-    extras_require={"migration": MIGRATION_REQUIREMENTS, "test": TEST_REQUIREMENTS},
-    include_package_data=True,
-    package_data={
+    "long_description": Path(CURRENT_DIR / "README.md").read_text(),
+    "license": "MIT license",
+    "packages": find_packages(where="src"),
+    "package_dir": {"": "src"},
+    "test_suite": "tests",
+    "install_requires": INSTALL_REQUIREMENTS,
+    "tests_require": TEST_REQUIREMENTS,
+    "extras_require": {"migration": MIGRATION_REQUIREMENTS, "test": TEST_REQUIREMENTS},
+    "include_package_data": True,
+    "package_data": {
         "": [
             "*.ini",
             "migration/*.py",
@@ -60,15 +60,15 @@ SETUP = dict(
             "migration/versions/*.py",
         ]
     },
-    entry_points={
+    "entry_points": {
         "console_scripts": [
             "simcore-service-postgres-database=simcore_postgres_database.cli:main",
             "sc-pg=simcore_postgres_database.cli:main",
             "simcore-service=simcore_postgres_database.cli:main",
         ]
     },
-    zip_safe=False,
-)
+    "zip_safe": False,
+}
 
 if __name__ == "__main__":
     setup(**SETUP)

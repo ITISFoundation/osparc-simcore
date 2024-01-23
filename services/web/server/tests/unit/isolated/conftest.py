@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -75,7 +74,7 @@ def app_config_for_production_legacy(test_data_dir: Path) -> ConfigDict:
 
 
 @pytest.fixture
-def mock_env_auto_deployer_agent(monkeypatch: MonkeyPatch) -> EnvVarsDict:
+def mock_env_auto_deployer_agent(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # git log --tags --simplify-by-decoration --pretty="format:%ci %d"
     #  2023-02-08 18:34:56 +0000  (tag: v1.47.0, tag: staging_ResistanceIsFutile12)
     #  2023-02-06 18:40:07 +0100  (tag: v1.46.0, tag: staging_ResistanceIsFutile11)

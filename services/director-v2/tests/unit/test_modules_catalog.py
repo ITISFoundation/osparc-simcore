@@ -11,7 +11,6 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.modules.catalog import CatalogClient
 
@@ -20,7 +19,7 @@ from simcore_service_director_v2.modules.catalog import CatalogClient
 def minimal_catalog_config(
     disable_postgres: None,
     project_env_devel_environment: EnvVarsDict,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "0")

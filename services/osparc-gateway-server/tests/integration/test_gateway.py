@@ -4,8 +4,6 @@
 import pytest
 import traitlets
 import traitlets.config
-from _pytest.fixtures import FixtureRequest
-from _pytest.monkeypatch import MonkeyPatch
 from dask_gateway_server.app import DaskGateway
 from faker import Faker
 from osparc_gateway_server.backend.osparc import OsparcBackend
@@ -19,9 +17,9 @@ from pytest_simcore.helpers.utils_host import get_localhost_ip
 )
 def minimal_config(
     docker_swarm,
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
-    request: FixtureRequest,
+    request: pytest.FixtureRequest,
 ):
     monkeypatch.setenv("GATEWAY_WORKERS_NETWORK", faker.pystr())
     monkeypatch.setenv("GATEWAY_SERVER_NAME", get_localhost_ip())
