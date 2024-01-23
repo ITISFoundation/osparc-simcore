@@ -1,17 +1,21 @@
 import re
 from datetime import datetime
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.products import ProductName
+from models_library.users import GroupID, UserID
 from simcore_service_webserver.db.models import UserRole, UserStatus
+from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.login._constants import MSG_LOGGED_IN
 from simcore_service_webserver.login._registration import create_invitation_token
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
+from simcore_service_webserver.products.api import list_products
 from simcore_service_webserver.security.api import clean_auth_policy_cache
 from yarl import URL
 
-from .rawdata_fakers import DEFAULT_FAKER, DEFAULT_PASSWORD, random_user
+from .rawdata_fakers import DEFAULT_FAKER, random_user
 from .utils_assert import assert_status
 
 
@@ -58,9 +62,6 @@ def parse_link(text):
 async def _insert_fake_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
     """Creates a fake user and inserts it in the users table in the database"""
     data = data or {}
-    data.setdefault(
-        "password", DEFAULT_PASSWORD
-    )  # Password must be at least 12 characters long
     data.setdefault("status", UserStatus.ACTIVE.name)
     data.setdefault("role", UserRole.USER.name)
     params = random_user(**data)
@@ -72,14 +73,32 @@ async def _insert_fake_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
     return user
 
 
+async def _register_user_in_product(
+    app: web.Application, user_id: UserID, product_name: ProductName | None = None
+) -> GroupID:
+    if product_name is None:
+        products = list_products(app)
+        assert products
+        product_name = products[0].name  # TODO: default?
+
+    return await auto_add_user_to_product_group(app, user_id, product_name=product_name)
+
+
 async def log_client_in(
-    client: TestClient, user_data=None, *, enable_check=True
+    client: TestClient,
+    user_data=None,
+    *,
+    enable_check=True,
+    product_name: ProductName | None = None,
 ) -> UserInfoDict:
     # creates user directly in db
     assert client.app
     db: AsyncpgStorage = get_plugin_storage(client.app)
 
     user = await _insert_fake_user(db, user_data)
+    await _register_user_in_product(
+        client.app, user_id=user["id"], product_name=product_name
+    )
 
     # login
     url = client.app.router["auth_login"].url_for()
@@ -98,14 +117,24 @@ async def log_client_in(
 
 
 class NewUser:
-    def __init__(self, params=None, app: web.Application | None = None):
+    def __init__(
+        self, params: dict[str, Any] | None = None, app: web.Application | None = None
+    ):
         self.params = params
         self.user = None
         assert app
         self.db = get_plugin_storage(app)
+        self.app = app
 
     async def __aenter__(self) -> UserInfoDict:
         self.user = await _insert_fake_user(self.db, self.params)
+
+        await _register_user_in_product(
+            self.app,
+            user_id=self.user["id"],
+            product_name=self.params.get("product_name", None),
+        )
+
         return self.user
 
     async def __aexit__(self, *args):
