@@ -882,6 +882,9 @@ services:
       - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock
     environment: &sidecar-environment
+      DASK_TLS_CA_FILE: /home/scu/.dask/dask-crt.pem
+      DASK_TLS_KEY: /home/scu/.dask/dask-key.pem
+      DASK_TLS_CERT: /home/scu/.dask/dask-crt.pem
       DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       SIDECAR_LOGLEVEL: ${LOG_LEVEL:-WARNING}
@@ -889,6 +892,13 @@ services:
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
     networks:
       - computational_services_subnet
+    secrets: &sidecar-secrets
+      - source: dask_tls_key
+        target: /home/scu/.dask/dask-key.pem
+        mode: 0444
+      - source: dask_tls_cert
+        target: /home/scu/.dask/dask-crt.pem
+        mode: 0444
 
   dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -900,6 +910,7 @@ services:
 
     networks:
       - computational_services_subnet
+    secrets: *sidecar-secrets
 
   datcore-adapter:
     image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
@@ -1158,3 +1169,11 @@ networks:
     internal: false
     labels:
       com.simcore.description: "computational services network"
+
+secrets:
+  dask_tls_key:
+    file: ./dask-sidecar/.dask-certificates/dask-key.pem
+    name: ${SWARM_STACK_NAME}_dask_tls_key
+  dask_tls_cert:
+    file: ./dask-sidecar/.dask-certificates/dask-cert.pem
+    name: ${SWARM_STACK_NAME}_dask_tls_cert
