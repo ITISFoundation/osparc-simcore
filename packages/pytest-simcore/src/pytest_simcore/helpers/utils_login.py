@@ -15,7 +15,7 @@ from simcore_service_webserver.products.api import list_products
 from simcore_service_webserver.security.api import clean_auth_policy_cache
 from yarl import URL
 
-from .rawdata_fakers import DEFAULT_FAKER, random_user
+from .rawdata_fakers import DEFAULT_FAKER, DEFAULT_TEST_PASSWORD, random_user
 from .utils_assert import assert_status
 
 
@@ -59,18 +59,42 @@ def parse_link(text):
     return URL(link).path
 
 
-async def _insert_fake_user(db: AsyncpgStorage, data=None) -> UserInfoDict:
-    """Creates a fake user and inserts it in the users table in the database"""
+async def _create_user(app: web.Application, data=None) -> UserInfoDict:
+    db: AsyncpgStorage = get_plugin_storage(app)
+
+    # create
     data = data or {}
     data.setdefault("status", UserStatus.ACTIVE.name)
     data.setdefault("role", UserRole.USER.name)
-    params = random_user(**data)
+    data.setdefault("password", DEFAULT_TEST_PASSWORD)
+    user = await db.create_user(random_user(**data))
 
-    user = await db.create_user(params)
-    user["raw_password"] = data["password"]
-    user.setdefault("first_name", None)
-    user.setdefault("last_name", None)
-    return user
+    # get
+    user = await db.get_user({"id": user["id"]})
+    assert "first_name" in user
+    assert "last_name" in user
+
+    # adds extras
+    extras = {"raw_password": data["password"]}
+
+    return UserInfoDict(
+        **{
+            key: user[key]
+            for key in [
+                "id",
+                "name",
+                "email",
+                "primary_gid",
+                "status",
+                "role",
+                "created_at",
+                "password_hash",
+                "first_name",
+                "last_name",
+            ]
+        },
+        **extras,
+    )
 
 
 async def _register_user_in_product(
@@ -84,20 +108,33 @@ async def _register_user_in_product(
     return await auto_add_user_to_product_group(app, user_id, product_name=product_name)
 
 
+async def _create_account(
+    app: web.Application,
+    user_data: dict[str, Any] | None = None,
+    product_name: ProductName | None = None,
+) -> UserInfoDict:
+    user = await _create_user(app, user_data)
+
+    product_group_id = await _register_user_in_product(
+        app, user_id=user["id"], product_name=product_name
+    )
+    assert product_group_id
+
+    return user
+
+
 async def log_client_in(
     client: TestClient,
-    user_data=None,
+    user_data: dict[str, Any] | None = None,
     *,
     enable_check=True,
     product_name: ProductName | None = None,
 ) -> UserInfoDict:
-    # creates user directly in db
     assert client.app
-    db: AsyncpgStorage = get_plugin_storage(client.app)
 
-    user = await _insert_fake_user(db, user_data)
-    await _register_user_in_product(
-        client.app, user_id=user["id"], product_name=product_name
+    # create account
+    user = await _create_account(
+        client.app, user_data=user_data, product_name=product_name
     )
 
     # login
@@ -118,23 +155,22 @@ async def log_client_in(
 
 class NewUser:
     def __init__(
-        self, params: dict[str, Any] | None = None, app: web.Application | None = None
+        self,
+        params: dict[str, Any] | None = None,
+        app: web.Application | None = None,
+        product_name: ProductName | None = None,
     ):
         self.params = params
         self.user = None
         assert app
         self.db = get_plugin_storage(app)
         self.app = app
+        self._product_name = product_name
 
     async def __aenter__(self) -> UserInfoDict:
-        self.user = await _insert_fake_user(self.db, self.params)
-
-        await _register_user_in_product(
-            self.app,
-            user_id=self.user["id"],
-            product_name=self.params.get("product_name", None),
+        self.user = await _create_account(
+            self.app, self.params, product_name=self._product_name
         )
-
         return self.user
 
     async def __aexit__(self, *args):
@@ -146,6 +182,7 @@ class LoggedUser(NewUser):
         super().__init__(params, client.app)
         self.client = client
         self.enable_check = check_if_succeeds
+        assert self.client.app
 
     async def __aenter__(self) -> UserInfoDict:
         self.user = await log_client_in(
@@ -154,6 +191,7 @@ class LoggedUser(NewUser):
         return self.user
 
     async def __aexit__(self, *args):
+        assert self.client.app
         # NOTE: cache key is based on an email. If the email is
         # reused during the test, then it creates quite some noise
         await clean_auth_policy_cache(self.client.app)
@@ -180,8 +218,7 @@ class NewInvitation(NewUser):
     async def __aenter__(self) -> "NewInvitation":
         # creates host user
         assert self.client.app
-        db: AsyncpgStorage = get_plugin_storage(self.client.app)
-        self.user = await _insert_fake_user(db, self.params)
+        self.user = await _create_user(self.client.app, self.params)
 
         self.confirmation = await create_invitation_token(
             self.db,
