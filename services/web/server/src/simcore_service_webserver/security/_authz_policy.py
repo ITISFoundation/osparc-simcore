@@ -14,7 +14,7 @@ from ..db.plugin import get_database_engine
 from ._authz_access_model import OptionalContext, RoleBasedAccessModel, check_access
 from ._authz_db import AuthInfoDict, get_active_user_or_none
 from ._constants import MSG_AUTH_NOT_AVAILABLE
-from ._identity_api import IdentityStr, VerifiedIdentity
+from ._identity_api import IdentityModel, IdentityStr
 
 _logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         or "None" if no user exists related to the identity.
         """
         try:
-            vi = VerifiedIdentity.parse_raw(identity)
+            vi = IdentityModel.create(identity)
         except ValidationError:
             return None
         else:

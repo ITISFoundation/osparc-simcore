@@ -7,8 +7,11 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from pydantic import BaseModel, Extra, Field
 
+# Identification *string* for an autheticated user
+IdentityStr: TypeAlias = str
 
-class VerifiedIdentity(BaseModel):
+
+class IdentityModel(BaseModel):
     email: LowerCaseEmailStr = Field(alias="e")
     product_name: ProductName = Field(alias="p")
 
@@ -18,9 +21,12 @@ class VerifiedIdentity(BaseModel):
         json_loads = ujson.loads
         json_dumps = ujson.dumps
 
+    @classmethod
+    def create(cls, identity: IdentityStr) -> "IdentityModel":
+        return cls.parse_raw(identity)
 
-# Identification string for an autheticated user
-IdentityStr: TypeAlias = str
+    def to_identity(self) -> IdentityStr:
+        return self.json(by_alias=True)
 
 
 async def remember_identity(
@@ -31,11 +37,11 @@ async def remember_identity(
     product_name: ProductName
 ) -> web.Response:
     """Remember = Saves verified identify in current session"""
-    verified = VerifiedIdentity(e=user_email, p=product_name)
+    verified = IdentityModel(e=user_email, p=product_name)
     await remember(
         request=request,
         response=response,
-        identity=verified.json(by_alias=True),
+        identity=verified.to_identity(),
     )
     return response
 
