@@ -1,6 +1,5 @@
 import re
 from copy import deepcopy
-from typing import Optional, Union
 
 import sqlalchemy as sa
 from sqlalchemy.engine import Engine
@@ -21,7 +20,7 @@ def build_url(
     """
     Safe build pg url as 'postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}'
     """
-    dsn = URL.build(
+    return URL.build(
         scheme="postgresql+psycopg2",
         user=user,
         password=password,
@@ -30,11 +29,10 @@ def build_url(
         path=f"/{database}",
     )
     # _kwargs allows expand on larger dicts without raising exceptions
-    return dsn
 
 
 def create_tables(dsn: URL):
-    engine: Optional[Engine] = None
+    engine: Engine | None = None
     try:
         engine = sa.create_engine(str(dsn))
         assert engine  # nosec
@@ -46,7 +44,7 @@ def create_tables(dsn: URL):
 
 def raise_if_not_responsive(dsn: URL, *, verbose=False):
     """Checks whether database is responsive, otherwise it throws exception"""
-    engine: Optional[Engine] = None
+    engine: Engine | None = None
     try:
         engine = sa.create_engine(
             str(dsn), echo=verbose, echo_pool=verbose, pool_timeout=5
@@ -62,7 +60,7 @@ def raise_if_not_responsive(dsn: URL, *, verbose=False):
 _URL_PASS_RE = re.compile(r":(\w+)@")
 
 
-def hide_url_pass(url: Union[str, URL]) -> str:
+def hide_url_pass(url: str | URL) -> str:
     return _URL_PASS_RE.sub(":********@", str(url))
 
 
@@ -71,6 +69,6 @@ def hide_dict_pass(data: dict) -> dict:
     for key in data_clone:
         if "pass" in key:
             data_clone[key] = "*" * 8
-        elif "url" == key:
+        elif key == "url":
             data_clone[key] = hide_url_pass(data[key])
     return data_clone

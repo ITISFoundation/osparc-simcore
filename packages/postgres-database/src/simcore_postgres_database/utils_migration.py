@@ -3,9 +3,8 @@
 """
 import sys
 from pathlib import Path
-from typing import Final, Optional
+from typing import Final
 
-from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
 from alembic.script.base import ScriptDirectory
 
@@ -34,9 +33,10 @@ def get_current_head() -> RevisionID:
     config = create_basic_config()
     script: ScriptDirectory = ScriptDirectory.from_config(config)
 
-    head: Optional[str] = script.get_current_head()
+    head: str | None = script.get_current_head()
     if not head:
-        raise RuntimeError(f"Cannot find head revision in {script}")
+        msg = f"Cannot find head revision in {script}"
+        raise RuntimeError(msg)
 
     return head
 

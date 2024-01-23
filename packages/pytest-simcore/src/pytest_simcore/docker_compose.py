@@ -22,7 +22,6 @@ from typing import Any
 import pytest
 import yaml
 from dotenv import dotenv_values
-from pytest import ExitCode
 
 from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
@@ -291,8 +290,8 @@ def pytest_exception_interact(node, call, report):
 
 
 @pytest.hookimpl()
-def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
-    if exitstatus == ExitCode.TESTS_FAILED:
+def pytest_sessionfinish(session: pytest.Session, exitstatus: pytest.ExitCode) -> None:
+    if exitstatus == pytest.ExitCode.TESTS_FAILED:
         root_directory: Path = Path(session.fspath)
         failed_test_directory = root_directory / "test_failures" / session.name
         _save_docker_logs_to_folder(failed_test_directory)

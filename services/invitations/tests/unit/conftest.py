@@ -10,7 +10,6 @@ import simcore_service_invitations
 from cryptography.fernet import Fernet
 from faker import Faker
 from models_library.products import ProductName
-from pytest import FixtureRequest, MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_invitations.services.invitations import InvitationInputs
@@ -62,7 +61,7 @@ def fake_password(faker: Faker) -> str:
 
 @pytest.fixture
 def app_environment(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     secret_key: str,
     fake_user_name: str,
     fake_password: str,
@@ -81,7 +80,7 @@ def app_environment(
 
 
 @pytest.fixture(params=[True, False])
-def is_trial_account(request: FixtureRequest) -> bool:
+def is_trial_account(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
@@ -91,7 +90,7 @@ def default_product() -> ProductName:
 
 
 @pytest.fixture(params=[None, "osparc", "s4llite", "s4laca"])
-def product(request: FixtureRequest) -> ProductName | None:
+def product(request: pytest.FixtureRequest) -> ProductName | None:
     # NOTE: INVITATIONS_DEFAULT_PRODUCT includes the default product field is not defined
     return request.param
 

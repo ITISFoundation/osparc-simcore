@@ -52,7 +52,7 @@ async def unused_volume_name(unused_volume: DockerVolume) -> str:
 
 async def test_workflow(
     mock_volumes_folders: None,
-    caplog_info_debug: LogCaptureFixture,
+    caplog_info_debug: pytest.LogCaptureFixture,
     settings: ApplicationSettings,
     used_volume_name: str,
     unused_volume_name: str,

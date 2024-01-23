@@ -19,7 +19,6 @@ from zipfile import ZipFile
 
 import osparc
 import pytest
-from pytest import TempPathFactory
 from pytest_simcore.helpers.utils_public_api import ServiceInfoDict, ServiceNameStr
 
 osparc_VERSION = tuple(map(int, osparc.__version__.split(".")))
@@ -78,7 +77,7 @@ def sleeper_solver(
 
 @pytest.fixture(scope="module")
 def uploaded_input_file(
-    tmp_path_factory: TempPathFactory, files_api: osparc.FilesApi
+    tmp_path_factory: pytest.TempPathFactory, files_api: osparc.FilesApi
 ) -> osparc.File:
     basedir: Path = tmp_path_factory.mktemp("uploaded_input_file")
 
