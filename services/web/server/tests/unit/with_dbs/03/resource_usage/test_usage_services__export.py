@@ -57,10 +57,10 @@ def setup_wallets_db(
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPFound),
-        (UserRole.TESTER, web.HTTPFound),
-        (UserRole.PRODUCT_OWNER, web.HTTPFound),
-        (UserRole.ADMIN, web.HTTPFound),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.PRODUCT_OWNER, web.HTTPOk),
+        (UserRole.ADMIN, web.HTTPOk),
     ],
 )
 async def test_export_service_usage_redirection(
@@ -73,12 +73,14 @@ async def test_export_service_usage_redirection(
 ):
     url = client.app.router["export_resource_usage_services"].url_for()
     resp = await client.get(f"{url}")
+    assert resp.status == expected.status_code
 
-    # checks is a redirection
-    assert len(resp.history) == 1
-    assert resp.history[0].status == expected.status_code
+    if resp.status == web.HTTPOk:
+        # checks is a redirection
+        assert len(resp.history) == 1
+        assert resp.history[0].status == web.HTTPFound.status_code
 
-    assert mock_export_usage_services.called
+        assert mock_export_usage_services.called
 
 
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
