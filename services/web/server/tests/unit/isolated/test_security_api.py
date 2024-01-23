@@ -214,11 +214,11 @@ async def test_user_session(client: TestClient, mocker: MockerFixture):
     await clean_auth_policy_cache(client.app)
 
     mocker.patch(
-        "simcore_service_webserver.security._authz.get_database_engine",
+        "simcore_service_webserver.security._authz_policy.get_database_engine",
         autospec=True,
     )
     get_active_user_or_none_mock = mocker.patch(
-        "simcore_service_webserver.security._authz.get_active_user_or_none",
+        "simcore_service_webserver.security._authz_policy.get_active_user_or_none",
         autospec=True,
         return_value={"email": "foo@email.com", "id": 1, "role": UserRole.ADMIN},
     )

@@ -244,7 +244,7 @@ async def test_check_access_expressions(access_model: RoleBasedAccessModel):
 def mock_db(mocker: MockerFixture) -> MagicMock:
 
     mocker.patch(
-        "simcore_service_webserver.security._authz.get_database_engine",
+        "simcore_service_webserver.security._authz_policy.get_database_engine",
         autospec=True,
         return_value="FAKE-ENGINE",
     )
@@ -264,7 +264,7 @@ def mock_db(mocker: MockerFixture) -> MagicMock:
         return copy.deepcopy(users_db.get(email, None))
 
     mock_db_fun = mocker.patch(
-        "simcore_service_webserver.security._authz.get_active_user_or_none",
+        "simcore_service_webserver.security._authz_policy.get_active_user_or_none",
         autospec=True,
         side_effect=_fake_db,
     )
