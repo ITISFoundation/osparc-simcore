@@ -1,5 +1,5 @@
 import logging
-from typing import Final
+from typing import Final, cast
 
 from models_library.api_schemas_resource_usage_tracker import (
     RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
@@ -76,5 +76,5 @@ async def export_service_runs(
         filters=filters,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
-    assert isinstance(result, AnyUrl)  # nosec
+    assert cast(AnyUrl, isinstance(result, AnyUrl))  # nosec
     return result
