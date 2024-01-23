@@ -4,8 +4,8 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import Iterator
 from datetime import datetime
-from typing import Iterator
 
 import pytest
 from aiopg.sa.connection import SAConnection
@@ -17,8 +17,8 @@ from simcore_postgres_database.utils_aiopg_orm import ALL_COLUMNS, BaseOrm
 
 @pytest.fixture
 async def fake_scicrunch_ids(pg_engine: Engine) -> list[str]:
-    row1 = dict(rrid="RRID:foo", name="foo", description="fooing")
-    row2 = dict(rrid="RRID:bar", name="bar", description="barring")
+    row1 = {"rrid": "RRID:foo", "name": "foo", "description": "fooing"}
+    row2 = {"rrid": "RRID:bar", "name": "bar", "description": "barring"}
 
     row_ids = []
     async with pg_engine.acquire() as conn:
@@ -299,3 +299,4 @@ async def test_rowproxy(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[st
 
     # to list[dict]: warning ... sometimes rows are None when in first() or fetchone()...
     list_of_dicts = [dict(row.items()) for row in rows if row]
+    assert list_of_dicts

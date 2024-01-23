@@ -8,7 +8,6 @@ from typing import Any
 import pytest
 from models_library.errors import ErrorDict
 from pydantic import ValidationError
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.email import SMTPSettings
 from simcore_postgres_database.models.products import ProductLoginSettingsDict
@@ -19,7 +18,7 @@ from simcore_service_webserver.login.settings import (
 )
 
 
-def test_login_with_invitation(monkeypatch: MonkeyPatch):
+def test_login_with_invitation(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("LOGIN_REGISTRATION_INVITATION_REQUIRED", "1")
 
     settings = LoginSettings.create_from_envs()
@@ -27,7 +26,7 @@ def test_login_with_invitation(monkeypatch: MonkeyPatch):
 
 
 @pytest.fixture
-def twilio_config(monkeypatch: MonkeyPatch) -> dict[str, str]:
+def twilio_config(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
 
     TWILO_CONFIG = {
         "TWILIO_ACCOUNT_SID": "fake-account",
@@ -41,7 +40,7 @@ def twilio_config(monkeypatch: MonkeyPatch) -> dict[str, str]:
 
 
 def test_login_settings_with_2fa(
-    monkeypatch: MonkeyPatch, twilio_config: dict[str, str]
+    monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]
 ):
     setenvs_from_dict(
         monkeypatch,
@@ -55,7 +54,7 @@ def test_login_settings_with_2fa(
 
 
 def test_login_settings_fails_with_2fa_but_wo_twilio(
-    monkeypatch: MonkeyPatch, twilio_config: dict[str, str]
+    monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]
 ):
     # cannot enable 2fa w/o twilio settings
     setenvs_from_dict(
@@ -75,7 +74,7 @@ def test_login_settings_fails_with_2fa_but_wo_twilio(
 
 @pytest.fixture
 def no_registration_environment(
-    monkeypatch: MonkeyPatch, twilio_config: dict[str, str]
+    monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]
 ):
     # cannot enable 2fa w/o email confirmation
     setenvs_from_dict(

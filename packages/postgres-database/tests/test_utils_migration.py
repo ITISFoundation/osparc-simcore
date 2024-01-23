@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 import simcore_postgres_database.cli

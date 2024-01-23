@@ -3,7 +3,8 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import pytest
 import sqlalchemy as sa
@@ -14,7 +15,7 @@ from simcore_postgres_database.models.tags import tags_to_groups
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
-    TagOperationNotAllowed,
+    TagOperationNotAllowedError,
     TagsRepo,
 )
 
@@ -54,12 +55,11 @@ async def other_user(
     create_fake_user: Callable[[SAConnection, RowProxy, Any], RowProxy],
     connection: SAConnection,
 ) -> RowProxy:
-    user_ = await create_fake_user(
+    return await create_fake_user(
         connection,
         status=UserStatus.ACTIVE,
         role=UserRole.USER,
     )
-    return user_
 
 
 async def test_tags_access_with_primary_groups(
@@ -218,7 +218,7 @@ async def test_tags_repo_list_and_get(
     tags_repo = TagsRepo(user_id=user.id)
 
     # (1) no tags
-    listed_tags = await tags_repo.list(conn)
+    listed_tags = await tags_repo.list_all(conn)
     assert not listed_tags
 
     # (2) one tag
@@ -235,7 +235,7 @@ async def test_tags_repo_list_and_get(
         )
     ]
 
-    listed_tags = await tags_repo.list(conn)
+    listed_tags = await tags_repo.list_all(conn)
     assert listed_tags
     assert [t["id"] for t in listed_tags] == expected_tags_ids
 
@@ -253,7 +253,7 @@ async def test_tags_repo_list_and_get(
         )
     )
 
-    listed_tags = await tags_repo.list(conn)
+    listed_tags = await tags_repo.list_all(conn)
     assert {t["id"] for t in listed_tags} == set(expected_tags_ids)
 
     # (4) add another tag from a differnt user
@@ -270,11 +270,11 @@ async def test_tags_repo_list_and_get(
 
     # same as before
     prev_listed_tags = listed_tags
-    listed_tags = await tags_repo.list(conn)
+    listed_tags = await tags_repo.list_all(conn)
     assert listed_tags == prev_listed_tags
 
     # (5) add a global tag
-    tag_id = await create_tag(
+    await create_tag(
         conn,
         name="TG",
         description="tag for EVERYBODY",
@@ -285,7 +285,7 @@ async def test_tags_repo_list_and_get(
         delete=False,
     )
 
-    listed_tags = await tags_repo.list(conn)
+    listed_tags = await tags_repo.list_all(conn)
     assert listed_tags == [
         {
             "id": 1,
@@ -317,7 +317,7 @@ async def test_tags_repo_list_and_get(
     ]
 
     other_repo = TagsRepo(user_id=other_user.id)
-    assert await other_repo.list(conn) == [
+    assert await other_repo.list_all(conn) == [
         {
             "id": 3,
             "name": "T3",
@@ -407,7 +407,7 @@ async def test_tags_repo_update(
         ),
     ]
 
-    with pytest.raises(TagOperationNotAllowed):
+    with pytest.raises(TagOperationNotAllowedError):
         await tags_repo.update(conn, tag_id=readonly_tid, description="modified")
 
     assert await tags_repo.update(
@@ -422,7 +422,7 @@ async def test_tags_repo_update(
         "delete": False,
     }
 
-    with pytest.raises(TagOperationNotAllowed):
+    with pytest.raises(TagOperationNotAllowedError):
         await tags_repo.update(conn, tag_id=other_tid, description="modified")
 
 
@@ -467,7 +467,7 @@ async def test_tags_repo_delete(
     ]
 
     # cannot delete
-    with pytest.raises(TagOperationNotAllowed):
+    with pytest.raises(TagOperationNotAllowedError):
         await tags_repo.delete(conn, tag_id=readonly_tid)
 
     # can delete
@@ -478,7 +478,7 @@ async def test_tags_repo_delete(
         await tags_repo.get(conn, tag_id=delete_tid)
 
     # cannot delete
-    with pytest.raises(TagOperationNotAllowed):
+    with pytest.raises(TagOperationNotAllowedError):
         await tags_repo.delete(conn, tag_id=other_tid)
 
 

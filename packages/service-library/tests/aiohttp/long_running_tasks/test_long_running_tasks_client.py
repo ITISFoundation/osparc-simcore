@@ -2,12 +2,11 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from typing import Callable, Optional
+from typing import Callable
 
 import pytest
 from aiohttp import ClientResponseError, web
 from aiohttp.test_utils import TestClient
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import long_running_tasks
 from servicelib.aiohttp.long_running_tasks import client as lr_client
@@ -63,7 +62,7 @@ async def test_long_running_task_request_raises_400(
 
 
 @pytest.fixture
-def short_poll_interval(monkeypatch: MonkeyPatch):
+def short_poll_interval(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
         lr_client,
         "_DEFAULT_POLL_INTERVAL_S",
@@ -74,7 +73,7 @@ def short_poll_interval(monkeypatch: MonkeyPatch):
 async def test_long_running_task_request(
     short_poll_interval, client: TestClient, long_running_task_url: URL
 ):
-    task: Optional[LRTask] = None
+    task: LRTask | None = None
     async for task in long_running_task_request(
         client.session,
         long_running_task_url.with_query(num_strings=10, sleep_time=0.1),
@@ -91,7 +90,7 @@ async def test_long_running_task_request_timeout(
     client: TestClient, long_running_task_url: URL
 ):
     assert client.app
-    task: Optional[LRTask] = None
+    task: LRTask | None = None
     with pytest.raises(asyncio.TimeoutError):
         async for task in long_running_task_request(
             client.session,
@@ -113,7 +112,7 @@ async def test_long_running_task_request_error(
     client: TestClient, long_running_task_url: URL
 ):
     assert client.app
-    task: Optional[LRTask] = None
+    task: LRTask | None = None
     async for task in long_running_task_request(
         client.session,
         long_running_task_url.with_query(

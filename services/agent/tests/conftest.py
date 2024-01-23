@@ -15,7 +15,6 @@ from models_library.basic_types import BootModeEnum
 from models_library.services import RunID
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
-from pytest import LogCaptureFixture, MonkeyPatch
 from settings_library.r_clone import S3Provider
 from simcore_service_agent.core.settings import ApplicationSettings
 
@@ -157,7 +156,7 @@ async def used_volume(
 
 @pytest.fixture
 def env(  # noqa: PT004
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     mocked_s3_server_url: HttpUrl,
     bucket: str,
     swarm_stack_name: str,
@@ -182,7 +181,9 @@ def settings(env: None) -> ApplicationSettings:
 
 
 @pytest.fixture()
-def caplog_info_debug(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
+def caplog_info_debug(
+    caplog: pytest.LogCaptureFixture,
+) -> Iterable[pytest.LogCaptureFixture]:
     with caplog.at_level(logging.DEBUG):
         yield caplog
 

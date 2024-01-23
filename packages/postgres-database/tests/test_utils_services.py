@@ -38,19 +38,19 @@ class RandomServiceFactory:
         version = self._faker.numerify("%#.%#.#")
         owner_gid = 1  # everybody
 
-        row = dict(
-            key=f"simcore/service/dynamic/{name_suffix}",
-            version=version,
-            owner=owner_gid,
-            name=f"service {name_suffix}",
-            description=self._faker.sentence(),
-            thumbnail=self._faker.image_url(120, 120),
-            classifiers=self._faker.random_elements(
+        row = {
+            "key": f"simcore/service/dynamic/{name_suffix}",
+            "version": version,
+            "owner": owner_gid,
+            "name": f"service {name_suffix}",
+            "description": self._faker.sentence(),
+            "thumbnail": self._faker.image_url(120, 120),
+            "classifiers": self._faker.random_elements(
                 elements=("RRID:SCR_018997", "RRID:SCR_019001", "RRID:Addgene_44362"),
                 unique=True,
             ),
-            quality={},
-        )
+            "quality": {},
+        }
         row.update(overrides)
 
         self._cache = row
@@ -59,14 +59,14 @@ class RandomServiceFactory:
 
     def random_service_access_rights(self, **overrides) -> dict[str, Any]:
         default_value = self._get_service_meta_data()
-        row = dict(
-            key=default_value["key"],
-            version=default_value["version"],
-            gid=default_value["owner"],
-            execute_access=True,
-            write_access=True,
-            product_name="osparc",
-        )
+        row = {
+            "key": default_value["key"],
+            "version": default_value["version"],
+            "gid": default_value["owner"],
+            "execute_access": True,
+            "write_access": True,
+            "product_name": "osparc",
+        }
         row.update(overrides)
 
         return row
@@ -76,21 +76,22 @@ class RandomServiceFactory:
     ) -> dict[str, Any]:
         default_value = self._get_service_meta_data()
 
-        row = dict(
-            service_key=default_value["key"],
-            service_version=default_value["version"],
-            service_display_name=default_value["name"],
-            service_input_port=f"input_{port_index}",
-            filetype=self._faker.uri_extension().removeprefix(".").upper(),
-            is_guest_allowed=bool(port_index % 2),
-        )
+        row = {
+            "service_key": default_value["key"],
+            "service_version": default_value["version"],
+            "service_display_name": default_value["name"],
+            "service_input_port": f"input_{port_index}",
+            "filetype": self._faker.uri_extension().removeprefix(".").upper(),
+            "is_guest_allowed": bool(port_index % 2),
+        }
 
         row.update(overrides)
         return row
 
     def _get_service_meta_data(self):
         if not self._cache:
-            raise ValueError("Run first random_service_meta_data(*)")
+            msg = "Run first random_service_meta_data(*)"
+            raise ValueError(msg)
         return self._cache
 
     def reset(self):
@@ -145,13 +146,13 @@ def services_fixture(faker: Faker, pg_sa_engine: sa.engine.Engine) -> ServicesFi
 
     with pg_sa_engine.begin() as conn:
         # PRODUCT
-        osparc_product = dict(
-            name="osparc",
-            display_name="Product Osparc",
-            short_name="osparc",
-            host_regex=r"^osparc.",
-            priority=0,
-        )
+        osparc_product = {
+            "name": "osparc",
+            "display_name": "Product Osparc",
+            "short_name": "osparc",
+            "host_regex": r"^osparc.",
+            "priority": 0,
+        }
         product_name = conn.execute(
             pg_insert(products)
             .values(**osparc_product)
@@ -328,7 +329,7 @@ def test_trial_queries_for_service_metadata(
             services_latest.c.key.like("simcore/services/dynamic/%%")
             & services_meta_data.c.classifiers.contains(["osparc"])
             & (services_access_rights.c.gid == 1)
-            & (services_access_rights.c.execute_access == True)
+            & (services_access_rights.c.execute_access.is_(True))
         )
 
         for n, query in enumerate([query1, query2, query3]):

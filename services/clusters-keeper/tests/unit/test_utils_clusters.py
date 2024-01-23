@@ -97,7 +97,7 @@ def test_create_startup_script(
         v[2:-1].split(":")[0]
         for v in docker_compose_expected_environment.values()
         if isinstance(v, str) and v.startswith("${")
-    ] + ["DOCKER_IMAGE_TAG"]
+    ] + ["DASK_NTHREADS", "DOCKER_IMAGE_TAG"]
     for env_key in expected_env_keys:
         assert (
             env_key in startup_script_env_keys_names

@@ -65,7 +65,8 @@ class BaseOrm(Generic[RowUId]):
             # FIXME: how can I compare a concrete with a generic type??
             # assert self._primary_key.type.python_type == RowUId  # nosec
         except StopIteration as e:
-            raise ValueError(f"Table {table.name} MUST define a primary key") from e
+            msg = f"Table {table.name} MUST define a primary key"
+            raise ValueError(msg) from e
 
         self._table = table
 
@@ -113,7 +114,8 @@ class BaseOrm(Generic[RowUId]):
     def _check_access_rights(access: set, values: dict) -> None:
         not_allowed: set[str] = access.intersection(values.keys())
         if not_allowed:
-            raise ValueError(f"Columns {not_allowed} are read-only")
+            msg = f"Columns {not_allowed} are read-only"
+            raise ValueError(msg)
 
     @property
     def columns(self) -> ImmutableColumnCollection:
@@ -124,7 +126,8 @@ class BaseOrm(Generic[RowUId]):
         Sets default for read operations either by passing a row identifier or a filter
         """
         if unique_id and rowid:
-            raise ValueError("Either identifier or unique condition but not both")
+            msg = "Either identifier or unique condition but not both"
+            raise ValueError(msg)
 
         if rowid is not None:
             self._where_clause = self._primary_key == rowid
@@ -137,9 +140,8 @@ class BaseOrm(Generic[RowUId]):
                 ),
             )
         if not self.is_filter_set():
-            raise ValueError(
-                "Either identifier or unique condition required. None provided"
-            )
+            msg = "Either identifier or unique condition required. None provided"
+            raise ValueError(msg)
         return self
 
     def clear_filter(self) -> None:

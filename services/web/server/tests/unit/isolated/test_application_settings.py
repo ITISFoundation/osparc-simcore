@@ -7,7 +7,6 @@ import os
 
 import pytest
 from aiohttp import web
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
 from servicelib.json_serialization import json_dumps
@@ -20,7 +19,7 @@ from simcore_service_webserver.application_settings import (
 
 @pytest.fixture
 def mock_env_devel_environment(
-    mock_env_devel_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+    mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     # Overrides to ensure dev-features are enabled testings
     return mock_env_devel_environment | setenvs_from_dict(
@@ -32,7 +31,7 @@ def mock_env_devel_environment(
 
 
 @pytest.fixture
-def mock_env_makefile(monkeypatch: MonkeyPatch) -> EnvVarsDict:
+def mock_env_makefile(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     """envvars produced @Makefile (export)"""
     # TODO: add Makefile recipe 'make dump-envs' to produce the file we load here
     return setenvs_from_dict(
@@ -61,7 +60,7 @@ def mock_env_makefile(monkeypatch: MonkeyPatch) -> EnvVarsDict:
 
 
 @pytest.fixture
-def mock_env_Dockerfile_build(monkeypatch: MonkeyPatch) -> EnvVarsDict:
+def mock_env_Dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     #
     # docker run -it --hostname "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}" local/webserver:production printenv
     #
@@ -98,7 +97,7 @@ def mock_env_Dockerfile_build(monkeypatch: MonkeyPatch) -> EnvVarsDict:
 
 @pytest.fixture
 def mock_webserver_service_environment(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     mock_env_makefile: EnvVarsDict,
     mock_env_devel_environment: EnvVarsDict,
     mock_env_Dockerfile_build: EnvVarsDict,
@@ -205,7 +204,7 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
 
 def test_settings_to_client_statics_plugins(
-    mock_webserver_service_environment: EnvVarsDict, monkeypatch: MonkeyPatch
+    mock_webserver_service_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
     disable_plugins = {"WEBSERVER_EXPORTER", "WEBSERVER_SCICRUNCH"}
     for name in disable_plugins:

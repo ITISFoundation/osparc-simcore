@@ -94,13 +94,13 @@ class MixinServiceSettings:
         assert prefix  # nosec
         prefix = prefix.upper()
 
-        parts = dict(
-            scheme=self._safe_getattr(f"{prefix}_SCHEME", URLPart.OPTIONAL, "http"),
-            host=self._safe_getattr(f"{prefix}_HOST", URLPart.REQUIRED),
-            user=self._safe_getattr(f"{prefix}_USER", user),
-            password=self._safe_getattr(f"{prefix}_PASSWORD", password),
-            port=self._safe_getattr(f"{prefix}_PORT", port),
-        )
+        parts = {
+            "scheme": self._safe_getattr(f"{prefix}_SCHEME", URLPart.OPTIONAL, "http"),
+            "host": self._safe_getattr(f"{prefix}_HOST", URLPart.REQUIRED),
+            "user": self._safe_getattr(f"{prefix}_USER", user),
+            "password": self._safe_getattr(f"{prefix}_PASSWORD", password),
+            "port": self._safe_getattr(f"{prefix}_PORT", port),
+        }
 
         if vtag != URLPart.EXCLUDE:
             if v := self._safe_getattr(f"{prefix}_VTAG", vtag):

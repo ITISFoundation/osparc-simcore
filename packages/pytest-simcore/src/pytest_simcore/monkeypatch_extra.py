@@ -6,7 +6,6 @@ import warnings
 from typing import Iterator
 
 import pytest
-from pytest import FixtureRequest, MonkeyPatch
 
 warnings.warn(
     f"{__name__} is deprecated, we highly recommend to use pytest.monkeypatch at function-scope level."
@@ -18,9 +17,9 @@ warnings.warn(
 
 
 @pytest.fixture(scope="module")
-def monkeypatch_module(request: FixtureRequest) -> Iterator[MonkeyPatch]:
+def monkeypatch_module(request: pytest.FixtureRequest) -> Iterator[pytest.MonkeyPatch]:
     assert request.scope == "module"
 
-    mpatch_module = MonkeyPatch()
+    mpatch_module = pytest.MonkeyPatch()
     yield mpatch_module
     mpatch_module.undo()
