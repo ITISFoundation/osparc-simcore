@@ -303,7 +303,9 @@ async def register(request: web.Request):
     assert not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED  # nosec
     assert not settings.LOGIN_2FA_REQUIRED  # nosec
 
-    return await login_granted_response(request=request, user=user)
+    return await login_granted_response(
+        request=request, user=user, product_name=product.name
+    )
 
 
 class RegisterPhoneBody(InputSchema):

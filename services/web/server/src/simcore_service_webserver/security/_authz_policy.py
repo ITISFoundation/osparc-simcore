@@ -7,13 +7,14 @@ from aiocache import cached
 from aiocache.base import BaseCache
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
+from pydantic import ValidationError
 from simcore_postgres_database.errors import DatabaseError
 
 from ..db.plugin import get_database_engine
 from ._authz_access_model import OptionalContext, RoleBasedAccessModel, check_access
 from ._authz_db import AuthInfoDict, get_active_user_or_none
 from ._constants import MSG_AUTH_NOT_AVAILABLE
-from ._identity_api import IdentityStr
+from ._identity_api import IdentityStr, VerifiedIdentity
 
 _logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         namespace=__name__,
         key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['email']}",
     )
-    async def _get_auth_or_none(self, *, email: IdentityStr) -> AuthInfoDict | None:
+    async def _get_auth_or_none(self, *, email: str) -> AuthInfoDict | None:
         """Keeps a cache for a few seconds. Avoids stress on the database with the
         successive streams observerd on this query
 
@@ -63,13 +64,15 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        user_info: AuthInfoDict | None = await self._get_auth_or_none(email=identity)
-
-        if user_info is None:
+        try:
+            vi = VerifiedIdentity.parse_raw(identity)
+        except ValidationError:
             return None
-
-        user_id: int = user_info["id"]
-        return user_id
+        else:
+            user_info: AuthInfoDict | None = None
+            # FIXME: needs to include product_name in auth query!
+            user_info = await self._get_auth_or_none(email=vi.email)
+            return user_info["id"] if user_info else None
 
     async def permits(
         self,

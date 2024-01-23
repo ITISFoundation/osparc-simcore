@@ -404,11 +404,16 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     response = web.HTTPFound(location=redirect_url)
     if is_anonymous_user:
         _logger.debug("Auto login for anonymous user %s", user["name"])
-        identity = user["email"]
-        await remember_identity(request, response, user_email=identity)
+
+        await remember_identity(
+            request,
+            response,
+            user_email=user["email"],
+            product_name=get_product_name(request),
+        )
 
         # NOTE: session is encrypted and stored in a cookie in the session middleware
-        assert (await get_session(request))["AIOHTTP_SECURITY"] == identity  # nosec
+        assert (await get_session(request))["AIOHTTP_SECURITY"] is not None  # nosec
 
     # WARNING: do NOT raise this response. From aiohttp 3.7.X, response is rebuild and cookie ignore.
     return response

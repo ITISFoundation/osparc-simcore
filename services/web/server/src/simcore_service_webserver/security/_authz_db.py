@@ -9,7 +9,6 @@ from pydantic import parse_obj_as
 from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import UserStatus, users
-from ._identity_api import IdentityStr
 
 _logger = logging.getLogger(__name__)
 
@@ -19,9 +18,7 @@ class AuthInfoDict(TypedDict, total=True):
     role: UserRole
 
 
-async def get_active_user_or_none(
-    engine: Engine, email: IdentityStr
-) -> AuthInfoDict | None:
+async def get_active_user_or_none(engine: Engine, email: str) -> AuthInfoDict | None:
     """Gets a user with email if ACTIVE othewise return None
 
     Raises:

@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from models_library.products import ProductName
 from servicelib.logging_utils import get_log_record_extra, log_context
 
 from ..security.api import remember_identity
@@ -15,7 +16,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def login_granted_response(
-    request: web.Request, *, user: dict[str, Any]
+    request: web.Request, *, user: dict[str, Any], product_name: ProductName
 ) -> web.Response:
     """
     Grants authorization for user creating a responses with an auth cookie
@@ -41,4 +42,5 @@ async def login_granted_response(
             request=request,
             response=response,
             user_email=email,
+            product_name=product_name,
         )
