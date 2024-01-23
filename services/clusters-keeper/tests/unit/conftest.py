@@ -101,6 +101,7 @@ def app_environment(
             "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY": faker.pystr(),
             "CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES": "{}",
             "CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX": faker.pystr(),
+            "CLUSTERS_KEEPER_DASK_NTHREADS": f"{faker.pyint(min_value=0)}",
             "PRIMARY_EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
@@ -246,7 +247,7 @@ def clusters_keeper_docker_compose() -> dict[str, Any]:
 
 @pytest.fixture
 async def clusters_keeper_rabbitmq_rpc_client(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]]
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ) -> RabbitMQRPCClient:
     rpc_client = await rabbitmq_rpc_client("pytest_clusters_keeper_rpc_client")
     assert rpc_client
