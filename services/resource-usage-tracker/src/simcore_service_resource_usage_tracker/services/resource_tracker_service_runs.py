@@ -134,6 +134,7 @@ async def list_service_runs(
 
 async def export_service_runs(
     s3_client: SimcoreS3API,
+    bucket_name: str,
     user_id: UserID,
     product_name: ProductName,
     resource_tracker_repo: ResourceTrackerRepository,
@@ -149,13 +150,14 @@ async def export_service_runs(
         started_until = filters.started_at.until
 
     # Create S3 key name
-    s3_bucket_name = S3BucketName("matus-testing")  # MD: parametrize bucket name
+    s3_bucket_name = S3BucketName(bucket_name)
     file_name = f"{datetime.now(tz=timezone.utc).date()}__{uuid4()}.csv"
     s3_object_key = f"resource-usage-tracker-service-runs/{file_name}"
 
     # Export CSV to S3
     await resource_tracker_repo.export_service_runs_table_to_s3(
         product_name=product_name,
+        s3_bucket_name=s3_bucket_name,
         s3_key=s3_object_key,
         user_id=user_id if access_all_wallet_usage is False else None,
         wallet_id=wallet_id,

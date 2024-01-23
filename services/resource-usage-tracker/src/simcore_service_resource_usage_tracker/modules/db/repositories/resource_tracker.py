@@ -7,6 +7,7 @@ import sqlalchemy as sa
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
+from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
 from models_library.resource_tracker import (
     CreditTransactionId,
@@ -289,6 +290,7 @@ class ResourceTrackerRepository(BaseRepository):
     async def export_service_runs_table_to_s3(
         self,
         product_name: ProductName,
+        s3_bucket_name: S3BucketName,
         s3_key: str,
         *,
         user_id: UserID | None,
@@ -363,7 +365,7 @@ class ResourceTrackerRepository(BaseRepository):
                 sa.DDL(
                     f"""
                 SELECT * from aws_s3.query_export_to_s3('{compiled_query}',
-                aws_commons.create_s3_uri('matus-testing', '{s3_key}', 'us-east-1'), 'format csv, HEADER true');
+                aws_commons.create_s3_uri('{s3_bucket_name}', '{s3_key}', 'us-east-1'), 'format csv, HEADER true');
                 """  # noqa: S608
                 )
             )

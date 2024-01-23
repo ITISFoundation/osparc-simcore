@@ -25,6 +25,7 @@ from simcore_service_resource_usage_tracker.modules.db.repositories.resource_tra
     ResourceTrackerRepository,
 )
 
+from ...core.settings import ApplicationSettings
 from ...models.pagination import LimitOffsetPage, LimitOffsetParamsWithDefault
 from ...modules.s3 import get_s3_client
 from ...services import (
@@ -97,8 +98,13 @@ async def get_usages_presigned_link(
     wallet_id: Annotated[WalletID | None, Query()] = None,
     access_all_wallet_usage: Annotated[bool, Query()] = False,
 ):
+    app_settings: ApplicationSettings = request.app.state.settings
+    s3_settings = app_settings.RESOURCE_USAGE_TRACKER_S3
+    assert s3_settings  # nosec
+
     return await resource_tracker_service_runs.export_service_runs(
         s3_client=get_s3_client(request.app),
+        bucket_name=f"{s3_settings.S3_BUCKET_NAME}",
         user_id=user_id,
         product_name=product_name,
         resource_tracker_repo=resource_tracker_repo,
