@@ -4,8 +4,7 @@ from typing import Any, TypedDict
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.products import ProductName
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from simcore_service_webserver.db.models import UserRole, UserStatus
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.login._constants import MSG_LOGGED_IN
@@ -97,13 +96,10 @@ async def _create_user(app: web.Application, data=None) -> UserInfoDict:
     )
 
 
-async def _register_user_in_product(
-    app: web.Application, user_id: UserID, product_name: ProductName | None = None
-) -> GroupID:
-    if product_name is None:
-        products = list_products(app)
-        assert products
-        product_name = products[0].name  # TODO: default?
+async def _register_user_in_default_product(app: web.Application, user_id: UserID):
+    products = list_products(app)
+    assert products
+    product_name = products[0].name
 
     return await auto_add_user_to_product_group(app, user_id, product_name=product_name)
 
@@ -111,15 +107,11 @@ async def _register_user_in_product(
 async def _create_account(
     app: web.Application,
     user_data: dict[str, Any] | None = None,
-    product_name: ProductName | None = None,
 ) -> UserInfoDict:
+    # users, groups in db
     user = await _create_user(app, user_data)
-
-    product_group_id = await _register_user_in_product(
-        app, user_id=user["id"], product_name=product_name
-    )
-    assert product_group_id
-
+    # user has default product
+    await _register_user_in_default_product(app, user_id=user["id"])
     return user
 
 
@@ -128,14 +120,11 @@ async def log_client_in(
     user_data: dict[str, Any] | None = None,
     *,
     enable_check=True,
-    product_name: ProductName | None = None,
 ) -> UserInfoDict:
     assert client.app
 
     # create account
-    user = await _create_account(
-        client.app, user_data=user_data, product_name=product_name
-    )
+    user = await _create_account(client.app, user_data=user_data)
 
     # login
     url = client.app.router["auth_login"].url_for()
@@ -158,19 +147,15 @@ class NewUser:
         self,
         params: dict[str, Any] | None = None,
         app: web.Application | None = None,
-        product_name: ProductName | None = None,
     ):
         self.params = params
         self.user = None
         assert app
         self.db = get_plugin_storage(app)
         self.app = app
-        self._product_name = product_name
 
     async def __aenter__(self) -> UserInfoDict:
-        self.user = await _create_account(
-            self.app, self.params, product_name=self._product_name
-        )
+        self.user = await _create_account(self.app, self.params)
         return self.user
 
     async def __aexit__(self, *args):
