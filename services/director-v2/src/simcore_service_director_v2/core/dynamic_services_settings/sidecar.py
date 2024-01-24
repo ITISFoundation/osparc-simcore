@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 from models_library.basic_types import BootModeEnum, PortInt
-from models_library.docker import DockerLabelKey, DockerPlacementConstraint
+from models_library.docker import DockerPlacementConstraint
 from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
@@ -56,7 +56,7 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
 class PlacementSettings(BaseCustomSettings):
     # This is just a service placement constraint, see
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.
-    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[DockerLabelKey] = Field(
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[DockerPlacementConstraint] = Field(
         default_factory=list,
         example='["node.labels.region==east", "one!=yes"]',
     )
