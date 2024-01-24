@@ -49,7 +49,13 @@ async def _remember_product_name(request: web.Request, product: ProductName):
 
 async def _get_product_name(request: web.Request) -> ProductName | None:
     session = await get_session(request)
-    return session.get(_SESSION_PRODUCT_NAME_KEY, None)
+    if product_name := session.get(_SESSION_PRODUCT_NAME_KEY, None):
+        return product_name
+
+    # NOTE: this or deduce from url
+    raise web.HTTPUnauthorized(
+        reason="Session is expired or undefined. To solve this problem, please reload site"
+    )
 
 
 async def _forget_product_name(request: web.Request) -> ProductName | None:
@@ -94,13 +100,11 @@ def app_products(expected_product_name: ProductName) -> OrderedDict[str, Product
     column_defaults["login_settings"] = LOGIN_SETTINGS_DEFAULT
 
     pp: OrderedDict[str, Product] = OrderedDict()
-    pp[expected_product_name] = Product(
-        name=expected_product_name,
-        host_regex=expected_product_name,
+    pp["tis"] = Product(
+        name="tis",
+        host_regex="tis",
         **column_defaults,
     )
-    assert expected_product_name not in {"osparc", "s4l"}
-
     pp["osparc"] = Product(
         name="osparc",
         host_regex="osparc",
@@ -111,40 +115,70 @@ def app_products(expected_product_name: ProductName) -> OrderedDict[str, Product
         host_regex="s4l",
         **column_defaults,
     )
+
+    assert expected_product_name in pp
     return pp
 
 
 @pytest.fixture
+def registered_users(expected_product_name: str):
+    users = [
+        {
+            "email": "foo@email.com",
+            "id": 1,
+            "role": UserRole.ADMIN,
+            "registered_products": {"osparc", expected_product_name},
+        },
+        {
+            "email": "bar@email.com",
+            "id": 2,
+            "role": UserRole.ADMIN,
+            "registered_products": {"osparc"},
+        },
+    ]
+    return {u["email"]: u for u in users}
+
+
+@pytest.fixture
 def app_routes(
-    expected_product_name: ProductName, app_products: OrderedDict[str, Product]
+    expected_product_name: ProductName,
+    app_products: OrderedDict[str, Product],
+    registered_users: dict,
 ) -> RouteTableDef:
-    assert "v0" == API_VTAG
+    assert API_VTAG == "v0"
 
     routes = RouteTableDef()
 
+    @routes.get("/")
+    async def _init(request: web.Request):
+        # get url and deliver product
+        product_name = expected_product_name
+        await _remember_product_name(request, product_name)
+        return web.HTTPOk()
+
+    @routes.post("/v0/hack/{product_name}")
+    async def _set_other_product(request: web.Request):
+        await _remember_product_name(request, request.match_info["product_name"])
+        return web.HTTPOk()
+
     @routes.post("/v0/login")
     async def _login(request: web.Request):
+        product_name = await _get_product_name(request)
+
         body = await request.json()
         email = parse_obj_as(LowerCaseEmailStr, body["email"])
-        product_name = parse_obj_as(ProductName, body["product"])
+
+        # Permission in this product: Has user access to product?
+        if product_name not in registered_users[email]["registered_products"]:
+            raise web.HTTPForbidden(reason="no access to this product")
 
         # Authentication takes place here
         if body.get("password") != "secret":
             raise web.HTTPUnauthorized(reason="wrong password")
 
-        # Product identity confirmed
-        if product_name not in app_products:
-            raise web.HTTPUnprocessableEntity(reason="wrong product")
-
-        # Permission in this product: Has user access to product?
-        # raise web.HTTPForbidden
-
         # if all good, let's update session with
-        await _remember_product_name(request, product_name)
         return await remember_identity(
-            request,
-            web.HTTPOk(),
-            user_email=email,
+            request, web.HTTPOk(), user_email=email, product_name=product_name
         )
 
     @routes.post("/v0/public")
@@ -167,8 +201,8 @@ def app_routes(
     async def _logout(request: web.Request):
         await check_authorized(request)
 
-        product_name = await _forget_product_name(request)
-        assert product_name == expected_product_name
+        # product_name = await _forget_product_name(request)
+        # assert product_name == expected_product_name
 
         return await forget_identity(request, web.HTTPOk())
 
@@ -208,7 +242,8 @@ def client(
     return event_loop.run_until_complete(aiohttp_client(app))
 
 
-async def test_user_session(client: TestClient, mocker: MockerFixture):
+@pytest.fixture
+async def mock_db(client: TestClient, mocker: MockerFixture) -> None:
     assert client.app
     # NOTE: this might be a problem with every test since cache is global per process
     await clean_auth_policy_cache(client.app)
@@ -217,18 +252,60 @@ async def test_user_session(client: TestClient, mocker: MockerFixture):
         "simcore_service_webserver.security._authz_policy.get_database_engine",
         autospec=True,
     )
+
+
+async def test_product_in_session(
+    client: TestClient,
+    mocker: MockerFixture,
+    expected_product_name: ProductName,
+    mock_db: None,
+):
+
+    resp = await client.post("/v0/public")
+    assert (
+        resp.status == web.HTTPUnauthorized.status_code
+    ), f"error: {await resp.text()}"
+
+    # inits session by getting front-end
+    resp = await client.get("/")
+    assert resp.ok, f"error: {await resp.text()}"
+
+    resp = await client.post("/v0/public")
+    assert resp.ok, f"error: {await resp.text()}"
+
+
+async def test_auth_in_session(
+    client: TestClient,
+    mocker: MockerFixture,
+    expected_product_name: ProductName,
+    mock_db: None,
+):
     get_active_user_or_none_mock = mocker.patch(
         "simcore_service_webserver.security._authz_policy.get_active_user_or_none",
         autospec=True,
         return_value={"email": "foo@email.com", "id": 1, "role": UserRole.ADMIN},
     )
 
+    # inits session by getting front-end
+    resp = await client.get("/")
+    assert resp.ok, f"error: {await resp.text()}"
+
+    # login 'bar' (has no access to product)
+    resp = await client.post(
+        "/v0/login",
+        json={
+            "email": "bar@email.com",
+            "password": "secret",
+        },
+    )
+    assert resp.status == web.HTTPForbidden.status_code
+
+    # login 'foo' (has access to product)
     resp = await client.post(
         "/v0/login",
         json={
             "email": "foo@email.com",
             "password": "secret",
-            "product": "tis",
         },
     )
     assert resp.ok
@@ -243,3 +320,43 @@ async def test_user_session(client: TestClient, mocker: MockerFixture):
 
     resp = await client.post("/v0/logout")
     assert resp.ok, f"error: {await resp.text()}"
+
+    # after logout
+    resp = await client.post("/v0/public")
+    assert resp.ok, f"error: {await resp.text()}"
+
+    resp = await client.post("/v0/protected")
+    assert (
+        resp.status == web.HTTPUnauthorized.status_code
+    ), f"error: {await resp.text()}"
+
+    resp = await client.post("/v0/logout")
+    assert (
+        resp.status == web.HTTPUnauthorized.status_code
+    ), f"error: {await resp.text()}"
+
+
+async def test_hack_product_session(client: TestClient, mocker: MockerFixture):
+
+    mocker.patch(
+        "simcore_service_webserver.security._authz_policy.get_active_user_or_none",
+        autospec=True,
+        return_value={"email": "foo@email.com", "id": 1, "role": UserRole.ADMIN},
+    )
+
+    resp = await client.post("/v0/hack/s4l")
+    assert resp.ok
+
+    # not logged in
+    resp = await client.post("/v0/protected")
+    assert resp.status == web.HTTPUnauthorized.status_code
+
+    # login 'foo' (w/o access to s4l)
+    resp = await client.post(
+        "/v0/login",
+        json={
+            "email": "foo@email.com",
+            "password": "secret",
+        },
+    )
+    assert resp.status == web.HTTPForbidden.status_code
