@@ -7,6 +7,7 @@ import asyncio
 from collections import OrderedDict
 from collections.abc import Callable
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 from aiohttp import web
@@ -54,7 +55,7 @@ async def _get_product_name(request: web.Request) -> ProductName | None:
         return product_name
 
     # NOTE: this or deduce from url
-    raise web.HTTPUnauthorized(reason="Invalid session")
+    raise web.HTTPUnauthorized(reason="Invalid session. Reload / first")
 
 
 async def _forget_product_name(request: web.Request) -> ProductName | None:
@@ -180,14 +181,13 @@ def app_routes(
     @routes.post("/v0/public")
     async def _public(request: web.Request):
         assert await _get_product_name(request) == expected_product_name
-
         return web.HTTPOk()
 
     @routes.post("/v0/admin")
     @login_required  # NOTE: same as `await check_user_authorized(request)``
     @permission_required(
-        "admin.*"
-    )  # NOTE: same as `await check_user_permission(request, "admin.*")``
+        "admin.*"  # NOTE: same as `await check_user_permission(request, "admin.*")``
+    )
     async def _admin_only(request: web.Request):
         assert await _get_product_name(request) == expected_product_name
         return web.HTTPOk()
@@ -234,7 +234,7 @@ def client(
 
 
 @pytest.fixture
-async def mock_db(client: TestClient, mocker: MockerFixture) -> None:
+async def db_mocked(client: TestClient, mocker: MockerFixture) -> None:
     assert client.app
     # NOTE: this might be a problem with every test since cache is global per process
     await clean_auth_policy_cache(client.app)
@@ -247,9 +247,8 @@ async def mock_db(client: TestClient, mocker: MockerFixture) -> None:
 
 async def test_product_in_session(
     client: TestClient,
-    mocker: MockerFixture,
     expected_product_name: ProductName,
-    mock_db: None,
+    db_mocked: None,
 ):
 
     resp = await client.post("/v0/public")
@@ -265,18 +264,21 @@ async def test_product_in_session(
     assert resp.ok, f"error: {await resp.text()}"
 
 
-async def test_auth_in_session(
-    client: TestClient,
-    mocker: MockerFixture,
-    expected_product_name: ProductName,
-    mock_db: None,
-):
-    get_active_user_or_none_mock = mocker.patch(
+@pytest.fixture
+def mock_get_active_user_or_none(mocker: MockerFixture) -> MagicMock:
+    return mocker.patch(
         "simcore_service_webserver.security._authz_policy.get_active_user_or_none",
         autospec=True,
         return_value={"email": "foo@email.com", "id": 1, "role": UserRole.ADMIN},
     )
 
+
+async def test_auth_in_session(
+    client: TestClient,
+    expected_product_name: ProductName,
+    db_mocked: None,
+    mock_get_active_user_or_none: MagicMock,
+):
     # inits session by getting front-end
     resp = await client.get("/")
     assert resp.ok, f"error: {await resp.text()}"
@@ -303,11 +305,11 @@ async def test_auth_in_session(
 
     resp = await client.post("/v0/public")
     assert resp.ok, f"error: {await resp.text()}"
-    assert not get_active_user_or_none_mock.called
+    assert not mock_get_active_user_or_none.called
 
     resp = await client.post("/v0/admin")
     assert resp.ok, f"error: {await resp.text()}"
-    assert get_active_user_or_none_mock.called
+    assert mock_get_active_user_or_none.called
 
     resp = await client.post("/v0/logout")
     assert resp.ok, f"error: {await resp.text()}"
@@ -327,13 +329,9 @@ async def test_auth_in_session(
     ), f"error: {await resp.text()}"
 
 
-async def test_hack_product_session(client: TestClient, mocker: MockerFixture):
-
-    mocker.patch(
-        "simcore_service_webserver.security._authz_policy.get_active_user_or_none",
-        autospec=True,
-        return_value={"email": "foo@email.com", "id": 1, "role": UserRole.ADMIN},
-    )
+async def test_hack_product_session(
+    client: TestClient, mock_get_active_user_or_none: MagicMock
+):
 
     resp = await client.post("/v0/hack/s4l")
     assert resp.ok
@@ -351,3 +349,43 @@ async def test_hack_product_session(client: TestClient, mocker: MockerFixture):
         },
     )
     assert resp.status == web.HTTPForbidden.status_code
+
+
+async def test_auth_request_overhead(
+    client: TestClient,
+    mock_get_active_user_or_none: MagicMock,
+):
+
+    # init
+    resp = await client.get("/")
+    assert resp.ok, f"error: {await resp.text()}"
+
+    # login
+    resp = await client.post(
+        "/v0/login",
+        json={
+            "email": "foo@email.com",
+            "password": "secret",
+        },
+    )
+    assert resp.ok, f"error: {await resp.text()}"
+
+    # actual test
+
+    # eval reference
+    t0 = asyncio.get_event_loop().time()
+    resp = await client.post("/v0/public")
+    ref_elapsed = asyncio.get_event_loop().time() - t0
+
+    assert resp.ok, f"error: {await resp.text()}"
+
+    # eval
+    t0 = asyncio.get_event_loop().time()
+    resp = await client.post("/v0/admin")
+    elapsed = asyncio.get_event_loop().time() - t0
+
+    assert resp.ok, f"error: {await resp.text()}"
+
+    # NOTE: 70% wrt reference (almost double!)
+    # and this is removing the access to the database!
+    assert elapsed < ref_elapsed * (1 + 0.7), f"{elapsed=}, {ref_elapsed=}"
