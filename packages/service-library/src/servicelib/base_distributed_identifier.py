@@ -1,4 +1,3 @@
-import json
 import logging
 from abc import ABC, abstractmethod
 from asyncio import Task
@@ -8,10 +7,10 @@ from typing import Final, Generic, TypeVar
 from pydantic import NonNegativeInt
 from settings_library.redis import RedisDatabase
 
-from .background_task import start_periodic_task, stop_periodic_task
+from .background_task import stop_periodic_task
 from .logging_utils import log_catch, log_context
 from .redis import RedisClientSDK
-from .redis_utils import exclusive
+from .redis_utils import start_exclusive_periodic_task
 from .utils import logged_gather
 
 _logger = logging.getLogger(__name__)
@@ -70,13 +69,11 @@ class BaseDistributedIdentifierManager(
         self._cleanup_task: Task | None = None
 
     async def setup(self) -> None:
-        lock_key = f"lock:{self.class_path()}:base-distributed-identifier"
-        lock_value = json.dumps({})
-        self._cleanup_task = start_periodic_task(
-            exclusive(self._redis_client_sdk, lock_key=lock_key, lock_value=lock_value)(
-                self._cleanup_unused_identifiers
-            ),
-            interval=self.cleanup_interval,
+        self._cleanup_task = start_exclusive_periodic_task(
+            self._redis_client_sdk,
+            self._cleanup_unused_identifiers,
+            task_period=self.cleanup_interval,
+            retry_after=self.cleanup_interval,
             task_name=f"{self.class_path()}_cleanup_unused_identifiers_task",
         )
 
