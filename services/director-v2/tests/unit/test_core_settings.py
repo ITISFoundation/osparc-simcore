@@ -273,7 +273,8 @@ def test_placement_settings(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(
         "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS", "{}"
     )
-    with pytest.raises(
-        ValidationError, match="empty placement replacement constraints"
-    ):
-        PlacementSettings()
+    placement_settings = PlacementSettings()
+    assert (
+        placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
+        == {}
+    )

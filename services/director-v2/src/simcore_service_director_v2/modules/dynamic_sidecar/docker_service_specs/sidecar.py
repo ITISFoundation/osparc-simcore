@@ -385,9 +385,10 @@ def get_dynamic_sidecar_spec(
     ] = (
         placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     )
-    for resource_name in scheduler_data.service_resources:
-        if resource_name in placement_substitutions:
-            placement_constraints.append(placement_substitutions[resource_name])
+    for image_resources in scheduler_data.service_resources.values():
+        for resource_name in image_resources.resources:
+            if resource_name in placement_substitutions:
+                placement_constraints.append(placement_substitutions[resource_name])
 
     #  -----------
     create_service_params = {
