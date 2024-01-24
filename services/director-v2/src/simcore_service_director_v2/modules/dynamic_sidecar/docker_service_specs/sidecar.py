@@ -380,21 +380,14 @@ def get_dynamic_sidecar_spec(
             )
         )
 
-    replacement_constraints: dict[
+    placement_substitutions: dict[
         str, PlacementConstraintStr
     ] = (
         placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     )
     for resource_name in scheduler_data.service_resources:
-        if resource_name not in {"CPU", "RAM"}:
-            if resource_name not in replacement_constraints:
-                msg = (
-                    "Since replacement placement constraints are enabled, "
-                    f"{resource_name} must be present inside {replacement_constraints=}"
-                )
-                raise ValueError(msg)
-
-            placement_constraints.append(replacement_constraints[resource_name])
+        if resource_name in placement_substitutions:
+            placement_constraints.append(placement_substitutions[resource_name])
 
     #  -----------
     create_service_params = {
