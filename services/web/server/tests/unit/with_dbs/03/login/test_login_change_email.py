@@ -5,7 +5,6 @@
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from pytest import CaptureFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, parse_link
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
@@ -56,7 +55,7 @@ async def test_change_to_existing_email(client: TestClient):
 async def test_change_and_confirm(
     client: TestClient,
     login_options: LoginOptions,
-    capsys: CaptureFixture,
+    capsys: pytest.CaptureFixture,
     new_email: str,
     mocked_email_core_remove_comments: None,
 ):

@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 
 import pytest
-from pytest import MonkeyPatch
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_dynamic_sidecar.core.utils import (
     CommandResult,
@@ -18,7 +17,7 @@ from simcore_service_dynamic_sidecar.core.utils import (
 
 @pytest.fixture
 def registry_with_auth(
-    monkeypatch: MonkeyPatch, docker_registry: str
+    monkeypatch: pytest.MonkeyPatch, docker_registry: str
 ) -> RegistrySettings:
     monkeypatch.setenv("REGISTRY_URL", docker_registry)
     monkeypatch.setenv("REGISTRY_AUTH", "false")

@@ -19,6 +19,7 @@ from starlette import status
 from starlette.exceptions import HTTPException
 
 from .._meta import API_VERSION, API_VTAG
+from ..api.errors.custom_errors import CustomBaseError, custom_error_handler
 from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
@@ -108,6 +109,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_exception_handler(RequestValidationError, http422_error_handler)
     app.add_exception_handler(HTTPStatusError, httpx_client_error_handler)
     app.add_exception_handler(LogDistributionBaseException, log_handling_error_handler)
+    app.add_exception_handler(CustomBaseError, custom_error_handler)
 
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(

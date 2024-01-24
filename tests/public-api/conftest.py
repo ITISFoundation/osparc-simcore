@@ -15,7 +15,6 @@ from typing import Callable, Iterable, Iterator
 import httpx
 import osparc
 import pytest
-from pytest import FixtureRequest
 from pytest_simcore.helpers.typing_docker import UrlStr
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from pytest_simcore.helpers.utils_public_api import (
@@ -77,7 +76,7 @@ def ops_services_selection(ops_docker_compose: dict) -> list[str]:
 
 
 @pytest.fixture(scope="module")
-def event_loop(request: FixtureRequest) -> Iterable[asyncio.AbstractEventLoop]:
+def event_loop(request: pytest.FixtureRequest) -> Iterable[asyncio.AbstractEventLoop]:
     """Overrides pytest_asyncio.event_loop and extends to module scope"""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop

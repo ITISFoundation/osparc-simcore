@@ -25,13 +25,13 @@ def get_cluster_name(
     wallet_id: WalletID | None,
     is_manager: bool,
 ) -> str:
-    return f"{CLUSTER_NAME_PREFIX}{'manager' if is_manager else 'worker'}-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+    return f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{CLUSTER_NAME_PREFIX}{'manager' if is_manager else 'worker'}-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
 
 
 def _minimal_identification_tag(app_settings: ApplicationSettings) -> EC2Tags:
     return {
-        AWSTagKey(".".join([_APPLICATION_TAG_KEY, "deploy"])): AWSTagValue(
-            app_settings.SWARM_STACK_NAME
+        AWSTagKey(".".join([_APPLICATION_TAG_KEY, "deploy",])): AWSTagValue(
+            f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{app_settings.SWARM_STACK_NAME}"
         )
     }
 

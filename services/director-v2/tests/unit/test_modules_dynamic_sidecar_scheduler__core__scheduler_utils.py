@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 
 import pytest
-from pytest import LogCaptureFixture
 from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DynamicSidecarStatus,
     SchedulerData,
@@ -24,7 +23,7 @@ def scheduler_data_manual_intervention(scheduler_data: SchedulerData) -> Schedul
 
 
 async def test_service_awaits_manual_interventions_logs_once(
-    caplog: LogCaptureFixture, scheduler_data_manual_intervention: SchedulerData
+    caplog: pytest.LogCaptureFixture, scheduler_data_manual_intervention: SchedulerData
 ):
     caplog.clear()
 

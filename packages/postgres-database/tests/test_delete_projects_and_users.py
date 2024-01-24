@@ -27,7 +27,7 @@ async def engine(pg_engine: Engine):
         with pytest.raises(ForeignKeyViolation):
             await conn.execute(projects.insert().values(**random_project(prj_owner=4)))
 
-    yield pg_engine
+    return pg_engine
 
 
 @pytest.mark.skip(reason="sandbox for dev purposes")

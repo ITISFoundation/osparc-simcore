@@ -11,7 +11,6 @@ from dataclasses import dataclass
 import aiohttp
 import pytest
 from aiohttp.client import ClientTimeout
-from pytest import MonkeyPatch
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -162,7 +161,7 @@ def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
 
 @pytest.fixture
 def simcore_services_ready(
-    services_endpoint: dict[str, URL], monkeypatch: MonkeyPatch
+    services_endpoint: dict[str, URL], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _wait_for_services_ready(services_endpoint)
     # patches environment variables with right host/port per service
@@ -177,7 +176,7 @@ def simcore_services_ready(
 
 @pytest.fixture(scope="module")
 def simcore_services_ready_module(
-    services_endpoint: dict[str, URL], monkeypatch_module: MonkeyPatch
+    services_endpoint: dict[str, URL], monkeypatch_module: pytest.MonkeyPatch
 ) -> None:
     warnings.warn(
         "This fixture uses deprecated monkeypatch_module fixture"

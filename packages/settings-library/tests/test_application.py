@@ -46,4 +46,4 @@ def test_applicaton_settings(app_environment: EnvVarsDict):
     settings = BaseApplicationSettings.create_from_envs()
 
     # some check
-    assert settings.SC_USER_ID == int(app_environment["SC_USER_ID"])
+    assert int(app_environment["SC_USER_ID"]) == settings.SC_USER_ID
