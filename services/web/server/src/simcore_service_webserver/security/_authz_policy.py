@@ -14,7 +14,7 @@ from ..db.plugin import get_database_engine
 from ._authz_access_model import OptionalContext, RoleBasedAccessModel, check_access
 from ._authz_db import AuthInfoDict, get_active_user_or_none
 from ._constants import MSG_AUTH_NOT_AVAILABLE
-from ._identity_api import IdentityModel, IdentityStr
+from ._identity_api import IdentityStr, VerifiedIdentity
 
 _logger = logging.getLogger(__name__)
 
@@ -65,14 +65,19 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         or "None" if no user exists related to the identity.
         """
         try:
-            vi = IdentityModel.create(identity)
+            vi = VerifiedIdentity.create(identity)
         except ValidationError:
             return None
         else:
-            user_info: AuthInfoDict | None = None
             # FIXME: needs to include product_name in auth query!
-            user_info = await self._get_auth_or_none(email=vi.email)
-            return user_info["id"] if user_info else None
+            user_info: AuthInfoDict | None = await self._get_auth_or_none(
+                email=vi.email
+            )
+            if user_info is None:
+                return None
+
+            user_id: int = user_info["id"]
+            return user_id
 
     async def permits(
         self,
@@ -87,7 +92,12 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         :param context: context of the operation, defaults to None
         :return: True if user has permission to execute this operation within the given context
         """
-        if identity is None or permission is None:
+        try:
+            verified = VerifiedIdentity.create(identity)
+        except ValidationError:
+            verified = None
+
+        if verified is None or permission is None:
             _logger.debug(
                 "Invalid %s of %s. Denying access.",
                 f"{identity=}",
@@ -95,7 +105,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             )
             return False
 
-        auth_info = await self._get_auth_or_none(email=identity)
+        auth_info = await self._get_auth_or_none(email=verified.email)
         if auth_info is None:
             return False
 

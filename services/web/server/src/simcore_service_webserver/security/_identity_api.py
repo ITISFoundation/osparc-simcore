@@ -11,7 +11,7 @@ from pydantic import BaseModel, Extra, Field
 IdentityStr: TypeAlias = str
 
 
-class IdentityModel(BaseModel):
+class VerifiedIdentity(BaseModel):
     email: LowerCaseEmailStr = Field(alias="e")
     product_name: ProductName = Field(alias="p")
 
@@ -22,7 +22,7 @@ class IdentityModel(BaseModel):
         json_dumps = ujson.dumps
 
     @classmethod
-    def create(cls, identity: IdentityStr) -> "IdentityModel":
+    def create(cls, identity: IdentityStr) -> "VerifiedIdentity":
         return cls.parse_raw(identity)
 
     def to_identity(self) -> IdentityStr:
@@ -37,7 +37,7 @@ async def remember_identity(
     product_name: ProductName
 ) -> web.Response:
     """Remember = Saves verified identify in current session"""
-    verified = IdentityModel(e=user_email, p=product_name)
+    verified = VerifiedIdentity(e=user_email, p=product_name)
     await remember(
         request=request,
         response=response,
