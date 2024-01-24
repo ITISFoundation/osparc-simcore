@@ -4,6 +4,7 @@
 import json
 import logging
 import os
+import warnings
 from distutils.util import strtobool
 
 from servicelib.client_session import (  # pylint: disable=no-name-in-module
@@ -61,19 +62,19 @@ DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: str = os.environ.get(
 )
 
 
-def _parse_placement_replacements() -> dict[str, str] | None:
-    result: dict[str, str] | None = None
-    str_env_var: str | None = os.environ.get(
-        "DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS", None
+def _parse_placement_replacements() -> dict[str, str]:
+    str_env_var: str = os.environ.get(
+        "DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS", "{}"
     )
-    if str_env_var:
-        result = json.loads(str_env_var)
-        if isinstance(result, dict) and len(result) == 0:
-            msg = (
-                "Cannot provide and empty constraints replacement "
-                f"constraints mapping: '{result}'"
-            )
-            raise ValueError(msg)
+    result: dict[str, str] = json.loads(str_env_var)
+
+    if len(result) > 0:
+        warnings.warn(  # noqa: B028
+            "Generic resources will be replaced by the following "
+            f"placement constraints {result}. This is a workaround "
+            "for https://github.com/moby/swarmkit/pull/3162",
+            UserWarning,
+        )
 
     return result
 
