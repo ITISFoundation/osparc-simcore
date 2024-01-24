@@ -1,31 +1,54 @@
-from enum import Enum
+from pathlib import Path
+from typing import Annotated
 
 import typer
 from monitor_release.models import Deployment
 from monitor_release.portainer import check_containers_deploys, check_running_sidecars
-from monitor_release.settings import get_settings
+from monitor_release.settings import get_legacy_settings, get_release_settings
 from rich.console import Console
 
 app = typer.Typer()
 console = Console()
 
 
-class Action(str, Enum):
-    containers = "containers"
-    sidecars = "sidecars"
+EnvFileOption = typer.Option(
+    exists=True,
+    file_okay=True,
+    dir_okay=False,
+    writable=False,
+    readable=True,
+    resolve_path=True,
+    help="Path to .env file",
+)
 
 
 @app.command()
-def main(
-    deployment: Deployment,
-    action: Action,
-    env_file: str = typer.Option(".env", help="Path to .env file"),
+def settings(
+    env_file: Annotated[Path, EnvFileOption] = Path("repo.config"),
 ):
-    settings = get_settings(env_file, deployment)
-    console.print(f"Deployment: {deployment}")
-    console.print(f"Action: {action}")
+    settings_ = get_release_settings(env_file)
+    console.print(settings_.model_dump_json(indent=1))
 
-    if action == Action.containers:
-        check_containers_deploys(settings, deployment)
-    if action == Action.sidecars:
-        check_running_sidecars(settings, deployment)
+
+@app.command()
+def containers(
+    deployment: Deployment,
+    env_file: Annotated[Path, EnvFileOption] = Path(".env"),
+):
+    settings_ = get_legacy_settings(f"{env_file}", deployment)
+    console.print(f"Deployment: {deployment}")
+    console.print("Action: containers")
+
+    check_containers_deploys(settings_, deployment)
+
+
+@app.command()
+def sidecars(
+    deployment: Deployment,
+    env_file: Annotated[Path, EnvFileOption] = Path(".env"),
+):
+    settings_ = get_legacy_settings(f"{env_file}", deployment)
+    console.print(f"Deployment: {deployment}")
+    console.print("Action: sidecars")
+
+    check_running_sidecars(settings_, deployment)

@@ -20,12 +20,13 @@ _DEPLOYMENTS_MAP = {
     Deployment.tip_production: "tip.itis.swiss",
     Deployment.aws_zmt_production: "sim4life.io",
 }
+_DEPLOYMENTS_IMAP = {v: k for k, v in _DEPLOYMENTS_MAP.items()}
 
-_SECRETS_CONFIG_FILE_NAME: Final[str] = "repo.config"
+SECRETS_CONFIG_FILE_NAME: Final[str] = "repo.config"
 
 
 def get_repo_configs_paths(top_folder: Path) -> list[Path]:
-    return list(top_folder.rglob(_SECRETS_CONFIG_FILE_NAME))
+    return list(top_folder.rglob(SECRETS_CONFIG_FILE_NAME))
 
 
 def get_deployment_name_or_none(repo_config: Path) -> str | None:
@@ -55,67 +56,69 @@ class ReleaseSettings(BaseSettings):
         return self
 
 
-def get_release_settings(env_file_path: Path, deployment: Deployment):
+def get_release_settings(env_file_path: Path):
 
+    # NOTE: these conversions and checks are done to keep
     deployment_name = get_deployment_name_or_none(env_file_path)
     if deployment_name is None:
         msg = f"{env_file_path=} cannot be matched to any deployment"
         raise ValueError(msg)
 
-    if _DEPLOYMENTS_MAP.get(deployment) != deployment_name:
-        msg = f"{env_file_path=} cannot be matched to {deployment=}"
+    deployment = _DEPLOYMENTS_IMAP.get(deployment_name)
+    if deployment is None:
+        msg = f"{deployment_name=} cannot be matched to any known deployment {set(_DEPLOYMENTS_IMAP.keys())}"
         raise ValueError(msg)
 
-    match deployment:
+    match deployment_name:
         # NOTE: `portainer_endpoint_version` and `starts_with` cannot be deduced from the
         # information in the `repo.config`. For that reason we have to set
         # those values in the code.
         #
 
-        case Deployment.master:
+        case "osparc-master.speag.com":
             settings = ReleaseSettings(
                 _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
                 starts_with="master-simcore_master",
             )
-        case Deployment.dalco_staging:
+        case "osparc-staging.speag.com":
             settings = ReleaseSettings(
                 _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
                 starts_with="staging-simcore_staging",
             )
-        case Deployment.dalco_production:
+        case "osparc.speag.com":
             settings = ReleaseSettings(
                 _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
                 starts_with="production-simcore_production",
             )
-        case Deployment.tip_production:
+        case "tip.itis.swiss":
             settings = ReleaseSettings(
                 _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=2,
                 starts_with="production-simcore_production",
             )
-        case Deployment.aws_staging:
+        case "osparc-staging.io":
             settings = ReleaseSettings(
                 _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=2,
                 starts_with="staging-simcore_staging",
             )
-        case Deployment.aws_nih_production:
+        case "osparc.io":
             settings = ReleaseSettings(
                 _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=2,
                 starts_with="production-simcore_production",
             )
-        case Deployment.aws_zmt_production:
+        case "sim4life.io":
             settings = ReleaseSettings(
                 _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
                 starts_with="staging-simcore_staging",
             )
         case _:
-            msg = f"Unkown {deployment=}. Please define a ReleaseSettings for it"
+            msg = f"Unkown {deployment=}. Please setupa a new ReleaseSettings for this configuration"
             raise ValueError(msg)
 
     return settings
@@ -130,7 +133,7 @@ class LegacySettings(BaseModel):
     portainer_endpoint_version: int
 
 
-def get_settings(env_file, deployment: str) -> LegacySettings:
+def get_legacy_settings(env_file, deployment: str) -> LegacySettings:
     # pylint: disable=too-many-return-statements
     load_dotenv(env_file)
 
