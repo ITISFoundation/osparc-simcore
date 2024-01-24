@@ -53,7 +53,6 @@ def mock_env(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
         "SC_BOOT_MODE": "production",
         "POSTGRES_CLIENT_NAME": "postgres_test_client",
         "RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_CHECK_ENABLED": "0",
-        # "RESOURCE_USAGE_TRACKER_S3": "null"
     }
     setenvs_from_dict(monkeypatch, env_vars)
     return env_vars
