@@ -81,14 +81,6 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
         description="The value of the service setting (shall follow Docker REST API scheme for services",
     )
 
-    @property
-    def destination_containers(self) -> list[str]:
-        return self._destination_containers
-
-    @destination_containers.setter
-    def destination_containers(self, value: list[str]) -> None:
-        self._destination_containers = value
-
     @validator("setting_type", pre=True)
     @classmethod
     def ensure_backwards_compatible_setting_type(cls, v):
