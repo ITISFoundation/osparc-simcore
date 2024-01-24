@@ -5,10 +5,12 @@ from typing import Any, cast
 
 from models_library.basic_types import PortInt
 from models_library.boot_options import BootOption, EnvVarKey
-from models_library.docker import to_simcore_runtime_docker_label_key
+from models_library.docker import (
+    DockerPlacementConstraint,
+    to_simcore_runtime_docker_label_key,
+)
 from models_library.service_settings_labels import (
     ComposeSpecLabelDict,
-    DockerPlacementConstraint,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
