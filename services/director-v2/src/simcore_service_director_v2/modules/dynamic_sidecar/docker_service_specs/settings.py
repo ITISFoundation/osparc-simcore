@@ -281,8 +281,7 @@ def _add_compose_destination_containers_to_settings_entries(
     def _inject_destination_container(
         item: SimcoreServiceSettingLabelEntry,
     ) -> SimcoreServiceSettingLabelEntry:
-        # pylint: disable=protected-access
-        item._destination_containers = destination_containers  # noqa: SLF001
+        item.set_destination_containers(destination_containers)
         return item
 
     return [_inject_destination_container(x) for x in settings]
@@ -388,10 +387,7 @@ def _patch_target_service_into_env_vars(
             # process entry
             list_of_env_vars = entry.value if entry.value else []
 
-            # pylint: disable=protected-access
-            destination_containers: list[
-                str
-            ] = entry._destination_containers  # noqa: SLF001
+            destination_containers: list[str] = entry.get_destination_containers()
 
             # transforms settings defined environment variables
             # from `ENV_VAR=PAYLOAD`
