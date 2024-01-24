@@ -96,6 +96,7 @@ async def login(request: web.Request):
     )
     login_ = await parse_request_body_as(LoginBody, request)
 
+    # auth user and has access to product
     user = await check_authorized_user_credentials_or_raise(
         user=await get_user_by_email(request.app, email=login_.email),
         password=login_.password.get_secret_value(),
@@ -112,7 +113,8 @@ async def login(request: web.Request):
             request, user=user, product_name=product.name
         )
 
-    # no phone
+    # 2FA login (continuation)
+    # check phone
     if not user["phone"]:
         return envelope_response(
             # LoginNextPage
