@@ -25,7 +25,7 @@ class AuthContextDict(TypedDict, total=False):
     product_name: ProductName
 
 
-OptionalContext: TypeAlias = AuthContextDict | None
+OptionalContext: TypeAlias = AuthContextDict | dict | None
 
 
 @dataclass
@@ -121,7 +121,7 @@ class RoleBasedAccessModel:
                 return True
         return False
 
-    async def who_can(self, operation: str, context: dict | None = None):
+    async def who_can(self, operation: str, context: OptionalContext = None):
         return [role for role in self.roles if await self.can(role, operation, context)]
 
     @classmethod
@@ -139,7 +139,7 @@ async def check_access(
     model: RoleBasedAccessModel,
     role: UserRole,
     operations: str,
-    context: dict | None = None,
+    context: OptionalContext = None,
 ) -> bool:
     """Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
 
