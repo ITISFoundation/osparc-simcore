@@ -72,7 +72,7 @@ assert_handler_signature_against_model(
 )
 
 
-@router.get(
+@router.post(
     "/services/-/resource-usages:export",
     status_code=status.HTTP_302_FOUND,
     responses={
@@ -81,6 +81,7 @@ assert_handler_signature_against_model(
         }
     },
     tags=["usage"],
+    summary="Redirects to download CSV link. CSV obtains finished and currently running user services (user and product are taken from context, optionally wallet_id parameter might be provided).",
 )
 async def export_resource_usage_services(
     order_by: Annotated[

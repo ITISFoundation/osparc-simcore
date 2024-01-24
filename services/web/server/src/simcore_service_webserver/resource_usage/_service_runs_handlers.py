@@ -145,7 +145,7 @@ async def list_resource_usage_services(request: web.Request):
     )
 
 
-@routes.get(
+@routes.post(
     f"/{VTAG}/services/-/resource-usages:export", name="export_resource_usage_services"
 )
 @login_required

@@ -403,6 +403,8 @@ sh==2.0.6
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 shellingham==1.5.0.post1
     # via typer
+shortuuid==1.0.11
+    # via -r requirements/_base.in
 six==1.16.0
     # via
     #   jsonschema

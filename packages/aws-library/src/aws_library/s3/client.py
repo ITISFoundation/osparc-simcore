@@ -45,9 +45,10 @@ class SimcoreS3API:
     async def close(self) -> None:
         await self.exit_stack.aclose()
 
-    async def ping(self) -> bool:
+    async def http_check_bucket_connected(self, bucket: S3BucketName) -> bool:
         try:
-            await self.client.list_buckets()
+            _logger.debug("Head bucket: %s", bucket)
+            await self.client.head_bucket(Bucket=bucket)
             return True
         except Exception:  # pylint: disable=broad-except
             return False

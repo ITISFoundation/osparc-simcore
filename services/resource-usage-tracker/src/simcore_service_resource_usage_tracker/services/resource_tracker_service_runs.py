@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
-from uuid import uuid4
 
+import shortuuid
 from aws_library.s3.client import SimcoreS3API
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunGet,
@@ -20,6 +20,8 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 from ..models.resource_tracker_service_runs import ServiceRunWithCreditsDB
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
+_PRESIGNED_LINK_EXPIRATION_SEC = 7200
+
 
 async def list_service_runs(
     user_id: UserID,
@@ -29,8 +31,8 @@ async def list_service_runs(
     offset: int = 0,
     wallet_id: WalletID | None = None,
     access_all_wallet_usage: bool = False,
-    order_by: OrderBy | None = None,  # noqa: ARG001
-    filters: ServiceResourceUsagesFilters | None = None,  # noqa: ARG001
+    order_by: OrderBy | None = None,
+    filters: ServiceResourceUsagesFilters | None = None,
 ) -> ServiceRunPage:
     started_from = None
     started_until = None
@@ -140,19 +142,17 @@ async def export_service_runs(
     resource_tracker_repo: ResourceTrackerRepository,
     wallet_id: WalletID | None = None,
     access_all_wallet_usage: bool = False,
-    order_by: OrderBy | None = None,  # noqa: ARG001
-    filters: ServiceResourceUsagesFilters | None = None,  # noqa: ARG001
+    order_by: OrderBy | None = None,
+    filters: ServiceResourceUsagesFilters | None = None,
 ) -> AnyUrl:
-    started_from = None
-    started_until = None
-    if filters:
-        started_from = filters.started_at.from_
-        started_until = filters.started_at.until
+    started_from = filters.started_at.from_ if filters else None
+    started_until = filters.started_at.until if filters else None
 
     # Create S3 key name
     s3_bucket_name = S3BucketName(bucket_name)
-    file_name = f"{datetime.now(tz=timezone.utc).date()}__{uuid4()}.csv"
-    s3_object_key = f"resource-usage-tracker-service-runs/{file_name}"
+    # NOTE: su stands for "service usage"
+    file_name = f"su_{shortuuid.uuid()}.csv"
+    s3_object_key = f"resource-usage-tracker-service-runs/{datetime.now(tz=timezone.utc).date()}/{file_name}"
 
     # Export CSV to S3
     await resource_tracker_repo.export_service_runs_table_to_s3(
@@ -168,6 +168,8 @@ async def export_service_runs(
 
     # Create presigned S3 link
     generated_url: AnyUrl = await s3_client.create_presigned_download_link(
-        bucket_name=s3_bucket_name, object_key=s3_object_key, expiration_secs=7200
+        bucket_name=s3_bucket_name,
+        object_key=s3_object_key,
+        expiration_secs=_PRESIGNED_LINK_EXPIRATION_SEC,
     )
     return generated_url

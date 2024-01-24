@@ -52,27 +52,37 @@ async def test_aiobotocore_s3_client_when_s3_server_goes_up_and_down(
     await s3_client.list_buckets()
 
 
-async def test_ping(
-    mocked_aws_server: ThreadedMotoServer,
-    simcore_s3_api: SimcoreS3API,
-):
-    assert await simcore_s3_api.ping() is True
-    mocked_aws_server.stop()
-    assert await simcore_s3_api.ping() is False
-    mocked_aws_server.start()
-    assert await simcore_s3_api.ping() is True
-
-
 @pytest.fixture
 async def create_s3_bucket(
     mocked_s3_server_envs: EnvVarsDict, s3_client: S3Client, faker: Faker
-):
+) -> AsyncIterator[S3BucketName]:
     bucket_name = faker.pystr()
     await s3_client.create_bucket(Bucket=bucket_name)
 
-    yield bucket_name
+    yield S3BucketName(bucket_name)
 
     await s3_client.delete_bucket(Bucket=bucket_name)
+
+
+async def test_http_check_bucket_connected(
+    mocked_aws_server: ThreadedMotoServer,
+    simcore_s3_api: SimcoreS3API,
+    create_s3_bucket: S3BucketName,
+):
+    assert (
+        await simcore_s3_api.http_check_bucket_connected(bucket=create_s3_bucket)
+        is True
+    )
+    mocked_aws_server.stop()
+    assert (
+        await simcore_s3_api.http_check_bucket_connected(bucket=create_s3_bucket)
+        is False
+    )
+    mocked_aws_server.start()
+    assert (
+        await simcore_s3_api.http_check_bucket_connected(bucket=create_s3_bucket)
+        is True
+    )
 
 
 @pytest.fixture
@@ -105,7 +115,7 @@ async def upload_file_to_bucket(
     create_small_csv_file: Path,
     mocked_s3_server_envs: EnvVarsDict,
     s3_client: S3Client,
-    create_s3_bucket: str,
+    create_s3_bucket: S3BucketName,
 ):
     await s3_client.upload_file(create_small_csv_file, create_s3_bucket, "test.csv")
 
@@ -118,6 +128,6 @@ async def test_create_single_presigned_download_link(
     simcore_s3_api: SimcoreS3API, upload_file_to_bucket: None, create_s3_bucket
 ):
     download_url = await simcore_s3_api.create_presigned_download_link(
-        S3BucketName(create_s3_bucket), "test.csv", 50
+        create_s3_bucket, "test.csv", 50
     )
     assert isinstance(download_url, AnyUrl)

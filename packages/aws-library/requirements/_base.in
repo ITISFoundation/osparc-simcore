@@ -9,6 +9,5 @@
 aioboto3
 aiocache
 pydantic[email]
-types-aiobotocore[ec2]
-types-aiobotocore[s3]
+types-aiobotocore[ec2,s3]
 sh

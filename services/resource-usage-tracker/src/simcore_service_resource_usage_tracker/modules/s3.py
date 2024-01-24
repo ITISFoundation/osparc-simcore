@@ -4,6 +4,7 @@ from typing import cast
 from aws_library.s3.client import SimcoreS3API
 from aws_library.s3.errors import S3NotConnectedError
 from fastapi import FastAPI
+from models_library.api_schemas_storage import S3BucketName
 from settings_library.s3 import S3Settings
 from tenacity import (
     AsyncRetrying,
@@ -35,7 +36,9 @@ def setup(app: FastAPI) -> None:
             before_sleep=before_sleep_log(_logger, logging.WARNING),
         ):
             with attempt:
-                connected = await client.ping()
+                connected = await client.http_check_bucket_connected(
+                    bucket=S3BucketName(settings.S3_BUCKET_NAME)
+                )
                 if not connected:
                     raise S3NotConnectedError  # pragma: no cover
 
