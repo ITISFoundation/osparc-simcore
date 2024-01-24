@@ -8,7 +8,7 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerLabelKey,
-    DockerPlacementConstraint,
+    DockerLabelKey,
     StandardSimcoreDockerLabels,
     to_simcore_runtime_docker_label_key,
 )
@@ -373,13 +373,13 @@ def get_dynamic_sidecar_spec(
         ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
         placement_constraints.append(
             parse_obj_as(
-                DockerPlacementConstraint,
+                DockerLabelKey,
                 f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ec2_instance_type}",
             )
         )
 
     placement_substitutions: dict[
-        str, DockerPlacementConstraint
+        str, DockerLabelKey
     ] = (
         placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     )

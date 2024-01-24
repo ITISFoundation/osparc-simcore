@@ -76,6 +76,9 @@ def _parse_placement_replacements() -> Dict[str, str]:
             "for https://github.com/moby/swarmkit/pull/3162",
             UserWarning,
         )
+    if len(result) != len(set(result.values())):
+        msg = f"Dictionary values must be unique, provided: {result}"
+        raise ValueError(msg)
 
     return result
 

@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 from models_library.basic_types import BootModeEnum, PortInt
-from models_library.docker import DockerPlacementConstraint
+from models_library.docker import DockerLabelKey
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
@@ -52,13 +52,13 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
 class PlacementSettings(BaseCustomSettings):
     # This is just a service placement constraint, see
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.
-    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[DockerPlacementConstraint] = Field(
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[DockerLabelKey] = Field(
         default_factory=list,
         example='["node.labels.region==east", "one!=yes"]',
     )
 
     DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[
-        str, DockerPlacementConstraint
+        str, DockerLabelKey
     ] = Field(
         default_factory=dict,
         description=(
@@ -68,6 +68,14 @@ class PlacementSettings(BaseCustomSettings):
         ),
         example='{"AIRAM": "node.labels.custom==true"}',
     )
+
+    @validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
+    @classmethod
+    def values_are_unique(cls, value: dict) -> dict:
+        if len(value) != len(set(value.values())):
+            msg = f"Dictionary values must be unique, provided: {value}"
+            raise ValueError(msg)
+        return value
 
     @validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod
