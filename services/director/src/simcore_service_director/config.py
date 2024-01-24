@@ -63,7 +63,7 @@ DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: str = os.environ.get(
 )
 
 
-def _parse_placement_replacements() -> Dict[str, str]:
+def _parse_placement_substitutions() -> Dict[str, str]:
     str_env_var: str = os.environ.get(
         "DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS", "{}"
     )
@@ -85,7 +85,7 @@ def _parse_placement_replacements() -> Dict[str, str]:
 
 DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: Dict[
     str, str
-] = _parse_placement_replacements()
+] = _parse_placement_substitutions()
 
 # for passing self-signed certificate to spawned services
 DIRECTOR_SELF_SIGNED_SSL_SECRET_ID: str = os.environ.get(
