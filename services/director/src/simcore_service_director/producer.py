@@ -7,7 +7,7 @@ from distutils.version import StrictVersion
 from enum import Enum
 from http import HTTPStatus
 from pprint import pformat
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import aiodocker
 import aiohttp
@@ -292,6 +292,11 @@ async def _create_docker_service_params(
                 f"traefik.http.routers.{service_name}.middlewares"
             ] += f", {service_name}_stripprefixregex"
 
+    placement_constraints_to_substitute: List[str] = []
+    placement_substitutions: Dict[
+        str, str
+    ] = config.DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
+
     for param in service_parameters_labels:
         _check_setting_correctness(param)
         # replace %service_uuid% by the given uuid
@@ -319,6 +324,32 @@ async def _create_docker_service_params(
                     "NanoCPUs"
                 ] = param["value"]["cpu_reservation"]
             # REST-API compatible
+            if (
+                placement_substitutions
+                and "Reservations" in param["value"]
+                and "GenericResources" in param["value"]["Reservations"]
+            ):
+                # Use placement constraints in place of generic resources, for details
+                # see https://github.com/ITISFoundation/osparc-simcore/issues/5250
+                # removing them form here
+                generic_resources: list = param["value"]["Reservations"][
+                    "GenericResources"
+                ]
+
+                to_remove: Set[str] = set()
+                for generic_resource in generic_resources:
+                    kind = generic_resource["DiscreteResourceSpec"]["Kind"]
+                    if kind in placement_substitutions:
+                        placement_constraints_to_substitute.append(kind)
+                        to_remove.add(kind)
+
+                # only include generic resources which must not be substituted
+                param["value"]["Reservations"]["GenericResources"] = [
+                    x
+                    for x in generic_resources
+                    if x["DiscreteResourceSpec"]["Kind"] not in to_remove
+                ]
+
             if "Limits" in param["value"] or "Reservations" in param["value"]:
                 docker_params["task_template"]["Resources"].update(param["value"])
 
@@ -376,6 +407,12 @@ async def _create_docker_service_params(
                 docker_params["task_template"]["ContainerSpec"]["Mounts"].extend(
                     mount_settings
                 )
+
+    # add placement constraints based on what was found
+    for generic_resource_kind in placement_constraints_to_substitute:
+        docker_params["task_template"]["Placement"]["Constraints"] += [
+            placement_substitutions[generic_resource_kind]
+        ]
 
     # attach the service to the swarm network dedicated to services
     try:

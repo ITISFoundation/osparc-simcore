@@ -81,6 +81,18 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
         description="The value of the service setting (shall follow Docker REST API scheme for services",
     )
 
+    def set_destination_containers(self, value: list[str]) -> None:
+        # NOTE: private attributes cannot be transformed into properties
+        # since it conflicts with pydantic's internals which treats them
+        # as fields
+        self._destination_containers = value
+
+    def get_destination_containers(self) -> list[str]:
+        # NOTE: private attributes cannot be transformed into properties
+        # since it conflicts with pydantic's internals which treats them
+        # as fields
+        return self._destination_containers
+
     @validator("setting_type", pre=True)
     @classmethod
     def ensure_backwards_compatible_setting_type(cls, v):
