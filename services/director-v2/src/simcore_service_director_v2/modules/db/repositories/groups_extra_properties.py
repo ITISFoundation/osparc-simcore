@@ -22,10 +22,12 @@ class GroupsExtraPropertiesRepository(BaseRepository):
         group_extra_properties = await self._get_aggregated_properties_for_user(
             user_id=user_id, product_name=product_name
         )
-        return group_extra_properties.internet_access
+        internet_access: bool = group_extra_properties.internet_access
+        return internet_access
 
-    async def telemetry_enabled(self, *, user_id: int, product_name: str) -> bool:
+    async def is_telemetry_enabled(self, *, user_id: int, product_name: str) -> bool:
         group_extra_properties = await self._get_aggregated_properties_for_user(
             user_id=user_id, product_name=product_name
         )
-        return group_extra_properties.enable_telemetry
+        telemetry_enabled: bool = group_extra_properties.enable_telemetry
+        return telemetry_enabled

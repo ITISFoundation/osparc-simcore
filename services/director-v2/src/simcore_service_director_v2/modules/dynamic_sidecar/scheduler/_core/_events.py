@@ -200,7 +200,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         users_repo = get_repository(app, UsersRepository)
         primary_group_id = await users_repo.get_primary_group_id(scheduler_data.user_id)
 
-        telemetry_enabled = await groups_extra_properties.telemetry_enabled(
+        is_telemetry_enabled = await groups_extra_properties.is_telemetry_enabled(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
         )
 
@@ -217,7 +217,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             allow_internet_access=allow_internet_access,
             metrics_collection_allowed=metrics_collection_allowed,
-            telemetry_enabled=telemetry_enabled,
+            telemetry_enabled=is_telemetry_enabled,
             primary_group_id=primary_group_id,
         )
 
