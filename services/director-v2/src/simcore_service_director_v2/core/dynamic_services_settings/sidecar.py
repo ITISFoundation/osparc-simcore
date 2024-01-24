@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 from models_library.basic_types import BootModeEnum, PortInt
-from models_library.docker import DockerLabelKey
+from models_library.docker import DockerLabelKey, DockerPlacementConstraint
 from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
@@ -62,7 +62,7 @@ class PlacementSettings(BaseCustomSettings):
     )
 
     DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[
-        str, DockerLabelKey
+        str, DockerPlacementConstraint
     ] = Field(
         default_factory=dict,
         description=(
