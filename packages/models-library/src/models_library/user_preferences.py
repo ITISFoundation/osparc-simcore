@@ -95,7 +95,10 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
 
     @classmethod
     def get_preference_identifier(cls) -> PreferenceIdentifier:
-        return cls.__fields__["preference_identifier"].default
+        preference_identifier: PreferenceIdentifier = cls.__fields__[
+            "preference_identifier"
+        ].default
+        return preference_identifier
 
 
 class UserServiceUserPreference(_BaseUserPreferenceModel):
