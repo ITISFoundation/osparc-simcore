@@ -8,8 +8,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .models import Deployment
 
-# NOTE: this mapping suggests that this script might be rather living a in a
-# different repo
 #
 _DEPLOYMENTS_MAP = {
     Deployment.master: "osparc-master.speag.com",
