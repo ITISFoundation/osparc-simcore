@@ -63,7 +63,7 @@ class PlacementSettings(BaseCustomSettings):
         example='["node.labels.region==east", "one!=yes"]',
     )
 
-    DIRECTOR_V2_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES: dict[
+    DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[
         str,
         PlacementConstraintStr,
     ] | None = Field(
@@ -79,11 +79,11 @@ class PlacementSettings(BaseCustomSettings):
     @property
     def use_generic_resources_instead_of_placement_constraints(self) -> bool:
         return (
-            self.DIRECTOR_V2_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES
+            self.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
             is None
         )
 
-    @validator("DIRECTOR_V2_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES")
+    @validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod
     def no_empty_placement_constraints_mapping_allowed(
         cls, value: dict | None

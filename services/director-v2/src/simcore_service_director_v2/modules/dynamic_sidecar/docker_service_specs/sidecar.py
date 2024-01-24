@@ -383,7 +383,7 @@ def get_dynamic_sidecar_spec(
         replacement_constraints: dict[
             str, PlacementConstraintStr
         ] | None = (
-            placement_settings.DIRECTOR_V2_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES
+            placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
         )
         if replacement_constraints:
             for resource_name in scheduler_data.service_resources:
