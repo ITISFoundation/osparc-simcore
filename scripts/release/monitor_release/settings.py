@@ -4,7 +4,7 @@ from typing import Final
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, HttpUrl, TypeAdapter, model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .models import Deployment
 
@@ -30,7 +30,7 @@ def get_repo_configs_paths(top_folder: Path) -> list[Path]:
 
 def get_deployment_name_or_none(repo_config: Path) -> str | None:
     if repo_config.name == "repo.config":
-        return repo_config.parent.name
+        return repo_config.resolve().parent.name
     return None
 
 
@@ -43,7 +43,9 @@ class ReleaseSettings(BaseSettings):
     swarm_stack_name: str = Field(..., validation_alias="SWARM_STACK_NAME")
     portainer_endpoint_version: int
     starts_with: str
-    portainer_url: HttpUrl
+    portainer_url: HttpUrl | None = None
+
+    model_config = SettingsConfigDict(extra="ignore")
 
     @model_validator(mode="after")
     def deduce_portainer_url(self):
@@ -72,43 +74,43 @@ def get_release_settings(env_file_path: Path, deployment: Deployment):
 
         case Deployment.master:
             settings = ReleaseSettings(
-                _enf_file=env_file_path,  # type: ignore
+                _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
                 starts_with="master-simcore_master",
             )
         case Deployment.dalco_staging:
             settings = ReleaseSettings(
-                _enf_file=env_file_path,  # type: ignore
+                _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
                 starts_with="staging-simcore_staging",
             )
         case Deployment.dalco_production:
             settings = ReleaseSettings(
-                _enf_file=env_file_path,  # type: ignore
+                _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
                 starts_with="production-simcore_production",
             )
         case Deployment.tip_production:
             settings = ReleaseSettings(
-                _enf_file=env_file_path,  # type: ignore
+                _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=2,
                 starts_with="production-simcore_production",
             )
         case Deployment.aws_staging:
             settings = ReleaseSettings(
-                _enf_file=env_file_path,  # type: ignore
+                _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=2,
                 starts_with="staging-simcore_staging",
             )
         case Deployment.aws_nih_production:
             settings = ReleaseSettings(
-                _enf_file=env_file_path,  # type: ignore
+                _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=2,
                 starts_with="production-simcore_production",
             )
         case Deployment.aws_zmt_production:
             settings = ReleaseSettings(
-                _enf_file=env_file_path,  # type: ignore
+                _env_file=env_file_path,  # type: ignore
                 portainer_endpoint_version=1,
                 starts_with="staging-simcore_staging",
             )
