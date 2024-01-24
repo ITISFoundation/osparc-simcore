@@ -1,3 +1,4 @@
+import os
 from unittest.mock import Mock
 
 import pytest
@@ -57,8 +58,9 @@ async def enable_resource_usage_tracker_s3(
     # Create bucket
     await s3_client.create_bucket(Bucket=mocked_s3_server_settings.S3_BUCKET_NAME)
 
-    # Set the environment variable
-    monkeypatch.delenv("RESOURCE_USAGE_TRACKER_S3")
+    # Remove the environment variable
+    if "RESOURCE_USAGE_TRACKER_S3" in os.environ:
+        monkeypatch.delenv("RESOURCE_USAGE_TRACKER_S3")
 
 
 @pytest.mark.rpc_test()
