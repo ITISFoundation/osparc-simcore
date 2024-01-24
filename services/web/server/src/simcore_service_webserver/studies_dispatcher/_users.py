@@ -19,7 +19,6 @@ from servicelib.logging_utils import log_decorator
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST, get_random_string
-from ..products.api import get_product_name
 from ..redis import get_redis_lock_manager_client
 from ..security.api import (
     authorized_userid,
@@ -177,5 +176,4 @@ async def ensure_authentication(
             request,
             response,
             user_email=user.email,
-            product_name=get_product_name(request),
         )

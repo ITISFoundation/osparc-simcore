@@ -35,3 +35,6 @@ async def get_active_user_or_none(engine: Engine, email: str) -> AuthInfoDict | 
         assert row is None or parse_obj_as(UserRole, row.role) is not None  # nosec
 
         return AuthInfoDict(id=row.id, role=row.role) if row else None
+
+
+# FIXME: check if user has this group

@@ -409,7 +409,6 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             request,
             response,
             user_email=user["email"],
-            product_name=get_product_name(request),
         )
 
         # NOTE: session is encrypted and stored in a cookie in the session middleware

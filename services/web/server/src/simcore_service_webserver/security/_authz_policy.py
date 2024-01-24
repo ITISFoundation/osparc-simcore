@@ -7,14 +7,13 @@ from aiocache import cached
 from aiocache.base import BaseCache
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
-from pydantic import ValidationError
 from simcore_postgres_database.errors import DatabaseError
 
 from ..db.plugin import get_database_engine
 from ._authz_access_model import OptionalContext, RoleBasedAccessModel, check_access
 from ._authz_db import AuthInfoDict, get_active_user_or_none
 from ._constants import MSG_AUTH_NOT_AVAILABLE
-from ._identity_api import IdentityStr, VerifiedIdentity
+from ._identity_api import IdentityStr
 
 _logger = logging.getLogger(__name__)
 
@@ -64,20 +63,12 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        try:
-            vi = VerifiedIdentity.create(identity)
-        except ValidationError:
+        user_info: AuthInfoDict | None = await self._get_auth_or_none(email=identity)
+        if user_info is None:
             return None
-        else:
-            # FIXME: needs to include product_name in auth query!
-            user_info: AuthInfoDict | None = await self._get_auth_or_none(
-                email=vi.email
-            )
-            if user_info is None:
-                return None
 
-            user_id: int = user_info["id"]
-            return user_id
+        user_id: int = user_info["id"]
+        return user_id
 
     async def permits(
         self,
@@ -92,12 +83,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         :param context: context of the operation, defaults to None
         :return: True if user has permission to execute this operation within the given context
         """
-        try:
-            verified = VerifiedIdentity.create(identity)
-        except ValidationError:
-            verified = None
-
-        if verified is None or permission is None:
+        if identity is None or permission is None:
             _logger.debug(
                 "Invalid %s of %s. Denying access.",
                 f"{identity=}",
@@ -105,9 +91,16 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             )
             return False
 
-        auth_info = await self._get_auth_or_none(email=verified.email)
+        auth_info = await self._get_auth_or_none(email=identity)
         if auth_info is None:
             return False
+
+        # product access
+        if permission == "product":
+            product_name = context and context.get("product_name", None)
+            if product_name is None:
+                return False
+            return True  # FIXME: await self._has_product_access(identity, product_name)
 
         # role-based access
         return await check_access(

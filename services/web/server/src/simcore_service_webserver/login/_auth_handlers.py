@@ -109,9 +109,7 @@ async def login(request: web.Request):
     # Some roles have login privileges
     skip_2fa: bool = UserRole(user["role"]) == UserRole.TESTER
     if skip_2fa or not settings.LOGIN_2FA_REQUIRED:
-        return await login_granted_response(
-            request, user=user, product_name=product.name
-        )
+        return await login_granted_response(request, user=user)
 
     # 2FA login (continuation)
     # check phone
@@ -230,7 +228,7 @@ async def login_2fa(request: web.Request):
     # dispose since code was used
     await delete_2fa_code(request.app, login_2fa_.email)
 
-    return await login_granted_response(request, user=user, product_name=product.name)
+    return await login_granted_response(request, user=user)
 
 
 class LogoutBody(InputSchema):

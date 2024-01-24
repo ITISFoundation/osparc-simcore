@@ -53,12 +53,6 @@ async def get_user_id_or_raise_if_unauthorized(request: web.Request) -> UserID:
 
     """
     userid = await aiohttp_security.api.authorized_userid(request)
-
-    # FIXME: verify correct product or rather interect get_product_name?
-    # current_product_name = get_product_name(request)
-    # authorized_product_name =
-    # TODO: perhaps we can store the product in a session as well
-
     if userid is None:
         raise web.HTTPUnauthorized
     return userid

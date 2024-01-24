@@ -177,9 +177,7 @@ def app_routes(
             raise web.HTTPUnauthorized(reason="wrong password")
 
         # if all good, let's update session with
-        return await remember_identity(
-            request, web.HTTPOk(), user_email=email, product_name=product_name
-        )
+        return await remember_identity(request, web.HTTPOk(), user_email=email)
 
     @routes.post("/v0/public")
     async def _public(request: web.Request):
