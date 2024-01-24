@@ -21,16 +21,17 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import LOGIN_SETTINGS_DEFAULT, products
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.login.decorators import login_required
 from simcore_service_webserver.products._events import _set_app_state
 from simcore_service_webserver.products._middlewares import discover_product_middleware
 from simcore_service_webserver.products._model import Product
 from simcore_service_webserver.security.api import (
     check_user_authorized,
-    check_user_permission,
     clean_auth_policy_cache,
     forget_identity,
     remember_identity,
 )
+from simcore_service_webserver.security.decorators import permission_required
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.settings import SessionSettings
 
@@ -53,9 +54,7 @@ async def _get_product_name(request: web.Request) -> ProductName | None:
         return product_name
 
     # NOTE: this or deduce from url
-    raise web.HTTPUnauthorized(
-        reason="Session is expired or undefined. To solve this problem, please reload site"
-    )
+    raise web.HTTPUnauthorized(reason="Invalid session")
 
 
 async def _forget_product_name(request: web.Request) -> ProductName | None:
@@ -164,7 +163,6 @@ def app_routes(
     @routes.post("/v0/login")
     async def _login(request: web.Request):
         product_name = await _get_product_name(request)
-
         body = await request.json()
         email = parse_obj_as(LowerCaseEmailStr, body["email"])
 
@@ -181,27 +179,22 @@ def app_routes(
 
     @routes.post("/v0/public")
     async def _public(request: web.Request):
-        # NOTE: this will not be true if login is not done!
         assert await _get_product_name(request) == expected_product_name
 
         return web.HTTPOk()
 
-    @routes.post("/v0/protected")
-    async def _protected(request: web.Request):
-        await check_user_authorized(request)  # = you are logged in
-        await check_user_permission(request, "admin.*")
-
+    @routes.post("/v0/admin")
+    @login_required  # NOTE: same as `await check_user_authorized(request)``
+    @permission_required(
+        "admin.*"
+    )  # NOTE: same as `await check_user_permission(request, "admin.*")``
+    async def _admin_only(request: web.Request):
         assert await _get_product_name(request) == expected_product_name
-
         return web.HTTPOk()
 
     @routes.post("/v0/logout")
     async def _logout(request: web.Request):
         await check_user_authorized(request)
-
-        # product_name = await _forget_product_name(request)
-        # assert product_name == expected_product_name
-
         return await forget_identity(request, web.HTTPOk())
 
     return routes
@@ -312,7 +305,7 @@ async def test_auth_in_session(
     assert resp.ok, f"error: {await resp.text()}"
     assert not get_active_user_or_none_mock.called
 
-    resp = await client.post("/v0/protected")
+    resp = await client.post("/v0/admin")
     assert resp.ok, f"error: {await resp.text()}"
     assert get_active_user_or_none_mock.called
 
@@ -323,7 +316,7 @@ async def test_auth_in_session(
     resp = await client.post("/v0/public")
     assert resp.ok, f"error: {await resp.text()}"
 
-    resp = await client.post("/v0/protected")
+    resp = await client.post("/v0/admin")
     assert (
         resp.status == web.HTTPUnauthorized.status_code
     ), f"error: {await resp.text()}"
@@ -346,7 +339,7 @@ async def test_hack_product_session(client: TestClient, mocker: MockerFixture):
     assert resp.ok
 
     # not logged in
-    resp = await client.post("/v0/protected")
+    resp = await client.post("/v0/admin")
     assert resp.status == web.HTTPUnauthorized.status_code
 
     # login 'foo' (w/o access to s4l)
