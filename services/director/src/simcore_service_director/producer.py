@@ -7,7 +7,6 @@ from distutils.version import StrictVersion
 from enum import Enum
 from http import HTTPStatus
 from pprint import pformat
-from typing import Dict, List, Optional, Tuple
 
 import aiodocker
 import aiohttp
@@ -50,7 +49,7 @@ class ServiceState(Enum):
     FAILED = "failed"
 
 
-async def _create_auth() -> Dict[str, str]:
+async def _create_auth() -> dict[str, str]:
     return {"username": config.REGISTRY_USER, "password": config.REGISTRY_PW}
 
 
@@ -76,12 +75,12 @@ async def _check_node_uuid_available(
     log.debug("UUID %s is free", node_uuid)
 
 
-def _check_setting_correctness(setting: Dict) -> None:
+def _check_setting_correctness(setting: dict) -> None:
     if "name" not in setting or "type" not in setting or "value" not in setting:
         raise exceptions.DirectorException("Invalid setting in %s" % setting)
 
 
-def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
+def _parse_mount_settings(settings: list[dict]) -> list[dict]:
     mounts = []
     for s in settings:
         log.debug("Retrieved mount settings %s", s)
@@ -105,7 +104,7 @@ def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
     return mounts
 
 
-def _parse_env_settings(settings: List[str]) -> Dict:
+def _parse_env_settings(settings: list[str]) -> dict:
     envs = {}
     for s in settings:
         log.debug("Retrieved env settings %s", s)
@@ -121,7 +120,7 @@ def _parse_env_settings(settings: List[str]) -> Dict:
 
 async def _read_service_settings(
     app: web.Application, key: str, tag: str, settings_name: str
-) -> Dict:
+) -> dict:
     image_labels = await registry_proxy.get_image_labels(app, key, tag)
     settings = (
         json.loads(image_labels[settings_name]) if settings_name in image_labels else {}
@@ -149,9 +148,9 @@ async def _create_docker_service_params(
     node_uuid: str,
     project_id: str,
     node_base_path: str,
-    internal_network_id: Optional[str],
+    internal_network_id: str | None,
     request_simcore_user_agent: str,
-) -> Dict:
+) -> dict:
     # pylint: disable=too-many-statements
     service_parameters_labels = await _read_service_settings(
         app, service_key, service_tag, config.SERVICE_RUNTIME_SETTINGS
@@ -292,10 +291,10 @@ async def _create_docker_service_params(
                 f"traefik.http.routers.{service_name}.middlewares"
             ] += f", {service_name}_stripprefixregex"
 
-    generic_resource_kinds: List[str] = []
-    replacement_constraints: Optional[
-        Dict[str, str]
-    ] = config.DIRECTOR_PLACEMENT_CONSTRAINTS_REPLACEMENTS_FOR_GENERIC_RESOURCES
+    generic_resource_kinds: list[str] = []
+    replacement_constraints: None | (
+        dict[str, str]
+    ) = config.DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
 
     for param in service_parameters_labels:
         _check_setting_correctness(param)
@@ -332,7 +331,7 @@ async def _create_docker_service_params(
                 # Use placement constraints in place of generic resources, for details
                 # see https://github.com/ITISFoundation/osparc-simcore/issues/5250
                 # removing them form here
-                generic_resources: List = param["value"]["Reservations"][
+                generic_resources: list = param["value"]["Reservations"][
                     "GenericResources"
                 ]
 
@@ -396,7 +395,7 @@ async def _create_docker_service_params(
                 )
         elif param["name"] == "mount":
             log.debug("Found mount parameter %s", param["value"])
-            mount_settings: List[Dict] = _parse_mount_settings(param["value"])
+            mount_settings: list[dict] = _parse_mount_settings(param["value"])
             if mount_settings:
                 docker_params["task_template"]["ContainerSpec"]["Mounts"].extend(
                     mount_settings
@@ -458,7 +457,7 @@ async def _create_docker_service_params(
     return docker_params
 
 
-def _get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
+def _get_service_entrypoint(service_boot_parameters_labels: dict) -> str:
     log.debug("Getting service entrypoint")
     for param in service_boot_parameters_labels:
         _check_setting_correctness(param)
@@ -468,10 +467,10 @@ def _get_service_entrypoint(service_boot_parameters_labels: Dict) -> str:
     return ""
 
 
-async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
+async def _get_swarm_network(client: aiodocker.docker.Docker) -> dict:
     network_name = "_default"
     if config.SIMCORE_SERVICES_NETWORK_NAME:
-        network_name = "{}".format(config.SIMCORE_SERVICES_NETWORK_NAME)
+        network_name = f"{config.SIMCORE_SERVICES_NETWORK_NAME}"
     # try to find the network name (usually named STACKNAME_default)
     networks = [
         x
@@ -490,8 +489,8 @@ async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
 
 
 async def _get_docker_image_port_mapping(
-    service: Dict,
-) -> Tuple[Optional[str], Optional[int]]:
+    service: dict,
+) -> tuple[str | None, int | None]:
     log.debug("getting port published by service: %s", service["Spec"]["Name"])
 
     published_ports = []
@@ -527,7 +526,7 @@ async def _get_docker_image_port_mapping(
 async def _pass_port_to_service(
     service_name: str,
     port: str,
-    service_boot_parameters_labels: Dict,
+    service_boot_parameters_labels: dict,
     session: ClientSession,
 ) -> None:
     for param in service_boot_parameters_labels:
@@ -615,8 +614,8 @@ async def _remove_overlay_network_of_swarm(
 
 
 async def _get_service_state(
-    client: aiodocker.docker.Docker, service: Dict
-) -> Tuple[ServiceState, str]:
+    client: aiodocker.docker.Docker, service: dict
+) -> tuple[ServiceState, str]:
     # some times one has to wait until the task info is filled
     service_name = service["Spec"]["Name"]
     log.debug("Getting service %s state", service_name)
@@ -690,7 +689,7 @@ async def _get_service_state(
 
 
 async def _wait_until_service_running_or_failed(
-    client: aiodocker.docker.Docker, service: Dict, node_uuid: str
+    client: aiodocker.docker.Docker, service: dict, node_uuid: str
 ) -> None:
     # some times one has to wait until the task info is filled
     service_name = service["Spec"]["Name"]
@@ -718,7 +717,7 @@ async def _wait_until_service_running_or_failed(
 
 async def _get_repos_from_key(
     app: web.Application, service_key: str
-) -> Dict[str, List[Dict]]:
+) -> dict[str, list[dict]]:
     # get the available image for the main service (syntax is image:tag)
     list_of_images = {
         service_key: await registry_proxy.list_image_tags(app, service_key)
@@ -738,7 +737,7 @@ async def _get_repos_from_key(
 
 async def _get_dependant_repos(
     app: web.Application, service_key: str, service_tag: str
-) -> List[Dict]:
+) -> list[dict]:
     list_of_images = await _get_repos_from_key(app, service_key)
     tag = await _find_service_tag(list_of_images, service_key, service_tag)
     # look for dependencies
@@ -760,7 +759,7 @@ _SERVICE_KEY_REGEX = re.compile(
 
 
 async def _find_service_tag(
-    list_of_images: Dict, service_key: str, service_tag: str
+    list_of_images: dict, service_key: str, service_tag: str
 ) -> str:
     if not service_key in list_of_images:
         raise exceptions.ServiceNotAvailableError(
@@ -796,9 +795,9 @@ async def _start_docker_service(
     main_service: bool,
     node_uuid: str,
     node_base_path: str,
-    internal_network_id: Optional[str],
+    internal_network_id: str | None,
     request_simcore_user_agent: str,
-) -> Dict:  # pylint: disable=R0913
+) -> dict:  # pylint: disable=R0913
     service_parameters = await _create_docker_service_params(
         app,
         client,
@@ -824,7 +823,7 @@ async def _start_docker_service(
         if "ID" not in service:
             # error while starting service
             raise exceptions.DirectorException(
-                "Error while starting service: {}".format(str(service))
+                f"Error while starting service: {str(service)}"
             )
         log.debug("Service started now waiting for it to run")
 
@@ -888,11 +887,11 @@ async def _create_node(
     client: aiodocker.docker.Docker,
     user_id: str,
     project_id: str,
-    list_of_services: List[Dict],
+    list_of_services: list[dict],
     node_uuid: str,
     node_base_path: str,
     request_simcore_user_agent: str,
-) -> List[Dict]:  # pylint: disable=R0913, R0915
+) -> list[dict]:  # pylint: disable=R0913, R0915
     log.debug(
         "Creating %s docker services for node %s and base path %s for user %s",
         len(list_of_services),
@@ -932,8 +931,8 @@ async def _create_node(
 
 
 async def _get_service_key_version_from_docker_service(
-    service: Dict,
-) -> Tuple[str, str]:
+    service: dict,
+) -> tuple[str, str]:
     service_full_name = str(service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"])
     if not service_full_name.startswith(config.REGISTRY_PATH):
         raise exceptions.DirectorException(
@@ -951,7 +950,7 @@ async def _get_service_key_version_from_docker_service(
     return service_key, service_tag
 
 
-async def _get_service_basepath_from_docker_service(service: Dict) -> str:
+async def _get_service_basepath_from_docker_service(service: dict) -> str:
     envs_list = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Env"]
     envs_dict = dict(x.split("=") for x in envs_list)
     return envs_dict["SIMCORE_NODE_BASEPATH"]
@@ -966,7 +965,7 @@ async def start_service(
     node_uuid: str,
     node_base_path: str,
     request_simcore_user_agent: str,
-) -> Dict:
+) -> dict:
     # pylint: disable=C0103
     log.debug(
         "starting service %s:%s using uuid %s, basepath %s",
@@ -1012,8 +1011,8 @@ async def start_service(
 
 
 async def _get_node_details(
-    app: web.Application, client: aiodocker.docker.Docker, service: Dict
-) -> Dict:
+    app: web.Application, client: aiodocker.docker.Docker, service: dict
+) -> dict:
     service_key, service_tag = await _get_service_key_version_from_docker_service(
         service
     )
@@ -1060,8 +1059,8 @@ async def _get_node_details(
 
 
 async def get_services_details(
-    app: web.Application, user_id: Optional[str], study_id: Optional[str]
-) -> List[Dict]:
+    app: web.Application, user_id: str | None, study_id: str | None
+) -> list[dict]:
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
         try:
             filters = [
@@ -1096,7 +1095,7 @@ async def get_services_details(
             ) from err
 
 
-async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
+async def get_service_details(app: web.Application, node_uuid: str) -> dict:
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
         try:
             list_running_services_with_uuid = await client.services.list(
