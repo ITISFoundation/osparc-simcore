@@ -26,7 +26,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
     this.__addHeader("Personal")
     this.__personalWalletsModel = this.__addWalletsList()
 
-    this.__addHeader("Shared with me")
+    this.__sharedHeader = this.__addHeader("Shared with me")
     this.__sharedWalletsModel = this.__addWalletsList({ flex: 1 })
 
     this.loadWallets();
@@ -132,6 +132,12 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         }
       });
       this.setWalletsLoaded(true);
+      if (this.__sharedWalletsModel.getLength() === 0) {
+        this.__sharedHeader.exclude()
+      }
+      else {
+        this.__sharedHeader.show()
+      }
     },
 
     __openEditWallet: function(walletId) {
@@ -212,6 +218,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       });
       header.add(selectColumn)
       this._add(header);
+      return header
     }
   }
 });
