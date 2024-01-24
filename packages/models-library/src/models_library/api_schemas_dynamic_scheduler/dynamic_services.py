@@ -32,6 +32,6 @@ class RPCDynamicServiceCreate(DynamicServiceCreate):
                 "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
                 "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
                 "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
-                "primary_group_id": 1,
+                "primary_group_id": 42,
             }
         }
