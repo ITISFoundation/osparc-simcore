@@ -1,5 +1,6 @@
 from functools import cached_property
 from pathlib import Path
+from typing import Any, Mapping
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, NonNegativeInt, SecretStr, parse_obj_as
@@ -152,16 +153,23 @@ class ApplicationSettings(BasicSettings):
         """If True, debug tracebacks should be returned on errors."""
         return self.SC_BOOT_MODE is not None and self.SC_BOOT_MODE.is_devel_mode()
 
-    @validator("API_SERVER_DEV_HTTP_CALLS_LOGS_PATH")
+    @validator("API_SERVER_DEV_HTTP_CALLS_LOGS_PATH", pre=True)
     @classmethod
-    def _enable_only_in_devel_mode(cls, v, values):
-        if v and not (
-            values
-            and (boot_mode := values.get("SC_BOOT_MODE"))
-            and boot_mode.is_devel_mode()
-        ):
-            msg = "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
-            raise ValueError(msg)
+    def _enable_only_in_devel_mode(cls, v: Any, values: Mapping[str, Any]):
+        if isinstance(v, str):
+            path_str = v.strip()
+            if not path_str:
+                return None
+
+            if (
+                values
+                and (boot_mode := values.get("SC_BOOT_MODE"))
+                and boot_mode.is_devel_mode()
+            ):
+                raise ValueError(
+                    "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
+                )
+
         return v
 
 
