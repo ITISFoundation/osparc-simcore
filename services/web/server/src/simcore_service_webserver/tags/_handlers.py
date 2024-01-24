@@ -16,7 +16,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_tags import (
     TagDict,
     TagNotFoundError,
-    TagOperationNotAllowed,
+    TagOperationNotAllowedError,
     TagsRepo,
 )
 
@@ -35,7 +35,7 @@ def _handle_tags_exceptions(handler: Handler):
         except TagNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-        except TagOperationNotAllowed as exc:
+        except TagOperationNotAllowedError as exc:
             raise web.HTTPUnauthorized(reason=f"{exc}") from exc
 
     return wrapper
@@ -155,7 +155,7 @@ async def list_tags(request: web.Request):
 
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
-        tags = await repo.list(conn)
+        tags = await repo.list_all(conn)
         return envelope_json_response(
             [TagGet.from_db(t).dict(by_alias=True) for t in tags]
         )

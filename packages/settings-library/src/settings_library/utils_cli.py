@@ -71,14 +71,13 @@ def print_as_json(settings_obj, *, compact=False, **pydantic_export_options):
 
 def create_json_encoder_wo_secrets(model_cls: type[BaseModel]):
     current_encoders = getattr(model_cls.Config, "json_encoders", {})
-    encoder = partial(
+    return partial(
         custom_pydantic_encoder,
         {
             SecretStr: lambda v: v.get_secret_value(),
             **current_encoders,
         },
     )
-    return encoder
 
 
 def create_settings_command(
@@ -117,7 +116,7 @@ def create_settings_command(
             settings_schema = settings_cls.schema_json(indent=2)
 
             assert logger is not None  # nosec
-            logger.error(
+            logger.error(  # noqa: TRY400
                 "Invalid settings. "
                 "Typically this is due to an environment variable missing or misspelled :\n%s",
                 "\n".join(
@@ -162,15 +161,15 @@ def create_settings_command(
 
 
 def create_version_callback(application_version: str) -> Callable:
-    def _version_callback(value: bool):
+    def _version_callback(value: bool):  # noqa: FBT001
         if value:
             rich.print(application_version)
-            raise typer.Exit()
+            raise typer.Exit
 
     def version(
         ctx: typer.Context,
         *,
-        version: bool = (
+        version: bool = (  # noqa: ARG001 # pylint: disable=unused-argument
             typer.Option(
                 None,
                 "--version",
@@ -181,6 +180,5 @@ def create_version_callback(application_version: str) -> Callable:
     ):
         """current version"""
         assert ctx  # nosec
-        assert version or not version  # nosec
 
     return version

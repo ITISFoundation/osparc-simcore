@@ -2,11 +2,10 @@
 
 import pytest
 from models_library.sidecar_volumes import VolumeState, VolumeStatus
-from pytest import FixtureRequest
 
 
 @pytest.fixture(params=VolumeStatus)
-def status(request: FixtureRequest) -> VolumeStatus:
+def status(request: pytest.FixtureRequest) -> VolumeStatus:
     return request.param
 
 

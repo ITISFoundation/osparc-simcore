@@ -5,15 +5,15 @@ import json
 import logging
 import os
 import time
+from collections.abc import Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Iterator
+from typing import Any
 
 import docker
 import jsonschema
 import pytest
 import tenacity
-from pytest import FixtureRequest
 
 from .helpers.utils_host import get_localhost_ip
 
@@ -235,7 +235,7 @@ def jupyter_service(docker_registry: str, node_meta_schema: dict) -> dict[str, A
 
 
 @pytest.fixture(scope="session", params=["2.0.4"])
-def dy_static_file_server_version(request: FixtureRequest):
+def dy_static_file_server_version(request: pytest.FixtureRequest):
     return request.param
 
 

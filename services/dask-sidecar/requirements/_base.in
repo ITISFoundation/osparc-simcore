@@ -25,3 +25,4 @@ dask-gateway # needed for the osparc-dask-gateway to preload the module
 fsspec[http, s3] # sub types needed as we acces http and s3 here
 lz4 # for compression
 pydantic[email,dotenv]
+prometheus_client

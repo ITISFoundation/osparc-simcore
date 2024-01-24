@@ -6,7 +6,6 @@ from random import randbytes
 from uuid import uuid4
 
 import pytest
-from _pytest.fixtures import FixtureRequest
 from pydantic import NonNegativeInt, PositiveInt
 from simcore_service_dynamic_sidecar.modules.outputs._directory_utils import (
     get_directory_total_size,
@@ -25,12 +24,12 @@ def _create_files(path: Path, files: NonNegativeInt) -> PositiveInt:
 
 
 @pytest.fixture(params=[10, 100, 1000])
-def files_per_directory(request: FixtureRequest) -> NonNegativeInt:
+def files_per_directory(request: pytest.FixtureRequest) -> NonNegativeInt:
     return request.param
 
 
 @pytest.fixture(params=[10, 100])
-def subdirs_per_directory(request: FixtureRequest) -> NonNegativeInt:
+def subdirs_per_directory(request: pytest.FixtureRequest) -> NonNegativeInt:
     return request.param
 
 
