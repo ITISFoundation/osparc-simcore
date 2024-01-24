@@ -8,6 +8,7 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerLabelKey,
+    DockerPlacementConstraint,
     StandardSimcoreDockerLabels,
     to_simcore_runtime_docker_label_key,
 )
@@ -22,7 +23,7 @@ from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
-from ....core.settings import AppSettings, PlacementConstraintStr
+from ....core.settings import AppSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
@@ -368,18 +369,31 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
         | standard_simcore_docker_labels
     )
 
+    placement_settings = (
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
+    )
     placement_constraints = deepcopy(
-        app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+        placement_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
     )
     # if service has a pricing plan apply constraints for autoscaling
     if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
         ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
         placement_constraints.append(
             parse_obj_as(
-                PlacementConstraintStr,
+                DockerPlacementConstraint,
                 f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ec2_instance_type}",
             )
         )
+
+    placement_substitutions: dict[
+        str, DockerPlacementConstraint
+    ] = (
+        placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
+    )
+    for image_resources in scheduler_data.service_resources.values():
+        for resource_name in image_resources.resources:
+            if resource_name in placement_substitutions:
+                placement_constraints.append(placement_substitutions[resource_name])
 
     #  -----------
     create_service_params = {
