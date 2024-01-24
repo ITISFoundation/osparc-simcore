@@ -5,6 +5,9 @@ import socketio
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services_utils import (
+    get_service_status_serialization_options,
+)
 from models_library.api_schemas_dynamic_scheduler.socketio import (
     SOCKET_IO_SERVICE_STATUS_EVENT,
 )
@@ -27,10 +30,12 @@ class Notifier(SingletonInAppStateMixin):
         primary_group_id: GroupID,
         service_status: NodeGet | DynamicServiceGet | NodeGetIdle,
     ) -> None:
-        by_alias = not isinstance(service_status, NodeGetIdle | NodeGet)
         await self._sio_manager.emit(
             SOCKET_IO_SERVICE_STATUS_EVENT,
-            data=jsonable_encoder(service_status, by_alias=by_alias),
+            data=jsonable_encoder(
+                service_status,
+                **get_service_status_serialization_options(service_status),
+            ),
             room=f"{primary_group_id}",
         )
 
