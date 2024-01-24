@@ -5,7 +5,7 @@ from pathlib import Path
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.docker import DockerLabelKey
-from models_library.utils.common_validators import ensure_unique_values_validator
+from models_library.utils.common_validators import ensure_unique_dict_values_validator
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
@@ -73,12 +73,12 @@ class PlacementSettings(BaseCustomSettings):
     _unique_custom_constraints = validator(
         "DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS",
         allow_reuse=True,
-    )(ensure_unique_values_validator)
+    )(ensure_unique_dict_values_validator)
 
     _unique_resource_placement_constraints_substitutions = validator(
         "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS",
         allow_reuse=True,
-    )(ensure_unique_values_validator)
+    )(ensure_unique_dict_values_validator)
 
     @validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod
