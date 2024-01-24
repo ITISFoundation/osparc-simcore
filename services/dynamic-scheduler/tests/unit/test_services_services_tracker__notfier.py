@@ -14,6 +14,9 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services_utils import (
+    get_service_status_serialization_options,
+)
 from models_library.api_schemas_dynamic_scheduler.socketio import (
     SOCKET_IO_SERVICE_STATUS_EVENT,
 )
@@ -255,7 +258,10 @@ async def test_notifier_publish_message(
         for on_service_status_event in on_service_status_events:
             await _assert_call_count(on_service_status_event, call_count=1)
             on_service_status_event.assert_awaited_once_with(
-                jsonable_encoder(service_status)
+                jsonable_encoder(
+                    service_status,
+                    **get_service_status_serialization_options(service_status),
+                )
             )
 
     await _assert_call_count(server_disconnect, call_count=number_of_clients)

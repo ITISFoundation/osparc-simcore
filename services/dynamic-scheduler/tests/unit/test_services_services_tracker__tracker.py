@@ -58,7 +58,7 @@ def mock_director_v2_api(
     mocker.patch(f"{base_module}.start_periodic_task")
     mocker.patch(f"{base_module}.stop_periodic_task")
     base_module = "servicelib.base_distributed_identifier"
-    mocker.patch(f"{base_module}.start_periodic_task")
+    mocker.patch(f"{base_module}.start_exclusive_periodic_task")
     mocker.patch(f"{base_module}.stop_periodic_task")
 
     # mocks the get to reply with nothing
