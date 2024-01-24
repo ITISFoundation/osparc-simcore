@@ -7,11 +7,12 @@
 import asyncio
 import logging
 import time
-from collections.abc import Coroutine
+from collections.abc import Callable, Coroutine
 
 import pytest
 import simcore_service_webserver
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
@@ -25,21 +26,24 @@ from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
 from simcore_service_webserver.diagnostics.settings import DiagnosticsSettings
 from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
-from tenacity import before_log, retry, stop_after_attempt, wait_fixed
+from tenacity import retry
+from tenacity.before import before_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 logger = logging.getLogger(__name__)
 
 
-def health_check_path(api_version_prefix) -> URL:
+def _health_check_path(api_version_prefix: str) -> URL:
     return URL(f"/{api_version_prefix}/health")
 
 
-async def health_check_emulator(
-    client,
-    health_check_path,
+async def _health_check_emulator(
+    client: TestClient,
+    health_check_path: URL,
     *,
-    min_num_checks=2,
+    min_num_checks: int = 2,
     start_period: int = 0,
     timeout: int = 30,
     interval: int = 30,
@@ -47,7 +51,7 @@ async def health_check_emulator(
 ):
     # Follows docker's health check protocol
     # SEE https://docs.docker.com/engine/reference/builder/#healthcheck
-    checkpoint: Coroutine = client.get(health_check_path)
+    checkpoint: Coroutine = client.get(health_check_path.path)
 
     check_count = 0
 
@@ -84,11 +88,12 @@ def mock_environment(mock_env_devel_environment: dict[str, str], monkeypatch):
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
-    unused_tcp_port_factory,
-    aiohttp_client,
-    api_version_prefix,
+    unused_tcp_port_factory: Callable,
+    aiohttp_client: Callable,
+    api_version_prefix: str,
     mock_environment: None,
-):
+) -> TestClient:
+
     routes = web.RouteTableDef()
 
     @routes.get("/error")
@@ -150,16 +155,17 @@ def client(
     )
 
 
-def test_diagnostics_setup(client):
-    app = client.app
+def test_diagnostics_setup(client: TestClient):
+    assert client.app
+    assert {m.__middleware_name__ for m in client.app.middlewares} == {
+        "servicelib.aiohttp.monitoring.monitor_simcore_service_webserver",
+        "servicelib.aiohttp.rest_middlewares.envelope_v0",
+        "servicelib.aiohttp.rest_middlewares.error_v0",
+        "simcore_service_webserver.session.plugin.session",
+    }
 
-    assert len(app.middlewares) == 3
-    assert "monitor" in app.middlewares[0].__middleware_name__
-    assert "error" in app.middlewares[1].__middleware_name__
-    assert "envelope" in app.middlewares[2].__middleware_name__
 
-
-async def test_healthy_app(client, api_version_prefix):
+async def test_healthy_app(client: TestClient, api_version_prefix: str):
     resp = await client.get(f"/{api_version_prefix}/health")
 
     data, error = await assert_status(resp, web.HTTPOk)
@@ -171,7 +177,9 @@ async def test_healthy_app(client, api_version_prefix):
     assert data["version"] == simcore_service_webserver._meta.__version__
 
 
-async def test_unhealthy_app_with_slow_callbacks(client, api_version_prefix):
+async def test_unhealthy_app_with_slow_callbacks(
+    client: TestClient, api_version_prefix: str
+):
     resp = await client.get(f"/{api_version_prefix}/health")
     await assert_status(resp, web.HTTPOk)
 
@@ -182,21 +190,24 @@ async def test_unhealthy_app_with_slow_callbacks(client, api_version_prefix):
     await assert_status(resp, web.HTTPServiceUnavailable)
 
 
-async def test_diagnose_on_unexpected_error(client):
+async def test_diagnose_on_unexpected_error(client: TestClient):
+    assert client.app
     resp = await client.get("/error")
     assert resp.status == web.HTTPInternalServerError.status_code
 
     assert_healthy_app(client.app)
 
 
-async def test_diagnose_on_failure(client):
+async def test_diagnose_on_failure(client: TestClient):
+    assert client.app
     resp = await client.get("/fail")
     assert resp.status == web.HTTPServiceUnavailable.status_code
 
     assert_healthy_app(client.app)
 
 
-async def test_diagnose_on_response_delays(client):
+async def test_diagnose_on_response_delays(client: TestClient):
+    assert client.app
     settings: DiagnosticsSettings = client.app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS
 
     tmax = settings.DIAGNOSTICS_MAX_AVG_LATENCY

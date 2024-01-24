@@ -1,8 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import NamedTuple
 
-from models_library.api_schemas_resource_usage_tracker.service_runs import ServiceRunGet
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -18,7 +16,7 @@ from models_library.resource_tracker import (
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, NonNegativeInt, PositiveInt
+from pydantic import BaseModel, NonNegativeInt
 
 
 class ServiceRunCreate(BaseModel):
@@ -96,11 +94,6 @@ class ServiceRunWithCreditsDB(ServiceRunDB):
 
     class Config:
         orm_mode = True
-
-
-class ServiceRunPage(NamedTuple):
-    items: list[ServiceRunGet]
-    total: PositiveInt
 
 
 class ServiceRunForCheckDB(BaseModel):

@@ -19,7 +19,6 @@ from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -53,7 +52,9 @@ def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
 
 @pytest.fixture
 def app_environment(
-    mock_env_devel_environment: EnvVarsDict, monkeypatch: MonkeyPatch, faker: Faker
+    mock_env_devel_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ) -> EnvVarsDict:
     envs = setenvs_from_dict(
         monkeypatch,
@@ -218,7 +219,13 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mocked_setup_rabbitmq(mocker: MockerFixture):
-    return mocker.patch(
-        "simcore_service_resource_usage_tracker.core.application.setup_rabbitmq",
-        autospec=True,
+    return (
+        mocker.patch(
+            "simcore_service_resource_usage_tracker.core.application.setup_rabbitmq",
+            autospec=True,
+        ),
+        mocker.patch(
+            "simcore_service_resource_usage_tracker.core.application.setup_rpc_api_routes",
+            autospec=True,
+        ),
     )

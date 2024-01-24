@@ -30,7 +30,7 @@ from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
-from ..users.api import get_user_name
+from ..users.api import get_user_fullname
 from . import projects_api
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
@@ -157,7 +157,7 @@ async def _copy_files_from_source_project(
                     source_project["uuid"],
                     ProjectStatus.CLONING,
                     user_id,
-                    await get_user_name(app, user_id),
+                    await get_user_fullname(app, user_id),
                 )
             )
         starting_value = task_progress.percent

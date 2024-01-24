@@ -8,14 +8,15 @@
 import inspect
 import logging
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, TypeAlias
+from typing import Any, TypeAlias
 
 from ..db.models import UserRole
 
 _logger = logging.getLogger(__name__)
 
-ContextType: TypeAlias = Optional[dict[str, Any]]
+OptionalContext: TypeAlias = dict[str, Any] | None
 
 
 @dataclass
@@ -24,12 +25,12 @@ class _RolePermissions:
     # named permissions allowed
     allowed: list[str] = field(default_factory=list)
     # checked permissions: permissions with conditions
-    check: dict[str, Callable[[ContextType], bool]] = field(default_factory=dict)
+    check: dict[str, Callable[[OptionalContext], bool]] = field(default_factory=dict)
+    # inherited permission
     inherits: list[UserRole] = field(default_factory=list)
 
     @classmethod
     def from_rawdata(cls, role: str | UserRole, value: dict) -> "_RolePermissions":
-
         if isinstance(role, str):
             name = role
             role = UserRole[name]
@@ -44,7 +45,8 @@ class _RolePermissions:
             elif isinstance(item, str):
                 allowed.add(item)
             else:
-                raise ValueError(f"Unexpected item for role '{role}'")
+                msg = f"Unexpected item for role '{role}'"
+                raise TypeError(msg)
 
         role_permission.allowed = list(allowed)
         role_permission.check = check
@@ -65,7 +67,7 @@ class RoleBasedAccessModel:
         self.roles: dict[UserRole, _RolePermissions] = {r.role: r for r in roles}
 
     async def can(
-        self, role: UserRole, operation: str, context: ContextType = None
+        self, role: UserRole, operation: str, context: OptionalContext = None
     ) -> bool:
         # pylint: disable=too-many-return-statements
 
@@ -85,17 +87,15 @@ class RoleBasedAccessModel:
             return True
 
         # checked operations
-        if operation in role_access.check.keys():
+        if operation in role_access.check:
             check = role_access.check[operation]
             try:
-                is_valid: bool
-
+                ok: bool
                 if inspect.iscoroutinefunction(check):
-                    is_valid = await check(context)
-                    return is_valid
-
-                is_valid = check(context)
-                return is_valid
+                    ok = await check(context)
+                else:
+                    ok = check(context)
+                return ok
 
             except Exception:  # pylint: disable=broad-except
                 _logger.debug(
@@ -113,11 +113,7 @@ class RoleBasedAccessModel:
         return False
 
     async def who_can(self, operation: str, context: dict | None = None):
-        allowed = []
-        for role in self.roles:
-            if await self.can(role, operation, context):
-                allowed.append(role)
-        return allowed
+        return [role for role in self.roles if await self.can(role, operation, context)]
 
     @classmethod
     def from_rawdata(cls, raw: dict):
@@ -131,7 +127,10 @@ _OPERATORS_REGEX_PATTERN = re.compile(r"(&|\||\bAND\b|\bOR\b)")
 
 
 async def check_access(
-    model: RoleBasedAccessModel, role: UserRole, operations: str, context: dict = None
+    model: RoleBasedAccessModel,
+    role: UserRole,
+    operations: str,
+    context: dict | None = None,
 ) -> bool:
     """Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
 
@@ -151,6 +150,5 @@ async def check_access(
             return False
         return can_lhs or (await model.can(role, rhs, context))
 
-    raise NotImplementedError(
-        f"Invalid expression '{operations}': only supports at most two operands"
-    )
+    msg = f"Invalid expression '{operations}': only supports at most two operands"
+    raise NotImplementedError(msg)

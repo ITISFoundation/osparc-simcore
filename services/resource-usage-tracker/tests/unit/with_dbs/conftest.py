@@ -6,7 +6,7 @@
 from collections.abc import AsyncIterable, Callable
 from datetime import datetime, timezone
 from random import choice
-from typing import Any
+from typing import Any, Awaitable
 
 import httpx
 import pytest
@@ -19,9 +19,10 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingMessageType,
     RabbitResourceTrackingStartedMessage,
 )
-from pytest import MonkeyPatch
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from servicelib.rabbitmq import RabbitMQRPCClient
+from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -43,7 +44,7 @@ from tenacity.wait import wait_fixed
 
 
 @pytest.fixture()
-def mock_env(monkeypatch: MonkeyPatch) -> EnvVarsDict:
+def mock_env(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
 
     Do override/extend this fixture to change configurations
@@ -257,3 +258,12 @@ def random_rabbit_message_start(
         return RabbitResourceTrackingStartedMessage(**msg_config)
 
     return _creator
+
+
+@pytest.fixture
+async def rpc_client(
+    rabbit_service: RabbitSettings,
+    initialized_app: FastAPI,
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    return await rabbitmq_rpc_client("client")

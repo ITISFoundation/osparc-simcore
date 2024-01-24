@@ -219,7 +219,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True
     )
 
+    CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX: str = Field(
+        ...,
+        description="set a prefix to all machines created (useful for testing)",
+    )
+
     CLUSTERS_KEEPER_RABBITMQ: RabbitSettings | None = Field(auto_default_from_env=True)
+
+    CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
     CLUSTERS_KEEPER_REDIS: RedisSettings = Field(auto_default_from_env=True)
 
@@ -247,6 +254,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: str = Field(
         ...,
         description="defines the image tag to use for the computational backend sidecar image (NOTE: it currently defaults to use itisfoundation organisation in Dockerhub)",
+    )
+
+    CLUSTERS_KEEPER_DASK_NTHREADS: NonNegativeInt = Field(
+        ...,
+        description="overrides the default number of threads in the dask-sidecars, setting it to 0 will use the default (see description in dask-sidecar)",
     )
 
     SWARM_STACK_NAME: str = Field(

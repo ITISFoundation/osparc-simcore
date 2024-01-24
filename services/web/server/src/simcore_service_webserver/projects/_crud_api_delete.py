@@ -15,7 +15,7 @@ from models_library.users import UserID
 
 from ..director_v2 import api
 from ..storage.api import delete_data_folders_of_project
-from ..users.api import UserNameDict
+from ..users.api import FullNameDict
 from ..users.exceptions import UserNotFoundError
 from .db import ProjectDBAPI
 from .exceptions import (
@@ -42,7 +42,7 @@ class RemoveProjectServicesCallable(Protocol):
         simcore_user_agent: str,
         *,
         notify_users: bool = True,
-        user_name: UserNameDict | None = None,
+        user_name: FullNameDict | None = None,
     ) -> None:
         ...
 

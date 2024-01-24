@@ -72,7 +72,7 @@ async def get_vendor_secrets(
         assert all(key.startswith(VENDOR_SECRET_PREFIX) for key in secrets)  # nosec
 
         assert all(  # nosec
-            isinstance(value, (bool, int, str, float)) for value in secrets.values()
+            isinstance(value, bool | int | str | float) for value in secrets.values()
         )
 
     return secrets

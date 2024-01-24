@@ -8,6 +8,7 @@ from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
     LogLevel,
+    PortInt,
     VersionTag,
 )
 from models_library.docker import DockerLabelKey
@@ -182,6 +183,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AUTOSCALING_DEBUG: bool = Field(
         default=False, description="Debug mode", env=["AUTOSCALING_DEBUG", "DEBUG"]
     )
+    AUTOSCALING_REMOTE_DEBUG_PORT: PortInt = PortInt(3000)
 
     AUTOSCALING_LOGLEVEL: LogLevel = Field(
         LogLevel.INFO, env=["AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
@@ -220,6 +222,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AUTOSCALING_REGISTRY: RegistrySettings | None = Field(auto_default_from_env=True)
 
     AUTOSCALING_DASK: DaskMonitoringSettings | None = Field(auto_default_from_env=True)
+
+    AUTOSCALING_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802

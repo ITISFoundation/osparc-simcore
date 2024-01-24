@@ -24,9 +24,11 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
     });
 
     let label = null;
-    if ("first_name" in collaborator) {
+    if (collaborator["first_name"]) {
       // user
-      label = collaborator["first_name"] + " " + collaborator["last_name"];
+      label = `${collaborator["first_name"]} ${"last_name" in collaborator && collaborator["last_name"] != null ? collaborator["last_name"] : ""}`;
+    } else if ("login" in collaborator) {
+      label = collaborator["login"];
     } else {
       // org
       label = collaborator["label"];

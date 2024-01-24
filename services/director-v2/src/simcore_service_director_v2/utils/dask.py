@@ -51,6 +51,7 @@ from ..core.errors import (
 )
 from ..models.comp_runs import ProjectMetadataDict, RunMetadataDict
 from ..models.comp_tasks import Image
+from ..models.dask_subsystem import DaskJobID
 from ..modules.osparc_variables_substitutions import (
     resolve_and_substitute_session_variables_in_specs,
     substitute_vendor_secrets_in_specs,
@@ -82,13 +83,15 @@ def generate_dask_job_id(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-) -> str:
+) -> DaskJobID:
     """creates a dask job id:
     The job ID shall contain the user_id, project_id, node_id
     Also, it must be unique
     and it is shown in the Dask scheduler dashboard website
     """
-    return f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:uuid_{uuid4()}"
+    return DaskJobID(
+        f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:uuid_{uuid4()}"
+    )
 
 
 _JOB_ID_PARTS: Final[int] = 6
@@ -305,6 +308,10 @@ def compute_task_labels(
     run_metadata: RunMetadataDict,
     node_requirements: NodeRequirements,
 ) -> ContainerLabelsDict:
+    """
+    Raises:
+        ValidationError
+    """
     product_name = run_metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
     standard_simcore_labels = StandardSimcoreDockerLabels.construct(
         user_id=user_id,

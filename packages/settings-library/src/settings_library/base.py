@@ -1,9 +1,16 @@
 import logging
 from collections.abc import Sequence
 from functools import cached_property
-from typing import Final, get_args
+from typing import Final, get_args, get_origin
 
-from pydantic import BaseConfig, BaseSettings, Extra, ValidationError, validator
+from pydantic import (
+    BaseConfig,
+    BaseSettings,
+    ConfigError,
+    Extra,
+    ValidationError,
+    validator,
+)
 from pydantic.error_wrappers import ErrorList, ErrorWrapper
 from pydantic.fields import ModelField, Undefined
 
@@ -90,7 +97,12 @@ class BaseCustomSettings(BaseSettings):
             if args := get_args(field_type):
                 field_type = next(a for a in args if a != type(None))
 
-            if issubclass(field_type, BaseCustomSettings):
+            # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
+            is_not_composed = (
+                get_origin(field_type) is None
+            )  # is not composed as dict[str, Any] or Generic[Base]
+
+            if is_not_composed and issubclass(field_type, BaseCustomSettings):
                 if auto_default_from_env:
                     assert field.field_info.default is Undefined
                     assert field.field_info.default_factory is None
@@ -100,13 +112,13 @@ class BaseCustomSettings(BaseSettings):
                     field.default = None
                     field.required = False  # has a default now
 
-            elif issubclass(field_type, BaseSettings):
+            elif is_not_composed and issubclass(field_type, BaseSettings):
                 msg = f"{cls}.{field.name} of type {field_type} must inherit from BaseCustomSettings"
-                raise ValueError(msg)
+                raise ConfigError(msg)
 
             elif auto_default_from_env:
                 msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclassesbut field {cls}.{field.name} is {field_type} "
-                raise ValueError(msg)
+                raise ConfigError(msg)
 
     @classmethod
     def create_from_envs(cls, **overrides):

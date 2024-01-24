@@ -76,9 +76,9 @@ async def _assert_cluster_instance_created(
     assert all("Value" in x for x in instance_ec2_tags)
 
     _EXPECTED_TAGS: dict[str, str] = {
-        f"{_APPLICATION_TAG_KEY}.deploy": app_settings.SWARM_STACK_NAME,
+        f"{_APPLICATION_TAG_KEY}.deploy": f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{app_settings.SWARM_STACK_NAME}",
         f"{_APPLICATION_TAG_KEY}.version": f"{APP_VERSION}",
-        "Name": f"{CLUSTER_NAME_PREFIX}manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}",
+        "Name": f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{CLUSTER_NAME_PREFIX}manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}",
         "user_id": f"{user_id}",
         "wallet_id": f"{wallet_id}",
         "osparc-tag": "the pytest tag is here",

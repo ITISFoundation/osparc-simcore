@@ -7,7 +7,8 @@
 import asyncio
 import re
 import urllib.parse
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 import pytest
 import simcore_service_webserver.studies_dispatcher._redirects_handlers
@@ -17,13 +18,13 @@ from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pydantic import BaseModel, ByteSize, parse_obj_as
-from pytest import FixtureRequest
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
+from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
 from simcore_service_webserver.studies_dispatcher._rest_handlers import ServiceGet
 from sqlalchemy.sql import text
@@ -84,7 +85,7 @@ def web_server(redis_service: RedisSettings, web_server: TestServer) -> TestServ
 async def director_v2_automock(
     director_v2_service_mock: aioresponses,
 ) -> AsyncIterator[aioresponses]:
-    yield director_v2_service_mock
+    return director_v2_service_mock
 
 
 FAKE_VIEWS_LIST = [
@@ -313,7 +314,7 @@ async def assert_redirected_to_study(
     ), "Expected front-end rendering workbench's study, got %s" % str(content)
 
     # Expects auth cookie for current user
-    assert "osparc.WEBAPI_SESSION" in [c.key for c in session.cookie_jar]
+    assert DEFAULT_SESSION_COOKIE_NAME in [c.key for c in session.cookie_jar]
 
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
@@ -327,18 +328,17 @@ async def assert_redirected_to_study(
         query_s
     )  # returns {'param1': ['value'], 'param2': ['value']}
 
-    assert "project_id" in query_params.keys()
-    assert "viewer_node_id" in query_params.keys()
+    assert "project_id" in query_params
+    assert "viewer_node_id" in query_params
 
     assert all(len(query_params[key]) == 1 for key in query_params)
 
     # returns newly created project
-    redirected_project_id = query_params["project_id"][0]
-    return redirected_project_id
+    return query_params["project_id"][0]
 
 
 @pytest.fixture(params=["service_and_file", "service_only", "file_only"])
-def redirect_type(request: FixtureRequest) -> str:
+def redirect_type(request: pytest.FixtureRequest) -> str:
     return request.param
 
 
@@ -372,14 +372,14 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
             ),
         }
     else:
-        raise ValueError(f"{redirect_type=} undefined")
+        msg = f"{redirect_type=} undefined"
+        raise ValueError(msg)
 
-    url = (
+    return (
         client.app.router["get_redirection_to_viewer"]
         .url_for()
         .with_query({k: f"{v}" for k, v in query.items()})
     )
-    return url
 
 
 async def test_dispatch_study_anonymously(
@@ -568,20 +568,20 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
 
 
 @pytest.mark.parametrize(
-    "missing_parameter", ("file_type", "file_size", "download_link")
+    "missing_parameter", ["file_type", "file_size", "download_link"]
 )
 async def test_missing_file_param(client: TestClient, missing_parameter: str):
     assert client.app
 
-    query = dict(
-        file_type="CSV",
-        file_size=1,
-        viewer_key="simcore/services/dynamic/raw-graphs",
-        viewer_version="2.11.1",
-        download_link=urllib.parse.quote(
+    query = {
+        "file_type": "CSV",
+        "file_size": 1,
+        "viewer_key": "simcore/services/dynamic/raw-graphs",
+        "viewer_version": "2.11.1",
+        "download_link": urllib.parse.quote(
             "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
         ),
-    )
+    }
     query.pop(missing_parameter)
 
     redirect_url = (

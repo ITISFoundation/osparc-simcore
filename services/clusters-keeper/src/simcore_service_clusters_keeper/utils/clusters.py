@@ -49,6 +49,7 @@ def create_startup_script(
 
     environment_variables = [
         f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}",
+        f"DASK_NTHREADS={app_settings.CLUSTERS_KEEPER_DASK_NTHREADS or ''}",
         f"CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_ACCESS_KEY_ID}",
         f"CLUSTERS_KEEPER_EC2_ENDPOINT={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_ENDPOINT}",
         f"CLUSTERS_KEEPER_EC2_REGION_NAME={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_REGION_NAME}",
@@ -67,6 +68,8 @@ def create_startup_script(
     startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
     startup_commands.extend(
         [
+            # NOTE: https://stackoverflow.com/questions/41203492/solving-redis-warnings-on-overcommit-memory-and-transparent-huge-pages-for-ubunt
+            "sysctl vm.overcommit_memory=1",
             f"echo '{_docker_compose_yml_base64_encoded()}' | base64 -d > docker-compose.yml",
             "docker swarm init",
             f"{' '.join(environment_variables)} docker stack deploy --with-registry-auth --compose-file=docker-compose.yml dask_stack",

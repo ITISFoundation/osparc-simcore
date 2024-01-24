@@ -5,7 +5,7 @@
 
 import hashlib
 import json
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid3
 
 import pytest
@@ -108,7 +108,6 @@ async def add_snapshot(
     project_wc: RowProxy, checksum: str, repo: RowProxy, conn: SAConnection
 ) -> str:
     snapshot_orm = SnapshotsOrm(conn)
-    snapshot_checksum = checksum
     row_id = await snapshot_orm.insert(
         checksum=checksum,
         content={"workbench": project_wc.workbench, "ui": project_wc.ui},
@@ -141,7 +140,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         assert isinstance(branch_id, int)
 
         branches_orm.set_filter(rowid=branch_id)
-        main_branch: Optional[RowProxy] = await branches_orm.fetch()
+        main_branch: RowProxy | None = await branches_orm.fetch()
         assert main_branch
         assert main_branch.name == "main", "Expected 'main' as default branch"
         assert main_branch.head_commit_id is None, "still not assigned"
@@ -259,7 +258,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
 
     # take snapshot = add & commit
     async with conn.begin():
-        snapshot_uuid: str = await add_snapshot(project_wc, checksum, repo, conn)
+        await add_snapshot(project_wc, checksum, repo, conn)
 
         commit_id = await commits_orm.insert(
             repo_id=head_commit.repo_id,
@@ -285,4 +284,4 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
 def test_concurrency():
     # several repos
     # several threads
-    assert False
+    raise AssertionError

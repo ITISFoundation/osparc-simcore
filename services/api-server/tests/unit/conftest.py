@@ -29,6 +29,7 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
@@ -42,6 +43,7 @@ from respx import MockRouter
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
+from simcore_service_api_server.services.solver_job_outputs import ResultsTypes
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from simcore_service_api_server.utils.http_calls_capture_processing import (
     PathDescription,
@@ -134,7 +136,7 @@ def auth(mocker, app: FastAPI, faker: Faker) -> HTTPBasicAuth:
         return_value=UserAndProductTuple(user_id=faker.pyint(), product_name="osparc"),
     )
     mocker.patch(
-        "simcore_service_api_server.db.repositories.users.UsersRepository.get_email_from_user_id",
+        "simcore_service_api_server.db.repositories.users.UsersRepository.get_active_user_email",
         autospec=True,
         return_value=faker.email(),
     )
@@ -365,6 +367,26 @@ def mocked_catalog_service_api_base(
         )
 
         yield respx_mock
+
+
+@pytest.fixture
+def mocked_solver_job_outputs(mocker):
+    result: dict[str, ResultsTypes] = {}
+    result["output_1"] = 0.6
+    result["output_2"] = BaseFileLink(
+        store=0,
+        path=SimcoreS3FileID(
+            "api/7cf771db-3ee9-319e-849f-53db0076fc93/single_number.txt"
+        ),
+        label=None,
+        eTag=None,
+    )
+    mocker.patch(
+        "simcore_service_api_server.api.routes.solvers_jobs_getters.get_solver_output_results",
+        autospec=True,
+        return_value=result,
+    )
+    yield
 
 
 @pytest.fixture

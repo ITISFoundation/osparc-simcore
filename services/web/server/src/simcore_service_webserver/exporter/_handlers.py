@@ -14,7 +14,7 @@ from ..login.decorators import login_required
 from ..projects.lock import lock_project
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security.decorators import permission_required
-from ..users.api import get_user_name
+from ..users.api import get_user_fullname
 from ._formatter.archive import get_sds_archive_path
 from .exceptions import SDSException
 from .utils import CleanupFileResponse
@@ -49,7 +49,7 @@ async def export_project(request: web.Request):
             project_uuid,
             ProjectStatus.EXPORTING,
             user_id,
-            await get_user_name(request.app, user_id),
+            await get_user_fullname(request.app, user_id),
         ):
             await retrieve_and_notify_project_locked_state(
                 user_id, project_uuid, request.app

@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreated,
     NodeGet,
     NodeGetIdle,
+    NodeGetUnknown,
     NodeRetrieve,
 )
 from models_library.groups import EVERYONE_GROUP_ID
@@ -175,7 +176,7 @@ async def get_node(request: web.Request) -> web.Response:
             reason=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
         )
 
-    service_data: NodeGetIdle | DynamicServiceGet | NodeGet = (
+    service_data: NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet = (
         await dynamic_scheduler_api.get_dynamic_service(
             app=request.app, node_id=path_params.node_id
         )
