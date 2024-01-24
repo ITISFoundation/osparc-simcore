@@ -8,6 +8,7 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerLabelKey,
+    DockerPlacementConstraint,
     StandardSimcoreDockerLabels,
     to_simcore_runtime_docker_label_key,
 )
@@ -20,10 +21,7 @@ from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
-from ....core.dynamic_services_settings.sidecar import (
-    DynamicSidecarSettings,
-    PlacementConstraintStr,
-)
+from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from ....core.settings import AppSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
@@ -375,13 +373,13 @@ def get_dynamic_sidecar_spec(
         ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
         placement_constraints.append(
             parse_obj_as(
-                PlacementConstraintStr,
+                DockerPlacementConstraint,
                 f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ec2_instance_type}",
             )
         )
 
     placement_substitutions: dict[
-        str, PlacementConstraintStr
+        str, DockerPlacementConstraint
     ] = (
         placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     )

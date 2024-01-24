@@ -1,11 +1,11 @@
 import logging
-import re
 import warnings
 from enum import Enum
 from pathlib import Path
 
 from models_library.basic_types import BootModeEnum, PortInt
-from pydantic import ConstrainedStr, Field, PositiveInt, validator
+from models_library.docker import DockerPlacementConstraint
+from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -49,23 +49,16 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
         return v
 
 
-class PlacementConstraintStr(ConstrainedStr):
-    strip_whitespace = True
-    regex = re.compile(
-        r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
-    )
-
-
 class PlacementSettings(BaseCustomSettings):
     # This is just a service placement constraint, see
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.
-    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[PlacementConstraintStr] = Field(
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[DockerPlacementConstraint] = Field(
         default_factory=list,
         example='["node.labels.region==east", "one!=yes"]',
     )
 
     DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[
-        str, PlacementConstraintStr
+        str, DockerPlacementConstraint
     ] = Field(
         default_factory=dict,
         description=(

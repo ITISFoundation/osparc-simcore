@@ -5,7 +5,10 @@ from typing import Any, cast
 
 from models_library.basic_types import PortInt
 from models_library.boot_options import BootOption, EnvVarKey
-from models_library.docker import to_simcore_runtime_docker_label_key
+from models_library.docker import (
+    DockerPlacementConstraint,
+    to_simcore_runtime_docker_label_key,
+)
 from models_library.service_settings_labels import (
     ComposeSpecLabelDict,
     SimcoreServiceLabels,
@@ -26,7 +29,6 @@ from models_library.utils.docker_compose import (
     MATCH_SERVICE_VERSION,
 )
 
-from ....core.dynamic_services_settings.sidecar import PlacementConstraintStr
 from ....modules.director_v0 import DirectorV0Client
 from ..errors import DynamicSidecarError
 
@@ -291,7 +293,7 @@ def _merge_resources_in_settings(
     settings: deque[SimcoreServiceSettingLabelEntry],
     service_resources: ServiceResourcesDict,
     *,
-    placement_substitutions: dict[str, PlacementConstraintStr],
+    placement_substitutions: dict[str, DockerPlacementConstraint],
 ) -> deque[SimcoreServiceSettingLabelEntry]:
     """All oSPARC services which have defined resource requirements will be added"""
     log.debug("MERGING\n%s\nAND\n%s", f"{settings=}", f"{service_resources}")
@@ -468,7 +470,7 @@ async def merge_settings_before_use(
     service_tag: str,
     service_user_selection_boot_options: dict[EnvVarKey, str],
     service_resources: ServiceResourcesDict,
-    placement_substitutions: dict[str, PlacementConstraintStr],
+    placement_substitutions: dict[str, DockerPlacementConstraint],
 ) -> SimcoreServiceSettingsLabel:
     labels_for_involved_services = await get_labels_for_involved_services(
         director_v0_client=director_v0_client,
