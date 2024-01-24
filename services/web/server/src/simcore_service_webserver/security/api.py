@@ -9,7 +9,7 @@ import passlib.hash
 from aiohttp import web
 from models_library.users import UserID
 
-from ._authz_access_model import OptionalContext, RoleBasedAccessModel
+from ._authz_access_model import AuthContextDict, OptionalContext, RoleBasedAccessModel
 from ._authz_policy import AuthorizationPolicy
 from ._identity_api import forget_identity, remember_identity
 
@@ -25,6 +25,7 @@ async def clean_auth_policy_cache(app: web.Application) -> None:
 
 
 async def authorized_userid(request: web.Request) -> UserID | None:
+    # TODO: remove
     return await aiohttp_security.api.authorized_userid(request)
 
 
@@ -43,10 +44,10 @@ async def check_user_authorized(request: web.Request) -> UserID:
 
     """
     # NOTE: Same as aiohttp_security.api.check_authorized
-    userid = await aiohttp_security.api.authorized_userid(request)
-    if userid is None:
+    user_id = await aiohttp_security.api.authorized_userid(request)
+    if user_id is None:
         raise web.HTTPUnauthorized
-    return userid
+    return user_id
 
 
 async def check_user_permission(
@@ -59,9 +60,9 @@ async def check_user_permission(
         web.HTTPForbidden: If user is authorized and does not have permission
     """
     # NOTE: Same as aiohttp_security.api.check_permission
-    context = context or {}
-    if not context.get("authorized_userid"):
-        context["authorized_userid"] = await check_user_authorized(request)
+    context = context or AuthContextDict()
+    if not context.get("authorized_uid"):
+        context["authorized_uid"] = await check_user_authorized(request)
 
     allowed = await aiohttp_security.api.permits(request, permission, context)
     if not allowed:

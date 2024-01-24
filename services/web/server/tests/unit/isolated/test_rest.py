@@ -3,7 +3,7 @@
 # pylint:disable=no-name-in-module
 
 import asyncio
-from typing import Callable
+from collections.abc import Callable
 from unittest.mock import MagicMock
 
 import pytest
@@ -74,14 +74,26 @@ async def test_frontend_config(
 
 
 @pytest.fixture
-def mock_user_logged_in(mocker: MockerFixture) -> UserID:
+def mock_login_required(mocker: MockerFixture) -> UserID:
     user_id = 1
     # patches @login_required decorator
-    # NOTE: that these tests have no database!
+    # avoids having to start database etc...
     mocker.patch(
-        "simcore_service_webserver.login.decorators.get_user_id_or_raise_if_unauthorized",
+        "simcore_service_webserver.login.decorators.check_user_authorized",
         spec=True,
         return_value=user_id,
+    )
+
+    mocker.patch(
+        "simcore_service_webserver.login.decorators.check_user_permission",
+        spec=True,
+        return_value=None,
+    )
+
+    mocker.patch(
+        "simcore_service_webserver.login.decorators.get_product_name",
+        spec=True,
+        return_value="osparc",
     )
     return user_id
 
@@ -127,7 +139,7 @@ async def test_get_scheduled_maintenance(
     api_version_prefix: str,
     redis_maintenance_data: dict[str, str],
     expected: type[web.HTTPException],
-    mock_user_logged_in: UserID,
+    mock_login_required: UserID,
     mock_redis_client: MagicMock,
 ):
     assert client.app

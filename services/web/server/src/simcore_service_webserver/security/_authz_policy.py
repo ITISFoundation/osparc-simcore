@@ -10,7 +10,12 @@ from aiohttp_security.abc import AbstractAuthorizationPolicy
 from simcore_postgres_database.errors import DatabaseError
 
 from ..db.plugin import get_database_engine
-from ._authz_access_model import OptionalContext, RoleBasedAccessModel, check_access
+from ._authz_access_model import (
+    AuthContextDict,
+    OptionalContext,
+    RoleBasedAccessModel,
+    check_access,
+)
 from ._authz_db import AuthInfoDict, get_active_user_or_none
 from ._constants import MSG_AUTH_NOT_AVAILABLE
 from ._identity_api import IdentityStr
@@ -95,11 +100,11 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         if auth_info is None:
             return False
 
-        context = context or {}
+        context = context or AuthContextDict()
 
         # product access
         if permission == "product":
-            product_name = context.get("product_name", None)
+            product_name = context.get("product_name")
             if product_name is None:
                 return False
             return True  # FIXME: await self._has_product_access(identity, product_name)
