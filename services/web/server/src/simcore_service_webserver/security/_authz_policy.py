@@ -95,9 +95,11 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         if auth_info is None:
             return False
 
+        context = context or {}
+
         # product access
         if permission == "product":
-            product_name = context and context.get("product_name", None)
+            product_name = context.get("product_name", None)
             if product_name is None:
                 return False
             return True  # FIXME: await self._has_product_access(identity, product_name)

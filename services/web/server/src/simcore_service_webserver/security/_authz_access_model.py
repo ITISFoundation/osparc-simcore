@@ -10,11 +10,20 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, TypedDict
+
+from models_library.products import ProductName
+from models_library.users import UserID
 
 from ..db.models import UserRole
 
 _logger = logging.getLogger(__name__)
+
+
+class ContextDict(TypedDict, total=False):
+    authorized_userid: UserID
+    product_name: ProductName
+
 
 OptionalContext: TypeAlias = dict[str, Any] | None
 

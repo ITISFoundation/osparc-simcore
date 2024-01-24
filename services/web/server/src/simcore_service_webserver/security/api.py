@@ -59,7 +59,10 @@ async def check_user_permission(
         web.HTTPForbidden: If user is authorized and does not have permission
     """
     # NOTE: Same as aiohttp_security.api.check_permission
-    await check_user_authorized(request)
+    context = context or {}
+    if not context.get("authorized_userid"):
+        context["authorized_userid"] = await check_user_authorized(request)
+
     allowed = await aiohttp_security.api.permits(request, permission, context)
     if not allowed:
         raise web.HTTPForbidden(reason=f"Not sufficient access rights for {permission}")

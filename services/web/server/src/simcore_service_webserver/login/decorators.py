@@ -52,7 +52,12 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
         user_id = await check_user_authorized(request)
 
         await check_user_permission(
-            request, "product", context={"product_name": get_product_name(request)}
+            request,
+            "product",
+            context={
+                "product_name": get_product_name(request),
+                "authorized_uid": user_id,
+            },
         )
 
         request[RQT_USERID_KEY] = user_id
