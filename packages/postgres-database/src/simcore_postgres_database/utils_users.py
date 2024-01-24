@@ -100,10 +100,10 @@ class UsersRepo:
 
     @staticmethod
     async def get_primary_group_id(conn: SAConnection, user_id: int) -> int:
-        value: str | None = await conn.scalar(
+        value: int | None = await conn.scalar(
             sa.select(users.c.primary_gid).where(users.c.id == user_id)
         )
-        if value:
+        if value is not None:
             assert isinstance(value, int)  # nosec
             return value
 
@@ -116,7 +116,7 @@ class UsersRepo:
                 (users.c.status == UserStatus.ACTIVE) & (users.c.id == user_id)
             )
         )
-        if value:
+        if value is not None:
             assert isinstance(value, str)  # nosec
             return value
 

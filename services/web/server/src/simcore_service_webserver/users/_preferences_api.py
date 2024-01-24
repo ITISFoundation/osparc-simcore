@@ -24,7 +24,6 @@ from . import _preferences_db
 from ._preferences_models import (
     ALL_FRONTEND_PREFERENCES,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
-    get_preference_identifier,
     get_preference_identifier_to_preference_name_map,
 )
 
@@ -89,8 +88,8 @@ async def get_frontend_user_preferences_aggregation(
 
     is_telemetry_enabled: bool = group_extra_properties.enable_telemetry
 
-    low_disk_warning_identifier = get_preference_identifier(
-        TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference
+    low_disk_warning_identifier = (
+        TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference.get_preference_identifier()
     )
 
     def include_preference(identifier: PreferenceIdentifier) -> bool:
