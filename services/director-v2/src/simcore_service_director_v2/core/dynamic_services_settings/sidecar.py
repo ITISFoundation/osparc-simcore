@@ -1,5 +1,6 @@
 import logging
 import re
+import warnings
 from enum import Enum
 from pathlib import Path
 
@@ -64,36 +65,27 @@ class PlacementSettings(BaseCustomSettings):
     )
 
     DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[
-        str,
-        PlacementConstraintStr,
-    ] | None = Field(
-        default=None,
+        str, PlacementConstraintStr
+    ] = Field(
+        default_factory=dict,
         description=(
             "Use placement constraints in place of generic resources, for details "
             "see https://github.com/ITISFoundation/osparc-simcore/issues/5250 "
             "When `None` (default), uses generic resources"
         ),
-        example='{"AIRAM": "node.labels.CUSTOM==CUSTOM_VALUE"}',
+        example='{"AIRAM": "node.labels.custom==true"}',
     )
-
-    @property
-    def use_generic_resources_instead_of_placement_constraints(self) -> bool:
-        return (
-            self.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
-            is None
-        )
 
     @validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod
-    def no_empty_placement_constraints_mapping_allowed(
-        cls, value: dict | None
-    ) -> dict | None:
-        if value is not None and len(value) == 0:
-            msg = (
-                "Cannot provide and empty placement replacement constraints "
-                f"mapping: '{value}'"
+    def warn_if_any_values_provided(cls, value: dict) -> dict:
+        if len(value) > 0:
+            warnings.warn(  # noqa: B028
+                "Generic resources will be replaced by the following "
+                f"placement constraints {value}. This is a workaround "
+                "for https://github.com/moby/swarmkit/pull/3162",
+                UserWarning,
             )
-            raise ValueError(msg)
         return value
 
 

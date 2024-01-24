@@ -379,23 +379,22 @@ def get_dynamic_sidecar_spec(
                 f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ec2_instance_type}",
             )
         )
-    if placement_settings.use_generic_resources_instead_of_placement_constraints:
-        replacement_constraints: dict[
-            str, PlacementConstraintStr
-        ] | None = (
-            placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
-        )
-        if replacement_constraints:
-            for resource_name in scheduler_data.service_resources:
-                if resource_name not in {"CPU", "RAM"}:
-                    if resource_name not in replacement_constraints:
-                        msg = (
-                            "Since replacement placement constraints are enabled, "
-                            f"{resource_name} must be present inside {replacement_constraints=}"
-                        )
-                        raise ValueError(msg)
 
-                    placement_constraints.append(replacement_constraints[resource_name])
+    replacement_constraints: dict[
+        str, PlacementConstraintStr
+    ] = (
+        placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
+    )
+    for resource_name in scheduler_data.service_resources:
+        if resource_name not in {"CPU", "RAM"}:
+            if resource_name not in replacement_constraints:
+                msg = (
+                    "Since replacement placement constraints are enabled, "
+                    f"{resource_name} must be present inside {replacement_constraints=}"
+                )
+                raise ValueError(msg)
+
+            placement_constraints.append(replacement_constraints[resource_name])
 
     #  -----------
     create_service_params = {

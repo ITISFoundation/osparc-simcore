@@ -26,6 +26,7 @@ from models_library.utils.docker_compose import (
     MATCH_SERVICE_VERSION,
 )
 
+from ....core.dynamic_services_settings.sidecar import PlacementConstraintStr
 from ....modules.director_v0 import DirectorV0Client
 from ..errors import DynamicSidecarError
 
@@ -281,7 +282,7 @@ def _add_compose_destination_containers_to_settings_entries(
         item: SimcoreServiceSettingLabelEntry,
     ) -> SimcoreServiceSettingLabelEntry:
         # pylint: disable=protected-access
-        item._destination_containers = destination_containers  # noqa: SLF001
+        item.destination_containers = destination_containers
         return item
 
     return [_inject_destination_container(x) for x in settings]
@@ -291,7 +292,7 @@ def _merge_resources_in_settings(
     settings: deque[SimcoreServiceSettingLabelEntry],
     service_resources: ServiceResourcesDict,
     *,
-    skip_generic_resources: bool,
+    placement_substitutions: dict[str, PlacementConstraintStr],
 ) -> deque[SimcoreServiceSettingLabelEntry]:
     """All oSPARC services which have defined resource requirements will be added"""
     log.debug("MERGING\n%s\nAND\n%s", f"{settings=}", f"{service_resources}")
@@ -340,8 +341,8 @@ def _merge_resources_in_settings(
                     "MemoryBytes"
                 ] += resource_value.reservation
             else:  # generic resources
-                if skip_generic_resources:
-                    # NOTE: placement constraints will be used in favour of generic resources
+                if resource_name in placement_substitutions:
+                    # NOTE: placement constraint will be used in favour of this generic resource
                     continue
                 generic_resource = {
                     "DiscreteResourceSpec": {
@@ -388,9 +389,7 @@ def _patch_target_service_into_env_vars(
             list_of_env_vars = entry.value if entry.value else []
 
             # pylint: disable=protected-access
-            destination_containers: list[
-                str
-            ] = entry._destination_containers  # noqa: SLF001
+            destination_containers: list[str] = entry.destination_containers
 
             # transforms settings defined environment variables
             # from `ENV_VAR=PAYLOAD`
@@ -471,7 +470,7 @@ async def merge_settings_before_use(
     service_tag: str,
     service_user_selection_boot_options: dict[EnvVarKey, str],
     service_resources: ServiceResourcesDict,
-    skip_generic_resources: bool,
+    placement_substitutions: dict[str, PlacementConstraintStr],
 ) -> SimcoreServiceSettingsLabel:
     labels_for_involved_services = await get_labels_for_involved_services(
         director_v0_client=director_v0_client,
@@ -511,7 +510,7 @@ async def merge_settings_before_use(
         )
 
     settings = _merge_resources_in_settings(
-        settings, service_resources, skip_generic_resources=skip_generic_resources
+        settings, service_resources, placement_substitutions=placement_substitutions
     )
     settings = _patch_target_service_into_env_vars(settings)
 

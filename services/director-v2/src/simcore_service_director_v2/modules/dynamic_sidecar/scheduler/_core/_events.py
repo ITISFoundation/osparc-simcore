@@ -159,7 +159,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             service_tag=scheduler_data.version,
             service_user_selection_boot_options=boot_options,
             service_resources=scheduler_data.service_resources,
-            skip_generic_resources=dynamic_services_placement_settings.use_generic_resources_instead_of_placement_constraints,
+            placement_substitutions=dynamic_services_placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS,
         )
 
         groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
