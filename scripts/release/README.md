@@ -1,14 +1,16 @@
-# Helper for monitoring of release
-`pip install .`
-`monitor-release --help`
+# release-monitor
 
-Check current status of containers
-`monitor-release master containers`
-Check running sidecars:
-`monitor-release master sidecars`
 
-# Create .env file
-```
+Helper for monitoring of release. Here some one-liner examples:
+
+- Installation: `pip install .; monitor-release --help` or simply `make install-ci` or `make install-dev`
+- Check current status of containers in `master` deployment: `monitor-release containers master` containers.
+- Check running sidecars in `master` deployment: `monitor-release sidecar master`
+
+
+## Create .env file
+
+```.env
 MASTER_PORTAINER_URL=
 MASTER_PORTAINER_USERNAME=
 MASTER_PORTAINER_PASSWORD=
