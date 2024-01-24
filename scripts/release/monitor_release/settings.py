@@ -65,6 +65,11 @@ def get_release_settings(env_file_path: Path, deployment: Deployment):
         raise ValueError(msg)
 
     match deployment:
+        # NOTE: `portainer_endpoint_version` and `starts_with` cannot be deduced from the
+        # information in the `repo.config`. For that reason we have to set
+        # those values in the code.
+        #
+
         case Deployment.master:
             settings = ReleaseSettings(
                 _enf_file=env_file_path,  # type: ignore
@@ -108,7 +113,7 @@ def get_release_settings(env_file_path: Path, deployment: Deployment):
                 starts_with="staging-simcore_staging",
             )
         case _:
-            msg = f"Invalid {deployment=}"
+            msg = f"Unkown {deployment=}. Please define a ReleaseSettings for it"
             raise ValueError(msg)
 
     return settings
