@@ -128,8 +128,6 @@ async def web_server(
 async def server_url(web_server: URL) -> str:
     return f'{web_server.with_path("/")}'
 
-    return 4
-
 
 @pytest.fixture
 def socketio_server_events(
