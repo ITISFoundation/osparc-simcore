@@ -6,6 +6,10 @@ x-dask-tls-secrets: &dask_tls_secrets
   - source: dask_tls_cert
     target: /home/scu/.dask/dask-crt.pem
     mode: 0444
+x-dask-tls-environment: &dask_tls_environment
+  - DASK_TLS_CA_FILE: /home/scu/.dask/dask-crt.pem
+  - DASK_TLS_KEY: /home/scu/.dask/dask-key.pem
+  - DASK_TLS_CERT: /home/scu/.dask/dask-crt.pem
 
 services:
   api-server:
@@ -186,8 +190,7 @@ services:
       - WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS=${WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS}
       - WORKERS_EC2_INSTANCES_SUBNET_ID=${WORKERS_EC2_INSTANCES_SUBNET_ID}
       - WORKERS_EC2_INSTANCES_CUSTOM_TAGS=${WORKERS_EC2_INSTANCES_CUSTOM_TAGS}
-    secrets:
-      - *dask_tls_secrets
+    secrets:  *dask_tls_secrets
 
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
@@ -249,6 +252,7 @@ services:
 
       - COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE=${COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE}
       - COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL=${COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL}
+      - COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH={"type":"tls","tls_ca_file":"/home/scu/.dask/dask-crt.pem","tls_client_cert":"/home/scu/.dask/dask-crt.pem","tls_client_key":"/home/scu/.dask/dask-key.pem"}
       - COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE=${COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE}
       - COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE=${COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE}
 
@@ -322,8 +326,7 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
-    secrets:
-      - *dask_tls_secrets
+    secrets:  *dask_tls_secrets
 
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
@@ -900,8 +903,7 @@ services:
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
     networks:
       - computational_services_subnet
-    secrets:
-      - *dask_tls_secrets
+    secrets:  *dask_tls_secrets
 
   dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -913,8 +915,7 @@ services:
 
     networks:
       - computational_services_subnet
-    secrets:
-      - *dask_tls_secrets
+    secrets:  *dask_tls_secrets
 
   datcore-adapter:
     image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}

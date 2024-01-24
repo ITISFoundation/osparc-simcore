@@ -18,7 +18,7 @@ from models_library.clusters import (
     ClusterAuthentication,
     NoAuthentication,
 )
-from pydantic import AnyHttpUrl, AnyUrl, Field, NonNegativeInt, parse_obj_as, validator
+from pydantic import AnyHttpUrl, AnyUrl, Field, NonNegativeInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
@@ -69,14 +69,14 @@ class ComputationalBackendSettings(BaseCustomSettings):
         default=True,
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: AnyUrl = Field(
-        parse_obj_as(AnyUrl, "tcp://dask-scheduler:8786"),
+        ...,
         description="This is the cluster that will be used by default"
         " when submitting computational services (typically "
         "tcp://dask-scheduler:8786 for the internal cluster, or "
         "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ClusterAuthentication | None = Field(
-        NoAuthentication(),
+        ...,
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
     )

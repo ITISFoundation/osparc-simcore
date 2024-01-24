@@ -16,10 +16,11 @@ from dask_task_models_library.container_tasks.events import (
 )
 from models_library.clusters import (
     ClusterAuthentication,
+    InternalClusterAuthentication,
     JupyterHubTokenAuthentication,
     KerberosAuthentication,
-    NoAuthentication,
     SimpleAuthentication,
+    TLSAuthentication,
 )
 from pydantic import AnyUrl
 
@@ -73,12 +74,23 @@ class DaskSubSystem:
             await wrap_client_async_routine(self.gateway.close())
 
 
-async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
+async def _connect_to_dask_scheduler(
+    endpoint: AnyUrl, authentication: InternalClusterAuthentication
+) -> DaskSubSystem:
     try:
+        security = False
+        if isinstance(authentication, TLSAuthentication):
+            security = distributed.Security(
+                tls_ca_file=f"{authentication.tls_ca_file}",
+                tls_client_cert=f"{authentication.tls_client_cert}",
+                tls_client_key=f"{authentication.tls_client_key}",
+                require_encryption=True,
+            )
         client = await distributed.Client(
             f"{endpoint}",
             asynchronous=True,
             name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
+            security=security,
         )
         return DaskSubSystem(
             client=client,
@@ -155,7 +167,7 @@ async def _connect_with_gateway_and_create_cluster(
 
 
 def _is_dask_scheduler(authentication: ClusterAuthentication) -> bool:
-    return isinstance(authentication, NoAuthentication)
+    return isinstance(authentication, InternalClusterAuthentication)
 
 
 async def create_internal_client_based_on_auth(
@@ -163,7 +175,7 @@ async def create_internal_client_based_on_auth(
 ) -> DaskSubSystem:
     if _is_dask_scheduler(authentication):
         # if no auth then we go for a standard scheduler connection
-        return await _connect_to_dask_scheduler(endpoint)
+        return await _connect_to_dask_scheduler(endpoint, authentication)
     # we do have some auth, so it is going through a gateway
     return await _connect_with_gateway_and_create_cluster(endpoint, authentication)
 

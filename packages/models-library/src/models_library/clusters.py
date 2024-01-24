@@ -1,4 +1,5 @@
 from enum import auto
+from pathlib import Path
 from typing import Any, ClassVar, Final, Literal, TypeAlias
 
 from pydantic import (
@@ -95,7 +96,34 @@ class NoAuthentication(BaseAuthentication):
     type: Literal["none"] = "none"
 
 
-InternalClusterAuthentication: TypeAlias = NoAuthentication
+class TLSAuthentication(BaseAuthentication):
+    type: Literal["tls"] = "tls"
+    tls_ca_file: Path
+    tls_client_cert: Path
+    tls_client_key: Path
+
+    class Config(BaseAuthentication.Config):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "type": "tls",
+                    "tls_ca_file": "/path/to/ca_file",
+                    "tls_client_cert": "/path/to/cert_file",
+                    "tls_client_key": "/path/to/key_file",
+                },
+            ]
+        }
+
+    @validator("tls_ca_file", "tls_client_cert", "tls_client_key")
+    @classmethod
+    def _file_exists(cls, v: Path) -> Path:
+        if not v.exists():
+            msg = f"{v} is missing!"
+            raise ValueError(msg)
+        return v
+
+
+InternalClusterAuthentication: TypeAlias = NoAuthentication | TLSAuthentication
 ExternalClusterAuthentication: TypeAlias = (
     SimpleAuthentication | KerberosAuthentication | JupyterHubTokenAuthentication
 )
