@@ -107,28 +107,36 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 		$(CURDIR)/tests/sleepers/sleepers.py
 
 
-
-.PHONY: test-dev
-test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
-	# WARNING:
-	#   - do not forget to build latest changes images
-	#   - this test can be affected by existing docker volumes in your host machine
-	#
-	# running unit tests
-	@pytest --keep-docker-up \
-	-vv \
-	--color=yes \
-	--failed-first \
-	--durations=10 \
-	--asyncio-mode=auto \
-	--pdb \
-	$(CURDIR)
+# Define the file where user input will be saved
+USER_INPUT_FILE := .e2e-playwright-env.txt
 
 
-.PHONY: test-ci
-test-ci: ## runs ci tests (i.e. w/o debug tools and with code coverage)
-	@pytest \
-	-vv \
-	--color=yes \
-	--durations=10 \
-	$(CURDIR)
+# Prompt the user for input and store it into variables
+$(USER_INPUT_FILE):
+		@read -p "Enter your product URL: " PRODUCT_URL; \
+		read -p "Is the product billable [y/n]: " BILLABLE; \
+		read -p "Enter your username: " USER_NAME; \
+		read -s -p "Enter your password: " PASSWORD; echo ""; \
+		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
+		echo "$$PRODUCT_URL $$USER_NAME $$PASSWORD $$NUM_SLEEPERS $$BILLABLE" > $(USER_INPUT_FILE)
+
+# Read user input from the file and run the test
+test-sleepers-anywhere: _check_venv_active $(USER_INPUT_FILE)
+	@IFS=' ' read -r PRODUCT_URL USER_NAME PASSWORD NUM_SLEEPERS BILLABLE < $(USER_INPUT_FILE); \
+	BILLABLE_FLAG=""; \
+    if [ "$$BILLABLE" = "y" ]; then \
+        BILLABLE_FLAG="--product-billable"; \
+    fi; \
+	pytest -s tests/sleepers/sleepers.py \
+		--color=yes \
+		--product-url=$$PRODUCT_URL \
+		--user-name=$$USER_NAME \
+		--password=$$PASSWORD \
+		--num-sleepers=$$NUM_SLEEPERS \
+		$$BILLABLE_FLAG \
+		--browser chromium \
+		--headed
+
+
+clean:
+	@rm -rf $(USER_INPUT_FILE)

@@ -15,12 +15,14 @@ from typing import Final
 from playwright.sync_api import Page, WebSocket
 from pytest_simcore.playwright_utils import (
     MINUTE,
+    RunningState,
     SocketIOEvent,
-    SocketIOProjectStateUpdatedWaiter,
-    decode_socketio_42_message,
+    retrieve_project_state_from_decoded_message,
+    wait_for_pipeline_state,
 )
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
 
+_WAITING_FOR_PIPELINE_TO_CHANGE_STATE: Final[int] = 1 * MINUTE
 _WAITING_FOR_CLUSTER_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_STARTED_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER: Final[int] = 1 * MINUTE
@@ -50,7 +52,7 @@ def _get_file_names(page: Page) -> list[str]:
     return file_names_found
 
 
-def test_sleepers(  # noqa: PLR0915
+def test_sleepers(
     page: Page,
     log_in_and_out: WebSocket,
     create_new_project_and_delete: Callable[..., None],
@@ -71,11 +73,13 @@ def test_sleepers(  # noqa: PLR0915
     create_new_project_and_delete(auto_delete=True)
 
     # we are now in the workbench
+    print(f"---> creating {num_sleepers} sleeper(s)...")
     for _ in range(1, num_sleepers):
         page.get_by_text("New Node").click()
         page.get_by_placeholder("Filter").click()
         page.get_by_placeholder("Filter").fill("sleeper")
         page.get_by_placeholder("Filter").press("Enter")
+    print(f"<--- {num_sleepers} sleeper(s) created")
 
     # set inputs if needed
     if input_sleep_time:
@@ -96,53 +100,54 @@ def test_sleepers(  # noqa: PLR0915
     # sometimes they may jump
     # PUBLISHED -> [WAITING_FOR_CLUSTER] -> (PENDING) -> [WAITING_FOR_RESOURCES] -> (PENDING) -> STARTED -> SUCCESS/FAILED
     socket_io_event = start_and_stop_pipeline()
-
-    current_state = socket_io_event.obj["data"]["state"]["value"]
+    current_state = retrieve_project_state_from_decoded_message(socket_io_event)
     print(f"---> pipeline is in {current_state=}")
 
-    # check that we get waiting_for_cluster state for max 5 minutes
-    if product_billable and current_state in ["PUBLISHED", "WAITING_FOR_CLUSTER"]:
-        waiter = SocketIOProjectStateUpdatedWaiter(
-            expected_states=("WAITING_FOR_RESOURCES",)
-        )
-        print("---> waiting for WAITING_FOR_RESOURCE state...")
-        with log_in_and_out.expect_event(
-            "framereceived", waiter, timeout=_WAITING_FOR_CLUSTER_MAX_WAITING_TIME
-        ) as event:
-            ...
-        current_state = decode_socketio_42_message(event.value).obj["data"]["state"][
-            "value"
-        ]
-        print(f"---> pipeline is in {current_state=}")
+    # this should not stay like this for long, it will either go to PENDING, WAITING_FOR_CLUSTER/WAITING_FOR_RESOURCES or STARTED or FAILED
+    current_state = wait_for_pipeline_state(
+        current_state,
+        websocket=log_in_and_out,
+        if_in_states=(
+            RunningState.PUBLISHED,
+            RunningState.PENDING,
+        ),
+        expected_states=(
+            RunningState.WAITING_FOR_CLUSTER,
+            RunningState.WAITING_FOR_RESOURCES,
+            RunningState.STARTED,
+        ),
+        timeout_ms=_WAITING_FOR_PIPELINE_TO_CHANGE_STATE,
+    )
 
-    # check that we get the starting/running state for max 5 minutes
-    if current_state != "STARTED":
-        waiter = SocketIOProjectStateUpdatedWaiter(expected_states=("STARTED",))
+    # in case we are in WAITING_FOR_CLUSTER, that means we have a new cluster OR that there is something restarting in a non billable deployment
+    current_state = wait_for_pipeline_state(
+        current_state,
+        websocket=log_in_and_out,
+        if_in_states=(RunningState.WAITING_FOR_CLUSTER,),
+        expected_states=(
+            RunningState.WAITING_FOR_RESOURCES,
+            RunningState.STARTED,
+        ),
+        timeout_ms=_WAITING_FOR_CLUSTER_MAX_WAITING_TIME,
+    )
 
-        print("---> waiting for STARTED state...")
-        with log_in_and_out.expect_event(
-            "framereceived", waiter, timeout=_WAITING_FOR_STARTED_MAX_WAITING_TIME
-        ) as event:
-            ...
-        current_state = decode_socketio_42_message(event.value).obj["data"]["state"][
-            "value"
-        ]
-        print(f"---> pipeline is in {current_state=}")
+    # now we wait for the workers
+    current_state = wait_for_pipeline_state(
+        current_state,
+        websocket=log_in_and_out,
+        if_in_states=(RunningState.WAITING_FOR_RESOURCES,),
+        expected_states=(RunningState.STARTED,),
+        timeout_ms=_WAITING_FOR_STARTED_MAX_WAITING_TIME,
+    )
 
     # check that we get success state now
-    waiter = SocketIOProjectStateUpdatedWaiter(expected_states=("SUCCESS", "FAILED"))
-    print("---> waiting for SUCCESS state...")
-    with log_in_and_out.expect_event(
-        "framereceived",
-        waiter,
-        timeout=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
-    ) as event:
-        ...
-    current_state = decode_socketio_42_message(event.value).obj["data"]["state"][
-        "value"
-    ]
-    print(f"---> pipeline is in {current_state=}")
-    assert current_state == "SUCCESS", "pipeline failed to run!"
+    current_state = wait_for_pipeline_state(
+        current_state,
+        websocket=log_in_and_out,
+        if_in_states=(RunningState.STARTED,),
+        expected_states=(RunningState.SUCCESS,),
+        timeout_ms=num_sleepers * _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER,
+    )
 
     # check the outputs (the first item is the title, so we skip it)
     expected_file_names = ["logs.zip", "single_number.txt"]
