@@ -1,5 +1,7 @@
 """ API for security subsystem.
 
+
+NOTE: DO NOT USE aiohttp_security.api directly but use this interface instead
 """
 
 import aiohttp_security.api
@@ -22,18 +24,6 @@ async def clean_auth_policy_cache(app: web.Application) -> None:
     await autz_policy.clear_cache()
 
 
-async def check_permission(
-    request: web.Request, permission: str, *, context: OptionalContext = None
-) -> None:
-    """Checker that passes only to authoraised users with given permission.
-
-    Raises:
-        web.HTTPUnauthorized: If user is not authorized
-        web.HTTPForbidden: If user is authorized and does not have permission
-    """
-    await aiohttp_security.api.check_permission(request, permission, context)
-
-
 async def authorized_userid(request: web.Request) -> UserID | None:
     return await aiohttp_security.api.authorized_userid(request)
 
@@ -46,16 +36,33 @@ async def is_anonymous(request: web.Request) -> bool:
     return is_user_id_none
 
 
-async def get_user_id_or_raise_if_unauthorized(request: web.Request) -> UserID:
+async def check_user_authorized(request: web.Request) -> UserID:
     """
     Raises:
         web.HTTPUnauthorized: for anonymous user (i.e. user_id is None)
 
     """
+    # NOTE: Same as aiohttp_security.api.check_authorized
     userid = await aiohttp_security.api.authorized_userid(request)
     if userid is None:
         raise web.HTTPUnauthorized
     return userid
+
+
+async def check_user_permission(
+    request: web.Request, permission: str, *, context: OptionalContext = None
+) -> None:
+    """Checker that passes only to authoraised users with given permission.
+
+    Raises:
+        web.HTTPUnauthorized: If user is not authorized
+        web.HTTPForbidden: If user is authorized and does not have permission
+    """
+    # NOTE: Same as aiohttp_security.api.check_permission
+    await check_user_authorized(request)
+    allowed = await aiohttp_security.api.permits(request, permission, context)
+    if not allowed:
+        raise web.HTTPForbidden(reason=f"Not sufficient access rights for {permission}")
 
 
 #
@@ -79,7 +86,7 @@ assert remember_identity  # nosec
 
 __all__: tuple[str, ...] = (
     "authorized_userid",
-    "check_permission",
+    "check_user_permission",
     "encrypt_password",
     "forget_identity",
     "get_access_model",

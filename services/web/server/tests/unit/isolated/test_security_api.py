@@ -12,7 +12,6 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aiohttp.web import RouteTableDef
-from aiohttp_security import check_authorized
 from aiohttp_session import get_session
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
@@ -26,7 +25,8 @@ from simcore_service_webserver.products._events import _set_app_state
 from simcore_service_webserver.products._middlewares import discover_product_middleware
 from simcore_service_webserver.products._model import Product
 from simcore_service_webserver.security.api import (
-    check_permission,
+    check_user_authorized,
+    check_user_permission,
     clean_auth_policy_cache,
     forget_identity,
     remember_identity,
@@ -188,8 +188,8 @@ def app_routes(
 
     @routes.post("/v0/protected")
     async def _protected(request: web.Request):
-        await check_authorized(request)  # = you are logged in
-        await check_permission(request, "admin.*")
+        await check_user_authorized(request)  # = you are logged in
+        await check_user_permission(request, "admin.*")
 
         assert await _get_product_name(request) == expected_product_name
 
@@ -197,7 +197,7 @@ def app_routes(
 
     @routes.post("/v0/logout")
     async def _logout(request: web.Request):
-        await check_authorized(request)
+        await check_user_authorized(request)
 
         # product_name = await _forget_product_name(request)
         # assert product_name == expected_product_name

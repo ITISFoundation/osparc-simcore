@@ -5,11 +5,12 @@ from aiohttp import web
 from servicelib.aiohttp.typing_extension import HandlerAnyReturn
 from servicelib.request_keys import RQT_USERID_KEY
 
-from ..security.api import get_user_id_or_raise_if_unauthorized
+from ..products.api import get_product_name
+from ..security.api import check_user_authorized, check_user_permission
 
 
 def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
-    """Decorator that restrict access only for authorized users
+    """Decorator that restrict access only for authorized users with permissions to access a given product
 
     - User is considered authorized if check_authorized(request) raises no exception
     - If authorized, it injects user_id in request[RQT_USERID_KEY]
@@ -43,12 +44,18 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
     async def _wrapper(request: web.Request):
         """
         Raises:
-            HTTPUnauthorized: if request authorization check fails
+            HTTPUnauthorized: if unauthorized user
+            HTTPForbidden: if user not allowed in product
         """
         # WARNING: note that check_authorized is patched in some tests.
         # Careful when changing the function signature
-        request[RQT_USERID_KEY] = await get_user_id_or_raise_if_unauthorized(request)
+        user_id = await check_user_authorized(request)
 
+        await check_user_permission(
+            request, "product", context={"product_name": get_product_name(request)}
+        )
+
+        request[RQT_USERID_KEY] = user_id
         return await handler(request)
 
     return _wrapper
