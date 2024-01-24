@@ -332,6 +332,7 @@ show-endpoints:
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Start compile+watch front-end container [front-end]
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
+	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
@@ -341,6 +342,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every service in production except static-webserver. For front-end development
 	# Start compile+watch front-end container [front-end]
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
+	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)  [back-end]
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
@@ -350,6 +352,7 @@ up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every 
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 ops_ci=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
+	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
@@ -360,6 +363,7 @@ endif
 	@$(_show_endpoints)
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
+	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(MAKE) .deploy-ops
