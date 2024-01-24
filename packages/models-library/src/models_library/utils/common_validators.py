@@ -42,3 +42,10 @@ def create_enums_pre_validator(enum_cls: type[enum.Enum]):
         return value
 
     return _validator
+
+
+def ensure_unique_dict_values_validator(dict_data: dict) -> dict:
+    if len(dict_data) != len(set(dict_data.values())):
+        msg = f"Dictionary values must be unique, provided: {dict_data}"
+        raise ValueError(msg)
+    return dict_data

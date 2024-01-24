@@ -5,6 +5,7 @@ from pathlib import Path
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.docker import DockerLabelKey
+from models_library.utils.common_validators import ensure_unique_values_validator
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
@@ -69,13 +70,15 @@ class PlacementSettings(BaseCustomSettings):
         example='{"AIRAM": "node.labels.custom==true"}',
     )
 
-    @validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
-    @classmethod
-    def values_are_unique(cls, value: dict) -> dict:
-        if len(value) != len(set(value.values())):
-            msg = f"Dictionary values must be unique, provided: {value}"
-            raise ValueError(msg)
-        return value
+    _unique_custom_constraints = validator(
+        "DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS",
+        allow_reuse=True,
+    )(ensure_unique_values_validator)
+
+    _unique_resource_placement_constraints_substitutions = validator(
+        "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS",
+        allow_reuse=True,
+    )(ensure_unique_values_validator)
 
     @validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod
