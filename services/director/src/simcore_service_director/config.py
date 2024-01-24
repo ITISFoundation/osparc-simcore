@@ -6,6 +6,7 @@ import logging
 import os
 import warnings
 from distutils.util import strtobool
+from typing import Dict, Optional
 
 from servicelib.client_session import (  # pylint: disable=no-name-in-module
     APP_CLIENT_SESSION_KEY,
@@ -62,11 +63,11 @@ DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: str = os.environ.get(
 )
 
 
-def _parse_placement_replacements() -> dict[str, str]:
+def _parse_placement_replacements() -> Dict[str, str]:
     str_env_var: str = os.environ.get(
         "DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS", "{}"
     )
-    result: dict[str, str] = json.loads(str_env_var)
+    result: Dict[str, str] = json.loads(str_env_var)
 
     if len(result) > 0:
         warnings.warn(  # noqa: B028
@@ -79,9 +80,9 @@ def _parse_placement_replacements() -> dict[str, str]:
     return result
 
 
-DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: None | (
-    dict[str, str]
-) = _parse_placement_replacements()
+DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: Dict[
+    str, str
+] = _parse_placement_replacements()
 
 # for passing self-signed certificate to spawned services
 DIRECTOR_SELF_SIGNED_SSL_SECRET_ID: str = os.environ.get(
@@ -122,7 +123,7 @@ REGISTRY_SSL: bool = strtobool(os.environ.get("REGISTRY_SSL", "True"))
 EXTRA_HOSTS_SUFFIX: str = os.environ.get("EXTRA_HOSTS_SUFFIX", "undefined")
 
 # these are the envs passed to the dynamic services by default
-SERVICES_DEFAULT_ENVS: dict[str, str] = {
+SERVICES_DEFAULT_ENVS: Dict[str, str] = {
     "POSTGRES_ENDPOINT": os.environ.get(
         "POSTGRES_ENDPOINT", "undefined postgres endpoint"
     ),
@@ -147,7 +148,7 @@ NODE_SCHEMA_LOCATION: str = os.environ.get(
     "NODE_SCHEMA_LOCATION", f"{API_ROOT}/{API_VERSION}/schemas/node-meta-v0.0.1.json"
 )
 # used to find the right network name
-SIMCORE_SERVICES_NETWORK_NAME: str | None = os.environ.get(
+SIMCORE_SERVICES_NETWORK_NAME: Optional[str] = os.environ.get(
     "SIMCORE_SERVICES_NETWORK_NAME"
 )
 # useful when developing with an alternative registry namespace
