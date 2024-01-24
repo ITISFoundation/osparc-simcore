@@ -17,7 +17,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.security._identity_api import VerifiedIdentity
 from simcore_service_webserver.session.api import get_session
 from simcore_service_webserver.session.settings import SessionSettings
 
@@ -89,9 +88,7 @@ async def test_security_identity_is_email_and_product(
         # check it is email
         resp = await client.get(session_url_path)
         unencrypted_session = await resp.json()
-        assert unencrypted_session.get("AIOHTTP_SECURITY") == VerifiedIdentity(
-            e=user["email"], p="osparc"
-        ).json(by_alias=True)
+        assert unencrypted_session.get("AIOHTTP_SECURITY") == user["email"]
 
         # logout: ends session
         await client.post(logout_url_path)
