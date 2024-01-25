@@ -56,12 +56,6 @@ distributed:
       client:
         key: ${DASK_TLS_KEY}
         cert: ${DASK_TLS_CERT}
-  scheduler:
-    dashboard:
-      tls:
-        ca-file: ${DASK_TLS_CA_FILE}
-        key: ${DASK_TLS_KEY}
-        cert: ${DASK_TLS_CERT}
 EOF
 
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
