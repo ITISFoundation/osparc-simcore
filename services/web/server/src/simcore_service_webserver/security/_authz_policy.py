@@ -1,5 +1,6 @@
 """ AUTHoriZation (auth) policy:
 """
+import functools
 import logging
 from typing import Final
 
@@ -7,6 +8,8 @@ from aiocache import cached
 from aiocache.base import BaseCache
 from aiohttp import web
 from aiohttp_security.abc import AbstractAuthorizationPolicy
+from models_library.products import ProductName
+from models_library.users import UserID
 from simcore_postgres_database.errors import DatabaseError
 
 from ..db.plugin import get_database_engine
@@ -14,9 +17,9 @@ from ._authz_access_model import (
     AuthContextDict,
     OptionalContext,
     RoleBasedAccessModel,
-    check_access,
+    has_access_by_role,
 )
-from ._authz_db import AuthInfoDict, get_active_user_or_none
+from ._authz_db import AuthInfoDict, get_active_user_or_none, is_user_in_product_name
 from ._constants import MSG_AUTH_NOT_AVAILABLE
 from ._identity_api import IdentityStr
 
@@ -24,6 +27,18 @@ _logger = logging.getLogger(__name__)
 
 _SECOND = 1  # in seconds
 _ACTIVE_USER_AUTHZ_CACHE_TTL: Final = 5 * _SECOND
+
+
+def _handle_exceptions_as_503(coro):
+    @functools.wraps
+    async def _wrapper(self, *args, **kwargs):
+        try:
+            await coro(self, *args, **kwargs)
+        except DatabaseError as err:
+            _logger.exception("Auth unavailable due to database error")
+            raise web.HTTPServiceUnavailable(reason=MSG_AUTH_NOT_AVAILABLE) from err
+
+    return _wrapper
 
 
 class AuthorizationPolicy(AbstractAuthorizationPolicy):
@@ -48,6 +63,14 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         except DatabaseError as err:
             _logger.exception("Auth unavailable due to database error")
             raise web.HTTPServiceUnavailable(reason=MSG_AUTH_NOT_AVAILABLE) from err
+
+    @_handle_exceptions_as_503
+    async def _has_access_to_product(
+        self, *, user_id: UserID, product_name: ProductName
+    ) -> bool:
+        return await is_user_in_product_name(
+            get_database_engine(self._app), user_id, product_name
+        )
 
     @property
     def access_model(self) -> RoleBasedAccessModel:
@@ -107,10 +130,12 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             product_name = context.get("product_name")
             if product_name is None:
                 return False
-            return True  # FIXME: await self._has_product_access(identity, product_name)
+            return await self._has_access_to_product(
+                user_id=auth_info["id"], product_name=product_name
+            )
 
         # role-based access
-        return await check_access(
+        return await has_access_by_role(
             self._access_model,
             role=auth_info["role"],
             operations=permission,

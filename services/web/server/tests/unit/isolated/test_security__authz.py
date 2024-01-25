@@ -22,7 +22,7 @@ from pytest_mock import MockerFixture
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.security._authz_access_model import (
     RoleBasedAccessModel,
-    check_access,
+    has_access_by_role,
 )
 from simcore_service_webserver.security._authz_access_roles import (
     ROLES_PERMISSIONS,
@@ -227,17 +227,19 @@ async def test_async_checked_permissions(access_model: RoleBasedAccessModel):
 async def test_check_access_expressions(access_model: RoleBasedAccessModel):
     R = UserRole
 
-    assert await check_access(access_model, R.ANONYMOUS, "study.stop")
+    assert await has_access_by_role(access_model, R.ANONYMOUS, "study.stop")
 
-    assert await check_access(
+    assert await has_access_by_role(
         access_model, R.ANONYMOUS, "study.stop |study.node.create"
     )
 
-    assert not await check_access(
+    assert not await has_access_by_role(
         access_model, R.ANONYMOUS, "study.stop & study.node.create"
     )
 
-    assert await check_access(access_model, R.USER, "study.stop & study.node.create")
+    assert await has_access_by_role(
+        access_model, R.USER, "study.stop & study.node.create"
+    )
 
 
 @pytest.fixture

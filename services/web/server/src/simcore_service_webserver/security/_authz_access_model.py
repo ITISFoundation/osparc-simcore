@@ -135,7 +135,7 @@ class RoleBasedAccessModel:
 _OPERATORS_REGEX_PATTERN = re.compile(r"(&|\||\bAND\b|\bOR\b)")
 
 
-async def check_access(
+async def has_access_by_role(
     model: RoleBasedAccessModel,
     role: UserRole,
     operations: str,
