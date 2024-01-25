@@ -4,9 +4,14 @@
 import time
 
 import distributed
+import pytest
 from distributed import SpecCluster
 from faker import Faker
-from models_library.clusters import NoAuthentication
+from models_library.clusters import (
+    InternalClusterAuthentication,
+    NoAuthentication,
+    TLSAuthentication,
+)
 from pydantic import AnyUrl, parse_obj_as
 from simcore_service_clusters_keeper.modules.dask import (
     is_scheduler_busy,
@@ -17,12 +22,22 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+_authentication_types = [
+    NoAuthentication(),
+    TLSAuthentication.construct(**TLSAuthentication.Config.schema_extra["examples"][0]),
+]
 
-async def test_ping_scheduler_non_existing_scheduler(faker: Faker):
+
+@pytest.mark.parametrize(
+    "authentication", _authentication_types, ids=lambda p: f"authentication-{p.type}"
+)
+async def test_ping_scheduler_non_existing_scheduler(
+    faker: Faker, authentication: InternalClusterAuthentication
+):
     assert (
         await ping_scheduler(
             parse_obj_as(AnyUrl, f"tcp://{faker.ipv4()}:{faker.port_number()}"),
-            NoAuthentication(),
+            authentication,
         )
         is False
     )
