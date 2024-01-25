@@ -10,6 +10,7 @@ from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.s3 import S3Settings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -115,3 +116,4 @@ class ApplicationSettings(MinimalApplicationSettings):
         description="Heartbeat couter limit when RUT considers service as unhealthy.",
     )
     RESOURCE_USAGE_TRACKER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+    RESOURCE_USAGE_TRACKER_S3: S3Settings | None = Field(auto_default_from_env=True)
