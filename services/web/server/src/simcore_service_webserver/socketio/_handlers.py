@@ -90,6 +90,7 @@ async def _set_user_in_group_rooms(
 
     sio = get_socket_server(app)
     for group in groups:
+        # NOTE socketio need to be upgraded that's why enter_room is not an awaitable
         sio.enter_room(socket_id, SocketIORoom.from_group_id(group["gid"]))
 
     sio.enter_room(socket_id, SocketIORoom.from_user_id(user_id))
