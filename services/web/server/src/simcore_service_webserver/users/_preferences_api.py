@@ -24,7 +24,8 @@ from . import _preferences_db
 from ._preferences_models import (
     ALL_FRONTEND_PREFERENCES,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
-    get_preference_identifier_to_preference_name_map,
+    get_preference_identifier,
+    get_preference_name,
 )
 
 _MAX_PARALLEL_DB_QUERIES: Final[NonNegativeInt] = 2
@@ -88,8 +89,8 @@ async def get_frontend_user_preferences_aggregation(
 
     is_telemetry_enabled: bool = group_extra_properties.enable_telemetry
 
-    low_disk_warning_identifier = (
-        TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference.get_preference_identifier()
+    low_disk_warning_identifier = get_preference_identifier(
+        TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference.get_preference_name()
     )
 
     def include_preference(identifier: PreferenceIdentifier) -> bool:
@@ -118,10 +119,8 @@ async def set_frontend_user_preference(
     value: Any,
 ) -> None:
     try:
-        preference_name: PreferenceName = (
-            get_preference_identifier_to_preference_name_map()[
-                frontend_preference_identifier
-            ]
+        preference_name: PreferenceName = get_preference_name(
+            frontend_preference_identifier
         )
     except KeyError as e:
         raise FrontendUserPreferenceIsNotDefinedError(

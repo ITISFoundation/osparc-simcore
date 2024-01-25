@@ -93,13 +93,6 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
     def to_db(self) -> dict:
         return self.dict(exclude={"preference_identifier", "preference_type"})
 
-    @classmethod
-    def get_preference_identifier(cls) -> PreferenceIdentifier:
-        preference_identifier: PreferenceIdentifier = cls.__fields__[
-            "preference_identifier"
-        ].default
-        return preference_identifier
-
 
 class UserServiceUserPreference(_BaseUserPreferenceModel):
     preference_type: PreferenceType = Field(PreferenceType.USER_SERVICE, const=True)

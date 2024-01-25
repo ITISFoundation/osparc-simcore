@@ -115,13 +115,18 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
 ]
 
+_PREFERENCE_NAME_TO_IDENTIFIER_MAPPING: dict[PreferenceName, PreferenceIdentifier] = {
+    p.get_preference_name(): p.__fields__["preference_identifier"].default
+    for p in ALL_FRONTEND_PREFERENCES
+}
+_PREFERENCE_IDENTIFIER_TO_NAME_MAPPING: dict[PreferenceIdentifier, PreferenceName] = {
+    i: n for n, i in _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING.items()
+}
 
-def get_preference_identifier_to_preference_name_map() -> (
-    dict[PreferenceIdentifier, PreferenceName]
-):
-    mapping: dict[PreferenceIdentifier, str] = {}
-    for preference in ALL_FRONTEND_PREFERENCES:
-        preference_identifier = preference.__fields__["preference_identifier"].default
-        mapping[preference_identifier] = preference.get_preference_name()
 
-    return mapping
+def get_preference_name(preference_identifier: PreferenceIdentifier) -> PreferenceName:
+    return _PREFERENCE_IDENTIFIER_TO_NAME_MAPPING[preference_identifier]
+
+
+def get_preference_identifier(preference_name: PreferenceName) -> PreferenceIdentifier:
+    return _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING[preference_name]
