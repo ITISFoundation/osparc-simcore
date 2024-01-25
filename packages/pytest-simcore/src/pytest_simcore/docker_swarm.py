@@ -240,11 +240,11 @@ def _deploy_stack(compose_file: Path, stack_name: str) -> None:
 def _make_dask_sidecar_certificates(simcore_service_folder: Path) -> None:
     dask_sidecar_root_folder = simcore_service_folder / "dask-sidecar"
     subprocess.run(
-        ["make", "certificates"],
+        ["make", "certificates"],  # noqa: S603, S607
         cwd=dask_sidecar_root_folder,
         check=True,
         capture_output=True,
-    )  # noqa: S603, S607
+    )
 
 
 @pytest.fixture(scope="module")
