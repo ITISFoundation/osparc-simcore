@@ -1,8 +1,8 @@
 """ AUTHoriZation (auth) policy:
 """
-import functools
+import contextlib
 import logging
-from typing import Callable, Final
+from typing import Final
 
 from aiocache import cached
 from aiocache.base import BaseCache
@@ -29,16 +29,13 @@ _SECOND = 1  # in seconds
 _ACTIVE_USER_AUTHZ_CACHE_TTL: Final = 5 * _SECOND
 
 
-def _handle_exceptions_as_503(coro: Callable):
-    @functools.wraps(coro)
-    async def _wrapper(self, **kwargs):
-        try:
-            return await coro(self, **kwargs)
-        except DatabaseError as err:
-            _logger.exception("Auth unavailable due to database error")
-            raise web.HTTPServiceUnavailable(reason=MSG_AUTH_NOT_AVAILABLE) from err
-
-    return _wrapper
+@contextlib.contextmanager
+def _handle_exceptions_as_503():
+    try:
+        yield
+    except DatabaseError as err:
+        _logger.exception("Auth unavailable due to database error")
+        raise web.HTTPServiceUnavailable(reason=MSG_AUTH_NOT_AVAILABLE) from err
 
 
 class AuthorizationPolicy(AbstractAuthorizationPolicy):
@@ -64,13 +61,13 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             _logger.exception("Auth unavailable due to database error")
             raise web.HTTPServiceUnavailable(reason=MSG_AUTH_NOT_AVAILABLE) from err
 
-    @_handle_exceptions_as_503
     async def _has_access_to_product(
         self, *, user_id: UserID, product_name: ProductName
     ) -> bool:
-        return await is_user_in_product_name(
-            get_database_engine(self._app), user_id, product_name
-        )
+        with _handle_exceptions_as_503():
+            return await is_user_in_product_name(
+                get_database_engine(self._app), user_id, product_name
+            )
 
     @property
     def access_model(self) -> RoleBasedAccessModel:

@@ -234,7 +234,7 @@ def client(
 
 
 @pytest.fixture
-async def db_mocked(client: TestClient, mocker: MockerFixture) -> None:
+async def basic_db_funs_mocked(client: TestClient, mocker: MockerFixture) -> None:
     assert client.app
     # NOTE: this might be a problem with every test since cache is global per process
     await clean_auth_policy_cache(client.app)
@@ -248,7 +248,7 @@ async def db_mocked(client: TestClient, mocker: MockerFixture) -> None:
 async def test_product_in_session(
     client: TestClient,
     expected_product_name: ProductName,
-    db_mocked: None,
+    basic_db_funs_mocked: None,
 ):
 
     resp = await client.post("/v0/public")
@@ -265,7 +265,9 @@ async def test_product_in_session(
 
 
 @pytest.fixture
-def mock_get_active_user_or_none(mocker: MockerFixture) -> MagicMock:
+def get_active_user_or_none_dbmock(
+    basic_db_funs_mocked: None, mocker: MockerFixture
+) -> MagicMock:
     return mocker.patch(
         "simcore_service_webserver.security._authz_policy.get_active_user_or_none",
         autospec=True,
@@ -274,7 +276,9 @@ def mock_get_active_user_or_none(mocker: MockerFixture) -> MagicMock:
 
 
 @pytest.fixture
-def is_user_in_product_name_mock(mocker: MockerFixture) -> MagicMock:
+def is_user_in_product_name_dbmock(
+    basic_db_funs_mocked: None, mocker: MockerFixture
+) -> MagicMock:
     return mocker.patch(
         "simcore_service_webserver.security._authz_policy.is_user_in_product_name",
         autospec=True,
@@ -285,9 +289,8 @@ def is_user_in_product_name_mock(mocker: MockerFixture) -> MagicMock:
 async def test_auth_in_session(
     client: TestClient,
     expected_product_name: ProductName,
-    db_mocked: None,
-    mock_get_active_user_or_none: MagicMock,
-    is_user_in_product_name_mock: MagicMock,
+    get_active_user_or_none_dbmock: MagicMock,
+    is_user_in_product_name_dbmock: MagicMock,
 ):
     # inits session by getting front-end
     resp = await client.get("/")
@@ -315,11 +318,11 @@ async def test_auth_in_session(
 
     resp = await client.post("/v0/public")
     assert resp.ok, f"error: {await resp.text()}"
-    assert not mock_get_active_user_or_none.called
+    assert not get_active_user_or_none_dbmock.called
 
     resp = await client.post("/v0/admin")
     assert resp.ok, f"error: {await resp.text()}"
-    assert mock_get_active_user_or_none.called
+    assert get_active_user_or_none_dbmock.called
 
     resp = await client.post("/v0/logout")
     assert resp.ok, f"error: {await resp.text()}"
@@ -341,8 +344,8 @@ async def test_auth_in_session(
 
 async def test_hack_product_session(
     client: TestClient,
-    mock_get_active_user_or_none: MagicMock,
-    is_user_in_product_name_mock: MagicMock,
+    get_active_user_or_none_dbmock: MagicMock,
+    is_user_in_product_name_dbmock: MagicMock,
 ):
 
     resp = await client.post("/v0/hack/s4l")
@@ -365,9 +368,8 @@ async def test_hack_product_session(
 
 async def test_time_overhead_on_handlers_of_auth_decorators(
     client: TestClient,
-    db_mocked: None,
-    mock_get_active_user_or_none: MagicMock,
-    is_user_in_product_name_mock: MagicMock,
+    get_active_user_or_none_dbmock: MagicMock,
+    is_user_in_product_name_dbmock: MagicMock,
 ):
     """test overhead of adding @login_required and @permission_required to a handler"""
 
@@ -401,6 +403,11 @@ async def test_time_overhead_on_handlers_of_auth_decorators(
 
     assert resp.ok, f"error: {await resp.text()}"
 
-    # NOTE: 150% wrt reference (basically double!)
+    # NOTE: 90% more wrt reference (basically double!)
     # and this is mocking the access to the database!
-    assert elapsed < ref_elapsed * (1 + 1.5), f"{elapsed=}, {ref_elapsed=}"
+    print(f"{elapsed/ref_elapsed=}")
+    assert elapsed < ref_elapsed * (1 + 0.9), f"got {elapsed/ref_elapsed=}"
+
+    # Number of times db functions are called in one request
+    assert get_active_user_or_none_dbmock.call_count == 1
+    assert is_user_in_product_name_dbmock.call_count == 1
