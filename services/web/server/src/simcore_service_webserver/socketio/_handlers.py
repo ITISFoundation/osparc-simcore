@@ -90,9 +90,9 @@ async def _set_user_in_group_rooms(
 
     sio = get_socket_server(app)
     for group in groups:
-        await sio.enter_room(socket_id, SocketIORoom.from_group_id(group["gid"]))
+        sio.enter_room(socket_id, SocketIORoom.from_group_id(group["gid"]))
 
-    await sio.enter_room(socket_id, SocketIORoom.from_user_id(user_id))
+    sio.enter_room(socket_id, SocketIORoom.from_user_id(user_id))
 
 
 #
