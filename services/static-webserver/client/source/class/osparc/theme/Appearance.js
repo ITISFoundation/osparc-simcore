@@ -1172,9 +1172,10 @@ qx.Theme.define("osparc.theme.Appearance", {
     "appmotion-buy-credits-input": {
       include: "textfield",
       style: state => ({
-        backgroundColor: state.readonly ? "transparent" : "background-main-1",
+        backgroundColor: state.disabled ? "transparent" : "background-main-1",
         padding: [10, 15],
-        font: "text-18"
+        font: "text-18",
+        decorator: "appmotion-buy-credits-input"
       })
     },
 
@@ -1182,9 +1183,10 @@ qx.Theme.define("osparc.theme.Appearance", {
       include: "selectbox",
       alias: "selectbox",
       style: state => ({
-        backgroundColor: "background-main-1",
+        backgroundColor: state.disabled ? "transparent" : "background-main-1",
         padding: [10, 15],
-        font: "text-14"
+        font: "text-14",
+        decorator: "appmotion-buy-credits-input"
       })
     },
 
@@ -1193,6 +1195,27 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "selectbox/list",
       style: state => ({
         backgroundColor: "background-main-1"
+      })
+    },
+
+    "appmotion-buy-credits-spinner": {
+      include: "spinner",
+      alias: "spinner"
+    },
+
+    "appmotion-buy-credits-spinner/textfield": {
+      include: "appmotion-buy-credits-input",
+      alias: "appmotion-buy-credits-input",
+      style: state => ({
+        font: "text-14"
+      })
+    },
+
+    "appmotion-buy-credits-checkbox": {
+      include: "checkbox",
+      alias: "checkbox",
+      style: state => ({
+        icon: state.checked ? "@MaterialIcons/check_box/20" : "@MaterialIcons/check_box_outline_blank/20"
       })
     }
   }
