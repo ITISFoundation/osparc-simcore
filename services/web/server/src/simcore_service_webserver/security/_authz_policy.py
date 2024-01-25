@@ -2,7 +2,7 @@
 """
 import functools
 import logging
-from typing import Final
+from typing import Callable, Final
 
 from aiocache import cached
 from aiocache.base import BaseCache
@@ -29,11 +29,11 @@ _SECOND = 1  # in seconds
 _ACTIVE_USER_AUTHZ_CACHE_TTL: Final = 5 * _SECOND
 
 
-def _handle_exceptions_as_503(coro):
-    @functools.wraps
-    async def _wrapper(self, *args, **kwargs):
+def _handle_exceptions_as_503(coro: Callable):
+    @functools.wraps(coro)
+    async def _wrapper(self, **kwargs):
         try:
-            await coro(self, *args, **kwargs)
+            return await coro(self, **kwargs)
         except DatabaseError as err:
             _logger.exception("Auth unavailable due to database error")
             raise web.HTTPServiceUnavailable(reason=MSG_AUTH_NOT_AVAILABLE) from err

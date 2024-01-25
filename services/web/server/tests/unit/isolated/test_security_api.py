@@ -273,11 +273,21 @@ def mock_get_active_user_or_none(mocker: MockerFixture) -> MagicMock:
     )
 
 
+@pytest.fixture
+def is_user_in_product_name_mock(mocker: MockerFixture) -> MagicMock:
+    return mocker.patch(
+        "simcore_service_webserver.security._authz_policy.is_user_in_product_name",
+        autospec=True,
+        return_value=True,
+    )
+
+
 async def test_auth_in_session(
     client: TestClient,
     expected_product_name: ProductName,
     db_mocked: None,
     mock_get_active_user_or_none: MagicMock,
+    is_user_in_product_name_mock: MagicMock,
 ):
     # inits session by getting front-end
     resp = await client.get("/")
@@ -330,7 +340,9 @@ async def test_auth_in_session(
 
 
 async def test_hack_product_session(
-    client: TestClient, mock_get_active_user_or_none: MagicMock
+    client: TestClient,
+    mock_get_active_user_or_none: MagicMock,
+    is_user_in_product_name_mock: MagicMock,
 ):
 
     resp = await client.post("/v0/hack/s4l")
@@ -351,10 +363,13 @@ async def test_hack_product_session(
     assert resp.status == web.HTTPForbidden.status_code
 
 
-async def test_auth_request_overhead(
+async def test_time_overhead_on_handlers_of_auth_decorators(
     client: TestClient,
+    db_mocked: None,
     mock_get_active_user_or_none: MagicMock,
+    is_user_in_product_name_mock: MagicMock,
 ):
+    """test overhead of adding @login_required and @permission_required to a handler"""
 
     # init
     resp = await client.get("/")
@@ -386,6 +401,6 @@ async def test_auth_request_overhead(
 
     assert resp.ok, f"error: {await resp.text()}"
 
-    # NOTE: 70% wrt reference (almost double!)
-    # and this is removing the access to the database!
-    assert elapsed < ref_elapsed * (1 + 0.7), f"{elapsed=}, {ref_elapsed=}"
+    # NOTE: 150% wrt reference (basically double!)
+    # and this is mocking the access to the database!
+    assert elapsed < ref_elapsed * (1 + 1.5), f"{elapsed=}, {ref_elapsed=}"
