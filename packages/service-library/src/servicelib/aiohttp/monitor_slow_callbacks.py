@@ -21,11 +21,14 @@ def enable(
     aio_debug_logger = get_logger(__name__)
     _run = asyncio.events.Handle._run
 
+    # sharing instance
+    profiler = Profiler(interval=slow_duration_secs)
+
     def instrumented(self):
         # unsetting profiler, helps with development mode and tests
         sys.setprofile(None)
 
-        with Profiler(interval=slow_duration_secs) as profiler:
+        with profiler:
             t0 = time.monotonic()
 
             retval = _run(self)
