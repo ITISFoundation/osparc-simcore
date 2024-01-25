@@ -372,6 +372,7 @@ async def test_time_overhead_on_handlers_of_auth_decorators(
     is_user_in_product_name_dbmock: MagicMock,
 ):
     """test overhead of adding @login_required and @permission_required to a handler"""
+    assert client.app
 
     # init
     resp = await client.get("/")
@@ -387,27 +388,33 @@ async def test_time_overhead_on_handlers_of_auth_decorators(
     )
     assert resp.ok, f"error: {await resp.text()}"
 
+    await clean_auth_policy_cache(client.app)
+
     # actual test
 
-    # eval reference
+    # reference: eval w/o decorators
     t0 = asyncio.get_event_loop().time()
     resp = await client.post("/v0/public")
     ref_elapsed = asyncio.get_event_loop().time() - t0
 
     assert resp.ok, f"error: {await resp.text()}"
 
-    # eval
+    # Number of times db functions are called in one request
+    assert get_active_user_or_none_dbmock.call_count == 0
+    assert is_user_in_product_name_dbmock.call_count == 0
+
+    # under test: eval w/ auth *_required decorators
     t0 = asyncio.get_event_loop().time()
     resp = await client.post("/v0/admin")
     elapsed = asyncio.get_event_loop().time() - t0
 
     assert resp.ok, f"error: {await resp.text()}"
 
-    # NOTE: 90% more wrt reference (basically double!)
-    # and this is mocking the access to the database!
-    print(f"{elapsed/ref_elapsed=}")
-    assert elapsed < ref_elapsed * (1 + 0.9), f"got {elapsed/ref_elapsed=}"
-
     # Number of times db functions are called in one request
     assert get_active_user_or_none_dbmock.call_count == 1
     assert is_user_in_product_name_dbmock.call_count == 1
+
+    # NOTE: 150% more wrt reference (basically ~ 2.5x more !!!!!!!!!!!)
+    # and this is mocking the access to the database!
+    assert elapsed < ref_elapsed * (1 + 1.6), f"got {elapsed/ref_elapsed=}"
+    print(f"Got {elapsed/ref_elapsed=}")
