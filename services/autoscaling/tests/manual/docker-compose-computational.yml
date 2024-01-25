@@ -2,7 +2,7 @@ version: "3.8"
 services:
   autoscaling:
     environment:
-      - DASK_MONITORING_URL=tls://dask-scheduler:8786
+      - DASK_MONITORING_URL=tcp://dask-scheduler:8786
   dask-sidecar:
     dns: 8.8.8.8 # needed to access internet
     image: itisfoundation/dask-sidecar:master-github-latest
@@ -16,7 +16,7 @@ services:
     environment:
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: 1
       DASK_NPROCS: 1
-      DASK_SCHEDULER_URL: ${DASK_SCHEDULER_URL:-tls://dask-scheduler:8786}
+      DASK_SCHEDULER_URL: ${DASK_SCHEDULER_URL:-tcp://dask-scheduler:8786}
       DASK_SIDECAR_NON_USABLE_RAM: 0
       DASK_SIDECAR_NUM_NON_USABLE_CPUS: 0
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
