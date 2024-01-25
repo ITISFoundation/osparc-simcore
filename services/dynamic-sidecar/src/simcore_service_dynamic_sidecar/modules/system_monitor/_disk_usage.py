@@ -24,7 +24,7 @@ async def get_usage(path: Path) -> DiskUsage:
     usage = await asyncio.get_event_loop().run_in_executor(
         None, psutil.disk_usage, f"{path}"
     )
-    return DiskUsage.parse_obj(usage._asdict())
+    return DiskUsage.from_ps_util_disk_usage(usage)
 
 
 @dataclass

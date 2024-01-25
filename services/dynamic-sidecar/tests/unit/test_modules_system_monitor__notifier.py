@@ -200,7 +200,9 @@ async def _assert_call_count(mock: AsyncMock, *, call_count: int) -> None:
 
 
 def _get_mocked_disk_usage(byte_size_str: str) -> DiskUsage:
-    return DiskUsage(total=0, used=0, free=ByteSize.validate(byte_size_str), percent=0)
+    return DiskUsage(
+        total=0, used=0, free=ByteSize.validate(byte_size_str), used_percent=0
+    )
 
 
 @pytest.mark.parametrize(

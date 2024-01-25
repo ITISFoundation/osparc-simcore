@@ -63,7 +63,9 @@ def _get_byte_size(byte_size_as_str: str) -> ByteSize:
 
 
 def _get_mocked_disk_usage(byte_size_as_str: str) -> DiskUsage:
-    return DiskUsage(total=0, used=0, free=_get_byte_size(byte_size_as_str), percent=0)
+    return DiskUsage(
+        total=0, used=0, free=_get_byte_size(byte_size_as_str), used_percent=0
+    )
 
 
 async def _assert_monitor_triggers(
