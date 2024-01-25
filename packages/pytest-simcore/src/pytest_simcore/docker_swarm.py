@@ -232,19 +232,24 @@ def _deploy_stack(compose_file: Path, stack_name: str) -> None:
             except subprocess.CalledProcessError as err:
                 if b"update out of sequence" in err.stderr:
                     raise TryAgain from err
-                print(
-                    "docker_stack failed",
-                    f"{' '.join(err.cmd)}",
-                    f"returncode={err.returncode}",
-                    f"stdout={err.stdout}",
-                    f"stderr={err.stderr}",
-                    "\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak",
+                pytest.fail(
+                    reason=f"deploying docker_stack failed: {err.cmd=}, {err.returncode=}, {err.stdout=}, {err.stderr=}\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak"
                 )
-                raise
+
+
+def _make_dask_sidecar_certificates(simcore_service_folder: Path) -> None:
+    dask_sidecar_root_folder = simcore_service_folder / "dask-sidecar"
+    subprocess.run(
+        ["make", "certificates"],
+        cwd=dask_sidecar_root_folder,
+        check=True,
+        capture_output=True,
+    )  # noqa: S603, S607
 
 
 @pytest.fixture(scope="module")
 def docker_stack(
+    osparc_simcore_services_dir: Path,
     docker_swarm: None,
     docker_client: docker.client.DockerClient,
     core_docker_compose_file: Path,
@@ -276,7 +281,7 @@ def docker_stack(
     # NOTE: if the migration service was already running prior to this call it must
     # be force updated so that it does its job. else it remains and tests will fail
     _force_remove_migration_service(docker_client)
-
+    _make_dask_sidecar_certificates(osparc_simcore_services_dir)
     # make up-version
     stacks_deployed: dict[str, dict] = {}
     for key, stack_name, compose_file in stacks:
