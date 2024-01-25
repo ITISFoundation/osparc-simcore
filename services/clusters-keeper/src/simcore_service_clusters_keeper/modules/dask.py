@@ -22,7 +22,7 @@ async def ping_scheduler(
     url: AnyUrl, authentication: InternalClusterAuthentication
 ) -> bool:
     try:
-        security = False
+        security = distributed.Security()
         if isinstance(authentication, TLSAuthentication):
             security = distributed.Security(
                 tls_ca_file=f"{authentication.tls_ca_file}",
@@ -47,7 +47,7 @@ async def ping_scheduler(
 async def is_scheduler_busy(
     url: AnyUrl, authentication: InternalClusterAuthentication
 ) -> bool:
-    security = False
+    security = distributed.Security()
     if isinstance(authentication, TLSAuthentication):
         security = distributed.Security(
             tls_ca_file=f"{authentication.tls_ca_file}",

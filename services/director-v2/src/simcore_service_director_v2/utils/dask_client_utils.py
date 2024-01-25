@@ -78,7 +78,7 @@ async def _connect_to_dask_scheduler(
     endpoint: AnyUrl, authentication: InternalClusterAuthentication
 ) -> DaskSubSystem:
     try:
-        security = False
+        security = distributed.Security()
         if isinstance(authentication, TLSAuthentication):
             security = distributed.Security(
                 tls_ca_file=f"{authentication.tls_ca_file}",
