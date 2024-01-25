@@ -12,6 +12,7 @@ from models_library.rabbitmq_messages import (
     WalletCreditsMessage,
 )
 from models_library.socketio import SocketMessageDict
+from models_library.users import GroupID
 from pydantic import parse_raw_as
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
@@ -152,13 +153,13 @@ async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> b
     wallet_groups = await wallets_api.list_wallet_groups_with_read_access_by_wallet(
         app, wallet_id=rabbit_message.wallet_id
     )
-    rooms_to_notify = [f"{item.gid}" for item in wallet_groups]
+    rooms_to_notify: list[GroupID] = [item.gid for item in wallet_groups]
     for room in rooms_to_notify:
         await send_group_messages(app, room, socket_messages)
     return True
 
 
-_EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...,]] = (
+_EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...]] = (
     SubcribeArgumentsTuple(
         LoggerRabbitMessage.get_channel_name(),
         _log_message_parser,
