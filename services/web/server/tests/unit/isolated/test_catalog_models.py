@@ -7,6 +7,7 @@ from copy import deepcopy
 
 import pytest
 from pint import UnitRegistry
+from pytest_benchmark.fixture import BenchmarkFixture
 from simcore_service_webserver.catalog._api_units import replace_service_input_outputs
 from simcore_service_webserver.catalog._handlers import RESPONSE_MODEL_POLICY
 
@@ -16,7 +17,9 @@ def unit_registry() -> UnitRegistry:
     return UnitRegistry()
 
 
-def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry):
+def test_from_catalog_to_webapi_service(
+    unit_registry: UnitRegistry, benchmark: BenchmarkFixture
+):
 
     # Taken from services/catalog/src/simcore_service_catalog/models/schemas/services.py on Feb.2021
     catalog_service = {
@@ -66,12 +69,16 @@ def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry):
         "owner": "foo@fake.com",
     }
 
-    webapi_service = deepcopy(catalog_service)
-    replace_service_input_outputs(
-        webapi_service, unit_registry=unit_registry, **RESPONSE_MODEL_POLICY
-    )
+    def _run():
+        s = deepcopy(catalog_service)
+        replace_service_input_outputs(
+            s, unit_registry=unit_registry, **RESPONSE_MODEL_POLICY
+        )
+        return s
 
-    print(json.dumps(webapi_service, indent=2))
+    webapi_service = benchmark(_run)
+
+    print(json.dumps(webapi_service, indent=1))
 
     # If units are defined, I want unitShort and unitLong
     assert webapi_service["outputs"]["outFile"]["unit"] == "sec"
