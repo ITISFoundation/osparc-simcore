@@ -61,6 +61,7 @@ class CatalogRequestContext(BaseModel):
 
 async def list_services(
     app: web.Application,
+    *,
     user_id: UserID,
     product_name: str,
     unit_registry: UnitRegistry,
