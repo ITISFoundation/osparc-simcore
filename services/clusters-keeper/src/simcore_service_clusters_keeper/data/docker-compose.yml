@@ -1,5 +1,8 @@
 version: "3.8"
 x-dask-tls-secrets: &dask_tls_secrets
+  - source: dask_tls_ca
+    target: ${DASK_TLS_KEY}
+    mode: 0444
   - source: dask_tls_key
     target: ${DASK_TLS_KEY}
     mode: 0444
@@ -48,7 +51,7 @@ services:
       DASK_TLS_CERT: ${DASK_TLS_CERT}
       DASK_TLS_KEY: ${DASK_TLS_KEY}
       LOG_LEVEL: ${LOG_LEVEL}
-      SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
+      SIDECAR_COMP_SERVICES_SHARED_FOLDER: /home/scu/computational_shared_data
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: computational_shared_data
     deploy:
       mode: global
@@ -115,7 +118,9 @@ volumes:
   redis-data:
 
 secrets:
+  dask_tls_ca:
+    file: .dask-certificates/tls_dask_ca.pem
   dask_tls_key:
-    file: ./dask-sidecar/.dask-certificates/dask-key.pem
+    file: .dask-certificates/tls_dask_cert.pem
   dask_tls_cert:
-    file: ./dask-sidecar/.dask-certificates/dask-cert.pem
+    file: .dask-certificates/tls_dask_key.pem

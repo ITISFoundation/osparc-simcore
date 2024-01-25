@@ -2,6 +2,7 @@ from enum import auto
 from pathlib import Path
 from typing import Any, ClassVar, Final, Literal, TypeAlias
 
+from attr import frozen
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -46,6 +47,7 @@ class BaseAuthentication(BaseModel):
     type: str
 
     class Config:
+        frozen = True
         extra = Extra.forbid
 
 
