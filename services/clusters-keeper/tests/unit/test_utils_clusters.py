@@ -154,7 +154,7 @@ def test_startup_script_defines_all_envs_for_docker_compose(
     )
     assert environment_variables
     process = subprocess.run(
-        [
+        [  # noqa: S603, S607
             "docker",
             "compose",
             "--dry-run",
