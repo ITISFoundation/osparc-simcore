@@ -115,14 +115,6 @@ class TLSAuthentication(BaseAuthentication):
             ]
         }
 
-    @validator("tls_ca_file", "tls_client_cert", "tls_client_key")
-    @classmethod
-    def _file_exists(cls, v: Path) -> Path:
-        if not v.exists():
-            msg = f"{v} is missing!"
-            raise ValueError(msg)
-        return v
-
 
 InternalClusterAuthentication: TypeAlias = NoAuthentication | TLSAuthentication
 ExternalClusterAuthentication: TypeAlias = (
