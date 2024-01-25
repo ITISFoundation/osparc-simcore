@@ -10,6 +10,7 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
+from models_library.clusters import InternalClusterAuthentication
 from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -254,6 +255,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: str = Field(
         ...,
         description="defines the image tag to use for the computational backend sidecar image (NOTE: it currently defaults to use itisfoundation organisation in Dockerhub)",
+    )
+
+    CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: InternalClusterAuthentication = Field(
+        ...,
+        description="defines the authentication of the clusters created via clusters-keeper (can be None or TLS)",
     )
 
     CLUSTERS_KEEPER_DASK_NTHREADS: NonNegativeInt = Field(
