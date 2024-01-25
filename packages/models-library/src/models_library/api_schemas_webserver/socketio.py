@@ -10,7 +10,7 @@ class SocketIORoom(str):
 
     @classmethod
     def from_group_id(cls, group_id: GroupID) -> "SocketIORoom":
-        return cls(group_id)
+        return cls(f"group:{group_id}")
 
     @classmethod
     def from_user_id(cls, user_id: UserID) -> "SocketIORoom":
