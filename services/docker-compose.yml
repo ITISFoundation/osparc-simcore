@@ -1,15 +1,12 @@
 version: "3.8"
 x-dask-tls-secrets: &dask_tls_secrets
   - source: dask_tls_key
-    target: /home/scu/.dask/dask-key.pem
+    target: ${DASK_TLS_KEY}
     mode: 0444
   - source: dask_tls_cert
-    target: /home/scu/.dask/dask-crt.pem
+    target: ${DASK_TLS_CERT}
     mode: 0444
-x-dask-tls-environment: &dask_tls_environment
-  - DASK_TLS_CA_FILE: /home/scu/.dask/dask-crt.pem
-  - DASK_TLS_KEY: /home/scu/.dask/dask-key.pem
-  - DASK_TLS_CERT: /home/scu/.dask/dask-crt.pem
+
 
 services:
   api-server:
@@ -893,9 +890,9 @@ services:
       - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock
     environment: &sidecar-environment
-      DASK_TLS_CA_FILE: /home/scu/.dask/dask-crt.pem
-      DASK_TLS_KEY: /home/scu/.dask/dask-key.pem
-      DASK_TLS_CERT: /home/scu/.dask/dask-crt.pem
+      DASK_TLS_CA_FILE: ${DASK_TLS_CA_FILE}
+      DASK_TLS_KEY: ${DASK_TLS_KEY}
+      DASK_TLS_CERT: ${DASK_TLS_CERT}
       DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       SIDECAR_LOGLEVEL: ${LOG_LEVEL:-WARNING}
