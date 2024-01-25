@@ -13,7 +13,7 @@ class ProfilerBorg:
 
     def __init__(self, interval: float) -> None:
         self.__dict__ = self._shared_state
-        self.profiler = Profiler(interval=interval, async_mode="strict")
+        self.profiler = Profiler(interval=interval)
 
 
 def enable(
