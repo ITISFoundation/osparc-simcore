@@ -1,8 +1,10 @@
 """Director service configuration
 """
 
+import json
 import logging
 import os
+import warnings
 from distutils.util import strtobool
 from typing import Dict, Optional
 
@@ -59,6 +61,31 @@ DIRECTOR_REGISTRY_CACHING_TTL: int = int(
 DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: str = os.environ.get(
     "DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS", ""
 )
+
+
+def _parse_placement_substitutions() -> Dict[str, str]:
+    str_env_var: str = os.environ.get(
+        "DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS", "{}"
+    )
+    result: Dict[str, str] = json.loads(str_env_var)
+
+    if len(result) > 0:
+        warnings.warn(  # noqa: B028
+            "Generic resources will be replaced by the following "
+            f"placement constraints {result}. This is a workaround "
+            "for https://github.com/moby/swarmkit/pull/3162",
+            UserWarning,
+        )
+    if len(result) != len(set(result.values())):
+        msg = f"Dictionary values must be unique, provided: {result}"
+        raise ValueError(msg)
+
+    return result
+
+
+DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: Dict[
+    str, str
+] = _parse_placement_substitutions()
 
 # for passing self-signed certificate to spawned services
 DIRECTOR_SELF_SIGNED_SSL_SECRET_ID: str = os.environ.get(
@@ -139,7 +166,7 @@ MONITORING_ENABLED: bool = strtobool(os.environ.get("MONITORING_ENABLED", "False
 # tracing
 TRACING_ENABLED: bool = strtobool(os.environ.get("TRACING_ENABLED", "True"))
 TRACING_ZIPKIN_ENDPOINT: str = os.environ.get(
-    "TRACING_ZIPKIN_ENDPOINT", "http://jaeger:9411" # NOSONAR
+    "TRACING_ZIPKIN_ENDPOINT", "http://jaeger:9411"  # NOSONAR
 )
 
 # resources: not taken from servicelib.resources since the director uses a fixed hash of that library

@@ -1,5 +1,5 @@
 import logging
-from typing import Final
+from typing import Final, cast
 
 from models_library.api_schemas_resource_usage_tracker import (
     RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
@@ -13,7 +13,7 @@ from models_library.resource_tracker import ServiceResourceUsagesFilters
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import AnyUrl, NonNegativeInt, parse_obj_as
 
 from ....logging_utils import log_decorator
 from ....rabbitmq import RabbitMQRPCClient
@@ -51,4 +51,30 @@ async def get_service_run_page(
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, ServiceRunPage)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def export_service_runs(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    wallet_id: WalletID | None = None,
+    access_all_wallet_usage: bool = False,
+    order_by: OrderBy | None = None,
+    filters: ServiceResourceUsagesFilters | None = None
+) -> AnyUrl:
+    result: AnyUrl = await rabbitmq_rpc_client.request(
+        RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "export_service_runs"),
+        user_id=user_id,
+        product_name=product_name,
+        wallet_id=wallet_id,
+        access_all_wallet_usage=access_all_wallet_usage,
+        order_by=order_by,
+        filters=filters,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    assert cast(AnyUrl, isinstance(result, AnyUrl))  # nosec
     return result
