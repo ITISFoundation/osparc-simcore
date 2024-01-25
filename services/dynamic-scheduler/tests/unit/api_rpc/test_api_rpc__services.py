@@ -15,6 +15,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
+from models_library.users import GroupID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
@@ -340,6 +341,11 @@ def mock_director_v2_service_stop(
         yield None
 
 
+@pytest.fixture
+def primary_group_id() -> GroupID:
+    return 42
+
+
 @pytest.mark.parametrize("is_legacy", [True, False])
 @pytest.mark.parametrize("save_state", [True, False])
 async def test_stop_dynamic_service(
@@ -351,6 +357,7 @@ async def test_stop_dynamic_service(
     node_id_manual_intervention: NodeID,
     simcore_user_agent: str,
     save_state: bool,
+    primary_group_id: GroupID,
 ):
     # service was stopped
     result = await services.stop_dynamic_service(
@@ -358,7 +365,7 @@ async def test_stop_dynamic_service(
         node_id=node_id,
         simcore_user_agent=simcore_user_agent,
         save_state=save_state,
-        primary_group_id=1,
+        primary_group_id=primary_group_id,
         timeout_s=5,
     )
     assert result is None
@@ -370,7 +377,7 @@ async def test_stop_dynamic_service(
             node_id=node_id_not_found,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
-            primary_group_id=1,
+            primary_group_id=primary_group_id,
             timeout_s=5,
         )
 
@@ -381,7 +388,7 @@ async def test_stop_dynamic_service(
             node_id=node_id_manual_intervention,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
-            primary_group_id=1,
+            primary_group_id=primary_group_id,
             timeout_s=5,
         )
 
