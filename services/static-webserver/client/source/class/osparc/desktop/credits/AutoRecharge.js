@@ -17,29 +17,13 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.desktop.credits.AutoRecharge", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.container.Stack,
 
   construct: function(walletId) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(15).set({
-      alignX: "center"
-    }));
-
     const store = osparc.store.Store.getInstance();
     const wallet = store.getWallets().find(w => w.getWalletId() == walletId);
-
-    const title = new qx.ui.basic.Label("Auto-recharge").set({
-      marginTop: 25,
-      font: "title-18"
-    });
-    const subtitle = new qx.ui.basic.Label("Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.").set({
-      rich: true,
-      font: "text-14",
-      textAlign: "center"
-    });
-    this._add(title);
-    this._add(subtitle);
 
     this.__buildLayout();
     this.setWallet(wallet);
@@ -67,8 +51,36 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     // __topUpAmountHelper: null,
 
     __buildLayout: function() {
-      this._add(this.__getAutoRechargeForm())
-      this._add(this.__getButtons())
+      this.removeAll()
+
+      this.__mainContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
+        alignX: "center"
+      }))
+      const title = new qx.ui.basic.Label("Auto-recharge").set({
+        marginTop: 25,
+        font: "title-18"
+      });
+      const subtitle = new qx.ui.basic.Label("Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.").set({
+        rich: true,
+        font: "text-14",
+        textAlign: "center"
+      });
+      this.__mainContent.add(title);
+      this.__mainContent.add(subtitle);
+      this.__mainContent.add(this.__getAutoRechargeForm())
+      this.__mainContent.add(this.__getButtons())
+      this.add(this.__mainContent)
+
+      this.__fetchingView = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+        alignX: "center",
+        alignY: "middle"
+      }))
+      const image = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/26")
+      image.getContentElement().addClass("rotate")
+      this.__fetchingView.add(image)
+      this.add(this.__fetchingView)
+
+      this.setSelection([this.__fetchingView])
     },
 
     __applyWallet: function(wallet) {
@@ -86,6 +98,8 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       const wallet = this.getWallet();
       const paymentMethodSB = this.__paymentMethodField;
       await osparc.desktop.credits.Utils.populatePaymentMethodSelector(wallet, paymentMethodSB);
+
+      this.setSelection([this.__fetchingView])
 
       // populate the form
       const params = {
@@ -112,6 +126,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       if (paymentMethodFound) {
         paymentMethodSB.setSelection([paymentMethodFound]);
       }
+      this.setSelection([this.__mainContent])
     },
 
     __getAutoRechargeForm: function() {
