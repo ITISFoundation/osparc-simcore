@@ -53,7 +53,7 @@ pytest_plugins = [
 @pytest.fixture(scope="session")
 def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     # fixtures in pytest_simcore.environs
-    service_folder = osparc_simcore_root_dir / "services" / "clusters_keeper"
+    service_folder = osparc_simcore_root_dir / "services" / "clusters-keeper"
     assert service_folder.exists()
     assert any(service_folder.glob("src/simcore_service_clusters_keeper"))
     return service_folder
@@ -235,6 +235,13 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
 async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
+
+
+@pytest.fixture
+def clusters_keeper_docker_compose_file(installed_package_dir: Path) -> Path:
+    docker_compose_path = installed_package_dir / "data" / "docker-compose.yml"
+    assert docker_compose_path.exists()
+    return docker_compose_path
 
 
 @pytest.fixture

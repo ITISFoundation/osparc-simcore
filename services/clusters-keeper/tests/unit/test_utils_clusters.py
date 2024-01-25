@@ -3,7 +3,9 @@
 # pylint: disable=unused-variable
 
 import re
+import subprocess
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -18,6 +20,7 @@ from models_library.api_schemas_clusters_keeper.clusters import ClusterState
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.clusters import (
+    _prepare_environment_variables,
     create_cluster_from_ec2_instance,
     create_startup_script,
 )
@@ -130,6 +133,47 @@ def test_create_startup_script(
         f'"{key}": "{value}"' in startup_script
         for key, value in additional_custom_tags.items()
     )
+
+
+def test_startup_script_defines_all_envs_for_docker_compose(
+    disabled_rabbitmq: None,
+    mocked_ec2_server_envs: EnvVarsDict,
+    mocked_redis_server: None,
+    app_settings: ApplicationSettings,
+    cluster_machines_name_prefix: str,
+    ec2_boot_specs: EC2InstanceBootSpecific,
+    clusters_keeper_docker_compose_file: Path,
+):
+    additional_custom_tags = {
+        AWSTagKey("pytest-tag-key"): AWSTagValue("pytest-tag-value")
+    }
+    environment_variables = _prepare_environment_variables(
+        app_settings,
+        cluster_machines_name_prefix=cluster_machines_name_prefix,
+        additional_custom_tags=additional_custom_tags,
+    )
+    assert environment_variables
+    process = subprocess.run(
+        [
+            "docker",
+            "compose",
+            "--dry-run",
+            f"--file={clusters_keeper_docker_compose_file}",
+            "up",
+        ],
+        capture_output=True,
+        check=True,
+        env={
+            e.split("=", maxsplit=1)[0]: e.split("=", maxsplit=1)[1]
+            for e in environment_variables
+        },
+    )
+    assert process
+    assert process.stderr
+    _ENV_VARIABLE_NOT_SET_ERROR = "variable is not set"
+    assert _ENV_VARIABLE_NOT_SET_ERROR not in process.stderr.decode()
+    assert process.stdout
+    assert process.stdout is None
 
 
 @pytest.mark.parametrize(

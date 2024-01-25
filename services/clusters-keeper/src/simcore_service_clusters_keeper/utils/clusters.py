@@ -30,13 +30,12 @@ def _docker_compose_yml_base64_encoded() -> str:
         return base64.b64encode(f.read()).decode("utf-8")
 
 
-def create_startup_script(
+def _prepare_environment_variables(
     app_settings: ApplicationSettings,
     *,
     cluster_machines_name_prefix: str,
-    ec2_boot_specific: EC2InstanceBootSpecific,
     additional_custom_tags: EC2Tags,
-) -> str:
+) -> list[str]:
     assert app_settings.CLUSTERS_KEEPER_EC2_ACCESS  # nosec
     assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES  # nosec
 
@@ -47,7 +46,7 @@ def create_startup_script(
     def _convert_to_env_dict(entries: dict[str, Any]) -> str:
         return f"'{json.dumps(jsonable_encoder(entries))}'"
 
-    environment_variables = [
+    return [
         f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}",
         f"DASK_NTHREADS={app_settings.CLUSTERS_KEEPER_DASK_NTHREADS or ''}",
         f"CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_ACCESS_KEY_ID}",
@@ -61,9 +60,26 @@ def create_startup_script(
         f"WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS)}",
         f"WORKERS_EC2_INSTANCES_SUBNET_ID={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SUBNET_ID}",
         f"WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}",
-        f"WORKERS_EC2_INSTANCES_CUSTOM_TAGS={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_TAGS | additional_custom_tags)}",
+        f"WORKERS_EC2_INSTANCES_CUSTOM_TAGS={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_TAGS | additional_custom_tags)}",  # type: ignore
         f"LOG_LEVEL={app_settings.LOG_LEVEL}",
     ]
+
+
+def create_startup_script(
+    app_settings: ApplicationSettings,
+    *,
+    cluster_machines_name_prefix: str,
+    ec2_boot_specific: EC2InstanceBootSpecific,
+    additional_custom_tags: EC2Tags,
+) -> str:
+    assert app_settings.CLUSTERS_KEEPER_EC2_ACCESS  # nosec
+    assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES  # nosec
+
+    environment_variables = _prepare_environment_variables(
+        app_settings,
+        cluster_machines_name_prefix=cluster_machines_name_prefix,
+        additional_custom_tags=additional_custom_tags,
+    )
 
     startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
     startup_commands.extend(
