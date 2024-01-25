@@ -63,8 +63,9 @@ def _get_byte_size(byte_size_as_str: str) -> ByteSize:
 
 
 def _get_mocked_disk_usage(byte_size_as_str: str) -> DiskUsage:
+    bytes_size = _get_byte_size(byte_size_as_str)
     return DiskUsage(
-        total=0, used=0, free=_get_byte_size(byte_size_as_str), used_percent=0
+        total=bytes_size, used=ByteSize(0), free=bytes_size, used_percent=0
     )
 
 
