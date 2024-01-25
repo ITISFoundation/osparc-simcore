@@ -16,6 +16,7 @@ from models_library.clusters import (
     DEFAULT_CLUSTER_ID,
     Cluster,
     ClusterAuthentication,
+    ClusterTypeInModel,
     NoAuthentication,
 )
 from pydantic import AnyHttpUrl, AnyUrl, Field, NonNegativeInt, validator
@@ -32,7 +33,6 @@ from settings_library.resource_usage_tracker import (
 )
 from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
-from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_common.settings import (
     NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE,
 )
@@ -75,7 +75,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
         "tcp://dask-scheduler:8786 for the internal cluster, or "
         "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
     )
-    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ClusterAuthentication | None = Field(
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ClusterAuthentication = Field(
         ...,
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
@@ -101,7 +101,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
             endpoint=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
             authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
             owner=1,  # NOTE: currently this is a soft hack (the group of everyone is the group 1)
-            type=ClusterType.ON_PREMISE,
+            type=ClusterTypeInModel.ON_PREMISE,
         )
 
     @validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", pre=True)
