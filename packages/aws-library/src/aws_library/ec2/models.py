@@ -103,6 +103,7 @@ class EC2InstanceConfig:
     key_name: str
     security_group_ids: list[str]
     subnet_id: str
+    iam_instance_profile: str
 
 
 AMIIdStr: TypeAlias = str

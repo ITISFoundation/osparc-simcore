@@ -128,6 +128,9 @@ class SimcoreEC2API:
                 ImageId=instance_config.ami_id,
                 MinCount=number_of_instances,
                 MaxCount=number_of_instances,
+                IamInstanceProfile={"Arn": instance_config.iam_instance_profile}
+                if instance_config.iam_instance_profile
+                else {},
                 InstanceType=instance_config.type.name,
                 InstanceInitiatedShutdownBehavior="terminate",
                 KeyName=instance_config.key_name,
