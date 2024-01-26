@@ -63,6 +63,7 @@ _CACHE_TTL: Final = 60  # secs
 
 
 def _hash_inputs(service: dict[str, Any], input_key: str, ureg):
+    assert ureg  # nosec
     return f"{service['key']}/{service['version']}/{input_key}"
 
 
@@ -92,6 +93,7 @@ class ServiceInputGetFactory:
 
 
 def _hash_outputs(service: dict[str, Any], output_key: str, ureg):
+    assert ureg  # nosec
     return f"{service['key']}/{service['version']}/{output_key}"
 
 
