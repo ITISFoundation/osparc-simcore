@@ -220,10 +220,10 @@ def _parse_docker_pull_progress(
     image_pulling_data.setdefault(layer_id, (0, 0))
 
     if status == _TargetPullStatus.DOWNLOADING:
-        # writes
         if "current" not in progress_detail or "total" not in progress_detail:
             return False
 
+        # writes
         image_pulling_data[layer_id] = (
             round(_DOWNLOAD_RATIO * progress_detail["current"]),
             progress_detail["total"],
@@ -237,13 +237,12 @@ def _parse_docker_pull_progress(
             layer_total_size,
         )
     elif status == _TargetPullStatus.EXTRACTING:
-        # reads
-        _, layer_total_size = image_pulling_data[layer_id]
-
-        # writes
         if "current" not in progress_detail:
             return False
 
+        # reads
+        _, layer_total_size = image_pulling_data[layer_id]
+        # writes
         image_pulling_data[layer_id] = (
             round(
                 _DOWNLOAD_RATIO * layer_total_size
