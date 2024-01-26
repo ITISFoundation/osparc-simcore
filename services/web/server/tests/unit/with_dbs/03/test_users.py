@@ -800,6 +800,8 @@ async def test_list_permissions_with_no_group_defined_returns_default_false_for_
     assert client.app
     url = client.app.router["list_user_permissions"].url_for()
     assert url.path == "/v0/me/permissions"
+
+    # NOTE: pcrespov -> sanderegg if no products, this request raises HTTPForbidden 403
     resp = await client.get(url.path)
     data, error = await assert_status(resp, expected_response)
     assert data
