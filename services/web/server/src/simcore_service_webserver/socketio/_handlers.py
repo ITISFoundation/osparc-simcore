@@ -8,6 +8,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from models_library.api_schemas_webserver.socketio import SocketIORoom
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from servicelib.aiohttp.observer import emit
@@ -89,7 +90,10 @@ async def _set_user_in_group_rooms(
 
     sio = get_socket_server(app)
     for group in groups:
-        sio.enter_room(socket_id, f"{group['gid']}")
+        # NOTE socketio need to be upgraded that's why enter_room is not an awaitable
+        sio.enter_room(socket_id, SocketIORoom.from_group_id(group["gid"]))
+
+    sio.enter_room(socket_id, SocketIORoom.from_user_id(user_id))
 
 
 #
