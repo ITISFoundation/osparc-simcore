@@ -80,7 +80,7 @@ def expected_credits_per_usd(
 
 @pytest.mark.parametrize(
     "user_role",
-    [(UserRole.PRODUCT_OWNER)],
+    [UserRole.PRODUCT_OWNER],
 )
 async def test_get_product(
     product_name: ProductName,

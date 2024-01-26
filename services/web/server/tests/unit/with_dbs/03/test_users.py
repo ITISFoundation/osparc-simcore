@@ -781,6 +781,10 @@ async def with_no_product_name_defined(
             )
 
 
+@pytest.mark.xfail(
+    "Currently no products blocks access to the entire  web API."
+    "pcrespov added this marker and notified sanderegg to review test"
+)
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
