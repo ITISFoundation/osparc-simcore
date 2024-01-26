@@ -18,7 +18,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_payments.socketio import (
     SOCKET_IO_PAYMENT_COMPLETED_EVENT,
 )
-from models_library.api_schemas_webserver.socketio import SocketIORoom
+from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.api_schemas_webserver.wallets import PaymentTransaction
 from models_library.users import GroupID, UserID
 from pydantic import parse_obj_as
@@ -96,7 +96,7 @@ def socketio_server_events(
     mocker: MockerFixture,
     user_primary_group_id: GroupID,
 ) -> dict[str, AsyncMock]:
-    room_name = SocketIORoom.from_group_id(user_primary_group_id)
+    room_name = SocketIORoomStr.from_group_id(user_primary_group_id)
 
     # handlers
     async def connect(sid: str, environ):
