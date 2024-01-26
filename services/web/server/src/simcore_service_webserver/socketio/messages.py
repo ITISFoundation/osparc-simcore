@@ -7,11 +7,11 @@ from collections.abc import Sequence
 from typing import Final
 
 from aiohttp.web import Application
+from models_library.api_schemas_webserver.socketio import SocketIORoom
 from models_library.socketio import SocketMessageDict
-from models_library.users import UserID
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
+from models_library.users import GroupID, UserID
 from servicelib.json_serialization import json_dumps
-from servicelib.utils import fire_and_forget_task, logged_gather
+from servicelib.utils import logged_gather
 from socketio import AsyncServer
 
 from ..resource_manager.user_sessions import managed_resource
@@ -44,7 +44,11 @@ async def send_messages(
 
     await logged_gather(
         *(
-            sio.emit(message["event_type"], json_dumps(message["data"]), room=sid)
+            sio.emit(
+                message["event_type"],
+                json_dumps(message["data"]),
+                room=SocketIORoom.from_socket_id(sid),
+            )
             for message in messages
             for sid in socket_ids
         ),
@@ -54,32 +58,16 @@ async def send_messages(
     )
 
 
-async def post_messages(
-    app: Application, user_id: UserID, messages: Sequence[SocketMessageDict]
-) -> None:
-    fire_and_forget_task(
-        send_messages(app, user_id, messages),
-        task_suffix_name=f"post_message_{user_id=}",
-        fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
-    )
-
-
-async def post_group_messages(
-    app: Application, room: str, messages: Sequence[SocketMessageDict]
-) -> None:
-    fire_and_forget_task(
-        send_group_messages(app, room, messages),
-        task_suffix_name=f"post_group_messages_{room=}",
-        fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
-    )
-
-
 async def send_group_messages(
-    app: Application, room: str, messages: Sequence[SocketMessageDict]
+    app: Application, group_id: GroupID, messages: Sequence[SocketMessageDict]
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
     send_tasks = [
-        sio.emit(message["event_type"], json_dumps(message["data"]), room=room)
+        sio.emit(
+            message["event_type"],
+            json_dumps(message["data"]),
+            room=SocketIORoom.from_group_id(group_id),
+        )
         for message in messages
     ]
 

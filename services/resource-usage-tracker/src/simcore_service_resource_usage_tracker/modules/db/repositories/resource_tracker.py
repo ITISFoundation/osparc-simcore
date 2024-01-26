@@ -7,6 +7,7 @@ import sqlalchemy as sa
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
+from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
 from models_library.resource_tracker import (
     CreditTransactionId,
@@ -285,6 +286,97 @@ class ResourceTrackerRepository(BaseRepository):
             result = await conn.execute(query)
 
         return [ServiceRunWithCreditsDB.from_orm(row) for row in result.fetchall()]
+
+    async def export_service_runs_table_to_s3(
+        self,
+        product_name: ProductName,
+        s3_bucket_name: S3BucketName,
+        s3_key: str,
+        *,
+        user_id: UserID | None,
+        wallet_id: WalletID | None,
+        started_from: datetime | None = None,
+        started_until: datetime | None = None,
+        order_by: OrderBy | None = None,
+    ):
+        async with self.db_engine.begin() as conn:
+            query = (
+                sa.select(
+                    resource_tracker_service_runs.c.product_name,
+                    resource_tracker_service_runs.c.service_run_id,
+                    resource_tracker_service_runs.c.wallet_name,
+                    resource_tracker_service_runs.c.user_email,
+                    resource_tracker_service_runs.c.project_name,
+                    resource_tracker_service_runs.c.node_name,
+                    resource_tracker_service_runs.c.service_key,
+                    resource_tracker_service_runs.c.service_version,
+                    resource_tracker_service_runs.c.service_type,
+                    resource_tracker_service_runs.c.started_at,
+                    resource_tracker_service_runs.c.stopped_at,
+                    resource_tracker_credit_transactions.c.osparc_credits,
+                    resource_tracker_credit_transactions.c.transaction_status,
+                )
+                .select_from(
+                    resource_tracker_service_runs.join(
+                        resource_tracker_credit_transactions,
+                        resource_tracker_service_runs.c.service_run_id
+                        == resource_tracker_credit_transactions.c.service_run_id,
+                        isouter=True,
+                    )
+                )
+                .where(resource_tracker_service_runs.c.product_name == product_name)
+            )
+
+            if user_id:
+                query = query.where(resource_tracker_service_runs.c.user_id == user_id)
+            if wallet_id:
+                query = query.where(
+                    resource_tracker_service_runs.c.wallet_id == wallet_id
+                )
+            if started_from:
+                query = query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    >= started_from.date()
+                )
+            if started_until:
+                query = query.where(
+                    sa.func.DATE(resource_tracker_service_runs.c.started_at)
+                    <= started_until.date()
+                )
+
+            if order_by:
+                if order_by.direction == OrderDirection.ASC:
+                    query = query.order_by(sa.asc(order_by.field))
+                else:
+                    query = query.order_by(sa.desc(order_by.field))
+            else:
+                # Default ordering
+                query = query.order_by(
+                    resource_tracker_service_runs.c.started_at.desc()
+                )
+
+            compiled_query = (
+                str(query.compile(compile_kwargs={"literal_binds": True}))
+                .replace("\n", "")
+                .replace("'", "''")
+            )
+
+            result = await conn.execute(
+                sa.DDL(
+                    f"""
+                SELECT * from aws_s3.query_export_to_s3('{compiled_query}',
+                aws_commons.create_s3_uri('{s3_bucket_name}', '{s3_key}', 'us-east-1'), 'format csv, HEADER true');
+                """  # noqa: S608
+                )
+            )
+            row = result.first()
+            assert row
+            _logger.info(
+                "Rows uploaded %s, Files uploaded %s, Bytes uploaded %s",
+                row[0],
+                row[1],
+                row[2],
+            )
 
     async def total_service_runs_by_product_and_user_and_wallet(
         self,
