@@ -1,7 +1,7 @@
 version: "3.8"
 x-dask-tls-secrets: &dask_tls_secrets
   - source: dask_tls_ca
-    target: ${DASK_TLS_KEY}
+    target: ${DASK_TLS_CA_FILE}
     mode: 0444
   - source: dask_tls_key
     target: ${DASK_TLS_KEY}
@@ -23,7 +23,7 @@ services:
       DASK_TLS_KEY: ${DASK_TLS_KEY}
       LOG_LEVEL: ${LOG_LEVEL}
     ports:
-      - 8786:8786 # dask-scheduler tcp access
+      - 8786:8786 # dask-scheduler access
       - 8787:8787 # dashboard
     deploy:
       placement:
@@ -120,8 +120,8 @@ volumes:
 
 secrets:
   dask_tls_ca:
-    file: .dask-certificates/tls_dask_ca.pem
+    file: ${DASK_TLS_CA_FILE}
   dask_tls_key:
-    file: .dask-certificates/tls_dask_cert.pem
+    file: ${DASK_TLS_KEY}
   dask_tls_cert:
-    file: .dask-certificates/tls_dask_key.pem
+    file: ${DASK_TLS_CERT}
