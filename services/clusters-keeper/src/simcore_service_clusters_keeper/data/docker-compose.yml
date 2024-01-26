@@ -1,15 +1,4 @@
 version: "3.8"
-x-dask-tls-secrets: &dask_tls_secrets
-  - source: dask_tls_ca
-    target: ${DASK_TLS_CA_FILE}
-    mode: 0444
-  - source: dask_tls_key
-    target: ${DASK_TLS_KEY}
-    mode: 0444
-  - source: dask_tls_cert
-    target: ${DASK_TLS_CERT}
-    mode: 0444
-
 services:
   dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
@@ -30,7 +19,16 @@ services:
       placement:
         constraints:
           - "node.role==manager"
-    secrets:  *dask_tls_secrets
+    secrets:
+      - source: dask_tls_ca
+        target: ${DASK_TLS_CA_FILE}
+        mode: 0444
+      - source: dask_tls_key
+        target: ${DASK_TLS_KEY}
+        mode: 0444
+      - source: dask_tls_cert
+        target: ${DASK_TLS_CERT}
+        mode: 0444
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
@@ -59,7 +57,16 @@ services:
       placement:
         constraints:
           - "node.role==worker"
-    secrets:  *dask_tls_secrets
+    secrets:
+      - source: dask_tls_ca
+        target: ${DASK_TLS_CA_FILE}
+        mode: 0444
+      - source: dask_tls_key
+        target: ${DASK_TLS_KEY}
+        mode: 0444
+      - source: dask_tls_cert
+        target: ${DASK_TLS_CERT}
+        mode: 0444
 
   autoscaling:
     image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG}
@@ -74,7 +81,7 @@ services:
       AUTOSCALING_NODES_MONITORING: null
       AUTOSCALING_POLL_INTERVAL: 10
       DASK_MONITORING_URL: tls://dask-scheduler:8786
-      DASK_SCHEDULER_AUTH: ${CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH}
+      DASK_SCHEDULER_AUTH: '{"type":"tls","tls_ca_file":"${DASK_TLS_CA_FILE}","tls_client_cert":"${DASK_TLS_CERT}","tls_client_key":"${DASK_TLS_KEY}"}'
       EC2_INSTANCES_ALLOWED_TYPES: ${WORKERS_EC2_INSTANCES_ALLOWED_TYPES}
       EC2_INSTANCES_CUSTOM_TAGS: ${WORKERS_EC2_INSTANCES_CUSTOM_TAGS}
       EC2_INSTANCES_KEY_NAME: ${WORKERS_EC2_INSTANCES_KEY_NAME}
@@ -94,7 +101,16 @@ services:
       placement:
         constraints:
           - "node.role==manager"
-    secrets:  *dask_tls_secrets
+    secrets:
+      - source: dask_tls_ca
+        target: ${DASK_TLS_CA_FILE}
+        mode: 0444
+      - source: dask_tls_key
+        target: ${DASK_TLS_KEY}
+        mode: 0444
+      - source: dask_tls_cert
+        target: ${DASK_TLS_CERT}
+        mode: 0444
 
   redis:
     # NOTE: currently autoscaling requires redis to run
