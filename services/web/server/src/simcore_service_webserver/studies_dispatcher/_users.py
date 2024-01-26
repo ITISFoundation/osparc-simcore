@@ -17,8 +17,10 @@ from pydantic import BaseModel, parse_obj_as
 from servicelib.logging_utils import log_decorator
 
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
+from ..groups.api import auto_add_user_to_product_group
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST, get_random_string
+from ..products.api import get_product_name
 from ..redis import get_redis_lock_manager_client
 from ..security.api import (
     authorized_userid,
@@ -55,10 +57,11 @@ async def _get_authorized_user(request: web.Request) -> dict:
     return {}
 
 
-async def _create_temporary_guest_user(request: web.Request):
+async def create_temporary_guest_user(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
+    product_name = get_product_name(request)
 
     random_user_name = get_random_string(min_len=5)
     email = parse_obj_as(LowerCaseEmailStr, f"{random_user_name}@guest-at-osparc.io")
@@ -108,6 +111,9 @@ async def _create_temporary_guest_user(request: web.Request):
             }
         )
         user: dict = await get_user(request.app, usr["id"])
+        await auto_add_user_to_product_group(
+            request.app, user_id=user["id"], product_name=product_name
+        )
 
         # (2) read details above
         await redis_locks_client.lock(
@@ -148,7 +154,7 @@ async def get_or_create_guest_user(
 
     if not user and allow_anonymous_or_guest_users:
         _logger.debug("Anonymous user is accepted as guest...")
-        user = await _create_temporary_guest_user(request)
+        user = await create_temporary_guest_user(request)
         is_anonymous_user = True
 
     if not allow_anonymous_or_guest_users and (not user or user.get("role") == GUEST):
