@@ -84,7 +84,7 @@ async def create_cluster(
         key_name=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME,
         security_group_ids=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS,
         subnet_id=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SUBNET_ID,
-        iam_instance_profile=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_IAM_PROFILES,
+        iam_instance_profile=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE,
     )
     new_ec2_instance_data: list[EC2InstanceData] = await ec2_client.start_aws_instance(
         instance_config,

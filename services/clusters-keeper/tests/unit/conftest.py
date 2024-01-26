@@ -120,7 +120,7 @@ def app_environment(
             "PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
                 {"osparc-tag": "the pytest tag is here"}
             ),
-            "PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE": faker.pystr(),
+            "PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE": "",  # must be empty since we would need to add it to moto as well
             "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
             "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
