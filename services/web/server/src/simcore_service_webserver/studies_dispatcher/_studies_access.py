@@ -39,7 +39,7 @@ from ._constants import (
     MSG_PUBLIC_PROJECT_NOT_PUBLISHED,
     MSG_UNEXPECTED_ERROR,
 )
-from ._users import create_temporary_guest_user
+from ._users import create_temporary_guest_user, get_authorized_user
 
 _logger = logging.getLogger(__name__)
 
@@ -108,16 +108,6 @@ async def _get_published_template_project(
             error_code="PROJECT_NOT_PUBLISHED",
             status_code=web.HTTPNotFound.status_code,
         ) from err
-
-
-async def get_authorized_user(request: web.Request) -> dict:
-    from ..login.storage import AsyncpgStorage, get_plugin_storage
-    from ..security.api import authorized_userid
-
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    userid = await authorized_userid(request)
-    user: dict = await db.get_user({"id": userid})
-    return user
 
 
 async def copy_study_to_account(

@@ -24,11 +24,6 @@ async def clean_auth_policy_cache(app: web.Application) -> None:
     await autz_policy.clear_cache()
 
 
-async def authorized_userid(request: web.Request) -> UserID | None:
-    # TODO: remove
-    return await aiohttp_security.api.authorized_userid(request)
-
-
 async def is_anonymous(request: web.Request) -> bool:
     """
     User is considered anonymous if there is not verified identity in request.

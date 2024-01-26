@@ -8,6 +8,7 @@
 
 """
 import logging
+from contextlib import suppress
 from datetime import datetime
 
 import redis.asyncio as aioredis
@@ -23,7 +24,7 @@ from ..login.utils import ACTIVE, GUEST, get_random_string
 from ..products.api import get_product_name
 from ..redis import get_redis_lock_manager_client
 from ..security.api import (
-    authorized_userid,
+    check_user_authorized,
     encrypt_password,
     is_anonymous,
     remember_identity,
@@ -45,15 +46,14 @@ class UserInfo(BaseModel):
     is_guest: bool = True
 
 
-async def _get_authorized_user(request: web.Request) -> dict:
-    # Returns valid user if it is identified (cookie) and logged in (valid cookie)?
-    user_id = await authorized_userid(request)
-    if user_id is not None:
-        try:
-            user = await get_user(request.app, user_id)
-            return user
-        except UserNotFoundError:
-            return {}
+async def get_authorized_user(request: web.Request) -> dict:
+    """Returns valid user if it is identified (cookie)
+    and logged in (valid cookie)?
+    """
+    with suppress(web.HTTPUnauthorized, UserNotFoundError):
+        user_id = await check_user_authorized(request)
+        user: dict = await get_user(request.app, user_id)
+        return user
     return {}
 
 
@@ -150,7 +150,7 @@ async def get_or_create_guest_user(
     is_anonymous_user = await is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
-        user = await _get_authorized_user(request)
+        user = await get_authorized_user(request)
 
     if not user and allow_anonymous_or_guest_users:
         _logger.debug("Anonymous user is accepted as guest...")
