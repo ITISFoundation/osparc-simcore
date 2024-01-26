@@ -481,7 +481,7 @@ async def _start_dynamic_service(
             )
             if wallet.available_credits <= ZERO_CREDITS:
                 raise WalletNotEnoughCreditsError(
-                    reason=f"Wallet {wallet.wallet_id} credit balance {wallet.available_credits}"
+                    reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
                 )
             wallet_info = WalletInfo(
                 wallet_id=project_wallet_id, wallet_name=wallet.name
