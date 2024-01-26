@@ -1,5 +1,4 @@
 import contextlib
-import logging
 from pathlib import Path
 
 import socketio
@@ -16,8 +15,6 @@ from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-
-_logger = logging.getLogger(__name__)
 
 
 class Notifier(SingletonInAppStateMixin):
