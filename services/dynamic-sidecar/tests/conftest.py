@@ -17,7 +17,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import RunID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import (
@@ -115,11 +115,6 @@ def user_id(faker: Faker) -> UserID:
 
 
 @pytest.fixture
-def primary_group_id() -> GroupID:
-    return 42
-
-
-@pytest.fixture
 def project_id(faker: Faker) -> ProjectID:
     return faker.uuid4(cast_to=None)
 
@@ -157,7 +152,6 @@ def base_mock_envs(
     outputs_dir: Path,
     state_paths_dirs: list[Path],
     state_exclude_dirs: list[Path],
-    primary_group_id: GroupID,
     node_id: NodeID,
     run_id: RunID,
     ensure_shared_store_dir: None,
@@ -174,7 +168,6 @@ def base_mock_envs(
         "REGISTRY_USER": "test",
         "REGISTRY_PW": "test",
         "REGISTRY_SSL": "false",
-        "DY_SIDECAR_PRIMARY_GROUP_ID": f"{primary_group_id}",
         "DY_SIDECAR_RUN_ID": f"{run_id}",
         "DY_SIDECAR_NODE_ID": f"{node_id}",
         "DY_SIDECAR_PATH_INPUTS": f"{inputs_dir}",
@@ -191,7 +184,6 @@ def mock_environment(
     base_mock_envs: EnvVarsDict,
     user_id: UserID,
     project_id: ProjectID,
-    primary_group_id: GroupID,
     state_paths_dirs: list[Path],
     state_exclude_dirs: list[Path],
     node_id: NodeID,
@@ -223,7 +215,6 @@ def mock_environment(
     envs["REGISTRY_SSL"] = "false"
 
     envs["DY_SIDECAR_USER_ID"] = f"{user_id}"
-    envs["DY_SIDECAR_PRIMARY_GROUP_ID"] = f"{primary_group_id}"
     envs["DY_SIDECAR_PROJECT_ID"] = f"{project_id}"
     envs["DY_SIDECAR_RUN_ID"] = run_id
     envs["DY_SIDECAR_NODE_ID"] = f"{node_id}"

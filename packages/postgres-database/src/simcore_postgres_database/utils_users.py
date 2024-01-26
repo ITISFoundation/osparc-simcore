@@ -99,17 +99,6 @@ class UsersRepo:
         raise UserNotFoundInRepoError
 
     @staticmethod
-    async def get_primary_group_id(conn: SAConnection, user_id: int) -> int:
-        value: int | None = await conn.scalar(
-            sa.select(users.c.primary_gid).where(users.c.id == user_id)
-        )
-        if value is not None:
-            assert isinstance(value, int)  # nosec
-            return value
-
-        raise UserNotFoundInRepoError
-
-    @staticmethod
     async def get_active_user_email(conn: SAConnection, user_id: int) -> str:
         value: str | None = await conn.scalar(
             sa.select(users.c.email).where(

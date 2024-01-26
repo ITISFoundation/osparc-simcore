@@ -19,7 +19,6 @@ from models_library.services import RunID
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_service_director_v2.modules.db.repositories.users import UsersRepository
 
 from .....core.dynamic_services_settings import DynamicServicesSettings
 from .....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
@@ -218,9 +217,6 @@ class CreateSidecars(DynamicSchedulerEvent):
         scheduler_data.run_id = RunID.create()
 
         # telemetry configuration
-        users_repo = get_repository(app, UsersRepository)
-        primary_group_id = await users_repo.get_primary_group_id(scheduler_data.user_id)
-
         is_telemetry_enabled = await groups_extra_properties.is_telemetry_enabled(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
         )
@@ -239,7 +235,6 @@ class CreateSidecars(DynamicSchedulerEvent):
             allow_internet_access=allow_internet_access,
             metrics_collection_allowed=metrics_collection_allowed,
             telemetry_enabled=is_telemetry_enabled,
-            primary_group_id=primary_group_id,
         )
 
         catalog_client = CatalogClient.instance(app)

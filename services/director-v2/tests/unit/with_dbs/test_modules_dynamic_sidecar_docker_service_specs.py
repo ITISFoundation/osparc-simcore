@@ -215,7 +215,6 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_RUN_ID": run_id,
                     "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",  # noqa: S108
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",  # noqa: S108
-                    "DY_SIDECAR_PRIMARY_GROUP_ID": "42",
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                     "DY_SIDECAR_STATE_EXCLUDE": json_dumps(
                         {"*.py", "/tmp/strip_me/*"}  # noqa: S108
