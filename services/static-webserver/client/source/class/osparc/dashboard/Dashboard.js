@@ -62,6 +62,11 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         }
       });
     this.__createMainViewLayout();
+    const autorecharge = new osparc.desktop.credits.AutoRecharge(1);
+    const win = osparc.ui.window.Window.popUpInWindow(autorecharge, "Auto-recharge", 400, 550).set({
+      resizable: false,
+      movable: false
+    });
   },
 
   properties: {

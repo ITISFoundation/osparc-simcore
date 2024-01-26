@@ -134,8 +134,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       this.setWalletsLoaded(true);
       if (this.__sharedWalletsModel.getLength() === 0) {
         this.__sharedHeader.exclude()
-      }
-      else {
+      } else {
         this.__sharedHeader.show()
       }
     },
