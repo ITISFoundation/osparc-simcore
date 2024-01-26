@@ -8,7 +8,7 @@ import psutil
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 from models_library.projects_nodes_io import NodeID
-from models_library.users import GroupID
+from models_library.users import UserID
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
@@ -30,7 +30,7 @@ async def get_usage(path: Path) -> DiskUsage:
 @dataclass
 class DiskUsageMonitor:
     app: FastAPI
-    primary_group_id: GroupID
+    user_id: UserID
     node_id: NodeID
     interval: timedelta
     monitored_paths: list[Path]
@@ -39,10 +39,7 @@ class DiskUsageMonitor:
 
     async def _publish_disk_usage(self, usage: dict[Path, DiskUsage]):
         await publish_disk_usage(
-            self.app,
-            primary_group_id=self.primary_group_id,
-            node_id=self.node_id,
-            usage=usage,
+            self.app, user_id=self.user_id, node_id=self.node_id, usage=usage
         )
 
     async def _monitor(self) -> None:
@@ -84,7 +81,7 @@ def setup_disk_usage(app: FastAPI) -> None:
 
             app.state.disk_usage_monitor = disk_usage_monitor = DiskUsageMonitor(
                 app,
-                primary_group_id=settings.DY_SIDECAR_PRIMARY_GROUP_ID,
+                user_id=settings.DY_SIDECAR_USER_ID,
                 node_id=settings.DY_SIDECAR_NODE_ID,
                 interval=settings.DYNAMIC_SIDECAR_TELEMETRY_DISK_USAGE_MONITOR_INTERVAL,
                 monitored_paths=_get_monitored_paths(app),

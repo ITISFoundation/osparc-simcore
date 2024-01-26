@@ -22,7 +22,7 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import (
     ServiceDiskUsage,
 )
 from models_library.projects_nodes_io import NodeID
-from models_library.users import GroupID
+from models_library.users import GroupID, UserID
 from pydantic import ByteSize, NonNegativeInt, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -224,7 +224,7 @@ async def test_notifier_publish_message(
     socketio_server_events: dict[str, AsyncMock],
     server_url: str,
     app: FastAPI,
-    primary_group_id: GroupID,
+    user_id: UserID,
     usage: dict[Path, DiskUsage],
     node_id: NodeID,
 ):
@@ -260,9 +260,7 @@ async def test_notifier_publish_message(
         ]
 
         # server publishes a message
-        await publish_disk_usage(
-            app, primary_group_id=primary_group_id, node_id=node_id, usage=usage
-        )
+        await publish_disk_usage(app, user_id=user_id, node_id=node_id, usage=usage)
 
         # check that all clients received it
         for on_service_disk_usage_event in on_service_disk_usage_events:

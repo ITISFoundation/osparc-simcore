@@ -10,7 +10,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import DynamicServiceKey, RunID, ServiceVersion
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -140,7 +140,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DY_SIDECAR_USER_ID: UserID
-    DY_SIDECAR_PRIMARY_GROUP_ID: GroupID
     DY_SIDECAR_PROJECT_ID: ProjectID
     DY_SIDECAR_NODE_ID: NodeID
     DY_SIDECAR_RUN_ID: RunID
