@@ -1,16 +1,13 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
-from collections.abc import AsyncIterable, AsyncIterator, Callable
-from contextlib import AsyncExitStack, asynccontextmanager
+from collections.abc import AsyncIterable, Callable
+from contextlib import AsyncExitStack, _AsyncGeneratorContextManager
 from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
 import socketio
-from aiohttp import web
-from aiohttp.test_utils import TestServer
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -27,7 +24,6 @@ from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
 from servicelib.utils import logged_gather
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
@@ -37,11 +33,10 @@ from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
 from simcore_service_dynamic_sidecar.modules.system_monitor._notifier import (
     publish_disk_usage,
 )
-from socketio import AsyncAioPikaManager, AsyncServer
+from socketio import AsyncServer
 from tenacity import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
-from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -76,106 +71,23 @@ async def disk_usage_monitor(app: FastAPI) -> DiskUsageMonitor:
 
 
 @pytest.fixture
-async def socketio_server(app: FastAPI) -> AsyncIterable[AsyncServer]:
+async def socketio_server(
+    app: FastAPI,
+    socketio_server_factory: Callable[
+        [RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]
+    ],
+) -> AsyncIterable[AsyncServer]:
     # Same configuration as simcore_service_webserver/socketio/server.py
     settings: ApplicationSettings = app.state.settings
     assert settings.RABBIT_SETTINGS
-    server_manager = AsyncAioPikaManager(url=settings.RABBIT_SETTINGS.dsn)
 
-    server = AsyncServer(
-        async_mode="aiohttp", engineio_logger=True, client_manager=server_manager
-    )
-
-    yield server
-
-    await cleanup_socketio_async_pubsub_manager(server_manager)
+    async with socketio_server_factory(settings.RABBIT_SETTINGS) as server:
+        yield server
 
 
 @pytest.fixture
-async def web_server(
-    socketio_server: AsyncServer, unused_tcp_port_factory: Callable[[], int]
-) -> AsyncIterator[URL]:
-    """
-    this emulates the webserver setup: socketio server with
-    an aiopika manager that attaches an aiohttp web app
-    """
-    aiohttp_app = web.Application()
-    socketio_server.attach(aiohttp_app)
-
-    async def _lifespan(
-        server: TestServer, started: asyncio.Event, teardown: asyncio.Event
-    ):
-        # NOTE: this is necessary to avoid blocking comms between client and this server
-        await server.start_server()
-        started.set()  # notifies started
-        await teardown.wait()  # keeps test0server until needs to close
-        await server.close()
-
-    setup = asyncio.Event()
-    teardown = asyncio.Event()
-
-    server = TestServer(aiohttp_app, port=unused_tcp_port_factory())
-    t = asyncio.create_task(_lifespan(server, setup, teardown), name="server-lifespan")
-
-    await setup.wait()
-
-    yield URL(server.make_url("/"))
-
-    assert t
-    teardown.set()
-
-
-@pytest.fixture
-async def server_url(web_server: URL) -> str:
-    return f'{web_server.with_path("/")}'
-
-
-@pytest.fixture
-def socketio_server_events(
-    socketio_server: AsyncServer,
-    mocker: MockerFixture,
-    user_id: UserID,
-) -> dict[str, AsyncMock]:
-    room_name = SocketIORoomStr.from_user_id(user_id)
-
-    # handlers
-    async def connect(sid: str, environ):
-        print("connecting", sid)
-        await socketio_server.enter_room(sid, room_name)
-
-    async def on_check(sid, data):
-        print("check", sid, data)
-
-    async def disconnect(sid: str):
-        print("disconnecting", sid)
-        await socketio_server.leave_room(sid, room_name)
-
-    # spies
-    spy_connect = mocker.AsyncMock(wraps=connect)
-    socketio_server.on("connect", spy_connect)
-
-    spy_on_check = mocker.AsyncMock(wraps=on_check)
-    socketio_server.on("check", spy_on_check)
-
-    spy_disconnect = mocker.AsyncMock(wraps=disconnect)
-    socketio_server.on("disconnect", spy_disconnect)
-
-    return {
-        connect.__name__: spy_connect,
-        disconnect.__name__: spy_disconnect,
-        on_check.__name__: spy_on_check,
-    }
-
-
-@asynccontextmanager
-async def get_socketio_client(server_url: str) -> AsyncIterator[socketio.AsyncClient]:
-    """This emulates a socketio client in the front-end"""
-    client = socketio.AsyncClient(logger=True, engineio_logger=True)
-    await client.connect(f"{server_url}", transports=["websocket"])
-
-    yield client
-
-    await client.disconnect()
+def room_name(user_id: UserID) -> SocketIORoomStr:
+    return SocketIORoomStr.from_user_id(user_id)
 
 
 def _get_on_service_disk_usage_event(
@@ -202,7 +114,10 @@ async def _assert_call_count(mock: AsyncMock, *, call_count: int) -> None:
 
 def _get_mocked_disk_usage(byte_size_str: str) -> DiskUsage:
     return DiskUsage(
-        total=0, used=0, free=ByteSize.validate(byte_size_str), used_percent=0
+        total=ByteSize(0),
+        used=ByteSize(0),
+        free=ByteSize.validate(byte_size_str),
+        used_percent=0,
     )
 
 
@@ -223,11 +138,13 @@ def _get_mocked_disk_usage(byte_size_str: str) -> DiskUsage:
 async def test_notifier_publish_message(
     disk_usage_monitor: DiskUsageMonitor,
     socketio_server_events: dict[str, AsyncMock],
-    server_url: str,
     app: FastAPI,
     user_id: UserID,
     usage: dict[Path, DiskUsage],
     node_id: NodeID,
+    socketio_client_factory: Callable[
+        [], _AsyncGeneratorContextManager[socketio.AsyncClient]
+    ],
 ):
     # web server spy events
     server_connect = socketio_server_events["connect"]
@@ -238,9 +155,7 @@ async def test_notifier_publish_message(
     async with AsyncExitStack() as socketio_frontend_clients:
         frontend_clients: list[socketio.AsyncClient] = await logged_gather(
             *[
-                socketio_frontend_clients.enter_async_context(
-                    get_socketio_client(server_url)
-                )
+                socketio_frontend_clients.enter_async_context(socketio_client_factory())
                 for _ in range(number_of_clients)
             ]
         )
