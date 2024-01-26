@@ -42,16 +42,6 @@ def _docker_compose_yml_base64_encoded() -> str:
     return _base_64_encode(file_path)
 
 
-@functools.lru_cache
-def _write_tls_certificates_commands(auth: TLSAuthentication) -> list[str]:
-    return [
-        f"mkdir --parents {_HOST_CERTIFICATES_BASE_PATH}",
-        f"echo '{_base_64_encode(auth.tls_ca_file)}' > {_HOST_TLS_CA_FILE_PATH}",
-        f"echo '{_base_64_encode(auth.tls_client_cert)}' > {_HOST_TLS_CERT_FILE_PATH}",
-        f"echo '{_base_64_encode(auth.tls_client_key)}' > {_HOST_TLS_KEY_FILE_PATH}",
-    ]
-
-
 def _prepare_environment_variables(
     app_settings: ApplicationSettings,
     *,
@@ -69,7 +59,7 @@ def _prepare_environment_variables(
         return f"'{json.dumps(jsonable_encoder(entries))}'"
 
     return [
-        f"CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH.json()}",
+        f"CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH)}",
         f"CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_ACCESS_KEY_ID}",
         f"CLUSTERS_KEEPER_EC2_ENDPOINT={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_ENDPOINT}",
         f"CLUSTERS_KEEPER_EC2_REGION_NAME={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_REGION_NAME}",
@@ -113,10 +103,15 @@ def create_startup_script(
         app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
         TLSAuthentication,
     ):
-        write_certificates_commands = _write_tls_certificates_commands(
-            app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH
-        )
-        startup_commands.extend(write_certificates_commands)
+        assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
+        download_certificates_commands = [
+            "apt install -y awscli",
+            f"mkdir --parents {_HOST_CERTIFICATES_BASE_PATH}",
+            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_CA_FILE_PATH}',
+            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_CERT_FILE_PATH}',
+            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_KEY_FILE_PATH}',
+        ]
+        startup_commands.extend(download_certificates_commands)
 
     startup_commands.extend(
         [
