@@ -44,14 +44,14 @@ async def get_or_create_cluster(
             assert len(new_ec2_instances) == 1  # nosec
             ec2_instance = new_ec2_instances[0]
     assert ec2_instance is not None  # nosec
+    cluster_auth = get_scheduler_auth(app)
     return create_cluster_from_ec2_instance(
         ec2_instance,
         user_id,
         wallet_id,
         dask_scheduler_ready=bool(
             ec2_instance.state == "running"
-            and await ping_scheduler(
-                get_scheduler_url(ec2_instance), get_scheduler_auth(app)
-            )
+            and await ping_scheduler(get_scheduler_url(ec2_instance), cluster_auth)
         ),
+        cluster_auth=cluster_auth,
     )

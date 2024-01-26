@@ -11,7 +11,7 @@ from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,
     OnDemandCluster,
 )
-from models_library.clusters import NoAuthentication, TLSAuthentication
+from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from types_aiobotocore_ec2.literals import InstanceStateNameType
@@ -166,10 +166,11 @@ def create_cluster_from_ec2_instance(
     wallet_id: WalletID | None,
     *,
     dask_scheduler_ready: bool,
+    cluster_auth: InternalClusterAuthentication,
 ) -> OnDemandCluster:
     return OnDemandCluster(
         endpoint=get_scheduler_url(instance),
-        authentication=NoAuthentication(),
+        authentication=cluster_auth,
         state=_convert_ec2_state_to_cluster_state(instance.state),
         user_id=user_id,
         wallet_id=wallet_id,
