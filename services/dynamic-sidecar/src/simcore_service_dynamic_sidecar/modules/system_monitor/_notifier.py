@@ -32,7 +32,7 @@ class Notifier(SingletonInAppStateMixin):
         await self._sio_manager.emit(
             SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
             data=jsonable_encoder(ServiceDiskUsage(node_id=node_id, usage=usage)),
-            room=SocketIORoomStr(user_id),
+            room=SocketIORoomStr.from_user_id(user_id),
         )
 
 

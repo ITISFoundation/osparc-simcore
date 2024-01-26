@@ -136,7 +136,7 @@ def socketio_server_events(
 
 @pytest.fixture
 async def web_server(
-    socketio_server: AsyncServer, aiohttp_unused_port: Callable
+    socketio_server: AsyncServer, unused_tcp_port_factory: Callable[[], int]
 ) -> AsyncIterator[URL]:
     """
     this emulates the webserver setup: socketio server with
@@ -157,7 +157,7 @@ async def web_server(
     setup = asyncio.Event()
     teardown = asyncio.Event()
 
-    server = TestServer(aiohttp_app, port=aiohttp_unused_port())
+    server = TestServer(aiohttp_app, port=unused_tcp_port_factory())
     t = asyncio.create_task(_lifespan(server, setup, teardown), name="server-lifespan")
 
     await setup.wait()
