@@ -143,7 +143,16 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
     )
     PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE: str = Field(
         ...,
-        description="ARN the EC2 instance should be attached to (example: arn:aws:iam::XXXXX:role/NAME)",
+        description="ARN the EC2 instance should be attached to (example: arn:aws:iam::XXXXX:role/NAME), to disable pass an empty string",
+    )
+    PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA: str = Field(
+        ..., description="Name of the dask TLC CA in AWS Parameter Store"
+    )
+    PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT: str = Field(
+        ..., description="Name of the dask TLC certificate in AWS Parameter Store"
+    )
+    PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY: str = Field(
+        ..., description="Name of the dask TLC key in AWS Parameter Store"
     )
 
     @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
