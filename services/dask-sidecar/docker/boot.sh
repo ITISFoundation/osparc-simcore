@@ -46,21 +46,21 @@ EOF
 # Check if DASK_TLS_CA_FILE is present
 if [ -n "$DASK_TLS_CA_FILE" ]; then
     cat >> /home/scu/.config/dask/distributed.yaml <<EOF
-  distributed:
-    comm:
-      default-scheme: tls
-      require-encryption: true
-      tls:
-        ca-file: ${DASK_TLS_CA_FILE}
-        scheduler:
-          key: ${DASK_TLS_KEY}
-          cert: ${DASK_TLS_CERT}
-        worker:
-          key: ${DASK_TLS_KEY}
-          cert: ${DASK_TLS_CERT}
-        client:
-          key: ${DASK_TLS_KEY}
-          cert: ${DASK_TLS_CERT}
+distributed:
+  comm:
+    default-scheme: tls
+    require-encryption: true
+    tls:
+      ca-file: ${DASK_TLS_CA_FILE}
+      scheduler:
+        key: ${DASK_TLS_KEY}
+        cert: ${DASK_TLS_CERT}
+      worker:
+        key: ${DASK_TLS_KEY}
+        cert: ${DASK_TLS_CERT}
+      client:
+        key: ${DASK_TLS_KEY}
+        cert: ${DASK_TLS_CERT}
 EOF
 fi
 
