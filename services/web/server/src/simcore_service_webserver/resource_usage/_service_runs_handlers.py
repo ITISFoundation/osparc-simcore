@@ -60,15 +60,6 @@ class _RequestContext(BaseModel):
 
 
 class _ListServicesResourceUsagesQueryParams(BaseModel):
-    limit: int = Field(
-        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-        description="maximum number of items to return (pagination)",
-        ge=1,
-        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
-    )
-    offset: NonNegativeInt = Field(
-        default=0, description="index to the first item to return (pagination)"
-    )
     wallet_id: WalletID | None = Field(default=None)
     order_by: Json[OrderBy | None] = Field(  # pylint: disable=unsubscriptable-object
         default=None,
@@ -94,6 +85,23 @@ class _ListServicesResourceUsagesQueryParams(BaseModel):
         extra = Extra.forbid
 
 
+class _ListServicesResourceUsagesQueryParamsWithPagination(
+    _ListServicesResourceUsagesQueryParams
+):
+    limit: int = Field(
+        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        description="maximum number of items to return (pagination)",
+        ge=1,
+        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    )
+    offset: NonNegativeInt = Field(
+        default=0, description="index to the first item to return (pagination)"
+    )
+
+    class Config:
+        extra = Extra.forbid
+
+
 #
 # API handlers
 #
@@ -108,7 +116,7 @@ routes = web.RouteTableDef()
 async def list_resource_usage_services(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(
-        _ListServicesResourceUsagesQueryParams, request
+        _ListServicesResourceUsagesQueryParamsWithPagination, request
     )
 
     services: ServiceRunPage = await api.list_usage_services(
@@ -135,3 +143,25 @@ async def list_resource_usage_services(request: web.Request):
         text=page.json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
+
+
+@routes.post(
+    f"/{VTAG}/services/-/resource-usages:export", name="export_resource_usage_services"
+)
+@login_required
+@permission_required("resource-usage.read")
+@_handle_resource_usage_exceptions
+async def export_resource_usage_services(request: web.Request):
+    req_ctx = _RequestContext.parse_obj(request)
+    query_params = parse_request_query_parameters_as(
+        _ListServicesResourceUsagesQueryParams, request
+    )
+    download_url = await api.export_usage_services(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        wallet_id=query_params.wallet_id,
+        order_by=parse_obj_as(OrderBy | None, query_params.order_by),
+        filters=parse_obj_as(ServiceResourceUsagesFilters | None, query_params.filters),
+    )
+    raise web.HTTPFound(location=f"{download_url}")
