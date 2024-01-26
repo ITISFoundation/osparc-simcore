@@ -80,7 +80,6 @@ def test_dynamic_sidecar_env_vars(
         allow_internet_access=False,
         metrics_collection_allowed=True,
         telemetry_enabled=True,
-        primary_group_id=42,
     )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 

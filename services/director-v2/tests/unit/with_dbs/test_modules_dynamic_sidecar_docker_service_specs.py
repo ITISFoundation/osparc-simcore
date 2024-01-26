@@ -439,7 +439,6 @@ def test_get_dynamic_proxy_spec(
             allow_internet_access=False,
             metrics_collection_allowed=True,
             telemetry_enabled=True,
-            primary_group_id=42,
         )
 
         exclude_keys: Mapping[int | str, Any] = {
@@ -534,7 +533,6 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         allow_internet_access=False,
         metrics_collection_allowed=True,
         telemetry_enabled=True,
-        primary_group_id=42,
     )
     assert dynamic_sidecar_spec
     dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()

@@ -21,8 +21,9 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import (
     DiskUsage,
     ServiceDiskUsage,
 )
+from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects_nodes_io import NodeID
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -133,21 +134,21 @@ async def server_url(web_server: URL) -> str:
 def socketio_server_events(
     socketio_server: AsyncServer,
     mocker: MockerFixture,
-    primary_group_id: GroupID,
+    user_id: UserID,
 ) -> dict[str, AsyncMock]:
-    user_room_name = f"{primary_group_id}"
+    room_name = SocketIORoomStr.from_user_id(user_id)
 
     # handlers
     async def connect(sid: str, environ):
         print("connecting", sid)
-        await socketio_server.enter_room(sid, user_room_name)
+        await socketio_server.enter_room(sid, room_name)
 
     async def on_check(sid, data):
         print("check", sid, data)
 
     async def disconnect(sid: str):
         print("disconnecting", sid)
-        await socketio_server.leave_room(sid, user_room_name)
+        await socketio_server.leave_room(sid, room_name)
 
     # spies
     spy_connect = mocker.AsyncMock(wraps=connect)
