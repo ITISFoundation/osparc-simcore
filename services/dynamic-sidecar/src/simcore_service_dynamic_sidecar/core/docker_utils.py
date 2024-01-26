@@ -192,6 +192,9 @@ class _TargetPullStatus(str, Enum):
     PULL_COMPLETE = "Pull complete"
 
 
+_ALL_TARGET_PULL_STATUSES: Final[set[str]] = set(_TargetPullStatus)
+
+
 def _parse_docker_pull_progress(
     docker_pull_progress: _DockerProgressDict, image_pulling_data: _LayersInfoDict
 ) -> bool:
@@ -205,57 +208,58 @@ def _parse_docker_pull_progress(
 
     status: str | None = docker_pull_progress.get("status")
 
-    if status in list(_TargetPullStatus):
-        assert "id" in docker_pull_progress  # nosec
-        assert "progressDetail" in docker_pull_progress  # nosec
+    if status not in _ALL_TARGET_PULL_STATUSES:
+        return False  # no pull progress logged
 
-        layer_id: LayerId = docker_pull_progress["id"]
-        # inits (read/write order is not guaranteed)
-        image_pulling_data.setdefault(layer_id, (0, 0))
+    progress_detail = docker_pull_progress.get("progressDetail", {})
 
-        if status == _TargetPullStatus.DOWNLOADING:
-            # writes
-            assert "current" in docker_pull_progress["progressDetail"]  # nosec
-            assert "total" in docker_pull_progress["progressDetail"]  # nosec
-            image_pulling_data[layer_id] = (
-                round(
-                    _DOWNLOAD_RATIO * docker_pull_progress["progressDetail"]["current"]
-                ),
-                docker_pull_progress["progressDetail"]["total"],
-            )
-        elif status == _TargetPullStatus.DOWNLOAD_COMPLETE:
-            # reads
-            _, layer_total_size = image_pulling_data[layer_id]
-            # writes
-            image_pulling_data[layer_id] = (
-                round(_DOWNLOAD_RATIO * layer_total_size),
-                layer_total_size,
-            )
-        elif status == _TargetPullStatus.EXTRACTING:
-            # reads
-            _, layer_total_size = image_pulling_data[layer_id]
+    layer_id: LayerId | None = docker_pull_progress.get("id", None)
+    if layer_id is None:
+        return False
+    # inits (read/write order is not guaranteed)
+    image_pulling_data.setdefault(layer_id, (0, 0))
 
-            # writes
-            assert "current" in docker_pull_progress["progressDetail"]  # nosec
-            image_pulling_data[layer_id] = (
-                round(
-                    _DOWNLOAD_RATIO * layer_total_size
-                    + (1 - _DOWNLOAD_RATIO)
-                    * docker_pull_progress["progressDetail"]["current"]
-                ),
-                layer_total_size,
-            )
-        elif status == _TargetPullStatus.PULL_COMPLETE:
-            # reads
-            _, layer_total_size = image_pulling_data[layer_id]
-            # writes
-            image_pulling_data[layer_id] = (
-                layer_total_size,
-                layer_total_size,
-            )
-        return True
+    if status == _TargetPullStatus.DOWNLOADING:
+        # writes
+        if "current" not in progress_detail or "total" not in progress_detail:
+            return False
 
-    return False  # no pull progress logged
+        image_pulling_data[layer_id] = (
+            round(_DOWNLOAD_RATIO * progress_detail["current"]),
+            progress_detail["total"],
+        )
+    elif status == _TargetPullStatus.DOWNLOAD_COMPLETE:
+        # reads
+        _, layer_total_size = image_pulling_data[layer_id]
+        # writes
+        image_pulling_data[layer_id] = (
+            round(_DOWNLOAD_RATIO * layer_total_size),
+            layer_total_size,
+        )
+    elif status == _TargetPullStatus.EXTRACTING:
+        # reads
+        _, layer_total_size = image_pulling_data[layer_id]
+
+        # writes
+        if "current" not in progress_detail:
+            return False
+
+        image_pulling_data[layer_id] = (
+            round(
+                _DOWNLOAD_RATIO * layer_total_size
+                + (1 - _DOWNLOAD_RATIO) * progress_detail["current"]
+            ),
+            layer_total_size,
+        )
+    elif status == _TargetPullStatus.PULL_COMPLETE:
+        # reads
+        _, layer_total_size = image_pulling_data[layer_id]
+        # writes
+        image_pulling_data[layer_id] = (
+            layer_total_size,
+            layer_total_size,
+        )
+    return True
 
 
 def _compute_sizes(all_images: _ImagesInfoDict) -> tuple[int, int]:
