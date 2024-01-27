@@ -1037,7 +1037,7 @@ async def test_task_progress_triggers(
 )
 async def test_handling_of_disconnected_dask_scheduler(
     with_disabled_scheduler_task: None,
-    dask_spec_local_cluster: SpecCluster,
+    mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     aiopg_engine: aiopg.sa.engine.Engine,
     mocker: MockerFixture,
