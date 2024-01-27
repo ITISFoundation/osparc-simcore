@@ -132,7 +132,7 @@ async def test_computational_sidecar_properly_start_stop(
             "ContainerSpec": {
                 "Image": image_name,
                 "Env": sidecar_envs
-                | {"DASK_SCHEDULER_URL": f"tcp://{get_localhost_ip()}:8786"},
+                | {"DASK_SCHEDULER_URL": f"tls://{get_localhost_ip()}:8786"},
                 "Init": True,
                 "Mounts": sidecar_mounts,
             }
