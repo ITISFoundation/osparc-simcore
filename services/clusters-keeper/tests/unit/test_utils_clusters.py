@@ -17,6 +17,11 @@ from aws_library.ec2.models import (
 )
 from faker import Faker
 from models_library.api_schemas_clusters_keeper.clusters import ClusterState
+from models_library.clusters import (
+    InternalClusterAuthentication,
+    NoAuthentication,
+    TLSAuthentication,
+)
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.clusters import (
@@ -187,11 +192,19 @@ def test_startup_script_defines_all_envs_for_docker_compose(
         ("whatever", ClusterState.STOPPED),
     ],
 )
+@pytest.mark.parametrize(
+    "authentication",
+    [
+        NoAuthentication(),
+        TLSAuthentication(**TLSAuthentication.Config.schema_extra["examples"][0]),
+    ],
+)
 def test_create_cluster_from_ec2_instance(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
     faker: Faker,
     ec2_state: InstanceStateNameType,
     expected_cluster_state: ClusterState,
+    authentication: InternalClusterAuthentication,
 ):
     instance_data = fake_ec2_instance_data(state=ec2_state)
     cluster_instance = create_cluster_from_ec2_instance(
@@ -199,6 +212,8 @@ def test_create_cluster_from_ec2_instance(
         faker.pyint(),
         faker.pyint(),
         dask_scheduler_ready=faker.pybool(),
+        cluster_auth=authentication,
     )
     assert cluster_instance
     assert cluster_instance.state is expected_cluster_state
+    assert cluster_instance.authentication == authentication
