@@ -59,7 +59,6 @@ def _prepare_environment_variables(
         return f"'{json.dumps(jsonable_encoder(entries))}'"
 
     return [
-        f"CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH)}",
         f"CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_ACCESS_KEY_ID}",
         f"CLUSTERS_KEEPER_EC2_ENDPOINT={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_ENDPOINT}",
         f"CLUSTERS_KEEPER_EC2_REGION_NAME={app_settings.CLUSTERS_KEEPER_EC2_ACCESS.EC2_REGION_NAME}",
