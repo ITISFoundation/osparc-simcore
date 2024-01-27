@@ -44,8 +44,8 @@ logging:
 EOF
 
 # Check if DASK_TLS_CA_FILE is present
-if [ -n "$DASK_TLS_CA_FILE" ]; then
-    cat >> /home/scu/.config/dask/distributed.yaml <<EOF
+if [ -n "${DASK_TLS_CA_FILE:-}" ]; then
+  cat >>/home/scu/.config/dask/distributed.yaml <<EOF
 distributed:
   comm:
     default-scheme: tls
