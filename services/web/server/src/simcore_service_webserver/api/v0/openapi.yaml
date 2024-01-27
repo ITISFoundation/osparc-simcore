@@ -3084,14 +3084,14 @@ paths:
         are taken from context, optionally wallet_id parameter might be provided).
       operationId: list_resource_usage_services
       parameters:
-      - description: Order by field (started_at|stopped_at|credit_cost) and direction
-          (asc|desc). The default sorting order is ascending.
+      - description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+          and direction (asc|desc). The default sorting order is ascending.
         required: false
         schema:
           title: Order By
           type: string
-          description: Order by field (started_at|stopped_at|credit_cost) and direction
-            (asc|desc). The default sorting order is ascending.
+          description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+            and direction (asc|desc). The default sorting order is ascending.
           format: json-string
         example: '{"field": "started_at", "direction": "desc"}'
         name: order_by
@@ -3151,14 +3151,14 @@ paths:
         wallet_id parameter might be provided).
       operationId: export_resource_usage_services
       parameters:
-      - description: Order by field (started_at|stopped_at|credit_cost) and direction
-          (asc|desc). The default sorting order is ascending.
+      - description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+          and direction (asc|desc). The default sorting order is ascending.
         required: false
         schema:
           title: Order By
           type: string
-          description: Order by field (started_at|stopped_at|credit_cost) and direction
-            (asc|desc). The default sorting order is ascending.
+          description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+            and direction (asc|desc). The default sorting order is ascending.
           format: json-string
         example: '{"field": "started_at", "direction": "desc"}'
         name: order_by

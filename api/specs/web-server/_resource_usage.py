@@ -49,7 +49,7 @@ async def list_resource_usage_services(
     order_by: Annotated[
         Json | None,
         Query(
-            description="Order by field (started_at|stopped_at|credit_cost) and direction (asc|desc). The default sorting order is ascending.",
+            description="Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status) and direction (asc|desc). The default sorting order is ascending.",
             example='{"field": "started_at", "direction": "desc"}',
         ),
     ] = None,
@@ -87,7 +87,7 @@ async def export_resource_usage_services(
     order_by: Annotated[
         Json | None,
         Query(
-            description="Order by field (started_at|stopped_at|credit_cost) and direction (asc|desc). The default sorting order is ascending.",
+            description="Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status) and direction (asc|desc). The default sorting order is ascending.",
             example='{"field": "started_at", "direction": "desc"}',
         ),
     ] = None,
