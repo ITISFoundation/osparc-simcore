@@ -72,7 +72,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
         ...,
         description="This is the cluster that will be used by default"
         " when submitting computational services (typically "
-        "tcp://dask-scheduler:8786 for the internal cluster, or "
+        "tcp://dask-scheduler:8786, tls://dask-scheduler:8786 for the internal cluster, or "
         "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ClusterAuthentication = Field(
