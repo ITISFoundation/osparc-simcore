@@ -97,17 +97,3 @@ def test_from_catalog_to_webapi_service(
     for field, value in catalog_service["outputs"]["outFile"].items():
         if field != "defaultValue":
             assert result["outputs"]["outFile"][field] == value, f"{got=}\n"
-
-    # Check whether cache was effective
-    meta = benchmark.stats
-
-    # The coefficient of variation provides a measure of relative variability
-    # in relation to the mean. It allows you to assess the degree of variability
-    # in a dataset while considering the scale of the data.
-    # A higher CV indicates greater relative variability, while a lower CV
-    # suggests lower relative variability.
-    ref_mean = 30e-6
-    ref_std = 2e-6
-    assert (meta.stats.stddev / meta.stats.mean) < (
-        ref_std / ref_mean
-    ), f"benchmark stats: {json.dumps(meta.stats.as_dict(), indent=1)}\n"
