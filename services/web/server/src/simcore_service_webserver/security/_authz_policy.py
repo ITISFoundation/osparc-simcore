@@ -25,8 +25,9 @@ from ._identity_api import IdentityStr
 
 _logger = logging.getLogger(__name__)
 
+# Keeps a cache during bursts to avoid stress on the database
 _SECOND = 1  # in seconds
-_ACTIVE_USER_AUTHZ_CACHE_TTL: Final = 5 * _SECOND
+_AUTHZ_BURST_CACHE_TTL: Final = 5 * _SECOND
 
 
 @contextlib.contextmanager
@@ -44,26 +45,30 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         self._access_model = access_model
 
     @cached(
-        ttl=_ACTIVE_USER_AUTHZ_CACHE_TTL,
+        ttl=_AUTHZ_BURST_CACHE_TTL,
         namespace=__name__,
         key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['email']}",
     )
     async def _get_auth_or_none(self, *, email: str) -> AuthInfoDict | None:
-        """Keeps a cache for a few seconds. Avoids stress on the database with the
-        successive streams observerd on this query
-
+        """
         Raises:
             web.HTTPServiceUnavailable: if database raises an exception
         """
-        try:
+        with _handle_exceptions_as_503():
             return await get_active_user_or_none(get_database_engine(self._app), email)
-        except DatabaseError as err:
-            _logger.exception("Auth unavailable due to database error")
-            raise web.HTTPServiceUnavailable(reason=MSG_AUTH_NOT_AVAILABLE) from err
 
+    @cached(
+        ttl=_AUTHZ_BURST_CACHE_TTL,
+        namespace=__name__,
+        key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['user_id']}/{kw['product_name']}",
+    )
     async def _has_access_to_product(
         self, *, user_id: UserID, product_name: ProductName
     ) -> bool:
+        """
+        Raises:
+            web.HTTPServiceUnavailable: if database raises an exception
+        """
         with _handle_exceptions_as_503():
             return await is_user_in_product_name(
                 get_database_engine(self._app), user_id, product_name
@@ -75,8 +80,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
     async def clear_cache(self):
         # pylint: disable=no-member
-        autz_cache: BaseCache = self._get_auth_or_none.cache
-        await autz_cache.clear()
+        for fun in (self._get_auth_or_none, self._has_access_to_product):
+            autz_cache: BaseCache = fun.cache
+            await autz_cache.clear()
 
     #
     # AbstractAuthorizationPolicy API
