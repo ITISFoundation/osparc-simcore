@@ -41,8 +41,8 @@ from simcore_service_api_server.services.director_v2 import (
 from simcore_service_api_server.services.log_streaming import (
     LogDistributor,
     LogStreamer,
-    LogStreamerNotRegistered,
-    LogStreamerRegistionConflict,
+    LogStreamerNotRegisteredError,
+    LogStreamerRegistionConflictError,
 )
 
 pytest_simcore_core_services_selection = [
@@ -217,7 +217,7 @@ async def test_one_job_multiple_registrations(
         pass
 
     await log_distributor.register(project_id, _)
-    with pytest.raises(LogStreamerRegistionConflict):
+    with pytest.raises(LogStreamerRegistionConflictError):
         await log_distributor.register(project_id, _)
     await log_distributor.deregister(project_id)
 
@@ -413,6 +413,6 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
 
 async def test_log_generator_context(mocker: MockFixture, faker: Faker):
     log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=None, max_log_check_seconds=1)  # type: ignore
-    with pytest.raises(LogStreamerNotRegistered):
+    with pytest.raises(LogStreamerNotRegisteredError):
         async for log in log_streamer.log_generator():
             print(log)

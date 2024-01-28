@@ -16,15 +16,15 @@ _NEW_LINE: Final[str] = "\n"
 _SLEEP_SECONDS_BEFORE_CHECK_JOB_STATUS: Final[PositiveInt] = 10
 
 
-class LogDistributionBaseException(Exception):
+class LogDistributionBaseError(Exception):
     pass
 
 
-class LogStreamerNotRegistered(LogDistributionBaseException):
+class LogStreamerNotRegisteredError(LogDistributionBaseError):
     pass
 
 
-class LogStreamerRegistionConflict(LogDistributionBaseException):
+class LogStreamerRegistionConflictError(LogDistributionBaseError):
     pass
 
 
@@ -63,7 +63,7 @@ class LogDistributor:
         callback = self._log_streamers.get(item.job_id)
         if callback is None:
             msg = f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
-            raise LogStreamerNotRegistered(msg)
+            raise LogStreamerNotRegisteredError(msg)
         await callback(item)
         return True
 
@@ -72,7 +72,7 @@ class LogDistributor:
     ):
         if job_id in self._log_streamers:
             msg = f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
-            raise LogStreamerRegistionConflict(msg)
+            raise LogStreamerRegistionConflictError(msg)
         self._log_streamers[job_id] = callback
         await self._rabbit_client.add_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
@@ -81,7 +81,7 @@ class LogDistributor:
     async def deregister(self, job_id: JobID):
         if job_id not in self._log_streamers:
             msg = f"No stream was connected to {job_id=}."
-            raise LogStreamerNotRegistered(msg)
+            raise LogStreamerNotRegisteredError(msg)
         await self._rabbit_client.remove_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
@@ -128,7 +128,7 @@ class LogStreamer:
     async def log_generator(self) -> AsyncIterable[str]:
         if not self._is_registered:
             msg = f"LogStreamer for job_id={self._job_id} is not correctly registered"
-            raise LogStreamerNotRegistered(msg)
+            raise LogStreamerNotRegisteredError(msg)
         last_log_time: datetime | None = None
         while True:
             while self._queue.empty():
