@@ -12,6 +12,8 @@ class S3Settings(BaseCustomSettings):
     S3_BUCKET_NAME: str
     S3_REGION: str = "us-east-1"
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("S3_ENDPOINT", pre=True)
     @classmethod
     def ensure_scheme(cls, v: str, values) -> str:

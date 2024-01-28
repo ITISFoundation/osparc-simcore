@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from pydantic import Field, SecretStr, validator
+from pydantic import Field, SecretStr, field_validator
 
 from .base import BaseCustomSettings
 
@@ -22,7 +22,8 @@ class RegistrySettings(BaseCustomSettings):
     )
     REGISTRY_SSL: bool = Field(..., description="access to registry through ssl")
 
-    @validator("REGISTRY_PATH", pre=True)
+    @field_validator("REGISTRY_PATH", mode="before")
+    @classmethod
     @classmethod
     def escape_none_string(cls, v):
         return None if v == "None" else v

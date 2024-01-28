@@ -13,8 +13,9 @@ would still have these invariants.
 """
 
 
-from pydantic import BaseSettings, validator
+from pydantic import validator
 from pydantic.fields import ModelField, Undefined
+from pydantic_settings import BaseSettings
 
 
 def assert_field_specs(
@@ -46,6 +47,8 @@ class Settings(BaseSettings):
     # Other ways to write down "required" is using ...
     VALUE_ALSO_REQUIRED: int = ...  # type: ignore
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("*", pre=True)
     @classmethod
     def parse_none(cls, v, values, field: ModelField):

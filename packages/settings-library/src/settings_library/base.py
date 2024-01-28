@@ -3,16 +3,10 @@ from collections.abc import Sequence
 from functools import cached_property
 from typing import Final, get_args, get_origin
 
-from pydantic import (
-    BaseConfig,
-    BaseSettings,
-    ConfigError,
-    Extra,
-    ValidationError,
-    validator,
-)
+from pydantic import BaseConfig, ConfigError, Extra, ValidationError, validator
 from pydantic.error_wrappers import ErrorList, ErrorWrapper
 from pydantic.fields import ModelField, Undefined
+from pydantic_settings import BaseSettings
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +63,8 @@ class BaseCustomSettings(BaseSettings):
     SEE tests for details.
     """
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("*", pre=True)
     @classmethod
     def parse_none(cls, v, field: ModelField):
@@ -77,6 +73,8 @@ class BaseCustomSettings(BaseSettings):
             return None
         return v
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseConfig):
         case_sensitive = True  # All must be capitalized
         extra = Extra.forbid
