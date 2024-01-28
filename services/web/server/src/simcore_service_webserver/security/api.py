@@ -85,7 +85,6 @@ assert remember_identity  # nosec
 
 __all__: tuple[str, ...] = (
     "AuthContextDict",
-    "authorized_userid",
     "check_user_permission",
     "encrypt_password",
     "forget_identity",

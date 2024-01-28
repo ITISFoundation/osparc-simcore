@@ -37,6 +37,7 @@ from ._constants import (
     MSG_PROJECT_NOT_FOUND,
     MSG_PROJECT_NOT_PUBLISHED,
     MSG_PUBLIC_PROJECT_NOT_PUBLISHED,
+    MSG_TOO_MANY_GUESTS,
     MSG_UNEXPECTED_ERROR,
 )
 from ._users import create_temporary_guest_user, get_authorized_user
@@ -282,9 +283,29 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     # Get or create a valid USER
     if not user:
-        _logger.debug("Creating temporary user ... [%s]", f"{is_anonymous_user=}")
-        user = await create_temporary_guest_user(request)
-        is_anonymous_user = True
+        try:
+            _logger.debug("Creating temporary user ... [%s]", f"{is_anonymous_user=}")
+            user = await create_temporary_guest_user(request)
+            is_anonymous_user = True
+
+        except Exception as exc:
+            # NOTE: when lock times out it is because a user cannot
+            # be create in less that 3 seconds. That shows that the system
+            # is really busy and we rather stop creating GUEST users. For that
+            # reason we respond with 429 and inform the user that temporarily
+            # we cannot accept any more users.
+            #
+            error_code = create_error_code(exc)
+            _logger.exception(
+                "Failed to create guest user. Responded with 429 Too Many Requests[%s]",
+                f"{error_code}",
+                extra={"error_code": error_code},
+            )
+            raise RedirectToFrontEndPageError(
+                MSG_TOO_MANY_GUESTS,
+                error_code=error_code,
+                status_code=web.HTTPTooManyRequests.status_code,
+            ) from exc
 
     # COPY
     try:
