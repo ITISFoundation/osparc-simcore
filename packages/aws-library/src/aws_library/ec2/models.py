@@ -2,18 +2,18 @@ import datetime
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
 import sh
 from models_library.docker import DockerGenericTag
 from pydantic import (
     BaseModel,
     ByteSize,
+    ConfigDict,
     ConstrainedStr,
-    Extra,
     Field,
     NonNegativeFloat,
-    validator,
+    field_validator,
 )
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
@@ -52,7 +52,8 @@ class Resources(BaseModel, frozen=True):
             }
         )
 
-    @validator("cpus", pre=True)
+    @field_validator("cpus", mode="before")
+    @classmethod
     @classmethod
     def _floor_cpus_to_0(cls, v: float) -> float:
         return max(v, 0)
@@ -125,56 +126,10 @@ class EC2InstanceBootSpecific(BaseModel):
         description="time interval between pulls of images (minimum is 1 minute) "
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    # just AMI
-                    "ami_id": "ami-123456789abcdef",
-                },
-                {
-                    # AMI + scripts
-                    "ami_id": "ami-123456789abcdef",
-                    "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
-                },
-                {
-                    # AMI + scripts + pre-pull
-                    "ami_id": "ami-123456789abcdef",
-                    "custom_boot_scripts": ["ls -tlah", "echo blahblah"],
-                    "pre_pull_images": [
-                        "nginx:latest",
-                        "itisfoundation/my-very-nice-service:latest",
-                        "simcore/services/dynamic/another-nice-one:2.4.5",
-                        "asd",
-                    ],
-                },
-                {
-                    # AMI + pre-pull
-                    "ami_id": "ami-123456789abcdef",
-                    "pre_pull_images": [
-                        "nginx:latest",
-                        "itisfoundation/my-very-nice-service:latest",
-                        "simcore/services/dynamic/another-nice-one:2.4.5",
-                        "asd",
-                    ],
-                },
-                {
-                    # AMI + pre-pull + cron
-                    "ami_id": "ami-123456789abcdef",
-                    "pre_pull_images": [
-                        "nginx:latest",
-                        "itisfoundation/my-very-nice-service:latest",
-                        "simcore/services/dynamic/another-nice-one:2.4.5",
-                        "asd",
-                    ],
-                    "pre_pull_images_cron_interval": "01:00:00",
-                },
-            ]
-        }
-
-    @validator("custom_boot_scripts")
+    @field_validator("custom_boot_scripts")
+    @classmethod
     @classmethod
     def validate_bash_calls(cls, v):
         try:

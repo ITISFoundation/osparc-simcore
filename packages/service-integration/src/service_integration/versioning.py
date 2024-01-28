@@ -4,7 +4,7 @@ from typing import Pattern
 
 from models_library.basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from packaging.version import Version
-from pydantic import BaseModel, ConstrainedStr, Field
+from pydantic import BaseModel, ConfigDict, ConstrainedStr, Field
 
 
 class SemanticVersionStr(ConstrainedStr):
@@ -49,9 +49,8 @@ class ExecutableVersionInfo(BaseModel):
     name: str
     version: SemanticVersionStr
     released: datetime
-
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "display_name": "SEMCAD X",
                 "display_version": "Matterhorn Student Edition 1",
@@ -61,6 +60,7 @@ class ExecutableVersionInfo(BaseModel):
                 "released": "2021-11-19T14:58:45.900979",
             }
         }
+    )
 
 
 class ServiceVersionInfo(BaseModel):
@@ -69,12 +69,12 @@ class ServiceVersionInfo(BaseModel):
         ..., description="osparc internal integration version"
     )
     released: datetime = Field(..., description="Publication/release date")
-
-    class Config:
-        schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "version": "1.0.0",  # e.g. first time released as an osparc
                 "integration_version": "2.1.0",
                 "released": "2021-11-19T14:58:45.900979",
             }
         }
+    )

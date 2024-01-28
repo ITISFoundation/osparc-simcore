@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Protocol, TypeAlias
+from typing import Any, Protocol, TypeAlias
 
 from models_library.basic_types import EnvVarKey
 from models_library.docker import DockerLabelKey
@@ -6,7 +6,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import BootMode
 from models_library.users import UserID
-from pydantic import AnyUrl, BaseModel, root_validator
+from pydantic import AnyUrl, BaseModel, ConfigDict, root_validator
 from settings_library.s3 import S3Settings
 
 from .docker import DockerBasicAuth
@@ -25,8 +25,8 @@ class TaskOwner(BaseModel):
     project_id: ProjectID
     node_id: NodeID
 
-    parent_project_id: ProjectID | None
-    parent_node_id: NodeID | None
+    parent_project_id: ProjectID | None = None
+    parent_node_id: NodeID | None = None
 
     @property
     def has_parent(self) -> bool:
@@ -44,25 +44,7 @@ class TaskOwner(BaseModel):
             raise ValueError(msg)
         return values
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "user_id": 32,
-                    "project_id": "ec7e595a-63ee-46a1-a04a-901b11b649f8",
-                    "node_id": "39467d89-b659-4914-9359-c40b1b6d1d6d",
-                    "parent_project_id": None,
-                    "parent_node_id": None,
-                },
-                {
-                    "user_id": 32,
-                    "project_id": "ec7e595a-63ee-46a1-a04a-901b11b649f8",
-                    "node_id": "39467d89-b659-4914-9359-c40b1b6d1d6d",
-                    "parent_project_id": "887e595a-63ee-46a1-a04a-901b11b649f8",
-                    "parent_node_id": "aa467d89-b659-4914-9359-c40b1b6d1d6d",
-                },
-            ]
-        }
+    model_config = ConfigDict()
 
 
 class ContainerTaskParameters(BaseModel):
@@ -75,25 +57,7 @@ class ContainerTaskParameters(BaseModel):
     labels: ContainerLabelsDict
     boot_mode: BootMode
     task_owner: TaskOwner
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "image": "ubuntu",
-                    "tag": "latest",
-                    "input_data": TaskInputData.Config.schema_extra["examples"][0],
-                    "output_data_keys": TaskOutputDataSchema.Config.schema_extra[
-                        "examples"
-                    ][0],
-                    "command": ["sleep 10", "echo hello"],
-                    "envs": {"MYENV": "is an env"},
-                    "labels": {"io.simcore.thelabel": "is amazing"},
-                    "boot_mode": BootMode.CPU.value,
-                    "task_owner": TaskOwner.Config.schema_extra["examples"][0],
-                },
-            ]
-        }
+    model_config = ConfigDict()
 
 
 class ContainerRemoteFct(Protocol):

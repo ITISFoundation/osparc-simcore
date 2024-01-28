@@ -11,8 +11,7 @@ from typing import Any
 
 from models_library.basic_types import SHA1Str, VersionStr
 from models_library.utils.labels_annotations import from_labels, to_labels
-from pydantic import BaseModel, Field
-from pydantic.config import Extra
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.networks import AnyUrl
 
 #
@@ -96,11 +95,11 @@ class OciImageSpecAnnotations(BaseModel):
         None,
         description="Digest of the image this image is based on (string)",
     )
-
-    class Config:
-        alias_generator = lambda field_name: field_name.replace("_", ".")
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        alias_generator=lambda field_name: field_name.replace("_", "."),
+        populate_by_name=True,
+        extra="forbid",
+    )
 
     @classmethod
     def from_labels_annotations(
@@ -127,11 +126,11 @@ class LabelSchemaAnnotations(BaseModel):
     build_date: datetime
     vcs_ref: str
     vcs_url: AnyUrl
-
-    class Config:
-        alias_generator = lambda field_name: field_name.replace("_", "-")
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        alias_generator=lambda field_name: field_name.replace("_", "-"),
+        populate_by_name=True,
+        extra="forbid",
+    )
 
     @classmethod
     def create_from_env(cls) -> "LabelSchemaAnnotations":

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, ClassVar, TypeAlias
 
 from distributed.worker import get_worker
-from pydantic import BaseModel, Extra, validator
+from pydantic import BaseModel, ConfigDict, validator
 
 from .protocol import TaskOwner
 
@@ -18,8 +18,7 @@ class BaseTaskEvent(BaseModel, ABC):
     def topic_name() -> str:
         raise NotImplementedError
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class TaskProgressEvent(BaseTaskEvent):
@@ -42,6 +41,8 @@ class TaskProgressEvent(BaseTaskEvent):
             task_owner=task_owner,
         )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseTaskEvent.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -70,6 +71,8 @@ class TaskProgressEvent(BaseTaskEvent):
             ]
         }
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("progress", always=True)
     @classmethod
     def ensure_between_0_1(cls, v):
@@ -103,6 +106,8 @@ class TaskLogEvent(BaseTaskEvent):
             task_owner=task_owner,
         )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseTaskEvent.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [

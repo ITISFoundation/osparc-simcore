@@ -36,9 +36,14 @@ from models_library.utils.labels_annotations import (
     from_labels,
     to_labels,
 )
-from pydantic import NonNegativeInt, ValidationError
-from pydantic.class_validators import root_validator, validator
-from pydantic.config import Extra
+from pydantic import (
+    ConfigDict,
+    NonNegativeInt,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
+from pydantic.class_validators import validator
 from pydantic.fields import Field
 from pydantic.main import BaseModel
 
@@ -98,6 +103,8 @@ class MetaConfig(ServiceDockerData):
     Necessary for both image- and runtime-spec
     """
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("contact")
     @classmethod
     def check_contact_in_authors(cls, v, values):
@@ -172,7 +179,8 @@ class SettingsItem(BaseModel):
         description="The value of the service setting (shall follow Docker REST API scheme for services",
     )
 
-    @validator("type_", pre=True)
+    @field_validator("type_", mode="before")
+    @classmethod
     @classmethod
     def ensure_backwards_compatible_setting_type(cls, v):
         if v == "resources":
@@ -180,6 +188,8 @@ class SettingsItem(BaseModel):
             return "Resources"
         return v
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("value", pre=True)
     @classmethod
     def check_value_against_custom_types(cls, v, values):
@@ -189,9 +199,7 @@ class SettingsItem(BaseModel):
 
 
 class ValidatingDynamicSidecarServiceLabels(DynamicSidecarServiceLabels):
-    class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 def _get_alias_generator(field_name: str) -> str:
@@ -222,7 +230,8 @@ class RuntimeConfig(BaseModel):
 
     settings: list[SettingsItem] = Field(default_factory=list)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     @classmethod
     def ensure_compatibility(cls, v):
         # NOTE: if changes are applied to `DynamicSidecarServiceLabels`
@@ -239,10 +248,9 @@ class RuntimeConfig(BaseModel):
 
         return v
 
-    class Config:
-        alias_generator = _get_alias_generator
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        alias_generator=_get_alias_generator, populate_by_name=True, extra="forbid"
+    )
 
     @classmethod
     def from_yaml(cls, path: Path) -> "RuntimeConfig":

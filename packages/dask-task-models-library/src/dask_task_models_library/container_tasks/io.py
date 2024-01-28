@@ -9,39 +9,30 @@ from models_library.services import PROPERTY_KEY_RE
 from pydantic import (
     AnyUrl,
     BaseModel,
-    Extra,
+    ConfigDict,
     Field,
     StrictBool,
     StrictFloat,
     StrictInt,
     StrictStr,
+    StringConstraints,
 )
-from pydantic.types import constr
+from typing_extensions import Annotated
 
 TaskCancelEventName = "cancel_event_{}"
 
 
 class PortSchema(BaseModel):
     required: bool
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "required": True,
-                },
-                {
-                    "required": False,
-                },
-            ]
-        }
+    model_config = ConfigDict(extra="forbid")
 
 
 class FilePortSchema(PortSchema):
     mapping: str | None = None
     url: AnyUrl
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(PortSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -65,24 +56,12 @@ class FileUrl(BaseModel):
         description="Local file relpath name (if given), otherwise it takes the url filename",
     )
     file_mime_type: str | None = Field(
-        default=None, description="the file MIME type", regex=MIME_TYPE_RE
+        default=None, description="the file MIME type", pattern=MIME_TYPE_RE
     )
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"url": "https://some_file_url", "file_mime_type": "application/json"},
-                {
-                    "url": "https://some_file_url",
-                    "file_mapping": "some_file_name.txt",
-                    "file_mime_type": "application/json",
-                },
-            ]
-        }
+    model_config = ConfigDict(extra="forbid")
 
 
-PortKey = constr(regex=PROPERTY_KEY_RE)
+PortKey = Annotated[str, StringConstraints(pattern=PROPERTY_KEY_RE)]
 PortValue = Union[
     StrictBool,
     StrictInt,
@@ -96,6 +75,8 @@ PortValue = Union[
 
 
 class TaskInputData(DictModel[PortKey, PortValue]):
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(DictModel.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -120,6 +101,8 @@ class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
     # does not work well in that case. For that reason, the schema is
     # sent as a json-schema instead of with a dynamically-created model class
     #
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(DictModel.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -175,6 +158,8 @@ class TaskOutputData(DictModel[PortKey, PortValue]):
         # NOTE: this cast is necessary to make mypy happy
         return cast(TaskOutputData, cls.parse_obj(data))
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(DictModel.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
