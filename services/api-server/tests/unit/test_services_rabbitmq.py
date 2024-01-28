@@ -96,9 +96,7 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-async def log_distributor(
-    client: httpx.AsyncClient, app: FastAPI
-) -> AsyncIterable[LogDistributor]:
+async def log_distributor(client: httpx.AsyncClient, app: FastAPI) -> LogDistributor:
     return get_log_distributor(app)
 
 
