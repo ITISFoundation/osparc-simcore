@@ -35,8 +35,10 @@ pytest-runner==6.0.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.7
     # via -r requirements/_test.in
-python-dotenv==1.0.0
-    # via -r requirements/_test.in
+python-dotenv==1.0.1
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 termcolor==2.3.0
     # via pytest-sugar
 tomli==2.0.1
