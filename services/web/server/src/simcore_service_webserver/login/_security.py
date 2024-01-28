@@ -11,7 +11,7 @@ from ..security.api import remember_identity
 from ._constants import MSG_LOGGED_IN
 from .utils import flash_response
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def login_granted_response(
@@ -29,7 +29,7 @@ async def login_granted_response(
     user_id = user.get("id")
 
     with log_context(
-        log,
+        _logger,
         logging.INFO,
         "login of user_id=%s with %s",
         f"{user_id}",

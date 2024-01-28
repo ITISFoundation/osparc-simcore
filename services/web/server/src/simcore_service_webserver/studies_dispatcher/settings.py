@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Any, ClassVar
 
 from aiohttp import web
 from pydantic import ByteSize, HttpUrl, parse_obj_as, validator
@@ -9,7 +10,7 @@ from settings_library.base import BaseCustomSettings
 
 class StudiesDispatcherSettings(BaseCustomSettings):
     STUDIES_ACCESS_ANONYMOUS_ALLOWED: bool = Field(
-        False,
+        default=False,
         description="If enabled, the study links are accessible to anonymous users",
     )
 
@@ -37,9 +38,10 @@ class StudiesDispatcherSettings(BaseCustomSettings):
 
     @validator("STUDIES_GUEST_ACCOUNT_LIFETIME")
     @classmethod
-    def is_positive_lifetime(cls, v):
+    def _is_positive_lifetime(cls, v):
         if v and isinstance(v, timedelta) and v.total_seconds() <= 0:
-            raise ValueError(f"Must be a positive number, got {v.total_seconds()=}")
+            msg = f"Must be a positive number, got {v.total_seconds()=}"
+            raise ValueError(msg)
         return v
 
     def is_login_required(self):
@@ -49,7 +51,7 @@ class StudiesDispatcherSettings(BaseCustomSettings):
         return not self.STUDIES_ACCESS_ANONYMOUS_ALLOWED
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "STUDIES_GUEST_ACCOUNT_LIFETIME": "2 1:10:00",  # 2 days 1h and 10 mins
                 "STUDIES_ACCESS_ANONYMOUS_ALLOWED": "1",

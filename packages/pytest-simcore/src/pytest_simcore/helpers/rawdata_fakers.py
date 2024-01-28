@@ -62,8 +62,8 @@ def _compute_hash(password: str) -> str:
         return hashlib.sha224(password.encode("ascii")).hexdigest()
 
 
-DEFAULT_PASSWORD = "password-with-at-least-12-characters"
-_DEFAULT_HASH = _compute_hash(DEFAULT_PASSWORD)
+DEFAULT_TEST_PASSWORD = "password-with-at-least-12-characters"  # noqa: S105
+_DEFAULT_HASH = _compute_hash(DEFAULT_TEST_PASSWORD)
 
 
 def random_user(

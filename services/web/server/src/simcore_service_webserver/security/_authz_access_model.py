@@ -10,13 +10,22 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, TypeAlias
+from typing import TypeAlias, TypedDict
+
+from models_library.products import ProductName
+from models_library.users import UserID
 
 from ..db.models import UserRole
 
 _logger = logging.getLogger(__name__)
 
-OptionalContext: TypeAlias = dict[str, Any] | None
+
+class AuthContextDict(TypedDict, total=False):
+    authorized_uid: UserID
+    product_name: ProductName
+
+
+OptionalContext: TypeAlias = AuthContextDict | dict | None
 
 
 @dataclass
@@ -112,7 +121,7 @@ class RoleBasedAccessModel:
                 return True
         return False
 
-    async def who_can(self, operation: str, context: dict | None = None):
+    async def who_can(self, operation: str, context: OptionalContext = None):
         return [role for role in self.roles if await self.can(role, operation, context)]
 
     @classmethod
@@ -126,11 +135,11 @@ class RoleBasedAccessModel:
 _OPERATORS_REGEX_PATTERN = re.compile(r"(&|\||\bAND\b|\bOR\b)")
 
 
-async def check_access(
+async def has_access_by_role(
     model: RoleBasedAccessModel,
     role: UserRole,
     operations: str,
-    context: dict | None = None,
+    context: OptionalContext = None,
 ) -> bool:
     """Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
 
