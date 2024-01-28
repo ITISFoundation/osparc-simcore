@@ -54,7 +54,6 @@ class Resources(BaseModel, frozen=True):
 
     @field_validator("cpus", mode="before")
     @classmethod
-    @classmethod
     def _floor_cpus_to_0(cls, v: float) -> float:
         return max(v, 0)
 
