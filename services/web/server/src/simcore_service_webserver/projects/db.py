@@ -23,6 +23,7 @@ from models_library.resource_tracker import (
     PricingPlanId,
     PricingUnitId,
 )
+from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
@@ -320,6 +321,7 @@ class ProjectDBAPI(BaseProjectDB):
         offset: int | None = 0,
         limit: int | None = None,
         search: str | None = None,
+        order_by: OrderBy | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
@@ -365,8 +367,14 @@ class ProjectDBAPI(BaseProjectDB):
                     | (users.c.name.ilike(f"%{search}%"))
                 )
 
-            # Default ordering
-            query = query.order_by(desc(projects.c.last_change_date), projects.c.id)
+            if order_by:
+                if order_by.direction == OrderDirection.ASC:
+                    query = query.order_by(sa.asc(order_by.field))
+                else:
+                    query = query.order_by(sa.desc(order_by.field))
+            else:
+                # Default ordering
+                query = query.order_by(desc(projects.c.last_change_date), projects.c.id)
 
             total_number_of_projects = await conn.scalar(
                 query.with_only_columns(func.count()).order_by(None)

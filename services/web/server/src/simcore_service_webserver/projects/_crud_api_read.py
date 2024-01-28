@@ -4,14 +4,14 @@
 Read operations are list, get
 
 """
-from enum import Enum
 
 from aiohttp import web
 from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.projects import ProjectListItem
 from models_library.projects import ProjectID
+from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
-from pydantic import BaseModel, Extra, Field, NonNegativeInt, PositiveInt
+from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
@@ -54,6 +54,7 @@ async def list_projects(
     offset: NonNegativeInt,
     limit: int,
     search: str | None,
+    order_by: OrderBy | None,
 ) -> tuple[list[ProjectDict], int]:
     app = request.app
     db = ProjectDBAPI.get_from_app_context(app)
@@ -71,6 +72,7 @@ async def list_projects(
         limit=limit,
         include_hidden=show_hidden,
         search=search,
+        order_by=order_by,
     )
 
     projects: list[ProjectDict] = await logged_gather(
@@ -99,30 +101,3 @@ async def get_project(
     project_type: ProjectTypeAPI,
 ):
     raise NotImplementedError
-
-
-class OrderDirection(str, Enum):
-    ASC = "asc"
-    DESC = "desc"
-
-
-class ProjectListFilters(BaseModel):
-    """inspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.
-    Encoded as JSON. Each available filter can have its own logic (should be well documented)
-    """
-
-    tags: list[PositiveInt] = Field(default_factory=list)
-    classifiers: list[str] = Field(default_factory=list)
-
-    class Config:
-        extra = Extra.forbid
-
-
-class ProjectOrderBy(BaseModel):
-    """inspired by Google AIP https://google.aip.dev/132#ordering"""
-
-    field: str = Field(default=None)
-    direction: OrderDirection = Field(default=OrderDirection.DESC)
-
-    class Config:
-        extra = Extra.forbid

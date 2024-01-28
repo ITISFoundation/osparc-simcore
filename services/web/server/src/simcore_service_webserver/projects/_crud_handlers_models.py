@@ -5,8 +5,9 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 """
 
 from models_library.projects import ProjectID
+from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageQueryParameters
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, Json, validator
 
 from .models import ProjectTypeAPI
 
@@ -50,6 +51,30 @@ class ProjectListParams(PageQueryParameters):
     def search_check_empty_string(cls, v):
         if not v:
             return None
+        return v
+
+
+class ProjectListWithJsonStrParams(ProjectListParams):
+    order_by: Json[OrderBy | None] = Field(  # pylint: disable=unsubscriptable-object
+        default=None,
+        description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
+        example='{"field": "prj_owner", "direction": "desc"}',
+        alias="order_by",
+    )
+
+    @validator("order_by", check_fields=False)
+    @classmethod
+    def validate_order_by_field(cls, v):
+        if v.field not in {
+            "type",
+            "uuid",
+            "name",
+            "description",
+            "prj_owner",
+            "creation_date",
+            "last_change_date",
+        }:
+            raise ValueError(f"We do not support ordering by provided field {v.field}")
         return v
 
     class Config:
