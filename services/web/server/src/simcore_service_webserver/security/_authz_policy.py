@@ -131,11 +131,10 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         # product access
         if permission == "product":
             product_name = context.get("product_name")
-            if product_name is None:
-                return False
-            return await self._has_access_to_product(
+            ok: bool = product_name is not None and await self._has_access_to_product(
                 user_id=auth_info["id"], product_name=product_name
             )
+            return ok
 
         # role-based access
         return await has_access_by_role(
