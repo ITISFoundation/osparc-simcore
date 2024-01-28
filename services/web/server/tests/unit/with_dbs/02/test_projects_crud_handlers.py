@@ -18,6 +18,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
+from models_library.products import ProductName
 from models_library.projects_nodes import Node
 from models_library.projects_state import ProjectState
 from models_library.services import ServiceKey
@@ -35,6 +36,12 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.groups.api import (
+    auto_add_user_to_product_group,
+    get_product_group_for_user,
+)
+from simcore_service_webserver.groups.exceptions import GroupNotFoundError
+from simcore_service_webserver.products.api import get_product
 from simcore_service_webserver.projects._permalink_api import ProjectPermalink
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.utils import to_datetime
@@ -58,16 +65,17 @@ def assert_replaced(current_project, update_data):
     assert to_datetime(update_data[k]) < to_datetime(current_project[k])
 
 
-async def _list_projects(
+async def _list_and_assert_projects(
     client: TestClient,
     expected: type[web.HTTPException],
     query_parameters: dict | None = None,
     headers: dict | None = None,
     expected_error_msg: str | None = None,
     expected_error_code: str | None = None,
-) -> tuple[list[dict], dict[str, Any], dict[str, Any]]:
+) -> tuple[list[ProjectDict], dict[str, Any], dict[str, Any]]:
     if not query_parameters:
         query_parameters = {}
+
     # GET /v0/projects
     assert client.app
     url = client.app.router["list_projects"].url_for()
@@ -88,7 +96,10 @@ async def _list_projects(
         include_links=True,
     )
     if data is not None:
+        assert errors is None
         assert meta is not None
+        assert isinstance(data, list)
+
         # see [api/specs/webserver/openapi-projects.yaml] for defaults
         exp_offset = max(int(query_parameters.get("offset", 0)), 0)
         exp_limit = max(1, min(int(query_parameters.get("limit", 20)), 50))
@@ -132,6 +143,8 @@ async def _list_projects(
     else:
         assert meta is None
         assert links is None
+        assert errors is not None
+
     return data, meta, links
 
 
@@ -199,7 +212,7 @@ async def test_list_projects(
     director_v2_service_mock: aioresponses,
 ):
     catalog_subsystem_mock([user_project, template_project])
-    data, *_ = await _list_projects(client, expected)
+    data, *_ = await _list_and_assert_projects(client, expected)
 
     if data:
         assert len(data) == 2
@@ -223,7 +236,7 @@ async def test_list_projects(
         assert project_permalink is None
 
     # GET /v0/projects?type=user
-    data, *_ = await _list_projects(client, expected, {"type": "user"})
+    data, *_ = await _list_and_assert_projects(client, expected, {"type": "user"})
     if data:
         assert len(data) == 1
 
@@ -239,7 +252,7 @@ async def test_list_projects(
 
     # GET /v0/projects?type=template
     # instead /v0/projects/templates ??
-    data, *_ = await _list_projects(client, expected, {"type": "template"})
+    data, *_ = await _list_and_assert_projects(client, expected, {"type": "template"})
     if data:
         assert len(data) == 1
 
@@ -255,13 +268,13 @@ async def test_list_projects(
 
 
 @pytest.fixture(scope="session")
-def s4l_product_name() -> str:
+def s4l_product_name() -> ProductName:
     return "s4l"
 
 
 @pytest.fixture
 def s4l_products_db_name(
-    postgres_db: sa.engine.Engine, s4l_product_name: str
+    postgres_db: sa.engine.Engine, s4l_product_name: ProductName
 ) -> Iterator[str]:
     with postgres_db.connect() as conn:
         conn.execute(
@@ -269,14 +282,47 @@ def s4l_products_db_name(
                 name=s4l_product_name, host_regex="pytest", display_name="pytest"
             )
         )
+
     yield s4l_product_name
+
     with postgres_db.connect() as conn:
         conn.execute(products.delete().where(products.c.name == s4l_product_name))
 
 
 @pytest.fixture
-def s4l_product_headers(s4l_products_db_name: str) -> dict[str, str]:
+def s4l_product_headers(s4l_products_db_name: ProductName) -> dict[str, str]:
     return {X_PRODUCT_NAME_HEADER: s4l_products_db_name}
+
+
+@pytest.fixture
+async def logged_user_registed_in_two_products(
+    client: TestClient, logged_user: UserInfoDict, s4l_products_db_name: ProductName
+):
+    assert client.app
+    # registered to osparc
+    osparc_product = get_product(client.app, "osparc")
+    assert osparc_product.group_id
+    assert await get_product_group_for_user(
+        client.app, user_id=logged_user["id"], product_gid=osparc_product.group_id
+    )
+
+    # not registered to s4l
+    s4l_product = get_product(client.app, s4l_products_db_name)
+    assert s4l_product.group_id
+
+    with pytest.raises(GroupNotFoundError):
+        await get_product_group_for_user(
+            client.app, user_id=logged_user["id"], product_gid=s4l_product.group_id
+        )
+
+    # register
+    await auto_add_user_to_product_group(
+        client.app, user_id=logged_user["id"], product_name=s4l_products_db_name
+    )
+
+    assert await get_product_group_for_user(
+        client.app, user_id=logged_user["id"], product_gid=s4l_product.group_id
+    )
 
 
 @pytest.mark.parametrize(
@@ -286,9 +332,9 @@ def s4l_product_headers(s4l_products_db_name: str) -> dict[str, str]:
     ],
 )
 async def test_list_projects_with_innaccessible_services(
-    s4l_products_db_name: str,
+    s4l_products_db_name: ProductName,
     client: TestClient,
-    logged_user: dict[str, Any],
+    logged_user_registed_in_two_products: UserInfoDict,
     user_project: dict[str, Any],
     template_project: dict[str, Any],
     expected: type[web.HTTPException],
@@ -299,26 +345,35 @@ async def test_list_projects_with_innaccessible_services(
 ):
     # use-case 1: calling with correct product name returns 2 projects
     # projects are linked to osparc
-    data, *_ = await _list_projects(client, expected)
+    data, *_ = await _list_and_assert_projects(client, expected)
     assert len(data) == 2
+
     # use-case 2: calling with another product name returns 0 projects
     # because projects are linked to osparc product in projects_to_products table
-    data, *_ = await _list_projects(client, expected, headers=s4l_product_headers)
+    data, *_ = await _list_and_assert_projects(
+        client, expected, headers=s4l_product_headers
+    )
     assert len(data) == 0
+
     # use-case 3: remove the links to products
     # shall still return 0 because the user has no access to the services
     with postgres_db.connect() as conn:
         conn.execute(projects_to_products.delete())
-    data, *_ = await _list_projects(client, expected, headers=s4l_product_headers)
+    data, *_ = await _list_and_assert_projects(
+        client, expected, headers=s4l_product_headers
+    )
     assert len(data) == 0
-    data, *_ = await _list_projects(client, expected)
+    data, *_ = await _list_and_assert_projects(client, expected)
     assert len(data) == 0
+
     # use-case 4: give user access to services
     # shall return the projects for any product
     catalog_subsystem_mock([user_project, template_project])
-    data, *_ = await _list_projects(client, expected, headers=s4l_product_headers)
+    data, *_ = await _list_and_assert_projects(
+        client, expected, headers=s4l_product_headers
+    )
     assert len(data) == 2
-    data, *_ = await _list_projects(client, expected)
+    data, *_ = await _list_and_assert_projects(client, expected)
     assert len(data) == 2
 
 
@@ -503,7 +558,9 @@ async def test_new_template_from_project(
         template_project = new_template_prj
         catalog_subsystem_mock([template_project])
 
-        templates, *_ = await _list_projects(client, web.HTTPOk, {"type": "template"})
+        templates, *_ = await _list_and_assert_projects(
+            client, web.HTTPOk, {"type": "template"}
+        )
 
         assert len(templates) == 1
         assert templates[0] == template_project

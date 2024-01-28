@@ -75,7 +75,7 @@ def mocked_twilio_service(mocker: MockerFixture) -> dict[str, Mock]:
             autospec=True,
         ),
         "send_sms_code_for_login": mocker.patch(
-            "simcore_service_webserver.login.handlers_auth.send_sms_code",
+            "simcore_service_webserver.login._auth_handlers.send_sms_code",
             autospec=True,
         ),
     }
@@ -339,7 +339,7 @@ async def test_2fa_sms_failure_during_login(
 
     # Mocks error in graylog https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
     mocker.patch(
-        "simcore_service_webserver.login.handlers_auth.send_sms_code",
+        "simcore_service_webserver.login._auth_handlers.send_sms_code",
         autospec=True,
         side_effect=TwilioRestException(
             status=400,

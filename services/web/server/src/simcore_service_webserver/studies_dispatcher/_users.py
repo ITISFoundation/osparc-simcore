@@ -8,6 +8,7 @@
 
 """
 import logging
+from contextlib import suppress
 from datetime import datetime
 
 import redis.asyncio as aioredis
@@ -17,11 +18,13 @@ from pydantic import BaseModel, parse_obj_as
 from servicelib.logging_utils import log_decorator
 
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
+from ..groups.api import auto_add_user_to_product_group
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST, get_random_string
+from ..products.api import get_product_name
 from ..redis import get_redis_lock_manager_client
 from ..security.api import (
-    authorized_userid,
+    check_user_authorized,
     encrypt_password,
     is_anonymous,
     remember_identity,
@@ -43,22 +46,28 @@ class UserInfo(BaseModel):
     is_guest: bool = True
 
 
-async def _get_authorized_user(request: web.Request) -> dict:
-    # Returns valid user if it is identified (cookie) and logged in (valid cookie)?
-    user_id = await authorized_userid(request)
-    if user_id is not None:
-        try:
-            user = await get_user(request.app, user_id)
-            return user
-        except UserNotFoundError:
-            return {}
+async def get_authorized_user(request: web.Request) -> dict:
+    """Returns valid user if it is identified (cookie)
+    and logged in (valid cookie)?
+    """
+    with suppress(web.HTTPUnauthorized, UserNotFoundError):
+        user_id = await check_user_authorized(request)
+        user: dict = await get_user(request.app, user_id)
+        return user
     return {}
 
 
-async def _create_temporary_guest_user(request: web.Request):
+async def create_temporary_guest_user(request: web.Request):
+    """Creates a guest user with a random name and
+
+    Raises:
+        LockNotOwnedError: Cannot release a lock that's no longer owned (e.g. when redis_locks_client times out)
+
+    """
     db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
+    product_name = get_product_name(request)
 
     random_user_name = get_random_string(min_len=5)
     email = parse_obj_as(LowerCaseEmailStr, f"{random_user_name}@guest-at-osparc.io")
@@ -75,7 +84,7 @@ async def _create_temporary_guest_user(request: web.Request):
     #     - the timeout here is the TTL of the lock in Redis. in case the webserver is overwhelmed and cannot create
     #       a user during that time or crashes, then redis will ensure the lock disappears and let the garbage collector do its work
     #
-    MAX_DELAY_TO_CREATE_USER = 3  # secs
+    MAX_DELAY_TO_CREATE_USER = 4  # secs
     #
     #  2. During initialization
     #     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
@@ -108,6 +117,9 @@ async def _create_temporary_guest_user(request: web.Request):
             }
         )
         user: dict = await get_user(request.app, usr["id"])
+        await auto_add_user_to_product_group(
+            request.app, user_id=user["id"], product_name=product_name
+        )
 
         # (2) read details above
         await redis_locks_client.lock(
@@ -144,11 +156,11 @@ async def get_or_create_guest_user(
     is_anonymous_user = await is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
-        user = await _get_authorized_user(request)
+        user = await get_authorized_user(request)
 
     if not user and allow_anonymous_or_guest_users:
         _logger.debug("Anonymous user is accepted as guest...")
-        user = await _create_temporary_guest_user(request)
+        user = await create_temporary_guest_user(request)
         is_anonymous_user = True
 
     if not allow_anonymous_or_guest_users and (not user or user.get("role") == GUEST):
@@ -172,4 +184,8 @@ async def ensure_authentication(
 ):
     if user.needs_login:
         _logger.debug("Auto login for anonymous user %s", user.name)
-        await remember_identity(request, response, user_email=user.email)
+        await remember_identity(
+            request,
+            response,
+            user_email=user.email,
+        )

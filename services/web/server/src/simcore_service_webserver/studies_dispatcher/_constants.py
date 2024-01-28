@@ -22,6 +22,11 @@ MSG_GUESTS_NOT_ALLOWED: Final[str] = (
     "If you don't have an account, please email to support and request one\n"
 )
 
+MSG_TOO_MANY_GUESTS: Final[str] = (
+    "We have reached the maximum of anonymous users allowed the platform. "
+    "Please try later or login with a registered account."
+)
+
 MSG_UNEXPECTED_ERROR: Final[
     str
 ] = "Opps this is embarrasing! Something went really wrong {hint}"
