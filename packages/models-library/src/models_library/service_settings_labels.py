@@ -14,6 +14,7 @@ from pydantic import (
     Json,
     PrivateAttr,
     ValidationError,
+    field_validator,
     parse_obj_as,
     root_validator,
     validator,
@@ -40,10 +41,12 @@ class ContainerSpec(BaseModel):
         alias="Command",
         description="Used to override the container's command",
         # NOTE: currently constraint to our use cases. Might mitigate some security issues.
-        min_items=1,
-        max_items=2,
+        min_length=1,
+        max_length=2,
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(_BaseConfig):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -93,7 +96,8 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
         # as fields
         return self._destination_containers
 
-    @validator("setting_type", pre=True)
+    @field_validator("setting_type", mode="before")
+    @classmethod
     @classmethod
     def ensure_backwards_compatible_setting_type(cls, v):
         if v == "resources":
@@ -101,6 +105,8 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
             return "Resources"
         return v
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(_BaseConfig):
         allow_population_by_field_name = True
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -191,6 +197,8 @@ class PathMappingsLabel(BaseModel):
         ),
     )
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("volume_size_limits")
     @classmethod
     def validate_volume_limits(cls, v, values) -> str | None:
@@ -218,6 +226,8 @@ class PathMappingsLabel(BaseModel):
         output: str | None = v
         return output
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(_BaseConfig):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -339,6 +349,8 @@ class DynamicSidecarServiceLabels(BaseModel):
         """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
         return self.paths_mapping is not None
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("container_http_entry", always=True)
     @classmethod
     def compose_spec_requires_container_http_entry(cls, v, values) -> str | None:
@@ -351,6 +363,8 @@ class DynamicSidecarServiceLabels(BaseModel):
             raise ValueError(msg)
         return f"{v}" if v else v
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("containers_allowed_outgoing_permit_list")
     @classmethod
     def _containers_allowed_outgoing_permit_list_in_compose_spec(cls, v, values):
@@ -372,6 +386,8 @@ class DynamicSidecarServiceLabels(BaseModel):
 
         return v
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("containers_allowed_outgoing_internet")
     @classmethod
     def _containers_allowed_outgoing_internet_in_compose_spec(cls, v, values):
@@ -393,6 +409,8 @@ class DynamicSidecarServiceLabels(BaseModel):
                     raise ValueError(err_msg)
         return v
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("callbacks_mapping")
     @classmethod
     def ensure_callbacks_mapping_container_names_defined_in_compose_spec(
@@ -421,11 +439,14 @@ class DynamicSidecarServiceLabels(BaseModel):
                     raise ValueError(err_msg)
         return v
 
-    @validator("user_preferences_path", pre=True)
+    @field_validator("user_preferences_path", mode="before")
+    @classmethod
     @classmethod
     def deserialize_from_json(cls, v):
         return f"{v}".removeprefix('"').removesuffix('"')
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("user_preferences_path")
     @classmethod
     def user_preferences_path_no_included_in_other_volumes(
@@ -483,6 +504,8 @@ class DynamicSidecarServiceLabels(BaseModel):
 
         return values
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(_BaseConfig):
         ...
 
@@ -513,6 +536,8 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
         ),
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(_BaseConfig):
         extra = Extra.allow
         schema_extra: ClassVar[dict[str, Any]] = {

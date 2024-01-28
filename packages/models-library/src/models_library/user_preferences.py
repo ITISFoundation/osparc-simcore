@@ -1,5 +1,5 @@
 from enum import auto
-from typing import Annotated, Any, ClassVar, TypeAlias
+from typing import Annotated, Any, ClassVar, Literal, TypeAlias
 
 from pydantic import BaseModel, Field
 from pydantic.main import ModelMetaclass
@@ -84,7 +84,7 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
 
 
 class FrontendUserPreference(_BaseUserPreferenceModel):
-    preference_type: PreferenceType = Field(default=PreferenceType.FRONTEND, const=True)
+    preference_type: Literal[PreferenceType.FRONTEND] = PreferenceType.FRONTEND
 
     preference_identifier: PreferenceIdentifier = Field(
         ..., description="used by the frontend"
@@ -95,7 +95,7 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
 
 
 class UserServiceUserPreference(_BaseUserPreferenceModel):
-    preference_type: PreferenceType = Field(PreferenceType.USER_SERVICE, const=True)
+    preference_type: Literal[PreferenceType.USER_SERVICE] = PreferenceType.USER_SERVICE
 
     service_key: ServiceKey = Field(
         ..., description="the service which manages the preferences"

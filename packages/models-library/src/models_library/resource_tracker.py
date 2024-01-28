@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime, timezone
 from enum import auto
-from typing import Any, ClassVar, NamedTuple, TypeAlias
+from typing import NamedTuple, TypeAlias
 
-from pydantic import BaseModel, Field, PositiveInt, validator
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, field_validator
 
 from .rest_filters import Filters
 from .utils.enums import StrAutoEnum
@@ -48,27 +48,15 @@ class PricingInfo(BaseModel):
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
     pricing_unit_cost_id: PricingUnitCostId
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"pricing_plan_id": 1, "pricing_unit_id": 1, "pricing_unit_cost_id": 1}
-            ]
-        }
+    model_config = ConfigDict()
 
 
 class HardwareInfo(BaseModel):
     aws_ec2_instances: list[str]
+    model_config = ConfigDict()
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"aws_ec2_instances": ["c6a.4xlarge"]},
-                {"aws_ec2_instances": []},
-            ]
-        }
-
-    @validator("aws_ec2_instances")
+    @field_validator("aws_ec2_instances")
+    @classmethod
     @classmethod
     def warn_if_too_many_instances_are_present(cls, v: list[str]) -> list[str]:
         if len(v) > 1:
@@ -95,11 +83,10 @@ class PricingPlanAndUnitIdsTuple(NamedTuple):
 class StartedAt(BaseModel):
     from_: datetime | None = Field(None, alias="from")
     until: datetime | None = Field(None)
+    model_config = ConfigDict(populate_by_name=True)
 
-    class Config:
-        allow_population_by_field_name = True
-
-    @validator("from_", pre=True)
+    @field_validator("from_", mode="before")
+    @classmethod
     @classmethod
     def parse_from_filter(cls, v):
         """Parse the filters field."""
@@ -114,7 +101,8 @@ class StartedAt(BaseModel):
             return from_
         return v
 
-    @validator("until", pre=True)
+    @field_validator("until", mode="before")
+    @classmethod
     @classmethod
     def parse_until_filter(cls, v):
         """Parse the filters field."""

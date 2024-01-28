@@ -1,7 +1,7 @@
-from typing import Any, ClassVar
+from typing import Any
 
 from models_library.products import ProductName
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from ..invitations import InvitationContent, InvitationInputs
 
@@ -13,8 +13,7 @@ _INPUTS_EXAMPLE: dict[str, Any] = {
 
 
 class ApiInvitationInputs(InvitationInputs):
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {"example": _INPUTS_EXAMPLE}
+    model_config = ConfigDict()
 
 
 class ApiInvitationContent(InvitationContent):
@@ -22,27 +21,12 @@ class ApiInvitationContent(InvitationContent):
     product: ProductName = Field(
         ..., description="This invitations can only be used for this product."
     )
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                **_INPUTS_EXAMPLE,
-                "product": "osparc",
-                "created": "2023-01-11 13:11:47.293595",
-            }
-        }
+    model_config = ConfigDict()
 
 
 class ApiInvitationContentAndLink(ApiInvitationContent):
     invitation_url: HttpUrl = Field(..., description="Invitation link")
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                **ApiInvitationContent.Config.schema_extra["example"],
-                "invitation_url": "https://foo.com/#/registration?invitation=1234",
-            }
-        }
+    model_config = ConfigDict()
 
 
 class ApiEncryptedInvitation(BaseModel):

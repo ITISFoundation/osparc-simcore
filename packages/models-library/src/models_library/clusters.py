@@ -4,11 +4,11 @@ from typing import Any, ClassVar, Final, Literal, TypeAlias
 from pydantic import (
     AnyUrl,
     BaseModel,
-    Extra,
+    ConfigDict,
     Field,
     HttpUrl,
     SecretStr,
-    root_validator,
+    model_validator,
     validator,
 )
 from pydantic.types import NonNegativeInt
@@ -30,9 +30,7 @@ class ClusterAccessRights(BaseModel):
     read: bool = Field(..., description="allows to run pipelines on that cluster")
     write: bool = Field(..., description="allows to modify the cluster")
     delete: bool = Field(..., description="allows to delete a cluster")
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 CLUSTER_ADMIN_RIGHTS = ClusterAccessRights(read=True, write=True, delete=True)
@@ -43,9 +41,7 @@ CLUSTER_NO_RIGHTS = ClusterAccessRights(read=False, write=False, delete=False)
 
 class BaseAuthentication(BaseModel):
     type: str
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class SimpleAuthentication(BaseAuthentication):
@@ -53,6 +49,8 @@ class SimpleAuthentication(BaseAuthentication):
     username: str
     password: SecretStr
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseAuthentication.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -69,6 +67,8 @@ class KerberosAuthentication(BaseAuthentication):
     type: Literal["kerberos"] = "kerberos"
 
     # NOTE: the entries here still need to be defined
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseAuthentication.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -83,6 +83,8 @@ class JupyterHubTokenAuthentication(BaseAuthentication):
     type: Literal["jupyterhub"] = "jupyterhub"
     api_token: str
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseAuthentication.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -123,10 +125,7 @@ class BaseCluster(BaseModel):
     _from_equivalent_enums = validator("type", allow_reuse=True, pre=True)(
         create_enums_pre_validator(ClusterTypeInModel)
     )
-
-    class Config:
-        extra = Extra.forbid
-        use_enum_values = True
+    model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
 
 ClusterID: TypeAlias = NonNegativeInt
@@ -136,6 +135,8 @@ DEFAULT_CLUSTER_ID: Final[NonNegativeInt] = 0
 class Cluster(BaseCluster):
     id: ClusterID = Field(..., description="The cluster ID")
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseCluster.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -197,7 +198,8 @@ class Cluster(BaseCluster):
             ]
         }
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     @classmethod
     def check_owner_has_access_rights(cls, values):
         is_default_cluster = bool(values["id"] == DEFAULT_CLUSTER_ID)

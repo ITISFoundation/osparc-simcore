@@ -2,7 +2,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..basic_types import PortInt
 from ..projects import ProjectID
@@ -39,19 +39,7 @@ class ServiceDetails(CommonServiceDetails):
         description="predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
         alias="service_basepath",
     )
-
-    class Config:
-        allow_population_by_field_name = True
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                "key": "simcore/services/dynamic/3dviewer",
-                "version": "2.4.5",
-                "user_id": 234,
-                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-            }
-        }
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class RunningDynamicServiceDetails(ServiceDetails):
@@ -93,6 +81,8 @@ class RunningDynamicServiceDetails(ServiceDetails):
     def legacy_service_url(self) -> str:
         return f"http://{self.host}:{self.internal_port}{self.basepath}"  # NOSONAR
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(ServiceDetails.Config):
         keep_untouched = (cached_property,)
         schema_extra: ClassVar[dict[str, Any]] = {

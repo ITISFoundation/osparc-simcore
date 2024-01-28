@@ -1,6 +1,6 @@
-from typing import Any, ClassVar, Literal
+from typing import Literal
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
@@ -17,7 +17,7 @@ __all__: tuple[str, ...] = ("ServiceResourcesDict",)
 class NodeCreate(InputSchemaWithoutCameCase):
     service_key: ServiceKey
     service_version: ServiceVersion
-    service_id: str | None
+    service_id: str | None = None
 
 
 class NodeCreated(OutputSchema):
@@ -40,13 +40,15 @@ class NodeGet(OutputSchema):
     service_key: ServiceKey = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        example=[
-            "simcore/services/comp/itis/sleeper",
-            "simcore/services/dynamic/3dviewer",
+        examples=[
+            [
+                "simcore/services/comp/itis/sleeper",
+                "simcore/services/dynamic/3dviewer",
+            ]
         ],
     )
     service_version: ServiceVersion = Field(
-        ..., description="semantic version number", example=["1.0.0", "0.0.1"]
+        ..., description="semantic version number", examples=[["1.0.0", "0.0.1"]]
     )
     service_host: str = Field(
         ...,
@@ -68,23 +70,7 @@ class NodeGet(OutputSchema):
         description="the service message",
     )
     user_id: str = Field(..., description="the user that started the service")
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                "published_port": 30000,
-                "entrypoint": "/the/entry/point/is/here",
-                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "service_key": "simcore/services/comp/itis/sleeper",
-                "service_version": "1.2.3",
-                "service_host": "jupyter_E1O2E-LAH",
-                "service_port": 8081,
-                "service_basepath": "/x/E1O2E-LAH",
-                "service_state": "pending",
-                "service_message": "no suitable node (insufficient resources on 1 node)",
-                "user_id": 123,
-            }
-        }
+    model_config = ConfigDict()
 
 
 class NodeGetIdle(OutputSchema):
@@ -95,13 +81,7 @@ class NodeGetIdle(OutputSchema):
     def from_node_id(cls, node_id: NodeID) -> "NodeGetIdle":
         return cls(service_state="idle", service_uuid=node_id)
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "service_state": "idle",
-            }
-        }
+    model_config = ConfigDict()
 
 
 class NodeGetUnknown(OutputSchema):
@@ -112,13 +92,7 @@ class NodeGetUnknown(OutputSchema):
     def from_node_id(cls, node_id: NodeID) -> "NodeGetUnknown":
         return cls(service_state="unknown", service_uuid=node_id)
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "service_state": "unknown",
-            }
-        }
+    model_config = ConfigDict()
 
 
 class NodeRetrieve(InputSchemaWithoutCameCase):
@@ -126,5 +100,7 @@ class NodeRetrieve(InputSchemaWithoutCameCase):
 
 
 class NodeRetrieved(RetrieveDataOut):
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(OutputSchema.Config):
         ...

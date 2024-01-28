@@ -3,9 +3,8 @@
 """
 
 from enum import Enum, unique
-from typing import Any, ClassVar
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, validator
 
 from .projects_access import Owner
 
@@ -60,25 +59,10 @@ class ProjectLocked(BaseModel):
         default=None, description="If locked, the user that owns the lock"
     )
     status: ProjectStatus = Field(..., description="The status of the project")
+    model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
-    class Config:
-        extra = Extra.forbid
-        use_enum_values = True
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"value": False, "status": ProjectStatus.CLOSED},
-                {
-                    "value": True,
-                    "status": ProjectStatus.OPENED,
-                    "owner": {
-                        "user_id": 123,
-                        "first_name": "Johnny",
-                        "last_name": "Cash",
-                    },
-                },
-            ]
-        }
-
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("owner", pre=True, always=True)
     @classmethod
     def check_not_null(cls, v, values):
@@ -87,6 +71,8 @@ class ProjectLocked(BaseModel):
             raise ValueError(msg)
         return v
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("status", always=True)
     @classmethod
     def check_status_compatible(cls, v, values):
@@ -103,14 +89,10 @@ class ProjectRunningState(BaseModel):
     value: RunningState = Field(
         ..., description="The running state of the project", examples=["STARTED"]
     )
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class ProjectState(BaseModel):
     locked: ProjectLocked = Field(..., description="The project lock state")
     state: ProjectRunningState = Field(..., description="The project running state")
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")

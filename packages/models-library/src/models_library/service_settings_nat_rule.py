@@ -1,7 +1,7 @@
 from collections.abc import Generator
-from typing import Any, ClassVar, Final
+from typing import Final
 
-from pydantic import BaseModel, Extra, Field, parse_obj_as, validator
+from pydantic import BaseModel, ConfigDict, Field, parse_obj_as, validator
 
 from .basic_types import PortInt
 from .osparc_variable_identifier import OsparcVariableIdentifier, raise_if_unresolved
@@ -17,6 +17,8 @@ class _PortRange(BaseModel):
     lower: PortInt | OsparcVariableIdentifier
     upper: PortInt | OsparcVariableIdentifier
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("upper")
     @classmethod
     def lower_less_than_upper(cls, v, values) -> PortInt:
@@ -34,9 +36,7 @@ class _PortRange(BaseModel):
             raise ValueError(msg)
         return PortInt(v)
 
-    class Config:
-        arbitrary_types_allowed = True
-        validate_assignment = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
 
 class DNSResolver(BaseModel):
@@ -44,17 +44,9 @@ class DNSResolver(BaseModel):
         ..., description="this is not an url address is derived from IP address"
     )
     port: PortInt | OsparcVariableIdentifier
-
-    class Config:
-        arbitrary_types_allowed = True
-        validate_assignment = True
-        extra = Extra.allow
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"address": "1.1.1.1", "port": 53},  # NOSONAR
-                {"address": "ns1.example.com", "port": 53},
-            ]
-        }
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True, validate_assignment=True, extra="allow"
+    )
 
 
 class NATRule(BaseModel):
@@ -82,6 +74,4 @@ class NATRule(BaseModel):
             else:
                 yield raise_if_unresolved(port)
 
-    class Config:
-        arbitrary_types_allowed = True
-        validate_assignment = True
+    model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)

@@ -14,8 +14,8 @@ from ..wallets import WalletID
 
 class ServiceRunGet(BaseModel):
     service_run_id: ServiceRunId
-    wallet_id: WalletID | None
-    wallet_name: str | None
+    wallet_id: WalletID | None = None
+    wallet_name: str | None = None
     user_id: UserID
     project_id: ProjectID
     project_name: str
@@ -26,11 +26,11 @@ class ServiceRunGet(BaseModel):
     service_type: str
     service_resources: dict
     started_at: datetime
-    stopped_at: datetime | None
+    stopped_at: datetime | None = None
     service_run_status: ServiceRunStatus
     # Cost in credits
-    credit_cost: Decimal | None
-    transaction_status: CreditTransactionStatus | None
+    credit_cost: Decimal | None = None
+    transaction_status: CreditTransactionStatus | None = None
 
 
 class ServiceRunPage(NamedTuple):

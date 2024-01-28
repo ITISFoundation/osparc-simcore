@@ -1,10 +1,10 @@
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
-from pydantic import BaseModel, ByteSize, Field
+from pydantic import BaseModel, ByteSize, ConfigDict, Field
 
 from ..resource_tracker import HardwareInfo, PricingInfo
 from ..services import ServicePortKey
-from ..services_resources import ServiceResourcesDict, ServiceResourcesDictHelpers
+from ..services_resources import ServiceResourcesDict
 from ..wallets import WalletInfo
 from .dynamic_services_service import RunningDynamicServiceDetails, ServiceDetails
 
@@ -30,10 +30,7 @@ class RetrieveDataOutEnveloped(BaseModel):
     ) -> "RetrieveDataOutEnveloped":
         return cls(data=RetrieveDataOut(size_bytes=ByteSize(transferred_bytes)))
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [{"data": {"size_bytes": 42}}]
-        }
+    model_config = ConfigDict()
 
 
 class DynamicServiceCreate(ServiceDetails):
@@ -55,26 +52,7 @@ class DynamicServiceCreate(ServiceDetails):
         default=None,
         description="contains harware information (ex. aws_ec2_instances)",
     )
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                "key": "simcore/services/dynamic/3dviewer",
-                "version": "2.4.5",
-                "user_id": 234,
-                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                "product_name": "osparc",
-                "can_save": True,
-                "service_resources": ServiceResourcesDictHelpers.Config.schema_extra[
-                    "examples"
-                ][0],
-                "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
-                "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
-                "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
-            }
-        }
+    model_config = ConfigDict()
 
 
 DynamicServiceGet: TypeAlias = RunningDynamicServiceDetails

@@ -7,19 +7,20 @@ from uuid import uuid4
 import arrow
 from pydantic import (
     BaseModel,
+    ConfigDict,
     ConstrainedStr,
-    Extra,
     Field,
     HttpUrl,
     NonNegativeInt,
     StrictBool,
     StrictFloat,
     StrictInt,
+    field_validator,
     validator,
 )
 
 from .basic_regex import VERSION_RE
-from .boot_options import BootOption, BootOptions
+from .boot_options import BootOptions
 from .emails import LowerCaseEmailStr
 from .services_constants import FILENAME_RE, PROPERTY_TYPE_RE
 from .services_ui import Widget
@@ -69,30 +70,22 @@ LATEST_INTEGRATION_VERSION = "1.0.0"
 # CONSTRAINT TYPES -------------------------------------------
 class ServicePortKey(ConstrainedStr):
     regex = re.compile(PROPERTY_KEY_RE)
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class FileName(ConstrainedStr):
     regex = re.compile(FILENAME_RE)
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class ServiceKey(ConstrainedStr):
     regex = SERVICE_KEY_RE
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class ServiceKeyEncoded(ConstrainedStr):
     regex = re.compile(SERVICE_ENCODED_KEY_RE)
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class DynamicServiceKey(ServiceKey):
@@ -105,9 +98,7 @@ class ComputationalServiceKey(ServiceKey):
 
 class ServiceVersion(ConstrainedStr):
     regex = re.compile(VERSION_RE)
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class RunID(str):
@@ -181,13 +172,11 @@ class Badge(BaseModel):
             "https://itisfoundation.github.io/",
         ],
     )
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class Author(BaseModel):
-    name: str = Field(..., description="Name of the author", example="Jim Knopf")
+    name: str = Field(..., description="Name of the author", examples=["Jim Knopf"])
     email: LowerCaseEmailStr = Field(
         ...,
         examples=["sun@sense.eight", "deleen@minbar.bab"],
@@ -196,9 +185,7 @@ class Author(BaseModel):
     affiliation: str | None = Field(
         None, examples=["Sense8", "Babylon 5"], description="Affiliation of the author"
     )
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class BaseServiceIOModel(BaseModel):
@@ -216,11 +203,11 @@ class BaseServiceIOModel(BaseModel):
         description="DEPRECATED: new display order is taken from the item position. This will be removed.",
     )
 
-    label: str = Field(..., description="short name for the property", example="Age")
+    label: str = Field(..., description="short name for the property", examples=["Age"])
     description: str = Field(
         ...,
         description="description of the property",
-        example="Age in seconds since 1970",
+        examples=["Age in seconds since 1970"],
     )
 
     # mathematical and physics descriptors
@@ -241,7 +228,7 @@ class BaseServiceIOModel(BaseModel):
             "data:application/hdf5",
             "data:application/edu.ucdavis@ceclancy.xyz",
         ],
-        regex=PROPERTY_TYPE_RE,
+        pattern=PROPERTY_TYPE_RE,
     )
 
     content_schema: dict[str, Any] | None = Field(
@@ -263,10 +250,10 @@ class BaseServiceIOModel(BaseModel):
         None,
         description="Units, when it refers to a physical quantity",
     )
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        extra = Extra.forbid
-
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("content_schema")
     @classmethod
     def check_type_is_set_to_schema(cls, v, values):
@@ -275,7 +262,8 @@ class BaseServiceIOModel(BaseModel):
             raise ValueError(msg)
         return v
 
-    @validator("content_schema")
+    @field_validator("content_schema")
+    @classmethod
     @classmethod
     def check_valid_json_schema(cls, v):
         if v is not None:
@@ -321,6 +309,8 @@ class ServiceInput(BaseServiceIOModel):
         description="custom widget to use instead of the default one determined from the data-type",
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseServiceIOModel.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -392,6 +382,8 @@ class ServiceOutput(BaseServiceIOModel):
         deprecated=True,
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseServiceIOModel.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -441,16 +433,14 @@ class ServiceKeyVersion(BaseModel):
         ...,
         description="service version number",
     )
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class _BaseServiceCommonDataModel(BaseModel):
     name: str = Field(
         ...,
         description="short, human readable name for the node",
-        example="Fast Counter",
+        examples=["Fast Counter"],
     )
     thumbnail: HttpUrl | None = Field(
         None,
@@ -468,6 +458,8 @@ class _BaseServiceCommonDataModel(BaseModel):
         ],
     )
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("thumbnail", pre=True, always=False)
     @classmethod
     def validate_thumbnail(cls, value):  # pylint: disable=no-self-argument,no-self-use
@@ -491,7 +483,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
         None,
         alias="integration-version",
         description="integration version number",
-        regex=VERSION_RE,
+        pattern=VERSION_RE,
         examples=["1.0.0"],
     )
     progress_regexp: str | None = Field(
@@ -508,7 +500,7 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
 
     badges: list[Badge] | None = Field(None)
 
-    authors: list[Author] = Field(..., min_items=1)
+    authors: list[Author] = Field(..., min_length=1)
     contact: LowerCaseEmailStr = Field(
         ...,
         description="email to correspond to the authors about the node",
@@ -534,106 +526,11 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
             "When None all 'data type inputs' are displayed."
         ),
     )
-
-    class Config:
-        description = "Description of a simcore node 'class' with input and output"
-        extra = Extra.forbid
-        frozen = False  # it inherits from ServiceKeyVersion.
-
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "name": "oSparc Python Runner",
-                    "key": "simcore/services/comp/osparc-python-runner",
-                    "type": "computational",
-                    "integration-version": "1.0.0",
-                    "progress_regexp": "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))",
-                    "version": "1.7.0",
-                    "description": "oSparc Python Runner",
-                    "contact": "smith@company.com",
-                    "authors": [
-                        {
-                            "name": "John Smith",
-                            "email": "smith@company.com",
-                            "affiliation": "Company",
-                        },
-                        {
-                            "name": "Richard Brown",
-                            "email": "brown@uni.edu",
-                            "affiliation": "University",
-                        },
-                    ],
-                    "inputs": {
-                        "input_1": {
-                            "displayOrder": 1,
-                            "label": "Input data",
-                            "description": "Any code, requirements or data file",
-                            "type": "data:*/*",
-                        }
-                    },
-                    "outputs": {
-                        "output_1": {
-                            "displayOrder": 1,
-                            "label": "Output data",
-                            "description": "All data produced by the script is zipped as output_data.zip",
-                            "type": "data:*/*",
-                            "fileToKeyMap": {"output_data.zip": "output_1"},
-                        }
-                    },
-                },
-                # latest
-                {
-                    "name": "oSparc Python Runner",
-                    "key": "simcore/services/comp/osparc-python-runner",
-                    "type": "computational",
-                    "integration-version": "1.0.0",
-                    "progress_regexp": "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))",
-                    "version": "1.7.0",
-                    "description": "oSparc Python Runner with boot options",
-                    "contact": "smith@company.com",
-                    "authors": [
-                        {
-                            "name": "John Smith",
-                            "email": "smith@company.com",
-                            "affiliation": "Company",
-                        },
-                        {
-                            "name": "Richard Brown",
-                            "email": "brown@uni.edu",
-                            "affiliation": "University",
-                        },
-                    ],
-                    "inputs": {
-                        "input_1": {
-                            "label": "Input data",
-                            "description": "Any code, requirements or data file",
-                            "type": "data:*/*",
-                        }
-                    },
-                    "outputs": {
-                        "output_1": {
-                            "label": "Output data",
-                            "description": "All data produced by the script is zipped as output_data.zip",
-                            "type": "data:*/*",
-                            "fileToKeyMap": {"output_data.zip": "output_1"},
-                        }
-                    },
-                    "boot-options": {
-                        "example_service_defined_boot_mode": BootOption.Config.schema_extra[
-                            "examples"
-                        ][
-                            0
-                        ],
-                        "example_service_defined_theme_selection": BootOption.Config.schema_extra[
-                            "examples"
-                        ][
-                            1
-                        ],
-                    },
-                    "min-visible-inputs": 2,
-                },
-            ]
-        }
+    model_config = ConfigDict(
+        description="Description of a simcore node 'class' with input and output",
+        extra="forbid",
+        frozen=False,
+    )
 
 
 class ServiceMetaData(_BaseServiceCommonDataModel):
@@ -643,42 +540,15 @@ class ServiceMetaData(_BaseServiceCommonDataModel):
     #        it should be implemented with a different model e.g. ServiceMetaDataUpdate
     #
 
-    name: str | None
-    thumbnail: HttpUrl | None
-    description: str | None
+    name: str | None = None
+    thumbnail: HttpUrl | None = None
+    description: str | None = None
     deprecated: datetime | None = Field(
         default=None,
         description="If filled with a date, then the service is to be deprecated at that date (e.g. cannot start anymore)",
     )
 
     # user-defined metatada
-    classifiers: list[str] | None
+    classifiers: list[str] | None = None
     quality: dict[str, Any] = {}
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                "key": "simcore/services/dynamic/sim4life",
-                "version": "1.0.9",
-                "name": "sim4life",
-                "description": "s4l web",
-                "thumbnail": "https://thumbnailit.org/image",
-                "quality": {
-                    "enabled": True,
-                    "tsr_target": {
-                        f"r{n:02d}": {"level": 4, "references": ""}
-                        for n in range(1, 11)
-                    },
-                    "annotations": {
-                        "vandv": "",
-                        "limitations": "",
-                        "certificationLink": "",
-                        "certificationStatus": "Uncertified",
-                    },
-                    "tsr_current": {
-                        f"r{n:02d}": {"level": 0, "references": ""}
-                        for n in range(1, 11)
-                    },
-                },
-            }
-        }
+    model_config = ConfigDict()

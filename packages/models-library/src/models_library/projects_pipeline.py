@@ -1,9 +1,7 @@
 import datetime
-from typing import Any, ClassVar
 from uuid import UUID
 
-import arrow
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from .clusters import ClusterID
 from .projects_nodes import NodeState
@@ -57,73 +55,4 @@ class ComputationTask(BaseModel):
         ...,
         description="task last modification timestamp or None if the there is no task",
     )
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
-                    "state": "PUBLISHED",
-                    "pipeline_details": {
-                        "adjacency_list": {
-                            "2fb4808a-e403-4a46-b52c-892560d27862": [],
-                            "19a40c7b-0a40-458a-92df-c77a5df7c886": [
-                                "2fb4808a-e403-4a46-b52c-892560d27862"
-                            ],
-                        },
-                        "node_states": {
-                            "2fb4808a-e403-4a46-b52c-892560d27862": {
-                                "modified": True,
-                                "dependencies": [],
-                                "progress": 0.0,
-                            },
-                            "19a40c7b-0a40-458a-92df-c77a5df7c886": {
-                                "modified": False,
-                                "dependencies": [
-                                    "2fb4808a-e403-4a46-b52c-892560d27862"
-                                ],
-                                "progress": 0.0,
-                            },
-                        },
-                        "progress": 0.0,
-                    },
-                    "iteration": None,
-                    "cluster_id": None,
-                    "started": arrow.utcnow().shift(minutes=-50).datetime,
-                    "stopped": None,
-                    "submitted": arrow.utcnow().shift(hours=-1).datetime,
-                },
-                {
-                    "id": "f81d7994-9ccc-4c95-8c32-aa70d6bbb1b0",
-                    "state": "SUCCESS",
-                    "pipeline_details": {
-                        "adjacency_list": {
-                            "2fb4808a-e403-4a46-b52c-892560d27862": [],
-                            "19a40c7b-0a40-458a-92df-c77a5df7c886": [
-                                "2fb4808a-e403-4a46-b52c-892560d27862"
-                            ],
-                        },
-                        "node_states": {
-                            "2fb4808a-e403-4a46-b52c-892560d27862": {
-                                "modified": False,
-                                "dependencies": [],
-                                "progress": 1.0,
-                            },
-                            "19a40c7b-0a40-458a-92df-c77a5df7c886": {
-                                "modified": False,
-                                "dependencies": [
-                                    "2fb4808a-e403-4a46-b52c-892560d27862"
-                                ],
-                                "progress": 1.0,
-                            },
-                        },
-                        "progress": 1.0,
-                    },
-                    "iteration": 2,
-                    "cluster_id": 0,
-                    "started": arrow.utcnow().shift(minutes=-50).datetime,
-                    "stopped": arrow.utcnow().shift(minutes=-20).datetime,
-                    "submitted": arrow.utcnow().shift(hours=-1).datetime,
-                },
-            ]
-        }
+    model_config = ConfigDict()

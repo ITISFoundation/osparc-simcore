@@ -1,7 +1,7 @@
 from decimal import Decimal
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 ProductName: TypeAlias = str
 
@@ -9,10 +9,4 @@ ProductName: TypeAlias = str
 class CreditResultGet(BaseModel):
     product_name: ProductName
     credit_amount: Decimal = Field(..., description="")
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"product_name": "s4l", "credit_amount": Decimal(15.5)},
-            ]
-        }
+    model_config = ConfigDict()

@@ -8,15 +8,16 @@
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 from uuid import UUID
 
 from pydantic import (
     AnyUrl,
     BaseModel,
+    ConfigDict,
     ConstrainedStr,
-    Extra,
     Field,
+    field_validator,
     parse_obj_as,
     validator,
 )
@@ -110,20 +111,9 @@ class PortLink(BaseModel):
     output: str = Field(
         ...,
         description="The port key in the node given by nodeUuid",
-        regex=PROPERTY_KEY_RE,
+        pattern=PROPERTY_KEY_RE,
     )
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                # minimal
-                {
-                    "nodeUuid": "da5068e0-8a8d-4fb9-9516-56e5ddaef15b",
-                    "output": "out_2",
-                }
-            ],
-        }
+    model_config = ConfigDict(extra="forbid")
 
 
 class DownloadLink(BaseModel):
@@ -131,17 +121,7 @@ class DownloadLink(BaseModel):
 
     download_link: AnyUrl = Field(..., alias="downloadLink")
     label: str | None = Field(default=None, description="Display name")
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                # minimal
-                {
-                    "downloadLink": "https://fakeimg.pl/250x100/",
-                }
-            ],
-        }
+    model_config = ConfigDict(extra="forbid")
 
 
 ## CUSTOM STORAGE SERVICES -----------
@@ -169,7 +149,8 @@ class BaseFileLink(BaseModel):
         alias="eTag",
     )
 
-    @validator("store", pre=True)
+    @field_validator("store", mode="before")
+    @classmethod
     @classmethod
     def legacy_enforce_str_to_int(cls, v):
         # SEE example 'legacy: store as string'
@@ -187,6 +168,8 @@ class SimCoreFileLink(BaseFileLink):
         # TODO: Remove with storage refactoring
     )
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("store", always=True)
     @classmethod
     def check_discriminator(cls, v):
@@ -196,6 +179,8 @@ class SimCoreFileLink(BaseFileLink):
             raise ValueError(msg)
         return 0
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("label", always=True, pre=True)
     @classmethod
     def pre_fill_label_with_filename_ext(cls, v, values):
@@ -203,34 +188,7 @@ class SimCoreFileLink(BaseFileLink):
             return Path(values["path"]).name
         return v
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "store": 0,
-                    "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
-                    "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
-                    "label": "input.txt",
-                },
-                # legacy: store as string (SEE incident https://git.speag.com/oSparc/e2e-testing/-/issues/1)
-                {
-                    "store": "0",
-                    "path": "50339632-ee1d-11ec-a0c2-02420a0194e4/23b1522f-225f-5a4c-9158-c4c19a70d4a8/output.h5",
-                    "eTag": "f7e4c7076761a42a871e978c8691c676",
-                },
-                # minimal
-                {
-                    "store": 0,
-                    "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
-                },
-                # w/ store id as int
-                {
-                    "store": 0,
-                    "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt",
-                },
-            ],
-        }
+    model_config = ConfigDict(extra="forbid")
 
 
 class DatCoreFileLink(BaseFileLink):
@@ -246,6 +204,8 @@ class DatCoreFileLink(BaseFileLink):
         description="Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
     )
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("store", always=True)
     @classmethod
     def check_discriminator(cls, v):
@@ -256,26 +216,7 @@ class DatCoreFileLink(BaseFileLink):
             raise ValueError(msg)
         return 1
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    # minimal
-                    "store": 1,
-                    "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
-                    "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
-                    "label": "initial_WTstates",
-                },
-                # with store id as str
-                {
-                    "store": 1,
-                    "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
-                    "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
-                    "label": "initial_WTstates",
-                },
-            ],
-        }
+    model_config = ConfigDict(extra="forbid")
 
 
 # Bundles all model links to a file vs PortLink

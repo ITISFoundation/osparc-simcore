@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import Any, ClassVar, TypeAlias
 
 import orjson
-from pydantic import Extra, Field
+from pydantic import ConfigDict, Field
 from pydantic.main import BaseModel
 
 from ..api_schemas_catalog import services as api_schemas_catalog_services
@@ -29,13 +29,15 @@ class _BaseCommonApiExtension(BaseModel):
         None,
         description="Short name for the unit for display (html-compatible), if available",
     )
-
-    class Config:
-        alias_generator = snake_to_camel
-        allow_population_by_field_name = True
-        extra = Extra.forbid
-        json_dumps = _orjson_dumps
-        json_loads = orjson.loads
+    # TODO[pydantic]: The following keys were removed: `json_dumps`, `json_loads`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        extra="forbid",
+        json_dumps=_orjson_dumps,
+        json_loads=orjson.loads,
+    )
 
 
 class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
@@ -45,6 +47,8 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
         ..., description="Unique name identifier for this input"
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(_BaseCommonApiExtension.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
@@ -85,6 +89,8 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
         ..., description="Unique name identifier for this input"
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(_BaseCommonApiExtension.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
@@ -127,15 +133,21 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
         ..., description="outputs with extended information"
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {"example": _EXAMPLE}
 
 
 class ServiceUpdate(api_schemas_catalog_services.ServiceUpdate):
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(InputSchema.Config):
         ...
 
 
 class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(OutputSchema.Config):
         ...
