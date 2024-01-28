@@ -282,14 +282,14 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     # Get or create a valid USER
     if not user:
-        _logger.debug("Creating temporary user ...")
+        _logger.debug("Creating temporary user ... [%s]", f"{is_anonymous_user=}")
         user = await create_temporary_guest_user(request)
         is_anonymous_user = True
 
     # COPY
     try:
         _logger.debug(
-            "Granted access to study '%s' for user %s. Copying study over ...",
+            "Granted access to study name='%s' for user email='%s'. Copying study over ...",
             template_project.get("name"),
             user.get("email"),
         )

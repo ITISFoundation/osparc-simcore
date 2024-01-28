@@ -58,6 +58,12 @@ async def get_authorized_user(request: web.Request) -> dict:
 
 
 async def create_temporary_guest_user(request: web.Request):
+    """Creates a guest user with a random name and
+
+    Raises:
+        LockNotOwnedError: Cannot release a lock that's no longer owned (e.g. when redis_locks_client times out)
+
+    """
     db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
@@ -78,7 +84,7 @@ async def create_temporary_guest_user(request: web.Request):
     #     - the timeout here is the TTL of the lock in Redis. in case the webserver is overwhelmed and cannot create
     #       a user during that time or crashes, then redis will ensure the lock disappears and let the garbage collector do its work
     #
-    MAX_DELAY_TO_CREATE_USER = 3  # secs
+    MAX_DELAY_TO_CREATE_USER = 5  # secs
     #
     #  2. During initialization
     #     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
