@@ -35,6 +35,8 @@ aiosignal==1.3.1
     # via aiohttp
 alembic==1.12.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+annotated-types==0.6.0
+    # via pydantic
 arrow==1.3.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -110,7 +112,7 @@ psycopg2-binary==2.9.9
     # via
     #   aiopg
     #   sqlalchemy
-pydantic==1.10.13
+pydantic==2.5.3
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -125,12 +127,21 @@ pydantic==1.10.13
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
+    #   pydantic-settings
+pydantic-core==2.14.6
+    # via pydantic
+pydantic-settings==2.1.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.16.1
     # via rich
 pyinstrument==4.6.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.8.2
     # via arrow
+python-dotenv==1.0.1
+    # via pydantic-settings
 pyyaml==6.0.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -201,6 +212,7 @@ typing-extensions==4.8.0
     #   alembic
     #   pint
     #   pydantic
+    #   pydantic-core
     #   typer
 yarl==1.9.2
     # via
