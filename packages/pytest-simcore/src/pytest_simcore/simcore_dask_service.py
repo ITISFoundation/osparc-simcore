@@ -2,11 +2,12 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 from distributed import Client
 from pydantic import AnyUrl
+from pytest_simcore.helpers.utils_host import get_localhost_ip
 
 from .helpers.utils_docker import get_service_published_port
 
@@ -20,7 +21,9 @@ async def dask_scheduler_service(simcore_services_ready, monkeypatch) -> str:
     )
     # override the port
     monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{dask_scheduler_api_port}")
-    return AnyUrl.build(scheme="tls", host="127.0.0.1", port=dask_scheduler_api_port)
+    return AnyUrl.build(
+        scheme="tls", host=get_localhost_ip(), port=dask_scheduler_api_port
+    )
 
 
 @pytest.fixture
