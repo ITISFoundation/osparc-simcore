@@ -112,6 +112,8 @@ attrs==21.4.0
     #   openapi-core
 bidict==0.22.0
     # via python-socketio
+cachetools==5.3.2
+    # via -r requirements/_base.in
 certifi==2023.7.22
     # via
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -251,6 +253,8 @@ markupsafe==2.1.1
     #   mako
 mdurl==0.1.2
     # via markdown-it-py
+msgpack==1.0.7
+    # via -r requirements/_base.in
 multidict==6.0.2
     # via
     #   aiohttp

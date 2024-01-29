@@ -1,5 +1,7 @@
 """ API for security subsystem.
 
+
+NOTE: DO NOT USE aiohttp_security.api directly but use this interface instead
 """
 
 import aiohttp_security.api
@@ -7,9 +9,9 @@ import passlib.hash
 from aiohttp import web
 from models_library.users import UserID
 
-from ._authz import AuthorizationPolicy
-from ._authz_access_model import OptionalContext, RoleBasedAccessModel
-from ._identity import forget_identity, remember_identity
+from ._authz_access_model import AuthContextDict, OptionalContext, RoleBasedAccessModel
+from ._authz_policy import AuthorizationPolicy
+from ._identity_api import forget_identity, remember_identity
 
 
 def get_access_model(app: web.Application) -> RoleBasedAccessModel:
@@ -22,7 +24,28 @@ async def clean_auth_policy_cache(app: web.Application) -> None:
     await autz_policy.clear_cache()
 
 
-async def check_permission(
+async def is_anonymous(request: web.Request) -> bool:
+    """
+    User is considered anonymous if there is not verified identity in request.
+    """
+    is_user_id_none: bool = await aiohttp_security.api.is_anonymous(request)
+    return is_user_id_none
+
+
+async def check_user_authorized(request: web.Request) -> UserID:
+    """
+    Raises:
+        web.HTTPUnauthorized: for anonymous user (i.e. user_id is None)
+
+    """
+    # NOTE: Same as aiohttp_security.api.check_authorized
+    user_id = await aiohttp_security.api.authorized_userid(request)
+    if user_id is None:
+        raise web.HTTPUnauthorized
+    return user_id
+
+
+async def check_user_permission(
     request: web.Request, permission: str, *, context: OptionalContext = None
 ) -> None:
     """Checker that passes only to authoraised users with given permission.
@@ -31,19 +54,14 @@ async def check_permission(
         web.HTTPUnauthorized: If user is not authorized
         web.HTTPForbidden: If user is authorized and does not have permission
     """
-    await aiohttp_security.api.check_permission(request, permission, context)
+    # NOTE: Same as aiohttp_security.api.check_permission
+    context = context or AuthContextDict()
+    if not context.get("authorized_uid"):
+        context["authorized_uid"] = await check_user_authorized(request)
 
-
-async def authorized_userid(request: web.Request) -> UserID | None:
-    return await aiohttp_security.api.authorized_userid(request)
-
-
-async def is_anonymous(request: web.Request) -> bool:
-    """
-    User is considered anonymous if there is not identityin request.
-    """
-    yes: bool = await aiohttp_security.api.is_anonymous(request)
-    return yes
+    allowed = await aiohttp_security.api.permits(request, permission, context)
+    if not allowed:
+        raise web.HTTPForbidden(reason=f"Not sufficient access rights for {permission}")
 
 
 #
@@ -66,8 +84,8 @@ assert remember_identity  # nosec
 
 
 __all__: tuple[str, ...] = (
-    "authorized_userid",
-    "check_permission",
+    "AuthContextDict",
+    "check_user_permission",
     "encrypt_password",
     "forget_identity",
     "get_access_model",

@@ -3,7 +3,7 @@ from functools import wraps
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
 
-from .api import check_permission
+from .api import check_user_permission
 
 
 def permission_required(permissions: str):
@@ -19,7 +19,7 @@ def permission_required(permissions: str):
     def _decorator(handler: Handler):
         @wraps(handler)
         async def _wrapped(request: web.Request):
-            await check_permission(request, permissions)
+            await check_user_permission(request, permissions)
 
             return await handler(request)
 
