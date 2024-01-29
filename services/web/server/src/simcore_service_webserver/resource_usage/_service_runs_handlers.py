@@ -6,7 +6,7 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunPage,
 )
 from models_library.resource_tracker import ServiceResourceUsagesFilters
-from models_library.rest_ordering import OrderBy
+from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
@@ -65,7 +65,7 @@ ORDER_BY_DESCRIPTION = "Order by field (wallet_id|wallet_name|user_id|project_id
 class _ListServicesResourceUsagesQueryParams(BaseModel):
     wallet_id: WalletID | None = Field(default=None)
     order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
-        default='{"field": "started_at", "direction": "desc"}',
+        default=OrderBy(field="started_at", direction=OrderDirection.DESC),
         description=ORDER_BY_DESCRIPTION,
         example='{"field": "started_at", "direction": "desc"}',
     )
