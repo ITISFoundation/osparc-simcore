@@ -45,6 +45,7 @@ EOF
 
 # Check if DASK_TLS_CA_FILE is present
 if [ -n "${DASK_TLS_CA_FILE:-}" ]; then
+  print_info "TLS authentication enabled
   cat >>/home/scu/.config/dask/distributed.yaml <<EOF
 distributed:
   comm:
