@@ -408,6 +408,9 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "splitpane/collapsible-view-left/collapse-button": {},
+    "splitpane/collapsible-view-right/collapse-button": {},
+
     /*
     ---------------------------------------------------------------------------
       NodePorts
@@ -527,8 +530,6 @@ qx.Theme.define("osparc.theme.Appearance", {
           cursor: "pointer",
           textColor: "default-button-text",
           padding: 5,
-          alignY: "middle",
-          alignX: "center",
           backgroundColor: "default-button"
         };
         if (states.hovered) {
@@ -592,8 +593,6 @@ qx.Theme.define("osparc.theme.Appearance", {
           decorator: "fab-button",
           cursor: "pointer",
           padding: 5,
-          alignY: "middle",
-          alignX: "center",
           textColor: "fab_text",
           backgroundColor: "fab-background"
         };
@@ -625,7 +624,8 @@ qx.Theme.define("osparc.theme.Appearance", {
           textColor: "link",
           padding: 5,
           alignY: "middle",
-          alignX: "center"
+          alignX: "center",
+          backgroundColor: "transparent"
         };
         if (states.hovered) {
           style.textColor = "contrasted-text-dark";
