@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import asyncio
+import statistics
 from collections import OrderedDict
 from collections.abc import Callable
 from typing import Any
@@ -366,12 +367,8 @@ async def test_hack_product_session(
     assert resp.status == web.HTTPForbidden.status_code
 
 
-async def test_time_overhead_on_handlers_of_auth_decorators(
-    client: TestClient,
-    get_active_user_or_none_dbmock: MagicMock,
-    is_user_in_product_name_dbmock: MagicMock,
-):
-    """test overhead of adding @login_required and @permission_required to a handler"""
+@pytest.fixture
+async def session_initialized(client: TestClient) -> None:
     assert client.app
 
     # init
@@ -390,13 +387,18 @@ async def test_time_overhead_on_handlers_of_auth_decorators(
 
     await clean_auth_policy_cache(client.app)
 
-    # actual test
+
+async def test_calls_on_handlers_of_auth_decorators(
+    client: TestClient,
+    session_initialized: None,
+    get_active_user_or_none_dbmock: MagicMock,
+    is_user_in_product_name_dbmock: MagicMock,
+):
+    """test overhead of adding @login_required and @permission_required to a handler"""
+    assert client.app
 
     # reference: eval w/o decorators
-    t0 = asyncio.get_event_loop().time()
     resp = await client.post("/v0/public")
-    ref_elapsed = asyncio.get_event_loop().time() - t0
-
     assert resp.ok, f"error: {await resp.text()}"
 
     # Number of times db functions are called in one request
@@ -404,15 +406,35 @@ async def test_time_overhead_on_handlers_of_auth_decorators(
     assert is_user_in_product_name_dbmock.call_count == 0
 
     # under test: eval w/ auth *_required decorators
-    t0 = asyncio.get_event_loop().time()
     resp = await client.post("/v0/admin")
-    elapsed = asyncio.get_event_loop().time() - t0
 
     assert resp.ok, f"error: {await resp.text()}"
 
     # Number of times db functions are called in one request
     assert get_active_user_or_none_dbmock.call_count == 1
     assert is_user_in_product_name_dbmock.call_count == 1
+
+
+async def test_time_overhead_on_handlers_of_auth_decorators(
+    client: TestClient, session_initialized: None
+):
+    async def _req(url_):
+        start = asyncio.get_event_loop().time()
+        resp = await client.post(url_)
+        stop = asyncio.get_event_loop().time()
+
+        assert resp.ok, f"error: {await resp.text()}"
+        return stop - start
+
+    num_of_rounds = 1
+    public_elapsed_times = [await _req("/v0/public") for _ in range(num_of_rounds)]
+    admin_elapsed_times = [await _req("/v0/admin") for _ in range(num_of_rounds)]
+
+    # SEE https://docs.python.org/3/library/statistics.html#function-details
+    # Note The mean is strongly affected by outliers and is not necessarily a typical example of the data points.
+    # For a more robust, although less efficient, measure of central tendency, see median().
+    ref_elapsed = statistics.median(public_elapsed_times)
+    elapsed = statistics.median(admin_elapsed_times)
 
     # NOTE: 150% more wrt reference (basically ~ 2.5x more !!!!!!!!!!!)
     # and this is mocking the access to the database!
