@@ -391,10 +391,12 @@ qx.Theme.define("osparc.theme.Decoration", {
         backgroundColor: "default-button-background"
       }
     },
-    "text-button": {
+    "form-button-text": {
       style: {
         width: 0,
-        radius: 0
+        radius: 0,
+        color: null,
+        backgroundColor: null
       }
     },
 
