@@ -3164,8 +3164,7 @@ paths:
       - required: false
         schema:
           title: Order By
-          type: string
-          format: json-string
+          default: '{"field": "started_at", "direction": "desc"}'
         example: '{"field": "started_at", "direction": "desc"}'
         name: order_by
         in: query

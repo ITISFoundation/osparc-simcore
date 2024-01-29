@@ -64,8 +64,8 @@ ORDER_BY_DESCRIPTION = "Order by field (wallet_id|wallet_name|user_id|project_id
 
 class _ListServicesResourceUsagesQueryParams(BaseModel):
     wallet_id: WalletID | None = Field(default=None)
-    order_by: Json[OrderBy | None] = Field(  # pylint: disable=unsubscriptable-object
-        default=None,
+    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
+        default='{"field": "started_at", "direction": "desc"}',
         description=ORDER_BY_DESCRIPTION,
         example='{"field": "started_at", "direction": "desc"}',
     )

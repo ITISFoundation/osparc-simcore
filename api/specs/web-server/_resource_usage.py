@@ -86,12 +86,12 @@ assert_handler_signature_against_model(
 )
 async def export_resource_usage_services(
     order_by: Annotated[
-        Json | None,
+        Json,
         Query(
             description="",
             example='{"field": "started_at", "direction": "desc"}',
         ),
-    ] = None,
+    ] = '{"field": "started_at", "direction": "desc"}',
     filters: Annotated[
         Json | None,
         Query(
