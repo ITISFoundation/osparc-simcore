@@ -59,11 +59,14 @@ class _RequestContext(BaseModel):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[pydantic-alias]
 
 
+ORDER_BY_DESCRIPTION = "Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status) and direction (asc|desc). The default sorting order is ascending."
+
+
 class _ListServicesResourceUsagesQueryParams(BaseModel):
     wallet_id: WalletID | None = Field(default=None)
     order_by: Json[OrderBy | None] = Field(  # pylint: disable=unsubscriptable-object
         default=None,
-        description="Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status) and direction (asc|desc). The default sorting order is ascending.",
+        description=ORDER_BY_DESCRIPTION,
         example='{"field": "started_at", "direction": "desc"}',
     )
     filters: Json[  # pylint: disable=unsubscriptable-object
