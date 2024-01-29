@@ -95,7 +95,7 @@ async def get_services_for_user_in_product(
             url,
             headers={X_PRODUCT_NAME_HEADER: product_name},
         ) as response:
-            if response.status >= 400:
+            if not response.ok:
                 _logger.warning(
                     "Error while retrieving services for user %s. Returning an empty list",
                     user_id,
