@@ -17,6 +17,7 @@ from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 
 
 @pytest.mark.parametrize(
@@ -79,7 +80,7 @@ def expected_credits_per_usd(
 
 @pytest.mark.parametrize(
     "user_role",
-    [(UserRole.PRODUCT_OWNER)],
+    [UserRole.PRODUCT_OWNER],
 )
 async def test_get_product(
     product_name: ProductName,
@@ -87,6 +88,12 @@ async def test_get_product(
     logged_user: UserInfoDict,
     client: TestClient,
 ):
+    # give access to user to this product
+    assert client.app
+    await auto_add_user_to_product_group(
+        client.app, user_id=logged_user["id"], product_name=product_name
+    )
+
     current_project_headers = {X_PRODUCT_NAME_HEADER: product_name}
     response = await client.get("/v0/products/current", headers=current_project_headers)
     data, error = await assert_status(response, web.HTTPOk)

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 
+import cachetools
 from models_library.api_schemas_webserver.catalog import (
     ServiceInputGet,
     ServiceInputKey,
@@ -51,8 +52,26 @@ def get_html_formatted_unit(
 #
 
 
+# Caching:  https://cachetools.readthedocs.io/en/latest/index.html#cachetools.TTLCache
+# - the least recently used items will be discarded first to make space when necessary.
+#
+
+_CACHE_MAXSIZE: Final = (
+    100  # number of items  i.e. ServiceInputGet/ServiceOutputGet insteances
+)
+_CACHE_TTL: Final = 60  # secs
+
+
+def _hash_inputs(service: dict[str, Any], input_key: str, ureg):
+    assert ureg  # nosec
+    return f"{service['key']}/{service['version']}/{input_key}"
+
+
 class ServiceInputGetFactory:
     @staticmethod
+    @cachetools.cached(
+        cachetools.TTLCache(ttl=_CACHE_TTL, maxsize=_CACHE_MAXSIZE), key=_hash_inputs
+    )
     def from_catalog_service_api_model(
         service: dict[str, Any],
         input_key: ServiceInputKey,
@@ -73,8 +92,16 @@ class ServiceInputGetFactory:
         return port
 
 
+def _hash_outputs(service: dict[str, Any], output_key: str, ureg):
+    assert ureg  # nosec
+    return f"{service['key']}/{service['version']}/{output_key}"
+
+
 class ServiceOutputGetFactory:
     @staticmethod
+    @cachetools.cached(
+        cachetools.TTLCache(ttl=_CACHE_TTL, maxsize=_CACHE_MAXSIZE), key=_hash_outputs
+    )
     def from_catalog_service_api_model(
         service: dict[str, Any],
         output_key: ServiceOutputKey,

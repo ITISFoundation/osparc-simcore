@@ -5,11 +5,14 @@ import sqlalchemy as sa
 from aiopg.sa import Engine
 from aiopg.sa.result import ResultProxy
 from models_library.basic_types import IdInt
+from models_library.products import ProductName
+from models_library.users import UserID
 from pydantic import parse_obj_as
+from simcore_postgres_database.models.groups import user_to_groups
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import UserStatus, users
-from ._identity import IdentityStr
 
 _logger = logging.getLogger(__name__)
 
@@ -19,9 +22,7 @@ class AuthInfoDict(TypedDict, total=True):
     role: UserRole
 
 
-async def get_active_user_or_none(
-    engine: Engine, email: IdentityStr
-) -> AuthInfoDict | None:
+async def get_active_user_or_none(engine: Engine, email: str) -> AuthInfoDict | None:
     """Gets a user with email if ACTIVE othewise return None
 
     Raises:
@@ -38,3 +39,21 @@ async def get_active_user_or_none(
         assert row is None or parse_obj_as(UserRole, row.role) is not None  # nosec
 
         return AuthInfoDict(id=row.id, role=row.role) if row else None
+
+
+async def is_user_in_product_name(
+    engine: Engine, user_id: UserID, product_name: ProductName
+) -> bool:
+    async with engine.acquire() as conn:
+        return (
+            await conn.scalar(
+                sa.select(users.c.id)
+                .select_from(
+                    users.join(user_to_groups, user_to_groups.c.uid == users.c.id).join(
+                        products, products.c.group_id == user_to_groups.c.gid
+                    )
+                )
+                .where((users.c.id == user_id) & (products.c.name == product_name))
+            )
+            is not None
+        )
