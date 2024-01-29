@@ -1044,7 +1044,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "7",
+        "8",
         "--appendonly",
         "yes"
       ]
