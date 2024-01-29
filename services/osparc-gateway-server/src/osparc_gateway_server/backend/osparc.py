@@ -135,11 +135,11 @@ class OsparcBackend(DBBackendBase):
     async def do_check_clusters(self, clusters: list[Cluster]) -> list[bool]:
         assert isinstance(self.log, logging.Logger)  # nosec
         self.log.debug("--> checking statuses of : %s", f"{clusters=}")
-        ok: list[bool | BaseException] = await asyncio.gather(
+        oks: list[bool | BaseException] = await asyncio.gather(
             *[self._check_service_status(c) for c in clusters], return_exceptions=True
         )
-        self.log.debug("<-- clusters status returned: %s", f"{ok=}")
-        return ok
+        self.log.debug("<-- clusters status returned: %s", f"{oks=}")
+        return [ok if isinstance(ok, bool) else False for ok in oks]
 
     async def do_start_worker(
         self, worker: Worker
