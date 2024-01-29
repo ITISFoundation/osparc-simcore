@@ -1,11 +1,10 @@
 # pylint:disable=protected-access
 
 import asyncio
-from typing import Final, Optional
+from typing import Final
 
 import pytest
 from pydantic import PositiveFloat
-from pytest import LogCaptureFixture
 from simcore_service_agent.modules.task_monitor import TaskMonitor
 
 REPEAT_TASK_INTERVAL_S: Final[PositiveFloat] = 0.05
@@ -22,8 +21,8 @@ async def _job_which_hangs() -> None:
 
 @pytest.mark.parametrize("repeat_interval_s", [REPEAT_TASK_INTERVAL_S, None])
 async def test_task_monitor_recovers_from_error(
-    caplog_info_debug: LogCaptureFixture,
-    repeat_interval_s: Optional[PositiveFloat],
+    caplog_info_debug: pytest.LogCaptureFixture,
+    repeat_interval_s: PositiveFloat | None,
 ):
 
     task_monitor = TaskMonitor()

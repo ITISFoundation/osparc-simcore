@@ -5,7 +5,10 @@ from typing import Any, cast
 
 from models_library.basic_types import PortInt
 from models_library.boot_options import BootOption, EnvVarKey
-from models_library.docker import to_simcore_runtime_docker_label_key
+from models_library.docker import (
+    DockerPlacementConstraint,
+    to_simcore_runtime_docker_label_key,
+)
 from models_library.service_settings_labels import (
     ComposeSpecLabelDict,
     SimcoreServiceLabels,
@@ -280,8 +283,7 @@ def _add_compose_destination_containers_to_settings_entries(
     def _inject_destination_container(
         item: SimcoreServiceSettingLabelEntry,
     ) -> SimcoreServiceSettingLabelEntry:
-        # pylint: disable=protected-access
-        item._destination_containers = destination_containers
+        item.set_destination_containers(destination_containers)
         return item
 
     return [_inject_destination_container(x) for x in settings]
@@ -290,6 +292,8 @@ def _add_compose_destination_containers_to_settings_entries(
 def _merge_resources_in_settings(
     settings: deque[SimcoreServiceSettingLabelEntry],
     service_resources: ServiceResourcesDict,
+    *,
+    placement_substitutions: dict[str, DockerPlacementConstraint],
 ) -> deque[SimcoreServiceSettingLabelEntry]:
     """All oSPARC services which have defined resource requirements will be added"""
     log.debug("MERGING\n%s\nAND\n%s", f"{settings=}", f"{service_resources}")
@@ -338,6 +342,9 @@ def _merge_resources_in_settings(
                     "MemoryBytes"
                 ] += resource_value.reservation
             else:  # generic resources
+                if resource_name in placement_substitutions:
+                    # NOTE: placement constraint will be used in favour of this generic resource
+                    continue
                 generic_resource = {
                     "DiscreteResourceSpec": {
                         "Kind": resource_name,
@@ -382,8 +389,7 @@ def _patch_target_service_into_env_vars(
             # process entry
             list_of_env_vars = entry.value if entry.value else []
 
-            # pylint: disable=protected-access
-            destination_containers: list[str] = entry._destination_containers
+            destination_containers: list[str] = entry.get_destination_containers()
 
             # transforms settings defined environment variables
             # from `ENV_VAR=PAYLOAD`
@@ -459,10 +465,12 @@ async def get_labels_for_involved_services(
 
 async def merge_settings_before_use(
     director_v0_client: DirectorV0Client,
+    *,
     service_key: str,
     service_tag: str,
     service_user_selection_boot_options: dict[EnvVarKey, str],
     service_resources: ServiceResourcesDict,
+    placement_substitutions: dict[str, DockerPlacementConstraint],
 ) -> SimcoreServiceSettingsLabel:
     labels_for_involved_services = await get_labels_for_involved_services(
         director_v0_client=director_v0_client,
@@ -501,7 +509,9 @@ async def merge_settings_before_use(
             )
         )
 
-    settings = _merge_resources_in_settings(settings, service_resources)
+    settings = _merge_resources_in_settings(
+        settings, service_resources, placement_substitutions=placement_substitutions
+    )
     settings = _patch_target_service_into_env_vars(settings)
 
     return SimcoreServiceSettingsLabel.parse_obj(settings)

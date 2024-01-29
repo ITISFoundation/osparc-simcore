@@ -35,16 +35,15 @@ def check_containers_deploys(settings, deployment):
         container_git_sha = None
         for task in item["tasks"]:
             oldest_running_task_timestamp = None
-            if task["status"] == "running":
-                if (
-                    oldest_running_task_timestamp is None
-                    or oldest_running_task_timestamp > task["timestamp"]
-                ):
-                    container_status = f"[green]{task['status']}[/green]"
-                    container_timestamp = f"{task['timestamp']}"
-                    container_git_sha = task["git_sha"]
+            if task["status"] == "running" and (
+                oldest_running_task_timestamp is None
+                or oldest_running_task_timestamp > task["timestamp"]
+            ):
+                container_status = f"[green]{task['status']}[/green]"
+                container_timestamp = f"{task['timestamp']}"
+                container_git_sha = task["git_sha"]
 
-                    oldest_running_task_timestamp = task["timestamp"]
+                oldest_running_task_timestamp = task["timestamp"]
             if task["status"] == "starting":
                 container_status = f"[blue]{task['status']}[/blue]"
                 container_timestamp = f"{task['timestamp']}"

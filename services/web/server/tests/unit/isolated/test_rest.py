@@ -3,13 +3,12 @@
 # pylint:disable=no-name-in-module
 
 import asyncio
-from typing import Callable
+from collections.abc import Callable
 from unittest.mock import MagicMock
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -74,19 +73,6 @@ async def test_frontend_config(
 
 
 @pytest.fixture
-def mock_user_logged_in(mocker: MockerFixture) -> UserID:
-    user_id = 1
-    # patches @login_required decorator
-    # NOTE: that these tests have no database!
-    mocker.patch(
-        "simcore_service_webserver.login.decorators.check_authorized",
-        spec=True,
-        return_value=user_id,
-    )
-    return user_id
-
-
-@pytest.fixture
 async def mock_redis_client(
     client: TestClient,
     mocker: MockerFixture,
@@ -127,7 +113,7 @@ async def test_get_scheduled_maintenance(
     api_version_prefix: str,
     redis_maintenance_data: dict[str, str],
     expected: type[web.HTTPException],
-    mock_user_logged_in: UserID,
+    mocked_login_required: None,
     mock_redis_client: MagicMock,
 ):
     assert client.app

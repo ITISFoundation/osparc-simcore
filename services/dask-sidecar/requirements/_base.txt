@@ -179,6 +179,8 @@ partd==1.4.0
     # via dask
 pillow==10.0.0
     # via bokeh
+prometheus-client==0.19.0
+    # via -r requirements/_base.in
 psutil==5.9.5
     # via distributed
 pydantic==1.10.12

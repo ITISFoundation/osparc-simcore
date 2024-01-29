@@ -5,7 +5,8 @@
 # pylint: disable=unused-variable
 
 
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient

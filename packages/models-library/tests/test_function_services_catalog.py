@@ -16,7 +16,6 @@ from models_library.function_services_catalog.api import (
     iter_service_docker_data,
 )
 from models_library.services import ServiceDockerData
-from pytest import MonkeyPatch
 
 
 @pytest.mark.parametrize(
@@ -42,7 +41,7 @@ def test_catalog_frontend_services_registry():
     assert not any(len(v) > 1 for v in versions_per_service.values())
 
 
-def test_catalog_registry(monkeypatch: MonkeyPatch):
+def test_catalog_registry(monkeypatch: pytest.MonkeyPatch):
     assert catalog._functions
     assert catalog.settings
 

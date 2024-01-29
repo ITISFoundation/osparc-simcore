@@ -17,25 +17,21 @@ faker = Faker()
     [
         pytest.param(
             ProgressRabbitMessageNode(
-                **{
-                    "project_id": faker.uuid4(cast_to=None),
-                    "user_id": faker.uuid4(cast_to=None),
-                    "node_id": faker.uuid4(cast_to=None),
-                    "progress_type": ProgressType.SERVICE_OUTPUTS_PULLING,
-                    "progress": 0.4,
-                }
+                project_id=faker.uuid4(cast_to=None),
+                user_id=faker.uuid4(cast_to=None),
+                node_id=faker.uuid4(cast_to=None),
+                progress_type=ProgressType.SERVICE_OUTPUTS_PULLING,
+                progress=0.4,
             ).json(),
             ProgressRabbitMessageNode,
             id="node_progress",
         ),
         pytest.param(
             ProgressRabbitMessageProject(
-                **{
-                    "project_id": faker.uuid4(cast_to=None),
-                    "user_id": faker.uuid4(cast_to=None),
-                    "progress_type": ProgressType.PROJECT_CLOSING,
-                    "progress": 0.4,
-                }
+                project_id=faker.uuid4(cast_to=None),
+                user_id=faker.uuid4(cast_to=None),
+                progress_type=ProgressType.PROJECT_CLOSING,
+                progress=0.4,
             ).json(),
             ProgressRabbitMessageProject,
             id="project_progress",

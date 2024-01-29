@@ -12,7 +12,6 @@ would still have these invariants.
 
 """
 
-from typing import Optional
 
 from pydantic import BaseSettings, validator
 from pydantic.fields import ModelField, Undefined
@@ -38,11 +37,11 @@ class Settings(BaseSettings):
     VALUE: int
     VALUE_DEFAULT: int = 42
 
-    VALUE_NULLABLE_REQUIRED: Optional[int] = ...  # type: ignore
-    VALUE_NULLABLE_OPTIONAL: Optional[int]
+    VALUE_NULLABLE_REQUIRED: int | None = ...  # type: ignore
+    VALUE_NULLABLE_OPTIONAL: int | None
 
-    VALUE_NULLABLE_DEFAULT_VALUE: Optional[int] = 42
-    VALUE_NULLABLE_DEFAULT_NULL: Optional[int] = None
+    VALUE_NULLABLE_DEFAULT_VALUE: int | None = 42
+    VALUE_NULLABLE_DEFAULT_NULL: int | None = None
 
     # Other ways to write down "required" is using ...
     VALUE_ALSO_REQUIRED: int = ...  # type: ignore

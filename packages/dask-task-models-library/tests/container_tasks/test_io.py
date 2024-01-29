@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 from pprint import pformat
-from typing import Optional
 
 import pytest
 from cloudpickle import dumps, loads
@@ -42,7 +41,7 @@ def _create_fake_outputs(
     output_folder: Path,
     set_optional_field: bool,
     faker: Faker,
-) -> Optional[str]:
+) -> str | None:
     jsonable_data = {}
     for key, value in schema.items():
         if not value.required and not set_optional_field:

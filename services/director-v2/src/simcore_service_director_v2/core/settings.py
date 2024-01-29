@@ -3,7 +3,6 @@
 
 
 import datetime
-import re
 from functools import cached_property
 
 from models_library.basic_types import (
@@ -19,15 +18,7 @@ from models_library.clusters import (
     ClusterAuthentication,
     NoAuthentication,
 )
-from pydantic import (
-    AnyHttpUrl,
-    AnyUrl,
-    ConstrainedStr,
-    Field,
-    NonNegativeInt,
-    parse_obj_as,
-    validator,
-)
+from pydantic import AnyHttpUrl, AnyUrl, Field, NonNegativeInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
@@ -48,13 +39,6 @@ from simcore_sdk.node_ports_common.settings import (
 from simcore_sdk.node_ports_v2 import FileLinkType
 
 from .dynamic_services_settings import DynamicServicesSettings
-
-
-class PlacementConstraintStr(ConstrainedStr):
-    strip_whitespace = True
-    regex = re.compile(
-        r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
-    )
 
 
 class DirectorV0Settings(BaseCustomSettings):
@@ -223,13 +207,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
         auto_default_from_env=True,
         description="resource usage tracker service client's plugin",
-    )
-
-    # This is just a service placement constraint, see
-    # https://docs.docker.com/engine/swarm/services/#control-service-placement.
-    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[PlacementConstraintStr] = Field(
-        default_factory=list,
-        example='["node.labels.region==east", "one!=yes"]',
     )
 
     @validator("LOG_LEVEL", pre=True)

@@ -2,9 +2,10 @@ import json
 import json.decoder
 import logging
 import os
+from collections.abc import Callable
 from copy import deepcopy
 from functools import wraps
-from typing import Callable, Final, Optional
+from typing import Final
 
 import click
 import docker.client
@@ -26,8 +27,7 @@ def _safe(if_fails_return=False):
         @wraps(func)
         def wrapper(*args, **kargs):
             try:
-                res = func(*args, **kargs)
-                return res
+                return func(*args, **kargs)
             except RuntimeError as err:
                 log.info(
                     "%s failed:  %s",
@@ -91,8 +91,8 @@ def reset_cache():
 
 
 def get_alembic_config_from_cache(
-    force_cfg: Optional[dict] = None,
-) -> Optional[AlembicConfig]:
+    force_cfg: dict | None = None,
+) -> AlembicConfig | None:
     """
     Creates alembic config from cfg or cache
 
@@ -101,10 +101,7 @@ def get_alembic_config_from_cache(
 
     # build url
     try:
-        if force_cfg:
-            cfg = force_cfg
-        else:
-            cfg = load_cache(raise_if_error=True)
+        cfg = force_cfg if force_cfg else load_cache(raise_if_error=True)
 
         url = build_url(**cfg)
     except Exception:  # pylint: disable=broad-except

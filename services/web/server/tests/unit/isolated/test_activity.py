@@ -2,9 +2,11 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 import yaml
@@ -19,15 +21,6 @@ from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
-
-
-@pytest.fixture
-def mocked_login_required(mocker: MockerFixture):
-    return mocker.patch(
-        "aiohttp_security.api.authorized_userid",
-        autospec=True,
-        return_value=1,  # user_id
-    )
 
 
 @pytest.fixture
@@ -54,12 +47,11 @@ def mocked_monitoring(mocker: MockerFixture, activity_data: dict[str, Any]) -> N
 
 
 @pytest.fixture
-def mocked_monitoring_down(mocker):
+def mocked_monitoring_down(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_webserver.activity._api.query_prometheus",
         side_effect=ClientConnectionError,
     )
-    return mocker
 
 
 @pytest.fixture
@@ -75,10 +67,10 @@ def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path) -> dict[str, 
 
 @pytest.fixture
 def client(
-    event_loop,
+    event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: dict[str, Any],
-    mock_orphaned_services,
+    mock_orphaned_services: MagicMock,
     monkeypatch_setenv_from_app_config: Callable,
 ):
     monkeypatch_setenv_from_app_config(app_config)
@@ -99,7 +91,9 @@ async def test_has_login_required(client: TestClient):
     await assert_status(resp, web.HTTPUnauthorized)
 
 
-async def test_monitoring_up(mocked_login_required, mocked_monitoring, client):
+async def test_monitoring_up(
+    mocked_login_required: None, mocked_monitoring: None, client
+):
     RUNNING_NODE_ID = "894dd8d5-de3b-4767-950c-7c3ed8f51d8c"
 
     resp = await client.get("/v0/activity/status")
@@ -120,6 +114,8 @@ async def test_monitoring_up(mocked_login_required, mocked_monitoring, client):
     assert stats.get("memUsage") == 177.664, "Incorrect value: Memory usage"
 
 
-async def test_monitoring_down(mocked_login_required, mocked_monitoring_down, client):
+async def test_monitoring_down(
+    mocked_login_required: None, mocked_monitoring_down: None, client: TestClient
+):
     resp = await client.get("/v0/activity/status")
     await assert_status(resp, web.HTTPNoContent)

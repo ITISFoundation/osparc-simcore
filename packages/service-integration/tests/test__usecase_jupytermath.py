@@ -12,7 +12,6 @@ from typing import Any, Callable, Iterable
 
 import pytest
 import yaml
-from pytest import TempPathFactory
 from service_integration import cli
 from typer.testing import CliRunner, Result
 
@@ -52,7 +51,7 @@ def _download_git_commit(repository: str, commit_sha: str, directory: Path):
 
 
 @pytest.fixture(scope="module")
-def jupytermath_repo(tmp_path_factory: TempPathFactory) -> Path:
+def jupytermath_repo(tmp_path_factory: pytest.TempPathFactory) -> Path:
     print("Running git", _git_version())
     tmp_path = tmp_path_factory.mktemp("jupytermath_repo")
     repo_dir = _download_git_commit(

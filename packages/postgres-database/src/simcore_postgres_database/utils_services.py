@@ -13,7 +13,7 @@ def create_select_latest_services_query(
     """
     assert issubclass(INTEGER, sa.Integer)  # nosec
 
-    select_latest_services = sa.select(
+    return sa.select(
         services_meta_data.c.key,
         sa.func.array_to_string(
             sa.func.max(
@@ -24,5 +24,3 @@ def create_select_latest_services_query(
             ".",
         ).label(column_version_label),
     ).group_by(services_meta_data.c.key)
-
-    return select_latest_services

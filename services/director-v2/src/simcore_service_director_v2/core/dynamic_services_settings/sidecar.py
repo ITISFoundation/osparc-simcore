@@ -1,10 +1,15 @@
 import logging
+import warnings
 from enum import Enum
 from pathlib import Path
-from typing import Final
 
 from models_library.basic_types import BootModeEnum, PortInt
-from pydantic import Field, NonNegativeInt, PositiveInt, validator
+from models_library.docker import DockerPlacementConstraint
+from models_library.utils.common_validators import (
+    ensure_unique_dict_values_validator,
+    ensure_unique_list_values_validator,
+)
+from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -13,8 +18,6 @@ from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 from ...constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 _logger = logging.getLogger(__name__)
-
-_MINUTE: Final[NonNegativeInt] = 60
 
 
 class VFSCacheMode(str, Enum):
@@ -50,6 +53,49 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
         return v
 
 
+class PlacementSettings(BaseCustomSettings):
+    # This is just a service placement constraint, see
+    # https://docs.docker.com/engine/swarm/services/#control-service-placement.
+    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[DockerPlacementConstraint] = Field(
+        default_factory=list,
+        example='["node.labels.region==east", "one!=yes"]',
+    )
+
+    DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[
+        str, DockerPlacementConstraint
+    ] = Field(
+        default_factory=dict,
+        description=(
+            "Use placement constraints in place of generic resources, for details "
+            "see https://github.com/ITISFoundation/osparc-simcore/issues/5250 "
+            "When `None` (default), uses generic resources"
+        ),
+        example='{"AIRAM": "node.labels.custom==true"}',
+    )
+
+    _unique_custom_constraints = validator(
+        "DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS",
+        allow_reuse=True,
+    )(ensure_unique_list_values_validator)
+
+    _unique_resource_placement_constraints_substitutions = validator(
+        "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS",
+        allow_reuse=True,
+    )(ensure_unique_dict_values_validator)
+
+    @validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
+    @classmethod
+    def warn_if_any_values_provided(cls, value: dict) -> dict:
+        if len(value) > 0:
+            warnings.warn(  # noqa: B028
+                "Generic resources will be replaced by the following "
+                f"placement constraints {value}. This is a workaround "
+                "for https://github.com/moby/swarmkit/pull/3162",
+                UserWarning,
+            )
+        return value
+
+
 class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_SC_BOOT_MODE: BootModeEnum = Field(
         ...,
@@ -72,6 +118,10 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+
+    DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: PlacementSettings = Field(
+        auto_default_from_env=True
+    )
 
     #
     # DEVELOPMENT ONLY config

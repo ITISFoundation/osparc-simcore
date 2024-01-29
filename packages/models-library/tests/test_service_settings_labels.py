@@ -86,10 +86,7 @@ def test_service_settings():
     # ensure private attribute assignment
     for service_setting in simcore_settings_settings_label:
         # pylint: disable=protected-access
-        service_setting._destination_containers = [  # noqa: SLF001
-            "random_value1",
-            "random_value2",
-        ]
+        service_setting.set_destination_containers(["random_value1", "random_value2"])
 
 
 @pytest.mark.parametrize("model_cls", [SimcoreServiceLabels])

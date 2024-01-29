@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 
-from typing import AsyncIterable
+from collections.abc import AsyncIterable
 
 import pytest
 from aiopg.sa.connection import SAConnection
