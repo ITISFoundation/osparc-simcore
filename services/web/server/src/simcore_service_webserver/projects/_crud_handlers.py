@@ -18,9 +18,11 @@ from models_library.api_schemas_webserver.projects import (
 from models_library.generics import Envelope
 from models_library.projects import Project
 from models_library.projects_state import ProjectLocked
+from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -48,7 +50,7 @@ from ._common_models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveParams,
     ProjectCreateParams,
-    ProjectListParams,
+    ProjectListWithJsonStrParams,
 )
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
@@ -152,7 +154,9 @@ async def list_projects(request: web.Request):
 
     """
     req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(ProjectListParams, request)
+    query_params = parse_request_query_parameters_as(
+        ProjectListWithJsonStrParams, request
+    )
 
     projects, total_number_of_projects = await _crud_api_read.list_projects(
         request,
@@ -163,6 +167,7 @@ async def list_projects(request: web.Request):
         limit=query_params.limit,
         offset=query_params.offset,
         search=query_params.search,
+        order_by=parse_obj_as(OrderBy, query_params.order_by),
     )
 
     page = Page[ProjectDict].parse_obj(
