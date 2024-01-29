@@ -40,7 +40,7 @@ from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
 from ..login.decorators import login_required
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
-from ..security.api import check_permission
+from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from . import _crud_api_create, _crud_api_read, projects_api
@@ -92,7 +92,7 @@ async def create_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(ProjectCreateParams, request)
     if query_params.as_template:  # create template from
-        await check_permission(request, "project.template.create")
+        await check_user_permission(request, "project.template.create")
 
     # NOTE: Having so many different types of bodys is an indication that
     # this entrypoint are in reality multiple entrypoints in one, namely
@@ -350,7 +350,7 @@ async def replace_project(request: web.Request):
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
-    await check_permission(
+    await check_user_permission(
         request,
         "project.update | project.workbench.node.inputs.update",
         context={
@@ -372,7 +372,7 @@ async def replace_project(request: web.Request):
         )
 
         if current_project["accessRights"] != new_project["accessRights"]:
-            await check_permission(request, "project.access_rights.update")
+            await check_user_permission(request, "project.access_rights.update")
 
         if await api.is_pipeline_running(
             request.app, req_ctx.user_id, path_params.project_id
