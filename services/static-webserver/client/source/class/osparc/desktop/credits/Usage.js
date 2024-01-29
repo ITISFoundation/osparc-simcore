@@ -111,7 +111,9 @@ qx.Class.define("osparc.desktop.credits.Usage", {
       container.add(selectBoxContainer);
       const filterContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox())
       this.__dateFilters = new osparc.desktop.credits.DateFilters();
-      this.__dateFilters.addListener("change", e => console.log(e.getData()));
+      this.__dateFilters.addListener("change", e => {
+        this.__fetchData()
+      });
       filterContainer.add(this.__dateFilters);
       filterContainer.add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -124,8 +126,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         console.log("export");
       });
       filterContainer.add(this.__exportButton);
-      // FEATURE TOGGLE
-      // container.add(filterContainer);
+      container.add(filterContainer);
       this._add(container);
       walletSelectBox.addListener("changeSelection", e => {
         if (walletSelectBox.getSelection().length) {
@@ -190,6 +191,10 @@ qx.Class.define("osparc.desktop.credits.Usage", {
       const options = {
         resolveWResponse: true
       };
+
+      params.url.filters = JSON.stringify({
+        "started_at": this.__dateFilters.getValue()
+      })
 
       const selectedWallet = this.__selectedWallet;
       if (selectedWallet) {

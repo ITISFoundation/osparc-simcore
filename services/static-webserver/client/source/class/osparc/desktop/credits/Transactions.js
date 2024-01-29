@@ -81,8 +81,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
       });
       filterContainer.add(this.__exportButton);
 
-      // FEATURE TOGGLE
-      // this._add(filterContainer);
+      this._add(filterContainer);
 
       const wallet = this.__personalWallet;
       if (wallet && wallet.getMyAccessRights()["write"]) {

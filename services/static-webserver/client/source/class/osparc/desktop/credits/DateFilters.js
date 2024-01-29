@@ -87,6 +87,14 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
         from,
         until
       });
+    },
+    getValue() {
+      const from = osparc.utils.Utils.formatDateYyyyMmDd(this.__from.getValue())
+      const until = osparc.utils.Utils.formatDateYyyyMmDd(this.__until.getValue())
+      return {
+        from,
+        until
+      }
     }
   }
 });
