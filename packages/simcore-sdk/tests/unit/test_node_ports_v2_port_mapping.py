@@ -4,19 +4,20 @@
 
 from collections import deque
 from pprint import pprint
-from typing import Any, Dict, List, Type, Union
+from typing import Any
 
 import pytest
 from models_library.services import ServiceInput
-from pydantic import ValidationError, confloat, schema_of
+from pydantic import Field, ValidationError, schema_of
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
+from typing_extensions import Annotated
 from utils_port_v2 import create_valid_port_config
 
 
 @pytest.mark.parametrize("port_class", [InputsList, OutputsList])
-def test_empty_ports_mapping(port_class: Type[Union[InputsList, OutputsList]]):
+def test_empty_ports_mapping(port_class: type[InputsList | OutputsList]):
     port_mapping = port_class(__root__={})
     assert not port_mapping.items()
     assert not port_mapping.values()
@@ -28,8 +29,8 @@ def test_empty_ports_mapping(port_class: Type[Union[InputsList, OutputsList]]):
 
 
 @pytest.mark.parametrize("port_class", [InputsList, OutputsList])
-def test_filled_ports_mapping(port_class: Type[Union[InputsList, OutputsList]]):
-    port_cfgs: Dict[str, Any] = {}
+def test_filled_ports_mapping(port_class: type[InputsList | OutputsList]):
+    port_cfgs: dict[str, Any] = {}
     for t in ["integer", "number", "boolean", "string"]:
         port = create_valid_port_config(t)
         port_cfgs[port["key"]] = port
@@ -71,10 +72,10 @@ def test_io_ports_are_not_aliases():
 
 
 @pytest.fixture
-def fake_port_meta() -> Dict[str, Any]:
+def fake_port_meta() -> dict[str, Any]:
     """Service port metadata: defines a list of non-negative numbers"""
     schema = schema_of(
-        List[confloat(ge=0)],
+        list[Annotated[float, Field(ge=0)]],
         title="list[non-negative number]",
     )
     schema.update(
@@ -86,7 +87,7 @@ def fake_port_meta() -> Dict[str, Any]:
     return port_model.dict(exclude_unset=True, by_alias=True)
 
 
-def test_validate_port_value_against_schema(fake_port_meta: Dict[str, Any]):
+def test_validate_port_value_against_schema(fake_port_meta: dict[str, Any]):
     # A simcore-sdk Port instance is a combination of both
     #  - the port's metadata
     #  - the port's value
@@ -121,7 +122,7 @@ def test_validate_port_value_against_schema(fake_port_meta: Dict[str, Any]):
     assert schema_error_path == deque([1])
 
 
-def test_validate_iolist_against_schema(fake_port_meta: Dict[str, Any]):
+def test_validate_iolist_against_schema(fake_port_meta: dict[str, Any]):
     # Check how errors propagate from a single Port to InputsList
 
     # reference port

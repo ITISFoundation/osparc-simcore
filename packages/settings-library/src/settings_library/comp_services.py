@@ -1,4 +1,4 @@
-from pydantic import ByteSize, NonNegativeInt, validator
+from pydantic import ByteSize, NonNegativeInt, field_validator
 from pydantic.tools import parse_raw_as
 from settings_library.base import BaseCustomSettings
 
@@ -15,14 +15,16 @@ class ComputationalServices(BaseCustomSettings):
     )
     DEFAULT_RUNTIME_TIMEOUT: NonNegativeInt = 0
 
-    @validator("DEFAULT_MAX_NANO_CPUS", pre=True)
+    @field_validator("DEFAULT_MAX_NANO_CPUS", mode="before")
+    @classmethod
     @classmethod
     def set_default_cpus_if_negative(cls, v):
         if v is None or v == "" or int(v) <= 0:
             v = _DEFAULT_MAX_NANO_CPUS_VALUE
         return v
 
-    @validator("DEFAULT_MAX_MEMORY", pre=True)
+    @field_validator("DEFAULT_MAX_MEMORY", mode="before")
+    @classmethod
     @classmethod
     def set_default_memory_if_negative(cls, v):
         if v is None or v == "" or int(v) <= 0:

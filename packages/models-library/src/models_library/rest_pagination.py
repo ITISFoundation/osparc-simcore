@@ -1,15 +1,15 @@
-from typing import Any, ClassVar, Final, Generic, TypeVar
+from typing import Final, Generic, TypeVar
 
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
-    Extra,
+    ConfigDict,
     Field,
     NonNegativeInt,
     PositiveInt,
+    field_validator,
     validator,
 )
-from pydantic.generics import GenericModel
 
 # Default limit values
 #  - Using same values across all pagination entrypoints simplifies
@@ -40,6 +40,8 @@ class PageMetaInfoLimitOffset(BaseModel):
     offset: NonNegativeInt = 0
     count: NonNegativeInt
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("offset")
     @classmethod
     def check_offset(cls, v, values):
@@ -48,6 +50,8 @@ class PageMetaInfoLimitOffset(BaseModel):
             raise ValueError(msg)
         return v
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("count")
     @classmethod
     def check_count(cls, v, values):
@@ -64,31 +68,22 @@ class PageMetaInfoLimitOffset(BaseModel):
             raise ValueError(msg)
         return v
 
-    class Config:
-        extra = Extra.forbid
-
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"total": 7, "count": 4, "limit": 4, "offset": 0},
-            ]
-        }
+    model_config = ConfigDict(extra="forbid")
 
 
 class PageLinks(BaseModel):
     self: AnyHttpUrl
     first: AnyHttpUrl
-    prev: AnyHttpUrl | None
-    next: AnyHttpUrl | None
+    prev: AnyHttpUrl | None = None
+    next: AnyHttpUrl | None = None
     last: AnyHttpUrl
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 ItemT = TypeVar("ItemT")
 
 
-class Page(GenericModel, Generic[ItemT]):
+class Page(BaseModel, Generic[ItemT]):
     """
     Paginated response model of ItemTs
     """
@@ -97,13 +92,16 @@ class Page(GenericModel, Generic[ItemT]):
     links: PageLinks = Field(alias="_links")
     data: list[ItemT]
 
-    @validator("data", pre=True)
+    @field_validator("data", mode="before")
+    @classmethod
     @classmethod
     def convert_none_to_empty_list(cls, v):
         if v is None:
             v = []
         return v
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("data")
     @classmethod
     def check_data_compatible_with_meta(cls, v, values):
@@ -116,34 +114,4 @@ class Page(GenericModel, Generic[ItemT]):
             raise ValueError(msg)
         return v
 
-    class Config:
-        extra = Extra.forbid
-
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                # first page Page[str]
-                {
-                    "_meta": {"total": 7, "count": 4, "limit": 4, "offset": 0},
-                    "_links": {
-                        "self": "https://osparc.io/v2/listing?offset=0&limit=4",
-                        "first": "https://osparc.io/v2/listing?offset=0&limit=4",
-                        "prev": None,
-                        "next": "https://osparc.io/v2/listing?offset=1&limit=4",
-                        "last": "https://osparc.io/v2/listing?offset=1&limit=4",
-                    },
-                    "data": ["data 1", "data 2", "data 3", "data 4"],
-                },
-                # second and last page
-                {
-                    "_meta": {"total": 7, "count": 3, "limit": 4, "offset": 1},
-                    "_links": {
-                        "self": "https://osparc.io/v2/listing?offset=1&limit=4",
-                        "first": "https://osparc.io/v2/listing?offset=0&limit=4",
-                        "prev": "https://osparc.io/v2/listing?offset=0&limit=4",
-                        "next": None,
-                        "last": "https://osparc.io/v2/listing?offset=1&limit=4",
-                    },
-                    "data": ["data 5", "data 6", "data 7"],
-                },
-            ]
-        }
+    model_config = ConfigDict(extra="forbid")

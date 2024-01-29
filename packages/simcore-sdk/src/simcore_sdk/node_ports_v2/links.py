@@ -4,18 +4,25 @@ from typing import Any, Union
 from models_library.basic_regex import UUID_RE
 from models_library.projects_nodes_io import BaseFileLink, DownloadLink
 from models_library.projects_nodes_io import PortLink as BasePortLink
-from pydantic import AnyUrl, Extra, Field, StrictBool, StrictFloat, StrictInt, StrictStr
+from pydantic import (
+    AnyUrl,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    StrictStr,
+)
 
 
 class PortLink(BasePortLink):
-    node_uuid: str = Field(..., regex=UUID_RE, alias="nodeUuid")
+    node_uuid: str = Field(..., pattern=UUID_RE, alias="nodeUuid")
 
 
 class FileLink(BaseFileLink):
     """allow all kind of file links"""
 
-    class Config:
-        extra = Extra.allow
+    model_config = ConfigDict(extra="allow")
 
 
 # TODO: needs to be in sync with project_nodes.InputTypes and project_nodes.OutputTypes

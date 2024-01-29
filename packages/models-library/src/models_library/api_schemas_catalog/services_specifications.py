@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..generated_models.docker_rest_api import ServiceSpec as DockerServiceSpec
 
@@ -12,9 +12,7 @@ class ServiceSpecifications(BaseModel):
         default=None,
         description="schedule-time specifications specifications for the service (follows Docker Service creation API (specifically only the Resources part), see https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate",
     )
-
-    class Config:
-        pass
+    model_config = ConfigDict()
 
 
 class ServiceSpecificationsGet(ServiceSpecifications):

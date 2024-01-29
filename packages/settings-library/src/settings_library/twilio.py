@@ -9,7 +9,7 @@ For twilio SMS services:
 import re
 from re import Pattern
 
-from pydantic import ConstrainedStr, Field, parse_obj_as
+from pydantic import ConfigDict, ConstrainedStr, Field, parse_obj_as
 
 from .base import BaseCustomSettings
 
@@ -18,9 +18,7 @@ class CountryCodeStr(ConstrainedStr):
     # Based on https://countrycode.org/
     strip_whitespace: bool = True
     regex: Pattern[str] | None = re.compile(r"^\d{1,4}")
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class TwilioSettings(BaseCustomSettings):

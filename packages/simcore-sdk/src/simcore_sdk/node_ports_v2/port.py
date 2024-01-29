@@ -65,7 +65,7 @@ class SetKWargs:
 
 
 class Port(BaseServiceIOModel):
-    key: str = Field(..., regex=PROPERTY_KEY_RE)
+    key: str = Field(..., pattern=PROPERTY_KEY_RE)
     widget: dict[str, Any] | None = None
     default_value: DataItemValue | None = Field(None, alias="defaultValue")
 
@@ -87,9 +87,13 @@ class Port(BaseServiceIOModel):
     # flags
     _used_default_value: bool = PrivateAttr(False)
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseServiceIOModel.Config):
         validate_assignment = True
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("value", always=True)
     @classmethod
     def check_value(cls, v: DataItemValue, values: dict[str, Any]) -> DataItemValue:
@@ -116,6 +120,8 @@ class Port(BaseServiceIOModel):
                 )
         return v
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("value_item", "value_concrete", pre=True)
     @classmethod
     def check_item_or_concrete_value(cls, v, values):

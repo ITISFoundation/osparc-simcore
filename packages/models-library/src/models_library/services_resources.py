@@ -5,11 +5,12 @@ from typing import Any, ClassVar, Final, TypeAlias
 from pydantic import (
     BaseModel,
     ByteSize,
+    ConfigDict,
     Field,
     StrictFloat,
     StrictInt,
+    model_validator,
     parse_obj_as,
-    root_validator,
 )
 
 from .docker import DockerGenericTag
@@ -40,7 +41,8 @@ class ResourceValue(BaseModel):
     limit: StrictInt | StrictFloat | str
     reservation: StrictInt | StrictFloat | str
 
-    @root_validator()
+    @model_validator()
+    @classmethod
     @classmethod
     def ensure_limits_are_equal_or_above_reservations(cls, values):
         if isinstance(values["reservation"], str):
@@ -59,8 +61,7 @@ class ResourceValue(BaseModel):
     def set_value(self, value: StrictInt | StrictFloat | str) -> None:
         self.limit = self.reservation = value
 
-    class Config:
-        validate_assignment = True
+    model_config = ConfigDict(validate_assignment=True)
 
 
 ResourcesDict = dict[ResourceName, ResourceValue]
@@ -92,22 +93,7 @@ class ImageResources(BaseModel):
         for resource in self.resources.values():
             resource.set_reservation_same_as_limit()
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                "image": "simcore/service/dynamic/pretty-intense:1.0.0",
-                "resources": {
-                    "CPU": {"limit": 4, "reservation": 0.1},
-                    "RAM": {"limit": 103079215104, "reservation": 536870912},
-                    "VRAM": {"limit": 1, "reservation": 1},
-                    "AIRAM": {"limit": 1, "reservation": 1},
-                    "ANY_resource": {
-                        "limit": "some_value",
-                        "reservation": "some_value",
-                    },
-                },
-            }
-        }
+    model_config = ConfigDict()
 
 
 ServiceResourcesDict: TypeAlias = dict[DockerGenericTag, ImageResources]

@@ -13,7 +13,7 @@ from contextlib import contextmanager
 from typing import TypeAlias, TypeVar, Union
 
 from aiohttp import web
-from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
+from pydantic import BaseModel, ConfigDict, ValidationError, parse_obj_as
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -30,8 +30,7 @@ class RequestParams(BaseModel):
 class StrictRequestParams(BaseModel):
     """Use a base class for context, path and query parameters"""
 
-    class Config:
-        extra = Extra.forbid  # strict
+    model_config = ConfigDict(extra="forbid")
 
 
 @contextmanager

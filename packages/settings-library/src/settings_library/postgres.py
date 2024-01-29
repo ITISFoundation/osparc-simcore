@@ -31,7 +31,7 @@ class PostgresSettings(BaseCustomSettings):
     POSTGRES_CLIENT_NAME: str | None = Field(
         default=None,
         description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
-        env=[
+        validation_alias=[
             "POSTGRES_CLIENT_NAME",
             # This is useful when running inside a docker container, then the hostname is set each client gets a different name
             "HOST",
@@ -39,6 +39,8 @@ class PostgresSettings(BaseCustomSettings):
         ],
     )
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("POSTGRES_MAXSIZE")
     @classmethod
     def _check_size(cls, v, values):
@@ -81,6 +83,8 @@ class PostgresSettings(BaseCustomSettings):
             )
         return dsn
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseCustomSettings.Config):
         schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
             "examples": [

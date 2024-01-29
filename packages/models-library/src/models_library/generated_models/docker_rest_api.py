@@ -8,11 +8,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Model(BaseModel):
-    __root__: Any
+    __root__: Any = None
 
 
 class Type(str, Enum):
@@ -61,42 +61,42 @@ class MountPoint(BaseModel):
     Type: Type1 | None = Field(
         None,
         description="The mount type:\n\n- `bind` a mount of a file or directory from the host into the container.\n- `volume` a docker volume with the given `Name`.\n- `tmpfs` a `tmpfs`.\n- `npipe` a named pipe from the host into the container.\n",
-        example="volume",
+        examples=["volume"],
     )
     Name: str | None = Field(
         None,
         description="Name is the name reference to the underlying data defined by `Source`\ne.g., the volume name.\n",
-        example="myvolume",
+        examples=["myvolume"],
     )
     Source: str | None = Field(
         None,
         description="Source location of the mount.\n\nFor volumes, this contains the storage location of the volume (within\n`/var/lib/docker/volumes/`). For bind-mounts, and `npipe`, this contains\nthe source (host) part of the bind-mount. For `tmpfs` mount points, this\nfield is empty.\n",
-        example="/var/lib/docker/volumes/myvolume/_data",
+        examples=["/var/lib/docker/volumes/myvolume/_data"],
     )
     Destination: str | None = Field(
         None,
         description="Destination is the path relative to the container root (`/`) where\nthe `Source` is mounted inside the container.\n",
-        example="/usr/share/nginx/html/",
+        examples=["/usr/share/nginx/html/"],
     )
     Driver: str | None = Field(
         None,
         description="Driver is the volume driver used to create the volume (if it is a volume).\n",
-        example="local",
+        examples=["local"],
     )
     Mode: str | None = Field(
         None,
         description='Mode is a comma separated list of options supplied by the user when\ncreating the bind/volume mount.\n\nThe default is platform-specific (`"z"` on Linux, empty on Windows).\n',
-        example="z",
+        examples=["z"],
     )
     RW: bool | None = Field(
         None,
         description="Whether the mount is mounted writable (read-write).\n",
-        example=True,
+        examples=[True],
     )
     Propagation: str | None = Field(
         None,
         description="Propagation describes how mounts are propagated from the host into the\nmount point, and vice-versa. Refer to the [Linux kernel documentation](https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt)\nfor details. This field is not used on Windows.\n",
-        example="",
+        examples=[""],
     )
 
 
@@ -115,15 +115,15 @@ class DeviceRequest(BaseModel):
     A request for devices to be sent to device drivers
     """
 
-    Driver: str | None = Field(None, example="nvidia")
-    Count: int | None = Field(None, example=-1)
+    Driver: str | None = Field(None, examples=["nvidia"])
+    Count: int | None = Field(None, examples=[-1])
     DeviceIDs: list[str] | None = Field(
-        None, example=["0", "1", "GPU-fef8089b-4820-abfc-e83e-94318197576e"]
+        None, examples=[["0", "1", "GPU-fef8089b-4820-abfc-e83e-94318197576e"]]
     )
     Capabilities: list[list[str]] | None = Field(
         None,
         description="A list of capabilities; an OR list of AND lists of capabilities.\n",
-        example=[["gpu", "nvidia", "compute"]],
+        examples=[[["gpu", "nvidia", "compute"]]],
     )
     Options: dict[str, str] | None = Field(
         None,
@@ -335,7 +335,7 @@ class Resources(BaseModel):
     CpusetCpus: str | None = Field(
         None,
         description="CPUs in which to allow execution (e.g., `0-3`, `0,1`).\n",
-        example="0-3",
+        examples=["0-3"],
     )
     CpusetMems: str | None = Field(
         None,
@@ -354,7 +354,7 @@ class Resources(BaseModel):
     KernelMemory: int | None = Field(
         None,
         description="Kernel memory limit in bytes.\n\n<p><br /></p>\n\n> **Deprecated**: This field is deprecated as the kernel 5.4 deprecated\n> `kmem.limit_in_bytes`.\n",
-        example=209715200,
+        examples=[209715200],
     )
     KernelMemoryTCP: int | None = Field(
         None, description="Hard limit for kernel TCP buffer memory (in bytes)."
@@ -413,12 +413,12 @@ class Limit(BaseModel):
 
     """
 
-    NanoCPUs: int | None = Field(None, example=4000000000)
-    MemoryBytes: int | None = Field(None, example=8272408576)
+    NanoCPUs: int | None = Field(None, examples=[4000000000])
+    MemoryBytes: int | None = Field(None, examples=[8272408576])
     Pids: int | None = Field(
         0,
         description="Limits the maximum number of PIDs in the container. Set `0` for unlimited.\n",
-        example=100,
+        examples=[100],
     )
 
 
@@ -447,10 +447,12 @@ class GenericResources(BaseModel):
     __root__: list[GenericResource] = Field(
         ...,
         description="User-defined resources can be either Integer resources (e.g, `SSD=3`) or\nString resources (e.g, `GPU=UUID1`).\n",
-        example=[
-            {"DiscreteResourceSpec": {"Kind": "SSD", "Value": 3}},
-            {"NamedResourceSpec": {"Kind": "GPU", "Value": "UUID1"}},
-            {"NamedResourceSpec": {"Kind": "GPU", "Value": "UUID2"}},
+        examples=[
+            [
+                {"DiscreteResourceSpec": {"Kind": "SSD", "Value": 3}},
+                {"NamedResourceSpec": {"Kind": "GPU", "Value": "UUID1"}},
+                {"NamedResourceSpec": {"Kind": "GPU", "Value": "UUID2"}},
+            ]
         ],
     )
 
@@ -508,17 +510,17 @@ class HealthcheckResult(BaseModel):
     Start: datetime | None = Field(
         None,
         description="Date and time at which this check started in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
-        example="2020-01-04T10:44:24.496525531Z",
+        examples=["2020-01-04T10:44:24.496525531Z"],
     )
     End: str | None = Field(
         None,
         description="Date and time at which this check ended in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
-        example="2020-01-04T10:45:21.364524523Z",
+        examples=["2020-01-04T10:45:21.364524523Z"],
     )
     ExitCode: int | None = Field(
         None,
         description="ExitCode meanings:\n\n- `0` healthy\n- `1` unhealthy\n- `2` reserved (considered unhealthy)\n- other values: error running probe\n",
-        example=0,
+        examples=[0],
     )
     Output: str | None = Field(None, description="Output from last check")
 
@@ -591,7 +593,7 @@ class ContainerConfig(BaseModel):
     Hostname: str | None = Field(
         None,
         description="The hostname to use for the container, as a valid RFC 1123 hostname.\n",
-        example="439f4e91bd1d",
+        examples=["439f4e91bd1d"],
     )
     Domainname: str | None = Field(
         None, description="The domain name to use for the container.\n"
@@ -609,7 +611,7 @@ class ContainerConfig(BaseModel):
     ExposedPorts: dict[str, dict[str, Any]] | None = Field(
         None,
         description='An object mapping ports to an empty object in the form:\n\n`{"<port>/<tcp|udp|sctp>": {}}`\n',
-        example={"80/tcp": {}, "443/tcp": {}},
+        examples=[{"80/tcp": {}, "443/tcp": {}}],
     )
     Tty: bool | None = Field(
         False,
@@ -622,21 +624,23 @@ class ContainerConfig(BaseModel):
     Env: list[str] | None = Field(
         None,
         description='A list of environment variables to set inside the container in the\nform `["VAR=value", ...]`. A variable without `=` is removed from the\nenvironment, rather than to have an empty value.\n',
-        example=["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"],
+        examples=[
+            ["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"]
+        ],
     )
     Cmd: list[str] | None = Field(
         None,
         description="Command to run specified as a string or an array of strings.\n",
-        example=["/bin/sh"],
+        examples=[["/bin/sh"]],
     )
     Healthcheck: HealthConfig | None = None
     ArgsEscaped: bool | None = Field(
-        False, description="Command is already escaped (Windows only)", example=False
+        False, description="Command is already escaped (Windows only)", examples=[False]
     )
     Image: str | None = Field(
         None,
         description="The name (or reference) of the image to use when creating the container,\nor which was used when the container was created.\n",
-        example="example-image:1.0",
+        examples=["example-image:1.0"],
     )
     Volumes: dict[str, dict[str, Any]] | None = Field(
         None,
@@ -645,12 +649,12 @@ class ContainerConfig(BaseModel):
     WorkingDir: str | None = Field(
         None,
         description="The working directory for commands to run in.",
-        example="/public/",
+        examples=["/public/"],
     )
     Entrypoint: list[str] | None = Field(
         None,
         description='The entry point for the container as a string or an array of strings.\n\nIf the array consists of exactly one empty string (`[""]`) then the\nentry point is reset to system default (i.e., the entry point used by\ndocker when there is no `ENTRYPOINT` instruction in the `Dockerfile`).\n',
-        example=[],
+        examples=[[]],
     )
     NetworkDisabled: bool | None = Field(
         None, description="Disable networking for the container."
@@ -659,20 +663,22 @@ class ContainerConfig(BaseModel):
     OnBuild: list[str] | None = Field(
         None,
         description="`ONBUILD` metadata that were defined in the image's `Dockerfile`.\n",
-        example=[],
+        examples=[[]],
     )
     Labels: dict[str, str] | None = Field(
         None,
         description="User-defined key/value metadata.",
-        example={
-            "com.example.some-label": "some-value",
-            "com.example.some-other-label": "some-other-value",
-        },
+        examples=[
+            {
+                "com.example.some-label": "some-value",
+                "com.example.some-other-label": "some-other-value",
+            }
+        ],
     )
     StopSignal: str | None = Field(
         None,
         description="Signal to stop a container as a string or unsigned integer.\n",
-        example="SIGTERM",
+        examples=["SIGTERM"],
     )
     StopTimeout: int | None = Field(
         10, description="Timeout to stop a container in seconds."
@@ -680,7 +686,7 @@ class ContainerConfig(BaseModel):
     Shell: list[str] | None = Field(
         None,
         description="Shell for when `RUN`, `CMD`, and `ENTRYPOINT` uses a shell.\n",
-        example=["/bin/sh", "-c"],
+        examples=[["/bin/sh", "-c"]],
     )
 
 
@@ -704,8 +710,7 @@ class PortMap(BaseModel):
 
     """
 
-    class Config:
-        extra = Extra.allow
+    model_config = ConfigDict(extra="allow")
 
 
 class PortBinding(BaseModel):
@@ -718,12 +723,12 @@ class PortBinding(BaseModel):
     HostIp: str | None = Field(
         None,
         description="Host IP address that the container's port is mapped to.",
-        example="127.0.0.1",
+        examples=["127.0.0.1"],
     )
     HostPort: str | None = Field(
         None,
         description="Host port number that the container's port is mapped to.",
-        example="4443",
+        examples=["4443"],
     )
 
 
@@ -735,16 +740,18 @@ class GraphDriverData(BaseModel):
     """
 
     Name: str = Field(
-        ..., description="Name of the storage driver.", example="overlay2"
+        ..., description="Name of the storage driver.", examples=["overlay2"]
     )
     Data: dict[str, str] = Field(
         ...,
         description="Low-level storage metadata, provided as key/value pairs.\n\nThis information is driver-specific, and depends on the storage-driver\nin use, and should be used for informational purposes only.\n",
-        example={
-            "MergedDir": "/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/merged",
-            "UpperDir": "/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/diff",
-            "WorkDir": "/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/work",
-        },
+        examples=[
+            {
+                "MergedDir": "/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/merged",
+                "UpperDir": "/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/diff",
+                "WorkDir": "/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/work",
+            }
+        ],
     )
 
 
@@ -754,12 +761,14 @@ class RootFS(BaseModel):
 
     """
 
-    Type: str = Field(..., example="layers")
+    Type: str = Field(..., examples=["layers"])
     Layers: list[str] | None = Field(
         None,
-        example=[
-            "sha256:1834950e52ce4d5a88a1bbd131c537f4d0e56d10ff0dd69e66be3b7dfa9df7e6",
-            "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+        examples=[
+            [
+                "sha256:1834950e52ce4d5a88a1bbd131c537f4d0e56d10ff0dd69e66be3b7dfa9df7e6",
+                "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+            ]
         ],
     )
 
@@ -774,7 +783,7 @@ class Metadata(BaseModel):
     LastTagTime: str | None = Field(
         None,
         description="Date and time at which the image was last tagged in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n\nThis information is only available if the image was tagged locally,\nand omitted otherwise.\n",
-        example="2022-02-28T14:40:02.623929178Z",
+        examples=["2022-02-28T14:40:02.623929178Z"],
     )
 
 
@@ -787,87 +796,93 @@ class ImageInspect(BaseModel):
     Id: str | None = Field(
         None,
         description="ID is the content-addressable ID of an image.\n\nThis identifier is a content-addressable digest calculated from the\nimage's configuration (which includes the digests of layers used by\nthe image).\n\nNote that this digest differs from the `RepoDigests` below, which\nholds digests of image manifests that reference the image.\n",
-        example="sha256:ec3f0931a6e6b6855d76b2d7b0be30e81860baccd891b2e243280bf1cd8ad710",
+        examples=[
+            "sha256:ec3f0931a6e6b6855d76b2d7b0be30e81860baccd891b2e243280bf1cd8ad710"
+        ],
     )
     RepoTags: list[str] | None = Field(
         None,
         description='List of image names/tags in the local image cache that reference this\nimage.\n\nMultiple image tags can refer to the same imagem and this list may be\nempty if no tags reference the image, in which case the image is\n"untagged", in which case it can still be referenced by its ID.\n',
-        example=[
-            "example:1.0",
-            "example:latest",
-            "example:stable",
-            "internal.registry.example.com:5000/example:1.0",
+        examples=[
+            [
+                "example:1.0",
+                "example:latest",
+                "example:stable",
+                "internal.registry.example.com:5000/example:1.0",
+            ]
         ],
     )
     RepoDigests: list[str] | None = Field(
         None,
         description="List of content-addressable digests of locally available image manifests\nthat the image is referenced from. Multiple manifests can refer to the\nsame image.\n\nThese digests are usually only available if the image was either pulled\nfrom a registry, or if the image was pushed to a registry, which is when\nthe manifest is generated and its digest calculated.\n",
-        example=[
-            "example@sha256:afcc7f1ac1b49db317a7196c902e61c6c3c4607d63599ee1a82d702d249a0ccb",
-            "internal.registry.example.com:5000/example@sha256:b69959407d21e8a062e0416bf13405bb2b71ed7a84dde4158ebafacfa06f5578",
+        examples=[
+            [
+                "example@sha256:afcc7f1ac1b49db317a7196c902e61c6c3c4607d63599ee1a82d702d249a0ccb",
+                "internal.registry.example.com:5000/example@sha256:b69959407d21e8a062e0416bf13405bb2b71ed7a84dde4158ebafacfa06f5578",
+            ]
         ],
     )
     Parent: str | None = Field(
         None,
         description="ID of the parent image.\n\nDepending on how the image was created, this field may be empty and\nis only set for images that were built/created locally. This field\nis empty if the image was pulled from an image registry.\n",
-        example="",
+        examples=[""],
     )
     Comment: str | None = Field(
         None,
         description="Optional message that was set when committing or importing the image.\n",
-        example="",
+        examples=[""],
     )
     Created: str | None = Field(
         None,
         description="Date and time at which the image was created, formatted in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
-        example="2022-02-04T21:20:12.497794809Z",
+        examples=["2022-02-04T21:20:12.497794809Z"],
     )
     Container: str | None = Field(
         None,
         description="The ID of the container that was used to create the image.\n\nDepending on how the image was created, this field may be empty.\n",
-        example="65974bc86f1770ae4bff79f651ebdbce166ae9aada632ee3fa9af3a264911735",
+        examples=["65974bc86f1770ae4bff79f651ebdbce166ae9aada632ee3fa9af3a264911735"],
     )
     ContainerConfig: ContainerConfig | None = None
     DockerVersion: str | None = Field(
         None,
         description="The version of Docker that was used to build the image.\n\nDepending on how the image was created, this field may be empty.\n",
-        example="20.10.7",
+        examples=["20.10.7"],
     )
     Author: str | None = Field(
         None,
         description="Name of the author that was specified when committing the image, or as\nspecified through MAINTAINER (deprecated) in the Dockerfile.\n",
-        example="",
+        examples=[""],
     )
     Config_: ContainerConfig | None = Field(None, alias="Config")  # type: ignore
     Architecture: str | None = Field(
         None,
         description="Hardware CPU architecture that the image runs on.\n",
-        example="arm",
+        examples=["arm"],
     )
     Variant: str | None = Field(
         None,
         description="CPU architecture variant (presently ARM-only).\n",
-        example="v7",
+        examples=["v7"],
     )
     Os: str | None = Field(
         None,
         description="Operating System the image is built to run on.\n",
-        example="linux",
+        examples=["linux"],
     )
     OsVersion: str | None = Field(
         None,
         description="Operating System version the image is built to run on (especially\nfor Windows).\n",
-        example="",
+        examples=[""],
     )
     Size: int | None = Field(
         None,
         description="Total size of the image including all layers it is composed of.\n",
-        example=1239828,
+        examples=[1239828],
     )
     VirtualSize: int | None = Field(
         None,
         description="Total size of the image including all layers it is composed of.\n\nIn versions of Docker before v1.10, this field was calculated from\nthe image itself and all of its parent images. Docker v1.10 and up\nstore images self-contained, and no longer use a parent-chain, making\nthis field an equivalent of the Size field.\n\nThis field is kept for backward compatibility, but may be removed in\na future version of the API.\n",
-        example=1239828,
+        examples=[1239828],
     )
     GraphDriver: GraphDriverData | None = None
     RootFS: RootFS | None = Field(
@@ -884,63 +899,71 @@ class ImageSummary(BaseModel):
     Id: str = Field(
         ...,
         description="ID is the content-addressable ID of an image.\n\nThis identifier is a content-addressable digest calculated from the\nimage's configuration (which includes the digests of layers used by\nthe image).\n\nNote that this digest differs from the `RepoDigests` below, which\nholds digests of image manifests that reference the image.\n",
-        example="sha256:ec3f0931a6e6b6855d76b2d7b0be30e81860baccd891b2e243280bf1cd8ad710",
+        examples=[
+            "sha256:ec3f0931a6e6b6855d76b2d7b0be30e81860baccd891b2e243280bf1cd8ad710"
+        ],
     )
     ParentId: str = Field(
         ...,
         description="ID of the parent image.\n\nDepending on how the image was created, this field may be empty and\nis only set for images that were built/created locally. This field\nis empty if the image was pulled from an image registry.\n",
-        example="",
+        examples=[""],
     )
     RepoTags: list[str] = Field(
         ...,
         description='List of image names/tags in the local image cache that reference this\nimage.\n\nMultiple image tags can refer to the same imagem and this list may be\nempty if no tags reference the image, in which case the image is\n"untagged", in which case it can still be referenced by its ID.\n',
-        example=[
-            "example:1.0",
-            "example:latest",
-            "example:stable",
-            "internal.registry.example.com:5000/example:1.0",
+        examples=[
+            [
+                "example:1.0",
+                "example:latest",
+                "example:stable",
+                "internal.registry.example.com:5000/example:1.0",
+            ]
         ],
     )
     RepoDigests: list[str] = Field(
         ...,
         description="List of content-addressable digests of locally available image manifests\nthat the image is referenced from. Multiple manifests can refer to the\nsame image.\n\nThese digests are usually only available if the image was either pulled\nfrom a registry, or if the image was pushed to a registry, which is when\nthe manifest is generated and its digest calculated.\n",
-        example=[
-            "example@sha256:afcc7f1ac1b49db317a7196c902e61c6c3c4607d63599ee1a82d702d249a0ccb",
-            "internal.registry.example.com:5000/example@sha256:b69959407d21e8a062e0416bf13405bb2b71ed7a84dde4158ebafacfa06f5578",
+        examples=[
+            [
+                "example@sha256:afcc7f1ac1b49db317a7196c902e61c6c3c4607d63599ee1a82d702d249a0ccb",
+                "internal.registry.example.com:5000/example@sha256:b69959407d21e8a062e0416bf13405bb2b71ed7a84dde4158ebafacfa06f5578",
+            ]
         ],
     )
     Created: int = Field(
         ...,
         description="Date and time at which the image was created as a Unix timestamp\n(number of seconds sinds EPOCH).\n",
-        example="1644009612",
+        examples=["1644009612"],
     )
     Size: int = Field(
         ...,
         description="Total size of the image including all layers it is composed of.\n",
-        example=172064416,
+        examples=[172064416],
     )
     SharedSize: int = Field(
         ...,
         description="Total size of image layers that are shared between this image and other\nimages.\n\nThis size is not calculated by default. `-1` indicates that the value\nhas not been set / calculated.\n",
-        example=1239828,
+        examples=[1239828],
     )
     VirtualSize: int = Field(
         ...,
         description="Total size of the image including all layers it is composed of.\n\nIn versions of Docker before v1.10, this field was calculated from\nthe image itself and all of its parent images. Docker v1.10 and up\nstore images self-contained, and no longer use a parent-chain, making\nthis field an equivalent of the Size field.\n\nThis field is kept for backward compatibility, but may be removed in\na future version of the API.\n",
-        example=172064416,
+        examples=[172064416],
     )
     Labels: dict[str, str] = Field(
         ...,
         description="User-defined key/value metadata.",
-        example={
-            "com.example.some-label": "some-value",
-            "com.example.some-other-label": "some-other-value",
-        },
+        examples=[
+            {
+                "com.example.some-label": "some-value",
+                "com.example.some-other-label": "some-other-value",
+            }
+        ],
     )
     Containers: int = Field(
         ...,
         description="Number of containers using this image. Includes both stopped and running\ncontainers.\n\nThis size is not calculated by default, and depends on which API endpoint\nis used. `-1` indicates that the value has not been set / calculated.\n",
-        example=2,
+        examples=[2],
     )
 
 
@@ -988,44 +1011,46 @@ class UsageData(BaseModel):
 
 
 class Volume(BaseModel):
-    Name: str = Field(..., description="Name of the volume.", example="tardis")
+    Name: str = Field(..., description="Name of the volume.", examples=["tardis"])
     Driver: str = Field(
         ...,
         description="Name of the volume driver used by the volume.",
-        example="custom",
+        examples=["custom"],
     )
     Mountpoint: str = Field(
         ...,
         description="Mount path of the volume on the host.",
-        example="/var/lib/docker/volumes/tardis",
+        examples=["/var/lib/docker/volumes/tardis"],
     )
     CreatedAt: str | None = Field(
         None,
         description="Date/Time the volume was created.",
-        example="2016-06-07T20:31:11.853781916Z",
+        examples=["2016-06-07T20:31:11.853781916Z"],
     )
     Status: dict[str, dict[str, Any]] | None = Field(
         None,
         description='Low-level details about the volume, provided by the volume driver.\nDetails are returned as a map with key/value pairs:\n`{"key":"value","key2":"value2"}`.\n\nThe `Status` field is optional, and is omitted if the volume driver\ndoes not support this feature.\n',
-        example={"hello": "world"},
+        examples=[{"hello": "world"}],
     )
     Labels: dict[str, str] = Field(
         ...,
         description="User-defined key/value metadata.",
-        example={
-            "com.example.some-label": "some-value",
-            "com.example.some-other-label": "some-other-value",
-        },
+        examples=[
+            {
+                "com.example.some-label": "some-value",
+                "com.example.some-other-label": "some-other-value",
+            }
+        ],
     )
     Scope: Scope = Field(
         ...,
         description="The level at which the volume exists. Either `global` for cluster-wide,\nor `local` for machine level.\n",
-        example="local",
+        examples=["local"],
     )
     Options: dict[str, str] = Field(
         ...,
         description="The driver specific options used when creating the volume.\n",
-        example={"device": "tmpfs", "o": "size=100m,uid=1000", "type": "tmpfs"},
+        examples=[{"device": "tmpfs", "o": "size=100m,uid=1000", "type": "tmpfs"}],
     )
     UsageData: UsageData | None = Field(
         None,
@@ -1041,23 +1066,25 @@ class VolumeConfig(BaseModel):
     Name: str | None = Field(
         None,
         description="The new volume's name. If not specified, Docker generates a name.\n",
-        example="tardis",
+        examples=["tardis"],
     )
     Driver: str | None = Field(
-        "local", description="Name of the volume driver to use.", example="custom"
+        "local", description="Name of the volume driver to use.", examples=["custom"]
     )
     DriverOpts: dict[str, str] | None = Field(
         None,
         description="A mapping of driver options and values. These options are\npassed directly to the driver and are driver specific.\n",
-        example={"device": "tmpfs", "o": "size=100m,uid=1000", "type": "tmpfs"},
+        examples=[{"device": "tmpfs", "o": "size=100m,uid=1000", "type": "tmpfs"}],
     )
     Labels: dict[str, str] | None = Field(
         None,
         description="User-defined key/value metadata.",
-        example={
-            "com.example.some-label": "some-value",
-            "com.example.some-other-label": "some-other-value",
-        },
+        examples=[
+            {
+                "com.example.some-label": "some-value",
+                "com.example.some-other-label": "some-other-value",
+            }
+        ],
     )
 
 
@@ -1099,43 +1126,45 @@ class BuildCache(BaseModel):
     ID: str | None = Field(
         None,
         description="Unique ID of the build cache record.\n",
-        example="ndlpt0hhvkqcdfkputsk4cq9c",
+        examples=["ndlpt0hhvkqcdfkputsk4cq9c"],
     )
     Parent: str | None = Field(
         None,
         description="ID of the parent build cache record.\n",
-        example="hw53o5aio51xtltp5xjp8v7fx",
+        examples=["hw53o5aio51xtltp5xjp8v7fx"],
     )
     Type: Type4 | None = Field(
-        None, description="Cache record type.\n", example="regular"
+        None, description="Cache record type.\n", examples=["regular"]
     )
     Description: str | None = Field(
         None,
         description="Description of the build-step that produced the build cache.\n",
-        example="mount / from exec /bin/sh -c echo 'Binary::apt::APT::Keep-Downloaded-Packages \"true\";' > /etc/apt/apt.conf.d/keep-cache",
+        examples=[
+            "mount / from exec /bin/sh -c echo 'Binary::apt::APT::Keep-Downloaded-Packages \"true\";' > /etc/apt/apt.conf.d/keep-cache"
+        ],
     )
     InUse: bool | None = Field(
-        None, description="Indicates if the build cache is in use.\n", example=False
+        None, description="Indicates if the build cache is in use.\n", examples=[False]
     )
     Shared: bool | None = Field(
-        None, description="Indicates if the build cache is shared.\n", example=True
+        None, description="Indicates if the build cache is shared.\n", examples=[True]
     )
     Size: int | None = Field(
         None,
         description="Amount of disk space used by the build cache (in bytes).\n",
-        example=51,
+        examples=[51],
     )
     CreatedAt: str | None = Field(
         None,
         description="Date and time at which the build cache was created in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
-        example="2016-08-18T10:44:24.496525531Z",
+        examples=["2016-08-18T10:44:24.496525531Z"],
     )
     LastUsedAt: str | None = Field(
         None,
         description="Date and time at which the build cache was last used in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
-        example="2017-08-09T07:09:37.632105588Z",
+        examples=["2017-08-09T07:09:37.632105588Z"],
     )
-    UsageCount: int | None = Field(None, example=26)
+    UsageCount: int | None = Field(None, examples=[26])
 
 
 class ImageID(BaseModel):
@@ -1178,28 +1207,30 @@ class EndpointIPAMConfig(BaseModel):
 
     """
 
-    IPv4Address: str | None = Field(None, example="172.20.30.33")
-    IPv6Address: str | None = Field(None, example="2001:db8:abcd::3033")
+    IPv4Address: str | None = Field(None, examples=["172.20.30.33"])
+    IPv6Address: str | None = Field(None, examples=["2001:db8:abcd::3033"])
     LinkLocalIPs: list[str] | None = Field(
-        None, example=["169.254.34.68", "fe80::3468"]
+        None, examples=[["169.254.34.68", "fe80::3468"]]
     )
 
 
 class PluginMount(BaseModel):
-    Name: str = Field(..., example="some-mount")
-    Description: str = Field(..., example="This is a mount that's used by the plugin.")
+    Name: str = Field(..., examples=["some-mount"])
+    Description: str = Field(
+        ..., examples=["This is a mount that's used by the plugin."]
+    )
     Settable: list[str]
-    Source: str = Field(..., example="/var/lib/docker/plugins/")
-    Destination: str = Field(..., example="/mnt/state")
-    Type: str = Field(..., example="bind")
-    Options: list[str] = Field(..., example=["rbind", "rw"])
+    Source: str = Field(..., examples=["/var/lib/docker/plugins/"])
+    Destination: str = Field(..., examples=["/mnt/state"])
+    Type: str = Field(..., examples=["bind"])
+    Options: list[str] = Field(..., examples=[["rbind", "rw"]])
 
 
 class PluginDevice(BaseModel):
     Name: str
     Description: str
     Settable: list[str]
-    Path: str = Field(..., example="/dev/fuse")
+    Path: str = Field(..., examples=["/dev/fuse"])
 
 
 class PluginEnv(BaseModel):
@@ -1222,9 +1253,9 @@ class PluginPrivilege(BaseModel):
 
     """
 
-    Name: str | None = Field(None, example="network")
+    Name: str | None = Field(None, examples=["network"])
     Description: str | None = None
-    Value: list[str] | None = Field(None, example=["host"])
+    Value: list[str] | None = Field(None, examples=[["host"]])
 
 
 class Settings(BaseModel):
@@ -1233,7 +1264,7 @@ class Settings(BaseModel):
     """
 
     Mounts: list[PluginMount]
-    Env: list[str] = Field(..., example=["DEBUG=0"])
+    Env: list[str] = Field(..., examples=[["DEBUG=0"]])
     Args: list[str]
     Devices: list[PluginDevice]
 
@@ -1252,44 +1283,48 @@ class Interface(BaseModel):
     The interface between Docker and the plugin
     """
 
-    Types: list[PluginInterfaceType] = Field(..., example=["docker.volumedriver/1.0"])
-    Socket: str = Field(..., example="plugins.sock")
+    Types: list[PluginInterfaceType] = Field(
+        ..., examples=[["docker.volumedriver/1.0"]]
+    )
+    Socket: str = Field(..., examples=["plugins.sock"])
     ProtocolScheme: ProtocolScheme | None = Field(
         None,
         description="Protocol to use for clients connecting to the plugin.",
-        example="some.protocol/v1.0",
+        examples=["some.protocol/v1.0"],
     )
 
 
 class User(BaseModel):
-    UID: int | None = Field(None, example=1000)
-    GID: int | None = Field(None, example=1000)
+    UID: int | None = Field(None, examples=[1000])
+    GID: int | None = Field(None, examples=[1000])
 
 
 class Network1(BaseModel):
-    Type: str = Field(..., example="host")
+    Type: str = Field(..., examples=["host"])
 
 
 class Linux(BaseModel):
-    Capabilities: list[str] = Field(..., example=["CAP_SYS_ADMIN", "CAP_SYSLOG"])
-    AllowAllDevices: bool = Field(..., example=False)
+    Capabilities: list[str] = Field(..., examples=[["CAP_SYS_ADMIN", "CAP_SYSLOG"]])
+    AllowAllDevices: bool = Field(..., examples=[False])
     Devices: list[PluginDevice]
 
 
 class Args(BaseModel):
-    Name: str = Field(..., example="args")
-    Description: str = Field(..., example="command line arguments")
+    Name: str = Field(..., examples=["args"])
+    Description: str = Field(..., examples=["command line arguments"])
     Settable: list[str]
     Value: list[str]
 
 
 class Rootfs(BaseModel):
-    type: str | None = Field(None, example="layers")
+    type: str | None = Field(None, examples=["layers"])
     diff_ids: list[str] | None = Field(
         None,
-        example=[
-            "sha256:675532206fbf3030b8458f88d6e26d4eb1577688a25efec97154c94e8b6b4887",
-            "sha256:e216a057b1cb1efc11f8a268f37ef62083e70b1b38323ba252e25ac88904a7e8",
+        examples=[
+            [
+                "sha256:675532206fbf3030b8458f88d6e26d4eb1577688a25efec97154c94e8b6b4887",
+                "sha256:e216a057b1cb1efc11f8a268f37ef62083e70b1b38323ba252e25ac88904a7e8",
+            ]
         ],
     )
 
@@ -1302,33 +1337,35 @@ class Config(BaseModel):
     DockerVersion: str | None = Field(
         None,
         description="Docker Version used to create the plugin",
-        example="17.06.0-ce",
+        examples=["17.06.0-ce"],
     )
-    Description: str = Field(..., example="A sample volume plugin for Docker")
-    Documentation: str = Field(..., example="/engine/extend/plugins/")
+    Description: str = Field(..., examples=["A sample volume plugin for Docker"])
+    Documentation: str = Field(..., examples=["/engine/extend/plugins/"])
     Interface: Interface = Field(
         ..., description="The interface between Docker and the plugin"
     )
     Entrypoint: list[str] = Field(
-        ..., example=["/usr/bin/sample-volume-plugin", "/data"]
+        ..., examples=[["/usr/bin/sample-volume-plugin", "/data"]]
     )
-    WorkDir: str = Field(..., example="/bin/")
+    WorkDir: str = Field(..., examples=["/bin/"])
     User: User | None = None
     Network: Network1
     Linux: Linux
-    PropagatedMount: str = Field(..., example="/mnt/volumes")
-    IpcHost: bool = Field(..., example=False)
-    PidHost: bool = Field(..., example=False)
+    PropagatedMount: str = Field(..., examples=["/mnt/volumes"])
+    IpcHost: bool = Field(..., examples=[False])
+    PidHost: bool = Field(..., examples=[False])
     Mounts: list[PluginMount]
     Env: list[PluginEnv] = Field(
         ...,
-        example=[
-            {
-                "Name": "DEBUG",
-                "Description": "If set, prints debug messages",
-                "Settable": None,
-                "Value": "0",
-            }
+        examples=[
+            [
+                {
+                    "Name": "DEBUG",
+                    "Description": "If set, prints debug messages",
+                    "Settable": None,
+                    "Value": "0",
+                }
+            ]
         ],
     )
     Args: Args
@@ -1341,13 +1378,14 @@ class Plugin(BaseModel):
     """
 
     Id: str | None = Field(
-        None, example="5724e2c8652da337ab2eedd19fc6fc0ec908e4bd907c7421bf6a8dfc70c4c078"
+        None,
+        examples=["5724e2c8652da337ab2eedd19fc6fc0ec908e4bd907c7421bf6a8dfc70c4c078"],
     )
-    Name: str = Field(..., example="tiborvass/sample-volume-plugin")
+    Name: str = Field(..., examples=["tiborvass/sample-volume-plugin"])
     Enabled: bool = Field(
         ...,
         description="True if the plugin is running. False if the plugin is not running, only installed.",
-        example=True,
+        examples=[True],
     )
     Settings: Settings = Field(
         ..., description="Settings that can be modified by users."
@@ -1355,7 +1393,7 @@ class Plugin(BaseModel):
     PluginReference: str | None = Field(
         None,
         description="plugin remote reference used to push/pull the plugin",
-        example="localhost:5000/tiborvass/sample-volume-plugin:latest",
+        examples=["localhost:5000/tiborvass/sample-volume-plugin:latest"],
     )
     Config_: Config = Field(..., alias="Config", description="The config of a plugin.")
 
@@ -1375,7 +1413,7 @@ class ObjectVersion(BaseModel):
 
     """
 
-    Index: int | None = Field(None, example=373531)
+    Index: int | None = Field(None, examples=[373531])
 
 
 class Role(str, Enum):
@@ -1398,13 +1436,17 @@ class Availability(str, Enum):
 
 
 class NodeSpec(BaseModel):
-    Name: str | None = Field(None, description="Name for the node.", example="my-node")
+    Name: str | None = Field(
+        None, description="Name for the node.", examples=["my-node"]
+    )
     Labels: dict[str, str] | None = Field(
         None, description="User-defined key/value metadata."
     )
-    Role: Role | None = Field(None, description="Role of the node.", example="manager")
+    Role: Role | None = Field(
+        None, description="Role of the node.", examples=["manager"]
+    )
     Availability: Availability | None = Field(
-        None, description="Availability of the node.", example="active"
+        None, description="Availability of the node.", examples=["active"]
     )
 
 
@@ -1417,12 +1459,12 @@ class Platform(BaseModel):
     Architecture: str | None = Field(
         None,
         description="Architecture represents the hardware architecture (for example,\n`x86_64`).\n",
-        example="x86_64",
+        examples=["x86_64"],
     )
     OS: str | None = Field(
         None,
         description="OS represents the Operating System (for example, `linux` or `windows`).\n",
-        example="linux",
+        examples=["linux"],
     )
 
 
@@ -1436,29 +1478,31 @@ class EngineDescription(BaseModel):
     EngineDescription provides information about an engine.
     """
 
-    EngineVersion: str | None = Field(None, example="17.06.0")
-    Labels: dict[str, str] | None = Field(None, example={"foo": "bar"})
+    EngineVersion: str | None = Field(None, examples=["17.06.0"])
+    Labels: dict[str, str] | None = Field(None, examples=[{"foo": "bar"}])
     Plugins: list[Plugin1] | None = Field(
         None,
-        example=[
-            {"Type": "Log", "Name": "awslogs"},
-            {"Type": "Log", "Name": "fluentd"},
-            {"Type": "Log", "Name": "gcplogs"},
-            {"Type": "Log", "Name": "gelf"},
-            {"Type": "Log", "Name": "journald"},
-            {"Type": "Log", "Name": "json-file"},
-            {"Type": "Log", "Name": "logentries"},
-            {"Type": "Log", "Name": "splunk"},
-            {"Type": "Log", "Name": "syslog"},
-            {"Type": "Network", "Name": "bridge"},
-            {"Type": "Network", "Name": "host"},
-            {"Type": "Network", "Name": "ipvlan"},
-            {"Type": "Network", "Name": "macvlan"},
-            {"Type": "Network", "Name": "null"},
-            {"Type": "Network", "Name": "overlay"},
-            {"Type": "Volume", "Name": "local"},
-            {"Type": "Volume", "Name": "localhost:5000/vieux/sshfs:latest"},
-            {"Type": "Volume", "Name": "vieux/sshfs:latest"},
+        examples=[
+            [
+                {"Type": "Log", "Name": "awslogs"},
+                {"Type": "Log", "Name": "fluentd"},
+                {"Type": "Log", "Name": "gcplogs"},
+                {"Type": "Log", "Name": "gelf"},
+                {"Type": "Log", "Name": "journald"},
+                {"Type": "Log", "Name": "json-file"},
+                {"Type": "Log", "Name": "logentries"},
+                {"Type": "Log", "Name": "splunk"},
+                {"Type": "Log", "Name": "syslog"},
+                {"Type": "Network", "Name": "bridge"},
+                {"Type": "Network", "Name": "host"},
+                {"Type": "Network", "Name": "ipvlan"},
+                {"Type": "Network", "Name": "macvlan"},
+                {"Type": "Network", "Name": "null"},
+                {"Type": "Network", "Name": "overlay"},
+                {"Type": "Volume", "Name": "local"},
+                {"Type": "Volume", "Name": "localhost:5000/vieux/sshfs:latest"},
+                {"Type": "Volume", "Name": "vieux/sshfs:latest"},
+            ]
         ],
     )
 
@@ -1512,7 +1556,7 @@ class Orchestration(BaseModel):
     TaskHistoryRetentionLimit: int | None = Field(
         None,
         description="The number of historic tasks to keep per instance or node. If\nnegative, never remove completed or failed tasks.\n",
-        example=10,
+        examples=[10],
     )
 
 
@@ -1522,7 +1566,9 @@ class Raft(BaseModel):
     """
 
     SnapshotInterval: int | None = Field(
-        None, description="The number of log entries between snapshots.", example=10000
+        None,
+        description="The number of log entries between snapshots.",
+        examples=[10000],
     )
     KeepOldSnapshots: int | None = Field(
         None,
@@ -1531,17 +1577,17 @@ class Raft(BaseModel):
     LogEntriesForSlowFollowers: int | None = Field(
         None,
         description="The number of log entries to keep around to sync up slow followers\nafter a snapshot is created.\n",
-        example=500,
+        examples=[500],
     )
     ElectionTick: int | None = Field(
         None,
         description="The number of ticks that a follower will wait for a message from\nthe leader before becoming a candidate and starting an election.\n`ElectionTick` must be greater than `HeartbeatTick`.\n\nA tick currently defaults to one second, so these translate\ndirectly to seconds currently, but this is NOT guaranteed.\n",
-        example=3,
+        examples=[3],
     )
     HeartbeatTick: int | None = Field(
         None,
         description="The number of ticks between heartbeats. Every HeartbeatTick ticks,\nthe leader will send a heartbeat to the followers.\n\nA tick currently defaults to one second, so these translate\ndirectly to seconds currently, but this is NOT guaranteed.\n",
-        example=1,
+        examples=[1],
     )
 
 
@@ -1553,7 +1599,7 @@ class Dispatcher(BaseModel):
     HeartbeatPeriod: int | None = Field(
         None,
         description="The delay for an agent to send a heartbeat to the dispatcher.\n",
-        example=5000000000,
+        examples=[5000000000],
     )
 
 
@@ -1593,7 +1639,7 @@ class CAConfig(BaseModel):
     NodeCertExpiry: int | None = Field(
         None,
         description="The duration node certificates are issued for.",
-        example=7776000000000000,
+        examples=[7776000000000000],
     )
     ExternalCAs: list[ExternalCA] | None = Field(
         None,
@@ -1621,7 +1667,7 @@ class EncryptionConfig(BaseModel):
     AutoLockManagers: bool | None = Field(
         None,
         description="If set, generate a key and use it to lock data stored on the\nmanagers.\n",
-        example=False,
+        examples=[False],
     )
 
 
@@ -1638,12 +1684,12 @@ class LogDriver(BaseModel):
     Name: str | None = Field(
         None,
         description="The log driver to use as a default for new tasks.\n",
-        example="json-file",
+        examples=["json-file"],
     )
     Options: dict[str, str] | None = Field(
         None,
         description="Driver-specific options for the selectd log driver, specified\nas key/value pairs.\n",
-        example={"max-file": "10", "max-size": "100m"},
+        examples=[{"max-file": "10", "max-size": "100m"}],
     )
 
 
@@ -1663,14 +1709,18 @@ class SwarmSpec(BaseModel):
     User modifiable swarm configuration.
     """
 
-    Name: str | None = Field(None, description="Name of the swarm.", example="default")
+    Name: str | None = Field(
+        None, description="Name of the swarm.", examples=["default"]
+    )
     Labels: dict[str, str] | None = Field(
         None,
         description="User-defined key/value metadata.",
-        example={
-            "com.example.corp.type": "production",
-            "com.example.corp.department": "engineering",
-        },
+        examples=[
+            {
+                "com.example.corp.type": "production",
+                "com.example.corp.department": "engineering",
+            }
+        ],
     )
     Orchestration: Orchestration | None = Field(
         None, description="Orchestration configuration."
@@ -1694,30 +1744,30 @@ class ClusterInfo(BaseModel):
     """
 
     ID: str | None = Field(
-        None, description="The ID of the swarm.", example="abajmipo7b4xz5ip2nrla6b11"
+        None, description="The ID of the swarm.", examples=["abajmipo7b4xz5ip2nrla6b11"]
     )
     Version: ObjectVersion | None = None
     CreatedAt: str | None = Field(
         None,
         description="Date and time at which the swarm was initialised in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
-        example="2016-08-18T10:44:24.496525531Z",
+        examples=["2016-08-18T10:44:24.496525531Z"],
     )
     UpdatedAt: str | None = Field(
         None,
         description="Date and time at which the swarm was last updated in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
-        example="2017-08-09T07:09:37.632105588Z",
+        examples=["2017-08-09T07:09:37.632105588Z"],
     )
     Spec: SwarmSpec | None = None
     TLSInfo: TLSInfo | None = None
     RootRotationInProgress: bool | None = Field(
         None,
         description="Whether there is currently a root CA rotation in progress for the swarm\n",
-        example=False,
+        examples=[False],
     )
     DataPathPort: int | None = Field(
         4789,
         description="DataPathPort specifies the data path port number for data traffic.\nAcceptable port range is 1024 to 49151.\nIf no port is set or is set to 0, the default port (4789) is used.\n",
-        example=4789,
+        examples=[4789],
     )
     DefaultAddrPool: list[str] | None = Field(
         None,
@@ -1726,7 +1776,7 @@ class ClusterInfo(BaseModel):
     SubnetSize: int | None = Field(
         24,
         description="SubnetSize specifies the subnet size of the networks created from the\ndefault subnet pool.\n",
-        example=24,
+        examples=[24],
         le=29,
     )
 
@@ -1740,12 +1790,16 @@ class JoinTokens(BaseModel):
     Worker: str | None = Field(
         None,
         description="The token workers can use to join the swarm.\n",
-        example="SWMTKN-1-3pu6hszjas19xyp7ghgosyx9k8atbfcr8p2is99znpy26u2lkl-1awxwuwd3z9j1z3puu7rcgdbx",
+        examples=[
+            "SWMTKN-1-3pu6hszjas19xyp7ghgosyx9k8atbfcr8p2is99znpy26u2lkl-1awxwuwd3z9j1z3puu7rcgdbx"
+        ],
     )
     Manager: str | None = Field(
         None,
         description="The token managers can use to join the swarm.\n",
-        example="SWMTKN-1-3pu6hszjas19xyp7ghgosyx9k8atbfcr8p2is99znpy26u2lkl-7p73s1dx5in4tatdymyhg9hu2",
+        examples=[
+            "SWMTKN-1-3pu6hszjas19xyp7ghgosyx9k8atbfcr8p2is99znpy26u2lkl-7p73s1dx5in4tatdymyhg9hu2"
+        ],
     )
 
 
@@ -1785,12 +1839,12 @@ class CredentialSpec(BaseModel):
         None,
         alias="Config",
         description="Load credential spec from a Swarm Config with the given ID.\nThe specified config must also be present in the Configs\nfield with the Runtime property set.\n\n<p><br /></p>\n\n\n> **Note**: `CredentialSpec.File`, `CredentialSpec.Registry`,\n> and `CredentialSpec.Config` are mutually exclusive.\n",
-        example="0bt9dmxjvjiqermk6xrop3ekq",
+        examples=["0bt9dmxjvjiqermk6xrop3ekq"],
     )
     File: str | None = Field(
         None,
         description="Load credential spec from this file. The file is read by\nthe daemon, and must be present in the `CredentialSpecs`\nsubdirectory in the docker data directory, which defaults\nto `C:\\ProgramData\\Docker\\` on Windows.\n\nFor example, specifying `spec.json` loads\n`C:\\ProgramData\\Docker\\CredentialSpecs\\spec.json`.\n\n<p><br /></p>\n\n> **Note**: `CredentialSpec.File`, `CredentialSpec.Registry`,\n> and `CredentialSpec.Config` are mutually exclusive.\n",
-        example="spec.json",
+        examples=["spec.json"],
     )
     Registry: str | None = Field(
         None,
@@ -1996,12 +2050,12 @@ class ContainerSpec(BaseModel):
     CapabilityAdd: list[str] | None = Field(
         None,
         description="A list of kernel capabilities to add to the default set\nfor the container.\n",
-        example=["CAP_NET_RAW", "CAP_SYS_ADMIN", "CAP_SYS_CHROOT", "CAP_SYSLOG"],
+        examples=[["CAP_NET_RAW", "CAP_SYS_ADMIN", "CAP_SYS_CHROOT", "CAP_SYSLOG"]],
     )
     CapabilityDrop: list[str] | None = Field(
         None,
         description="A list of kernel capabilities to drop from the default set\nfor the container.\n",
-        example=["CAP_NET_RAW"],
+        examples=[["CAP_NET_RAW"]],
     )
     Ulimits: list[Ulimit1] | None = Field(
         None,
@@ -2071,20 +2125,24 @@ class Placement(BaseModel):
     Constraints: list[str] | None = Field(
         None,
         description="An array of constraint expressions to limit the set of nodes where\na task can be scheduled. Constraint expressions can either use a\n_match_ (`==`) or _exclude_ (`!=`) rule. Multiple constraints find\nnodes that satisfy every expression (AND match). Constraints can\nmatch node or Docker Engine labels as follows:\n\nnode attribute       | matches                        | example\n---------------------|--------------------------------|-----------------------------------------------\n`node.id`            | Node ID                        | `node.id==2ivku8v2gvtg4`\n`node.hostname`      | Node hostname                  | `node.hostname!=node-2`\n`node.role`          | Node role (`manager`/`worker`) | `node.role==manager`\n`node.platform.os`   | Node operating system          | `node.platform.os==windows`\n`node.platform.arch` | Node architecture              | `node.platform.arch==x86_64`\n`node.labels`        | User-defined node labels       | `node.labels.security==high`\n`engine.labels`      | Docker Engine's labels         | `engine.labels.operatingsystem==ubuntu-14.04`\n\n`engine.labels` apply to Docker Engine labels like operating system,\ndrivers, etc. Swarm administrators add `node.labels` for operational\npurposes by using the [`node update endpoint`](#operation/NodeUpdate).\n",
-        example=[
-            "node.hostname!=node3.corp.example.com",
-            "node.role!=manager",
-            "node.labels.type==production",
-            "node.platform.os==linux",
-            "node.platform.arch==x86_64",
+        examples=[
+            [
+                "node.hostname!=node3.corp.example.com",
+                "node.role!=manager",
+                "node.labels.type==production",
+                "node.platform.os==linux",
+                "node.platform.arch==x86_64",
+            ]
         ],
     )
     Preferences: list[Preference] | None = Field(
         None,
         description="Preferences provide a way to make the scheduler aware of factors\nsuch as topology. They are provided in order from highest to\nlowest precedence.\n",
-        example=[
-            {"Spread": {"SpreadDescriptor": "node.labels.datacenter"}},
-            {"Spread": {"SpreadDescriptor": "node.labels.rack"}},
+        examples=[
+            [
+                {"Spread": {"SpreadDescriptor": "node.labels.datacenter"}},
+                {"Spread": {"SpreadDescriptor": "node.labels.rack"}},
+            ]
         ],
     )
     MaxReplicas: int | None = Field(
@@ -2300,7 +2358,7 @@ class EndpointPortConfig(BaseModel):
     PublishMode: PublishMode | None = Field(
         PublishMode.ingress,
         description='The mode in which port is published.\n\n<p><br /></p>\n\n- "ingress" makes the target port accessible on every node,\n  regardless of whether there is a task for the service running on\n  that node or not.\n- "host" bypasses the routing mesh and publish the port directly on\n  the swarm node where that service is running.\n',
-        example="ingress",
+        examples=["ingress"],
     )
 
 
@@ -2367,12 +2425,12 @@ class ServiceStatus(BaseModel):
     RunningTasks: int | None = Field(
         None,
         description="The number of tasks for the service currently in the Running state.\n",
-        example=7,
+        examples=[7],
     )
     DesiredTasks: int | None = Field(
         None,
         description="The number of tasks for the service desired to be running.\nFor replicated services, this is the replica count from the\nservice spec. For global services, this is computed by taking\ncount of all tasks for the service with a Desired State other\nthan Shutdown.\n",
-        example=10,
+        examples=[10],
     )
     CompletedTasks: int | None = Field(
         None,
@@ -2425,10 +2483,12 @@ class Driver(BaseModel):
     options: dict[str, str] | None = Field(
         None,
         description="Key/value map of driver-specific options.",
-        example={
-            "OptionA": "value for driver-specific option A",
-            "OptionB": "value for driver-specific option B",
-        },
+        examples=[
+            {
+                "OptionA": "value for driver-specific option A",
+                "OptionB": "value for driver-specific option B",
+            }
+        ],
     )
 
 
@@ -2437,15 +2497,17 @@ class SecretSpec(BaseModel):
     labels: dict[str, str] | None = Field(
         None,
         description="User-defined key/value metadata.",
-        example={
-            "com.example.some-label": "some-value",
-            "com.example.some-other-label": "some-other-value",
-        },
+        examples=[
+            {
+                "com.example.some-label": "some-value",
+                "com.example.some-other-label": "some-other-value",
+            }
+        ],
     )
     data: str | None = Field(
         None,
         description="Base64-url-safe-encoded ([RFC 4648](https://tools.ietf.org/html/rfc4648#section-5))\ndata to store as secret.\n\nThis field is only used to _create_ a secret, and is not returned by\nother endpoints.\n",
-        example="",
+        examples=[""],
     )
     driver: Driver | None = Field(
         None,
@@ -2458,10 +2520,10 @@ class SecretSpec(BaseModel):
 
 
 class Secret1(BaseModel):
-    ID: str | None = Field(None, example="blt1owaxmitz71s9v5zh81zun")
+    ID: str | None = Field(None, examples=["blt1owaxmitz71s9v5zh81zun"])
     Version: ObjectVersion | None = None
-    CreatedAt: str | None = Field(None, example="2017-07-20T13:55:28.678958722Z")
-    UpdatedAt: str | None = Field(None, example="2017-07-20T13:55:28.678958722Z")
+    CreatedAt: str | None = Field(None, examples=["2017-07-20T13:55:28.678958722Z"])
+    UpdatedAt: str | None = Field(None, examples=["2017-07-20T13:55:28.678958722Z"])
     Spec: SecretSpec | None = None
 
 
@@ -2517,9 +2579,9 @@ class Platform1(BaseModel):
 
 
 class Component(BaseModel):
-    Name: str = Field(..., description="Name of the component\n", example="Engine")
+    Name: str = Field(..., description="Name of the component\n", examples=["Engine"])
     Version: str = Field(
-        ..., description="Version of the component\n", example="19.03.12"
+        ..., description="Version of the component\n", examples=["19.03.12"]
     )
     Details: dict[str, Any] | None = Field(
         None,
@@ -2538,52 +2600,52 @@ class SystemVersion(BaseModel):
         None, description="Information about system components\n"
     )
     Version: str | None = Field(
-        None, description="The version of the daemon", example="19.03.12"
+        None, description="The version of the daemon", examples=["19.03.12"]
     )
     ApiVersion: str | None = Field(
         None,
         description="The default (and highest) API version that is supported by the daemon\n",
-        example="1.40",
+        examples=["1.40"],
     )
     MinAPIVersion: str | None = Field(
         None,
         description="The minimum API version that is supported by the daemon\n",
-        example="1.12",
+        examples=["1.12"],
     )
     GitCommit: str | None = Field(
         None,
         description="The Git commit of the source code that was used to build the daemon\n",
-        example="48a66213fe",
+        examples=["48a66213fe"],
     )
     GoVersion: str | None = Field(
         None,
         description="The version Go used to compile the daemon, and the version of the Go\nruntime in use.\n",
-        example="go1.13.14",
+        examples=["go1.13.14"],
     )
     Os: str | None = Field(
         None,
         description='The operating system that the daemon is running on ("linux" or "windows")\n',
-        example="linux",
+        examples=["linux"],
     )
     Arch: str | None = Field(
         None,
         description="The architecture that the daemon is running on\n",
-        example="amd64",
+        examples=["amd64"],
     )
     KernelVersion: str | None = Field(
         None,
         description="The kernel version (`uname -r`) that the daemon is running on.\n\nThis field is omitted when empty.\n",
-        example="4.19.76-linuxkit",
+        examples=["4.19.76-linuxkit"],
     )
     Experimental: bool | None = Field(
         None,
         description="Indicates if the daemon is started with experimental features enabled.\n\nThis field is omitted when empty / false.\n",
-        example=True,
+        examples=[True],
     )
     BuildTime: str | None = Field(
         None,
         description="The date and time that the daemon was compiled.\n",
-        example="2020-06-22T15:49:27.000000000+00:00",
+        examples=["2020-06-22T15:49:27.000000000+00:00"],
     )
 
 
@@ -2627,9 +2689,11 @@ class Isolation2(str, Enum):
 
 class DefaultAddressPool(BaseModel):
     Base: str | None = Field(
-        None, description="The network address in CIDR format", example="10.10.0.0/16"
+        None,
+        description="The network address in CIDR format",
+        examples=["10.10.0.0/16"],
     )
-    Size: int | None = Field(None, description="The network pool size", example="24")
+    Size: int | None = Field(None, description="The network pool size", examples=["24"])
 
 
 class PluginsInfo(BaseModel):
@@ -2647,31 +2711,33 @@ class PluginsInfo(BaseModel):
     Volume: list[str] | None = Field(
         None,
         description="Names of available volume-drivers, and network-driver plugins.",
-        example=["local"],
+        examples=[["local"]],
     )
     Network: list[str] | None = Field(
         None,
         description="Names of available network-drivers, and network-driver plugins.",
-        example=["bridge", "host", "ipvlan", "macvlan", "null", "overlay"],
+        examples=[["bridge", "host", "ipvlan", "macvlan", "null", "overlay"]],
     )
     Authorization: list[str] | None = Field(
         None,
         description="Names of available authorization plugins.",
-        example=["img-authz-plugin", "hbm"],
+        examples=[["img-authz-plugin", "hbm"]],
     )
     Log: list[str] | None = Field(
         None,
         description="Names of available logging-drivers, and logging-driver plugins.",
-        example=[
-            "awslogs",
-            "fluentd",
-            "gcplogs",
-            "gelf",
-            "journald",
-            "json-file",
-            "logentries",
-            "splunk",
-            "syslog",
+        examples=[
+            [
+                "awslogs",
+                "fluentd",
+                "gcplogs",
+                "gelf",
+                "journald",
+                "json-file",
+                "logentries",
+                "splunk",
+                "syslog",
+            ]
         ],
     )
 
@@ -2684,26 +2750,28 @@ class IndexInfo(BaseModel):
     Name: str | None = Field(
         None,
         description='Name of the registry, such as "docker.io".\n',
-        example="docker.io",
+        examples=["docker.io"],
     )
     Mirrors: list[str] | None = Field(
         None,
         description="List of mirrors, expressed as URIs.\n",
-        example=[
-            "https://hub-mirror.corp.example.com:5000/",
-            "https://registry-2.docker.io/",
-            "https://registry-3.docker.io/",
+        examples=[
+            [
+                "https://hub-mirror.corp.example.com:5000/",
+                "https://registry-2.docker.io/",
+                "https://registry-3.docker.io/",
+            ]
         ],
     )
     Secure: bool | None = Field(
         None,
         description="Indicates if the registry is part of the list of insecure\nregistries.\n\nIf `false`, the registry is insecure. Insecure registries accept\nun-encrypted (HTTP) and/or untrusted (HTTPS with certificates from\nunknown CAs) communication.\n\n> **Warning**: Insecure registries can be useful when running a local\n> registry. However, because its use creates security vulnerabilities\n> it should ONLY be enabled for testing purposes. For increased\n> security, users should add their CA to their system's list of\n> trusted CAs instead of enabling this option.\n",
-        example=True,
+        examples=[True],
     )
     Official: bool | None = Field(
         None,
         description="Indicates whether this is an official registry (i.e., Docker Hub / docker.io)\n",
-        example=True,
+        examples=[True],
     )
 
 
@@ -2721,12 +2789,12 @@ class Runtime(BaseModel):
     path: str | None = Field(
         None,
         description="Name and, optional, path, of the OCI executable binary.\n\nIf the path is omitted, the daemon searches the host's `$PATH` for the\nbinary and uses the first result.\n",
-        example="/usr/local/bin/my-oci-runtime",
+        examples=["/usr/local/bin/my-oci-runtime"],
     )
     runtimeArgs: list[str] | None = Field(
         None,
         description="List of command-line arguments to pass to the runtime when invoked.\n",
-        example=["--debug", "--systemd-cgroup=false"],
+        examples=[["--debug", "--systemd-cgroup=false"]],
     )
 
 
@@ -2741,12 +2809,12 @@ class Commit(BaseModel):
     ID: str | None = Field(
         None,
         description="Actual commit ID of external tool.",
-        example="cfb82a876ecc11b5ca0977d1733adbe58599088a",
+        examples=["cfb82a876ecc11b5ca0977d1733adbe58599088a"],
     )
     Expected: str | None = Field(
         None,
         description="Commit ID of external tool expected by dockerd as set at build time.\n",
-        example="2d41c047c83e09a6d61d464906feb2a2f3c52aa4",
+        examples=["2d41c047c83e09a6d61d464906feb2a2f3c52aa4"],
     )
 
 
@@ -2805,16 +2873,18 @@ class EventActor(BaseModel):
     ID: str | None = Field(
         None,
         description="The ID of the object emitting the event",
-        example="ede54ee1afda366ab42f824e8a5ffd195155d853ceaec74a927f249ea270c743",
+        examples=["ede54ee1afda366ab42f824e8a5ffd195155d853ceaec74a927f249ea270c743"],
     )
     Attributes: dict[str, str] | None = Field(
         None,
         description="Various key/value attributes of the object, depending on its type.\n",
-        example={
-            "com.example.some-label": "some-label-value",
-            "image": "alpine:latest",
-            "name": "my-container",
-        },
+        examples=[
+            {
+                "com.example.some-label": "some-label-value",
+                "image": "alpine:latest",
+                "name": "my-container",
+            }
+        ],
     )
 
 
@@ -2854,19 +2924,25 @@ class SystemEventsResponse(BaseModel):
     """
 
     Type: Type5 | None = Field(
-        None, description="The type of object emitting the event", example="container"
+        None,
+        description="The type of object emitting the event",
+        examples=["container"],
     )
-    Action: str | None = Field(None, description="The type of event", example="create")
+    Action: str | None = Field(
+        None, description="The type of event", examples=["create"]
+    )
     Actor: EventActor | None = None
     scope: Scope1 | None = Field(
         None,
         description="Scope of the event. Engine events are `local` scope. Cluster (Swarm)\nevents are `swarm` scope.\n",
     )
-    time: int | None = Field(None, description="Timestamp of event", example=1629574695)
+    time: int | None = Field(
+        None, description="Timestamp of event", examples=[1629574695]
+    )
     timeNano: int | None = Field(
         None,
         description="Timestamp of event, with nanosecond accuracy",
-        example=1629574695515050031,
+        examples=[1629574695515050031],
     )
 
 
@@ -2880,15 +2956,17 @@ class OCIDescriptor(BaseModel):
     mediaType: str | None = Field(
         None,
         description="The media type of the object this schema refers to.\n",
-        example="application/vnd.docker.distribution.manifest.v2+json",
+        examples=["application/vnd.docker.distribution.manifest.v2+json"],
     )
     digest: str | None = Field(
         None,
         description="The digest of the targeted content.\n",
-        example="sha256:c0537ff6a5218ef531ece93d4984efc99bbf3f7497c0a7726c88e2bb7584dc96",
+        examples=[
+            "sha256:c0537ff6a5218ef531ece93d4984efc99bbf3f7497c0a7726c88e2bb7584dc96"
+        ],
     )
     size: int | None = Field(
-        None, description="The size in bytes of the blob.\n", example=3987495
+        None, description="The size in bytes of the blob.\n", examples=[3987495]
     )
 
 
@@ -2902,29 +2980,29 @@ class OCIPlatform(BaseModel):
     architecture: str | None = Field(
         None,
         description="The CPU architecture, for example `amd64` or `ppc64`.\n",
-        example="arm",
+        examples=["arm"],
     )
     os: str | None = Field(
         None,
         description="The operating system, for example `linux` or `windows`.\n",
-        example="windows",
+        examples=["windows"],
     )
     os_version: str | None = Field(
         None,
         alias="os.version",
         description="Optional field specifying the operating system version, for example on\nWindows `10.0.19041.1165`.\n",
-        example="10.0.19041.1165",
+        examples=["10.0.19041.1165"],
     )
     os_features: list[str] | None = Field(
         None,
         alias="os.features",
         description="Optional field specifying an array of strings, each listing a required\nOS feature (for example on Windows `win32k`).\n",
-        example=["win32k"],
+        examples=[["win32k"]],
     )
     variant: str | None = Field(
         None,
         description="Optional field specifying a variant of the CPU, for example `v7` to\nspecify ARMv7 when architecture is `arm`.\n",
-        example="v7",
+        examples=["v7"],
     )
 
 
@@ -2948,8 +3026,8 @@ class ResourceObject(BaseModel):
 
     """
 
-    NanoCPUs: int | None = Field(None, example=4000000000)
-    MemoryBytes: int | None = Field(None, example=8272408576)
+    NanoCPUs: int | None = Field(None, examples=[4000000000])
+    MemoryBytes: int | None = Field(None, examples=[8272408576])
     GenericResources: GenericResources | None = None
 
 
@@ -2962,12 +3040,12 @@ class Health(BaseModel):
     Status: Status | None = Field(
         None,
         description='Status is one of `none`, `starting`, `healthy` or `unhealthy`\n\n- "none"      Indicates there is no healthcheck\n- "starting"  Starting indicates that the container is not yet ready\n- "healthy"   Healthy indicates that the container is running correctly\n- "unhealthy" Unhealthy indicates that the container has a problem\n',
-        example="healthy",
+        examples=["healthy"],
     )
     FailingStreak: int | None = Field(
         None,
         description="FailingStreak is the number of consecutive failures",
-        example=0,
+        examples=[0],
     )
     Log: list[HealthcheckResult] | None = Field(
         None, description="Log contains the last few results (oldest first)\n"
@@ -3048,7 +3126,7 @@ class HostConfig(Resources):
     OomScoreAdj: int | None = Field(
         None,
         description="An integer value containing the score given to the container in\norder to tune OOM killer preferences.\n",
-        example=500,
+        examples=[500],
     )
     PidMode: str | None = Field(
         None,
@@ -3096,8 +3174,8 @@ class HostConfig(Resources):
     ConsoleSize: list[ConsoleSizeItem] | None = Field(
         None,
         description="Initial console size, as an `[height, width]` array. (Windows only)\n",
-        max_items=2,
-        min_items=2,
+        max_length=2,
+        min_length=2,
     )
     Isolation: Isolation | None = Field(
         None, description="Isolation technology of the container. (Windows only)\n"
@@ -3156,48 +3234,50 @@ class EndpointSettings(BaseModel):
     """
 
     IPAMConfig: EndpointIPAMConfig | None = None
-    Links: list[str] | None = Field(None, example=["container_1", "container_2"])
-    Aliases: list[str] | None = Field(None, example=["server_x", "server_y"])
+    Links: list[str] | None = Field(None, examples=[["container_1", "container_2"]])
+    Aliases: list[str] | None = Field(None, examples=[["server_x", "server_y"]])
     NetworkID: str | None = Field(
         None,
         description="Unique ID of the network.\n",
-        example="08754567f1f40222263eab4102e1c733ae697e8e354aa9cd6e18d7402835292a",
+        examples=["08754567f1f40222263eab4102e1c733ae697e8e354aa9cd6e18d7402835292a"],
     )
     EndpointID: str | None = Field(
         None,
         description="Unique ID for the service endpoint in a Sandbox.\n",
-        example="b88f5b905aabf2893f3cbc4ee42d1ea7980bbc0a92e2c8922b1e1795298afb0b",
+        examples=["b88f5b905aabf2893f3cbc4ee42d1ea7980bbc0a92e2c8922b1e1795298afb0b"],
     )
     Gateway: str | None = Field(
-        None, description="Gateway address for this network.\n", example="172.17.0.1"
+        None, description="Gateway address for this network.\n", examples=["172.17.0.1"]
     )
     IPAddress: str | None = Field(
-        None, description="IPv4 address.\n", example="172.17.0.4"
+        None, description="IPv4 address.\n", examples=["172.17.0.4"]
     )
     IPPrefixLen: int | None = Field(
-        None, description="Mask length of the IPv4 address.\n", example=16
+        None, description="Mask length of the IPv4 address.\n", examples=[16]
     )
     IPv6Gateway: str | None = Field(
-        None, description="IPv6 gateway address.\n", example="2001:db8:2::100"
+        None, description="IPv6 gateway address.\n", examples=["2001:db8:2::100"]
     )
     GlobalIPv6Address: str | None = Field(
-        None, description="Global IPv6 address.\n", example="2001:db8::5689"
+        None, description="Global IPv6 address.\n", examples=["2001:db8::5689"]
     )
     GlobalIPv6PrefixLen: int | None = Field(
-        None, description="Mask length of the global IPv6 address.\n", example=64
+        None, description="Mask length of the global IPv6 address.\n", examples=[64]
     )
     MacAddress: str | None = Field(
         None,
         description="MAC address for the endpoint on this network.\n",
-        example="02:42:ac:11:00:04",
+        examples=["02:42:ac:11:00:04"],
     )
     DriverOpts: dict[str, str] | None = Field(
         None,
         description="DriverOpts is a mapping of driver options and values. These options\nare passed directly to the driver and are driver specific.\n",
-        example={
-            "com.example.some-label": "some-value",
-            "com.example.some-other-label": "some-other-value",
-        },
+        examples=[
+            {
+                "com.example.some-label": "some-value",
+                "com.example.some-other-label": "some-other-value",
+            }
+        ],
     )
 
 
@@ -3208,7 +3288,7 @@ class NodeDescription(BaseModel):
 
     """
 
-    Hostname: str | None = Field(None, example="bf3067039e47")
+    Hostname: str | None = Field(None, examples=["bf3067039e47"])
     Platform: Platform | None = None
     Resources: ResourceObject | None = None
     Engine: EngineDescription | None = None
@@ -3224,9 +3304,9 @@ class NodeStatus(BaseModel):
     """
 
     State: NodeState | None = None
-    Message: str | None = Field(None, example="")
+    Message: str | None = Field(None, examples=[""])
     Addr: str | None = Field(
-        None, description="IP address of the node.", example="172.17.0.2"
+        None, description="IP address of the node.", examples=["172.17.0.2"]
     )
 
 
@@ -3239,12 +3319,12 @@ class ManagerStatus(BaseModel):
 
     """
 
-    Leader: bool | None = Field(False, example=True)
+    Leader: bool | None = Field(False, examples=[True])
     Reachability: Reachability | None = None
     Addr: str | None = Field(
         None,
         description="The IP address and port at which the manager is reachable.\n",
-        example="10.0.0.46:2377",
+        examples=["10.0.0.46:2377"],
     )
 
 
@@ -3433,41 +3513,41 @@ class ContainerState(BaseModel):
     Status: Status2 | None = Field(
         None,
         description='String representation of the container state. Can be one of "created",\n"running", "paused", "restarting", "removing", "exited", or "dead".\n',
-        example="running",
+        examples=["running"],
     )
     Running: bool | None = Field(
         None,
         description='Whether this container is running.\n\nNote that a running container can be _paused_. The `Running` and `Paused`\nbooleans are not mutually exclusive:\n\nWhen pausing a container (on Linux), the freezer cgroup is used to suspend\nall processes in the container. Freezing the process requires the process to\nbe running. As a result, paused containers are both `Running` _and_ `Paused`.\n\nUse the `Status` field instead to determine if a container\'s state is "running".\n',
-        example=True,
+        examples=[True],
     )
     Paused: bool | None = Field(
-        None, description="Whether this container is paused.", example=False
+        None, description="Whether this container is paused.", examples=[False]
     )
     Restarting: bool | None = Field(
-        None, description="Whether this container is restarting.", example=False
+        None, description="Whether this container is restarting.", examples=[False]
     )
     OOMKilled: bool | None = Field(
         None,
         description="Whether this container has been killed because it ran out of memory.\n",
-        example=False,
+        examples=[False],
     )
-    Dead: bool | None = Field(None, example=False)
+    Dead: bool | None = Field(None, examples=[False])
     Pid: int | None = Field(
-        None, description="The process ID of this container", example=1234
+        None, description="The process ID of this container", examples=[1234]
     )
     ExitCode: int | None = Field(
-        None, description="The last exit code of this container", example=0
+        None, description="The last exit code of this container", examples=[0]
     )
     Error: str | None = None
     StartedAt: str | None = Field(
         None,
         description="The time when this container was last started.",
-        example="2020-01-06T09:06:59.461876391Z",
+        examples=["2020-01-06T09:06:59.461876391Z"],
     )
     FinishedAt: str | None = Field(
         None,
         description="The time when this container last exited.",
-        example="2020-01-06T09:07:59.461876391Z",
+        examples=["2020-01-06T09:07:59.461876391Z"],
     )
     Health: Health | None = None
 
@@ -3490,56 +3570,62 @@ class RegistryServiceConfig(BaseModel):
     AllowNondistributableArtifactsCIDRs: list[str] | None = Field(
         None,
         description="List of IP ranges to which nondistributable artifacts can be pushed,\nusing the CIDR syntax [RFC 4632](https://tools.ietf.org/html/4632).\n\nSome images (for example, Windows base images) contain artifacts\nwhose distribution is restricted by license. When these images are\npushed to a registry, restricted artifacts are not included.\n\nThis configuration override this behavior, and enables the daemon to\npush nondistributable artifacts to all registries whose resolved IP\naddress is within the subnet described by the CIDR syntax.\n\nThis option is useful when pushing images containing\nnondistributable artifacts to a registry on an air-gapped network so\nhosts on that network can pull the images without connecting to\nanother server.\n\n> **Warning**: Nondistributable artifacts typically have restrictions\n> on how and where they can be distributed and shared. Only use this\n> feature to push artifacts to private registries and ensure that you\n> are in compliance with any terms that cover redistributing\n> nondistributable artifacts.\n",
-        example=["::1/128", "127.0.0.0/8"],
+        examples=[["::1/128", "127.0.0.0/8"]],
     )
     AllowNondistributableArtifactsHostnames: list[str] | None = Field(
         None,
         description="List of registry hostnames to which nondistributable artifacts can be\npushed, using the format `<hostname>[:<port>]` or `<IP address>[:<port>]`.\n\nSome images (for example, Windows base images) contain artifacts\nwhose distribution is restricted by license. When these images are\npushed to a registry, restricted artifacts are not included.\n\nThis configuration override this behavior for the specified\nregistries.\n\nThis option is useful when pushing images containing\nnondistributable artifacts to a registry on an air-gapped network so\nhosts on that network can pull the images without connecting to\nanother server.\n\n> **Warning**: Nondistributable artifacts typically have restrictions\n> on how and where they can be distributed and shared. Only use this\n> feature to push artifacts to private registries and ensure that you\n> are in compliance with any terms that cover redistributing\n> nondistributable artifacts.\n",
-        example=[
-            "registry.internal.corp.example.com:3000",
-            "[2001:db8:a0b:12f0::1]:443",
+        examples=[
+            [
+                "registry.internal.corp.example.com:3000",
+                "[2001:db8:a0b:12f0::1]:443",
+            ]
         ],
     )
     InsecureRegistryCIDRs: list[str] | None = Field(
         None,
         description="List of IP ranges of insecure registries, using the CIDR syntax\n([RFC 4632](https://tools.ietf.org/html/4632)). Insecure registries\naccept un-encrypted (HTTP) and/or untrusted (HTTPS with certificates\nfrom unknown CAs) communication.\n\nBy default, local registries (`127.0.0.0/8`) are configured as\ninsecure. All other registries are secure. Communicating with an\ninsecure registry is not possible if the daemon assumes that registry\nis secure.\n\nThis configuration override this behavior, insecure communication with\nregistries whose resolved IP address is within the subnet described by\nthe CIDR syntax.\n\nRegistries can also be marked insecure by hostname. Those registries\nare listed under `IndexConfigs` and have their `Secure` field set to\n`false`.\n\n> **Warning**: Using this option can be useful when running a local\n> registry, but introduces security vulnerabilities. This option\n> should therefore ONLY be used for testing purposes. For increased\n> security, users should add their CA to their system's list of trusted\n> CAs instead of enabling this option.\n",
-        example=["::1/128", "127.0.0.0/8"],
+        examples=[["::1/128", "127.0.0.0/8"]],
     )
     IndexConfigs: dict[str, IndexInfo] | None = Field(
         None,
-        example={
-            "127.0.0.1:5000": {
-                "Name": "127.0.0.1:5000",
-                "Mirrors": [],
-                "Secure": False,
-                "Official": False,
-            },
-            "[2001:db8:a0b:12f0::1]:80": {
-                "Name": "[2001:db8:a0b:12f0::1]:80",
-                "Mirrors": [],
-                "Secure": False,
-                "Official": False,
-            },
-            "docker.io": {
-                "Name": "docker.io",
-                "Mirrors": ["https://hub-mirror.corp.example.com:5000/"],
-                "Secure": True,
-                "Official": True,
-            },
-            "registry.internal.corp.example.com:3000": {
-                "Name": "registry.internal.corp.example.com:3000",
-                "Mirrors": [],
-                "Secure": False,
-                "Official": False,
-            },
-        },
+        examples=[
+            {
+                "127.0.0.1:5000": {
+                    "Name": "127.0.0.1:5000",
+                    "Mirrors": [],
+                    "Secure": False,
+                    "Official": False,
+                },
+                "[2001:db8:a0b:12f0::1]:80": {
+                    "Name": "[2001:db8:a0b:12f0::1]:80",
+                    "Mirrors": [],
+                    "Secure": False,
+                    "Official": False,
+                },
+                "docker.io": {
+                    "Name": "docker.io",
+                    "Mirrors": ["https://hub-mirror.corp.example.com:5000/"],
+                    "Secure": True,
+                    "Official": True,
+                },
+                "registry.internal.corp.example.com:3000": {
+                    "Name": "registry.internal.corp.example.com:3000",
+                    "Mirrors": [],
+                    "Secure": False,
+                    "Official": False,
+                },
+            }
+        ],
     )
     Mirrors: list[str] | None = Field(
         None,
         description="List of registry URLs that act as a mirror for the official\n(`docker.io`) registry.\n",
-        example=[
-            "https://hub-mirror.corp.example.com:5000/",
-            "https://[2001:db8:a0b:12f0::1]/",
+        examples=[
+            [
+                "https://hub-mirror.corp.example.com:5000/",
+                "https://[2001:db8:a0b:12f0::1]/",
+            ]
         ],
     )
 
@@ -3553,30 +3639,32 @@ class SwarmInfo(BaseModel):
     NodeID: str | None = Field(
         "",
         description="Unique identifier of for this node in the swarm.",
-        example="k67qz4598weg5unwwffg6z1m1",
+        examples=["k67qz4598weg5unwwffg6z1m1"],
     )
     NodeAddr: str | None = Field(
         "",
         description="IP address at which this node can be reached by other nodes in the\nswarm.\n",
-        example="10.0.0.46",
+        examples=["10.0.0.46"],
     )
     LocalNodeState: LocalNodeState | None = None
-    ControlAvailable: bool | None = Field(False, example=True)
+    ControlAvailable: bool | None = Field(False, examples=[True])
     Error: str | None = ""
     RemoteManagers: list[PeerNode] | None = Field(
         None,
         description="List of ID's and addresses of other managers in the swarm.\n",
-        example=[
-            {"NodeID": "71izy0goik036k48jg985xnds", "Addr": "10.0.0.158:2377"},
-            {"NodeID": "79y6h1o4gv8n120drcprv5nmc", "Addr": "10.0.0.159:2377"},
-            {"NodeID": "k67qz4598weg5unwwffg6z1m1", "Addr": "10.0.0.46:2377"},
+        examples=[
+            [
+                {"NodeID": "71izy0goik036k48jg985xnds", "Addr": "10.0.0.158:2377"},
+                {"NodeID": "79y6h1o4gv8n120drcprv5nmc", "Addr": "10.0.0.159:2377"},
+                {"NodeID": "k67qz4598weg5unwwffg6z1m1", "Addr": "10.0.0.46:2377"},
+            ]
         ],
     )
     Nodes: int | None = Field(
-        None, description="Total number of nodes in the swarm.", example=4
+        None, description="Total number of nodes in the swarm.", examples=[4]
     )
     Managers: int | None = Field(
-        None, description="Total number of managers in the swarm.", example=3
+        None, description="Total number of managers in the swarm.", examples=[3]
     )
     Cluster: ClusterInfo | None = None
 
@@ -3604,73 +3692,73 @@ class NetworkSettings(BaseModel):
     Bridge: str | None = Field(
         None,
         description="Name of the network'a bridge (for example, `docker0`).",
-        example="docker0",
+        examples=["docker0"],
     )
     SandboxID: str | None = Field(
         None,
         description="SandboxID uniquely represents a container's network stack.",
-        example="9d12daf2c33f5959c8bf90aa513e4f65b561738661003029ec84830cd503a0c3",
+        examples=["9d12daf2c33f5959c8bf90aa513e4f65b561738661003029ec84830cd503a0c3"],
     )
     HairpinMode: bool | None = Field(
         None,
         description="Indicates if hairpin NAT should be enabled on the virtual interface.\n",
-        example=False,
+        examples=[False],
     )
     LinkLocalIPv6Address: str | None = Field(
         None,
         description="IPv6 unicast address using the link-local prefix.",
-        example="fe80::42:acff:fe11:1",
+        examples=["fe80::42:acff:fe11:1"],
     )
     LinkLocalIPv6PrefixLen: int | None = Field(
-        None, description="Prefix length of the IPv6 unicast address.", example="64"
+        None, description="Prefix length of the IPv6 unicast address.", examples=["64"]
     )
     Ports: PortMap | None = None
     SandboxKey: str | None = Field(
         None,
         description="SandboxKey identifies the sandbox",
-        example="/var/run/docker/netns/8ab54b426c38",
+        examples=["/var/run/docker/netns/8ab54b426c38"],
     )
     SecondaryIPAddresses: list[Address] | None = Field(None, description="")
     SecondaryIPv6Addresses: list[Address] | None = Field(None, description="")
     EndpointID: str | None = Field(
         None,
         description='EndpointID uniquely represents a service endpoint in a Sandbox.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when attached to the\n> default "bridge" network. Use the information from the "bridge"\n> network inside the `Networks` map instead, which contains the same\n> information. This field was deprecated in Docker 1.9 and is scheduled\n> to be removed in Docker 17.12.0\n',
-        example="b88f5b905aabf2893f3cbc4ee42d1ea7980bbc0a92e2c8922b1e1795298afb0b",
+        examples=["b88f5b905aabf2893f3cbc4ee42d1ea7980bbc0a92e2c8922b1e1795298afb0b"],
     )
     Gateway: str | None = Field(
         None,
         description='Gateway address for the default "bridge" network.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when attached to the\n> default "bridge" network. Use the information from the "bridge"\n> network inside the `Networks` map instead, which contains the same\n> information. This field was deprecated in Docker 1.9 and is scheduled\n> to be removed in Docker 17.12.0\n',
-        example="172.17.0.1",
+        examples=["172.17.0.1"],
     )
     GlobalIPv6Address: str | None = Field(
         None,
         description='Global IPv6 address for the default "bridge" network.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when attached to the\n> default "bridge" network. Use the information from the "bridge"\n> network inside the `Networks` map instead, which contains the same\n> information. This field was deprecated in Docker 1.9 and is scheduled\n> to be removed in Docker 17.12.0\n',
-        example="2001:db8::5689",
+        examples=["2001:db8::5689"],
     )
     GlobalIPv6PrefixLen: int | None = Field(
         None,
         description='Mask length of the global IPv6 address.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when attached to the\n> default "bridge" network. Use the information from the "bridge"\n> network inside the `Networks` map instead, which contains the same\n> information. This field was deprecated in Docker 1.9 and is scheduled\n> to be removed in Docker 17.12.0\n',
-        example=64,
+        examples=[64],
     )
     IPAddress: str | None = Field(
         None,
         description='IPv4 address for the default "bridge" network.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when attached to the\n> default "bridge" network. Use the information from the "bridge"\n> network inside the `Networks` map instead, which contains the same\n> information. This field was deprecated in Docker 1.9 and is scheduled\n> to be removed in Docker 17.12.0\n',
-        example="172.17.0.4",
+        examples=["172.17.0.4"],
     )
     IPPrefixLen: int | None = Field(
         None,
         description='Mask length of the IPv4 address.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when attached to the\n> default "bridge" network. Use the information from the "bridge"\n> network inside the `Networks` map instead, which contains the same\n> information. This field was deprecated in Docker 1.9 and is scheduled\n> to be removed in Docker 17.12.0\n',
-        example=16,
+        examples=[16],
     )
     IPv6Gateway: str | None = Field(
         None,
         description='IPv6 gateway address for this network.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when attached to the\n> default "bridge" network. Use the information from the "bridge"\n> network inside the `Networks` map instead, which contains the same\n> information. This field was deprecated in Docker 1.9 and is scheduled\n> to be removed in Docker 17.12.0\n',
-        example="2001:db8:2::100",
+        examples=["2001:db8:2::100"],
     )
     MacAddress: str | None = Field(
         None,
         description='MAC address for the container on the default "bridge" network.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when attached to the\n> default "bridge" network. Use the information from the "bridge"\n> network inside the `Networks` map instead, which contains the same\n> information. This field was deprecated in Docker 1.9 and is scheduled\n> to be removed in Docker 17.12.0\n',
-        example="02:42:ac:11:00:04",
+        examples=["02:42:ac:11:00:04"],
     )
     Networks: dict[str, EndpointSettings] | None = Field(
         None,
@@ -3695,17 +3783,17 @@ class Network(BaseModel):
 
 
 class Node(BaseModel):
-    ID: str | None = Field(None, example="24ifsmvkjbyhk")
+    ID: str | None = Field(None, examples=["24ifsmvkjbyhk"])
     Version: ObjectVersion | None = None
     CreatedAt: str | None = Field(
         None,
         description="Date and time at which the node was added to the swarm in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
-        example="2016-08-18T10:44:24.496525531Z",
+        examples=["2016-08-18T10:44:24.496525531Z"],
     )
     UpdatedAt: str | None = Field(
         None,
         description="Date and time at which the node was last updated in\n[RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format with nano-seconds.\n",
-        example="2017-08-09T07:09:37.632105588Z",
+        examples=["2017-08-09T07:09:37.632105588Z"],
     )
     Spec: NodeSpec | None = None
     Description: NodeDescription | None = None
@@ -3717,123 +3805,129 @@ class SystemInfo(BaseModel):
     ID: str | None = Field(
         None,
         description="Unique identifier of the daemon.\n\n<p><br /></p>\n\n> **Note**: The format of the ID itself is not part of the API, and\n> should not be considered stable.\n",
-        example="7TRN:IPZB:QYBB:VPBQ:UMPP:KARE:6ZNR:XE6T:7EWV:PKF4:ZOJD:TPYS",
+        examples=["7TRN:IPZB:QYBB:VPBQ:UMPP:KARE:6ZNR:XE6T:7EWV:PKF4:ZOJD:TPYS"],
     )
     Containers: int | None = Field(
-        None, description="Total number of containers on the host.", example=14
+        None, description="Total number of containers on the host.", examples=[14]
     )
     ContainersRunning: int | None = Field(
-        None, description='Number of containers with status `"running"`.\n', example=3
+        None,
+        description='Number of containers with status `"running"`.\n',
+        examples=[3],
     )
     ContainersPaused: int | None = Field(
-        None, description='Number of containers with status `"paused"`.\n', example=1
+        None, description='Number of containers with status `"paused"`.\n', examples=[1]
     )
     ContainersStopped: int | None = Field(
-        None, description='Number of containers with status `"stopped"`.\n', example=10
+        None,
+        description='Number of containers with status `"stopped"`.\n',
+        examples=[10],
     )
     Images: int | None = Field(
         None,
         description="Total number of images on the host.\n\nBoth _tagged_ and _untagged_ (dangling) images are counted.\n",
-        example=508,
+        examples=[508],
     )
     Driver: str | None = Field(
-        None, description="Name of the storage driver in use.", example="overlay2"
+        None, description="Name of the storage driver in use.", examples=["overlay2"]
     )
     DriverStatus: list[list[str]] | None = Field(
         None,
         description='Information specific to the storage driver, provided as\n"label" / "value" pairs.\n\nThis information is provided by the storage driver, and formatted\nin a way consistent with the output of `docker info` on the command\nline.\n\n<p><br /></p>\n\n> **Note**: The information returned in this field, including the\n> formatting of values and labels, should not be considered stable,\n> and may change without notice.\n',
-        example=[
-            ["Backing Filesystem", "extfs"],
-            ["Supports d_type", "true"],
-            ["Native Overlay Diff", "true"],
+        examples=[
+            [
+                ["Backing Filesystem", "extfs"],
+                ["Supports d_type", "true"],
+                ["Native Overlay Diff", "true"],
+            ]
         ],
     )
     DockerRootDir: str | None = Field(
         None,
         description="Root directory of persistent Docker state.\n\nDefaults to `/var/lib/docker` on Linux, and `C:\\ProgramData\\docker`\non Windows.\n",
-        example="/var/lib/docker",
+        examples=["/var/lib/docker"],
     )
     Plugins: PluginsInfo | None = None
     MemoryLimit: bool | None = Field(
         None,
         description="Indicates if the host has memory limit support enabled.",
-        example=True,
+        examples=[True],
     )
     SwapLimit: bool | None = Field(
         None,
         description="Indicates if the host has memory swap limit support enabled.",
-        example=True,
+        examples=[True],
     )
     KernelMemory: bool | None = Field(
         None,
         description="Indicates if the host has kernel memory limit support enabled.\n\n<p><br /></p>\n\n> **Deprecated**: This field is deprecated as the kernel 5.4 deprecated\n> `kmem.limit_in_bytes`.\n",
-        example=True,
+        examples=[True],
     )
     KernelMemoryTCP: bool | None = Field(
         None,
         description="Indicates if the host has kernel memory TCP limit support enabled.\n\nKernel memory TCP limits are not supported when using cgroups v2, which\ndoes not support the corresponding `memory.kmem.tcp.limit_in_bytes` cgroup.\n",
-        example=True,
+        examples=[True],
     )
     CpuCfsPeriod: bool | None = Field(
         None,
         description="Indicates if CPU CFS(Completely Fair Scheduler) period is supported by\nthe host.\n",
-        example=True,
+        examples=[True],
     )
     CpuCfsQuota: bool | None = Field(
         None,
         description="Indicates if CPU CFS(Completely Fair Scheduler) quota is supported by\nthe host.\n",
-        example=True,
+        examples=[True],
     )
     CPUShares: bool | None = Field(
         None,
         description="Indicates if CPU Shares limiting is supported by the host.\n",
-        example=True,
+        examples=[True],
     )
     CPUSet: bool | None = Field(
         None,
         description="Indicates if CPUsets (cpuset.cpus, cpuset.mems) are supported by the host.\n\nSee [cpuset(7)](https://www.kernel.org/doc/Documentation/cgroup-v1/cpusets.txt)\n",
-        example=True,
+        examples=[True],
     )
     PidsLimit: bool | None = Field(
         None,
         description="Indicates if the host kernel has PID limit support enabled.",
-        example=True,
+        examples=[True],
     )
     OomKillDisable: bool | None = Field(
         None, description="Indicates if OOM killer disable is supported on the host."
     )
     IPv4Forwarding: bool | None = Field(
-        None, description="Indicates IPv4 forwarding is enabled.", example=True
+        None, description="Indicates IPv4 forwarding is enabled.", examples=[True]
     )
     BridgeNfIptables: bool | None = Field(
         None,
         description="Indicates if `bridge-nf-call-iptables` is available on the host.",
-        example=True,
+        examples=[True],
     )
     BridgeNfIp6tables: bool | None = Field(
         None,
         description="Indicates if `bridge-nf-call-ip6tables` is available on the host.",
-        example=True,
+        examples=[True],
     )
     Debug: bool | None = Field(
         None,
         description="Indicates if the daemon is running in debug-mode / with debug-level\nlogging enabled.\n",
-        example=True,
+        examples=[True],
     )
     NFd: int | None = Field(
         None,
         description="The total number of file Descriptors in use by the daemon process.\n\nThis information is only returned if debug-mode is enabled.\n",
-        example=64,
+        examples=[64],
     )
     NGoroutines: int | None = Field(
         None,
         description="The  number of goroutines that currently exist.\n\nThis information is only returned if debug-mode is enabled.\n",
-        example=174,
+        examples=[174],
     )
     SystemTime: str | None = Field(
         None,
         description="Current system-time in [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt)\nformat with nano-seconds.\n",
-        example="2017-08-08T20:28:29.06202363Z",
+        examples=["2017-08-08T20:28:29.06202363Z"],
     )
     LoggingDriver: str | None = Field(
         None, description="The logging driver to use as a default for new containers.\n"
@@ -3841,121 +3935,125 @@ class SystemInfo(BaseModel):
     CgroupDriver: CgroupDriver | None = Field(
         CgroupDriver.cgroupfs,
         description="The driver to use for managing cgroups.\n",
-        example="cgroupfs",
+        examples=["cgroupfs"],
     )
     CgroupVersion: CgroupVersion | None = Field(
-        CgroupVersion.field_1, description="The version of the cgroup.\n", example="1"
+        CgroupVersion.field_1,
+        description="The version of the cgroup.\n",
+        examples=["1"],
     )
     NEventsListener: int | None = Field(
-        None, description="Number of event listeners subscribed.", example=30
+        None, description="Number of event listeners subscribed.", examples=[30]
     )
     KernelVersion: str | None = Field(
         None,
         description='Kernel version of the host.\n\nOn Linux, this information obtained from `uname`. On Windows this\ninformation is queried from the <kbd>HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\</kbd>\nregistry value, for example _"10.0 14393 (14393.1198.amd64fre.rs1_release_sec.170427-1353)"_.\n',
-        example="4.9.38-moby",
+        examples=["4.9.38-moby"],
     )
     OperatingSystem: str | None = Field(
         None,
         description='Name of the host\'s operating system, for example: "Ubuntu 16.04.2 LTS"\nor "Windows Server 2016 Datacenter"\n',
-        example="Alpine Linux v3.5",
+        examples=["Alpine Linux v3.5"],
     )
     OSVersion: str | None = Field(
         None,
         description="Version of the host's operating system\n\n<p><br /></p>\n\n> **Note**: The information returned in this field, including its\n> very existence, and the formatting of values, should not be considered\n> stable, and may change without notice.\n",
-        example="16.04",
+        examples=["16.04"],
     )
     OSType: str | None = Field(
         None,
         description='Generic type of the operating system of the host, as returned by the\nGo runtime (`GOOS`).\n\nCurrently returned values are "linux" and "windows". A full list of\npossible values can be found in the [Go documentation](https://golang.org/doc/install/source#environment).\n',
-        example="linux",
+        examples=["linux"],
     )
     Architecture: str | None = Field(
         None,
         description="Hardware architecture of the host, as returned by the Go runtime\n(`GOARCH`).\n\nA full list of possible values can be found in the [Go documentation](https://golang.org/doc/install/source#environment).\n",
-        example="x86_64",
+        examples=["x86_64"],
     )
     NCPU: int | None = Field(
         None,
         description="The number of logical CPUs usable by the daemon.\n\nThe number of available CPUs is checked by querying the operating\nsystem when the daemon starts. Changes to operating system CPU\nallocation after the daemon is started are not reflected.\n",
-        example=4,
+        examples=[4],
     )
     MemTotal: int | None = Field(
         None,
         description="Total amount of physical memory available on the host, in bytes.\n",
-        example=2095882240,
+        examples=[2095882240],
     )
     IndexServerAddress: str | None = Field(
         "https://index.docker.io/v1/",
         description="Address / URL of the index server that is used for image search,\nand as a default for user authentication for Docker Hub and Docker Cloud.\n",
-        example="https://index.docker.io/v1/",
+        examples=["https://index.docker.io/v1/"],
     )
     RegistryConfig: RegistryServiceConfig | None = None
     GenericResources: GenericResources | None = None
     HttpProxy: str | None = Field(
         None,
         description="HTTP-proxy configured for the daemon. This value is obtained from the\n[`HTTP_PROXY`](https://www.gnu.org/software/wget/manual/html_node/Proxies.html) environment variable.\nCredentials ([user info component](https://tools.ietf.org/html/rfc3986#section-3.2.1)) in the proxy URL\nare masked in the API response.\n\nContainers do not automatically inherit this configuration.\n",
-        example="http://xxxxx:xxxxx@proxy.corp.example.com:8080",
+        examples=["http://xxxxx:xxxxx@proxy.corp.example.com:8080"],
     )
     HttpsProxy: str | None = Field(
         None,
         description="HTTPS-proxy configured for the daemon. This value is obtained from the\n[`HTTPS_PROXY`](https://www.gnu.org/software/wget/manual/html_node/Proxies.html) environment variable.\nCredentials ([user info component](https://tools.ietf.org/html/rfc3986#section-3.2.1)) in the proxy URL\nare masked in the API response.\n\nContainers do not automatically inherit this configuration.\n",
-        example="https://xxxxx:xxxxx@proxy.corp.example.com:4443",
+        examples=["https://xxxxx:xxxxx@proxy.corp.example.com:4443"],
     )
     NoProxy: str | None = Field(
         None,
         description="Comma-separated list of domain extensions for which no proxy should be\nused. This value is obtained from the [`NO_PROXY`](https://www.gnu.org/software/wget/manual/html_node/Proxies.html)\nenvironment variable.\n\nContainers do not automatically inherit this configuration.\n",
-        example="*.local, 169.254/16",
+        examples=["*.local, 169.254/16"],
     )
     Name: str | None = Field(
-        None, description="Hostname of the host.", example="node5.corp.example.com"
+        None, description="Hostname of the host.", examples=["node5.corp.example.com"]
     )
     Labels: list[str] | None = Field(
         None,
         description="User-defined labels (key/value metadata) as set on the daemon.\n\n<p><br /></p>\n\n> **Note**: When part of a Swarm, nodes can both have _daemon_ labels,\n> set through the daemon configuration, and _node_ labels, set from a\n> manager node in the Swarm. Node labels are not included in this\n> field. Node labels can be retrieved using the `/nodes/(id)` endpoint\n> on a manager node in the Swarm.\n",
-        example=["storage=ssd", "production"],
+        examples=[["storage=ssd", "production"]],
     )
     ExperimentalBuild: bool | None = Field(
         None,
         description="Indicates if experimental features are enabled on the daemon.\n",
-        example=True,
+        examples=[True],
     )
     ServerVersion: str | None = Field(
         None,
         description="Version string of the daemon.\n\n> **Note**: the [standalone Swarm API](/swarm/swarm-api/)\n> returns the Swarm version instead of the daemon  version, for example\n> `swarm/1.2.8`.\n",
-        example="17.06.0-ce",
+        examples=["17.06.0-ce"],
     )
     ClusterStore: str | None = Field(
         None,
         description="URL of the distributed storage backend.\n\n\nThe storage backend is used for multihost networking (to store\nnetwork and endpoint information) and by the node discovery mechanism.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when using standalone Swarm\n> mode, and overlay networking using an external k/v store. Overlay\n> networks with Swarm mode enabled use the built-in raft store, and\n> this field will be empty.\n",
-        example="consul://consul.corp.example.com:8600/some/path",
+        examples=["consul://consul.corp.example.com:8600/some/path"],
     )
     ClusterAdvertise: str | None = Field(
         None,
         description="The network endpoint that the Engine advertises for the purpose of\nnode discovery. ClusterAdvertise is a `host:port` combination on which\nthe daemon is reachable by other hosts.\n\n<p><br /></p>\n\n> **Deprecated**: This field is only propagated when using standalone Swarm\n> mode, and overlay networking using an external k/v store. Overlay\n> networks with Swarm mode enabled use the built-in raft store, and\n> this field will be empty.\n",
-        example="node5.corp.example.com:8000",
+        examples=["node5.corp.example.com:8000"],
     )
     Runtimes: dict[str, Runtime] | None = Field(
         {"runc": {"path": "runc"}},
         description='List of [OCI compliant](https://github.com/opencontainers/runtime-spec)\nruntimes configured on the daemon. Keys hold the "name" used to\nreference the runtime.\n\nThe Docker daemon relies on an OCI compliant runtime (invoked via the\n`containerd` daemon) as its interface to the Linux kernel namespaces,\ncgroups, and SELinux.\n\nThe default runtime is `runc`, and automatically configured. Additional\nruntimes can be configured by the user and will be listed here.\n',
-        example={
-            "runc": {"path": "runc"},
-            "runc-master": {"path": "/go/bin/runc"},
-            "custom": {
-                "path": "/usr/local/bin/my-oci-runtime",
-                "runtimeArgs": ["--debug", "--systemd-cgroup=false"],
-            },
-        },
+        examples=[
+            {
+                "runc": {"path": "runc"},
+                "runc-master": {"path": "/go/bin/runc"},
+                "custom": {
+                    "path": "/usr/local/bin/my-oci-runtime",
+                    "runtimeArgs": ["--debug", "--systemd-cgroup=false"],
+                },
+            }
+        ],
     )
     DefaultRuntime: str | None = Field(
         "runc",
         description="Name of the default OCI runtime that is used when starting containers.\n\nThe default can be overridden per-container at create time.\n",
-        example="runc",
+        examples=["runc"],
     )
     Swarm: SwarmInfo | None = None
     LiveRestoreEnabled: bool | None = Field(
         False,
         description="Indicates if live restore is enabled.\n\nIf enabled, containers are kept running when the daemon is shutdown\nor upon daemon start if running containers are detected.\n",
-        example=False,
+        examples=[False],
     )
     Isolation: Isolation2 | None = Field(
         Isolation2.default,
@@ -3964,7 +4062,7 @@ class SystemInfo(BaseModel):
     InitBinary: str | None = Field(
         None,
         description="Name and, optional, path of the `docker-init` binary.\n\nIf the path is omitted, the daemon searches the host's `$PATH` for the\nbinary and uses the first result.\n",
-        example="docker-init",
+        examples=["docker-init"],
     )
     ContainerdCommit: Commit | None = None
     RuncCommit: Commit | None = None
@@ -3972,18 +4070,20 @@ class SystemInfo(BaseModel):
     SecurityOptions: list[str] | None = Field(
         None,
         description="List of security features that are enabled on the daemon, such as\napparmor, seccomp, SELinux, user-namespaces (userns), and rootless.\n\nAdditional configuration options for each security feature may\nbe present, and are included as a comma-separated list of key/value\npairs.\n",
-        example=[
-            "name=apparmor",
-            "name=seccomp,profile=default",
-            "name=selinux",
-            "name=userns",
-            "name=rootless",
+        examples=[
+            [
+                "name=apparmor",
+                "name=seccomp,profile=default",
+                "name=selinux",
+                "name=userns",
+                "name=rootless",
+            ]
         ],
     )
     ProductLicense: str | None = Field(
         None,
         description="Reports a summary of the product license on the daemon.\n\nIf a commercial license has been applied to the daemon, information\nsuch as number of nodes, and expiration are included.\n",
-        example="Community Engine",
+        examples=["Community Engine"],
     )
     DefaultAddressPools: list[DefaultAddressPool] | None = Field(
         None,
@@ -3992,9 +4092,11 @@ class SystemInfo(BaseModel):
     Warnings: list[str] | None = Field(
         None,
         description="List of warnings / informational messages about missing features, or\nissues related to the daemon configuration.\n\nThese messages can be printed by the client as information to the user.\n",
-        example=[
-            "WARNING: No memory limit support",
-            "WARNING: bridge-nf-call-iptables is disabled",
-            "WARNING: bridge-nf-call-ip6tables is disabled",
+        examples=[
+            [
+                "WARNING: No memory limit support",
+                "WARNING: bridge-nf-call-iptables is disabled",
+                "WARNING: bridge-nf-call-ip6tables is disabled",
+            ]
         ],
     )

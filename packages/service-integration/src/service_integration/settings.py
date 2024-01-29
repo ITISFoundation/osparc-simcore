@@ -1,12 +1,11 @@
-from typing import Optional
-
-from pydantic import BaseModel, BaseSettings, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Registry(BaseModel):
     url_or_prefix: str
-    user: Optional[str] = None
-    password: Optional[SecretStr] = None
+    user: str | None = None
+    password: SecretStr | None = None
 
 
 # NOTE: image names w/o a prefix default in dockerhub registry
@@ -28,9 +27,7 @@ class AppSettings(BaseSettings):
     COMPOSE_VERSION: str = Field(
         "3.7", description="version of the docker-compose spec"
     )
-
-    class Config:
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file_encoding="utf-8")
 
     # TODO: load from ~/.osparc/service-integration.json or env file
     # TODO: add access to secrets

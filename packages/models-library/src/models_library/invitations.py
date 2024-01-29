@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Final
 
 from models_library.products import ProductName
-from pydantic import BaseModel, EmailStr, Field, PositiveInt, validator
+from pydantic import BaseModel, EmailStr, Field, PositiveInt, field_validator
 
 _MAX_LEN: Final = 40
 
@@ -34,7 +34,8 @@ class InvitationInputs(BaseModel):
         description="If None, it will use INVITATIONS_DEFAULT_PRODUCT",
     )
 
-    @validator("issuer", pre=True)
+    @field_validator("issuer", mode="before")
+    @classmethod
     @classmethod
     def trim_long_issuers_to_max_length(cls, v):
         if v and isinstance(v, str):

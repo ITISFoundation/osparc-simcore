@@ -1,7 +1,13 @@
 import logging
 from typing import TypeAlias
 
-from pydantic import BaseModel, ConstrainedFloat, Field, validate_arguments, validator
+from pydantic import (
+    BaseModel,
+    ConstrainedFloat,
+    Field,
+    field_validator,
+    validate_arguments,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +52,8 @@ class TaskProgress(BaseModel):
     def create(cls) -> "TaskProgress":
         return cls.parse_obj({"message": "", "percent": 0.0})
 
-    @validator("percent")
+    @field_validator("percent")
+    @classmethod
     @classmethod
     def round_value_to_3_digit(cls, v):
         return round(v, 3)

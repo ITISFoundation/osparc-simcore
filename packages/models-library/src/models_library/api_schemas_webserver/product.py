@@ -17,6 +17,8 @@ class GetCreditPrice(OutputSchema):
         "If None, then this product's price is UNDEFINED",
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -52,9 +54,9 @@ class GetProduct(OutputSchema):
     )
 
     login_settings: dict
-    max_open_studies_per_user: PositiveInt | None
+    max_open_studies_per_user: PositiveInt | None = None
     is_payment_enabled: bool
-    credits_per_usd: NonNegativeDecimal | None
+    credits_per_usd: NonNegativeDecimal | None = None
 
     templates: list[GetProductTemplate] = Field(
         default_factory=list,
@@ -82,6 +84,8 @@ class InvitationGenerated(OutputSchema):
     created: datetime
     invitation_link: HttpUrl
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [

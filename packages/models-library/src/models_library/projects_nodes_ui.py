@@ -2,20 +2,16 @@
     Models node UI (legacy model, use instead projects.ui.py)
 """
 
-from pydantic import BaseModel, Extra, Field
-from pydantic.color import Color
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic_extra_types.color import Color
 
 
 class Position(BaseModel):
-    x: int = Field(..., description="The x position", example=["12"])
-    y: int = Field(..., description="The y position", example=["15"])
-
-    class Config:
-        extra = Extra.forbid
+    x: int = Field(..., description="The x position", examples=[["12"]])
+    y: int = Field(..., description="The y position", examples=[["15"]])
+    model_config = ConfigDict(extra="forbid")
 
 
 class Marker(BaseModel):
     color: Color = Field(...)
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")

@@ -5,7 +5,8 @@
 
 import pytest
 from models_library.errors import ErrorDict
-from pydantic import BaseModel, ValidationError, conint
+from pydantic import BaseModel, Field, ValidationError
+from typing_extensions import Annotated
 
 
 class B(BaseModel):
@@ -13,7 +14,7 @@ class B(BaseModel):
 
 
 class A(BaseModel):
-    x: conint(ge=2)
+    x: Annotated[int, Field(ge=2)]
     b: B
 
 

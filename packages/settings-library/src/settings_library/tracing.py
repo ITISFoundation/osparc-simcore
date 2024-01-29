@@ -17,5 +17,5 @@ class TracingSettings(BaseCustomSettings):
     TRACING_CLIENT_NAME: str = Field(
         default=UNDEFINED_CLIENT_NAME,
         description="Name of the application connecting the tracing service",
-        env=["HOST", "HOSTNAME", "TRACING_CLIENT_NAME"],
+        validation_alias=["HOST", "HOSTNAME", "TRACING_CLIENT_NAME"],
     )

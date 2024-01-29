@@ -1,6 +1,6 @@
 import logging
 
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BootMode
 from settings_library.utils_logging import MixinLoggingSettings
@@ -19,7 +19,7 @@ def test_mixin_logging(monkeypatch):
         # LOGGING
         LOG_LEVEL: str = Field(
             "WARNING",
-            env=[
+            validation_alias=[
                 "APPNAME_LOG_LEVEL",
                 "LOG_LEVEL",
             ],
@@ -27,7 +27,8 @@ def test_mixin_logging(monkeypatch):
 
         APPNAME_DEBUG: bool = Field(False, description="Starts app in debug mode")
 
-        @validator("LOG_LEVEL")
+        @field_validator("LOG_LEVEL")
+        @classmethod
         @classmethod
         def _v(cls, value) -> str:
             return cls.validate_log_level(value)

@@ -10,8 +10,9 @@ from typing import Any
 
 import pytest
 import settings_library.base
-from pydantic import BaseModel, BaseSettings, ValidationError
+from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
+from pydantic_settings import BaseSettings
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
 from settings_library.base import (

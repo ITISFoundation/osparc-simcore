@@ -1,14 +1,13 @@
 from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
 from typing import Any, Generic, TypeVar
 
-from pydantic import validator
-from pydantic.generics import GenericModel
+from pydantic import BaseModel, field_validator
 
 DictKey = TypeVar("DictKey")
 DictValue = TypeVar("DictValue")
 
 
-class DictModel(GenericModel, Generic[DictKey, DictValue]):
+class DictModel(BaseModel, Generic[DictKey, DictValue]):
     __root__: dict[DictKey, DictValue]
 
     def __getitem__(self, k: DictKey) -> DictValue:
@@ -45,7 +44,7 @@ class DictModel(GenericModel, Generic[DictKey, DictValue]):
 DataT = TypeVar("DataT")
 
 
-class ListModel(GenericModel, Generic[DataT]):
+class ListModel(BaseModel, Generic[DataT]):
     __root__: list[DataT]
 
     def __iter__(self):
@@ -58,7 +57,7 @@ class ListModel(GenericModel, Generic[DataT]):
         return len(self.__root__)
 
 
-class Envelope(GenericModel, Generic[DataT]):
+class Envelope(BaseModel, Generic[DataT]):
     data: DataT | None = None
     error: Any | None = None
 
@@ -66,7 +65,8 @@ class Envelope(GenericModel, Generic[DataT]):
     def parse_data(cls, obj):
         return cls.parse_obj({"data": obj})
 
-    @validator("data", pre=True)
+    @field_validator("data", mode="before")
+    @classmethod
     @classmethod
     def empty_dict_is_none(cls, v):
         if v == {}:

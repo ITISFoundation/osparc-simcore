@@ -14,9 +14,9 @@ from ._base import InputSchema, OutputSchema
 class WalletGet(OutputSchema):
     wallet_id: WalletID
     name: str
-    description: str | None
+    description: str | None = None
     owner: GroupID
-    thumbnail: str | None
+    thumbnail: str | None = None
     status: WalletStatus
     created: datetime
     modified: datetime
@@ -40,8 +40,8 @@ class CreateWalletBodyParams(OutputSchema):
 
 class PutWalletBodyParams(OutputSchema):
     name: str
-    description: str | None
-    thumbnail: str | None
+    description: str | None = None
+    thumbnail: str | None = None
     status: WalletStatus
 
 
@@ -75,7 +75,7 @@ class PaymentTransaction(OutputSchema):
     osparc_credits: Decimal
     comment: str = FieldNotRequired()
     created_at: datetime
-    completed_at: datetime | None
+    completed_at: datetime | None = None
     # SEE PaymentTransactionState enum
     state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"] = Field(
         ..., alias="completedStatus"
@@ -91,6 +91,8 @@ class PaymentMethodInitiated(OutputSchema):
         ..., description="Link to external site that holds the payment submission form"
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -109,6 +111,8 @@ class PaymentMethodTransaction(OutputSchema):
     payment_method_id: PaymentMethodID
     state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"]
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -135,6 +139,8 @@ class PaymentMethodGet(OutputSchema):
         description="If true, this payment-method is used for auto-recharge",
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -192,4 +198,4 @@ class ReplaceWalletAutoRecharge(InputSchema):
     enabled: bool
     payment_method_id: PaymentMethodID
     top_up_amount_in_usd: NonNegativeDecimal
-    monthly_limit_in_usd: NonNegativeDecimal | None
+    monthly_limit_in_usd: NonNegativeDecimal | None = None

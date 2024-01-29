@@ -24,8 +24,8 @@ class ServiceRunGet(
     BaseModel
 ):  # NOTE: this is already in use so I didnt modidy inheritance from OutputSchema
     service_run_id: ServiceRunId
-    wallet_id: WalletID | None
-    wallet_name: str | None
+    wallet_id: WalletID | None = None
+    wallet_name: str | None = None
     user_id: UserID
     project_id: ProjectID
     project_name: str
@@ -36,7 +36,7 @@ class ServiceRunGet(
     service_type: str
     service_resources: dict
     started_at: datetime
-    stopped_at: datetime | None
+    stopped_at: datetime | None = None
     service_run_status: ServiceRunStatus
 
 

@@ -4,10 +4,11 @@
 
 import re
 from copy import deepcopy
-from typing import Any, ClassVar, TypeAlias, Union
+from typing import Any, TypeAlias, Union
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     ConstrainedStr,
     Extra,
     Field,
@@ -15,7 +16,7 @@ from pydantic import (
     StrictBool,
     StrictFloat,
     StrictInt,
-    validator,
+    field_validator,
 )
 
 from .basic_types import EnvVarKey, HttpUrlWithCustomMinLength
@@ -90,28 +91,7 @@ class NodeState(BaseModel):
         le=1.0,
         description="current progress of the task if available (None if not started or not a computational task)",
     )
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "modified": True,
-                    "dependencies": [],
-                    "currentStatus": "NOT_STARTED",
-                },
-                {
-                    "modified": True,
-                    "dependencies": ["42838344-03de-4ce2-8d93-589a5dcdfd05"],
-                    "currentStatus": "ABORTED",
-                },
-                {
-                    "modified": False,
-                    "dependencies": [],
-                    "currentStatus": "SUCCESS",
-                },
-            ]
-        }
+    model_config = ConfigDict(extra="forbid")
 
 
 class Node(BaseModel):
@@ -208,7 +188,8 @@ class Node(BaseModel):
         ),
     )
 
-    @validator("thumbnail", pre=True)
+    @field_validator("thumbnail", mode="before")
+    @classmethod
     @classmethod
     def convert_empty_str_to_none(cls, v):
         if isinstance(v, str) and v == "":
@@ -221,7 +202,8 @@ class Node(BaseModel):
             return RunningState.FAILED
         return RunningState(v)
 
-    @validator("state", pre=True)
+    @field_validator("state", mode="before")
+    @classmethod
     @classmethod
     def convert_from_enum(cls, v):
         if isinstance(v, str):
@@ -230,6 +212,8 @@ class Node(BaseModel):
             return NodeState(currentStatus=running_state_value)
         return v
 
+    # TODO[pydantic]: We couldn't refactor this class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config:
         extra = Extra.forbid
         # NOTE: exporting without this trick does not make runHash as nullable.

@@ -6,7 +6,7 @@ from pydantic import (
     Field,
     HttpUrl,
     NonNegativeFloat,
-    root_validator,
+    model_validator,
     validator,
 )
 from pydantic.networks import AnyUrl
@@ -44,7 +44,8 @@ AvailableResources: TypeAlias = DictModel[str, PositiveFloat]
 
 
 class UsedResources(DictModel[str, NonNegativeFloat]):
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     @classmethod
     def ensure_negative_value_is_zero(cls, values):
         # dasks adds/remove resource values and sometimes
@@ -72,6 +73,8 @@ class Scheduler(BaseModel):
     status: str = Field(..., description="The running status of the scheduler")
     workers: WorkersDict | None = Field(default_factory=dict)
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("workers", pre=True, always=True)
     @classmethod
     def ensure_workers_is_empty_dict(cls, v):
@@ -95,10 +98,13 @@ class ClusterGet(Cluster):
         alias="accessRights", default_factory=dict
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(Cluster.Config):
         allow_population_by_field_name = True
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     @classmethod
     def ensure_access_rights_converted(cls, values):
         if "access_rights" in values:
@@ -112,12 +118,14 @@ class ClusterDetailsGet(ClusterDetails):
 
 
 class ClusterCreate(BaseCluster):
-    owner: GroupID | None
+    owner: GroupID | None = None
     authentication: ExternalClusterAuthentication
     access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
     )
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("thumbnail", always=True, pre=True)
     @classmethod
     def set_default_thumbnail_if_empty(cls, v, values):
@@ -131,6 +139,8 @@ class ClusterCreate(BaseCluster):
             return default_thumbnails[cluster_type]
         return v
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseCluster.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -166,17 +176,19 @@ class ClusterCreate(BaseCluster):
 
 
 class ClusterPatch(BaseCluster):
-    name: str | None
-    description: str | None
-    type: ClusterTypeInModel | None
-    owner: GroupID | None
-    thumbnail: HttpUrl | None
-    endpoint: AnyUrl | None
-    authentication: ExternalClusterAuthentication | None
+    name: str | None = None
+    description: str | None = None
+    type: ClusterTypeInModel | None = None
+    owner: GroupID | None = None
+    thumbnail: HttpUrl | None = None
+    endpoint: AnyUrl | None = None
+    authentication: ExternalClusterAuthentication | None = None
     access_rights: dict[GroupID, ClusterAccessRights] | None = Field(
-        alias="accessRights"
+        None, alias="accessRights"
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseCluster.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [

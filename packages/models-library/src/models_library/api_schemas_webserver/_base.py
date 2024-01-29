@@ -5,38 +5,36 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, ConfigDict
 
 from ..utils.change_case import snake_to_camel
 
 
 class EmptyModel(BaseModel):
-    # Used to represent body={}
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class InputSchemaWithoutCameCase(BaseModel):
-    # Added to tmp keep backwards compatibility
-    # until all bodies are updated
-    #
-    class Config:
-        allow_population_by_field_name = False
-        extra = Extra.ignore  # Non-strict inputs policy: Used to prune extra field
-        allow_mutations = False
+    model_config = ConfigDict(
+        populate_by_name=False, extra="ignore", allow_mutations=False
+    )
 
 
 class InputSchema(BaseModel):
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(InputSchemaWithoutCameCase.Config):  # type: ignore[pydantic-alias]
         alias_generator = snake_to_camel
 
 
 class OutputSchema(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.ignore  # Used to prune extra fields from internal data
-        allow_mutations = False
-        alias_generator = snake_to_camel
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        extra="ignore",
+        allow_mutations=False,
+        alias_generator=snake_to_camel,
+    )
 
     def data(
         self,

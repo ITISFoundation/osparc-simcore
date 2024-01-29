@@ -10,7 +10,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, ConfigDict, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -39,9 +39,7 @@ class MyRequestContext(BaseModel):
 
 class MyRequestPathParams(BaseModel):
     project_uuid: UUID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @classmethod
     def create_fake(cls, faker: Faker):

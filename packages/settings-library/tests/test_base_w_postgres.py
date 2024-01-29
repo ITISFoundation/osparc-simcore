@@ -49,7 +49,7 @@ def model_classes_factory() -> Callable:
 
             POSTGRES_CLIENT_NAME: str | None = Field(
                 None,
-                env=["HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"],
+                validation_alias=["HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"],
             )
 
         #
