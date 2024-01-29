@@ -309,7 +309,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .on_conflict_do_nothing()
             )
 
-    async def list_projects(
+    async def list_projects(  # pylint: disable=too-many-arguments
         self,
         user_id: PositiveInt,
         *,
