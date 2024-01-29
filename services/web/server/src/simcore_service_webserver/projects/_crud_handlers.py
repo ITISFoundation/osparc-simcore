@@ -167,7 +167,7 @@ async def list_projects(request: web.Request):
         limit=query_params.limit,
         offset=query_params.offset,
         search=query_params.search,
-        order_by=parse_obj_as(OrderBy | None, query_params.order_by),
+        order_by=parse_obj_as(OrderBy, query_params.order_by),
     )
 
     page = Page[ProjectDict].parse_obj(

@@ -5,7 +5,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 """
 
 from models_library.projects import ProjectID
-from models_library.rest_ordering import OrderBy
+from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import BaseModel, Extra, Field, Json, validator
 
@@ -55,8 +55,8 @@ class ProjectListParams(PageQueryParameters):
 
 
 class ProjectListWithJsonStrParams(ProjectListParams):
-    order_by: Json[OrderBy | None] = Field(  # pylint: disable=unsubscriptable-object
-        default=None,
+    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
+        default=OrderBy(field="last_change_date", direction=OrderDirection.DESC),
         description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "prj_owner", "direction": "desc"}',
         alias="order_by",

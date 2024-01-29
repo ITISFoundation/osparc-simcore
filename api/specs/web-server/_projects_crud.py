@@ -64,9 +64,9 @@ async def list_projects(
         Json | None,
         Query(
             description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
-            example='{"field": "prj_owner", "direction": "desc"}',
+            example='{"field": "last_change_date", "direction": "desc"}',
         ),
-    ] = None,
+    ] = '{"field": "last_change_date", "direction": "desc"}',
 ):
     ...
 

@@ -54,7 +54,7 @@ async def list_projects(
     offset: NonNegativeInt,
     limit: int,
     search: str | None,
-    order_by: OrderBy | None,
+    order_by: OrderBy,
 ) -> tuple[list[ProjectDict], int]:
     app = request.app
     db = ProjectDBAPI.get_from_app_context(app)

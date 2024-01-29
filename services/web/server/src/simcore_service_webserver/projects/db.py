@@ -44,7 +44,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesRepo,
 )
 from simcore_postgres_database.webserver_models import ProjectType, projects, users
-from sqlalchemy import desc, func, literal_column
+from sqlalchemy import func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_
 from tenacity import TryAgain
@@ -321,7 +321,9 @@ class ProjectDBAPI(BaseProjectDB):
         offset: int | None = 0,
         limit: int | None = None,
         search: str | None = None,
-        order_by: OrderBy | None = None,
+        order_by: OrderBy = OrderBy(
+            field="last_change_date", direction=OrderDirection.DESC
+        ),
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
@@ -367,14 +369,10 @@ class ProjectDBAPI(BaseProjectDB):
                     | (users.c.name.ilike(f"%{search}%"))
                 )
 
-            if order_by:
-                if order_by.direction == OrderDirection.ASC:
-                    query = query.order_by(sa.asc(order_by.field))
-                else:
-                    query = query.order_by(sa.desc(order_by.field))
+            if order_by.direction == OrderDirection.ASC:
+                query = query.order_by(sa.asc(order_by.field))
             else:
-                # Default ordering
-                query = query.order_by(desc(projects.c.last_change_date), projects.c.id)
+                query = query.order_by(sa.desc(order_by.field))
 
             total_number_of_projects = await conn.scalar(
                 query.with_only_columns(func.count()).order_by(None)
