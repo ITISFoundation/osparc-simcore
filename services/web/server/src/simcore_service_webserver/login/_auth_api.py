@@ -6,6 +6,7 @@ from simcore_postgres_database.models.users import UserStatus
 from simcore_postgres_database.utils_users import UsersRepo
 
 from ..db.plugin import get_database_engine
+from ..groups.api import is_user_by_email_in_group
 from ..products.api import Product
 from ..security.api import check_password, encrypt_password
 from ._constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
@@ -25,7 +26,7 @@ async def create_user(
     email: str,
     password: str,
     status: UserStatus,
-    expires_at: datetime | None
+    expires_at: datetime | None,
 ) -> dict:
 
     async with get_database_engine(app).acquire() as conn:
@@ -39,7 +40,7 @@ async def create_user(
     return dict(user.items())
 
 
-async def check_authorized_user_or_raise(
+async def check_authorized_user_credentials_or_raise(
     user: dict,
     password: str,
     product: Product,
@@ -56,5 +57,23 @@ async def check_authorized_user_or_raise(
         raise web.HTTPUnauthorized(
             reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )
-
     return user
+
+
+async def check_authorized_user_in_product_or_raise(
+    app: web.Application,
+    *,
+    user: dict,
+    product: Product,
+) -> None:
+    """Checks whether user is registered in this product"""
+    email = user.get("email", "").lower()
+    product_group_id = product.group_id
+    assert product_group_id is not None  # nosec
+
+    if product_group_id is not None and not await is_user_by_email_in_group(
+        app, user_email=email, group_id=product_group_id
+    ):
+        raise web.HTTPUnauthorized(
+            reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
+        )

@@ -126,6 +126,8 @@ tomli==2.0.1
     #   pyproject-hooks
 tomlkit==0.12.3
     # via pylint
+types-cachetools==5.3.0.7
+    # via -r requirements/_tools.in
 typing-extensions==4.3.0
     # via
     #   -c requirements/_base.txt
