@@ -147,7 +147,7 @@ async def list_resource_usage_services(request: web.Request):
         wallet_id=query_params.wallet_id,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=parse_obj_as(OrderBy | None, query_params.order_by),
+        order_by=parse_obj_as(OrderBy, query_params.order_by),
         filters=parse_obj_as(ServiceResourceUsagesFilters | None, query_params.filters),
     )
 
