@@ -194,7 +194,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __confirmUpdate: function() {
-      this.__openButton.setLabel("Update");
       this.__openButton.addListenerOnce("tap", () => {
         const msg = this.tr("Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?");
         const win = new osparc.dashboard.ResourceUpgradeHelper(msg).set({
