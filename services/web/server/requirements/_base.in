@@ -18,7 +18,6 @@
 --requirement ../../../../packages/service-library/requirements/_aiohttp.in
 
 
-
 aio-pika # RabbitMQ client
 aiocache
 aiodebug # asyncio debug
@@ -31,12 +30,14 @@ aiohttp-swagger[performance]
 aiopg[sa] # db
 aiosmtplib # email
 asyncpg # db
+cachetools # caching for sync functions
 cryptography # security
 faker # Only used in dev-mode for proof-of-concepts
 gunicorn[setproctitle]
 jinja_app_loader # email
 json2html
 jsondiff
+msgpack
 openpyxl # excel
 orjson  # json
 packaging

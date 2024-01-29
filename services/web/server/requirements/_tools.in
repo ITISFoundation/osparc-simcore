@@ -4,5 +4,5 @@
 
 --requirement ../../../../requirements/devenv.txt
 
-# for gunicorn reloading mechanism
-inotify
+inotify # for gunicorn reloading mechanism
+types-cachetools

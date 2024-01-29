@@ -3,14 +3,5 @@
 # Include this file with --contraints
 #
 
-# BREAKING CHANGES:
-# -> tests will fail with
-#   RuntimeError: There is already a profiler running.
-#   You cannot run multiple profilers in the same thread or async context, unless you disable async support.
-#
-# SEE https://github.com/joerick/pyinstrument#v400release
-pyinstrument<4
-
-
 # SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_url_compose_changed_with_latest_release
 yarl<1.6

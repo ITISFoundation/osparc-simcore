@@ -2080,6 +2080,17 @@ paths:
       summary: List Projects
       operationId: list_projects
       parameters:
+      - description: Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date)
+          and direction (asc|desc). The default sorting order is ascending.
+        required: false
+        schema:
+          title: Order By
+          description: Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date)
+            and direction (asc|desc). The default sorting order is ascending.
+          default: '{"field": "last_change_date", "direction": "desc"}'
+        example: '{"field": "last_change_date", "direction": "desc"}'
+        name: order_by
+        in: query
       - required: false
         schema:
           title: Limit

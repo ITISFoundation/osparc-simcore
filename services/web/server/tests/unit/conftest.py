@@ -1,9 +1,3 @@
-""" Configuration for unit testing
-
-    - Any interaction with other app MUST be emulated with fakes/mocks
-    - ONLY external apps allowed is postgress (see unit/with_postgres)
-"""
-
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
@@ -12,11 +6,11 @@
 
 
 import json
-import logging
 import sys
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 import yaml
@@ -29,9 +23,6 @@ from simcore_service_webserver.rest._utils import (
 )
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-
-log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
@@ -76,7 +67,7 @@ def activity_data(fake_data_dir: Path) -> Iterable[dict[str, Any]]:
 
 
 @pytest.fixture
-def mock_orphaned_services(mocker):
+def mock_orphaned_services(mocker) -> MagicMock:
     return mocker.patch(
         "simcore_service_webserver.garbage_collector._core.remove_orphaned_services",
         return_value="",
