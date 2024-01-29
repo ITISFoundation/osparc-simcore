@@ -331,14 +331,11 @@ pydantic==1.9.0
     #   -r requirements/_base.in
 pygments==2.15.1
     # via rich
-pyinstrument==3.4.2
+pyinstrument==4.6.1
     # via
     #   -c requirements/../../../../packages/service-library/requirements/./_base.in
-    #   -c requirements/./constraints.txt
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-pyinstrument-cext==0.2.4
-    # via pyinstrument
 pyjwt==2.4.0
     # via twilio
 pyrsistent==0.18.1
