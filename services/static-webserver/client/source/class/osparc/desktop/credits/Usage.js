@@ -35,8 +35,10 @@ qx.Class.define("osparc.desktop.credits.Usage", {
       this._removeAll();
 
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
       const lbl = new qx.ui.basic.Label("Select a credit account:");
       container.add(lbl);
+
       const selectBoxContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const walletSelectBox = new qx.ui.form.SelectBox().set({
         allowStretchX: false,
@@ -52,6 +54,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
       this.__fetchingImg.getContentElement().addClass("rotate");
       selectBoxContainer.add(this.__fetchingImg);
       container.add(selectBoxContainer);
+
       const filterContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox())
       this.__dateFilters = new osparc.desktop.credits.DateFilters();
       this.__dateFilters.addListener("change", e => {
@@ -71,7 +74,9 @@ qx.Class.define("osparc.desktop.credits.Usage", {
       });
       filterContainer.add(this.__exportButton);
       container.add(filterContainer);
+
       this._add(container);
+
       walletSelectBox.addListener("changeSelection", e => {
         if (walletSelectBox.getSelection().length) {
           this.__selectedWallet = walletSelectBox.getSelection()[0].getModel()
@@ -90,6 +95,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
           }
         }
       });
+
       this.__userWallets.forEach(wallet => {
         walletSelectBox.add(new qx.ui.form.ListItem(wallet.getName(), null, wallet));
       });
