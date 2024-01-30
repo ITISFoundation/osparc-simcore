@@ -106,8 +106,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           });
           break;
         case "reset-button":
-          control = new qx.ui.toolbar.Button(null, "@MaterialIcons/close/12").set({
-            appearance: "text-button",
+          control = new qx.ui.toolbar.Button(null, "@MaterialIcons/close/20").set({
+            cursor: "pointer",
             paddingLeft: 0,
             paddingRight: 10,
             alignY: "middle",

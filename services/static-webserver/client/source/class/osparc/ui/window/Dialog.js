@@ -117,8 +117,9 @@ qx.Class.define("osparc.ui.window.Dialog", {
     addCancelButton: function() {
       const cancelButton = this.getChildControl("cancel-button");
       cancelButton.set({
-        font: "text-14",
-        textColor: "link"
+        appearance: "form-button-outlined",
+        center: true,
+        minWidth: 100
       });
       cancelButton.addListener("mouseover", event => console.log(event), this);
       cancelButton.addListener("execute", () => this.close(), this);
