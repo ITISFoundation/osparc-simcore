@@ -230,6 +230,12 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "no-border-2": {
+      style: {
+        width: 0
+      }
+    },
+
     "border-status": {
       decorator: qx.ui.decoration.MSingleBorder,
       style: {
