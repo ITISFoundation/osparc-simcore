@@ -3,6 +3,7 @@ from collections.abc import Coroutine
 from typing import Any
 
 import distributed
+from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl
 
 _logger = logging.getLogger(__name__)
@@ -17,9 +18,21 @@ async def _wrap_client_async_routine(
     return await client_coroutine
 
 
-async def ping_scheduler(url: AnyUrl) -> bool:
+async def ping_scheduler(
+    url: AnyUrl, authentication: InternalClusterAuthentication
+) -> bool:
     try:
-        async with distributed.Client(url, asynchronous=True, timeout="5"):
+        security = distributed.Security()
+        if isinstance(authentication, TLSAuthentication):
+            security = distributed.Security(
+                tls_ca_file=f"{authentication.tls_ca_file}",
+                tls_client_cert=f"{authentication.tls_client_cert}",
+                tls_client_key=f"{authentication.tls_client_key}",
+                require_encryption=True,
+            )
+        async with distributed.Client(
+            url, asynchronous=True, timeout="5", security=security
+        ):
             ...
         return True
     except OSError:
@@ -31,8 +44,18 @@ async def ping_scheduler(url: AnyUrl) -> bool:
     return False
 
 
-async def is_scheduler_busy(url: AnyUrl) -> bool:
-    async with distributed.Client(url, asynchronous=True) as client:
+async def is_scheduler_busy(
+    url: AnyUrl, authentication: InternalClusterAuthentication
+) -> bool:
+    security = distributed.Security()
+    if isinstance(authentication, TLSAuthentication):
+        security = distributed.Security(
+            tls_ca_file=f"{authentication.tls_ca_file}",
+            tls_client_cert=f"{authentication.tls_client_cert}",
+            tls_client_key=f"{authentication.tls_client_key}",
+            require_encryption=True,
+        )
+    async with distributed.Client(url, asynchronous=True, security=security) as client:
         datasets_on_scheduler = await _wrap_client_async_routine(client.list_datasets())
         _logger.info("cluster currently has %s datasets", len(datasets_on_scheduler))
         num_processing_tasks = 0

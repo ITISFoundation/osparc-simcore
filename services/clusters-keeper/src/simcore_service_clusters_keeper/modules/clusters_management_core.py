@@ -14,7 +14,7 @@ from ..modules.clusters import (
     get_cluster_workers,
     set_instance_heartbeat,
 )
-from ..utils.dask import get_scheduler_url
+from ..utils.dask import get_scheduler_auth, get_scheduler_url
 from ..utils.ec2 import HEARTBEAT_TAG_KEY
 from .dask import is_scheduler_busy, ping_scheduler
 
@@ -78,14 +78,17 @@ async def _find_terminateable_instances(
 
 
 async def check_clusters(app: FastAPI) -> None:
+
     instances = await get_all_clusters(app)
     connected_intances = [
         instance
         for instance in instances
-        if await ping_scheduler(get_scheduler_url(instance))
+        if await ping_scheduler(get_scheduler_url(instance), get_scheduler_auth(app))
     ]
     for instance in connected_intances:
-        is_busy = await is_scheduler_busy(get_scheduler_url(instance))
+        is_busy = await is_scheduler_busy(
+            get_scheduler_url(instance), get_scheduler_auth(app)
+        )
         _logger.info(
             "%s currently %s",
             f"{instance.id=} for {instance.tags=}",

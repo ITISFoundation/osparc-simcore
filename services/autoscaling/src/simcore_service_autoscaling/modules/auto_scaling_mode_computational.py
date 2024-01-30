@@ -4,6 +4,7 @@ from typing import cast
 
 from aws_library.ec2.models import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
+from models_library.clusters import InternalClusterAuthentication
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerLabelKey,
@@ -36,6 +37,12 @@ def _scheduler_url(app: FastAPI) -> AnyUrl:
     return app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL
 
 
+def _scheduler_auth(app: FastAPI) -> InternalClusterAuthentication:
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_DASK  # nosec
+    return app_settings.AUTOSCALING_DASK.DASK_SCHEDULER_AUTH
+
+
 class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     async def get_monitored_nodes(app: FastAPI) -> list[Node]:
@@ -58,10 +65,12 @@ class ComputationalAutoscaling(BaseAutoscaling):
     @staticmethod
     async def list_unrunnable_tasks(app: FastAPI) -> list[DaskTask]:
         try:
-            unrunnable_tasks = await dask.list_unrunnable_tasks(_scheduler_url(app))
+            unrunnable_tasks = await dask.list_unrunnable_tasks(
+                _scheduler_url(app), _scheduler_auth(app)
+            )
             # NOTE: any worker "processing" more than 1 task means that the other tasks are queued!
             processing_tasks_by_worker = await dask.list_processing_tasks_per_worker(
-                _scheduler_url(app)
+                _scheduler_url(app), _scheduler_auth(app)
             )
             queued_tasks = []
             for tasks in processing_tasks_by_worker.values():
@@ -107,13 +116,13 @@ class ComputationalAutoscaling(BaseAutoscaling):
     ) -> Resources:
         try:
             num_results_in_memory = await dask.get_worker_still_has_results_in_memory(
-                _scheduler_url(app), instance.ec2_instance
+                _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
             )
             if num_results_in_memory > 0:
                 # NOTE: this is a trick to consider the node still useful
                 return Resources(cpus=0, ram=ByteSize(1024 * 1024 * 1024))
             return await dask.get_worker_used_resources(
-                _scheduler_url(app), instance.ec2_instance
+                _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
             )
         except (DaskWorkerNotFoundError, DaskNoWorkersError):
             return Resources.create_as_empty()
@@ -139,7 +148,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
     ) -> Resources:
         try:
             return await dask.compute_cluster_total_resources(
-                _scheduler_url(app), instances
+                _scheduler_url(app), _scheduler_auth(app), instances
             )
         except DaskNoWorkersError:
             return Resources.create_as_empty()
@@ -153,9 +162,9 @@ class ComputationalAutoscaling(BaseAutoscaling):
 
         # now check if dask-scheduler is available
         return await dask.is_worker_connected(
-            _scheduler_url(app), instance.ec2_instance
+            _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
         )
 
     @staticmethod
     async def try_retire_nodes(app: FastAPI) -> None:
-        await dask.try_retire_nodes(_scheduler_url(app))
+        await dask.try_retire_nodes(_scheduler_url(app), _scheduler_auth(app))

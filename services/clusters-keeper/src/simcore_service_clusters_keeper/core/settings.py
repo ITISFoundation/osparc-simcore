@@ -10,6 +10,7 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
+from models_library.clusters import InternalClusterAuthentication
 from pydantic import Field, NonNegativeInt, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -140,6 +141,19 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         description="Allows to define tags that should be added to the created EC2 instance default tags. "
         "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
     )
+    PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE: str = Field(
+        ...,
+        description="ARN the EC2 instance should be attached to (example: arn:aws:iam::XXXXX:role/NAME), to disable pass an empty string",
+    )
+    PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA: str = Field(
+        ..., description="Name of the dask TLC CA in AWS Parameter Store"
+    )
+    PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT: str = Field(
+        ..., description="Name of the dask TLC certificate in AWS Parameter Store"
+    )
+    PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY: str = Field(
+        ..., description="Name of the dask TLC key in AWS Parameter Store"
+    )
 
     @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
@@ -254,6 +268,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: str = Field(
         ...,
         description="defines the image tag to use for the computational backend sidecar image (NOTE: it currently defaults to use itisfoundation organisation in Dockerhub)",
+    )
+
+    CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: InternalClusterAuthentication = Field(
+        ...,
+        description="defines the authentication of the clusters created via clusters-keeper (can be None or TLS)",
     )
 
     CLUSTERS_KEEPER_DASK_NTHREADS: NonNegativeInt = Field(
