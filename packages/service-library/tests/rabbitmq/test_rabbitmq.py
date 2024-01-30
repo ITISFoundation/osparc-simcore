@@ -462,3 +462,45 @@ async def test_unsubscribe_consumer(
     await client.unsubscribe(exchange_name)
     with pytest.raises(aio_pika.exceptions.ChannelNotFoundEntity):
         await client.unsubscribe(exchange_name)
+
+
+@pytest.mark.parametrize("max_requeue_retry", [None, 3, 10])
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
+async def test_subscribe_to_failing_message_handler(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    max_requeue_retry: int | None,
+):
+    message_intercepted = mock.AsyncMock()
+
+    async def _faulty_message_handler(message: Any) -> bool:
+        message_intercepted()
+        msg = f"Always fail. Received message {message}"
+        raise RuntimeError(msg)
+
+    exchange_name = f"{random_exchange_name()}"
+    client = create_rabbitmq_client("consumer")
+
+    await client.subscribe(
+        exchange_name,
+        _faulty_message_handler,
+        exclusive_queue=False,
+        max_retries_upon_error=max_requeue_retry,
+    )
+
+    publisher = create_rabbitmq_client("publisher")
+    message = random_rabbit_message()
+    await publisher.publish(exchange_name, message)
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(2),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            if max_requeue_retry is None:
+                assert message_intercepted.call_count > 100
+            else:
+                assert message_intercepted.call_count == max_requeue_retry + 1
