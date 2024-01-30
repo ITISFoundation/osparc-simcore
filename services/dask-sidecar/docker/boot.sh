@@ -34,35 +34,57 @@ fi
 # RUNNING application ----------------------------------------
 #
 # - If DASK_START_AS_SCHEDULER is set, then it boots as scheduler otherwise as worker
-# - SEE https://docs.dask.org/en/latest/setup/cli.html
-# - SEE https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
-# - FIXME: create command prefix: https://unix.stackexchange.com/questions/444946/how-can-we-run-a-command-stored-in-a-variable
 #
+
+mkdir --parents /home/scu/.config/dask
+cat >/home/scu/.config/dask/distributed.yaml <<EOF
+logging:
+  distributed: ${LOG_LEVEL:-warning}
+  distributed.scheduler: ${LOG_LEVEL:-warning}
+EOF
+
+# Check if DASK_TLS_CA_FILE is present
+if [ -n "${DASK_TLS_CA_FILE:-}" ]; then
+  print_info "TLS authentication enabled"
+  cat >>/home/scu/.config/dask/distributed.yaml <<EOF
+distributed:
+  comm:
+    default-scheme: tls
+    require-encryption: true
+    tls:
+      ca-file: ${DASK_TLS_CA_FILE}
+      scheduler:
+        key: ${DASK_TLS_KEY}
+        cert: ${DASK_TLS_CERT}
+      worker:
+        key: ${DASK_TLS_KEY}
+        cert: ${DASK_TLS_CERT}
+      client:
+        key: ${DASK_TLS_KEY}
+        cert: ${DASK_TLS_CERT}
+EOF
+fi
 
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   scheduler_version=$(dask scheduler --version)
-  mkdir --parents /home/scu/.config/dask
-  dask_logging=$(printf "logging:\n  distributed: %s\n  distributed.scheduler: %s" "${LOG_LEVEL:-warning}" "${LOG_LEVEL:-warning}")
-  echo "$dask_logging" >> /home/scu/.config/dask/distributed.yaml
-
   print_info "Starting as dask scheduler:${scheduler_version}..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     exec watchmedo auto-restart \
-        --recursive \
-        --pattern="*.py;*/src/*" \
-        --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
-        --ignore-directories -- \
-        dask scheduler \
-        --preload simcore_service_dask_sidecar.scheduler
+      --recursive \
+      --pattern="*.py;*/src/*" \
+      --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
+      --ignore-directories -- \
+      dask scheduler \
+      --preload simcore_service_dask_sidecar.scheduler
   else
     exec dask scheduler \
-    --preload simcore_service_dask_sidecar.scheduler
+      --preload simcore_service_dask_sidecar.scheduler
 
   fi
 
 else
   DASK_WORKER_VERSION=$(dask worker --version)
-  DASK_SCHEDULER_URL=${DASK_SCHEDULER_URL:="tcp://${DASK_SCHEDULER_HOST}:8786"}
+  DASK_SCHEDULER_URL=${DASK_SCHEDULER_URL:="tls://${DASK_SCHEDULER_HOST}:8786"}
 
   #
   # DASK RESOURCES DEFINITION

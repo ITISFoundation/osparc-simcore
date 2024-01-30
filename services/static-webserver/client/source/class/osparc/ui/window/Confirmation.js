@@ -26,6 +26,10 @@ qx.Class.define("osparc.ui.window.Confirmation", {
     this.addCancelButton();
 
     const confirmButton = this.__confirmButton = new qx.ui.form.Button();
+    confirmButton.set({
+      center: true,
+      minWidth: 100
+    });
     this.bind("confirmText", confirmButton, "label");
     confirmButton.addListener("execute", () => {
       this.setConfirmed(true);

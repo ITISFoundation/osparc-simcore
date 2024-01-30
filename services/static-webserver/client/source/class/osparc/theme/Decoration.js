@@ -26,7 +26,7 @@ qx.Theme.define("osparc.theme.Decoration", {
         backgroundColor: "material-button-background",
         transitionProperty: ["background-color", "border-color", "opacity"],
         transitionDuration: "0.25s",
-        transitionTimingFunction: "ease-in-out",
+        transitionTimingFunction: "linear",
         shadowColor: "transparent"
       }
     },
@@ -391,10 +391,12 @@ qx.Theme.define("osparc.theme.Decoration", {
         backgroundColor: "default-button-background"
       }
     },
-    "text-button": {
+    "form-button-text": {
       style: {
         width: 0,
-        radius: 0
+        radius: 0,
+        color: null,
+        backgroundColor: null
       }
     },
 

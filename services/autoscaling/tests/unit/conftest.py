@@ -215,6 +215,7 @@ def enabled_computational_mode(
         {
             "AUTOSCALING_DASK": "{}",
             "DASK_MONITORING_URL": faker.url(),
+            "DASK_SCHEDULER_AUTH": "{}",
             "DASK_MONITORING_USER_NAME": faker.user_name(),
             "DASK_MONITORING_PASSWORD": faker.password(),
         },

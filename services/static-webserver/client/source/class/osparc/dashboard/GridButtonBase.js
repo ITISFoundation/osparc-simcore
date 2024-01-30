@@ -190,6 +190,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           break;
         case "title":
           control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-light",
             font: "text-16",
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().TITLE_MAX_HEIGHT,
@@ -217,6 +218,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         }
         case "subtitle-text": {
           control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-dark",
             alignY: "middle",
             rich: true,
             anonymous: true,

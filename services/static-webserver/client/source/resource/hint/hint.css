@@ -1,76 +1,74 @@
 .hint:after {
-    border: solid transparent;
+    border: 5px solid transparent;
     content: " ";
     height: 0;
     width: 0;
     position: absolute;
     pointer-events: none;
-    border-width: 5px;
 }
 
 .hint-top:after {
     top: 0;
     left: 50%;
     margin-left: -5px;
-    border-top-color: #666;
+    border-top-color: rgba(255, 255, 255, 0.01);
 }
 
 .hint-right:after {
     right: 0;
     top: 50%;
     margin-top: -5px;
-    border-right-color: #666;
+    border-right-color: rgba(255, 255, 255, 0.01);
 }
 
 .hint-bottom:after {
     bottom: 0;
     left: 50%;
     margin-left: -5px;
-    border-bottom-color: #666;
+    border-bottom-color: rgba(255, 255, 255, 0.01);
 }
 
 .hint-left:after {
     left: 0;
     top: 50%;
     margin-top: -5px;
-    border-left-color: #666;
+    border-left-color: rgba(255, 255, 255, 0.01);
 }
 
 
 .hint-large:after {
-    border: solid transparent;
+    border: 10px solid transparent;
     content: " ";
     height: 0;
     width: 0;
     position: absolute;
     pointer-events: none;
-    border-width: 10px;
 }
 
 .hint-large-top:after {
     top: 0;
     left: 50%;
     margin-left: -10px;
-    border-top-color: #69747b;
+    border-top-color: rgba(255, 255, 255, 0.01);
 }
 
 .hint-large-right:after {
     right: 0;
     top: 50%;
     margin-top: -10px;
-    border-right-color: #69747b;
+    border-right-color: rgba(255, 255, 255, 0.01);
 }
 
 .hint-large-bottom:after {
     bottom: 0;
     left: 50%;
     margin-left: -10px;
-    border-bottom-color: #69747b;
+    border-bottom-color: rgba(255, 255, 255, 0.01);
 }
 
 .hint-large-left:after {
     left: 0;
     top: 50%;
     margin-top: -10px;
-    border-left-color: #69747b;
+    border-left-color: rgba(255, 255, 255, 0.01);
 }
