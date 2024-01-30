@@ -83,6 +83,7 @@ async def load_products_on_startup(app: web.Application):
                 payments = await get_product_payment_fields(
                     connection, product_name=row.name
                 )
+
                 app_products[name] = Product(
                     **dict(row.items()),
                     is_payment_enabled=payments.enabled,

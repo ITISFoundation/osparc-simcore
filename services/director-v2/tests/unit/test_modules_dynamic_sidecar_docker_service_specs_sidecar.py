@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Any
+from typing import Any, Final
 
 import pytest
 from simcore_service_director_v2.core.settings import AppSettings
@@ -12,7 +12,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.si
 )
 
 # PLEASE keep alphabetical to simplify debugging
-EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
+EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
     "DY_SIDECAR_CALLBACKS_MAPPING",
     "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED",
     "DY_SIDECAR_NODE_ID",
@@ -25,11 +25,13 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "DY_SIDECAR_SERVICE_VERSION",
     "DY_SIDECAR_STATE_EXCLUDE",
     "DY_SIDECAR_STATE_PATHS",
+    "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE",
     "DY_SIDECAR_USER_ID",
     "DY_SIDECAR_USER_PREFERENCES_PATH",
     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS",
     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE",
     "DYNAMIC_SIDECAR_LOG_LEVEL",
+    "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS",
     "POSTGRES_DB",
     "POSTGRES_ENDPOINT",
     "POSTGRES_HOST",
@@ -54,7 +56,6 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
     "S3_ACCESS_KEY",
     "S3_BUCKET_NAME",
     "S3_ENDPOINT",
-    "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS",
     "S3_SECRET_KEY",
     "S3_SECURE",
     "SC_BOOT_MODE",
@@ -78,6 +79,7 @@ def test_dynamic_sidecar_env_vars(
         app_settings,
         allow_internet_access=False,
         metrics_collection_allowed=True,
+        telemetry_enabled=True,
     )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 

@@ -224,6 +224,7 @@ def expected_dynamic_sidecar_spec(
                     ),
                     "DY_SIDECAR_USER_ID": "234",
                     "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "False",
+                    "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": "True",
                     "FORWARD_ENV_DISPLAY": ":0",
                     "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": "3",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
@@ -437,6 +438,7 @@ def test_get_dynamic_proxy_spec(
             has_quota_support=False,
             allow_internet_access=False,
             metrics_collection_allowed=True,
+            telemetry_enabled=True,
         )
 
         exclude_keys: Mapping[int | str, Any] = {
@@ -530,6 +532,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         has_quota_support=False,
         allow_internet_access=False,
         metrics_collection_allowed=True,
+        telemetry_enabled=True,
     )
     assert dynamic_sidecar_spec
     dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()
