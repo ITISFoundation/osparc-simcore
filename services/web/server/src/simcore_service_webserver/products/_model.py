@@ -234,6 +234,7 @@ class Product(BaseModel):
                 "manuals",
                 "support",
                 "is_payment_enabled",
+                "is_dynamic_services_telemetry_enabled",
             },
             exclude_none=True,
             exclude_unset=True,
