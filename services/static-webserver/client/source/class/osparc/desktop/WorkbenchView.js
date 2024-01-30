@@ -786,6 +786,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
+    listenToDiskTelemetry: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      const slotName = "serviceDiskUsage";
+      if (!socket.slotExists(slotName)) {
+        // debugger
+        socket.on(slotName, diskUsage => {
+          const data = diskUsage;
+          console.log('data', JSON.stringify(data, null, 2));
+          // this.getStudy().nodeNodeProgressSequence(data);
+        }, this);
+      }
+    },
+
     getStartStopButtons: function() {
       return this.__workbenchPanel.getToolbar().getChildControl("start-stop-btns");
     },
