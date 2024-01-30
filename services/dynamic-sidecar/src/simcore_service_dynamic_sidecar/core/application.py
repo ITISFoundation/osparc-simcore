@@ -23,6 +23,7 @@ from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.outputs import setup_outputs
 from ..modules.prometheus_metrics import setup_prometheus_metrics
 from ..modules.resource_tracking import setup_resource_tracking
+from ..modules.system_monitor import setup_system_monitor
 from ..modules.user_services_preferences import setup_user_services_preferences
 from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
@@ -158,6 +159,7 @@ def create_app():
         setup_rabbitmq(app)
         setup_background_log_fetcher(app)
         setup_resource_tracking(app)
+        setup_system_monitor(app)
 
     # also sets up mounted_volumes
     setup_mounted_fs(app)
