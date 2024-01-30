@@ -126,7 +126,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         toolbar.add(serviceVersionSelector);
       }
 
-      this.__createOpenButtun();
+      this.__createOpenButton();
       this.__handleServiceUpdatableCheck(resourceData.workbench);
 
       this._add(toolbar);
