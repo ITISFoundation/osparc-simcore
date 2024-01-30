@@ -465,12 +465,14 @@ async def test_unsubscribe_consumer(
 
 
 @pytest.mark.parametrize("max_requeue_retry", [None, 3, 10])
+@pytest.mark.parametrize("topics", [None, ["one"], ["one", "two"]])
 @pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_subscribe_to_failing_message_handler(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     random_rabbit_message: Callable[..., PytestRabbitMessage],
     max_requeue_retry: int | None,
+    topics: list[str] | None,
 ):
     message_intercepted = mock.AsyncMock()
 
@@ -485,13 +487,21 @@ async def test_subscribe_to_failing_message_handler(
     await client.subscribe(
         exchange_name,
         _faulty_message_handler,
+        topics=topics,
         exclusive_queue=False,
         max_retries_upon_error=max_requeue_retry,
     )
 
     publisher = create_rabbitmq_client("publisher")
-    message = random_rabbit_message()
-    await publisher.publish(exchange_name, message)
+    if topics is not None:
+        for topic in topics:
+            message = random_rabbit_message(topic=topic)
+            await publisher.publish(exchange_name, message)
+    else:
+        message = random_rabbit_message()
+        await publisher.publish(exchange_name, message)
+
+    topics_multiplier = 1 if topics is None else len(topics)
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
@@ -503,4 +513,7 @@ async def test_subscribe_to_failing_message_handler(
             if max_requeue_retry is None:
                 assert message_intercepted.call_count > 100
             else:
-                assert message_intercepted.call_count == max_requeue_retry + 1
+                assert (
+                    message_intercepted.call_count
+                    == (max_requeue_retry + 1) * topics_multiplier
+                )

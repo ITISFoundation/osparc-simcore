@@ -176,7 +176,9 @@ class RabbitMQClient(RabbitMQClientBase):
                                     f"(attempt {message.headers[_HEADER_X_RETRY_COUNT]}/{max_retries_upon_error})"
                                 )
                             )
-                            await exchange.publish(message, routing_key="")
+                            await exchange.publish(
+                                message, routing_key=message.routing_key or ""
+                            )
 
                         if requeue_on_nack:
                             _logger.exception(_get_unhandled_exception_message())
