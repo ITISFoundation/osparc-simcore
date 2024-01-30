@@ -86,6 +86,7 @@ async def start_computation(request: web.Request) -> web.Response:
         simcore_user_agent = request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         )
+
         async with get_database_engine(request.app).acquire() as conn:
             group_properties = (
                 await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(

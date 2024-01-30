@@ -61,7 +61,7 @@ def client(
     )
 
 
-async def test_identity_is_email(
+async def test_security_identity_is_email_and_product(
     client: TestClient,
     session_url_path: str,
 ):
@@ -73,25 +73,28 @@ async def test_identity_is_email(
 
     async with NewUser(app=client.app) as user:
         resp = await client.get(session_url_path)
-        session = await resp.json()
-        assert session.get("AIOHTTP_SECURITY") is None
+        unencrypted_session = await resp.json()
+        assert unencrypted_session.get("AIOHTTP_SECURITY") is None
 
-        # login
+        # login: verifies identity
         await client.post(
             login_url_path,
-            json={"email": user["email"], "password": user["raw_password"]},
+            json={
+                "email": user["email"],
+                "password": user["raw_password"],
+            },
         )
 
         # check it is email
         resp = await client.get(session_url_path)
-        session = await resp.json()
-        assert session.get("AIOHTTP_SECURITY") == user["email"]
+        unencrypted_session = await resp.json()
+        assert unencrypted_session.get("AIOHTTP_SECURITY") == user["email"]
 
-        # logout
+        # logout: ends session
         await client.post(logout_url_path)
         resp = await client.get(session_url_path)
-        session = await resp.json()
-        assert session.get("AIOHTTP_SECURITY") is None
+        unencrypted_session = await resp.json()
+        assert unencrypted_session.get("AIOHTTP_SECURITY") is None
 
 
 @pytest.mark.parametrize(

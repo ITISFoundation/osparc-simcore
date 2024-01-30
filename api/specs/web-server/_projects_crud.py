@@ -11,7 +11,7 @@ This OAS are the source of truth
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
@@ -27,12 +27,11 @@ from models_library.api_schemas_webserver.projects import (
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
+from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._common_models import ProjectPathParams
-from simcore_service_webserver.projects._crud_handlers import (
-    ProjectCreateParams,
-    ProjectListParams,
-)
+from simcore_service_webserver.projects._crud_handlers import ProjectCreateParams
+from simcore_service_webserver.projects._crud_handlers_models import ProjectListParams
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -59,7 +58,16 @@ async def create_project(
     "/projects",
     response_model=Page[ProjectListItem],
 )
-async def list_projects(_params: Annotated[ProjectListParams, Depends()]):
+async def list_projects(
+    _params: Annotated[ProjectListParams, Depends()],
+    order_by: Annotated[
+        Json,
+        Query(
+            description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
+            example='{"field": "last_change_date", "direction": "desc"}',
+        ),
+    ] = '{"field": "last_change_date", "direction": "desc"}',
+):
     ...
 
 

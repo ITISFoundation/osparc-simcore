@@ -48,6 +48,7 @@ def _get_environment_variables(
     *,
     allow_internet_access: bool,
     metrics_collection_allowed: bool,
+    telemetry_enabled: bool,
 ) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
@@ -79,6 +80,7 @@ def _get_environment_variables(
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
         "DY_SIDECAR_RUN_ID": scheduler_data.run_id,
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
+        "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": f"{telemetry_enabled}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
         "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.json(),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
@@ -299,7 +301,7 @@ def _get_ports(
     return ports
 
 
-def get_dynamic_sidecar_spec(
+def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR0913
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
@@ -311,6 +313,7 @@ def get_dynamic_sidecar_spec(
     allow_internet_access: bool,
     hardware_info: HardwareInfo | None,
     metrics_collection_allowed: bool,
+    telemetry_enabled: bool,
 ) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -408,6 +411,7 @@ def get_dynamic_sidecar_spec(
                     app_settings,
                     allow_internet_access=allow_internet_access,
                     metrics_collection_allowed=metrics_collection_allowed,
+                    telemetry_enabled=telemetry_enabled,
                 ),
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,

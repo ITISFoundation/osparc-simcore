@@ -29,6 +29,7 @@ class GroupExtraProperties(FromRowMixin):
     internet_access: bool
     override_services_specifications: bool
     use_on_demand_clusters: bool
+    enable_telemetry: bool
     created: datetime.datetime
     modified: datetime.datetime
 

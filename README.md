@@ -1,7 +1,9 @@
 # osparc-simcore platform
 
 <p align="center">
+<a href="https://osparc.io" target="_blank">
 <img src="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png" width="500">
+</a>
 </p>
 
 <!-- BADGES: LINKS ON CLICK --------------------------------------------------------------->
@@ -184,7 +186,9 @@ This project is licensed under the terms of the [MIT license](LICENSE).
 ---
 
 <p align="center">
+<a href="https://www.z43.swiss" target="_blank">
 <image src="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore-clients/4e8b18494f3191d55f6692a6a605818aeeb83f95/docs/_media/mwl.png" alt="Made with love (and lots of hard work) at www.z43.swiss" width="20%" />
+</a>
 </p>
 
 <!-- ADD REFERENCES BELOW AND KEEP THEM IN ALPHABETICAL ORDER -->
