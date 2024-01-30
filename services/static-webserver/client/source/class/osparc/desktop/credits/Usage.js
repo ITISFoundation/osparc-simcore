@@ -83,6 +83,9 @@ qx.Class.define("osparc.desktop.credits.Usage", {
             this.__table = new osparc.desktop.credits.UsageTable(this.__selectedWallet.getWalletId(), this.__dateFilters.getValue()).set({
               marginTop: 10
             })
+            this.__table.getTableModel().bind("isFetching", this.__fetchingImg, "visibility", {
+              converter: isFetching => isFetching ? "visible" : "excluded"
+            })
             container.add(this.__table)
           }
         }

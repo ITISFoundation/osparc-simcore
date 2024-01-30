@@ -43,6 +43,11 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
     filters: {
       check: "Object",
       init: null
+    },
+    isFetching: {
+      check: "Boolean",
+      init: false,
+      event: "changeFetching"
     }
   },
 
@@ -72,6 +77,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
     },
     // overridden
     _loadRowData(firstRow, lastRow) {
+      this.setIsFetching(true)
       osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", {
         url: {
           walletId: this.getWalletId(),
@@ -116,6 +122,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
         .catch(() => {
           this._onRowDataLoaded(null)
         })
+        .finally(() => this.setIsFetching(false))
     }
   }
 })
