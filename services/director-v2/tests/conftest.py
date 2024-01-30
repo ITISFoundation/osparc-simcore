@@ -16,6 +16,7 @@ import httpx
 import pytest
 import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
+from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import Node, NodesDict
 from pytest_mock import MockerFixture
@@ -142,7 +143,9 @@ def dynamic_sidecar_docker_image_name() -> str:
 
 @pytest.fixture
 def mock_env(
-    monkeypatch: pytest.MonkeyPatch, dynamic_sidecar_docker_image_name: str
+    monkeypatch: pytest.MonkeyPatch,
+    dynamic_sidecar_docker_image_name: str,
+    faker: Faker,
 ) -> EnvVarsDict:
     """This is the base mock envs used to configure the app.
 
@@ -155,6 +158,8 @@ def mock_env(
         "SWARM_STACK_NAME": "test_swarm_name",
         "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
         "COMPUTATIONAL_BACKEND_ENABLED": "false",
+        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": f"{faker.url()}",
+        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": "{}",
         "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "false",
         "RABBIT_HOST": "mocked_host",
         "RABBIT_SECURE": "false",

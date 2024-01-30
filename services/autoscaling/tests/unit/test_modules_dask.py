@@ -12,6 +12,11 @@ import pytest
 from arrow import utcnow
 from aws_library.ec2.models import Resources
 from faker import Faker
+from models_library.clusters import (
+    InternalClusterAuthentication,
+    NoAuthentication,
+    TLSAuthentication,
+)
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from simcore_service_autoscaling.core.errors import (
@@ -35,11 +40,22 @@ from simcore_service_autoscaling.modules.dask import (
 )
 from tenacity import retry, stop_after_delay, wait_fixed
 
+_authentication_types = [
+    NoAuthentication(),
+    TLSAuthentication.construct(**TLSAuthentication.Config.schema_extra["examples"][0]),
+]
 
-async def test__scheduler_client_with_wrong_url(faker: Faker):
+
+@pytest.mark.parametrize(
+    "authentication", _authentication_types, ids=lambda p: f"authentication-{p.type}"
+)
+async def test__scheduler_client_with_wrong_url(
+    faker: Faker, authentication: InternalClusterAuthentication
+):
     with pytest.raises(DaskSchedulerNotFoundError):
         async with _scheduler_client(
-            parse_obj_as(AnyUrl, f"tcp://{faker.ipv4()}:{faker.port_number()}")
+            parse_obj_as(AnyUrl, f"tcp://{faker.ipv4()}:{faker.port_number()}"),
+            authentication,
         ):
             ...
 
@@ -47,6 +63,11 @@ async def test__scheduler_client_with_wrong_url(faker: Faker):
 @pytest.fixture
 def scheduler_url(dask_spec_local_cluster: distributed.SpecCluster) -> AnyUrl:
     return parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address)
+
+
+@pytest.fixture
+def scheduler_authentication() -> InternalClusterAuthentication:
+    return NoAuthentication()
 
 
 @pytest.fixture
@@ -64,8 +85,10 @@ def dask_workers_config() -> dict[str, Any]:
     }
 
 
-async def test__scheduler_client(scheduler_url: AnyUrl):
-    async with _scheduler_client(scheduler_url):
+async def test__scheduler_client(
+    scheduler_url: AnyUrl, scheduler_authentication: InternalClusterAuthentication
+):
+    async with _scheduler_client(scheduler_url, scheduler_authentication):
         ...
 
 
@@ -75,25 +98,26 @@ async def test_list_unrunnable_tasks_with_no_workers(
     scheduler_url = parse_obj_as(
         AnyUrl, dask_local_cluster_without_workers.scheduler_address
     )
-    assert await list_unrunnable_tasks(scheduler_url) == []
+    assert await list_unrunnable_tasks(scheduler_url, NoAuthentication()) == []
 
 
 async def test_list_unrunnable_tasks(
     scheduler_url: AnyUrl,
+    scheduler_authentication: InternalClusterAuthentication,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
 ):
     # we have nothing running now
-    assert await list_unrunnable_tasks(scheduler_url) == []
+    assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == []
     # start a task that cannot run
     dask_task_impossible_resources = {"XRAM": 213}
     future = create_dask_task(dask_task_impossible_resources)
     assert future
-    assert await list_unrunnable_tasks(scheduler_url) == [
+    assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == [
         DaskTask(task_id=future.key, required_resources=dask_task_impossible_resources)
     ]
     # remove that future, will remove the task
     del future
-    assert await list_unrunnable_tasks(scheduler_url) == []
+    assert await list_unrunnable_tasks(scheduler_url, scheduler_authentication) == []
 
 
 _REMOTE_FCT_SLEEP_TIME_S: Final[int] = 3
@@ -101,6 +125,7 @@ _REMOTE_FCT_SLEEP_TIME_S: Final[int] = 3
 
 async def test_list_processing_tasks(
     scheduler_url: AnyUrl,
+    scheduler_authentication: InternalClusterAuthentication,
     dask_spec_cluster_client: distributed.Client,
 ):
     def _add_fct(x: int, y: int) -> int:
@@ -110,13 +135,18 @@ async def test_list_processing_tasks(
         return x + y
 
     # there is nothing now
-    assert await list_processing_tasks_per_worker(url=scheduler_url) == {}
+    assert (
+        await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication)
+        == {}
+    )
 
     # this function will be queued and executed as there are no specific resources needed
     future_queued_task = dask_spec_cluster_client.submit(_add_fct, 2, 5)
     assert future_queued_task
 
-    assert await list_processing_tasks_per_worker(scheduler_url) == {
+    assert await list_processing_tasks_per_worker(
+        scheduler_url, scheduler_authentication
+    ) == {
         next(iter(dask_spec_cluster_client.scheduler_info()["workers"])): [
             DaskTask(task_id=DaskTaskId(future_queued_task.key), required_resources={})
         ]
@@ -126,7 +156,10 @@ async def test_list_processing_tasks(
     assert result == 7
 
     # nothing processing anymore
-    assert await list_processing_tasks_per_worker(url=scheduler_url) == {}
+    assert (
+        await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication)
+        == {}
+    )
 
 
 _DASK_SCHEDULER_REACTION_TIME_S: Final[int] = 4
@@ -151,11 +184,14 @@ def fake_ec2_instance_data_with_invalid_ec2_name(
 
 async def test_get_worker_still_has_results_in_memory_with_invalid_ec2_name_raises(
     scheduler_url: AnyUrl,
+    scheduler_authentication: InternalClusterAuthentication,
     fake_ec2_instance_data_with_invalid_ec2_name: EC2InstanceData,
 ):
     with pytest.raises(Ec2InvalidDnsNameError):
         await get_worker_still_has_results_in_memory(
-            scheduler_url, fake_ec2_instance_data_with_invalid_ec2_name
+            scheduler_url,
+            scheduler_authentication,
+            fake_ec2_instance_data_with_invalid_ec2_name,
         )
 
 
@@ -168,22 +204,26 @@ async def test_get_worker_still_has_results_in_memory_with_no_workers_raises(
     )
     with pytest.raises(DaskNoWorkersError):
         await get_worker_still_has_results_in_memory(
-            scheduler_url, fake_localhost_ec2_instance_data
+            scheduler_url, NoAuthentication(), fake_localhost_ec2_instance_data
         )
 
 
 async def test_get_worker_still_has_results_in_memory_with_invalid_worker_host_raises(
     scheduler_url: AnyUrl,
+    scheduler_authentication: InternalClusterAuthentication,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     ec2_instance_data = fake_ec2_instance_data()
     with pytest.raises(DaskWorkerNotFoundError):
-        await get_worker_still_has_results_in_memory(scheduler_url, ec2_instance_data)
+        await get_worker_still_has_results_in_memory(
+            scheduler_url, scheduler_authentication, ec2_instance_data
+        )
 
 
 @pytest.mark.parametrize("fct_shall_err", [True, False], ids=str)
 async def test_get_worker_still_has_results_in_memory(
     scheduler_url: AnyUrl,
+    scheduler_authentication: InternalClusterAuthentication,
     dask_spec_cluster_client: distributed.Client,
     fake_localhost_ec2_instance_data: EC2InstanceData,
     fct_shall_err: bool,
@@ -191,7 +231,7 @@ async def test_get_worker_still_has_results_in_memory(
     # nothing ran, so it's 0
     assert (
         await get_worker_still_has_results_in_memory(
-            scheduler_url, fake_localhost_ec2_instance_data
+            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
         )
         == 0
     )
@@ -209,7 +249,7 @@ async def test_get_worker_still_has_results_in_memory(
     await _wait_for_task_done(future_queued_task)
     assert (
         await get_worker_still_has_results_in_memory(
-            scheduler_url, fake_localhost_ec2_instance_data
+            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
         )
         == 1
     )
@@ -227,7 +267,7 @@ async def test_get_worker_still_has_results_in_memory(
     await _wait_for_dask_scheduler_to_change_state()
     assert (
         await get_worker_still_has_results_in_memory(
-            scheduler_url, fake_localhost_ec2_instance_data
+            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
         )
         == 1
     )
@@ -237,7 +277,7 @@ async def test_get_worker_still_has_results_in_memory(
     await _wait_for_dask_scheduler_to_change_state()
     assert (
         await get_worker_still_has_results_in_memory(
-            scheduler_url, fake_localhost_ec2_instance_data
+            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
         )
         == 0
     )
@@ -245,11 +285,14 @@ async def test_get_worker_still_has_results_in_memory(
 
 async def test_worker_used_resources_with_invalid_ec2_name_raises(
     scheduler_url: AnyUrl,
+    scheduler_authentication: InternalClusterAuthentication,
     fake_ec2_instance_data_with_invalid_ec2_name: EC2InstanceData,
 ):
     with pytest.raises(Ec2InvalidDnsNameError):
         await get_worker_used_resources(
-            scheduler_url, fake_ec2_instance_data_with_invalid_ec2_name
+            scheduler_url,
+            scheduler_authentication,
+            fake_ec2_instance_data_with_invalid_ec2_name,
         )
 
 
@@ -261,26 +304,34 @@ async def test_worker_used_resources_with_no_workers_raises(
         AnyUrl, dask_local_cluster_without_workers.scheduler_address
     )
     with pytest.raises(DaskNoWorkersError):
-        await get_worker_used_resources(scheduler_url, fake_localhost_ec2_instance_data)
+        await get_worker_used_resources(
+            scheduler_url, NoAuthentication(), fake_localhost_ec2_instance_data
+        )
 
 
 async def test_worker_used_resources_with_invalid_worker_host_raises(
     scheduler_url: AnyUrl,
+    scheduler_authentication: InternalClusterAuthentication,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
     ec2_instance_data = fake_ec2_instance_data()
     with pytest.raises(DaskWorkerNotFoundError):
-        await get_worker_used_resources(scheduler_url, ec2_instance_data)
+        await get_worker_used_resources(
+            scheduler_url, scheduler_authentication, ec2_instance_data
+        )
 
 
 async def test_worker_used_resources(
     scheduler_url: AnyUrl,
+    scheduler_authentication: InternalClusterAuthentication,
     dask_spec_cluster_client: distributed.Client,
     fake_localhost_ec2_instance_data: EC2InstanceData,
 ):
     # initial state
     assert (
-        await get_worker_used_resources(scheduler_url, fake_localhost_ec2_instance_data)
+        await get_worker_used_resources(
+            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
+        )
         == Resources.create_as_empty()
     )
 
@@ -298,7 +349,7 @@ async def test_worker_used_resources(
     assert future_queued_task
     await _wait_for_dask_scheduler_to_change_state()
     assert await get_worker_used_resources(
-        scheduler_url, fake_localhost_ec2_instance_data
+        scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
     ) == Resources(cpus=num_cpus, ram=ByteSize(0))
 
     result = await future_queued_task.result(timeout=_DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
@@ -306,6 +357,8 @@ async def test_worker_used_resources(
 
     # back to no use
     assert (
-        await get_worker_used_resources(scheduler_url, fake_localhost_ec2_instance_data)
+        await get_worker_used_resources(
+            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
+        )
         == Resources.create_as_empty()
     )

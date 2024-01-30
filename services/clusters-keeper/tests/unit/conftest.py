@@ -53,7 +53,7 @@ pytest_plugins = [
 @pytest.fixture(scope="session")
 def project_slug_dir(osparc_simcore_root_dir: Path) -> Path:
     # fixtures in pytest_simcore.environs
-    service_folder = osparc_simcore_root_dir / "services" / "clusters_keeper"
+    service_folder = osparc_simcore_root_dir / "services" / "clusters-keeper"
     assert service_folder.exists()
     assert any(service_folder.glob("src/simcore_service_clusters_keeper"))
     return service_folder
@@ -102,6 +102,7 @@ def app_environment(
             "CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES": "{}",
             "CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX": faker.pystr(),
             "CLUSTERS_KEEPER_DASK_NTHREADS": f"{faker.pyint(min_value=0)}",
+            "CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": "{}",
             "PRIMARY_EC2_INSTANCES_KEY_NAME": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
                 faker.pylist(allowed_types=(str,))
@@ -119,6 +120,10 @@ def app_environment(
             "PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
                 {"osparc-tag": "the pytest tag is here"}
             ),
+            "PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE": "",  # must be empty since we would need to add it to moto as well
+            "PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA": faker.pystr(),
+            "PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT": faker.pystr(),
+            "PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY": faker.pystr(),
             "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
             "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
@@ -234,6 +239,13 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
 async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
+
+
+@pytest.fixture
+def clusters_keeper_docker_compose_file(installed_package_dir: Path) -> Path:
+    docker_compose_path = installed_package_dir / "data" / "docker-compose.yml"
+    assert docker_compose_path.exists()
+    return docker_compose_path
 
 
 @pytest.fixture
