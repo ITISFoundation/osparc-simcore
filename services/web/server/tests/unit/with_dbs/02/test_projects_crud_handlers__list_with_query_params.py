@@ -4,6 +4,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-statements
 
+import json
 import random
 from collections import UserDict
 from copy import deepcopy
@@ -251,3 +252,111 @@ async def test_list_projects_with_search_parameter(
     assert data["_meta"]["limit"] == 1
     assert data["_links"]["next"].endswith("/v0/projects?search=oda&offset=1&limit=1")
     assert data["_links"]["last"].endswith("/v0/projects?search=oda&offset=1&limit=1")
+
+
+_alphabetically_ordered_list = ["a", "b", "c", "d", "e"]
+
+
+@pytest.mark.parametrize(*standard_user_role())
+async def test_list_projects_with_order_by_parameter(
+    client: TestClient,
+    logged_user: UserDict,
+    expected: ExpectedResponse,
+    fake_project: ProjectDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
+    project_db_cleaner,
+    mock_catalog_api_get_services_for_user_in_product,
+):
+    projects_info = [
+        _ProjectInfo(
+            uuid="aaa0eca3-d210-4db6-84f9-63670b07176b",
+            name="d",
+            description="c",
+        ),
+        _ProjectInfo(
+            uuid="cccef868-fe1b-11ed-b038-cdb13a78a6f3",
+            name="b",
+            description="e",
+        ),
+        _ProjectInfo(
+            uuid="eee66c12-fe1b-11ed-b038-cdb13a78a6f3",
+            name="a",
+            description="a",
+        ),
+        _ProjectInfo(
+            uuid="ddd32426-fe1b-11ed-b038-cdb13a78a6f3",
+            name="c",
+            description="b",
+        ),
+        _ProjectInfo(
+            uuid="bbb7aff6-fe1b-11ed-b038-cdb13a78a6f3",
+            name="e",
+            description="d",
+        ),
+    ]
+
+    user_projects = []
+    for project_ in projects_info:
+        project_data = deepcopy(fake_project)
+        project_data["name"] = project_.name
+        project_data["uuid"] = project_.uuid
+        project_data["description"] = project_.description
+
+        user_projects.append(
+            await _new_project(
+                client,
+                logged_user["id"],
+                osparc_product_name,
+                tests_data_dir,
+                project_data,
+            )
+        )
+
+    # Order by uuid ascending
+    base_url = client.app.router["list_projects"].url_for()
+    url = base_url.with_query(
+        order_by=json.dumps({"field": "uuid", "direction": "asc"})
+    )
+    assert (
+        f"{url}"
+        == f"/{api_version_prefix}/projects?order_by=%7B%22field%22:+%22uuid%22,+%22direction%22:+%22asc%22%7D"
+    )
+    resp = await client.get(url)
+    data = await resp.json()
+    assert resp.status == 200
+    assert [item["uuid"][0] for item in data["data"]] == _alphabetically_ordered_list
+
+    # Order by uuid descending
+    base_url = client.app.router["list_projects"].url_for()
+    url = base_url.with_query(
+        order_by=json.dumps({"field": "uuid", "direction": "desc"})
+    )
+    resp = await client.get(url)
+    data = await resp.json()
+    assert resp.status == 200
+    assert [item["uuid"][0] for item in data["data"]] == _alphabetically_ordered_list[
+        ::-1
+    ]
+
+    # Order by name ascending
+    base_url = client.app.router["list_projects"].url_for()
+    url = base_url.with_query(
+        order_by=json.dumps({"field": "name", "direction": "asc"})
+    )
+    resp = await client.get(url)
+    data = await resp.json()
+    assert resp.status == 200
+    assert [item["name"][0] for item in data["data"]] == _alphabetically_ordered_list
+
+    # Order by description ascending
+    base_url = client.app.router["list_projects"].url_for()
+    url = base_url.with_query(
+        order_by=json.dumps({"field": "description", "direction": "asc"})
+    )
+    resp = await client.get(url)
+    data = await resp.json()
+    assert resp.status == 200
+    assert [
+        item["description"][0] for item in data["data"]
+    ] == _alphabetically_ordered_list

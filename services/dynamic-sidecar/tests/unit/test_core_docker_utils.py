@@ -235,6 +235,17 @@ async def test_pull_image(repeat: str):
 
 PULL_PROGRESS_SEQUENCE: list[dict[str, Any]] = [
     {"status": "Pulling from library/busybox", "id": "latest"},
+    {"status": "Downloading", "progressDetail": {}, "id": "6e3729cf69e0"},
+    {
+        "status": "Downloading",
+        "progressDetail": {"current": 32768},
+        "id": "6e3729cf69e0",
+    },
+    {
+        "status": "Downloading",
+        "progressDetail": {"total": 2219949},
+        "id": "6e3729cf69e0",
+    },
     {"status": "Pulling fs layer", "progressDetail": {}, "id": "3f4d90098f5b"},
     {
         "status": "Downloading",

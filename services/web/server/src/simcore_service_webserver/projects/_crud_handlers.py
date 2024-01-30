@@ -18,9 +18,11 @@ from models_library.api_schemas_webserver.projects import (
 from models_library.generics import Envelope
 from models_library.projects import Project
 from models_library.projects_state import ProjectLocked
+from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -40,7 +42,7 @@ from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
 from ..login.decorators import login_required
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
-from ..security.api import check_permission
+from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from . import _crud_api_create, _crud_api_read, projects_api
@@ -48,7 +50,7 @@ from ._common_models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveParams,
     ProjectCreateParams,
-    ProjectListParams,
+    ProjectListWithJsonStrParams,
 )
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
@@ -92,7 +94,7 @@ async def create_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(ProjectCreateParams, request)
     if query_params.as_template:  # create template from
-        await check_permission(request, "project.template.create")
+        await check_user_permission(request, "project.template.create")
 
     # NOTE: Having so many different types of bodys is an indication that
     # this entrypoint are in reality multiple entrypoints in one, namely
@@ -152,7 +154,9 @@ async def list_projects(request: web.Request):
 
     """
     req_ctx = RequestContext.parse_obj(request)
-    query_params = parse_request_query_parameters_as(ProjectListParams, request)
+    query_params = parse_request_query_parameters_as(
+        ProjectListWithJsonStrParams, request
+    )
 
     projects, total_number_of_projects = await _crud_api_read.list_projects(
         request,
@@ -163,6 +167,7 @@ async def list_projects(request: web.Request):
         limit=query_params.limit,
         offset=query_params.offset,
         search=query_params.search,
+        order_by=parse_obj_as(OrderBy, query_params.order_by),
     )
 
     page = Page[ProjectDict].parse_obj(
@@ -350,7 +355,7 @@ async def replace_project(request: web.Request):
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
-    await check_permission(
+    await check_user_permission(
         request,
         "project.update | project.workbench.node.inputs.update",
         context={
@@ -372,7 +377,7 @@ async def replace_project(request: web.Request):
         )
 
         if current_project["accessRights"] != new_project["accessRights"]:
-            await check_permission(request, "project.access_rights.update")
+            await check_user_permission(request, "project.access_rights.update")
 
         if await api.is_pipeline_running(
             request.app, req_ctx.user_id, path_params.project_id
