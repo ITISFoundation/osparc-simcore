@@ -368,7 +368,10 @@ async def test_hack_product_session(
 
 
 @pytest.fixture
-async def session_initialized(client: TestClient) -> None:
+async def session_initialized(
+    client: TestClient,
+    basic_db_funs_mocked: None,
+) -> None:
     assert client.app
 
     # init
@@ -388,7 +391,7 @@ async def session_initialized(client: TestClient) -> None:
     await clean_auth_policy_cache(client.app)
 
 
-async def test_calls_on_handlers_of_auth_decorators(
+async def test_number_of_db_calls_on_handlers_of_auth_decorators(
     client: TestClient,
     session_initialized: None,
     get_active_user_or_none_dbmock: MagicMock,
@@ -416,7 +419,10 @@ async def test_calls_on_handlers_of_auth_decorators(
 
 
 async def test_time_overhead_on_handlers_of_auth_decorators(
-    client: TestClient, session_initialized: None
+    client: TestClient,
+    session_initialized: None,
+    get_active_user_or_none_dbmock: MagicMock,
+    is_user_in_product_name_dbmock: MagicMock,
 ):
     async def _req(url_):
         start = asyncio.get_event_loop().time()
@@ -426,7 +432,7 @@ async def test_time_overhead_on_handlers_of_auth_decorators(
         assert resp.ok, f"error: {await resp.text()}"
         return stop - start
 
-    num_of_rounds = 1
+    num_of_rounds = 100
     public_elapsed_times = [await _req("/v0/public") for _ in range(num_of_rounds)]
     admin_elapsed_times = [await _req("/v0/admin") for _ in range(num_of_rounds)]
 
@@ -438,5 +444,6 @@ async def test_time_overhead_on_handlers_of_auth_decorators(
 
     # NOTE: 150% more wrt reference (basically ~ 2.5x more !!!!!!!!!!!)
     # and this is mocking the access to the database!
-    assert elapsed < ref_elapsed * (1 + 1.6), f"got {elapsed/ref_elapsed=}"
-    print(f"Got {elapsed/ref_elapsed=}")
+    msg = f"got {elapsed/ref_elapsed=} from medians {elapsed=} and {ref_elapsed=} after {num_of_rounds=}"
+    print(msg.capitalize())
+    assert elapsed < ref_elapsed * (1 + 1.6), msg
