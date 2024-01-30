@@ -132,7 +132,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       this._add(toolbar);
     },
 
-    __createOpenButtun: function() {
+    __createOpenButton: function() {
       const openButton = this.__openButton = new qx.ui.form.Button(this.tr("Open")).set({
         appearance: "form-button",
         font: "text-14",
