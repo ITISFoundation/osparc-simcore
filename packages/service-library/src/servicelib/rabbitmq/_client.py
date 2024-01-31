@@ -24,7 +24,7 @@ _DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S: Final[int] = 5
 _HEADER_X_DEATH: Final[str] = "x-death"
 
 DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S: Final[float] = 1
-DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS: Final[NonNegativeInt] = 3
+DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS: Final[NonNegativeInt] = 15
 
 
 def _get_delayed_exchange_name(exchange_name: str) -> str:
