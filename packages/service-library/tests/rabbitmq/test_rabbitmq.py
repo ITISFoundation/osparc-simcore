@@ -563,6 +563,8 @@ async def _assert_wait_for_messages(
 @pytest.mark.parametrize(
     "max_requeue_retry",
     [
+        0,
+        1,
         3,
         10,
     ],
@@ -597,7 +599,6 @@ async def test_subscribe_to_failing_message_handler(
     )
 
     expected_results = (max_requeue_retry + 1) * topics_multiplier
-
     await _assert_wait_for_messages(on_message_spy, expected_results)
 
     report = _get_spy_report(on_message_spy)
@@ -622,7 +623,7 @@ async def test_subscribe_no_dead_letter_exchange_messages(
 ):
     message_failed: dict[str, bool] = {}
 
-    async def _retry_message_then_succeed(message: Any) -> bool:
+    async def _fail_once_then_succeed(message: Any) -> bool:
         print("Handling message", message)
         if message not in message_failed:
             message_failed[message] = False
@@ -637,11 +638,10 @@ async def test_subscribe_no_dead_letter_exchange_messages(
         random_rabbit_message,
         DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
         topics,
-        _retry_message_then_succeed,
+        _fail_once_then_succeed,
     )
 
     expected_results = 2 * topics_multiplier
-
     await _assert_wait_for_messages(on_message_spy, expected_results)
 
     report = _get_spy_report(on_message_spy)
