@@ -1328,7 +1328,7 @@ jobs:
   unit-test-service-library:
     needs: changes
     if: ${{ needs.changes.outputs.service-library == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 10 # if this timeout gets too small, then split the tests
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
     strategy:
