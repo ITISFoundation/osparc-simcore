@@ -165,6 +165,7 @@ qx.Class.define("osparc.share.Collaborators", {
           break;
         case "open-organizations-btn":
           control = new qx.ui.form.Button(this.tr("Organizations...")).set({
+            appearance: "form-button-outlined",
             allowGrowY: false,
             allowGrowX: false,
             icon: osparc.dashboard.CardBase.SHARED_ORGS
@@ -217,8 +218,9 @@ qx.Class.define("osparc.share.Collaborators", {
       const label = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
       vBox.add(label);
 
-      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add Editors...")).set({
-        appearance: "strong-button",
+      const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Share with...")).set({
+        appearance: "form-button",
+        alignX: "left",
         allowGrowX: false
       });
       addCollaboratorBtn.addListener("execute", () => {

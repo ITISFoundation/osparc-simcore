@@ -6,15 +6,29 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
+      DASK_TLS_CA_FILE: ${DASK_TLS_CA_FILE}
+      DASK_TLS_CERT: ${DASK_TLS_CERT}
+      DASK_TLS_KEY: ${DASK_TLS_KEY}
+      DASK_SCHEDULER_URL: tls://dask-scheduler:8786
       DASK_START_AS_SCHEDULER: 1
-      LOG_LEVEL: ${LOG_LEVEL:-WARNING}
+      LOG_LEVEL: ${LOG_LEVEL}
     ports:
-      - 8786:8786 # dask-scheduler tcp access
+      - 8786:8786 # dask-scheduler access
       - 8787:8787 # dashboard
     deploy:
       placement:
         constraints:
           - "node.role==manager"
+    secrets:
+      - source: dask_tls_ca
+        target: ${DASK_TLS_CA_FILE}
+        mode: 0444
+      - source: dask_tls_key
+        target: ${DASK_TLS_KEY}
+        mode: 0444
+      - source: dask_tls_cert
+        target: ${DASK_TLS_CERT}
+        mode: 0444
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
@@ -28,18 +42,31 @@ services:
     environment:
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: 1
       DASK_NPROCS: 1
-      DASK_NTHREADS: ${WORKERS_NTHREADS}
-      DASK_SCHEDULER_URL: ${DASK_SCHEDULER_URL:-tcp://dask-scheduler:8786}
+      DASK_NTHREADS: ${DASK_NTHREADS}
+      DASK_SCHEDULER_URL: tls://dask-scheduler:8786
       DASK_SIDECAR_NON_USABLE_RAM: 0
       DASK_SIDECAR_NUM_NON_USABLE_CPUS: 0
-      LOG_LEVEL: ${LOG_LEVEL:-WARNING}
-      SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
+      DASK_TLS_CA_FILE: ${DASK_TLS_CA_FILE}
+      DASK_TLS_CERT: ${DASK_TLS_CERT}
+      DASK_TLS_KEY: ${DASK_TLS_KEY}
+      LOG_LEVEL: ${LOG_LEVEL}
+      SIDECAR_COMP_SERVICES_SHARED_FOLDER: /home/scu/computational_shared_data
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: computational_shared_data
     deploy:
       mode: global
       placement:
         constraints:
           - "node.role==worker"
+    secrets:
+      - source: dask_tls_ca
+        target: ${DASK_TLS_CA_FILE}
+        mode: 0444
+      - source: dask_tls_key
+        target: ${DASK_TLS_KEY}
+        mode: 0444
+      - source: dask_tls_cert
+        target: ${DASK_TLS_CERT}
+        mode: 0444
 
   autoscaling:
     image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG}
@@ -47,14 +74,16 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      DASK_MONITORING_URL: tcp://dask-scheduler:8786
       AUTOSCALING_EC2_ACCESS_KEY_ID: ${CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID}
       AUTOSCALING_EC2_ENDPOINT: ${CLUSTERS_KEEPER_EC2_ENDPOINT}
       AUTOSCALING_EC2_REGION_NAME: ${CLUSTERS_KEEPER_EC2_REGION_NAME}
       AUTOSCALING_EC2_SECRET_ACCESS_KEY: ${CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY}
       AUTOSCALING_NODES_MONITORING: null
       AUTOSCALING_POLL_INTERVAL: 10
+      DASK_MONITORING_URL: tls://dask-scheduler:8786
+      DASK_SCHEDULER_AUTH: '{"type":"tls","tls_ca_file":"${DASK_TLS_CA_FILE}","tls_client_cert":"${DASK_TLS_CERT}","tls_client_key":"${DASK_TLS_KEY}"}'
       EC2_INSTANCES_ALLOWED_TYPES: ${WORKERS_EC2_INSTANCES_ALLOWED_TYPES}
+      EC2_INSTANCES_CUSTOM_TAGS: ${WORKERS_EC2_INSTANCES_CUSTOM_TAGS}
       EC2_INSTANCES_KEY_NAME: ${WORKERS_EC2_INSTANCES_KEY_NAME}
       EC2_INSTANCES_MACHINES_BUFFER: 0
       EC2_INSTANCES_MAX_INSTANCES: ${WORKERS_EC2_INSTANCES_MAX_INSTANCES}
@@ -62,7 +91,6 @@ services:
       EC2_INSTANCES_SECURITY_GROUP_IDS: ${WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS}
       EC2_INSTANCES_SUBNET_ID: ${WORKERS_EC2_INSTANCES_SUBNET_ID}
       EC2_INSTANCES_TIME_BEFORE_TERMINATION: ${WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION}
-      EC2_INSTANCES_CUSTOM_TAGS: ${WORKERS_EC2_INSTANCES_CUSTOM_TAGS}
       LOG_FORMAT_LOCAL_DEV_ENABLED: 1
       LOG_LEVEL: ${LOG_LEVEL:-WARNING}
       REDIS_HOST: redis
@@ -73,6 +101,16 @@ services:
       placement:
         constraints:
           - "node.role==manager"
+    secrets:
+      - source: dask_tls_ca
+        target: ${DASK_TLS_CA_FILE}
+        mode: 0444
+      - source: dask_tls_key
+        target: ${DASK_TLS_KEY}
+        mode: 0444
+      - source: dask_tls_cert
+        target: ${DASK_TLS_CERT}
+        mode: 0444
 
   redis:
     # NOTE: currently autoscaling requires redis to run
@@ -96,3 +134,11 @@ volumes:
   computational_shared_data:
     name: computational_shared_data
   redis-data:
+
+secrets:
+  dask_tls_ca:
+    file: ${DASK_TLS_CA_FILE}
+  dask_tls_key:
+    file: ${DASK_TLS_KEY}
+  dask_tls_cert:
+    file: ${DASK_TLS_CERT}

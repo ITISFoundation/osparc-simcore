@@ -151,6 +151,7 @@ async def test_get_or_create_cluster_massive_calls(
     ec2_client: EC2Client,
     user_id: UserID,
     wallet_id: WalletID,
+    mocked_dask_ping_scheduler: MockedDaskModule,
 ):
     # NOTE: when a user starts many computational jobs in parallel
     # the get_or_create_cluster is flooded with a lot of calls for the
@@ -172,3 +173,4 @@ async def test_get_or_create_cluster_massive_calls(
 
     assert results
     assert all(isinstance(response, OnDemandCluster) for response in results)
+    mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
