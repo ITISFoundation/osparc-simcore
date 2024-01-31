@@ -23,6 +23,9 @@ _DEFAULT_PREFETCH_VALUE: Final[int] = 10
 _DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S: Final[int] = 5
 _HEADER_X_DEATH: Final[str] = "x-death"
 
+DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S: Final[float] = 1
+DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS: Final[NonNegativeInt] = 3
+
 
 def _get_delayed_exchange_name(exchange_name: str) -> str:
     return f"delayed_{exchange_name}"
@@ -134,10 +137,10 @@ class RabbitMQClient(RabbitMQClientBase):
         exclusive_queue: bool = True,
         topics: list[str] | None = None,
         message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
-        on_error_delay_s: float = 1,
-        max_retries_upon_error: int = 3,
+        unexpected_error_retry_delay_s: float = DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S,
+        unexpected_error_max_attempts: int = DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
     ) -> str:
-        """subscribe to exchange_name calling message_handler for every incoming message
+        """subscribe to exchange_name calling ``message_handler`` for every incoming message
         - exclusive_queue: True means that every instance of this application will
             receive the incoming messages
         - exclusive_queue: False means that only one instance of this application will
@@ -155,8 +158,10 @@ class RabbitMQClient(RabbitMQClientBase):
           - a queue bound with topic "director-v2.event.specific_event" will only
             receive messages with that exact routing key (same as DIRECT exchanges behavior)
 
-        When `max_retries_upon_error` is provided, if an error is raised by the handler, this
-        is the maximum amount of retries after which the message is given up for.
+        ``unexpected_error_max_attempts`` is the maximum amount of retries when the ``message_handler``
+            raised an unexpected error
+        ``unexpected_error_retry_delay_s`` time to wait between each retry when the ``message_handler``
+            raised an unexpected error
 
         Raises:
             aio_pika.exceptions.ChannelPreconditionFailed: In case an existing exchange with
@@ -210,14 +215,16 @@ class RabbitMQClient(RabbitMQClientBase):
                 self.client_name,
                 delayed_exchange_name,
                 exclusive_queue=exclusive_queue,
-                message_ttl=int(on_error_delay_s * 1000),  # TTL in milliseconds
+                message_ttl=int(
+                    unexpected_error_retry_delay_s * 1000
+                ),  # TTL in milliseconds
                 arguments={"x-dead-letter-exchange": exchange.name},
             )
             await delayed_queue.bind(delayed_exchange)
 
             _consumer_tag = await self._get_consumer_tag(exchange_name)
             await queue.consume(
-                partial(_on_message, message_handler, max_retries_upon_error),
+                partial(_on_message, message_handler, unexpected_error_max_attempts),
                 exclusive=exclusive_queue,
                 consumer_tag=_consumer_tag,
             )

@@ -544,8 +544,8 @@ async def test_subscribe_to_failing_message_handler(
         _faulty_message_handler,
         topics=topics,
         exclusive_queue=False,
-        max_retries_upon_error=max_requeue_retry,
-        on_error_delay_s=on_error_delay_s,
+        unexpected_error_max_attempts=max_requeue_retry,
+        unexpected_error_retry_delay_s=on_error_delay_s,
     )
 
     publisher = create_rabbitmq_client("publisher")
