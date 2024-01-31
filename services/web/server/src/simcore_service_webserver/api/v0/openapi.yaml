@@ -3095,15 +3095,14 @@ paths:
         are taken from context, optionally wallet_id parameter might be provided).
       operationId: list_resource_usage_services
       parameters:
-      - description: Order by field (started_at|stopped_at|credit_cost) and direction
-          (asc|desc). The default sorting order is ascending.
+      - description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+          and direction (asc|desc). The default sorting order is ascending.
         required: false
         schema:
           title: Order By
-          type: string
-          description: Order by field (started_at|stopped_at|credit_cost) and direction
-            (asc|desc). The default sorting order is ascending.
-          format: json-string
+          description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+            and direction (asc|desc). The default sorting order is ascending.
+          default: '{"field": "started_at", "direction": "desc"}'
         example: '{"field": "started_at", "direction": "desc"}'
         name: order_by
         in: query
@@ -3162,30 +3161,21 @@ paths:
         wallet_id parameter might be provided).
       operationId: export_resource_usage_services
       parameters:
-      - description: Order by field (started_at|stopped_at|credit_cost) and direction
-          (asc|desc). The default sorting order is ascending.
-        required: false
+      - required: false
         schema:
           title: Order By
-          type: string
-          description: Order by field (started_at|stopped_at|credit_cost) and direction
-            (asc|desc). The default sorting order is ascending.
-          format: json-string
+          default: '{"field": "started_at", "direction": "desc"}'
         example: '{"field": "started_at", "direction": "desc"}'
         name: order_by
         in: query
-      - description: Filters to process on the resource usages list, encoded as JSON.
-          Currently supports the filtering of 'started_at' field with 'from' and 'until'
-          parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is
-          inclusive.
+      - description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+          and direction (asc|desc). The default sorting order is ascending.
         required: false
         schema:
           title: Filters
           type: string
-          description: Filters to process on the resource usages list, encoded as
-            JSON. Currently supports the filtering of 'started_at' field with 'from'
-            and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range
-            specified is inclusive.
+          description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+            and direction (asc|desc). The default sorting order is ascending.
           format: json-string
         example: '{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}'
         name: filters

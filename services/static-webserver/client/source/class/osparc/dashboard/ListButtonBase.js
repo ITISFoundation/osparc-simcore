@@ -91,6 +91,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           break;
         case "title":
           control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-light",
             font: "text-14",
             alignY: "middle",
             maxWidth: 400,
@@ -104,6 +105,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           break;
         case "description":
           control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-dark",
             rich: true,
             maxHeight: 16,
             minWidth: 100,

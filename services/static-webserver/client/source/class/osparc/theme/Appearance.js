@@ -111,6 +111,15 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "widget/selected-file-layout/download-button/icon": {},
+    "widget/selected-file-layout/delete-button/icon": {},
+    "pb-dynamic/menu-button/icon": {},
+    "pb-template/menu-button/icon": {},
+    "pb-study/menu-button/icon": {},
+    "pb-computational/menu-button/icon": {
+      alias: "image"
+    },
+
     "pb-study/lock-status":  {
       style: function() {
         return {
@@ -399,6 +408,9 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "splitpane/collapsible-view-left/collapse-button": {},
+    "splitpane/collapsible-view-right/collapse-button": {},
+
     /*
     ---------------------------------------------------------------------------
       NodePorts
@@ -509,6 +521,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       Buttons
     ---------------------------------------------------------------------------
     */
+    "widget/reset-button": {},
 
     "form-button": {
       style: function(states) {
@@ -517,8 +530,6 @@ qx.Theme.define("osparc.theme.Appearance", {
           cursor: "pointer",
           textColor: "default-button-text",
           padding: 5,
-          alignY: "middle",
-          alignX: "center",
           backgroundColor: "default-button"
         };
         if (states.hovered) {
@@ -582,8 +593,6 @@ qx.Theme.define("osparc.theme.Appearance", {
           decorator: "fab-button",
           cursor: "pointer",
           padding: 5,
-          alignY: "middle",
-          alignX: "center",
           textColor: "fab_text",
           backgroundColor: "fab-background"
         };
@@ -608,10 +617,9 @@ qx.Theme.define("osparc.theme.Appearance", {
     },
 
     "form-button-text": {
-      include: "form-button",
       style: function(states) {
         const style = {
-          decorator: "text-button",
+          decorator: "form-button-text",
           cursor: "pointer",
           textColor: "link",
           padding: 5,
@@ -620,7 +628,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           backgroundColor: "transparent"
         };
         if (states.hovered) {
-          style.textColor = "default-button-hover";
+          style.textColor = "contrasted-text-dark";
         }
         if (states.focused) {
           style.textColor = "default-button-focus";
@@ -973,7 +981,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     "hint": {
       style: state => ({
-        backgroundColor: "background-main-2",
+        backgroundColor: "window-popup-background",
         decorator: "hint",
         padding: 5
       })

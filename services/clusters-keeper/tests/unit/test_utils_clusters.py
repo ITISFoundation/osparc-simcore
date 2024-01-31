@@ -3,7 +3,9 @@
 # pylint: disable=unused-variable
 
 import re
+import subprocess
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -15,9 +17,15 @@ from aws_library.ec2.models import (
 )
 from faker import Faker
 from models_library.api_schemas_clusters_keeper.clusters import ClusterState
+from models_library.clusters import (
+    InternalClusterAuthentication,
+    NoAuthentication,
+    TLSAuthentication,
+)
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.clusters import (
+    _prepare_environment_variables,
     create_cluster_from_ec2_instance,
     create_startup_script,
 )
@@ -64,12 +72,12 @@ def test_create_startup_script(
     for boot_script in ec2_boot_specs.custom_boot_scripts:
         assert boot_script in startup_script
     # we have commands to pipe into a docker-compose file
-    assert " | base64 -d > docker-compose.yml" in startup_script
+    assert " | base64 -d > /docker-compose.yml" in startup_script
     # we have commands to init a docker-swarm
     assert "docker swarm init" in startup_script
     # we have commands to deploy a stack
     assert (
-        "docker stack deploy --with-registry-auth --compose-file=docker-compose.yml dask_stack"
+        "docker stack deploy --with-registry-auth --compose-file=/docker-compose.yml dask_stack"
         in startup_script
     )
     # before that we have commands that setup ENV variables, let's check we have all of them as defined in the docker-compose
@@ -84,20 +92,20 @@ def test_create_startup_script(
     )
     startup_script_env_keys_names = [key for key, _ in startup_script_key_value_pairs]
     # docker-compose expected values
+    docker_compose_expected_environment: dict[str, str] = {}
     assert "services" in clusters_keeper_docker_compose
-    assert "autoscaling" in clusters_keeper_docker_compose["services"]
-    assert "environment" in clusters_keeper_docker_compose["services"]["autoscaling"]
-    docker_compose_expected_environment: dict[
-        str, str
-    ] = clusters_keeper_docker_compose["services"]["autoscaling"]["environment"]
-    assert isinstance(docker_compose_expected_environment, dict)
+    assert isinstance(clusters_keeper_docker_compose["services"], dict)
+    for service_details in clusters_keeper_docker_compose["services"].values():
+        if "environment" in service_details:
+            assert isinstance(service_details["environment"], dict)
+            docker_compose_expected_environment |= service_details["environment"]
 
     # check the expected environment variables are set so the docker-compose will be complete (we define enough)
     expected_env_keys = [
         v[2:-1].split(":")[0]
         for v in docker_compose_expected_environment.values()
         if isinstance(v, str) and v.startswith("${")
-    ] + ["DASK_NTHREADS", "DOCKER_IMAGE_TAG"]
+    ] + ["DOCKER_IMAGE_TAG"]
     for env_key in expected_env_keys:
         assert (
             env_key in startup_script_env_keys_names
@@ -132,6 +140,46 @@ def test_create_startup_script(
     )
 
 
+def test_startup_script_defines_all_envs_for_docker_compose(
+    disabled_rabbitmq: None,
+    mocked_ec2_server_envs: EnvVarsDict,
+    mocked_redis_server: None,
+    app_settings: ApplicationSettings,
+    cluster_machines_name_prefix: str,
+    ec2_boot_specs: EC2InstanceBootSpecific,
+    clusters_keeper_docker_compose_file: Path,
+):
+    additional_custom_tags = {
+        AWSTagKey("pytest-tag-key"): AWSTagValue("pytest-tag-value")
+    }
+    environment_variables = _prepare_environment_variables(
+        app_settings,
+        cluster_machines_name_prefix=cluster_machines_name_prefix,
+        additional_custom_tags=additional_custom_tags,
+    )
+    assert environment_variables
+    process = subprocess.run(
+        [  # noqa: S603, S607
+            "docker",
+            "compose",
+            "--dry-run",
+            f"--file={clusters_keeper_docker_compose_file}",
+            "up",
+        ],
+        capture_output=True,
+        check=True,
+        env={
+            e.split("=", maxsplit=1)[0]: e.split("=", maxsplit=1)[1]
+            for e in environment_variables
+        },
+    )
+    assert process
+    assert process.stderr
+    _ENV_VARIABLE_NOT_SET_ERROR = "variable is not set"
+    assert _ENV_VARIABLE_NOT_SET_ERROR not in process.stderr.decode()
+    assert process.stdout
+
+
 @pytest.mark.parametrize(
     "ec2_state, expected_cluster_state",
     [
@@ -144,11 +192,19 @@ def test_create_startup_script(
         ("whatever", ClusterState.STOPPED),
     ],
 )
+@pytest.mark.parametrize(
+    "authentication",
+    [
+        NoAuthentication(),
+        TLSAuthentication(**TLSAuthentication.Config.schema_extra["examples"][0]),
+    ],
+)
 def test_create_cluster_from_ec2_instance(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
     faker: Faker,
     ec2_state: InstanceStateNameType,
     expected_cluster_state: ClusterState,
+    authentication: InternalClusterAuthentication,
 ):
     instance_data = fake_ec2_instance_data(state=ec2_state)
     cluster_instance = create_cluster_from_ec2_instance(
@@ -156,6 +212,8 @@ def test_create_cluster_from_ec2_instance(
         faker.pyint(),
         faker.pyint(),
         dask_scheduler_ready=faker.pybool(),
+        cluster_auth=authentication,
     )
     assert cluster_instance
     assert cluster_instance.state is expected_cluster_state
+    assert cluster_instance.authentication == authentication

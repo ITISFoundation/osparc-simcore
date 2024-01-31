@@ -30,6 +30,12 @@ class ResourceTrackingSettings(BaseCustomSettings):
     )
 
 
+class SystemMonitorSettings(BaseCustomSettings):
+    DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE: bool = Field(
+        default=False, description="enabled/disabled disk usage monitoring"
+    )
+
+
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_BOOT_MODE: BootModeEnum = Field(
         ...,
@@ -85,6 +91,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     )
 
+    DYNAMIC_SIDECAR_TELEMETRY_DISK_USAGE_MONITOR_INTERVAL: timedelta = Field(
+        default=timedelta(seconds=5),
+        description="time between checks for disk usage",
+    )
+
     DEBUG: bool = Field(
         default=False,
         description="If set to True the application will boot into debug mode",
@@ -137,6 +148,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_SERVICE_KEY: DynamicServiceKey | None = None
     DY_SIDECAR_SERVICE_VERSION: ServiceVersion | None = None
     DY_SIDECAR_PRODUCT_NAME: ProductName | None = None
+
+    SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(auto_default_from_env=True)
 
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 

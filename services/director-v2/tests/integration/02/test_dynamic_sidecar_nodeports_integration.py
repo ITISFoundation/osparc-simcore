@@ -27,7 +27,7 @@ from helpers.shared_comp_utils import (
     assert_computation_task_out_obj,
 )
 from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
-from models_library.clusters import DEFAULT_CLUSTER_ID
+from models_library.clusters import DEFAULT_CLUSTER_ID, InternalClusterAuthentication
 from models_library.projects import (
     Node,
     NodesDict,
@@ -331,6 +331,7 @@ def mock_env(
     network_name: str,
     dev_feature_r_clone_enabled: str,
     dask_scheduler_service: str,
+    dask_scheduler_auth: InternalClusterAuthentication,
     minimal_configuration: None,
 ) -> None:
     # Works as below line in docker.compose.yml
@@ -368,6 +369,7 @@ def mock_env(
             "COMPUTATIONAL_BACKEND_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": dask_scheduler_auth.json(),
         },
     )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)

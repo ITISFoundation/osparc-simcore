@@ -105,7 +105,7 @@ class UsersRepo:
                 (users.c.status == UserStatus.ACTIVE) & (users.c.id == user_id)
             )
         )
-        if value:
+        if value is not None:
             assert isinstance(value, str)  # nosec
             return value
 

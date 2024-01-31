@@ -81,6 +81,9 @@ def test_settings_with_repository_env_devel(
     mock_env_devel_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setenv("SC_BOOT_MODE", "production")  # defined in Dockerfile
+    monkeypatch.setenv(
+        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", "{}"
+    )  # defined in docker-compose
 
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))

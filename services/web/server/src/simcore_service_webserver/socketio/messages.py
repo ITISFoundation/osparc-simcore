@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from typing import Final
 
 from aiohttp.web import Application
-from models_library.api_schemas_webserver.socketio import SocketIORoom
+from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID, UserID
 from servicelib.json_serialization import json_dumps
@@ -47,7 +47,7 @@ async def send_messages(
             sio.emit(
                 message["event_type"],
                 json_dumps(message["data"]),
-                room=SocketIORoom.from_socket_id(sid),
+                room=SocketIORoomStr.from_socket_id(sid),
             )
             for message in messages
             for sid in socket_ids
@@ -66,7 +66,7 @@ async def send_group_messages(
         sio.emit(
             message["event_type"],
             json_dumps(message["data"]),
-            room=SocketIORoom.from_group_id(group_id),
+            room=SocketIORoomStr.from_group_id(group_id),
         )
         for message in messages
     ]

@@ -8,7 +8,8 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from models_library.api_schemas_webserver.socketio import SocketIORoom
+from models_library.api_schemas_webserver.socketio import SocketIORoomStr
+from models_library.products import ProductName
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from servicelib.aiohttp.observer import emit
@@ -18,6 +19,7 @@ from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionErro
 
 from ..groups.api import list_user_groups
 from ..login.decorators import login_required
+from ..products.api import Product, get_current_product
 from ..resource_manager.user_sessions import managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .messages import SOCKET_IO_HEARTBEAT_EVENT, send_messages
@@ -41,7 +43,7 @@ _EMIT_INTERVAL_S: int = 2
 
 def auth_user_factory(socket_id: SocketID):
     @login_required
-    async def _handler(request: web.Request) -> UserID:
+    async def _handler(request: web.Request) -> tuple[UserID, ProductName]:
         """
         Raises:
             web.HTTPUnauthorized: when the user is not recognized. Keeps the original request
@@ -49,6 +51,7 @@ def auth_user_factory(socket_id: SocketID):
         app = request.app
         user_id = UserID(request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID))
         client_session_id = request.query.get("client_session_id", None)
+        product: Product = get_current_product(request)
 
         _logger.debug(
             "client %s,%s authenticated", f"{user_id=}", f"{client_session_id=}"
@@ -76,7 +79,7 @@ def auth_user_factory(socket_id: SocketID):
             )
             await resource_registry.set_socket_id(socket_id)
 
-        return user_id
+        return user_id, product.name
 
     return _handler
 
@@ -91,9 +94,9 @@ async def _set_user_in_group_rooms(
     sio = get_socket_server(app)
     for group in groups:
         # NOTE socketio need to be upgraded that's why enter_room is not an awaitable
-        sio.enter_room(socket_id, SocketIORoom.from_group_id(group["gid"]))
+        sio.enter_room(socket_id, SocketIORoomStr.from_group_id(group["gid"]))
 
-    sio.enter_room(socket_id, SocketIORoom.from_user_id(user_id))
+    sio.enter_room(socket_id, SocketIORoomStr.from_user_id(user_id))
 
 
 #
@@ -121,7 +124,7 @@ async def connect(
 
     try:
         auth_user_handler = auth_user_factory(socket_id)
-        user_id = await auth_user_handler(environ["aiohttp.request"])
+        user_id, product_name = await auth_user_handler(environ["aiohttp.request"])
 
         await _set_user_in_group_rooms(app, user_id, socket_id)
 
@@ -132,7 +135,7 @@ async def connect(
             "SIGNAL_USER_CONNECTED",
             user_id,
             app,
-            "s4l",  # NOTE: will be changed after https://github.com/ITISFoundation/osparc-simcore/issues/4776
+            product_name,
         )
 
         heart_beat_messages: list[SocketMessageDict] = [

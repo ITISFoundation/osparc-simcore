@@ -5,6 +5,7 @@
 from collections.abc import AsyncIterator
 from typing import Any
 
+import aiopg.sa
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -16,6 +17,9 @@ from pydantic import BaseModel
 from pydantic.fields import ModelField
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser
+from simcore_postgres_database.models.groups_extra_properties import (
+    groups_extra_properties,
+)
 from simcore_postgres_database.models.users import UserStatus
 from simcore_service_webserver.users._preferences_api import (
     ALL_FRONTEND_PREFERENCES,
@@ -111,8 +115,21 @@ async def test__get_frontend_user_preferences_list_defaults(
         assert preference.value == _get_default_field_value(preference.__class__)
 
 
+@pytest.fixture
+async def enable_all_frontend_preferences(
+    aiopg_engine: aiopg.sa.engine.Engine, product_name: ProductName
+) -> None:
+    async with aiopg_engine.acquire() as conn:
+        await conn.execute(
+            groups_extra_properties.update()
+            .where(groups_extra_properties.c.product_name == product_name)
+            .values(enable_telemetry=True)
+        )
+
+
 async def test_get_frontend_user_preferences_aggregation(
     app: web.Application,
+    enable_all_frontend_preferences: None,
     user_id: UserID,
     product_name: ProductName,
     drop_all_preferences: None,
