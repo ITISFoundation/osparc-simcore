@@ -31,7 +31,7 @@ def _get_delayed_exchange_name(exchange_name: str) -> str:
 def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
     count: int = 0
 
-    x_death: list[dict[str, Any]] = message.headers.get(_HEADER_X_DEATH, [])  # type: ignore
+    x_death: list[dict[str, Any]] = message.headers.get(_HEADER_X_DEATH, [])
     if x_death:
         count = x_death[0]["count"]
 
