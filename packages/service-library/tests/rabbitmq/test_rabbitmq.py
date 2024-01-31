@@ -447,6 +447,7 @@ async def test_rabbit_not_using_the_same_exchange_type_raises(
         await client.subscribe(exchange_name, mocked_message_parser, topics=[])
 
 
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_unsubscribe_consumer(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
