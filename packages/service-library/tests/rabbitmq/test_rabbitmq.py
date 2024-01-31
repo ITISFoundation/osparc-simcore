@@ -6,9 +6,9 @@
 
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 from unittest import mock
 
 import aio_pika
@@ -16,6 +16,7 @@ import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient, _client
+from servicelib.rabbitmq._client import DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS
 from servicelib.rabbitmq._models import MessageHandler
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
@@ -504,6 +505,61 @@ def _get_spy_report(mock: mock.Mock) -> dict[str, set[int]]:
     return results
 
 
+_ON_ERROR_DELAY_S: Final[float] = 0.1
+
+
+async def _setup_publisher_and_subscriber(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    max_requeue_retry: int,
+    topics: list[str] | None,
+    message_handler: Callable[[Any], Awaitable[bool]],
+) -> int:
+    exchange_name = f"{random_exchange_name()}"
+    client = create_rabbitmq_client("consumer")
+
+    await client.subscribe(
+        exchange_name,
+        message_handler,
+        topics=topics,
+        exclusive_queue=False,
+        unexpected_error_max_attempts=max_requeue_retry,
+        unexpected_error_retry_delay_s=_ON_ERROR_DELAY_S,
+    )
+
+    publisher = create_rabbitmq_client("publisher")
+    if topics is not None:
+        for topic in topics:
+            message = random_rabbit_message(topic=topic)
+            await publisher.publish(exchange_name, message)
+    else:
+        message = random_rabbit_message()
+        await publisher.publish(exchange_name, message)
+
+    return 1 if topics is None else len(topics)
+
+
+async def _assert_wait_for_messages(
+    on_message_spy: mock.Mock, expected_results: int
+) -> None:
+    def _ensure_expected_calls() -> None:
+        assert len(on_message_spy.call_args_list) == expected_results
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(expected_results * _ON_ERROR_DELAY_S * 2),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            _ensure_expected_calls()
+
+    # wait some more time to make sure retry mechanism did not trigger
+    await asyncio.sleep(_ON_ERROR_DELAY_S * 3)
+    _ensure_expected_calls()
+
+
 @pytest.mark.parametrize(
     "max_requeue_retry",
     [
@@ -531,51 +587,20 @@ async def test_subscribe_to_failing_message_handler(
         msg = f"Always fail. Received message {message}"
         raise RuntimeError(msg)
 
-    exchange_name = f"{random_exchange_name()}"
-    client = create_rabbitmq_client("consumer")
-
-    on_error_delay_s = 0.1
-
-    await client.subscribe(
-        exchange_name,
+    topics_multiplier = await _setup_publisher_and_subscriber(
+        create_rabbitmq_client,
+        random_exchange_name,
+        random_rabbit_message,
+        max_requeue_retry,
+        topics,
         _faulty_message_handler,
-        topics=topics,
-        exclusive_queue=False,
-        unexpected_error_max_attempts=max_requeue_retry,
-        unexpected_error_retry_delay_s=on_error_delay_s,
     )
-
-    publisher = create_rabbitmq_client("publisher")
-    if topics is not None:
-        for topic in topics:
-            message = random_rabbit_message(topic=topic)
-            await publisher.publish(exchange_name, message)
-    else:
-        message = random_rabbit_message()
-        await publisher.publish(exchange_name, message)
-
-    topics_multiplier = 1 if topics is None else len(topics)
 
     expected_results = (max_requeue_retry + 1) * topics_multiplier
 
-    def _ensure_expected_calls():
-        assert len(on_message_spy.call_args_list) == expected_results
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(expected_results * on_error_delay_s * 2),
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-    ):
-        with attempt:
-            _ensure_expected_calls()
-
-    # wait some more time to detect if max_retries_upon_error was respected
-    await asyncio.sleep(on_error_delay_s * 3)
-    _ensure_expected_calls()
+    await _assert_wait_for_messages(on_message_spy, expected_results)
 
     report = _get_spy_report(on_message_spy)
-
     routing_keys: list[str] = [""] if topics is None else topics
     assert report == {k: set(range(max_requeue_retry + 1)) for k in routing_keys}
 
@@ -606,50 +631,20 @@ async def test_subscribe_no_dead_letter_exchange_messages(
             return False
         return True
 
-    exchange_name = f"{random_exchange_name()}"
-    client = create_rabbitmq_client("consumer")
-
-    on_error_delay_s = 0.1
-
-    await client.subscribe(
-        exchange_name,
+    topics_multiplier = await _setup_publisher_and_subscriber(
+        create_rabbitmq_client,
+        random_exchange_name,
+        random_rabbit_message,
+        DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
+        topics,
         _retry_message_then_succeed,
-        topics=topics,
-        exclusive_queue=False,
-        unexpected_error_retry_delay_s=on_error_delay_s,
     )
-
-    publisher = create_rabbitmq_client("publisher")
-    if topics is not None:
-        for topic in topics:
-            message = random_rabbit_message(topic=topic)
-            await publisher.publish(exchange_name, message)
-    else:
-        message = random_rabbit_message()
-        await publisher.publish(exchange_name, message)
-
-    topics_multiplier = 1 if topics is None else len(topics)
 
     expected_results = 2 * topics_multiplier
 
-    def _ensure_expected_calls():
-        assert len(on_message_spy.call_args_list) == expected_results
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(expected_results * on_error_delay_s * 2),
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-    ):
-        with attempt:
-            _ensure_expected_calls()
-
-    # wait some more time to make sure retry mechanism did not trigger
-    await asyncio.sleep(on_error_delay_s * 3)
-    _ensure_expected_calls()
+    await _assert_wait_for_messages(on_message_spy, expected_results)
 
     report = _get_spy_report(on_message_spy)
-
     routing_keys: list[str] = [""] if topics is None else topics
     assert report == {k: set(range(1)) for k in routing_keys}
 
