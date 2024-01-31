@@ -560,23 +560,16 @@ async def _assert_wait_for_messages(
     _ensure_expected_calls()
 
 
-@pytest.mark.parametrize(
-    "max_requeue_retry",
-    [
-        0,
-        1,
-        3,
-        10,
-    ],
-)
-@pytest.mark.parametrize(
-    "topics",
-    [
-        None,
-        ["one"],
-        ["one", "two"],
-    ],
-)
+_TOPICS: Final[list[list[str] | None]] = [
+    None,
+    ["one"],
+    ["one", "two"],
+]
+
+
+@pytest.mark.parametrize("max_requeue_retry", [0, 1, 3, 10])
+@pytest.mark.parametrize("topics", _TOPICS)
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_subscribe_to_failing_message_handler(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
@@ -606,14 +599,8 @@ async def test_subscribe_to_failing_message_handler(
     assert report == {k: set(range(max_requeue_retry + 1)) for k in routing_keys}
 
 
-@pytest.mark.parametrize(
-    "topics",
-    [
-        None,
-        ["one"],
-        ["one", "two"],
-    ],
-)
+@pytest.mark.parametrize("topics", _TOPICS)
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_subscribe_no_dead_letter_exchange_messages(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
