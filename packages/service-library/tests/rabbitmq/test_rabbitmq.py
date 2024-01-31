@@ -432,6 +432,7 @@ async def test_rabbit_adding_topics_to_a_fanout_exchange(
     await _assert_message_received(mocked_message_parser, 0)
 
 
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_rabbit_not_using_the_same_exchange_type_raises(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
