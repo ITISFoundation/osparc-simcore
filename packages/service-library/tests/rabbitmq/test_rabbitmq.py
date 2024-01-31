@@ -527,10 +527,7 @@ async def test_subscribe_to_failing_message_handler(
     max_requeue_retry: int,
     topics: list[str] | None,
 ):
-    message_intercepted = mock.AsyncMock()
-
     async def _faulty_message_handler(message: Any) -> bool:
-        message_intercepted()
         msg = f"Always fail. Received message {message}"
         raise RuntimeError(msg)
 
@@ -562,12 +559,11 @@ async def test_subscribe_to_failing_message_handler(
     expected_results = (max_requeue_retry + 1) * topics_multiplier
 
     def _ensure_expected_calls():
-        assert message_intercepted.call_count == expected_results
         assert len(on_message_spy.call_args_list) == expected_results
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
-        stop=stop_after_delay(100),
+        stop=stop_after_delay(expected_results * on_error_delay_s * 2),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
@@ -582,3 +578,81 @@ async def test_subscribe_to_failing_message_handler(
 
     routing_keys: list[str] = [""] if topics is None else topics
     assert report == {k: set(range(max_requeue_retry + 1)) for k in routing_keys}
+
+
+@pytest.mark.parametrize(
+    "topics",
+    [
+        None,
+        ["one"],
+        ["one", "two"],
+    ],
+)
+async def test_subscribe_no_dead_letter_exchange_messages(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    on_message_spy: mock.Mock,
+    topics: list[str] | None,
+):
+    message_failed: dict[str, bool] = {}
+
+    async def _retry_message_then_succeed(message: Any) -> bool:
+        print("Handling message", message)
+        if message not in message_failed:
+            message_failed[message] = False
+        if not message_failed[message]:
+            message_failed[message] = True
+            return False
+        return True
+
+    exchange_name = f"{random_exchange_name()}"
+    client = create_rabbitmq_client("consumer")
+
+    on_error_delay_s = 0.1
+
+    await client.subscribe(
+        exchange_name,
+        _retry_message_then_succeed,
+        topics=topics,
+        exclusive_queue=False,
+        unexpected_error_retry_delay_s=on_error_delay_s,
+    )
+
+    publisher = create_rabbitmq_client("publisher")
+    if topics is not None:
+        for topic in topics:
+            message = random_rabbit_message(topic=topic)
+            await publisher.publish(exchange_name, message)
+    else:
+        message = random_rabbit_message()
+        await publisher.publish(exchange_name, message)
+
+    topics_multiplier = 1 if topics is None else len(topics)
+
+    expected_results = 2 * topics_multiplier
+
+    def _ensure_expected_calls():
+        assert len(on_message_spy.call_args_list) == expected_results
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(expected_results * on_error_delay_s * 2),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            _ensure_expected_calls()
+
+    # wait some more time to make sure retry mechanism did not trigger
+    await asyncio.sleep(on_error_delay_s * 3)
+    _ensure_expected_calls()
+
+    report = _get_spy_report(on_message_spy)
+
+    routing_keys: list[str] = [""] if topics is None else topics
+    assert report == {k: set(range(1)) for k in routing_keys}
+
+    # ensure no headers in received messages, meaning the handler did not fail
+    for entry in on_message_spy.call_args_list:
+        assert entry.args[0].headers == {}
