@@ -104,7 +104,6 @@ def create_startup_script(
     ):
         assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
         download_certificates_commands = [
-            "apt install -y awscli",
             f"mkdir --parents {_HOST_CERTIFICATES_BASE_PATH}",
             f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_CA_FILE_PATH}',
             f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_CERT_FILE_PATH}',
