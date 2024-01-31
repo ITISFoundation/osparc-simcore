@@ -630,6 +630,3 @@ async def test_unsubscribe_consumer(
     await client.unsubscribe(exchange_name)
     with pytest.raises(aio_pika.exceptions.ChannelNotFoundEntity):
         await client.unsubscribe(exchange_name)
-
-
-# TODO: if they still fail try to pull the tests upper. I have no more ideas why they fail
