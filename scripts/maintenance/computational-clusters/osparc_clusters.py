@@ -458,6 +458,20 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
     return list_of_tasks
 
 
+def _dask_client(ip_address: str) -> distributed.Client:
+    security = distributed.Security()
+    if state["dask_certificates"] is not None:
+        security = distributed.Security(
+            tls_ca_file=f"{state['dask_certificates'] / 'dask-cert.pem'}",
+            tls_client_cert=f"{state['dask_certificates'] / 'dask-cert.pem'}",
+            tls_client_key=f"{state['dask_certificates'] / 'dask-key.pem'}",
+            require_encryption=True,
+        )
+    return distributed.Client(
+        f"tls://{ip_address}:8786", security=security, timeout="5"
+    )
+
+
 def _analyze_computational_instances(
     computational_instances: list[ComputationalInstance],
 ) -> list[ComputationalCluster]:
@@ -471,9 +485,8 @@ def _analyze_computational_instances(
             processing_jobs = {}
             unrunnable_tasks = {}
             with contextlib.suppress(TimeoutError, OSError):
-                client = distributed.Client(
-                    f"tcp://{instance.ec2_instance.public_ip_address}:8786", timeout="5"
-                )
+                client = _dask_client(instance.ec2_instance.public_ip_address)
+
                 scheduler_info = client.scheduler_info()
                 datasets_on_cluster = client.list_datasets()
                 processing_jobs = client.processing()
@@ -513,7 +526,6 @@ def _detect_instances(
 ) -> tuple[list[DynamicInstance], list[ComputationalCluster]]:
     dynamic_instances = []
     computational_instances = []
-
     for instance in track(instances, description="Detecting running instances..."):
         if comp_instance := _parse_computational(instance):
             if (user_id is None or comp_instance.user_id == user_id) and (
@@ -545,6 +557,9 @@ state = {
 def main(
     repo_config: Annotated[Path, typer.Option(help="path to the repo.config file")],
     ssh_key_path: Annotated[Path, typer.Option(help="path to the repo ssh key")] = None,  # type: ignore
+    dask_certificates: Annotated[
+        Path, typer.Option(help="path to the dask certificates")
+    ] = None,
 ):
     """Manages external clusters"""
     environment = dotenv_values(repo_config)
@@ -566,6 +581,9 @@ def main(
     )
 
     state["ssh_key_path"] = ssh_key_path.expanduser() if ssh_key_path else None
+    state["dask_certificates"] = (
+        ssh_key_path.expanduser() if dask_certificates else None
+    )
 
 
 @app.command()
@@ -640,10 +658,7 @@ def clear_jobs(
     if typer.confirm("Are you sure you want to erase all the jobs from that cluster?"):
         print("proceeding with reseting jobs from cluster...")
         the_cluster = computational_clusters[0]
-        with distributed.Client(
-            f"tcp://{the_cluster.primary.ec2_instance.public_ip_address}:8786",
-            timeout="5",
-        ) as client:
+        with _dask_client(the_cluster.primary.ec2_instance.public_ip_address) as client:
             client.datasets.clear()
         print("proceeding with reseting jobs from cluster done.")
         print("Refreshing...")
