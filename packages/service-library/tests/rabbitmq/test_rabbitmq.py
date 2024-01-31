@@ -15,7 +15,8 @@ import aio_pika
 import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
-from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
+from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient, _client
+from servicelib.rabbitmq._models import MessageHandler
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -464,14 +465,66 @@ async def test_unsubscribe_consumer(
         await client.unsubscribe(exchange_name)
 
 
-@pytest.mark.parametrize("max_requeue_retry", [None, 3, 10])
-@pytest.mark.parametrize("topics", [None, ["one"], ["one", "two"]])
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
+@pytest.fixture
+def on_message_spy(mocker: MockerFixture) -> mock.Mock:
+    spy = mock.Mock()
+
+    original_handler = _client._on_message  # noqa: SLF001
+
+    async def __on_message(
+        message_handler: MessageHandler,
+        max_retries_upon_error: int,
+        message: aio_pika.abc.AbstractIncomingMessage,
+    ) -> None:
+        await original_handler(message_handler, max_retries_upon_error, message)
+        spy(message)
+
+    mocker.patch(
+        "servicelib.rabbitmq._client._on_message",
+        side_effect=__on_message,
+    )
+    return spy
+
+
+def _get_spy_report(mock: mock.Mock) -> dict[str, set[int]]:
+    print(mock.call_args_list)
+
+    results: dict[str, set[int]] = {}
+
+    for entry in mock.call_args_list:
+        message: aio_pika.abc.AbstractIncomingMessage = entry.args[0]
+        assert message.routing_key is not None
+
+        if message.routing_key not in results:
+            results[message.routing_key] = set()
+
+        count = _client._get_x_death_count(message)  # noqa: SLF001
+        results[message.routing_key].add(count)
+
+    return results
+
+
+@pytest.mark.parametrize(
+    "max_requeue_retry",
+    [
+        3,
+        10,
+    ],
+)
+@pytest.mark.parametrize(
+    "topics",
+    [
+        None,
+        ["one"],
+        ["one", "two"],
+    ],
+)
 async def test_subscribe_to_failing_message_handler(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     random_rabbit_message: Callable[..., PytestRabbitMessage],
-    max_requeue_retry: int | None,
+    on_message_spy: mock.Mock,
+    max_requeue_retry: int,
     topics: list[str] | None,
 ):
     message_intercepted = mock.AsyncMock()
@@ -484,12 +537,15 @@ async def test_subscribe_to_failing_message_handler(
     exchange_name = f"{random_exchange_name()}"
     client = create_rabbitmq_client("consumer")
 
+    on_error_delay_s = 0.1
+
     await client.subscribe(
         exchange_name,
         _faulty_message_handler,
         topics=topics,
         exclusive_queue=False,
         max_retries_upon_error=max_requeue_retry,
+        on_error_delay_s=on_error_delay_s,
     )
 
     publisher = create_rabbitmq_client("publisher")
@@ -503,17 +559,26 @@ async def test_subscribe_to_failing_message_handler(
 
     topics_multiplier = 1 if topics is None else len(topics)
 
+    expected_results = (max_requeue_retry + 1) * topics_multiplier
+
+    def _ensure_expected_calls():
+        assert message_intercepted.call_count == expected_results
+        assert len(on_message_spy.call_args_list) == expected_results
+
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
-        stop=stop_after_delay(2),
+        stop=stop_after_delay(100),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
         with attempt:
-            if max_requeue_retry is None:
-                assert message_intercepted.call_count > 100
-            else:
-                assert (
-                    message_intercepted.call_count
-                    == (max_requeue_retry + 1) * topics_multiplier
-                )
+            _ensure_expected_calls()
+
+    # wait some more time to detect if max_retries_upon_error was respected
+    await asyncio.sleep(on_error_delay_s * 3)
+    _ensure_expected_calls()
+
+    report = _get_spy_report(on_message_spy)
+
+    routing_keys: list[str] = [""] if topics is None else topics
+    assert report == {k: set(range(max_requeue_retry + 1)) for k in routing_keys}

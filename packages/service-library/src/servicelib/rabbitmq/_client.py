@@ -1,7 +1,8 @@
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Final
+from functools import partial
+from typing import Any, Final
 
 import aio_pika
 from pydantic import NonNegativeInt
@@ -20,15 +21,60 @@ _logger = logging.getLogger(__name__)
 
 _DEFAULT_PREFETCH_VALUE: Final[int] = 10
 _DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S: Final[int] = 5
-_HEADER_X_RETRY_COUNT: Final[str] = "x-retry-count"
+_HEADER_X_DEATH: Final[str] = "x-death"
 
 
-def _get_unhandled_exception_message(extra_message: str = "") -> str:
-    return (
-        "unhandled exception when consuming RabbitMQ message, "
-        "this is caught but should not happen. "
-        "Please check, message will be queued back%s!" % extra_message
-    )
+def _get_delayed_exchange_name(exchange_name: str) -> str:
+    return f"delayed_{exchange_name}"
+
+
+def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
+    count: int = 0
+
+    x_death: list[dict[str, Any]] = message.headers.get(_HEADER_X_DEATH, [])  # type: ignore
+    if x_death:
+        count = x_death[0]["count"]
+
+    return count
+
+
+async def _on_message(
+    message_handler: MessageHandler,
+    max_retries_upon_error: int,
+    message: aio_pika.abc.AbstractIncomingMessage,
+) -> None:
+    async with message.process(requeue=True, ignore_processed=True):
+        count = _get_x_death_count(message)
+        try:
+            with log_context(
+                _logger,
+                logging.DEBUG,
+                msg=f"Received message from {message.exchange=}, {message.routing_key=}",
+            ):
+                if not await message_handler(message.body):
+                    # NOTE: will put message to original queue(not the DLX)
+                    await message.nack()
+        except Exception:  # pylint: disable=broad-exception-caught
+            _logger.warning(
+                (
+                    "Retry [%s/%s] for handler '%s', which raised "
+                    "an unexpected error caused by message '%s'"
+                ),
+                count,
+                max_retries_upon_error,
+                message_handler,
+                message,
+            )
+
+            if count < max_retries_upon_error:
+                # NOTE: puts message to the DLX
+                await message.nack(requeue=False)
+            else:
+                _logger.error(  # noqa: TRY400
+                    "Handler '%s' is giving up on message '%s'",
+                    message_handler,
+                    message,
+                )
 
 
 @dataclass
@@ -88,7 +134,8 @@ class RabbitMQClient(RabbitMQClientBase):
         exclusive_queue: bool = True,
         topics: list[str] | None = None,
         message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
-        max_retries_upon_error: int | None = None,
+        on_error_delay_s: float = 1,
+        max_retries_upon_error: int = 3,
     ) -> str:
         """subscribe to exchange_name calling message_handler for every incoming message
         - exclusive_queue: True means that every instance of this application will
@@ -136,12 +183,14 @@ class RabbitMQClient(RabbitMQClientBase):
             # consumer/publisher must set the same configuration for same queue
             # exclusive means that the queue is only available for THIS very client
             # and will be deleted when the client disconnects
+            delayed_exchange_name = _get_delayed_exchange_name(exchange_name)
             queue = await declare_queue(
                 channel,
                 self.client_name,
                 exchange_name,
                 exclusive_queue=exclusive_queue,
                 message_ttl=message_ttl,
+                arguments={"x-dead-letter-exchange": delayed_exchange_name},
             )
             if topics is None:
                 await queue.bind(exchange, routing_key="")
@@ -150,43 +199,25 @@ class RabbitMQClient(RabbitMQClientBase):
                     *(queue.bind(exchange, routing_key=topic) for topic in topics)
                 )
 
-            requeue_on_nack: bool = max_retries_upon_error is None
+            # Delayed Exchange
+            delayed_exchange = await channel.declare_exchange(
+                delayed_exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
+            )
 
-            async def _on_message(
-                message: aio_pika.abc.AbstractIncomingMessage,
-            ) -> None:
-                async with message.process(requeue=True, ignore_processed=True):
-                    retry_count: int = message.headers.get(_HEADER_X_RETRY_COUNT, 0)  # type: ignore
-                    try:
-                        with log_context(
-                            _logger,
-                            logging.DEBUG,
-                            msg=f"Received message from {message.exchange=}, {message.routing_key=}",
-                        ):
-                            if not await message_handler(message.body):
-                                await message.nack()
-                    except Exception:  # pylint: disable=broad-exception-caught
-                        if (
-                            max_retries_upon_error is not None
-                            and retry_count < max_retries_upon_error
-                        ):
-                            message.headers[_HEADER_X_RETRY_COUNT] = retry_count + 1
-                            _logger.exception(
-                                _get_unhandled_exception_message(
-                                    f"(attempt {message.headers[_HEADER_X_RETRY_COUNT]}/{max_retries_upon_error})"
-                                )
-                            )
-                            await exchange.publish(
-                                message, routing_key=message.routing_key or ""
-                            )
-
-                        if requeue_on_nack:
-                            _logger.exception(_get_unhandled_exception_message())
-                        await message.nack(requeue=requeue_on_nack)
+            # Delayed Queue
+            delayed_queue = await declare_queue(
+                channel,
+                self.client_name,
+                delayed_exchange_name,
+                exclusive_queue=exclusive_queue,
+                message_ttl=int(on_error_delay_s * 1000),  # TTL in milliseconds
+                arguments={"x-dead-letter-exchange": exchange.name},
+            )
+            await delayed_queue.bind(delayed_exchange)
 
             _consumer_tag = await self._get_consumer_tag(exchange_name)
             await queue.consume(
-                _on_message,
+                partial(_on_message, message_handler, max_retries_upon_error),
                 exclusive=exclusive_queue,
                 consumer_tag=_consumer_tag,
             )
@@ -204,7 +235,13 @@ class RabbitMQClient(RabbitMQClientBase):
         async with self._channel_pool.acquire() as channel:
             exchange = await channel.get_exchange(exchange_name)
             queue = await declare_queue(
-                channel, self.client_name, exchange_name, exclusive_queue=True
+                channel,
+                self.client_name,
+                exchange_name,
+                exclusive_queue=True,
+                arguments={
+                    "x-dead-letter-exchange": _get_delayed_exchange_name(exchange_name)
+                },
             )
 
             await asyncio.gather(
@@ -221,7 +258,13 @@ class RabbitMQClient(RabbitMQClientBase):
         async with self._channel_pool.acquire() as channel:
             exchange = await channel.get_exchange(exchange_name)
             queue = await declare_queue(
-                channel, self.client_name, exchange_name, exclusive_queue=True
+                channel,
+                self.client_name,
+                exchange_name,
+                exclusive_queue=True,
+                arguments={
+                    "x-dead-letter-exchange": _get_delayed_exchange_name(exchange_name)
+                },
             )
 
             await asyncio.gather(
