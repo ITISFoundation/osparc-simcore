@@ -402,9 +402,7 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     await _assert_message_received(mocked_message_parser, 0)
 
 
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_rabbit_adding_topics_to_a_fanout_exchange(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -434,7 +432,6 @@ async def test_rabbit_adding_topics_to_a_fanout_exchange(
     await _assert_message_received(mocked_message_parser, 0)
 
 
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_rabbit_not_using_the_same_exchange_type_raises(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
@@ -449,7 +446,6 @@ async def test_rabbit_not_using_the_same_exchange_type_raises(
         await client.subscribe(exchange_name, mocked_message_parser, topics=[])
 
 
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_unsubscribe_consumer(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
