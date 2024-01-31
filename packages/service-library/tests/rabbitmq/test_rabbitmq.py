@@ -488,8 +488,6 @@ def on_message_spy(mocker: MockerFixture) -> mock.Mock:
 
 
 def _get_spy_report(mock: mock.Mock) -> dict[str, set[int]]:
-    print(mock.call_args_list)
-
     results: dict[str, set[int]] = {}
 
     for entry in mock.call_args_list:
@@ -569,7 +567,6 @@ _TOPICS: Final[list[list[str] | None]] = [
 
 @pytest.mark.parametrize("max_requeue_retry", [0, 1, 3, 10])
 @pytest.mark.parametrize("topics", _TOPICS)
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_subscribe_to_failing_message_handler(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
@@ -600,7 +597,6 @@ async def test_subscribe_to_failing_message_handler(
 
 
 @pytest.mark.parametrize("topics", _TOPICS)
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_subscribe_no_dead_letter_exchange_messages(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
@@ -611,7 +607,6 @@ async def test_subscribe_no_dead_letter_exchange_messages(
     message_failed: dict[str, bool] = {}
 
     async def _fail_once_then_succeed(message: Any) -> bool:
-        print("Handling message", message)
         if message not in message_failed:
             message_failed[message] = False
         if not message_failed[message]:
