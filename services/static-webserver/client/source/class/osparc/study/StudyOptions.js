@@ -121,26 +121,29 @@ qx.Class.define("osparc.study.StudyOptions", {
           break;
         case "wallet-selector":
           control = osparc.desktop.credits.Utils.createWalletSelector("read").set({
-            width: 150
+            width: 150,
+            allowGrowX: true,
+            alignX: "center"
           });
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "credits-left-view":
           control = this.__getCreditsIndicator();
-          this.getChildControl("top-summary-layout").add(control);
+          this.getChildControl("top-summary-layout").add(control, {
+            flex: 1
+          });
           break;
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
             alignX: "right"
           }));
-          this.getChildControl("top-summary-layout").add(control, {
-            flex: 1
-          });
+          this.getChildControl("top-summary-layout").add(control);
           break;
         case "open-button":
           control = new qx.ui.form.Button(this.tr("Open")).set({
-            appearance: "strong-button",
+            appearance: "form-button",
             font: "text-14",
+            minWidth: 150,
             maxWidth: 150,
             height: 35,
             center: true
@@ -150,7 +153,9 @@ qx.Class.define("osparc.study.StudyOptions", {
           break;
         case "cancel-button":
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
+            appearance: "form-button-outlined",
             font: "text-14",
+            minWidth: 150,
             maxWidth: 150,
             height: 35,
             center: true

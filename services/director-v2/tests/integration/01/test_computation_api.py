@@ -21,7 +21,7 @@ from helpers.shared_comp_utils import (
     assert_computation_task_out_obj,
 )
 from models_library.api_schemas_directorv2.comp_tasks import ComputationGet
-from models_library.clusters import DEFAULT_CLUSTER_ID
+from models_library.clusters import DEFAULT_CLUSTER_ID, InternalClusterAuthentication
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
@@ -56,6 +56,7 @@ def mock_env(
     monkeypatch: pytest.MonkeyPatch,
     dynamic_sidecar_docker_image_name: str,
     dask_scheduler_service: str,
+    dask_scheduler_auth: InternalClusterAuthentication,
 ) -> None:
     # used by the client fixture
     setenvs_from_dict(
@@ -64,6 +65,7 @@ def mock_env(
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "1",
             "COMPUTATIONAL_BACKEND_ENABLED": "1",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": dask_scheduler_auth.json(),
             "DYNAMIC_SIDECAR_IMAGE": dynamic_sidecar_docker_image_name,
             "SIMCORE_SERVICES_NETWORK_NAME": "test_swarm_network_name",
             "SWARM_STACK_NAME": "test_mocked_stack_name",

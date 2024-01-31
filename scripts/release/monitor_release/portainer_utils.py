@@ -3,10 +3,10 @@ import json
 import arrow
 import requests
 from monitor_release.models import RunningSidecar
-from monitor_release.settings import Settings
+from monitor_release.settings import LegacySettings
 
 
-def get_bearer_token(settings: Settings):
+def get_bearer_token(settings: LegacySettings):
     headers = {"accept": "application/json", "Content-Type": "application/json"}
     payload = json.dumps(
         {
@@ -19,11 +19,10 @@ def get_bearer_token(settings: Settings):
         headers=headers,
         data=payload,
     )
-    bearer_token = response.json()["jwt"]
-    return bearer_token
+    return response.json()["jwt"]
 
 
-def get_services(settings: Settings, bearer_token):
+def get_services(settings: LegacySettings, bearer_token):
     services_url = f"{settings.portainer_url}/portainer/api/endpoints/{settings.portainer_endpoint_version}/docker/services"
     response = requests.get(
         services_url,
@@ -32,11 +31,10 @@ def get_services(settings: Settings, bearer_token):
             "Content-Type": "application/json",
         },
     )
-    services = response.json()
-    return services
+    return response.json()
 
 
-def get_tasks(settings: Settings, bearer_token):
+def get_tasks(settings: LegacySettings, bearer_token):
     tasks_url = f"{settings.portainer_url}/portainer/api/endpoints/{settings.portainer_endpoint_version}/docker/tasks"
     response = requests.get(
         tasks_url,
@@ -45,11 +43,10 @@ def get_tasks(settings: Settings, bearer_token):
             "Content-Type": "application/json",
         },
     )
-    tasks = response.json()
-    return tasks
+    return response.json()
 
 
-def get_containers(settings: Settings, bearer_token):
+def get_containers(settings: LegacySettings, bearer_token):
     bearer_token = get_bearer_token(settings)
 
     containers_url = f"{settings.portainer_url}/portainer/api/endpoints/{settings.portainer_endpoint_version}/docker/containers/json?all=true"
@@ -60,11 +57,10 @@ def get_containers(settings: Settings, bearer_token):
             "Content-Type": "application/json",
         },
     )
-    containers = response.json()
-    return containers
+    return response.json()
 
 
-def check_simcore_running_sidecars(settings: Settings, services):
+def check_simcore_running_sidecars(settings: LegacySettings, services):
     running_sidecars: list[RunningSidecar] = []
     for service in services:
         if (
@@ -106,7 +102,9 @@ def _generate_containers_map(containers):
     return container_map
 
 
-def check_simcore_deployed_services(settings: Settings, services, tasks, containers):
+def check_simcore_deployed_services(
+    settings: LegacySettings, services, tasks, containers
+):
     container_map = _generate_containers_map(containers)
     service_task_map = {}
     for service in services:

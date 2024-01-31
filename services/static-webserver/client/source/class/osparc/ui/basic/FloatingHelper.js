@@ -91,8 +91,7 @@ qx.Class.define("osparc.ui.basic.FloatingHelper", {
       switch (id) {
         case "hint-container":
           control = new qx.ui.container.Composite().set({
-            appearance: "hint",
-            backgroundColor: "node-selected-background"
+            appearance: "hint"
           });
           break;
         case "caret": {

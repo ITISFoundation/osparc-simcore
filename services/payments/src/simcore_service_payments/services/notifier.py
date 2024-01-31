@@ -8,6 +8,7 @@ from models_library.api_schemas_payments.socketio import (
     SOCKET_IO_PAYMENT_COMPLETED_EVENT,
     SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT,
 )
+from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodTransaction,
     PaymentTransaction,
@@ -48,7 +49,7 @@ class Notifier(SingletonInAppStateMixin):
         return await self._sio_manager.emit(
             SOCKET_IO_PAYMENT_COMPLETED_EVENT,
             data=jsonable_encoder(payment, by_alias=True),
-            room=f"{user_primary_group_id}",
+            room=SocketIORoomStr.from_group_id(user_primary_group_id),
         )
 
     async def notify_payment_method_acked(
@@ -61,7 +62,7 @@ class Notifier(SingletonInAppStateMixin):
         return await self._sio_manager.emit(
             SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT,
             data=jsonable_encoder(payment_method, by_alias=True),
-            room=f"{user_primary_group_id}",
+            room=SocketIORoomStr.from_group_id(user_primary_group_id),
         )
 
 
@@ -77,7 +78,6 @@ def setup_notifier(app: FastAPI):
         assert Notifier.get_from_app_state(app) == notifier  # nosec
 
     async def _on_shutdown() -> None:
-
         with contextlib.suppress(AttributeError):
             Notifier.pop_from_app_state(app)
 

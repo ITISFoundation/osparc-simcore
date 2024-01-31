@@ -8,6 +8,7 @@ from typing import Any, Final, TypeAlias
 import distributed
 from aws_library.ec2.models import EC2InstanceData, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
+from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 
 from ..core.errors import (
@@ -37,14 +38,27 @@ _DASK_SCHEDULER_CONNECT_TIMEOUT_S: Final[int] = 5
 
 
 @contextlib.asynccontextmanager
-async def _scheduler_client(url: AnyUrl) -> AsyncIterator[distributed.Client]:
+async def _scheduler_client(
+    url: AnyUrl, authentication: InternalClusterAuthentication
+) -> AsyncIterator[distributed.Client]:
     """
     Raises:
         DaskSchedulerNotFoundError: if the scheduler was not found/cannot be reached
     """
     try:
+        security = distributed.Security()
+        if isinstance(authentication, TLSAuthentication):
+            security = distributed.Security(
+                tls_ca_file=f"{authentication.tls_ca_file}",
+                tls_client_cert=f"{authentication.tls_client_cert}",
+                tls_client_key=f"{authentication.tls_client_key}",
+                require_encryption=True,
+            )
         async with distributed.Client(
-            url, asynchronous=True, timeout=f"{_DASK_SCHEDULER_CONNECT_TIMEOUT_S}"
+            url,
+            asynchronous=True,
+            timeout=f"{_DASK_SCHEDULER_CONNECT_TIMEOUT_S}",
+            security=security,
         ) as client:
             yield client
     except OSError as exc:
@@ -97,16 +111,21 @@ def _dask_worker_from_ec2_instance(
 
 
 async def is_worker_connected(
-    scheduler_url: AnyUrl, worker_ec2_instance: EC2InstanceData
+    scheduler_url: AnyUrl,
+    authentication: InternalClusterAuthentication,
+    worker_ec2_instance: EC2InstanceData,
 ) -> bool:
     with contextlib.suppress(DaskNoWorkersError, DaskWorkerNotFoundError):
-        async with _scheduler_client(scheduler_url) as client:
+        async with _scheduler_client(scheduler_url, authentication) as client:
             _dask_worker_from_ec2_instance(client, worker_ec2_instance)
             return True
     return False
 
 
-async def list_unrunnable_tasks(url: AnyUrl) -> list[DaskTask]:
+async def list_unrunnable_tasks(
+    scheduler_url: AnyUrl,
+    authentication: InternalClusterAuthentication,
+) -> list[DaskTask]:
     """
     Raises:
         DaskSchedulerNotFoundError
@@ -119,7 +138,7 @@ async def list_unrunnable_tasks(url: AnyUrl) -> list[DaskTask]:
             task.key: task.resource_restrictions for task in dask_scheduler.unrunnable
         }
 
-    async with _scheduler_client(url) as client:
+    async with _scheduler_client(scheduler_url, authentication) as client:
         list_of_tasks: dict[
             DaskTaskId, DaskTaskResources
         ] = await _wrap_client_async_routine(client.run_on_scheduler(_list_tasks))
@@ -131,7 +150,8 @@ async def list_unrunnable_tasks(url: AnyUrl) -> list[DaskTask]:
 
 
 async def list_processing_tasks_per_worker(
-    url: AnyUrl,
+    scheduler_url: AnyUrl,
+    authentication: InternalClusterAuthentication,
 ) -> dict[DaskWorkerUrl, list[DaskTask]]:
     """
     Raises:
@@ -149,7 +169,7 @@ async def list_processing_tasks_per_worker(
                 )
         return worker_to_processing_tasks
 
-    async with _scheduler_client(url) as client:
+    async with _scheduler_client(scheduler_url, authentication) as client:
         worker_to_tasks: dict[
             str, list[tuple[DaskTaskId, DaskTaskResources]]
         ] = await _wrap_client_async_routine(
@@ -166,7 +186,9 @@ async def list_processing_tasks_per_worker(
 
 
 async def get_worker_still_has_results_in_memory(
-    url: AnyUrl, ec2_instance: EC2InstanceData
+    scheduler_url: AnyUrl,
+    authentication: InternalClusterAuthentication,
+    ec2_instance: EC2InstanceData,
 ) -> int:
     """
     Raises:
@@ -175,7 +197,7 @@ async def get_worker_still_has_results_in_memory(
         DaskWorkerNotFoundError
         DaskNoWorkersError
     """
-    async with _scheduler_client(url) as client:
+    async with _scheduler_client(scheduler_url, authentication) as client:
         _, worker_details = _dask_worker_from_ec2_instance(client, ec2_instance)
 
         worker_metrics: dict[str, Any] = worker_details["metrics"]
@@ -183,7 +205,9 @@ async def get_worker_still_has_results_in_memory(
 
 
 async def get_worker_used_resources(
-    url: AnyUrl, ec2_instance: EC2InstanceData
+    scheduler_url: AnyUrl,
+    authentication: InternalClusterAuthentication,
+    ec2_instance: EC2InstanceData,
 ) -> Resources:
     """
     Raises:
@@ -205,7 +229,7 @@ async def get_worker_used_resources(
             return dict(worker_state.used_resources)
         return None
 
-    async with _scheduler_client(url) as client:
+    async with _scheduler_client(scheduler_url, authentication) as client:
         worker_url, _ = _dask_worker_from_ec2_instance(client, ec2_instance)
 
         # now get the used resources
@@ -213,7 +237,7 @@ async def get_worker_used_resources(
             client.run_on_scheduler(_get_worker_used_resources, worker_url=worker_url),
         )
         if worker_used_resources is None:
-            raise DaskWorkerNotFoundError(worker_host=worker_url, url=url)
+            raise DaskWorkerNotFoundError(worker_host=worker_url, url=scheduler_url)
         return Resources(
             cpus=worker_used_resources.get("CPU", 0),
             ram=parse_obj_as(ByteSize, worker_used_resources.get("RAM", 0)),
@@ -221,17 +245,19 @@ async def get_worker_used_resources(
 
 
 async def compute_cluster_total_resources(
-    url: AnyUrl, instances: list[AssociatedInstance]
+    scheduler_url: AnyUrl,
+    authentication: InternalClusterAuthentication,
+    instances: list[AssociatedInstance],
 ) -> Resources:
     if not instances:
         return Resources.create_as_empty()
-    async with _scheduler_client(url) as client:
+    async with _scheduler_client(scheduler_url, authentication) as client:
         instance_hosts = (
             node_ip_from_ec2_private_dns(i.ec2_instance) for i in instances
         )
         scheduler_info = client.scheduler_info()
         if "workers" not in scheduler_info or not scheduler_info["workers"]:
-            raise DaskNoWorkersError(url=url)
+            raise DaskNoWorkersError(url=scheduler_url)
         workers: dict[str, Any] = scheduler_info["workers"]
         for worker_details in workers.values():
             if worker_details["host"] not in instance_hosts:
@@ -240,8 +266,10 @@ async def compute_cluster_total_resources(
         return Resources.create_as_empty()
 
 
-async def try_retire_nodes(url: AnyUrl) -> None:
-    async with _scheduler_client(url) as client:
+async def try_retire_nodes(
+    scheduler_url: AnyUrl, authentication: InternalClusterAuthentication
+) -> None:
+    async with _scheduler_client(scheduler_url, authentication) as client:
         await _wrap_client_async_routine(
             client.retire_workers(close_workers=False, remove=False)
         )

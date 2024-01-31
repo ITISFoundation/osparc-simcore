@@ -177,3 +177,6 @@ Untitled*
 services/**/settings-schema.json
 
 tests/public-api/osparc_python_wheels/*
+
+# osparc-config repo files
+repo.config

@@ -2,7 +2,8 @@
 # pylint: disable=redefined-outer-name
 
 import asyncio
-from typing import Any, AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
+from typing import Any
 
 import aiodocker
 import pytest
@@ -18,8 +19,7 @@ async def sidecar_computational_shared_volume(
     faker: Faker,
     docker_volume: Callable[[str], Awaitable[dict[str, Any]]],
 ) -> dict[str, Any]:
-    volume = await docker_volume(faker.pystr())
-    return volume
+    return await docker_volume(faker.pystr())
 
 
 @pytest.fixture
@@ -32,11 +32,10 @@ def sidecar_envs(
     computational_sidecar_mounted_folder: str,
     sidecar_computational_shared_volume: dict[str, Any],
 ) -> dict[str, str]:
-    envs = {
+    return {
         "SIDECAR_COMP_SERVICES_SHARED_FOLDER": f"{computational_sidecar_mounted_folder}",
         "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME": f"{sidecar_computational_shared_volume['Name']}",
     }
-    return envs
 
 
 @pytest.fixture
@@ -44,7 +43,7 @@ def sidecar_mounts(
     sidecar_computational_shared_volume: dict[str, Any],
     computational_sidecar_mounted_folder: str,
 ) -> list[dict[str, Any]]:
-    mounts = [  # docker socket needed to use the docker api
+    return [  # docker socket needed to use the docker api
         {
             "Source": "/var/run/docker.sock",
             "Target": "/var/run/docker.sock",
@@ -59,16 +58,15 @@ def sidecar_mounts(
             "ReadOnly": False,
         },
     ]
-    return mounts
 
 
 @pytest.fixture
 async def create_docker_service(
     async_docker_client: aiodocker.Docker,
-) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
+) -> AsyncIterator[Callable[..., Awaitable[Mapping[str, Any]]]]:
     services = []
 
-    async def service_creator(**service_kwargs) -> dict[str, Any]:
+    async def service_creator(**service_kwargs) -> Mapping[str, Any]:
         service = await async_docker_client.services.create(**service_kwargs)
         assert service
         assert "ID" in service
@@ -116,7 +114,11 @@ async def test_computational_sidecar_properly_start_stop(
         task_template={
             "ContainerSpec": {
                 "Image": image_name,
-                "Env": sidecar_envs | {"DASK_START_AS_SCHEDULER": "1"},
+                "Env": sidecar_envs
+                | {
+                    "DASK_START_AS_SCHEDULER": "1",
+                    "DASK_SCHEDULER_URL": f"tcp://{get_localhost_ip()}:8786",
+                },
                 "Init": True,
                 "Mounts": sidecar_mounts,
             }

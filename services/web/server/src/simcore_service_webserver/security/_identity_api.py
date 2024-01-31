@@ -4,15 +4,22 @@ from aiohttp import web
 from aiohttp_security.api import forget, remember
 from models_library.emails import LowerCaseEmailStr
 
-# Identification string for an autheticated user
-IdentityStr: TypeAlias = LowerCaseEmailStr
+# Identification *string* for an autheticated user
+IdentityStr: TypeAlias = str
 
 
 async def remember_identity(
-    request: web.Request, response: web.Response, *, user_email: IdentityStr
+    request: web.Request,
+    response: web.Response,
+    *,
+    user_email: LowerCaseEmailStr,
 ) -> web.Response:
     """Remember = Saves verified identify in current session"""
-    await remember(request=request, response=response, identity=user_email)
+    await remember(
+        request=request,
+        response=response,
+        identity=user_email,
+    )
     return response
 
 

@@ -7,23 +7,41 @@
 aio-pika==9.1.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+aioboto3==12.2.0
+    # via -r requirements/../../../packages/aws-library/requirements/_base.in
+aiobotocore==2.9.0
+    # via
+    #   aioboto3
+    #   aiobotocore
 aiocache==0.12.1
-    # via -r requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/_base.in
+    #   -r requirements/_base.in
 aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.21.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==23.1.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiohttp==3.8.5
     # via
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -34,7 +52,10 @@ aiohttp==3.8.5
     #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   aiobotocore
     #   aiodocker
+aioitertools==0.11.0
+    # via aiobotocore
 aiormq==6.7.6
     # via aio-pika
 aiosignal==1.3.1
@@ -49,6 +70,9 @@ anyio==3.6.2
 arrow==1.2.3
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/./../../../packages/models-library/requirements/_base.in
@@ -63,8 +87,23 @@ attrs==21.4.0
     # via
     #   aiohttp
     #   jsonschema
+boto3==1.33.13
+    # via aiobotocore
+botocore==1.33.13
+    # via
+    #   aiobotocore
+    #   boto3
+    #   s3transfer
+botocore-stubs==1.34.23
+    # via types-aiobotocore
 certifi==2023.7.22
     # via
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -100,6 +139,12 @@ email-validator==2.0.0.post2
     # via pydantic
 fastapi==0.96.0
     # via
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -113,6 +158,7 @@ fastapi==0.96.0
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   fastapi-pagination
+    #   prometheus-fastapi-instrumentator
 fastapi-pagination==0.12.5
     # via -r requirements/_base.in
 fonttools==4.39.4
@@ -135,6 +181,12 @@ httptools==0.5.0
     # via uvicorn
 httpx==0.24.1
     # via
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -153,8 +205,14 @@ idna==3.4
     #   httpx
     #   requests
     #   yarl
+jmespath==1.0.1
+    # via
+    #   boto3
+    #   botocore
 jsonschema==3.2.0
     # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/./../../../packages/models-library/requirements/_base.in
@@ -162,6 +220,12 @@ kiwisolver==1.4.4
     # via matplotlib
 mako==1.2.4
     # via
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -193,6 +257,8 @@ numpy==1.24.3
     #   prometheus-api-client
 orjson==3.9.7
     # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/./../../../packages/models-library/requirements/_base.in
@@ -208,10 +274,22 @@ pillow==9.5.0
     # via matplotlib
 prometheus-api-client==0.5.3
     # via -r requirements/_base.in
+prometheus-client==0.19.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   prometheus-fastapi-instrumentator
+prometheus-fastapi-instrumentator==6.1.0
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 psycopg2-binary==2.9.6
     # via sqlalchemy
 pydantic==1.10.7
     # via
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -223,6 +301,12 @@ pydantic==1.10.7
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -237,6 +321,7 @@ pygments==2.15.1
 pyinstrument==4.4.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 pyparsing==3.0.9
     # via matplotlib
@@ -245,6 +330,7 @@ pyrsistent==0.19.3
 python-dateutil==2.8.2
     # via
     #   arrow
+    #   botocore
     #   dateparser
     #   matplotlib
     #   pandas
@@ -256,6 +342,12 @@ pytz==2023.3
     #   pandas
 pyyaml==6.0.1
     # via
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -267,10 +359,17 @@ pyyaml==6.0.1
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   uvicorn
 redis==4.5.5
     # via
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -282,6 +381,7 @@ redis==4.5.5
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 regex==2023.5.5
     # via dateparser
@@ -291,12 +391,20 @@ requests==2.30.0
     #   prometheus-api-client
 rich==13.3.5
     # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/./../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
+s3transfer==0.8.2
+    # via boto3
+sh==2.0.6
+    # via -r requirements/../../../packages/aws-library/requirements/_base.in
 shellingham==1.5.0.post1
     # via typer
+shortuuid==1.0.11
+    # via -r requirements/_base.in
 six==1.16.0
     # via
     #   jsonschema
@@ -308,6 +416,12 @@ sniffio==1.3.0
     #   httpx
 sqlalchemy==1.4.48
     # via
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -322,6 +436,12 @@ sqlalchemy==1.4.48
     #   alembic
 starlette==0.27.0
     # via
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -336,21 +456,34 @@ starlette==0.27.0
 tenacity==8.2.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 toolz==0.12.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.65.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 typer==0.9.0
     # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/./../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
+types-aiobotocore==2.11.0
+    # via -r requirements/../../../packages/aws-library/requirements/_base.in
+types-aiobotocore-ec2==2.11.0
+    # via types-aiobotocore
+types-aiobotocore-s3==2.11.0
+    # via types-aiobotocore
+types-awscrt==0.20.2
+    # via botocore-stubs
 typing-extensions==4.5.0
     # via
     #   aiodebug
@@ -358,12 +491,21 @@ typing-extensions==4.5.0
     #   alembic
     #   pydantic
     #   typer
+    #   types-aiobotocore
+    #   types-aiobotocore-ec2
+    #   types-aiobotocore-s3
 tzdata==2023.3
     # via pandas
 tzlocal==5.0.1
     # via dateparser
 urllib3==2.0.2
     # via
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/aws-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -374,6 +516,7 @@ urllib3==2.0.2
     #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   botocore
     #   requests
 uvicorn==0.22.0
     # via
@@ -385,6 +528,8 @@ watchfiles==0.19.0
     # via uvicorn
 websockets==11.0.3
     # via uvicorn
+wrapt==1.16.0
+    # via aiobotocore
 yarl==1.9.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in

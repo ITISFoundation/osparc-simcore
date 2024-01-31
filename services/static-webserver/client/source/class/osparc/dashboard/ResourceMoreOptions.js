@@ -101,6 +101,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __classifiersPage: null,
     __qualityPage: null,
     __servicesUpdatePage: null,
+    __openButton: null,
+    __anyUpdatable: null,
+    _services: null,
 
     __addToolbar: function() {
       const toolbar = this.__toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
@@ -123,23 +126,23 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         toolbar.add(serviceVersionSelector);
       }
 
-      const openButton = new qx.ui.form.Button(this.tr("Open")).set({
-        appearance: "strong-button",
+      this.__createOpenButton();
+      this.__handleServiceUpdatableCheck(resourceData.workbench);
+
+      this._add(toolbar);
+    },
+
+    __createOpenButton: function() {
+      const openButton = this.__openButton = new qx.ui.form.Button(this.tr("Open")).set({
+        appearance: "form-button",
         font: "text-14",
         alignX: "right",
-        minHeight: 35,
-        maxHeight: 35,
-        width: 70,
+        minWidth: 150,
+        maxWidth: 150,
+        height: 35,
         center: true,
-        enabled: false
+        enabled: true
       });
-      if ("workbench" in resourceData) {
-        osparc.study.Utils.getInaccessibleServices(resourceData["workbench"])
-          .then(unaccessibleServices => openButton.setEnabled(unaccessibleServices.length === 0));
-      } else {
-        openButton.setEnabled(true);
-      }
-
       osparc.utils.Utils.setIdToWidget(openButton, "openResource");
       const store = osparc.store.Store.getInstance();
       store.bind("currentStudy", openButton, "visibility", {
@@ -148,7 +151,34 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       this.bind("showOpenButton", openButton, "visibility", {
         converter: show => (store.getCurrentStudy() === null && show) ? "visible" : "excluded"
       });
-      openButton.addListener("execute", () => {
+    },
+
+    __handleServiceUpdatableCheck: function(workbench) {
+      const updatableServices = [];
+      this.__anyUpdatable = false;
+      for (const nodeId in workbench) {
+        const node = workbench[nodeId];
+        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(this._services, node["key"], node["version"]);
+        if (latestCompatibleMetadata === null) {
+          osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
+        }
+        const isUpdatable = osparc.service.Utils.isUpdatable(node);
+        if (isUpdatable) {
+          this.__anyUpdatable = true;
+          updatableServices.push(nodeId);
+        }
+      }
+      if (this.__anyUpdatable) {
+        this.__confirmUpdate();
+      } else {
+        this.__openStudy();
+      }
+      this.__toolbar.add(this.__openButton);
+    },
+
+    __openStudy: function() {
+      this.__openButton.setLabel("Open");
+      this.__openButton.addListenerOnce("execute", () => {
         switch (this.__resourceData["resourceType"]) {
           case "study":
             this.fireDataEvent("openStudy", this.__resourceData);
@@ -160,10 +190,38 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
             this.fireDataEvent("openService", this.__resourceData);
             break;
         }
-      });
-      toolbar.add(openButton);
+      }, true);
+    },
 
-      this._add(toolbar);
+    __confirmUpdate: function() {
+      this.__openButton.addListenerOnce("tap", () => {
+        const msg = this.tr("Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?");
+        const win = new osparc.dashboard.ResourceUpgradeHelper(msg).set({
+          primaryAction: "create",
+          secondaryAction: "primary"
+        });
+        win.center();
+        win.open();
+        win.addListenerOnce("close", () => {
+          if (win.getConfirmed()) {
+            this.__isUpdatable = false;
+            this.__openPage(this.__servicesUpdatePage);
+          } else {
+            this.__isUpdatable = false;
+            switch (this.__resourceData["resourceType"]) {
+              case "study":
+                this.fireDataEvent("openStudy", this.__resourceData);
+                break;
+              case "template":
+                this.fireDataEvent("openTemplate", this.__resourceData);
+                break;
+              case "service":
+                this.fireDataEvent("openService", this.__resourceData);
+                break;
+            }
+          }
+        });
+      }, this);
     },
 
     __addTabPagesView: function() {
@@ -542,6 +600,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         } else if (osparc.utils.Resources.isTemplate(resourceData)) {
           this.fireDataEvent("updateTemplate", updatedData);
         }
+        this.__handleServiceUpdatableCheck(updatedData.workbench);
       });
       const page = this.__servicesUpdatePage = this.self().createPage(title, servicesUpdate, icon, id);
       return page;

@@ -1,7 +1,8 @@
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from importlib.metadata import version
-from typing import Any, AsyncGenerator
+from typing import Any
 
 import osparc_gateway_server
 from aiodocker import Docker
@@ -77,7 +78,7 @@ class OsparcBackend(DBBackendBase):
         self.worker_start_timeout = self.settings.GATEWAY_WORKER_START_TIMEOUT
         self.docker_client = Docker()
 
-        print(WELCOME_MSG, flush=True)
+        print(WELCOME_MSG, flush=True)  # noqa: T201
 
     async def do_cleanup(self) -> None:
         assert isinstance(self.log, logging.Logger)  # nosec
@@ -106,7 +107,6 @@ class OsparcBackend(DBBackendBase):
         for key, value in modifications.items():
             scheduler_cmd = modify_cmd_argument(scheduler_cmd, key, value)
         # start the scheduler
-        # asyncio.create_task(_background_task(self, cluster))
         async for dask_scheduler_start_result in start_service(
             docker_client=self.docker_client,
             settings=self.settings,
@@ -135,11 +135,11 @@ class OsparcBackend(DBBackendBase):
     async def do_check_clusters(self, clusters: list[Cluster]) -> list[bool]:
         assert isinstance(self.log, logging.Logger)  # nosec
         self.log.debug("--> checking statuses of : %s", f"{clusters=}")
-        ok: list[bool] = await asyncio.gather(
+        oks: list[bool | BaseException] = await asyncio.gather(
             *[self._check_service_status(c) for c in clusters], return_exceptions=True
         )
-        self.log.debug("<-- clusters status returned: %s", f"{ok=}")
-        return ok
+        self.log.debug("<-- clusters status returned: %s", f"{oks=}")
+        return [ok if isinstance(ok, bool) else False for ok in oks]
 
     async def do_start_worker(
         self, worker: Worker
@@ -160,9 +160,8 @@ class OsparcBackend(DBBackendBase):
             # this should not happen since calling do_start_worker is done
             # from the on_cluster_heartbeat that checks if we already reached max worker
             # What may happen is that a docker node was removed in between and that is an error we can report.
-            raise PublicException(
-                "Unexpected error while creating a new worker, there is no available host! Was a docker node removed?"
-            ) from exc
+            msg = "Unexpected error while creating a new worker, there is no available host! Was a docker node removed?"
+            raise PublicException(msg) from exc
         assert node_hostname is not None  # nosec
         worker_env = self.get_worker_env(worker.cluster)
         dask_scheduler_url = f"tls://cluster_{worker.cluster.id}_scheduler:{OSPARC_SCHEDULER_API_PORT}"  #  worker.cluster.scheduler_address
@@ -307,7 +306,7 @@ class OsparcBackend(DBBackendBase):
         for worker in cluster.workers.values():
             if worker.status >= JobStatus.STOPPED:
                 continue
-            elif worker.name in closing_workers:
+            if worker.name in closing_workers:
                 if worker.status < JobStatus.RUNNING:
                     newly_running.append(worker)
                 close_expected.append(worker)
@@ -337,7 +336,7 @@ class OsparcBackend(DBBackendBase):
             self.queue.put(cluster)
 
         self.db.update_workers(target_updates)
-        for w, u in target_updates:
+        for w, _u in target_updates:
             self.queue.put(w)
 
         if newly_running:
