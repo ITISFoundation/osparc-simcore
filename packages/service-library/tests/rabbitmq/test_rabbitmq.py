@@ -325,7 +325,6 @@ async def test_a_subscribe_always_returns_fails_stops(
 
 
 async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -343,7 +342,6 @@ async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
 
 
 async def test_rabbit_client_pub_sub(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -361,7 +359,6 @@ async def test_rabbit_client_pub_sub(
 
 @pytest.mark.parametrize("num_subs", [10])
 async def test_rabbit_client_pub_many_subs(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -393,7 +390,6 @@ async def test_rabbit_client_pub_many_subs(
 
 
 async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -424,7 +420,6 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
 
 @pytest.mark.parametrize("num_subs", [10])
 async def test_pub_sub_with_non_exclusive_queue(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -489,7 +484,6 @@ def test_rabbit_pub_sub_performance(
 
 
 async def test_rabbit_pub_sub_with_topic(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -544,7 +538,6 @@ async def test_rabbit_pub_sub_with_topic(
 
 
 async def test_rabbit_pub_sub_bind_and_unbind_topics(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,

@@ -59,7 +59,6 @@ async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
 
 async def test_rabbit_client_lose_connection(
     async_docker_client: aiodocker.Docker,
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     docker_client: docker.client.DockerClient,
 ):
