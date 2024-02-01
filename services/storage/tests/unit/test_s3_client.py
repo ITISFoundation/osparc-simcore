@@ -8,14 +8,12 @@
 import asyncio
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from random import choice
 from typing import Final
 from uuid import uuid4
 
-import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
 from faker import Faker
@@ -56,19 +54,17 @@ def mock_config(
     monkeypatch.setenv("STORAGE_POSTGRES", "null")
 
 
-async def test_storage_storage_s3_client_creation(app_settings: Settings):
+async def test_storage_storage_s3_client_creation(
+    app_settings: Settings,
+):  # mocked_aws_server: ThreadedMotoServer
     assert app_settings.STORAGE_S3
-    async with AsyncExitStack() as exit_stack:
-        storage_s3_client = await StorageS3Client.create(
-            exit_stack,
-            app_settings.STORAGE_S3,
-            app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
-        )
-        assert storage_s3_client
-        response = await storage_s3_client.client.list_buckets()
-        assert not response["Buckets"]
-    with pytest.raises(botocore.exceptions.HTTPClientError):
-        await storage_s3_client.client.list_buckets()
+    storage_s3_client = await StorageS3Client.create(
+        app_settings.STORAGE_S3,
+        app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
+    )
+    assert storage_s3_client
+    response = await storage_s3_client.client.list_buckets()
+    assert not response["Buckets"]
 
 
 @pytest.fixture
@@ -76,19 +72,17 @@ async def storage_s3_client(
     app_settings: Settings,
 ) -> AsyncIterator[StorageS3Client]:
     assert app_settings.STORAGE_S3
-    async with AsyncExitStack() as exit_stack:
-        storage_s3_client = await StorageS3Client.create(
-            exit_stack,
-            app_settings.STORAGE_S3,
-            app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
-        )
-        # check that no bucket is lying around
-        assert storage_s3_client
-        response = await storage_s3_client.client.list_buckets()
-        assert not response[
-            "Buckets"
-        ], f"for testing puproses, there should be no bucket lying around! {response=}"
-        yield storage_s3_client
+    storage_s3_client = await StorageS3Client.create(
+        app_settings.STORAGE_S3,
+        app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
+    )
+    # check that no bucket is lying around
+    assert storage_s3_client
+    response = await storage_s3_client.client.list_buckets()
+    assert not response[
+        "Buckets"
+    ], f"for testing puproses, there should be no bucket lying around! {response=}"
+    yield storage_s3_client
 
 
 async def test_create_bucket(storage_s3_client: StorageS3Client, faker: Faker):

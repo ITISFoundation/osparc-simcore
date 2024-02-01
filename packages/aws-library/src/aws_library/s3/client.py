@@ -17,14 +17,17 @@ from .errors import S3RuntimeError
 _logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
+@dataclass
 class SimcoreS3API:
     client: S3Client
     session: aioboto3.Session
     exit_stack: contextlib.AsyncExitStack
+    transfer_max_concurrency: int
 
     @classmethod
-    async def create(cls, settings: S3Settings) -> "SimcoreS3API":
+    async def create(
+        cls, settings: S3Settings, s3_max_concurrency: int = 10
+    ) -> "SimcoreS3API":
         session = aioboto3.Session()
         session_client = session.client(
             "s3",
@@ -40,12 +43,12 @@ class SimcoreS3API:
         s3_client = cast(
             S3Settings, await exit_stack.enter_async_context(session_client)
         )
-        return cls(s3_client, session, exit_stack)
+        return cls(s3_client, session, exit_stack, s3_max_concurrency)
 
     async def close(self) -> None:
         await self.exit_stack.aclose()
 
-    async def http_check_bucket_connected(self, bucket: S3BucketName) -> bool:
+    async def is_connected(self, bucket: S3BucketName) -> bool:
         try:
             _logger.debug("Head bucket: %s", bucket)
             await self.client.head_bucket(Bucket=bucket)

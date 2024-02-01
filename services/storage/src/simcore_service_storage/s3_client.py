@@ -1,15 +1,16 @@
+import contextlib
 import datetime
 import json
 import logging
 import urllib.parse
 from collections.abc import AsyncGenerator, Callable
-from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, TypeAlias, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
+from aws_library.s3.client import SimcoreS3API
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from models_library.api_schemas_storage import UploadedPart
@@ -86,14 +87,10 @@ async def _list_objects_v2_paginated_gen(
 
 
 @dataclass
-class StorageS3Client:  # pylint: disable=too-many-public-methods
-    session: aioboto3.Session
-    client: S3Client
-    transfer_max_concurrency: int
-
+class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
     @classmethod
     async def create(
-        cls, exit_stack: AsyncExitStack, settings: S3Settings, s3_max_concurrency: int
+        cls, settings: S3Settings, s3_max_concurrency: int = 10
     ) -> "StorageS3Client":
         # upon creation the client does not try to connect, one need to make an operation
         session = aioboto3.Session()
@@ -108,11 +105,12 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
             config=Config(signature_version="s3v4"),
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
+        exit_stack = contextlib.AsyncExitStack()
         client = cast(S3Client, await exit_stack.enter_async_context(session_client))
         # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
         await client.list_buckets()
 
-        return cls(session, client, s3_max_concurrency)
+        return cls(client, session, exit_stack, s3_max_concurrency)
 
     @s3_exception_handler(_logger)
     async def create_bucket(self, bucket: S3BucketName) -> None:
