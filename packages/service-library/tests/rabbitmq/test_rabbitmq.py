@@ -159,9 +159,6 @@ async def _setup_publisher_and_subscriber(
 async def _assert_wait_for_messages(
     on_message_spy: mock.Mock, expected_results: int
 ) -> None:
-    def _ensure_expected_calls() -> None:
-        assert len(on_message_spy.call_args_list) == expected_results
-
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
         stop=stop_after_delay(expected_results * _ON_ERROR_DELAY_S * 2),
@@ -169,11 +166,11 @@ async def _assert_wait_for_messages(
         reraise=True,
     ):
         with attempt:
-            _ensure_expected_calls()
+            assert len(on_message_spy.call_args_list) == expected_results
 
     # wait some more time to make sure retry mechanism did not trigger
     await asyncio.sleep(_ON_ERROR_DELAY_S * 3)
-    _ensure_expected_calls()
+    assert len(on_message_spy.call_args_list) == expected_results
 
 
 async def _assert_message_received(
