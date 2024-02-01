@@ -127,19 +127,17 @@ def _get_spy_report(mock: mock.Mock) -> dict[str, set[int]]:
 
 
 async def _setup_publisher_and_subscriber(
-    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    consumer: RabbitMQClient,
+    publisher: RabbitMQClient,
     random_exchange_name: Callable[[], str],
     random_rabbit_message: Callable[..., PytestRabbitMessage],
     max_requeue_retry: int,
     topics: list[str] | None,
     message_handler: Callable[[Any], Awaitable[bool]],
 ) -> int:
-    client = create_rabbitmq_client("consumer")
-    publisher = create_rabbitmq_client("publisher")
-
     exchange_name = f"{random_exchange_name()}"
 
-    await client.subscribe(
+    await consumer.subscribe(
         exchange_name,
         message_handler,
         topics=topics,
@@ -232,8 +230,11 @@ async def test_subscribe_to_failing_message_handler(
         msg = f"Always fail. Received message {message}"
         raise RuntimeError(msg)
 
+    consumer = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
     topics_count = await _setup_publisher_and_subscriber(
-        create_rabbitmq_client,
+        consumer,
+        publisher,
         random_exchange_name,
         random_rabbit_message,
         max_requeue_retry,
@@ -268,8 +269,11 @@ async def test_subscribe_fail_then_success(
             return False
         return True
 
+    consumer = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
     topics_count = await _setup_publisher_and_subscriber(
-        create_rabbitmq_client,
+        consumer,
+        publisher,
         random_exchange_name,
         random_rabbit_message,
         _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
@@ -310,8 +314,11 @@ async def test_subscribe_always_returns_fails_stops(
     async def _always_returning_fail(_: Any) -> bool:
         return False
 
+    consumer = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
     topics_count = await _setup_publisher_and_subscriber(
-        create_rabbitmq_client,
+        consumer,
+        publisher,
         random_exchange_name,
         random_rabbit_message,
         _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
