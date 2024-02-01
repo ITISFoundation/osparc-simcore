@@ -210,6 +210,7 @@ _TOPICS: Final[list[list[str] | None]] = [
 ]
 
 
+@pytest.mark.timeout(100)
 @pytest.mark.parametrize("max_requeue_retry", [0, 1, 3, 10])
 @pytest.mark.parametrize("topics", _TOPICS)
 async def test_a_subscribe_to_failing_message_handler(
@@ -241,6 +242,7 @@ async def test_a_subscribe_to_failing_message_handler(
     assert report == {k: set(range(max_requeue_retry + 1)) for k in routing_keys}
 
 
+@pytest.mark.timeout(100)
 @pytest.mark.parametrize("topics", _TOPICS)
 async def test_a_subscribe_fail_then_success(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
@@ -289,6 +291,7 @@ async def test_a_subscribe_fail_then_success(
     assert requeued_message_count == topics_multiplier
 
 
+@pytest.mark.timeout(100)
 @pytest.mark.parametrize("topics", _TOPICS)
 async def test_a_subscribe_always_returns_fails_stops(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
