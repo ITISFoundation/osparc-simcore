@@ -134,8 +134,10 @@ async def _setup_publisher_and_subscriber(
     topics: list[str] | None,
     message_handler: Callable[[Any], Awaitable[bool]],
 ) -> int:
-    exchange_name = f"{random_exchange_name()}"
     client = create_rabbitmq_client("consumer")
+    publisher = create_rabbitmq_client("publisher")
+
+    exchange_name = f"{random_exchange_name()}"
 
     await client.subscribe(
         exchange_name,
@@ -146,7 +148,6 @@ async def _setup_publisher_and_subscriber(
         unexpected_error_retry_delay_s=_ON_ERROR_DELAY_S,
     )
 
-    publisher = create_rabbitmq_client("publisher")
     if topics is not None:
         for topic in topics:
             message = random_rabbit_message(topic=topic)
