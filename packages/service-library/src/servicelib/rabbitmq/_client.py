@@ -39,6 +39,35 @@ def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
     return count
 
 
+async def _safe_nack(
+    message_handler: MessageHandler,
+    max_retries_upon_error: int,
+    message: aio_pika.abc.AbstractIncomingMessage,
+):
+    count = _get_x_death_count(message)
+    _logger.warning(
+        (
+            "Retry [%s/%s] for handler '%s', which raised "
+            "an unexpected error caused by message_id='%s'"
+        ),
+        count,
+        max_retries_upon_error,
+        message_handler,
+        message.message_id,
+    )
+
+    if count < max_retries_upon_error:
+        # NOTE: puts message to the Dead Letter Exchange
+        await message.nack(requeue=False)
+    else:
+        _logger.exception(
+            "Handler '%s' is giving up on message '%s' with body '%s'",
+            message_handler,
+            message,
+            message.body,
+        )
+
+
 async def _on_message(
     message_handler: MessageHandler,
     max_retries_upon_error: int,
@@ -52,31 +81,9 @@ async def _on_message(
                 msg=f"Received message from {message.exchange=}, {message.routing_key=}",
             ):
                 if not await message_handler(message.body):
-                    # NOTE: puts message to the Dead Letter Exchange
-                    await message.nack(requeue=False)
+                    await _safe_nack(message_handler, max_retries_upon_error, message)
         except Exception:  # pylint: disable=broad-exception-caught
-            count = _get_x_death_count(message)
-            _logger.warning(
-                (
-                    "Retry [%s/%s] for handler '%s', which raised "
-                    "an unexpected error caused by message_id='%s'"
-                ),
-                count,
-                max_retries_upon_error,
-                message_handler,
-                message.message_id,
-            )
-
-            if count < max_retries_upon_error:
-                # NOTE: puts message to the Dead Letter Exchange
-                await message.nack(requeue=False)
-            else:
-                _logger.exception(
-                    "Handler '%s' is giving up on message '%s' with body '%s'",
-                    message_handler,
-                    message,
-                    message.body,
-                )
+            await _safe_nack(message_handler, max_retries_upon_error, message)
 
 
 @dataclass

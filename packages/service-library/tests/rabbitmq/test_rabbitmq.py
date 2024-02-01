@@ -212,7 +212,7 @@ _TOPICS: Final[list[list[str] | None]] = [
 
 @pytest.mark.parametrize("max_requeue_retry", [0, 1, 3, 10])
 @pytest.mark.parametrize("topics", _TOPICS)
-async def test_subscribe_to_failing_message_handler(
+async def test_a_subscribe_to_failing_message_handler(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     random_rabbit_message: Callable[..., PytestRabbitMessage],
@@ -242,7 +242,7 @@ async def test_subscribe_to_failing_message_handler(
 
 
 @pytest.mark.parametrize("topics", _TOPICS)
-async def test_a_subscribe_no_dead_letter_exchange_messages(
+async def test_a_subscribe_fail_then_success(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     random_rabbit_message: Callable[..., PytestRabbitMessage],
@@ -289,7 +289,37 @@ async def test_a_subscribe_no_dead_letter_exchange_messages(
     assert requeued_message_count == topics_multiplier
 
 
-async def test_a_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
+@pytest.mark.parametrize("topics", _TOPICS)
+async def test_a_subscribe_always_returns_fails_stops(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    on_message_spy: mock.Mock,
+    topics: list[str] | None,
+):
+    async def _always_returning_fail(_: Any) -> bool:
+        return False
+
+    topics_multiplier = await _setup_publisher_and_subscriber(
+        create_rabbitmq_client,
+        random_exchange_name,
+        random_rabbit_message,
+        _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
+        topics,
+        _always_returning_fail,
+    )
+
+    expected_results = (_DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS + 1) * topics_multiplier
+    await _assert_wait_for_messages(on_message_spy, expected_results)
+
+    report = _get_spy_report(on_message_spy)
+    routing_keys: list[str] = [""] if topics is None else topics
+    assert report == {
+        k: set(range(_DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS + 1)) for k in routing_keys
+    }
+
+
+async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
     cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
