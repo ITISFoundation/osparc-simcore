@@ -52,7 +52,7 @@ async def _on_message(
                 msg=f"Received message from {message.exchange=}, {message.routing_key=}",
             ):
                 if not await message_handler(message.body):
-                    # NOTE: will put message to original queue(not the Dead Letter Exchange)
+                    # NOTE: puts message to the Dead Letter Exchange
                     await message.nack(requeue=False)
         except Exception:  # pylint: disable=broad-exception-caught
             count = _get_x_death_count(message)
