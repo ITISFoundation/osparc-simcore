@@ -29,7 +29,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 _ON_ERROR_DELAY_S: Final[float] = 0.1
-_TIMEOUT_IF_STUCK: Final[float] = 60
+_TIMEOUT_IF_STUCK: Final[float] = 20
 
 
 @pytest.fixture
