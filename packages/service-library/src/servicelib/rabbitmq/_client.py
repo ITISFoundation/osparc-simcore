@@ -26,9 +26,7 @@ _HEADER_X_DEATH: Final[str] = "x-death"
 _DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S: Final[float] = 1
 _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS: Final[NonNegativeInt] = 15
 
-
-def _get_delayed_exchange_name(exchange_name: str) -> str:
-    return f"delayed_{exchange_name}"
+_DELAYED_EXCHANGE_NAME: Final[str] = "delayed_{exchange_name}"
 
 
 def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
@@ -188,7 +186,9 @@ class RabbitMQClient(RabbitMQClientBase):
             # consumer/publisher must set the same configuration for same queue
             # exclusive means that the queue is only available for THIS very client
             # and will be deleted when the client disconnects
-            delayed_exchange_name = _get_delayed_exchange_name(exchange_name)
+            delayed_exchange_name = _DELAYED_EXCHANGE_NAME.format(
+                exchange_name=exchange_name
+            )
             queue = await declare_queue(
                 channel,
                 self.client_name,
@@ -247,7 +247,9 @@ class RabbitMQClient(RabbitMQClientBase):
                 exchange_name,
                 exclusive_queue=True,
                 arguments={
-                    "x-dead-letter-exchange": _get_delayed_exchange_name(exchange_name)
+                    "x-dead-letter-exchange": _DELAYED_EXCHANGE_NAME.format(
+                        exchange_name=exchange_name
+                    )
                 },
             )
 
@@ -270,7 +272,9 @@ class RabbitMQClient(RabbitMQClientBase):
                 exchange_name,
                 exclusive_queue=True,
                 arguments={
-                    "x-dead-letter-exchange": _get_delayed_exchange_name(exchange_name)
+                    "x-dead-letter-exchange": _DELAYED_EXCHANGE_NAME.format(
+                        exchange_name=exchange_name
+                    )
                 },
             )
 
