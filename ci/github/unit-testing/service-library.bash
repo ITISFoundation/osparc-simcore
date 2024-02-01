@@ -22,7 +22,7 @@ test_all() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd packages/service-library
-  make "test-ci[all]"
+  make "test-ci[all]" pytest-parameters="--vvv"
   popd
 }
 
