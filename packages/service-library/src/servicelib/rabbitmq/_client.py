@@ -45,18 +45,17 @@ async def _safe_nack(
     message: aio_pika.abc.AbstractIncomingMessage,
 ):
     count = _get_x_death_count(message)
-    _logger.warning(
-        (
-            "Retry [%s/%s] for handler '%s', which raised "
-            "an unexpected error caused by message_id='%s'"
-        ),
-        count,
-        max_retries_upon_error,
-        message_handler,
-        message.message_id,
-    )
-
     if count < max_retries_upon_error:
+        _logger.warning(
+            (
+                "Retry [%s/%s] for handler '%s', which raised "
+                "an unexpected error caused by message_id='%s'"
+            ),
+            count,
+            max_retries_upon_error,
+            message_handler,
+            message.message_id,
+        )
         # NOTE: puts message to the Dead Letter Exchange
         await message.nack(requeue=False)
     else:
