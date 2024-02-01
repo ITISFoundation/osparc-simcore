@@ -53,7 +53,7 @@ async def _on_message(
             ):
                 if not await message_handler(message.body):
                     # NOTE: will put message to original queue(not the Dead Letter Exchange)
-                    await message.nack()
+                    await message.nack(requeue=False)
         except Exception:  # pylint: disable=broad-exception-caught
             count = _get_x_death_count(message)
             _logger.warning(
@@ -158,9 +158,9 @@ class RabbitMQClient(RabbitMQClientBase):
             receive messages with that exact routing key (same as DIRECT exchanges behavior)
 
         ``unexpected_error_max_attempts`` is the maximum amount of retries when the ``message_handler``
-            raised an unexpected error
+            raised an unexpected error or it returns `False`
         ``unexpected_error_retry_delay_s`` time to wait between each retry when the ``message_handler``
-            raised an unexpected error
+            raised an unexpected error or it returns `False`
 
         Raises:
             aio_pika.exceptions.ChannelPreconditionFailed: In case an existing exchange with
