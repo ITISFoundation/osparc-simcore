@@ -16,7 +16,7 @@ import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient, _client
-from servicelib.rabbitmq._client import DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS
+from servicelib.rabbitmq._client import _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS
 from servicelib.rabbitmq._models import MessageHandler
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
@@ -553,7 +553,7 @@ async def test__subscribe_no_dead_letter_exchange_messages(
         create_rabbitmq_client,
         random_exchange_name,
         random_rabbit_message,
-        DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
+        _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
         topics,
         _fail_once_then_succeed,
     )

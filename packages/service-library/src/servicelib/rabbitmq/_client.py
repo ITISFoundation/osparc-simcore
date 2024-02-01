@@ -23,8 +23,8 @@ _DEFAULT_PREFETCH_VALUE: Final[int] = 10
 _DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S: Final[int] = 5
 _HEADER_X_DEATH: Final[str] = "x-death"
 
-DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S: Final[float] = 1
-DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS: Final[NonNegativeInt] = 15
+_DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S: Final[float] = 1
+_DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS: Final[NonNegativeInt] = 15
 
 
 def _get_delayed_exchange_name(exchange_name: str) -> str:
@@ -137,8 +137,8 @@ class RabbitMQClient(RabbitMQClientBase):
         exclusive_queue: bool = True,
         topics: list[str] | None = None,
         message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
-        unexpected_error_retry_delay_s: float = DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S,
-        unexpected_error_max_attempts: int = DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
+        unexpected_error_retry_delay_s: float = _DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S,
+        unexpected_error_max_attempts: int = _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
     ) -> str:
         """subscribe to exchange_name calling ``message_handler`` for every incoming message
         - exclusive_queue: True means that every instance of this application will
