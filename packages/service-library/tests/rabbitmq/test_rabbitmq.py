@@ -6,6 +6,7 @@
 
 
 import asyncio
+import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Final
@@ -15,6 +16,7 @@ import aio_pika
 import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
+from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient, _client
 from servicelib.rabbitmq._client import _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS
 from servicelib.rabbitmq._models import MessageHandler
@@ -33,6 +35,8 @@ _ON_ERROR_DELAY_S: Final[float] = 0.1
 # this value to avoid failures due to timeouts
 # when ran in batch the rabbit service is already up and running
 _TIMEOUT_IF_STUCK: Final[float] = 10
+
+_logger = logging.getLogger()
 
 
 @pytest.fixture
@@ -98,7 +102,8 @@ def on_message_spy(mocker: MockerFixture) -> mock.Mock:
         max_retries_upon_error: int,
         message: aio_pika.abc.AbstractIncomingMessage,
     ) -> None:
-        await original_handler(message_handler, max_retries_upon_error, message)
+        with log_context(_logger, logging.ERROR, msg=f"handling {message}"):
+            await original_handler(message_handler, max_retries_upon_error, message)
         spy(message)
 
     mocker.patch(
