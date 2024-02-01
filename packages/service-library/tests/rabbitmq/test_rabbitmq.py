@@ -625,8 +625,17 @@ async def test_subscribe_no_dead_letter_exchange_messages(
 
     report = _get_spy_report(on_message_spy)
     routing_keys: list[str] = [""] if topics is None else topics
-    assert report == {k: set(range(1)) for k in routing_keys}
+    assert report == {k: set(range(2)) for k in routing_keys}
 
-    # ensure no headers in received messages, meaning the handler did not fail
+    # check messages as expected
+    original_message_count = 0
+    requeued_message_count = 0
     for entry in on_message_spy.call_args_list:
-        assert entry.args[0].headers == {}
+        message = entry.args[0]
+        if message.headers == {}:
+            original_message_count += 1
+        if message.headers and message.headers["x-death"][0]["count"] == 1:
+            requeued_message_count += 1
+
+    assert original_message_count == topics_multiplier
+    assert requeued_message_count == topics_multiplier
