@@ -23,28 +23,26 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
     this.base(arguments)
     const model = new osparc.desktop.credits.UsageTableModel(walletId, filters)
     this.setTableModel(model)
-
-    // const model = new qx.ui.table.model.Simple();
-    // const cols = this.self().COLUMNS;
-    // const colNames = Object.values(cols).map(col => col.title);
-    // model.setColumns(colNames);
+    this.setHeaderCellHeight(26);
+    this.setRowHeight(26);
 
     // this.base(arguments, model, {
     //   tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
     //   statusBarVisible: false
     // });
-    // this.makeItLoose();
 
-    // const columnModel = this.getTableColumnModel();
-    // columnModel.getBehavior().setWidth(cols.duration.pos, 70);
-    // columnModel.getBehavior().setWidth(cols.status.pos, 70);
-    // columnModel.getBehavior().setWidth(cols.cost.pos, 60);
+    const columnModel = this.getTableColumnModel();
 
-    // columnModel.setDataCellRenderer(cols.cost.pos, new qx.ui.table.cellrenderer.Number());
+    columnModel.setColumnWidth(4, 70);
+    columnModel.setColumnWidth(5, 70);
+    columnModel.setColumnWidth(6, 60);
 
-    // if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
-    //   columnModel.setColumnVisible(cols.cost.pos, false);
-    //   columnModel.setColumnVisible(cols.user.pos, false);
-    // }
+    columnModel.setDataCellRenderer(6, new qx.ui.table.cellrenderer.Number());
+    columnModel.setDataCellRenderer(7, new qx.ui.table.cellrenderer.Number());
+
+    if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      columnModel.setColumnVisible(6, false);
+      columnModel.setColumnVisible(7, false);
+    }
   }
 })

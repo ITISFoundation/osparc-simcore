@@ -70,7 +70,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         alignY: "bottom"
       });
       this.__exportButton.addListener("execute", () => {
-        console.log("export");
+        this.__handleExport()
       });
       filterContainer.add(this.__exportButton);
       container.add(filterContainer);
@@ -99,6 +99,12 @@ qx.Class.define("osparc.desktop.credits.Usage", {
       this.__userWallets.forEach(wallet => {
         walletSelectBox.add(new qx.ui.form.ListItem(wallet.getName(), null, wallet));
       });
+    },
+    __handleExport() {
+      const reportUrl = new URL("/v0/services/-/usage-report", window.location.origin)
+      reportUrl.searchParams.append("wallet_id", this.__selectedWallet.getWalletId())
+      reportUrl.searchParams.append("filters", JSON.stringify({ "started_at": this.__dateFilters.getValue() }))
+      window.open(reportUrl, "_blank")
     }
   }
 });
