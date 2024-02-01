@@ -203,7 +203,93 @@ async def _assert_message_received(
             )
 
 
-async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
+_TOPICS: Final[list[list[str] | None]] = [
+    None,
+    ["one"],
+    ["one", "two"],
+]
+
+
+@pytest.mark.parametrize("max_requeue_retry", [0, 1, 3, 10])
+@pytest.mark.parametrize("topics", _TOPICS)
+async def test_subscribe_to_failing_message_handler(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    on_message_spy: mock.Mock,
+    max_requeue_retry: int,
+    topics: list[str] | None,
+):
+    async def _faulty_message_handler(message: Any) -> bool:
+        msg = f"Always fail. Received message {message}"
+        raise RuntimeError(msg)
+
+    topics_multiplier = await _setup_publisher_and_subscriber(
+        create_rabbitmq_client,
+        random_exchange_name,
+        random_rabbit_message,
+        max_requeue_retry,
+        topics,
+        _faulty_message_handler,
+    )
+
+    expected_results = (max_requeue_retry + 1) * topics_multiplier
+    await _assert_wait_for_messages(on_message_spy, expected_results)
+
+    report = _get_spy_report(on_message_spy)
+    routing_keys: list[str] = [""] if topics is None else topics
+    assert report == {k: set(range(max_requeue_retry + 1)) for k in routing_keys}
+
+
+@pytest.mark.parametrize("topics", _TOPICS)
+async def test_a_subscribe_no_dead_letter_exchange_messages(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    on_message_spy: mock.Mock,
+    topics: list[str] | None,
+):
+    message_failed: dict[str, bool] = {}
+
+    async def _fail_once_then_succeed(message: Any) -> bool:
+        if message not in message_failed:
+            message_failed[message] = False
+        if not message_failed[message]:
+            message_failed[message] = True
+            return False
+        return True
+
+    topics_multiplier = await _setup_publisher_and_subscriber(
+        create_rabbitmq_client,
+        random_exchange_name,
+        random_rabbit_message,
+        _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
+        topics,
+        _fail_once_then_succeed,
+    )
+
+    expected_results = 2 * topics_multiplier
+    await _assert_wait_for_messages(on_message_spy, expected_results)
+
+    report = _get_spy_report(on_message_spy)
+    routing_keys: list[str] = [""] if topics is None else topics
+    assert report == {k: set(range(2)) for k in routing_keys}
+
+    # check messages as expected
+    original_message_count = 0
+    requeued_message_count = 0
+    for entry in on_message_spy.call_args_list:
+        message = entry.args[0]
+        if message.headers == {}:
+            original_message_count += 1
+        if message.headers and message.headers["x-death"][0]["count"] == 1:
+            requeued_message_count += 1
+
+    assert original_message_count == topics_multiplier
+    assert requeued_message_count == topics_multiplier
+
+
+async def test_a_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
     cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
@@ -553,89 +639,3 @@ async def test_unsubscribe_consumer(
     await client.unsubscribe(exchange_name)
     with pytest.raises(aio_pika.exceptions.ChannelNotFoundEntity):
         await client.unsubscribe(exchange_name)
-
-
-_TOPICS: Final[list[list[str] | None]] = [
-    None,
-    ["one"],
-    ["one", "two"],
-]
-
-
-@pytest.mark.parametrize("max_requeue_retry", [0, 1, 3, 10])
-@pytest.mark.parametrize("topics", _TOPICS)
-async def test_subscribe_to_failing_message_handler(
-    create_rabbitmq_client: Callable[[str], RabbitMQClient],
-    random_exchange_name: Callable[[], str],
-    random_rabbit_message: Callable[..., PytestRabbitMessage],
-    on_message_spy: mock.Mock,
-    max_requeue_retry: int,
-    topics: list[str] | None,
-):
-    async def _faulty_message_handler(message: Any) -> bool:
-        msg = f"Always fail. Received message {message}"
-        raise RuntimeError(msg)
-
-    topics_multiplier = await _setup_publisher_and_subscriber(
-        create_rabbitmq_client,
-        random_exchange_name,
-        random_rabbit_message,
-        max_requeue_retry,
-        topics,
-        _faulty_message_handler,
-    )
-
-    expected_results = (max_requeue_retry + 1) * topics_multiplier
-    await _assert_wait_for_messages(on_message_spy, expected_results)
-
-    report = _get_spy_report(on_message_spy)
-    routing_keys: list[str] = [""] if topics is None else topics
-    assert report == {k: set(range(max_requeue_retry + 1)) for k in routing_keys}
-
-
-@pytest.mark.parametrize("topics", _TOPICS)
-async def test_subscribe_no_dead_letter_exchange_messages(
-    create_rabbitmq_client: Callable[[str], RabbitMQClient],
-    random_exchange_name: Callable[[], str],
-    random_rabbit_message: Callable[..., PytestRabbitMessage],
-    on_message_spy: mock.Mock,
-    topics: list[str] | None,
-):
-    message_failed: dict[str, bool] = {}
-
-    async def _fail_once_then_succeed(message: Any) -> bool:
-        if message not in message_failed:
-            message_failed[message] = False
-        if not message_failed[message]:
-            message_failed[message] = True
-            return False
-        return True
-
-    topics_multiplier = await _setup_publisher_and_subscriber(
-        create_rabbitmq_client,
-        random_exchange_name,
-        random_rabbit_message,
-        _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
-        topics,
-        _fail_once_then_succeed,
-    )
-
-    expected_results = 2 * topics_multiplier
-    await _assert_wait_for_messages(on_message_spy, expected_results)
-
-    report = _get_spy_report(on_message_spy)
-    routing_keys: list[str] = [""] if topics is None else topics
-    assert report == {k: set(range(2)) for k in routing_keys}
-
-    # check messages as expected
-    original_message_count = 0
-    requeued_message_count = 0
-    for entry in on_message_spy.call_args_list:
-        message = entry.args[0]
-        if message.headers == {}:
-            original_message_count += 1
-        if message.headers and message.headers["x-death"][0]["count"] == 1:
-            requeued_message_count += 1
-
-    assert original_message_count == topics_multiplier
-    assert requeued_message_count == topics_multiplier
