@@ -20,7 +20,7 @@ import typer
 from dotenv import dotenv_values
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
-from pydantic import ByteSize
+from pydantic import ByteSize, TypeAdapter
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
 from rich.table import Column, Style, Table
@@ -351,7 +351,7 @@ def _print_dynamic_instances(
                     f"Up: {_timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {instance.ec2_instance.public_ip_address}",
                     f"IntIP: {instance.ec2_instance.private_ip_address}",
-                    f"/docker(free): {instance.disk_space.human_readable()}",
+                    f"/docker(free): {_color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
                 ]
             ),
             f"Graylog: {_create_graylog_permalinks(environment, instance.ec2_instance)}",
@@ -377,6 +377,10 @@ def _color_encode_with_state(string: str, ec2_instance: Instance) -> str:
         if ec2_instance.state["Name"] == "running"
         else f"[yellow]{string}[/yellow]"
     )
+
+
+def _color_encode_with_threshold(string: str, value, threshold) -> str:
+    return string if value > threshold else f"[red]{string}[/red]"
 
 
 def _print_computational_clusters(
