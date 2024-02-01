@@ -66,9 +66,10 @@ qx.Class.define("osparc.widget.PersistentIframe", {
 
     createToolbarButton: function() {
       return new qx.ui.form.Button().set({
+        appearance: "fab-button",
         zIndex: 20,
-        backgroundColor: "transparent",
-        decorator: null
+        padding: [0, 5],
+        marginRight: 10
       });
     },
 
@@ -129,10 +130,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       const reloadButton = this.__reloadButton = this.self().createToolbarButton().set({
         label: this.tr("Reload"),
         icon: "@FontAwesome5Solid/redo-alt/14",
-        paddingLeft: 8,
-        paddingRight: 4,
-        paddingTop: 3,
-        paddingBottom: 6,
+        padding: [1, 5],
         gap: 10
       });
       reloadButton.addListener("execute", e => {
