@@ -153,7 +153,8 @@ async def _setup_publisher_and_subscriber(
         message = random_rabbit_message()
         await publisher.publish(exchange_name, message)
 
-    return 1 if topics is None else len(topics)
+    topics_count: int = 1 if topics is None else len(topics)
+    return topics_count
 
 
 async def _assert_wait_for_messages(
@@ -226,7 +227,7 @@ async def test_a_subscribe_to_failing_message_handler(
         msg = f"Always fail. Received message {message}"
         raise RuntimeError(msg)
 
-    topics_multiplier = await _setup_publisher_and_subscriber(
+    topics_count = await _setup_publisher_and_subscriber(
         create_rabbitmq_client,
         random_exchange_name,
         random_rabbit_message,
@@ -235,7 +236,7 @@ async def test_a_subscribe_to_failing_message_handler(
         _faulty_message_handler,
     )
 
-    expected_results = (max_requeue_retry + 1) * topics_multiplier
+    expected_results = (max_requeue_retry + 1) * topics_count
     await _assert_wait_for_messages(on_message_spy, expected_results)
 
     report = _get_spy_report(on_message_spy)
@@ -262,7 +263,7 @@ async def test_a_subscribe_fail_then_success(
             return False
         return True
 
-    topics_multiplier = await _setup_publisher_and_subscriber(
+    topics_count = await _setup_publisher_and_subscriber(
         create_rabbitmq_client,
         random_exchange_name,
         random_rabbit_message,
@@ -271,7 +272,7 @@ async def test_a_subscribe_fail_then_success(
         _fail_once_then_succeed,
     )
 
-    expected_results = 2 * topics_multiplier
+    expected_results = 2 * topics_count
     await _assert_wait_for_messages(on_message_spy, expected_results)
 
     report = _get_spy_report(on_message_spy)
@@ -288,8 +289,8 @@ async def test_a_subscribe_fail_then_success(
         if message.headers and message.headers["x-death"][0]["count"] == 1:
             requeued_message_count += 1
 
-    assert original_message_count == topics_multiplier
-    assert requeued_message_count == topics_multiplier
+    assert original_message_count == topics_count
+    assert requeued_message_count == topics_count
 
 
 @pytest.mark.timeout(_TIMEOUT_IF_STUCK)
@@ -304,7 +305,7 @@ async def test_a_subscribe_always_returns_fails_stops(
     async def _always_returning_fail(_: Any) -> bool:
         return False
 
-    topics_multiplier = await _setup_publisher_and_subscriber(
+    topics_count = await _setup_publisher_and_subscriber(
         create_rabbitmq_client,
         random_exchange_name,
         random_rabbit_message,
@@ -313,7 +314,7 @@ async def test_a_subscribe_always_returns_fails_stops(
         _always_returning_fail,
     )
 
-    expected_results = (_DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS + 1) * topics_multiplier
+    expected_results = (_DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS + 1) * topics_count
     await _assert_wait_for_messages(on_message_spy, expected_results)
 
     report = _get_spy_report(on_message_spy)
