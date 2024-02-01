@@ -106,10 +106,7 @@ def on_message_spy(mocker: MockerFixture) -> mock.Mock:
             await original_handler(message_handler, max_retries_upon_error, message)
         spy(message)
 
-    mocker.patch(
-        "servicelib.rabbitmq._client._on_message",
-        side_effect=__on_message,
-    )
+    mocker.patch("servicelib.rabbitmq._client._on_message", side_effect=__on_message)
     return spy
 
 
