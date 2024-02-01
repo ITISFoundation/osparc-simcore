@@ -255,13 +255,13 @@ async def test_subscribe_fail_then_success(
     on_message_spy: mock.Mock,
     topics: list[str] | None,
 ):
-    message_failed: dict[str, bool] = {}
+    message_status: dict[str, bool] = {}
 
     async def _fail_once_then_succeed(message: Any) -> bool:
-        if message not in message_failed:
-            message_failed[message] = False
-        if not message_failed[message]:
-            message_failed[message] = True
+        if message not in message_status:
+            message_status[message] = False
+        if not message_status[message]:
+            message_status[message] = True
             return False
         return True
 
