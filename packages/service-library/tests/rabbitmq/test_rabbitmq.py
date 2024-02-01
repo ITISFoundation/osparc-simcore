@@ -160,9 +160,11 @@ async def _setup_publisher_and_subscriber(
 async def _assert_wait_for_messages(
     on_message_spy: mock.Mock, expected_results: int
 ) -> None:
+    total_seconds_to_wait = expected_results * _ON_ERROR_DELAY_S * 2
+    print(f"Will wait for messages for {total_seconds_to_wait} seconds")
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
-        stop=stop_after_delay(expected_results * _ON_ERROR_DELAY_S * 2),
+        stop=stop_after_delay(total_seconds_to_wait),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
