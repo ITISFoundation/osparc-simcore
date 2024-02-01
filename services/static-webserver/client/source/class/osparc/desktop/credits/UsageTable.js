@@ -23,13 +23,10 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
     this.base(arguments)
     const model = new osparc.desktop.credits.UsageTableModel(walletId, filters)
     this.setTableModel(model)
+    this.setStatusBarVisible(false)
+
     this.setHeaderCellHeight(26);
     this.setRowHeight(26);
-
-    // this.base(arguments, model, {
-    //   tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
-    //   statusBarVisible: false
-    // });
 
     const columnModel = this.getTableColumnModel();
 
@@ -38,7 +35,6 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
     columnModel.setColumnWidth(6, 60);
 
     columnModel.setDataCellRenderer(6, new qx.ui.table.cellrenderer.Number());
-    columnModel.setDataCellRenderer(7, new qx.ui.table.cellrenderer.Number());
 
     if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
       columnModel.setColumnVisible(6, false);

@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
       osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", {
         url: {
           walletId: this.getWalletId(),
-          limit: lastRow - firstRow,
+          limit: lastRow - firstRow + 1,
           offset: firstRow,
           filters: this.getFilters() ?
             JSON.stringify({
