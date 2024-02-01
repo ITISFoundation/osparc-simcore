@@ -145,6 +145,9 @@ def _create_graylog_permalinks(
     return f"https://monitoring.{environment['MACHINE_FQDN']}/graylog/search?q=source%3A%22ip-{source_name}%22&rangetype=relative&from={time_span}"
 
 
+UNDEFINED_BYTESIZE: Final[ByteSize] = ByteSize(-1)
+
+
 def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
     name = _get_instance_name(instance)
     if result := state["dynamic_parser"].search(name):
@@ -154,7 +157,7 @@ def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
             name=name,
             ec2_instance=instance,
             running_services=[],
-            disk_space=ByteSize(-1),
+            disk_space=UNDEFINED_BYTESIZE,
         )
     return None
 
@@ -379,8 +382,11 @@ def _color_encode_with_state(string: str, ec2_instance: Instance) -> str:
     )
 
 
+DANGER = "[red]{}[/red]"
+
+
 def _color_encode_with_threshold(string: str, value, threshold) -> str:
-    return string if value > threshold else f"[red]{string}[/red]"
+    return string if value > threshold else DANGER.format(string)
 
 
 def _print_computational_clusters(
@@ -657,12 +663,8 @@ def main(
 
 @app.command()
 def summary(
-    user_id: Annotated[
-        int | None, typer.Option(help="the user ID")  # noqa: UP007
-    ] = None,
-    wallet_id: Annotated[
-        int | None, typer.Option(help="the wallet ID")  # noqa: UP007
-    ] = None,
+    user_id: Annotated[int, typer.Option(help="the user ID")] = None,
+    wallet_id: Annotated[int, typer.Option(help="the wallet ID")] = None,
 ) -> None:
     """Show a summary of the current situation of autoscaled EC2 instances.
 
