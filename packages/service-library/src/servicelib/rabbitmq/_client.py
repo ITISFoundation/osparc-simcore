@@ -43,7 +43,7 @@ async def _safe_nack(
     message_handler: MessageHandler,
     max_retries_upon_error: int,
     message: aio_pika.abc.AbstractIncomingMessage,
-):
+) -> None:
     count = _get_x_death_count(message)
     if count < max_retries_upon_error:
         _logger.warning(
