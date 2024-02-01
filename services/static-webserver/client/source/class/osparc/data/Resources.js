@@ -735,7 +735,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/wallets/-/payments"
+            url: statics.API + "/wallets/-/payments?offset={offset}&limit={limit}"
           },
           startPayment: {
             method: "POST",

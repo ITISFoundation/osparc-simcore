@@ -10,6 +10,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
 
   construct(walletId, filters) {
     this.base(arguments)
+    this.setBlockSize(24)
     this.setColumns([
       osparc.product.Utils.getStudyAlias({firstUpperCase: true}),
       qx.locale.Manager.tr("Node"),
