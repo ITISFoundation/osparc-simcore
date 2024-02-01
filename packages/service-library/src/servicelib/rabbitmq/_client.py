@@ -45,7 +45,6 @@ async def _on_message(
     message: aio_pika.abc.AbstractIncomingMessage,
 ) -> None:
     async with message.process(requeue=True, ignore_processed=True):
-        count = _get_x_death_count(message)
         try:
             with log_context(
                 _logger,
@@ -53,28 +52,30 @@ async def _on_message(
                 msg=f"Received message from {message.exchange=}, {message.routing_key=}",
             ):
                 if not await message_handler(message.body):
-                    # NOTE: will put message to original queue(not the DLX)
+                    # NOTE: will put message to original queue(not the Dead Letter Exchange)
                     await message.nack()
         except Exception:  # pylint: disable=broad-exception-caught
+            count = _get_x_death_count(message)
             _logger.warning(
                 (
                     "Retry [%s/%s] for handler '%s', which raised "
-                    "an unexpected error caused by message '%s'"
+                    "an unexpected error caused by message_id='%s'"
                 ),
                 count,
                 max_retries_upon_error,
                 message_handler,
-                message,
+                message.message_id,
             )
 
             if count < max_retries_upon_error:
-                # NOTE: puts message to the DLX
+                # NOTE: puts message to the Dead Letter Exchange
                 await message.nack(requeue=False)
             else:
-                _logger.error(  # noqa: TRY400
-                    "Handler '%s' is giving up on message '%s'",
+                _logger.exception(
+                    "Handler '%s' is giving up on message '%s' with body '%s'",
                     message_handler,
                     message,
+                    message.body,
                 )
 
 
@@ -186,6 +187,7 @@ class RabbitMQClient(RabbitMQClientBase):
             # consumer/publisher must set the same configuration for same queue
             # exclusive means that the queue is only available for THIS very client
             # and will be deleted when the client disconnects
+            # NOTE what is a dead letter exchange, see https://www.rabbitmq.com/dlx.html
             delayed_exchange_name = _DELAYED_EXCHANGE_NAME.format(
                 exchange_name=exchange_name
             )
@@ -204,20 +206,16 @@ class RabbitMQClient(RabbitMQClientBase):
                     *(queue.bind(exchange, routing_key=topic) for topic in topics)
                 )
 
-            # Delayed Exchange
             delayed_exchange = await channel.declare_exchange(
                 delayed_exchange_name, aio_pika.ExchangeType.FANOUT, durable=True
             )
 
-            # Delayed Queue
             delayed_queue = await declare_queue(
                 channel,
                 self.client_name,
                 delayed_exchange_name,
                 exclusive_queue=exclusive_queue,
-                message_ttl=int(
-                    unexpected_error_retry_delay_s * 1000
-                ),  # TTL in milliseconds
+                message_ttl=int(unexpected_error_retry_delay_s * 1000),
                 arguments={"x-dead-letter-exchange": exchange.name},
             )
             await delayed_queue.bind(delayed_exchange)
