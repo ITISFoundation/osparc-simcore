@@ -55,6 +55,8 @@ def setup_notifier_email(app: FastAPI):
 
         async def _on_shutdown() -> None:
             with contextlib.suppress(AttributeError):
+                # FIXME: is there a reason really to pop it from state? Only to make sure
+                # nobody is using it afterwards
                 EmailNotifier.pop_from_app_state(app)
 
         app.add_event_handler("startup", _on_startup)
