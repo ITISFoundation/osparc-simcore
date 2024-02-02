@@ -1,14 +1,15 @@
-import json
+import datetime
 import logging
 from asyncio import Task
 from typing import Final
 
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
-from pydantic import NonNegativeFloat, NonNegativeInt
-from servicelib.background_task import start_periodic_task, stop_periodic_task
+from pydantic import NonNegativeInt
+from servicelib.background_task import stop_periodic_task
+from servicelib.logging_utils import log_context
 from servicelib.redis import RedisClientSDK
-from servicelib.redis_utils import exclusive
+from servicelib.redis_utils import start_exclusive_periodic_task
 from servicelib.utils import logged_gather
 
 from ._notifier import publish_message
@@ -25,13 +26,15 @@ class ServicesTracker(ServicesManager):
         self,
         app: FastAPI,
         redis_client_sdk: RedisClientSDK,
-        check_interval: NonNegativeFloat = 10,
+        check_interval: datetime.timedelta = datetime.timedelta(seconds=5),
     ) -> None:
         super().__init__(app, redis_client_sdk)
 
         self.check_interval = check_interval
         self.service_status_cache: ServiceStatusCache = ServiceStatusCache(
-            app, ttl=self.check_interval * 4, namespace="services_tracker"
+            app,
+            ttl=self.check_interval.total_seconds() * 4,
+            namespace="services_tracker",
         )
 
         self._check_task: Task | None = None
@@ -39,13 +42,10 @@ class ServicesTracker(ServicesManager):
     async def setup(self) -> None:
         await super().setup()
 
-        lock_key = f"lock:{self.class_path()}:services-tracker"
-        lock_value = json.dumps({})
-        self._check_task = start_periodic_task(
-            exclusive(self._redis_client_sdk, lock_key=lock_key, lock_value=lock_value)(
-                self._check_services_status_task
-            ),
-            interval=self.cleanup_interval,
+        self._check_task = start_exclusive_periodic_task(
+            self._redis_client_sdk,
+            self._check_services_status_task,
+            task_period=self.check_interval,
             task_name=f"{self.class_path()}_check_services_status_task",
         )
 
@@ -61,8 +61,9 @@ class ServicesTracker(ServicesManager):
             _logger.debug("Could not retrieve the status of services %s", node_id)
             return
 
-        cached_status = await self.service_status_cache.get_value(f"{node_id}")
-        await self.service_status_cache.set_value(f"{node_id}", service_status)
+        cache_key = f"{node_id}"
+        cached_status = await self.service_status_cache.get_value(cache_key)
+        await self.service_status_cache.set_value(cache_key, service_status)
 
         if cached_status is None or cached_status != service_status:
             cleanup_context = await self._get_identifier_context(node_id)
@@ -72,14 +73,16 @@ class ServicesTracker(ServicesManager):
                 self.app,
                 node_id=node_id,
                 service_status=service_status,
-                primary_group_id=cleanup_context.primary_group_id,
+                user_id=cleanup_context.user_id,
             )
 
     async def _check_services_status_task(self) -> None:
-        await logged_gather(
-            *(
-                self._check_single_service(node_id)
-                for node_id in await self._get_tracked()
-            ),
-            max_concurrency=_DIRECTOR_V2_API_PARALLELISM,
-        )
+        # runs at regular intervals on one single worker and enqueues requests
+        with log_context(_logger, logging.INFO, "check services status"):
+            await logged_gather(
+                *(
+                    self._check_single_service(node_id)
+                    for node_id in await self._get_tracked()
+                ),
+                max_concurrency=_DIRECTOR_V2_API_PARALLELISM,
+            )
