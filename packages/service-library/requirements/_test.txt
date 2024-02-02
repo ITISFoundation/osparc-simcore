@@ -156,7 +156,6 @@ pytest==7.4.3
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-    #   pytest-timeout
     #   pytest-xdist
 pytest-aiohttp==1.0.5
     # via -r requirements/_test.in
@@ -175,8 +174,6 @@ pytest-mock==3.12.0
 pytest-runner==6.0.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.7
-    # via -r requirements/_test.in
-pytest-timeout==2.2.0
     # via -r requirements/_test.in
 pytest-xdist==3.3.1
     # via -r requirements/_test.in

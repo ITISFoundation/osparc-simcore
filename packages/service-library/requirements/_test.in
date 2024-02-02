@@ -27,7 +27,6 @@ pytest-instafail
 pytest-mock
 pytest-runner
 pytest-sugar
-pytest-timeout
 pytest-xdist
 python-dotenv
 respx
