@@ -566,7 +566,6 @@ async def _start_dynamic_service(
                 wallet_info=wallet_info,
                 pricing_info=pricing_info,
                 hardware_info=hardware_info,
-                user_id=user_id,
             ),
         )
 
