@@ -4,6 +4,7 @@ import socket
 from typing import Any, Final
 
 import aio_pika
+from aiormq.exceptions import ChannelPreconditionFailed
 from pydantic import NonNegativeInt
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -84,4 +85,10 @@ async def declare_queue(
     #   1. a user bought 1000$ of credits
     #   2. for some reason resource usage tracker is unavailable and the messages is stuck in the queue
     #   3. if the queue is deleted, the action relative to this transaction will be lost
-    return await channel.declare_queue(**queue_parameters)
+    try:
+        return await channel.declare_queue(**queue_parameters)
+    except ChannelPreconditionFailed:
+        _logger.exception(
+            "Most likely the rabbit queue parameters have changed. See notes above to fix!"
+        )
+        raise
