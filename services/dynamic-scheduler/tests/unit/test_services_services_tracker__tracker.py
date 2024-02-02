@@ -208,7 +208,7 @@ async def _create_service(services_tracker: ServicesTracker, node_id: NodeID) ->
     rpc_dynamic_service_create.node_uuid = node_id
     await services_tracker.create(
         cleanup_context=TrackerCleanupContext(
-            simcore_user_agent="", save_state=True, primary_group_id=1
+            simcore_user_agent="", save_state=True, user_id=1
         ),
         rpc_dynamic_service_create=rpc_dynamic_service_create,
     )
@@ -247,7 +247,7 @@ async def test_services_tracker_notification_publishing(
     mock_publish_message.assert_awaited_once_with(
         app,
         node_id=new_service_node_id,
-        primary_group_id=1,
+        user_id=1,
         service_status=new_service_status_sequence[0],
     )
 
@@ -310,8 +310,5 @@ async def test_services_tracker_notification_sequence(
 
     for i, service_status_change in enumerate(services_status_changes):
         assert mock_publish_message.await_args_list[i] == call(
-            app,
-            node_id=node_id,
-            service_status=service_status_change,
-            primary_group_id=1,
+            app, node_id=node_id, service_status=service_status_change, user_id=1
         )
