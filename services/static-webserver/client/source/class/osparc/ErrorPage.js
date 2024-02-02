@@ -51,7 +51,9 @@ qx.Class.define("osparc.ErrorPage", {
 
     this.getChildControl("logo");
     this.getChildControl("lying-panda");
-    // this.getChildControl("code"); NOTE: disabled SEE https://github.com/ITISFoundation/osparc-issues/issues/1252
+    // this.getChildControl("code");
+    // NOTE: disabled due to https://github.com/ITISFoundation/osparc-issues/issues/1252
+    // but kept in case the decision is reversed.
     this.getChildControl("messages-layout");
   },
 
