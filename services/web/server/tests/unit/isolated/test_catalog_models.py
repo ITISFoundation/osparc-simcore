@@ -12,13 +12,13 @@ from simcore_service_webserver.catalog._api_units import replace_service_input_o
 from simcore_service_webserver.catalog._handlers import RESPONSE_MODEL_POLICY
 
 
-@pytest.fixture(scope="module")
-def unit_registry() -> UnitRegistry:
-    return UnitRegistry()
+@pytest.fixture(params=["UnitRegistry", None])
+def unit_registry(request: pytest.FixtureRequest) -> UnitRegistry | None:
+    return None if request.param is None else UnitRegistry()
 
 
 def test_from_catalog_to_webapi_service(
-    unit_registry: UnitRegistry, benchmark: BenchmarkFixture
+    unit_registry: UnitRegistry | None, benchmark: BenchmarkFixture
 ):
 
     # Taken from services/catalog/src/simcore_service_catalog/models/schemas/services.py on Feb.2021
@@ -83,12 +83,14 @@ def test_from_catalog_to_webapi_service(
 
     # If units are defined, I want unitShort and unitLong
     assert result["outputs"]["outFile"]["unit"] == "sec", f"{got=}\n"
-    assert result["outputs"]["outFile"]["unitShort"] == "s", f"{got=}\n"
-    assert result["outputs"]["outFile"]["unitLong"] == "second", f"{got=}\n"
 
-    # if units are NOT defined => must NOT set Long/Short units
-    fields = set(result["inputs"]["uno"].keys())
-    assert not fields.intersection({"unit", "unitShort", "unitLong"})
+    if unit_registry:
+        assert result["outputs"]["outFile"]["unitShort"] == "s", f"{got=}\n"
+        assert result["outputs"]["outFile"]["unitLong"] == "second", f"{got=}\n"
+
+        # if units are NOT defined => must NOT set Long/Short units
+        fields = set(result["inputs"]["uno"].keys())
+        assert not fields.intersection({"unit", "unitShort", "unitLong"})
 
     # Trimmed!
     assert "defaultValue" not in result["outputs"]["outFile"], f"{got=}\n"
