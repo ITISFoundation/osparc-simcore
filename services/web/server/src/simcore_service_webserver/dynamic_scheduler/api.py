@@ -24,7 +24,6 @@ from servicelib.utils import logged_gather
 
 from ..director_v2.api import list_dynamic_services
 from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
-from ..users.api import get_user
 from .settings import DynamicSchedulerSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -65,13 +64,12 @@ async def stop_dynamic_service(
             await stack.enter_async_context(progress)
 
         settings: DynamicSchedulerSettings = get_plugin_settings(app)
-        user_dict = await get_user(app, user_id)
         await services.stop_dynamic_service(
             get_rabbitmq_rpc_client(app),
             node_id=node_id,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
-            primary_group_id=user_dict["primary_gid"],
+            user_id=user_id,
             timeout_s=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
         )
 

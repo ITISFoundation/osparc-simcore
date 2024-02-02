@@ -12,8 +12,9 @@ from models_library.api_schemas_dynamic_scheduler.socketio import (
     SOCKET_IO_SERVICE_STATUS_EVENT,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects_nodes_io import NodeID
-from models_library.users import GroupID
+from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 _logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ class Notifier(SingletonInAppStateMixin):
 
     async def notify_service_status(
         self,
-        primary_group_id: GroupID,
+        user_id: UserID,
         service_status: NodeGet | DynamicServiceGet | NodeGetIdle,
     ) -> None:
         await self._sio_manager.emit(
@@ -36,7 +37,7 @@ class Notifier(SingletonInAppStateMixin):
                 service_status,
                 **get_service_status_serialization_options(service_status),
             ),
-            room=f"{primary_group_id}",
+            room=SocketIORoomStr.from_user_id(user_id),
         )
 
 
@@ -45,18 +46,17 @@ async def publish_message(
     *,
     node_id: NodeID,
     service_status: NodeGet | DynamicServiceGet | NodeGetIdle,
-    primary_group_id: GroupID,
+    user_id: UserID,
 ) -> None:
-    _ = app
     _logger.debug(
-        "Publishing message for user %s (primary_gid %s) -> %s",
+        "Publishing message for service %s and user_id %s -> %s",
         node_id,
-        primary_group_id,
+        user_id,
         service_status,
     )
     notifier: Notifier = Notifier.get_from_app_state(app)
     await notifier.notify_service_status(
-        primary_group_id=primary_group_id,
+        user_id=user_id,
         service_status=service_status,
     )
 

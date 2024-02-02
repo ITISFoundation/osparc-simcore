@@ -5,7 +5,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
-from models_library.users import GroupID
+from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
@@ -48,12 +48,12 @@ async def stop_dynamic_service(
     node_id: NodeID,
     simcore_user_agent: str,
     save_state: bool,
-    primary_group_id: GroupID,
+    user_id: UserID,
 ) -> None:
     await services_tracker_api.stop_dynamic_service(
         services_tracker_api.get_services_tracker(app),
         node_id=node_id,
         simcore_user_agent=simcore_user_agent,
         save_state=save_state,
-        primary_group_id=primary_group_id,
+        user_id=user_id,
     )

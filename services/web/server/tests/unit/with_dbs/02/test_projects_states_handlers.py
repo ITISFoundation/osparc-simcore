@@ -88,7 +88,6 @@ async def _list_projects(
     expected: type[web.HTTPException],
     query_parameters: dict | None = None,
 ) -> list[ProjectDict]:
-
     assert client.app
 
     # GET /v0/projects
@@ -383,7 +382,6 @@ async def test_open_project(
                         wallet_info=None,
                         pricing_info=None,
                         hardware_info=None,
-                        primary_group_id=logged_user["primary_gid"],
                     ),
                 )
             )
@@ -463,7 +461,6 @@ async def test_open_template_project_for_edition(
                         wallet_info=None,
                         pricing_info=None,
                         hardware_info=None,
-                        primary_group_id=logged_user["primary_gid"],
                     ),
                 )
             )
