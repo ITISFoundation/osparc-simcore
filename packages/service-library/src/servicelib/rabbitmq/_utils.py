@@ -1,7 +1,7 @@
 import logging
 import os
 import socket
-from typing import Final
+from typing import Any, Final
 
 import aio_pika
 from pydantic import NonNegativeInt
@@ -55,12 +55,16 @@ async def declare_queue(
     exchange_name: str,
     *,
     exclusive_queue: bool,
+    arguments: dict[str, Any] | None = None,
     message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
 ) -> aio_pika.abc.AbstractRobustQueue:
+    default_arguments = {"x-message-ttl": message_ttl}
+    if arguments is not None:
+        default_arguments.update(arguments)
     queue_parameters = {
         "durable": True,
         "exclusive": exclusive_queue,
-        "arguments": {"x-message-ttl": message_ttl},
+        "arguments": default_arguments,
         "name": f"{get_rabbitmq_client_unique_name(client_name)}_{exchange_name}_exclusive",
     }
     if not exclusive_queue:

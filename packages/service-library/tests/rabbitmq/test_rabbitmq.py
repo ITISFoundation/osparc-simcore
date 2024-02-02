@@ -6,16 +6,17 @@
 
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 from unittest import mock
 
 import aio_pika
 import pytest
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
-from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
+from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient, _client
+from servicelib.rabbitmq._client import _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -25,6 +26,8 @@ from tenacity.wait import wait_fixed
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
+
+_ON_ERROR_DELAY_S: Final[float] = 0.1
 
 
 @pytest.fixture
@@ -79,6 +82,80 @@ def random_rabbit_message(
     return _creator
 
 
+@pytest.fixture
+def on_message_spy(mocker: MockerFixture) -> mock.Mock:
+    return mocker.spy(_client, "_on_message")
+
+
+def _get_spy_report(mock: mock.Mock) -> dict[str, set[int]]:
+    results: dict[str, set[int]] = {}
+
+    for entry in mock.call_args_list:
+        message: aio_pika.abc.AbstractIncomingMessage = entry.args[2]
+        assert message.routing_key is not None
+
+        if message.routing_key not in results:
+            results[message.routing_key] = set()
+
+        count = _client._get_x_death_count(message)  # noqa: SLF001
+        results[message.routing_key].add(count)
+
+    return results
+
+
+async def _setup_publisher_and_subscriber(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    max_requeue_retry: int,
+    topics: list[str] | None,
+    message_handler: Callable[[Any], Awaitable[bool]],
+) -> int:
+    publisher = create_rabbitmq_client("publisher")
+    consumer = create_rabbitmq_client("consumer")
+
+    exchange_name = f"{random_exchange_name()}"
+
+    await consumer.subscribe(
+        exchange_name,
+        message_handler,
+        topics=topics,
+        exclusive_queue=False,
+        unexpected_error_max_attempts=max_requeue_retry,
+        unexpected_error_retry_delay_s=_ON_ERROR_DELAY_S,
+    )
+
+    if topics is not None:
+        for topic in topics:
+            message = random_rabbit_message(topic=topic)
+            await publisher.publish(exchange_name, message)
+    else:
+        message = random_rabbit_message()
+        await publisher.publish(exchange_name, message)
+
+    topics_count: int = 1 if topics is None else len(topics)
+    return topics_count
+
+
+async def _assert_wait_for_messages(
+    on_message_spy: mock.Mock, expected_results: int
+) -> None:
+    total_seconds_to_wait = expected_results * _ON_ERROR_DELAY_S * 2
+    print(f"Will wait for messages for {total_seconds_to_wait} seconds")
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(total_seconds_to_wait),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            assert len(on_message_spy.call_args_list) == expected_results
+
+    # wait some more time to make sure retry mechanism did not trigger
+    await asyncio.sleep(_ON_ERROR_DELAY_S * 3)
+    assert len(on_message_spy.call_args_list) == expected_results
+
+
 async def _assert_message_received(
     mocked_message_parser: mock.AsyncMock,
     expected_call_count: int,
@@ -110,8 +187,123 @@ async def _assert_message_received(
             )
 
 
+_TOPICS: Final[list[list[str] | None]] = [
+    None,
+    ["one"],
+    ["one", "two"],
+]
+
+
+@pytest.mark.parametrize("max_requeue_retry", [0, 1, 3, 10])
+@pytest.mark.parametrize("topics", _TOPICS)
+async def test_subscribe_to_failing_message_handler(
+    on_message_spy: mock.Mock,
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    max_requeue_retry: int,
+    topics: list[str] | None,
+):
+    async def _faulty_message_handler(message: Any) -> bool:
+        msg = f"Always fail. Received message {message}"
+        raise RuntimeError(msg)
+
+    topics_count = await _setup_publisher_and_subscriber(
+        create_rabbitmq_client,
+        random_exchange_name,
+        random_rabbit_message,
+        max_requeue_retry,
+        topics,
+        _faulty_message_handler,
+    )
+
+    expected_results = (max_requeue_retry + 1) * topics_count
+    await _assert_wait_for_messages(on_message_spy, expected_results)
+
+    report = _get_spy_report(on_message_spy)
+    routing_keys: list[str] = [""] if topics is None else topics
+    assert report == {k: set(range(max_requeue_retry + 1)) for k in routing_keys}
+
+
+@pytest.mark.parametrize("topics", _TOPICS)
+async def test_subscribe_fail_then_success(
+    on_message_spy: mock.Mock,
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    topics: list[str] | None,
+):
+    message_status: dict[str, bool] = {}
+
+    async def _fail_once_then_succeed(message: Any) -> bool:
+        if message not in message_status:
+            message_status[message] = False
+        if not message_status[message]:
+            message_status[message] = True
+            return False
+        return True
+
+    topics_count = await _setup_publisher_and_subscriber(
+        create_rabbitmq_client,
+        random_exchange_name,
+        random_rabbit_message,
+        _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
+        topics,
+        _fail_once_then_succeed,
+    )
+
+    expected_results = 2 * topics_count
+    await _assert_wait_for_messages(on_message_spy, expected_results)
+
+    report = _get_spy_report(on_message_spy)
+    routing_keys: list[str] = [""] if topics is None else topics
+    assert report == {k: set(range(2)) for k in routing_keys}
+
+    # check messages as expected
+    original_message_count = 0
+    requeued_message_count = 0
+    for entry in on_message_spy.call_args_list:
+        message = entry.args[2]
+        if message.headers == {}:
+            original_message_count += 1
+        if message.headers and message.headers["x-death"][0]["count"] == 1:
+            requeued_message_count += 1
+
+    assert original_message_count == topics_count
+    assert requeued_message_count == topics_count
+
+
+@pytest.mark.parametrize("topics", _TOPICS)
+async def test_subscribe_always_returns_fails_stops(
+    on_message_spy: mock.Mock,
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    topics: list[str] | None,
+):
+    async def _always_returning_fail(_: Any) -> bool:
+        return False
+
+    topics_count = await _setup_publisher_and_subscriber(
+        create_rabbitmq_client,
+        random_exchange_name,
+        random_rabbit_message,
+        _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
+        topics,
+        _always_returning_fail,
+    )
+
+    expected_results = (_DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS + 1) * topics_count
+    await _assert_wait_for_messages(on_message_spy, expected_results)
+
+    report = _get_spy_report(on_message_spy)
+    routing_keys: list[str] = [""] if topics is None else topics
+    assert report == {
+        k: set(range(_DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS + 1)) for k in routing_keys
+    }
+
+
 async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -129,7 +321,6 @@ async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
 
 
 async def test_rabbit_client_pub_sub(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -147,7 +338,6 @@ async def test_rabbit_client_pub_sub(
 
 @pytest.mark.parametrize("num_subs", [10])
 async def test_rabbit_client_pub_many_subs(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -179,7 +369,6 @@ async def test_rabbit_client_pub_many_subs(
 
 
 async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -210,7 +399,6 @@ async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
 
 @pytest.mark.parametrize("num_subs", [10])
 async def test_pub_sub_with_non_exclusive_queue(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -275,7 +463,6 @@ def test_rabbit_pub_sub_performance(
 
 
 async def test_rabbit_pub_sub_with_topic(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocker: MockerFixture,
@@ -330,7 +517,6 @@ async def test_rabbit_pub_sub_with_topic(
 
 
 async def test_rabbit_pub_sub_bind_and_unbind_topics(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
@@ -400,9 +586,7 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     await _assert_message_received(mocked_message_parser, 0)
 
 
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
 async def test_rabbit_adding_topics_to_a_fanout_exchange(
-    cleanup_check_rabbitmq_server_has_no_errors: None,
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     random_exchange_name: Callable[[], str],
     mocked_message_parser: mock.AsyncMock,
