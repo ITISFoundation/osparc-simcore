@@ -5172,6 +5172,7 @@ components:
           - $ref: '#/components/schemas/KerberosAuthentication'
           - $ref: '#/components/schemas/JupyterHubTokenAuthentication'
           - $ref: '#/components/schemas/NoAuthentication'
+          - $ref: '#/components/schemas/TLSAuthentication'
           description: Dask gateway authentication
         accessRights:
           title: Accessrights
@@ -5243,6 +5244,7 @@ components:
           - $ref: '#/components/schemas/KerberosAuthentication'
           - $ref: '#/components/schemas/JupyterHubTokenAuthentication'
           - $ref: '#/components/schemas/NoAuthentication'
+          - $ref: '#/components/schemas/TLSAuthentication'
           description: Dask gateway authentication
     ClusterTypeInModel:
       title: ClusterTypeInModel
@@ -9546,6 +9548,33 @@ components:
         annotations:
           title: Annotations
           type: object
+    TLSAuthentication:
+      title: TLSAuthentication
+      required:
+      - tls_ca_file
+      - tls_client_cert
+      - tls_client_key
+      type: object
+      properties:
+        type:
+          title: Type
+          enum:
+          - tls
+          type: string
+          default: tls
+        tls_ca_file:
+          title: Tls Ca File
+          type: string
+          format: path
+        tls_client_cert:
+          title: Tls Client Cert
+          type: string
+          format: path
+        tls_client_key:
+          title: Tls Client Key
+          type: string
+          format: path
+      additionalProperties: false
     TableSynchronisation:
       title: TableSynchronisation
       required:
