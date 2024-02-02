@@ -19,7 +19,7 @@ def enable(
     from aiodebug.logging_compat import get_logger
 
     aio_debug_logger = get_logger(__name__)
-    _run = asyncio.events.Handle._run
+    _run = asyncio.events.Handle._run  # noqa: SLF001
 
     profiler = Profiler(interval=slow_duration_secs, async_mode="disabled")
 
@@ -48,4 +48,4 @@ def enable(
 
         return retval
 
-    asyncio.events.Handle._run = instrumented  # type: ignore[method-assign]
+    asyncio.events.Handle._run = instrumented  # type: ignore[method-assign]  # noqa: SLF001
