@@ -42,7 +42,7 @@ class RabbitMessageBase(BaseModel):
     def routing_key(self) -> str | None:
         """this is used to define the topic of the message
 
-        :return: the topic or None (NOTE: None will implicitely use a FANOUT exchange)
+        :return: the topic or None (NOTE: None will implicitly use a FANOUT exchange)
         """
 
     def body(self) -> bytes:
