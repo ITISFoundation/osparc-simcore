@@ -84,17 +84,18 @@ async def rabbit_service(
 async def create_rabbitmq_client(
     rabbit_service: RabbitSettings,
 ) -> AsyncIterator[Callable[[str], RabbitMQClient]]:
-    created_clients = []
+    created_clients: list[RabbitMQClient] = []
 
     def _creator(client_name: str, *, heartbeat: int = 60) -> RabbitMQClient:
+        # pylint: disable=protected-access
         client = RabbitMQClient(
             f"pytest_{client_name}", rabbit_service, heartbeat=heartbeat
         )
         assert client
-        assert client._connection_pool  # pylint: disable=protected-access
-        assert not client._connection_pool.is_closed  # pylint: disable=protected-access
-        assert client._channel_pool  # pylint: disable=protected-access
-        assert not client._channel_pool.is_closed  # pylint: disable=protected-access
+        assert client._connection_pool  # noqa: SLF001
+        assert not client._connection_pool.is_closed  # noqa: SLF001
+        assert client._channel_pool  # noqa: SLF001
+        assert not client._channel_pool.is_closed  # noqa: SLF001
         assert client.client_name == f"pytest_{client_name}"
         assert client.settings == rabbit_service
         created_clients.append(client)
@@ -127,7 +128,6 @@ async def rabbitmq_rpc_client(
     yield _creator
     # cleanup, properly close the clients
     await asyncio.gather(*(client.close() for client in created_clients))
-
 
 
 async def rabbitmq_client(create_rabbitmq_client):
