@@ -4,6 +4,7 @@ import socket
 from typing import Any, Final
 
 import aio_pika
+from aiormq.exceptions import ChannelPreconditionFailed
 from pydantic import NonNegativeInt
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -70,4 +71,24 @@ async def declare_queue(
     if not exclusive_queue:
         # NOTE: setting a name will ensure multiple instance will take their data here
         queue_parameters |= {"name": exchange_name}
-    return await channel.declare_queue(**queue_parameters)
+
+    # NOTE: if below line raises something similar to ``ChannelPreconditionFailed: PRECONDITION_FAILED``
+    # most likely someone changed the signature of the queues (parameters etc...)
+    # Safest way to deal with it:
+    #   1. check whether there are any messages for the existing queue in rabbitmq
+    #   2. NO messages -> delete queue
+    #   3. Found messages:
+    #        - save messages
+    #        - delete queue
+    #        - restore messages
+    # Why is this the safest, with an example?
+    #   1. a user bought 1000$ of credits
+    #   2. for some reason resource usage tracker is unavailable and the messages is stuck in the queue
+    #   3. if the queue is deleted, the action relative to this transaction will be lost
+    try:
+        return await channel.declare_queue(**queue_parameters)
+    except ChannelPreconditionFailed:
+        _logger.exception(
+            "Most likely the rabbit queue parameters have changed. See notes above to fix!"
+        )
+        raise
