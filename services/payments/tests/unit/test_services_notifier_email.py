@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import mimetypes
+from contextlib import asynccontextmanager
 from email.headerregistry import Address
 from email.message import EmailMessage
 from email.utils import make_msgid
@@ -33,10 +34,8 @@ def guess_file_type(file_path: Path) -> tuple[str, str]:
     return maintype, subtype
 
 
-async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
-
-    settings = SMTPSettings.create_from_envs()
-
+@asynccontextmanager
+async def email_session(settings: SMTPSettings):
     async with aiosmtplib.SMTP(
         hostname=settings.SMTP_HOST,
         port=settings.SMTP_PORT,
@@ -56,81 +55,91 @@ async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
                 settings.SMTP_PASSWORD.get_secret_value(),
             )
 
-        def compose_email(msg: EmailMessage, text_body, html_body) -> EmailMessage:
-            # Text version
-            msg.set_content(
-                f"""\
-                {text_body}
+        yield smtp
 
-                Done with love at Z43
-            """
-            )
 
-            # HTML version
-            logo_cid = make_msgid()
-            msg.add_alternative(
-                f"""\
-            <html>
-            <head></head>
-            <body>
-                {html_body}
-                Done with love at <img src="cid:{logo_cid[1:-1]}" width=30/>
-            </body>
-            </html>
-            """,
-                subtype="html",
-            )
+async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
 
-            assert msg.is_multipart()
+    settings = SMTPSettings.create_from_envs()
 
-            logo_path = (
-                osparc_simcore_root_dir
-                / "services/static-webserver/client/source/resource/osparc/z43-logo.png"
-            )
-            maintype, subtype = guess_file_type(logo_path)
-            msg.get_payload(1).add_related(
-                logo_path.read_bytes(),
-                maintype=maintype,
-                subtype=subtype,
-                cid=logo_cid,
-            )
+    def compose_branded_email(
+        msg: EmailMessage, text_body, html_body, attachments: list[Path]
+    ) -> EmailMessage:
+        # Text version
+        msg.set_content(
+            f"""\
+            {text_body}
 
-            # Attach file
-            pdf_path = osparc_simcore_root_dir / "ignore.pdf"
-            maintype, subtype = guess_file_type(pdf_path)
+            Done with love at Z43
+        """
+        )
+
+        # HTML version
+        logo_cid = make_msgid()
+        msg.add_alternative(
+            f"""\
+        <html>
+        <head></head>
+        <body>
+            {html_body}
+            Done with love at <img src="cid:{logo_cid[1:-1]}" width=30/>
+        </body>
+        </html>
+        """,
+            subtype="html",
+        )
+
+        assert msg.is_multipart()
+
+        logo_path = (
+            osparc_simcore_root_dir
+            / "services/static-webserver/client/source/resource/osparc/z43-logo.png"
+        )
+        maintype, subtype = guess_file_type(logo_path)
+        msg.get_payload(1).add_related(
+            logo_path.read_bytes(),
+            maintype=maintype,
+            subtype=subtype,
+            cid=logo_cid,
+        )
+
+        # Attach files
+        for attachment_path in attachments:
+            maintype, subtype = guess_file_type(attachment_path)
             msg.add_attachment(
-                pdf_path.read_bytes(),
-                filename=pdf_path.name,
+                attachment_path.read_bytes(),
+                filename=attachment_path.name,
                 maintype=maintype,
                 subtype=subtype,
             )
-            return msg
+        return msg
 
-        msg = EmailMessage()
-        msg["From"] = Address(
-            display_name="osparc support", addr_spec="support@osparc.io"
-        )
-        msg["To"] = Address(
-            display_name="Pedro Crespo-Valero", addr_spec="crespo@speag.com"
-        )
-        msg["Subject"] = "Payment invoice"
+    msg = EmailMessage()
+    msg["From"] = Address(display_name="osparc support", addr_spec="support@osparc.io")
+    msg["To"] = Address(
+        display_name="Pedro Crespo-Valero", addr_spec="crespo@speag.com"
+    )
+    msg["Subject"] = "Payment invoice"
 
-        text_body = """\
-        Hi there,
+    text_body = """\
+    Hi there,
 
-        This is your invoice.
-        """
+    This is your invoice.
+    """
 
-        html_body = """\
-        <p>Hi there!</p>
-        <p>This is your
-            <a href="http://www.yummly.com/recipe/Roasted-Asparagus-Epicurious-203718">
-                invoice
-            </a>.
-        </p>
-        """
-        msg = compose_email(msg, text_body, html_body)
+    html_body = """\
+    <p>Hi there!</p>
+    <p>This is your
+        <a href="http://www.yummly.com/recipe/Roasted-Asparagus-Epicurious-203718">
+            invoice
+        </a>.
+    </p>
+    """
+    msg = compose_branded_email(
+        msg, text_body, html_body, attachments=[osparc_simcore_root_dir / "ignore.pdf"]
+    )
 
+    async with email_session(settings) as smtp:
         await smtp.send_message(msg)
 
         # render a template
