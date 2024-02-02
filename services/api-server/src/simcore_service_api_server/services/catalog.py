@@ -94,7 +94,7 @@ class CatalogApi(BaseServiceClientApi):
                     if predicate is None or predicate(solver):
                         solvers.append(solver)
 
-            except ValidationError as err:
+            except ValidationError as err:  # noqa: PERF203
                 # NOTE: For the moment, this is necessary because there are no guarantees
                 #       at the image registry. Therefore we exclude and warn
                 #       invalid items instead of returning error
