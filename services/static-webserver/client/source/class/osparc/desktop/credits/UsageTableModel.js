@@ -5,6 +5,15 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 const SERVER_MAX_LIMIT = 49
+const COLUMN_ID_TO_DB_COLUMN_MAP = {
+  0: "project_name",
+  1: "node_name",
+  2: "service_key",
+  3: "started_at",
+  5: "service_run_status",
+  6: "credit_cost",
+  7: "user_email"
+}
 
 qx.Class.define("osparc.desktop.credits.UsageTableModel", {
   extend: qx.ui.table.model.Remote,
@@ -35,6 +44,9 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
     if (filters) {
       this.setFilters(filters)
     }
+    this.setSortColumnIndexWithoutSortingData(3)
+    this.setSortAscendingWithoutSortingData(false)
+    this.setColumnSortable(4, false)
   },
 
   properties: {
@@ -50,10 +62,25 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
       check: "Boolean",
       init: false,
       event: "changeFetching"
+    },
+    orderBy: {
+      check: "Object",
+      init: {
+        field: "started_at",
+        direction: "desc"
+      }
     }
   },
 
   members: {
+    // overrriden
+    sortByColumn(columnIndex, ascending) {
+      this.setOrderBy({
+        field: COLUMN_ID_TO_DB_COLUMN_MAP[columnIndex],
+        direction: ascending ? "asc" : "desc"
+      })
+      this.base(arguments, columnIndex, ascending)
+    },
     // overridden
     _loadRowCount() {
       osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", {
@@ -62,10 +89,11 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
           limit: 1,
           offset: 0,
           filters: this.getFilters() ?
-          JSON.stringify({
-            "started_at": this.getFilters()
-          }) :
-          null
+            JSON.stringify({
+              "started_at": this.getFilters()
+            }) :
+            null,
+          orderBy: JSON.stringify(this.getOrderBy())
         }
       }, undefined, {
         resolveWResponse: true
@@ -91,7 +119,8 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
               JSON.stringify({
                 "started_at": this.getFilters()
               }) :
-              null
+              null,
+            orderBy: JSON.stringify(this.getOrderBy())
           }
         })
           .then(rawData => {
