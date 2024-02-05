@@ -651,6 +651,7 @@
         "required": [
           "service_run_id",
           "user_id",
+          "user_email",
           "project_id",
           "project_name",
           "node_id",
@@ -683,6 +684,10 @@
             "exclusiveMinimum": true,
             "type": "integer",
             "minimum": 0
+          },
+          "user_email": {
+            "title": "User Email",
+            "type": "string"
           },
           "project_id": {
             "title": "Project Id",
