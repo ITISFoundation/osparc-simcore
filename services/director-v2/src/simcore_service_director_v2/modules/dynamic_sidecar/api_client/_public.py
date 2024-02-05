@@ -5,7 +5,7 @@ from functools import cached_property
 from typing import Any, Final
 
 from fastapi import FastAPI, status
-from httpx import AsyncClient, ConnectError
+from httpx import AsyncClient
 from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
@@ -16,7 +16,6 @@ from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.http_client_thin import (
     BaseHttpClientError,
-    ClientHttpError,
     UnexpectedStatusError,
 )
 from servicelib.fastapi.long_running_tasks.client import (
@@ -468,19 +467,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
     async def free_reserved_disk_space(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        try:
-            await self._thin_client.post_disk_reserved_free(dynamic_sidecar_endpoint)
-        except ClientHttpError as e:
-            # do not raise error if connect to sidecar
-            if isinstance(
-                e.error, ConnectError  # pylint: disable=no-member # type: ignore
-            ):
-                _logger.info(
-                    "Could not connect to '%s' to free reserved disk space",
-                    dynamic_sidecar_endpoint,
-                )
-            else:
-                raise
+        await self._thin_client.post_disk_reserved_free(dynamic_sidecar_endpoint)
 
 
 def _get_proxy_configuration(
