@@ -29,6 +29,7 @@ from types_aiobotocore_s3.type_defs import (
 )
 
 from .constants import EXPAND_DIR_MAX_ITEM_COUNT, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from .exceptions import S3KeyNotFoundError
 from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks, s3_exception_handler
 
@@ -73,12 +74,13 @@ async def _list_objects_v2_paginated_gen(
     *,
     items_per_page: int = _MAX_ITEMS_PER_PAGE,
 ) -> AsyncGenerator[list[ObjectTypeDef], None]:
+    paginator = client.get_paginator("list_objects_v2")
     pagination_config: PaginatorConfigTypeDef = {
         "PageSize": items_per_page,
     }
 
     page: ListObjectsV2OutputTypeDef
-    async for page in client.get_paginator("list_objects_v2").paginate(
+    async for page in paginator.paginate(
         Bucket=bucket, Prefix=prefix, PaginationConfig=pagination_config
     ):
         items_in_page: list[ObjectTypeDef] = page.get("Contents", [])
@@ -292,7 +294,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
                     )
                     _logger.debug("restored %s", f"{bucket}/{file_id}")
 
-    async def list_all_objects_gen(
+    async def iter_pages(
         self, bucket: S3BucketName, *, prefix: str
     ) -> AsyncGenerator[list[ObjectTypeDef], None]:
         async for s3_objects in _list_objects_v2_paginated_gen(
@@ -313,7 +315,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         with log_context(
             _logger, logging.INFO, f"deleting objects in {prefix=}", log_duration=True
         ):
-            async for s3_objects in self.list_all_objects_gen(bucket, prefix=prefix):
+            async for s3_objects in self.iter_pages(bucket, prefix=prefix):
                 if objects_to_delete := [f["Key"] for f in s3_objects if "Key" in f]:
                     await self.client.delete_objects(
                         Bucket=bucket,

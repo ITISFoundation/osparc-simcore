@@ -23,13 +23,6 @@ from .exceptions import (
     S3ReadTimeoutError,
 )
 
-#
-# Retry policies
-#
-# NOTE: these are retries on the S3* exceptions mapped in s3_exception_handler
-#
-
-
 _logger = logging.getLogger(__name__)
 
 # this is artifically defined, if possible we keep a maximum number of requests for parallel
@@ -69,14 +62,30 @@ def s3_exception_handler(log: logging.Logger):
     """Converts typical aiobotocore/boto exceptions to storage exceptions
     NOTE: this is a work in progress as more exceptions might arise in different
     use-cases
-
-    SEE https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html
     """
+    # SEE https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html
+
+    def _map_error_from_aws_services(
+        err: botocore.exceptions.ClientError, *args
+    ) -> S3AccessError:
+        #
+        # SEE https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html#parsing-error-responses-and-catching-exceptions-from-aws-services
+        #
+        error_code: str | None = err.response.get("Error", {}).get("Code", None)
+        if error_code == "404":
+            if err.operation_name == "HeadObject":
+                return S3KeyNotFoundError(bucket=args[0], key=args[1])
+            if err.operation_name == "HeadBucket":
+                return S3BucketInvalidError(bucket=args[0])
+        if error_code == "403" and err.operation_name == "HeadBucket":
+            return S3BucketInvalidError(bucket=args[0])
+
+        # Still not handled
+        return S3AccessError()
 
     def _decorator(func):
         @functools.wraps(func)
         async def _wrapper(self, *args, **kwargs):
-
             try:
                 response = await func(self, *args, **kwargs)
 
@@ -89,16 +98,7 @@ def s3_exception_handler(log: logging.Logger):
                 raise S3ReadTimeoutError(error=err) from err
 
             except botocore.exceptions.ClientError as err:
-                # AWS services error responses
-                error_code: str | None = err.response.get("Error", {}).get("Code", None)
-                if error_code == "404":
-                    if err.operation_name == "HeadObject":
-                        raise S3KeyNotFoundError(bucket=args[0], key=args[1]) from err
-                    if err.operation_name == "HeadBucket":
-                        raise S3BucketInvalidError(bucket=args[0]) from err
-                if error_code == "403" and err.operation_name == "HeadBucket":
-                    raise S3BucketInvalidError(bucket=args[0]) from err
-                raise S3AccessError from err
+                raise _map_error_from_aws_services(err, *args) from err
 
             except botocore.exceptions.EndpointConnectionError as err:
                 raise S3AccessError from err
@@ -113,6 +113,12 @@ def s3_exception_handler(log: logging.Logger):
 
     return _decorator
 
+
+#
+# Retry policies
+#
+# NOTE: these are retries on the S3* exceptions mapped in s3_exception_handler
+#
 
 on_timeout_retry_with_exponential_backoff = tenacity.retry(
     retry=retry_if_exception_type(S3ReadTimeoutError),
