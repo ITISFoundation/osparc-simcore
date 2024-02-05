@@ -107,7 +107,7 @@ class ServiceHealthcheckEndpoint:
 
 
 _SERVICE_NAME_REPLACEMENTS: dict[str, str] = {
-    "dynamic-schdlr": "dynamic-scheduler",
+    "dynamic-scheduler": "dynamic-schdlr",
 }
 
 
