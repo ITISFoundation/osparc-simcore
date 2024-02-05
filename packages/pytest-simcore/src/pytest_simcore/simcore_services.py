@@ -106,6 +106,11 @@ class ServiceHealthcheckEndpoint:
         return obj
 
 
+_SERVICE_NAME_REPLACEMENTS: dict[str, str] = {
+    "dynamic-schdlr": "dynamic-scheduler",
+}
+
+
 @pytest.fixture(scope="module")
 def services_endpoint(
     core_services_selection: list[str],
@@ -116,6 +121,7 @@ def services_endpoint(
 
     stack_name = testing_environ_vars["SWARM_STACK_NAME"]
     for service in core_services_selection:
+        service = _SERVICE_NAME_REPLACEMENTS.get(service, service)
         assert f"{stack_name}_{service}" in docker_stack["services"]
         full_service_name = f"{stack_name}_{service}"
 
