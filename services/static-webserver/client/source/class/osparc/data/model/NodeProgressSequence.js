@@ -206,7 +206,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       const pullingSidecarPBar = this.__pullingSidecarPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(pullingSidecarPBar);
 
-      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Downloading outputs..."));
+      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Downloading your outputs..."));
       this.__sequenceLoadingPage.add(pullingOutputsTitle);
 
       const pullingOutputsPBar = this.__pullingOutputsPBar = this.self().createProgressBar();
@@ -224,7 +224,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       const pullingImagesPBar = this.__pullingImagesPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(pullingImagesPBar);
 
-      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Downloading inputs..."));
+      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Downloading your inputs..."));
       this.__sequenceLoadingPage.add(pullingInputsTitle);
 
       const pullingInputsPBar = this.__pullingInputsPBar = this.self().createProgressBar();
