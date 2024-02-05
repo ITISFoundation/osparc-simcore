@@ -190,13 +190,13 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         minHeight: 250
       });
 
-      const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling sidecar..."));
+      const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Getting extra components ready..."));
       this.__sequenceLoadingPage.add(pullingSidecarTitle);
 
       const pullingSidecarPBar = this.__pullingSidecarPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(pullingSidecarPBar);
 
-      const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Scaling up the cluster..."));
+      const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Increasing system capacity..."));
       this.__sequenceLoadingPage.add(scalingTitle);
 
       const scalingSubtitle = this.__clusterUpScalingSubtitle = new qx.ui.basic.Label(qx.locale.Manager.tr("This step can take up to 3 minutes"));
@@ -206,25 +206,25 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       const clusterUpScalingPBar = this.__clusterUpScalingPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(clusterUpScalingPBar);
 
-      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling inputs..."));
+      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Collecting inputs..."));
       this.__sequenceLoadingPage.add(pullingInputsTitle);
 
       const pullingInputsPBar = this.__pullingInputsPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(pullingInputsPBar);
 
-      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling outputs..."));
+      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Collecting outputs..."));
       this.__sequenceLoadingPage.add(pullingOutputsTitle);
 
       const pullingOutputsPBar = this.__pullingOutputsPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(pullingOutputsPBar);
 
-      const pullingStateTitle = this.__pullingStateTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling state..."));
+      const pullingStateTitle = this.__pullingStateTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your work..."));
       this.__sequenceLoadingPage.add(pullingStateTitle);
 
       const pullingStatePBar = this.__pullingStatePBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(pullingStatePBar);
 
-      const pullingImagesTitle = this.__pullingImagesTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling images..."));
+      const pullingImagesTitle = this.__pullingImagesTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Downloading service components..."));
       this.__sequenceLoadingPage.add(pullingImagesTitle);
 
       const pullingImagesPBar = this.__pullingImagesPBar = this.self().createProgressBar();
