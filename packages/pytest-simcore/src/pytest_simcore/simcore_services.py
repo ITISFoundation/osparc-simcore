@@ -54,6 +54,9 @@ AIOHTTP_BASED_SERVICE_PORT: int = 8080
 FASTAPI_BASED_SERVICE_PORT: int = 8000
 DASK_SCHEDULER_SERVICE_PORT: int = 8787
 
+_SERVICE_NAME_REPLACEMENTS: dict[str, str] = {
+    "dynamic-scheduler": "dynamic-schdlr",
+}
 
 _ONE_SEC_TIMEOUT = ClientTimeout(total=1)  # type: ignore
 
@@ -104,11 +107,6 @@ class ServiceHealthcheckEndpoint:
             ),
         )
         return obj
-
-
-_SERVICE_NAME_REPLACEMENTS: dict[str, str] = {
-    "dynamic-scheduler": "dynamic-schdlr",
-}
 
 
 @pytest.fixture(scope="module")
