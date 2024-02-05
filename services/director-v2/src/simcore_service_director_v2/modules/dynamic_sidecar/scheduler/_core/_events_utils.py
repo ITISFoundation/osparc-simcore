@@ -118,13 +118,13 @@ async def service_remove_containers(
             scheduler_data.endpoint, progress_callback=progress_callback
         )
     except (BaseHttpClientError, TaskClientResultError) as e:
-        _logger.warning(
+        _logger.info(
             (
-                "Could not remove service containers for "
-                "%s\n%s. Will continue to save the data from the service!"
+                "Could not remove service containers for %s. "
+                "Will continue to save the data from the service! Error: %s"
             ),
             scheduler_data.service_name,
-            f"{e}",
+            f"{type(e)}: {e}",
         )
 
 
@@ -135,13 +135,13 @@ async def service_free_reserved_disk_space(
     try:
         await sidecars_client.free_reserved_disk_space(scheduler_data.endpoint)
     except BaseHttpClientError as e:
-        _logger.warning(
+        _logger.info(
             (
-                "Could not free reserved disk space for "
-                "%s\n%s. Will continue to save the data from the service!"
+                "Could not remove service containers for %s. "
+                "Will continue to save the data from the service! Error: %s"
             ),
             scheduler_data.service_name,
-            f"{e}",
+            f"{type(e)}: {e}",
         )
 
 
