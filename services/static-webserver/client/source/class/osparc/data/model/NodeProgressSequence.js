@@ -190,12 +190,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         minHeight: 250
       });
 
-      const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Getting extra components ready..."));
-      this.__sequenceLoadingPage.add(pullingSidecarTitle);
-
-      const pullingSidecarPBar = this.__pullingSidecarPBar = this.self().createProgressBar();
-      this.__sequenceLoadingPage.add(pullingSidecarPBar);
-
       const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Increasing system capacity..."));
       this.__sequenceLoadingPage.add(scalingTitle);
 
@@ -206,13 +200,13 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       const clusterUpScalingPBar = this.__clusterUpScalingPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(clusterUpScalingPBar);
 
-      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Collecting inputs..."));
-      this.__sequenceLoadingPage.add(pullingInputsTitle);
+      const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Setting up key components..."));
+      this.__sequenceLoadingPage.add(pullingSidecarTitle);
 
-      const pullingInputsPBar = this.__pullingInputsPBar = this.self().createProgressBar();
-      this.__sequenceLoadingPage.add(pullingInputsPBar);
+      const pullingSidecarPBar = this.__pullingSidecarPBar = this.self().createProgressBar();
+      this.__sequenceLoadingPage.add(pullingSidecarPBar);
 
-      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Collecting outputs..."));
+      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Downloading outputs..."));
       this.__sequenceLoadingPage.add(pullingOutputsTitle);
 
       const pullingOutputsPBar = this.__pullingOutputsPBar = this.self().createProgressBar();
@@ -224,11 +218,17 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       const pullingStatePBar = this.__pullingStatePBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(pullingStatePBar);
 
-      const pullingImagesTitle = this.__pullingImagesTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Downloading service components..."));
+      const pullingImagesTitle = this.__pullingImagesTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Installing software..."));
       this.__sequenceLoadingPage.add(pullingImagesTitle);
 
       const pullingImagesPBar = this.__pullingImagesPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(pullingImagesPBar);
+
+      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Downloading inputs..."));
+      this.__sequenceLoadingPage.add(pullingInputsTitle);
+
+      const pullingInputsPBar = this.__pullingInputsPBar = this.self().createProgressBar();
+      this.__sequenceLoadingPage.add(pullingInputsPBar);
     },
 
     __applySidecarPulling: function(value) {
