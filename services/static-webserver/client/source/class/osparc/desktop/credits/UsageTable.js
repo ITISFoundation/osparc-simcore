@@ -44,7 +44,10 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
     // Array [0, 1, ..., N] where N is column_count - 1 (default column order)
     this.__columnOrder = [...Array(columnModel.getOverallColumnCount()).keys()]
 
-    if (osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder()) {
+    if (
+      osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder() &&
+      osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder().length === this.__columnOrder.length
+    ) {
       columnModel.setColumnsOrder(osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder())
       this.__columnOrder = osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder()
     } else {
