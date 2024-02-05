@@ -4,6 +4,7 @@
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
  */
+const SERVER_MAX_LIMIT = 49
 
 qx.Class.define("osparc.desktop.credits.UsageTableModel", {
   extend: qx.ui.table.model.Remote,
@@ -79,51 +80,76 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
     // overridden
     _loadRowData(firstRow, lastRow) {
       this.setIsFetching(true)
-      osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", {
-        url: {
-          walletId: this.getWalletId(),
-          limit: lastRow - firstRow + 1,
-          offset: firstRow,
-          filters: this.getFilters() ?
-            JSON.stringify({
-              "started_at": this.getFilters()
-            }) :
-            null
-        }
-      })
-        .then(rawData => {
-          const data = []
-          rawData.forEach(rawRow => {
-            let service = ""
-            if (rawRow["service_key"]) {
-              const serviceName = rawRow["service_key"].split("/").pop()
-              service = `${serviceName}:${rawRow["service_version"]}`
-            }
-            let start = ""
-            let duration = ""
-            if (rawRow["started_at"]) {
-              start = osparc.utils.Utils.formatDateAndTime(new Date(rawRow["started_at"]))
-              if (rawRow["stopped_at"]) {
-                duration = osparc.utils.Utils.formatMilliSeconds(new Date(rawRow["stopped_at"]) - new Date(rawRow["started_at"]))
+      // Returns a request promise with given offset and limit
+      const getFetchPromise = (offset, limit=SERVER_MAX_LIMIT) => {
+        return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", {
+          url: {
+            walletId: this.getWalletId(),
+            limit,
+            offset,
+            filters: this.getFilters() ?
+              JSON.stringify({
+                "started_at": this.getFilters()
+              }) :
+              null
+          }
+        })
+          .then(rawData => {
+            const data = []
+            rawData.forEach(rawRow => {
+              let service = ""
+              if (rawRow["service_key"]) {
+                const serviceName = rawRow["service_key"].split("/").pop()
+                service = `${serviceName}:${rawRow["service_version"]}`
               }
-            }
-            data.push({
-              project: rawRow["project_name"] || rawRow["project_id"],
-              node: rawRow["node_name"] || rawRow["node_id"],
-              service,
-              start,
-              duration,
-              status: qx.lang.String.firstUp(rawRow["service_run_status"].toLowerCase()),
-              cost: rawRow["credit_cost"] ? rawRow["credit_cost"].toFixed(2) : "",
-              user: rawRow["user_id"]
+              let start = ""
+              let duration = ""
+              if (rawRow["started_at"]) {
+                start = osparc.utils.Utils.formatDateAndTime(new Date(rawRow["started_at"]))
+                if (rawRow["stopped_at"]) {
+                  duration = osparc.utils.Utils.formatMilliSeconds(new Date(rawRow["stopped_at"]) - new Date(rawRow["started_at"]))
+                }
+              }
+              data.push({
+                project: rawRow["project_name"] || rawRow["project_id"],
+                node: rawRow["node_name"] || rawRow["node_id"],
+                service,
+                start,
+                duration,
+                status: qx.lang.String.firstUp(rawRow["service_run_status"].toLowerCase()),
+                cost: rawRow["credit_cost"] ? rawRow["credit_cost"].toFixed(2) : "",
+                user: rawRow["user_id"]
+              })
             })
+            return data
           })
-          this._onRowDataLoaded(data)
-        })
-        .catch(() => {
-          this._onRowDataLoaded(null)
-        })
-        .finally(() => this.setIsFetching(false))
+      }
+      // Divides the model row request into several server requests to comply with the 49 rows server limit
+      const reqLimit = lastRow - firstRow + 1 // Number of requested rows
+      const nRequests = Math.ceil(reqLimit / SERVER_MAX_LIMIT)
+      if (nRequests > 1) {
+        let requests = []
+        for (let i=firstRow; i <= lastRow; i += SERVER_MAX_LIMIT) {
+          requests.push(getFetchPromise(i, i > lastRow - SERVER_MAX_LIMIT + 1 ? reqLimit % SERVER_MAX_LIMIT : SERVER_MAX_LIMIT))
+        }
+        Promise.all(requests)
+          .then(responses => {
+            this._onRowDataLoaded(responses.flat())
+          })
+          .catch(() => {
+            this._onRowDataLoaded(null)
+          })
+          .finally(() => this.setIsFetching(false))
+      } else {
+        getFetchPromise(firstRow, reqLimit)
+          .then(data => {
+            this._onRowDataLoaded(data)
+          })
+          .catch(() => {
+            this._onRowDataLoaded(null)
+          })
+          .finally(() => this.setIsFetching(false))
+      }
     }
   }
 })
