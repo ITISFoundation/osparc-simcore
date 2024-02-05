@@ -40,5 +40,26 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
       columnModel.setColumnVisible(6, false);
       columnModel.setColumnVisible(7, false);
     }
+
+    // Array [0, 1, ..., N] where N is column_count - 1 (default column order)
+    this.__columnOrder = [...Array(columnModel.getOverallColumnCount()).keys()]
+
+    if (osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder()) {
+      columnModel.setColumnsOrder(osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder())
+      this.__columnOrder = osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder()
+    } else {
+      osparc.Preferences.getInstance().setBillingCenterUsageColumnOrder(this.__columnOrder)
+    }
+
+    columnModel.addListener("orderChanged", e => {
+      // Save new order into preferences
+      if (e.getData()) {
+        const { fromOverXPos, toOverXPos } = e.getData()
+        // Edit current order
+        this.__columnOrder = this.__columnOrder.toSpliced(toOverXPos, 0, this.__columnOrder.splice(fromOverXPos, 1)[0])
+        // Save order
+        osparc.Preferences.getInstance().setBillingCenterUsageColumnOrder(this.__columnOrder)
+      }
+    }, this)
   }
 })

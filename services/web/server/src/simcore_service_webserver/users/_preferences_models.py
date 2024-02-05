@@ -97,7 +97,7 @@ class TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference(
 
 class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "billingCenterUsageColumnOrder"
-    value: list[str] = []
+    value: list[int] | None = None
 
 
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
