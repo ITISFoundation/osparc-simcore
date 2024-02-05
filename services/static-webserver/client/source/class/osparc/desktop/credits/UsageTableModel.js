@@ -118,13 +118,13 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
                 duration,
                 status: qx.lang.String.firstUp(rawRow["service_run_status"].toLowerCase()),
                 cost: rawRow["credit_cost"] ? rawRow["credit_cost"].toFixed(2) : "",
-                user: rawRow["user_id"]
+                user: rawRow["user_email"]
               })
             })
             return data
           })
       }
-      // Divides the model row request into several server requests to comply with the 49 rows server limit
+      // Divides the model row request into several server requests to comply with the number of rows server limit
       const reqLimit = lastRow - firstRow + 1 // Number of requested rows
       const nRequests = Math.ceil(reqLimit / SERVER_MAX_LIMIT)
       if (nRequests > 1) {
