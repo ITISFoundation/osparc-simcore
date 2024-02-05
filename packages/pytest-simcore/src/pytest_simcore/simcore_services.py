@@ -45,7 +45,7 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "dask-scheduler": "/health",
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
-    "dynamic-scheduler": "/",
+    "dynamic-schdlr": "/",
     "invitations": "/",
     "payments": "/",
     "resource-usage-tracker": "/",
