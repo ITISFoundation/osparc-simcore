@@ -1,3 +1,4 @@
+import botocore.exceptions
 from pydantic.errors import PydanticErrorMixin
 
 
@@ -40,6 +41,11 @@ class LinkAlreadyExistsError(DatabaseAccessError):
 class S3AccessError(StorageRuntimeError):
     code = "s3_access.error"
     msg_template: str = "Unexpected error while accessing S3 backend"
+
+
+class S3ReadTimeoutError(S3AccessError):
+    msg_template = "S3 {error}, rq={error.request}, rsp={error.response}"
+    error: botocore.exceptions.ReadTimeoutError
 
 
 class S3BucketInvalidError(S3AccessError):
