@@ -31,6 +31,7 @@ _SERVICE_RUN_GET = ServiceRunPage(
                 "wallet_id": 1,
                 "wallet_name": "the super wallet!",
                 "user_id": 1,
+                "user_email": "name@email.testing",
                 "project_id": "5c2110be-441b-11ee-a0e8-02420a000040",
                 "project_name": "osparc",
                 "node_id": "3d2133f4-aba4-4364-9f7a-9377dea1221f",

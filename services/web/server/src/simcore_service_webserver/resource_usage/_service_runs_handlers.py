@@ -84,6 +84,7 @@ class _ListServicesResourceUsagesQueryParams(BaseModel):
             "wallet_id",
             "wallet_name",
             "user_id",
+            "user_email",
             "project_id",
             "project_name",
             "node_id",
