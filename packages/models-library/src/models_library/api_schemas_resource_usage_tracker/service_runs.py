@@ -17,6 +17,7 @@ class ServiceRunGet(BaseModel):
     wallet_id: WalletID | None
     wallet_name: str | None
     user_id: UserID
+    user_email: str
     project_id: ProjectID
     project_name: str
     node_id: NodeID
