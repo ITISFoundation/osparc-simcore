@@ -77,7 +77,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
         marginTop: 10
       })
       if (this.__personalWallet && this.__personalWallet.getMyAccessRights()["write"]) {
-        this._add(this.__table)
+        this._add(this.__table, { flex: 1 })
         this.__table.getTableModel().reloadData()
       } else {
         this._add(osparc.desktop.credits.Utils.getNoWriteAccessInformationLabel())

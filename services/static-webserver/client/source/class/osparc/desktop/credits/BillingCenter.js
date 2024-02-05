@@ -123,7 +123,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       transactions.set({
         margin: 10
       });
-      page.add(transactions);
+      page.add(transactions, { flex: 1 });
       return page;
     },
 
@@ -136,7 +136,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       usage.set({
         margin: 10
       });
-      page.add(usage);
+      page.add(usage, { flex: 1 });
       return page;
     },
 

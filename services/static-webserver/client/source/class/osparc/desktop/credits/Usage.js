@@ -91,7 +91,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
             this.__table.getTableModel().bind("isFetching", this.__fetchingImg, "visibility", {
               converter: isFetching => isFetching ? "visible" : "excluded"
             })
-            container.add(this.__table)
+            container.add(this.__table, { flex: 1 })
           }
         }
       });
