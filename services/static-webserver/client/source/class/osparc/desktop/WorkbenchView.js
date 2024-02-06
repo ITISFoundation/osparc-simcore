@@ -221,6 +221,39 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.add(control, 1); // flex 1
           break;
         }
+        case "disk-indicator": {
+          control = new qx.ui.container.Composite(
+            new qx.ui.layout.VBox().set({
+              alignY: "middle",
+              alignX: "center"
+            })
+          ).set({
+            decorator: "indicator-border",
+            padding: [3, 10],
+            alignY: "middle",
+            allowShrinkX: false,
+            allowShrinkY: false,
+            allowGrowX: false,
+            allowGrowY: false,
+            marginRight: 10,
+            marginTop: 7,
+            visibility: "excluded"
+          });
+          break;
+        }
+        case "disk-indicator-label": {
+          const indicator = this.getChildControl("disk-indicator")
+          control = new qx.ui.basic.Label().set({
+            value: "0GB",
+            font: "small-bold",
+            textColor: "contrasted-text-light",
+            alignX: "center",
+            alignY: "middle",
+            rich: false
+          })
+          indicator.add(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -447,9 +480,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       osparc.utils.Utils.setIdToWidget(logsPage.getChildControl("button"), "loggerTabButton");
       tabViewMain.add(logsPage);
 
-
       this.__addTopBarSpacer(topBar);
-
+      if (this.__lowDiskThreshold) {
+        topBar.add(this.updateDiskIndicator());
+      }
       const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         label: this.tr("App Mode"),
