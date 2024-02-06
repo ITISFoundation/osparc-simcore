@@ -14,14 +14,14 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-aiosmtplib
+aiosmtplib # notifier
 cryptography
 fastapi
 httpx
-Jinja2
+Jinja2 # notifier
 packaging
 python-jose
 python-multipart
-python-socketio
+python-socketio # notifier
 typer[all]
 uvicorn[standard]

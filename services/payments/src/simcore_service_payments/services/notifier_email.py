@@ -9,6 +9,7 @@ from typing import Final, cast
 
 import aiosmtplib
 from attr import dataclass
+from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodTransaction,
     PaymentTransaction,
@@ -22,6 +23,7 @@ from .notifier_abc import NotificationProvider
 
 _logger = logging.getLogger(__name__)
 
+
 _BASE_HTML: Final[
     str
 ] = """
@@ -30,7 +32,7 @@ _BASE_HTML: Final[
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payment Confirmation</title>
+<title>{% block title %}{% endblock %}</title>
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -48,35 +50,73 @@ _BASE_HTML: Final[
         color: #007bff;
         text-decoration: none;
     }
-    .button {
-        display: inline-block;
-        padding: 10px 20px;
-        font-size: 18px;
-        cursor: pointer;
-        text-align: center;
-        text-decoration: none;
-        outline: none;
-        color: #fff;
-        background-color: #007bff;
-        border: none;
-        border-radius: 5px;
-        box-shadow: 0 9px #999;
-    }
-    .button:hover {background-color: #0056b3}
-    .button:active {
-        background-color: #0056b3;
-        box-shadow: 0 5px #666;
-        transform: translateY(4px);
-    }
 </style>
 </head>
 <body>
-    <div class="container">
-        {0}
-    </div>
+    {% block content %}
+    {% endblock %}
 </body>
 </html>
 """
+
+_NOTIFY_PAYMENTS_HTML = """
+{% extends 'base.html' %}
+
+{% block title %}Payment Confirmation{% endblock %}
+
+{% block content %}
+<div class="container">
+    <p>Dear {{ user.first_name }},</p>
+    <p>We are delighted to confirm the successful processing of your payment of <strong>{{ payment.price_dollars }}</strong> <em>USD</em> for the purchase of <strong>{{ payment.osparc_credits }}</strong> <em>credits</em>. The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.</p>
+    <p>For more details you can view or download your <a href="{{ payment.invoice_url }}">receipt</a></p>
+    <p>Should you have any questions or require further assistance, please do not hesitate to reach out to our <a href="mailto:{{ product.support_email }}">customer support team</a>.</p>
+    <p>Best Regards,</p>
+    <p>{{ product.display_name }} support team<br>{{ product.vendor_display_inline }}</p>
+</div>
+{% endblock %}
+"""
+
+_NOTIFY_PAYMENTS_TXT = """
+    Dear {{ user.first_name }},
+
+    We are delighted to confirm the successful processing of your payment of **{{ payment.price_dollars }}** *USD* for the purchase of **{{ payment.osparc_credits }}** *credits*. The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.
+
+    To view or download your detailed receipt, please click the following link {{ payment.invoice_url }}
+
+    Should you have any questions or require further assistance, please do not hesitate to reach out to our {{ product.support_email }}" customer support team.
+    Best Regards,
+
+    {{ product.display_name }} support team
+    {{ product.vendor_display_inline }}
+"""
+
+
+_PRODUCT_NOTIFICATIONS_TEMPLATES = {
+    "base.html": _BASE_HTML,
+    "notify_payments.html": _NOTIFY_PAYMENTS_HTML,
+    "notify_payments.txt": _NOTIFY_PAYMENTS_TXT,
+}
+
+
+@dataclass
+class _UserData:
+    first_name: str
+    last_name: str
+    email: str
+
+
+@dataclass
+class _ProductData:
+    product_name: ProductName
+    display_name: str
+    vendor_display_inline: str
+    support_email: str
+
+
+@dataclass
+class _PaymentData:
+    price_dollars: str
+    osparc_credits: str
 
 
 def _guess_file_type(file_path: Path) -> tuple[str, str]:
@@ -98,6 +138,47 @@ def _add_attachments(msg: EmailMessage, file_paths: list[Path]):
             maintype=maintype,
             subtype=subtype,
         )
+
+
+async def _create_user_email(
+    env: Environment,
+    user: _UserData,
+    payment: PaymentTransaction,
+    product: _ProductData,
+) -> EmailMessage:
+    msg = EmailMessage()
+
+    # from/to
+    msg["From"] = Address(
+        display_name=f"{product.display_name} support",
+        addr_spec=product.support_email,
+    )
+    msg["To"] = Address(
+        display_name=f"{user.first_name} {user.last_name}",
+        addr_spec=user.email,
+    )
+
+    # subject
+    msg[
+        "Subject"
+    ] = f"Your Payment {payment.price_dollars:.2f} USD for {payment.osparc_credits:.2f} Credits Was Successful"
+
+    # body
+    data = {
+        "user": user,
+        "product": product,
+        "payment": _PaymentData(
+            price_dollars=f"{payment.price_dollars:.2f}",
+            osparc_credits=f"{payment.osparc_credits:.2f}",
+        ),
+    }
+
+    text_template = env.get_template("notify_payments.txt")
+    msg.set_content(text_template.render(data))
+
+    html_template = env.get_template("notify_payments.html")
+    msg.add_alternative(html_template.render(data), subtype="html")
+    return msg
 
 
 @asynccontextmanager
@@ -126,77 +207,16 @@ async def _create_email_session(
         yield cast(aiosmtplib.SMTP, smtp)
 
 
-@dataclass
-class _ProductInfo:
-    product_name: ProductName
-    display_name: str
-    vendor_display_inline: str
-    support_email: str
-
-
-async def _compose_subject_and_content(
-    msg: EmailMessage, user, payment: PaymentTransaction, product: _ProductInfo
-) -> EmailMessage:
-    # TODO: templates come here. Keep it async
-
-    msg[
-        "Subject"
-    ] = f"Your Payment {payment.price_dollars:2.f} USD for {payment.osparc_credits:2.f} Credits Was Successful"
-
-    msg.set_content(
-        f"""\
-        Dear {user.first_name},
-
-        We are delighted to confirm the successful processing of your payment of <strong>{payment.price_dollars:2.f}</strong> for the purchase of {payment.osparc_credits:2.f} credits. The credits have been added to your {product.display_name} account, and you are all set to utilize them.
-
-        To view or download your detailed receipt, please click the following link: {payment.invoice_url}
-
-        If you have any questions or need further assistance, please do not hesitate to reach out to our customer support team at {product.support_email}
-
-        Best Regards,
-
-        {product.display_name} support team
-        {product.vendor_display_inline}
-        """
-    )
-
-    msg.add_alternative(
-        _BASE_HTML.format(
-            f"""\
-        <p>Dear {user.first_name},</p>
-        <p>We are delighted to confirm the successful processing of your payment of <strong>{payment.price_dollars:2.f}</strong> for the purchase of {payment.osparc_credits:2.f} credits. The credits have been added to your {product.display_name} account, and you are all set to utilize them.</p>
-        <p>To view or download your detailed receipt, please click the button below:</p>
-        <p><a href="{payment.invoice_url}" class="button">View Receipt</a></p>
-        <p>Should you have any questions or require further assistance, please do not hesitate to reach out to our <a href="mailto:{product.support_email}">customer support team</a>.</p>
-        <p>Best Regards,</p>
-        <p>{product.display_name} support team<br>{product.vendor_display_inline}</p>
-        """
-        )
-    )
-    return msg
-
-
-async def _create_user_email(
-    user, payment: PaymentTransaction, product: _ProductInfo
-) -> EmailMessage:
-    msg = EmailMessage()
-    msg["From"] = Address(
-        display_name=f"{product.display_name} support",
-        addr_spec=product.support_email,
-    )
-    msg["To"] = Address(
-        display_name=f"{user.first_name} {user.last_name}",
-        addr_spec=user.email,
-    )
-    await _compose_subject_and_content(msg, user, payment, product)
-    return msg
-
-
 class EmailProvider(NotificationProvider):
     # interfaces with the notification system
     def __init__(self, settings: SMTPSettings, users_repo: PaymentsUsersRepo):
         self._users_repo = users_repo
         self._settings = settings
+
+        self._jinja_env = Environment(
+            loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
+            autoescape=select_autoescape(["html", "xml"]),
+        )
 
     async def on_app_startup(self):
         # TODO: get templates from db upon start and not everytime
@@ -208,7 +228,7 @@ class EmailProvider(NotificationProvider):
 
         # retrieve info
         user = await self._users_repo.get_email_info(user_id)
-        product = _ProductInfo(
+        product = _ProductData(
             product_name="osparc",
             display_name="o²S²PARC",
             vendor_display_inline="IT'IS Foundation. Zeughausstrasse 43, 8004 Zurich, Switzerland ",
@@ -220,7 +240,10 @@ class EmailProvider(NotificationProvider):
 
         # compose email
         msg: EmailMessage = await _create_user_email(
-            user, payment=payment, product=product
+            self._jinja_env,
+            user=user,
+            payment=payment,
+            product=product,
         )
 
         return msg
@@ -242,4 +265,4 @@ class EmailProvider(NotificationProvider):
     ):
         assert user_id  # nosec
         assert payment_method  # nosec
-        _logger.debug("Nothing to send here")
+        _logger.debug("No email sent when payment method is acked")
