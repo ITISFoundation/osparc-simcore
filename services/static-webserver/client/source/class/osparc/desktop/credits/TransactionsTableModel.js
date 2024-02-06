@@ -26,6 +26,12 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
       "comment",
       "invoice"
     ])
+    this.setColumnSortable(0, false)
+    this.setColumnSortable(1, false)
+    this.setColumnSortable(2, false)
+    this.setColumnSortable(3, false)
+    this.setColumnSortable(4, false)
+    this.setColumnSortable(5, false)
   },
 
   properties: {
