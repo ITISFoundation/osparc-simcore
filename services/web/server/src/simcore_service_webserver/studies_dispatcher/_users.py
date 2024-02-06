@@ -13,9 +13,12 @@ from datetime import datetime
 
 import redis.asyncio as aioredis
 from aiohttp import web
+from aioredis.exceptions import LockNotOwnedError
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, parse_obj_as
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
+from servicelib.utils import fire_and_forget_task
 
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..groups.api import auto_add_user_to_product_group
@@ -57,11 +60,19 @@ async def get_authorized_user(request: web.Request) -> dict:
     return {}
 
 
+class MaxGuestUsersError(RuntimeError):
+    # NOTE: when lock times out it is because a user cannot
+    # be create in less that MAX_DELAY_TO_CREATE_USER seconds.
+    # That shows that the system is really loaded and we rather
+    # stop creating GUEST users.
+    ...
+
+
 async def create_temporary_guest_user(request: web.Request):
     """Creates a guest user with a random name and
 
     Raises:
-        LockNotOwnedError: Cannot release a lock that's no longer owned (e.g. when redis_locks_client times out)
+        MaxGuestUsersError: No more guest users allowed
 
     """
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -84,7 +95,7 @@ async def create_temporary_guest_user(request: web.Request):
     #     - the timeout here is the TTL of the lock in Redis. in case the webserver is overwhelmed and cannot create
     #       a user during that time or crashes, then redis will ensure the lock disappears and let the garbage collector do its work
     #
-    MAX_DELAY_TO_CREATE_USER = 4  # secs
+    MAX_DELAY_TO_CREATE_USER = 5  # secs
     #
     #  2. During initialization
     #     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
@@ -101,31 +112,52 @@ async def create_temporary_guest_user(request: web.Request):
     #
 
     # (1) read details above
-    async with redis_locks_client.lock(
-        GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
-        timeout=MAX_DELAY_TO_CREATE_USER,
-    ):
-        # NOTE: usr Dict is incomplete, e.g. does not contain primary_gid
-        usr = await db.create_user(
-            {
-                "name": random_user_name,
-                "email": email,
-                "password_hash": encrypt_password(password),
-                "status": ACTIVE,
-                "role": GUEST,
-                "expires_at": expires_at,
-            }
-        )
-        user: dict = await get_user(request.app, usr["id"])
-        await auto_add_user_to_product_group(
-            request.app, user_id=user["id"], product_name=product_name
-        )
+    usr = {}
+    try:
+        async with redis_locks_client.lock(
+            GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
+            timeout=MAX_DELAY_TO_CREATE_USER,
+        ):
+            # NOTE: usr Dict is incomplete, e.g. does not contain primary_gid
+            usr = await db.create_user(
+                {
+                    "name": random_user_name,
+                    "email": email,
+                    "password_hash": encrypt_password(password),
+                    "status": ACTIVE,
+                    "role": GUEST,
+                    "expires_at": expires_at,
+                }
+            )
+            user: dict = await get_user(request.app, usr["id"])
+            await auto_add_user_to_product_group(
+                request.app, user_id=user["id"], product_name=product_name
+            )
 
-        # (2) read details above
-        await redis_locks_client.lock(
-            GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
-            timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
-        ).acquire()
+            # (2) read details above
+            await redis_locks_client.lock(
+                GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
+                timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
+            ).acquire()
+
+    except LockNotOwnedError as err:
+        # NOTE: here we cleanup but if any trace is left it will be deleted by gc
+        if usr.get("id"):
+
+            async def _cleanup(draft_user):
+                with suppress(Exception):
+                    await db.delete_user(draft_user)
+
+            fire_and_forget_task(
+                _cleanup(usr),
+                task_suffix_name="cleanup_temporary_guest_user",
+                fire_and_forget_tasks_collection=request.app[
+                    APP_FIRE_AND_FORGET_TASKS_KEY
+                ],
+            )
+
+        msg = f"Load limit reached. Unable to create a user under {MAX_DELAY_TO_CREATE_USER} sec."
+        raise MaxGuestUsersError(msg) from err
 
     return user
 
