@@ -17,6 +17,7 @@ from servicelib import redis as servicelib_redis
 from servicelib.redis import (
     CouldNotAcquireLockError,
     RedisClientSDK,
+    RedisClientSDKHealthChecked,
     RedisClientsManager,
 )
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -262,3 +263,19 @@ async def test_redis_client_sdks_manager(redis_service: RedisSettings):
         assert manager.client(database)
 
     await manager.shutdown()
+
+
+async def test_redis_client_sdk_health_checked(redis_service: RedisSettings):
+    # setup
+    redis_resources_dns = redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
+    client = RedisClientSDKHealthChecked(redis_resources_dns)
+    assert client
+    assert client.redis_dsn == redis_resources_dns
+    await client.setup()
+
+    await client._check_health()  # noqa: SLF001
+    assert client.is_healthy is True
+
+    # cleanup
+    await client.redis.flushall()
+    await client.shutdown()

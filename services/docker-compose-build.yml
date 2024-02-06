@@ -300,7 +300,7 @@ services:
         org.opencontainers.image.revision: "${VCS_REF}"
         io.osparc.api-version: "${PAYMENTS_API_VERSION}"
 
-  dynamic-schdlr:
+  dynamic-scheduler:
     image: local/dynamic-scheduler:${BUILD_TARGET:?build_target_required}
     build:
       context: ../
