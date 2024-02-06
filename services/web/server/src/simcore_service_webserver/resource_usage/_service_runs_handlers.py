@@ -7,7 +7,11 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
 )
 from models_library.resource_tracker import ServiceResourceUsagesFilters
 from models_library.rest_ordering import OrderBy, OrderDirection
-from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+    Page,
+)
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -103,9 +107,6 @@ class _ListServicesResourceUsagesQueryParams(BaseModel):
         extra = Extra.forbid
 
 
-LIST_USAGE_MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE = 100
-
-
 class _ListServicesResourceUsagesQueryParamsWithPagination(
     _ListServicesResourceUsagesQueryParams
 ):
@@ -113,7 +114,7 @@ class _ListServicesResourceUsagesQueryParamsWithPagination(
         default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         description="maximum number of items to return (pagination)",
         ge=1,
-        lt=LIST_USAGE_MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+        lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
     )
     offset: NonNegativeInt = Field(
         default=0, description="index to the first item to return (pagination)"
