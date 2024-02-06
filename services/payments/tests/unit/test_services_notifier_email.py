@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import arrow
 import pytest
@@ -73,9 +74,7 @@ async def test_send_email_workflow(
     """
 
     if not external_email:
-        mocker.patch(
-            "simcore_service_payments.services.notifier_email._create_email_session"
-        )
+        mocker.patch("simcore_service_payments.services.notifier_email.SMTP")
 
     settings = SMTPSettings.create_from_envs()
     env = Environment(
@@ -108,7 +107,10 @@ async def test_send_email_workflow(
     attachment.write_text(faker.text())
     _add_attachments(msg, [attachment])
 
-    print(msg)
-
     async with _create_email_session(settings) as smtp:
         await smtp.send_message(msg)
+
+    if not external_email:
+        assert isinstance(smtp, AsyncMock)
+        assert smtp.login.called
+        assert smtp.send_message.called

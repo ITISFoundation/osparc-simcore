@@ -7,7 +7,7 @@ from email.message import EmailMessage
 from pathlib import Path
 from typing import Final, cast
 
-import aiosmtplib
+from aiosmtplib import SMTP
 from attr import dataclass
 from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.api_schemas_webserver.wallets import (
@@ -186,8 +186,8 @@ async def _create_user_email(
 @asynccontextmanager
 async def _create_email_session(
     settings: SMTPSettings,
-) -> AsyncIterator[aiosmtplib.SMTP]:
-    async with aiosmtplib.SMTP(
+) -> AsyncIterator[SMTP]:
+    async with SMTP(
         hostname=settings.SMTP_HOST,
         port=settings.SMTP_PORT,
         # FROM https://aiosmtplib.readthedocs.io/en/stable/usage.html#starttls-connections
@@ -206,7 +206,7 @@ async def _create_email_session(
                 settings.SMTP_PASSWORD.get_secret_value(),
             )
 
-        yield cast(aiosmtplib.SMTP, smtp)
+        yield cast(SMTP, smtp)
 
 
 class EmailProvider(NotificationProvider):

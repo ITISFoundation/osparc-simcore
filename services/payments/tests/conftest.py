@@ -76,8 +76,7 @@ def docker_compose_service_payments_env_vars(
         "payments"
     ]
 
-    def _substitute(item):
-        key, value = item.split("=")
+    def _substitute(key, value):
         if m := re.match(r"\${([^{}:-]\w+)", value):
             expected_env_var = m.group(1)
             try:
@@ -92,10 +91,10 @@ def docker_compose_service_payments_env_vars(
         return None
 
     envs: EnvVarsDict = {}
-    for item in payments.get("environment", []):
-        if found := _substitute(item):
-            key, value = found
-            envs[key] = value
+    for key, value in payments.get("environment", {}).items():
+        if found := _substitute(key, value):
+            _, new_value = found
+            envs[key] = new_value
 
     return envs
 
