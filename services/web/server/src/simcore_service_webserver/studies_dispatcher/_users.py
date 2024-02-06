@@ -134,7 +134,9 @@ async def create_temporary_guest_user(request: web.Request):
             ).acquire()
 
     except LockNotOwnedError as err:
-        #   NOTE: when lock times out it is because a user cannot
+        # NOTE: The policy on number of GUETS users allowed is bound to the
+        # load of the system.
+        # If the lock times-out it is because a user cannot
         # be create in less that MAX_DELAY_TO_CREATE_USER seconds.
         # That shows that the system is really loaded and we rather
         # stop creating GUEST users.
