@@ -48,7 +48,6 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     __topUpAmountField: null,
     __monthlyLimitField: null,
     __paymentMethodField: null,
-    // __topUpAmountHelper: null,
 
     __buildLayout: function() {
       this.removeAll()
@@ -115,7 +114,6 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
     __populateForm: function(arData) {
       this.__enabledField.setValue(arData.enabled);
       this.__topUpAmountField.setValue(arData["topUpAmountInUsd"]);
-      // this.__topUpAmountHelper.setValue(this.tr(`When your account reaches ${arData["minBalanceInUsd"]} credits, it gets recharged by this amount`));
       if (arData["monthlyLimitInUsd"]) {
         this.__monthlyLimitField.setValue(arData["monthlyLimitInUsd"] > 0 ? arData["monthlyLimitInUsd"] : 0);
       } else {
@@ -169,12 +167,6 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         appearance: "appmotion-buy-credits-spinner"
       });
       topUpAmountLayout.add(topUpAmountField);
-      // const topUpAmountHelper = this.__topUpAmountHelper = new qx.ui.basic.Label().set({
-      //   font: "text-12",
-      //   rich: true,
-      //   wrap: true
-      // });
-      // topUpAmountLayout.add(topUpAmountHelper);
       autoRechargeLayout.add(topUpAmountLayout);
 
       const monthlyLimitLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
