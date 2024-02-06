@@ -4,13 +4,13 @@
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
  */
+const SERVER_MAX_LIMIT = 49
 
 qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
   extend: qx.ui.table.model.Remote,
 
   construct() {
     this.base(arguments)
-    this.setBlockSize(24)
     this.setColumns([
       qx.locale.Manager.tr("Date"),
       qx.locale.Manager.tr("Price USD"),
@@ -69,32 +69,60 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
         })
     },
     // overridden
-    _loadRowData(firstRow, lastRow) {
+    _loadRowData(firstRow, qxLastRow) {
       this.setIsFetching(true)
-      osparc.data.Resources.fetch("payments", "get", {
-        url: {
-          limit: lastRow - firstRow + 1,
-          offset: firstRow
-        }
-      })
-        .then(({ data: rawData }) => {
-          const data = []
-          rawData.forEach(rawRow => {
-            data.push({
-              date: osparc.utils.Utils.formatDateAndTime(new Date(rawRow.createdAt)),
-              price: rawRow.priceDollars ? rawRow.priceDollars.toFixed(2) : 0,
-              credits: rawRow.osparcCredits ? rawRow.osparcCredits.toFixed(2) * 1 : 0,
-              status: this.__addColorTag(rawRow.completedStatus),
-              comment: rawRow.comment,
-              invoice: rawRow.invoiceUrl ? this.__createPdfIconWithLink(rawRow.invoiceUrl) : ""
-            })
+      // Please Qloocloox don't ask for more rows than there are
+      const lastRow = Math.min(qxLastRow, this._rowCount - 1)
+      const getFetchPromise = (offset, limit=SERVER_MAX_LIMIT) => {
+        return osparc.data.Resources.fetch("payments", "get", {
+            url: {
+              limit,
+              offset
+            }
           })
-          this._onRowDataLoaded(data)
-        })
-        .catch(() => {
-          this._onRowDataLoaded(null)
-        })
-        .finally(() => this.setIsFetching(false))
+            .then(({ data: rawData }) => {
+              const data = []
+              rawData.forEach(rawRow => {
+                data.push({
+                  date: osparc.utils.Utils.formatDateAndTime(new Date(rawRow.createdAt)),
+                  price: rawRow.priceDollars ? rawRow.priceDollars.toFixed(2) : 0,
+                  credits: rawRow.osparcCredits ? rawRow.osparcCredits.toFixed(2) * 1 : 0,
+                  status: this.__addColorTag(rawRow.completedStatus),
+                  comment: rawRow.comment,
+                  invoice: rawRow.invoiceUrl ? this.__createPdfIconWithLink(rawRow.invoiceUrl) : ""
+                })
+              })
+              return data
+            })
+      }
+      // Divides the model row request into several server requests to comply with the number of rows server limit
+      const reqLimit = lastRow - firstRow + 1 // Number of requested rows
+      const nRequests = Math.ceil(reqLimit / SERVER_MAX_LIMIT)
+      if (nRequests > 1) {
+        let requests = []
+        for (let i=firstRow; i <= lastRow; i += SERVER_MAX_LIMIT) {
+          requests.push(getFetchPromise(i, i > lastRow - SERVER_MAX_LIMIT + 1 ? reqLimit % SERVER_MAX_LIMIT : SERVER_MAX_LIMIT))
+        }
+        Promise.all(requests)
+          .then(responses => {
+            this._onRowDataLoaded(responses.flat())
+          })
+          .catch(err => {
+            console.error(err)
+            this._onRowDataLoaded(null)
+          })
+          .finally(() => this.setIsFetching(false))
+      } else {
+        getFetchPromise(firstRow, reqLimit)
+          .then(data => {
+            this._onRowDataLoaded(data)
+          })
+          .catch(err => {
+            console.error(err)
+            this._onRowDataLoaded(null)
+          })
+          .finally(() => this.setIsFetching(false))
+      }
     },
     __getLevelColor: function(status) {
       const colorManager = qx.theme.manager.Color.getInstance();

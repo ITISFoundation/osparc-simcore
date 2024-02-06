@@ -105,8 +105,10 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
         })
     },
     // overridden
-    _loadRowData(firstRow, lastRow) {
+    _loadRowData(firstRow, qxLastRow) {
       this.setIsFetching(true)
+      // Please Qloocloox don't ask for more rows than there are
+      const lastRow = Math.min(qxLastRow, this._rowCount - 1)
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit=SERVER_MAX_LIMIT) => {
         return osparc.data.Resources.fetch("resourceUsagePerWallet", "getPage", {
@@ -151,7 +153,6 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
             })
             return data
           })
-          .catch(() => [])
       }
       // Divides the model row request into several server requests to comply with the number of rows server limit
       const reqLimit = lastRow - firstRow + 1 // Number of requested rows
@@ -165,7 +166,8 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
           .then(responses => {
             this._onRowDataLoaded(responses.flat())
           })
-          .catch(() => {
+          .catch(err => {
+            console.error(err)
             this._onRowDataLoaded(null)
           })
           .finally(() => this.setIsFetching(false))
@@ -174,7 +176,8 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
           .then(data => {
             this._onRowDataLoaded(data)
           })
-          .catch(() => {
+          .catch(err => {
+            console.error(err)
             this._onRowDataLoaded(null)
           })
           .finally(() => this.setIsFetching(false))
