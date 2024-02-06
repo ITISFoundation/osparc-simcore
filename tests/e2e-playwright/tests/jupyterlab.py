@@ -40,7 +40,7 @@ def test_jupyterlab(
     # connect and listen to websocket
     page.on("websocket", on_web_socket)
 
-    # open services tab and filter for sim4life service
+    # open services tab and filter for the service
     page.get_by_test_id("servicesTabBtn").click()
     _textbox = page.get_by_role("textbox", name="search")
     _textbox.fill(service_key)
