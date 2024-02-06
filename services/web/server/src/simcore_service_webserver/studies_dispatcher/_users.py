@@ -35,6 +35,7 @@ from ..security.api import (
 from ..users.api import get_user
 from ..users.exceptions import UserNotFoundError
 from ._constants import MSG_GUESTS_NOT_ALLOWED
+from ._errors import GuestUsersLimitError
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -58,14 +59,6 @@ async def get_authorized_user(request: web.Request) -> dict:
         user: dict = await get_user(request.app, user_id)
         return user
     return {}
-
-
-class MaxGuestUsersError(RuntimeError):
-    # NOTE: when lock times out it is because a user cannot
-    # be create in less that MAX_DELAY_TO_CREATE_USER seconds.
-    # That shows that the system is really loaded and we rather
-    # stop creating GUEST users.
-    ...
 
 
 async def create_temporary_guest_user(request: web.Request):
@@ -141,6 +134,11 @@ async def create_temporary_guest_user(request: web.Request):
             ).acquire()
 
     except LockNotOwnedError as err:
+        #   NOTE: when lock times out it is because a user cannot
+        # be create in less that MAX_DELAY_TO_CREATE_USER seconds.
+        # That shows that the system is really loaded and we rather
+        # stop creating GUEST users.
+
         # NOTE: here we cleanup but if any trace is left it will be deleted by gc
         if usr.get("id"):
 
@@ -155,9 +153,7 @@ async def create_temporary_guest_user(request: web.Request):
                     APP_FIRE_AND_FORGET_TASKS_KEY
                 ],
             )
-
-        msg = f"Load limit reached. Unable to create a user under {MAX_DELAY_TO_CREATE_USER} sec."
-        raise MaxGuestUsersError(msg) from err
+        raise GuestUsersLimitError from err
 
     return user
 

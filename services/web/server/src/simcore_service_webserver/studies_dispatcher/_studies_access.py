@@ -40,7 +40,8 @@ from ._constants import (
     MSG_TOO_MANY_GUESTS,
     MSG_UNEXPECTED_ERROR,
 )
-from ._users import MaxGuestUsersError, create_temporary_guest_user, get_authorized_user
+from ._errors import GuestUsersLimitError
+from ._users import create_temporary_guest_user, get_authorized_user
 
 _logger = logging.getLogger(__name__)
 
@@ -288,7 +289,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             user = await create_temporary_guest_user(request)
             is_anonymous_user = True
 
-        except MaxGuestUsersError as exc:
+        except GuestUsersLimitError as exc:
             #
             # NOTE: Creation of guest users is limited. For that
             # reason we respond with 429 and inform the user that temporarily
