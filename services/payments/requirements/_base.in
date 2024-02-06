@@ -16,7 +16,6 @@
 
 cryptography
 fastapi
-fastapi-mail # NOTE: this is an old version because of pydantic2 limitation!
 httpx
 packaging
 python-jose
