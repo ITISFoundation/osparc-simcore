@@ -75,25 +75,25 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1)
       const getFetchPromise = (offset, limit=SERVER_MAX_LIMIT) => {
         return osparc.data.Resources.fetch("payments", "get", {
-            url: {
-              limit,
-              offset
-            }
-          })
-            .then(({ data: rawData }) => {
-              const data = []
-              rawData.forEach(rawRow => {
-                data.push({
-                  date: osparc.utils.Utils.formatDateAndTime(new Date(rawRow.createdAt)),
-                  price: rawRow.priceDollars ? rawRow.priceDollars.toFixed(2) : 0,
-                  credits: rawRow.osparcCredits ? rawRow.osparcCredits.toFixed(2) * 1 : 0,
-                  status: this.__addColorTag(rawRow.completedStatus),
-                  comment: rawRow.comment,
-                  invoice: rawRow.invoiceUrl ? this.__createPdfIconWithLink(rawRow.invoiceUrl) : ""
-                })
+          url: {
+            limit,
+            offset
+          }
+        })
+          .then(({ data: rawData }) => {
+            const data = []
+            rawData.forEach(rawRow => {
+              data.push({
+                date: osparc.utils.Utils.formatDateAndTime(new Date(rawRow.createdAt)),
+                price: rawRow.priceDollars ? rawRow.priceDollars.toFixed(2) : 0,
+                credits: rawRow.osparcCredits ? rawRow.osparcCredits.toFixed(2) * 1 : 0,
+                status: this.__addColorTag(rawRow.completedStatus),
+                comment: rawRow.comment,
+                invoice: rawRow.invoiceUrl ? this.__createPdfIconWithLink(rawRow.invoiceUrl) : ""
               })
-              return data
             })
+            return data
+          })
       }
       // Divides the model row request into several server requests to comply with the number of rows server limit
       const reqLimit = lastRow - firstRow + 1 // Number of requested rows
