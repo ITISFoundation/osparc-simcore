@@ -23,8 +23,8 @@ projects_uuid_pattern: Final[re.Pattern] = re.compile(
 
 def on_web_socket(ws) -> None:
     print(f"WebSocket opened: {ws.url}")
-    ws.on("framesent", lambda payload: print(payload))
-    ws.on("framereceived", lambda payload: print(payload))
+    ws.on("framesent", lambda payload: print("⬇️", payload))
+    ws.on("framereceived", lambda payload: print("⬆️", payload))
     ws.on("close", lambda payload: print("WebSocket closed"))
 
 
