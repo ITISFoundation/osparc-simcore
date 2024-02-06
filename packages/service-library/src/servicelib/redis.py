@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import logging
+from asyncio import Task
 from dataclasses import dataclass, field
 from typing import AsyncIterator, Final
 from uuid import uuid4
@@ -17,7 +18,7 @@ from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import retry
 
-from .background_task import periodic_task
+from .background_task import periodic_task, start_periodic_task, stop_periodic_task
 from .logging_utils import log_catch, log_context
 
 _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
@@ -42,10 +43,16 @@ class CouldNotConnectToRedisError(BaseRedisError):
 class RedisClientSDK:
     redis_dsn: str
     _client: aioredis.Redis = field(init=False)
+    _health_check_task: Task | None = None
+    _is_redis_healthy: bool = True
 
     @property
     def redis(self) -> aioredis.Redis:
         return self._client
+
+    @property
+    def is_healthy(self) -> bool:
+        return self._is_redis_healthy
 
     def __post_init__(self):
         self._client = aioredis.from_url(
@@ -61,6 +68,9 @@ class RedisClientSDK:
             decode_responses=True,
         )
 
+    async def _check_redis_health(self) -> None:
+        self._is_redis_healthy = await self.ping()
+
     @retry(**RedisRetryPolicyUponInitialization(logger).kwargs)
     async def setup(self) -> None:
         if not await self._client.ping():
@@ -72,7 +82,16 @@ class RedisClientSDK:
             f"{self._client=}",
         )
 
+        self._health_check_task = start_periodic_task(
+            self._check_redis_health,
+            interval=datetime.timedelta(seconds=5),
+            task_name="redis_service_health_check",
+        )
+
     async def shutdown(self) -> None:
+        if self._health_check_task:
+            await stop_periodic_task(self._health_check_task)
+
         await self._client.close(close_connection_pool=True)
 
     async def ping(self) -> bool:
