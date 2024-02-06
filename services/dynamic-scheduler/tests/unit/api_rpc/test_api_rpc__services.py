@@ -125,7 +125,9 @@ def mock_director_v2_service_state(
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
+    disable_redis_setup: None,
+    app_environment: EnvVarsDict,
+    rabbit_service: RabbitSettings,
 ) -> EnvVarsDict:
     return app_environment
 

@@ -12,7 +12,9 @@ from simcore_service_dynamic_scheduler.models.schemas.meta import Meta
 
 @pytest.fixture
 def app_environment(
-    disable_rabbitmq_setup: None, app_environment: EnvVarsDict
+    disable_rabbitmq_setup: None,
+    disable_redis_setup: None,
+    app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
     return app_environment
 
