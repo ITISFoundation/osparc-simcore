@@ -386,6 +386,13 @@ def pytest_addoption(parser: pytest.Parser):
         default=None,
         help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
     )
+    group.addoption(
+        "--external-email",
+        action="store",
+        type=str,
+        default=None,
+        help="An email for test_services_notifier_email",
+    )
 
 
 @pytest.fixture(scope="session")
