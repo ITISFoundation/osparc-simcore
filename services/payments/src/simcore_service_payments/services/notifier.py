@@ -32,7 +32,7 @@ class NotifierService(SingletonInAppStateMixin):
         payment: PaymentTransaction,
     ):
         if payment.completed_at is None:
-            msg = "Cannot notify unAcked payment"
+            msg = "Cannot notify incomplete payment"
             raise ValueError(msg)
 
         await asyncio.gather(
