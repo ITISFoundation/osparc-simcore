@@ -35,7 +35,7 @@ from ..models.db_to_api import to_payment_method_api_model
 from ..models.payments_gateway import GetPaymentMethod, InitPaymentMethod
 from ..models.schemas.acknowledgements import AckPaymentMethod
 from ..models.utils import merge_models
-from .notifier import Notifier
+from .notifier import NotifierService
 from .payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger(__name__)
@@ -121,7 +121,7 @@ async def acknowledge_creation_of_payment_method(
 
 
 async def on_payment_method_completed(
-    payment_method: PaymentsMethodsDB, notifier: Notifier
+    payment_method: PaymentsMethodsDB, notifier: NotifierService
 ):
     assert payment_method.completed_at is not None  # nosec
     assert payment_method.initiated_at < payment_method.completed_at  # nosec

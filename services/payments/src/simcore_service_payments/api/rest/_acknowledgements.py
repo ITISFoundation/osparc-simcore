@@ -19,7 +19,7 @@ from ...models.schemas.acknowledgements import (
     PaymentMethodID,
 )
 from ...services import payments, payments_methods
-from ...services.notifier import Notifier
+from ...services.notifier import NotifierService
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
 from ._dependencies import (
     create_repository,
@@ -46,7 +46,7 @@ async def acknowledge_payment(
         PaymentsMethodsRepo, Depends(create_repository(PaymentsMethodsRepo))
     ],
     rut_api: Annotated[ResourceUsageTrackerApi, Depends(get_rut_api)],
-    notifier: Annotated[Notifier, Depends(get_from_app_state(Notifier))],
+    notifier: Annotated[NotifierService, Depends(get_from_app_state(NotifierService))],
     background_tasks: BackgroundTasks,
 ):
     """completes (ie. ack) request initated by `/init` on the payments-gateway API"""
@@ -96,7 +96,7 @@ async def acknowledge_payment_method(
     repo: Annotated[
         PaymentsMethodsRepo, Depends(create_repository(PaymentsMethodsRepo))
     ],
-    notifier: Annotated[Notifier, Depends(get_from_app_state(Notifier))],
+    notifier: Annotated[NotifierService, Depends(get_from_app_state(NotifierService))],
     background_tasks: BackgroundTasks,
 ):
     """completes (ie. ack) request initated by `/payments-methods:init` on the payments-gateway API"""
