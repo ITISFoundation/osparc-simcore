@@ -20,7 +20,6 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
 
   construct(walletId, filters) {
     this.base(arguments)
-    this.setBlockSize(24)
     this.setColumns([
       osparc.product.Utils.getStudyAlias({firstUpperCase: true}),
       qx.locale.Manager.tr("Node"),
@@ -152,6 +151,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
             })
             return data
           })
+          .catch(() => [])
       }
       // Divides the model row request into several server requests to comply with the number of rows server limit
       const reqLimit = lastRow - firstRow + 1 // Number of requested rows
