@@ -20,3 +20,6 @@ class PaymentsUsersRepo(BaseRepository):
                 msg = f"{user_id=} not found"
                 raise ValueError(msg)
             return GroupID(row.primary_gid)
+
+    async def get_email_info(self, user_id: UserID):
+        raise NotImplementedError
