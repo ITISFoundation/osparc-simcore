@@ -66,13 +66,13 @@ def test_jupyterlab(
         "button", name="New Launcher (Ctrl+Shift+L)"
     ).click(timeout=600000)
     page.frame_locator(".qx-main-dark").locator(".jp-LauncherCard-icon").first.click()
-    _a = (
+    _jupyterlab_ui = (
         page.frame_locator(".qx-main-dark")
         .get_by_label("Untitled.ipynb")
         .get_by_role("textbox")
     )
-    _a.fill("print('test')")
-    _a.press("Shift+Enter")
+    _jupyterlab_ui.fill("print('test')")
+    _jupyterlab_ui.press("Shift+Enter")
     page.wait_for_timeout(1000)
 
     # Going back to dashboard
