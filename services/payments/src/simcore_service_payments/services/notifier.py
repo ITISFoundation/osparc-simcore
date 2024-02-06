@@ -1,4 +1,3 @@
-import asyncio
 import contextlib
 import logging
 
@@ -9,6 +8,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
+from servicelib.utils import logged_gather
 
 from ..core.settings import ApplicationSettings
 from ..db.payment_users_repo import PaymentsUsersRepo
@@ -35,11 +35,12 @@ class NotifierService(SingletonInAppStateMixin):
             msg = "Cannot notify incomplete payment"
             raise ValueError(msg)
 
-        await asyncio.gather(
+        await logged_gather(
             *(
                 provider.notify_payment_completed(user_id=user_id, payment=payment)
                 for provider in self.providers
-            )
+            ),
+            reraise=False,
         )
 
     async def notify_payment_method_acked(
@@ -51,13 +52,14 @@ class NotifierService(SingletonInAppStateMixin):
             msg = "Cannot notify unAcked payment-method"
             raise ValueError(msg)
 
-        await asyncio.gather(
+        await logged_gather(
             *(
                 provider.notify_payment_method_acked(
                     user_id=user_id, payment_method=payment_method
                 )
                 for provider in self.providers
-            )
+            ),
+            reraise=False,
         )
 
 
