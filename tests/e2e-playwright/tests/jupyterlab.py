@@ -28,7 +28,7 @@ def on_web_socket(ws) -> None:
     ws.on("close", lambda payload: print("WebSocket closed"))
 
 
-def test_sim4life(
+def test_jupyterlab(
     page: Page,
     log_in_and_out: None,
     api_request_context: APIRequestContext,
@@ -61,10 +61,18 @@ def test_sim4life(
     assert match
     extracted_uuid = match.group(1)
 
-    # Wait until grid is shown
-    page.frame_locator(".qx-main-dark").get_by_role("img", name="Remote render").click(
-        button="right", timeout=600000
+    # Wait until iframe is shown and create new notebook with print statement
+    page.frame_locator(".qx-main-dark").get_by_role(
+        "button", name="New Launcher (Ctrl+Shift+L)"
+    ).click(timeout=600000)
+    page.frame_locator(".qx-main-dark").locator(".jp-LauncherCard-icon").first.click()
+    _a = (
+        page.frame_locator(".qx-main-dark")
+        .get_by_label("Untitled.ipynb")
+        .get_by_role("textbox")
     )
+    _a.fill("print('test')")
+    _a.press("Shift+Enter")
     page.wait_for_timeout(1000)
 
     # Going back to dashboard
