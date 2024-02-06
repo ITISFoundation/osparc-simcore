@@ -46,7 +46,7 @@ SERVICES_NAMES_TO_BUILD := \
 	osparc-gateway-server \
 	payments \
 	resource-usage-tracker \
-	dynamic-schdlr \
+	dynamic-scheduler \
   service-integration \
   static-webserver \
   storage \
