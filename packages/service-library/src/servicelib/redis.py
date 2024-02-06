@@ -2,8 +2,9 @@ import contextlib
 import datetime
 import logging
 from asyncio import Task
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Final
+from typing import Final
 from uuid import uuid4
 
 import redis.asyncio as aioredis
@@ -43,16 +44,10 @@ class CouldNotConnectToRedisError(BaseRedisError):
 class RedisClientSDK:
     redis_dsn: str
     _client: aioredis.Redis = field(init=False)
-    _health_check_task: Task | None = None
-    _is_redis_healthy: bool = True
 
     @property
     def redis(self) -> aioredis.Redis:
         return self._client
-
-    @property
-    def is_healthy(self) -> bool:
-        return self._is_redis_healthy
 
     def __post_init__(self):
         self._client = aioredis.from_url(
@@ -68,9 +63,6 @@ class RedisClientSDK:
             decode_responses=True,
         )
 
-    async def _check_redis_health(self) -> None:
-        self._is_redis_healthy = await self.ping()
-
     @retry(**RedisRetryPolicyUponInitialization(logger).kwargs)
     async def setup(self) -> None:
         if not await self._client.ping():
@@ -82,16 +74,7 @@ class RedisClientSDK:
             f"{self._client=}",
         )
 
-        self._health_check_task = start_periodic_task(
-            self._check_redis_health,
-            interval=datetime.timedelta(seconds=5),
-            task_name="redis_service_health_check",
-        )
-
     async def shutdown(self) -> None:
-        if self._health_check_task:
-            await stop_periodic_task(self._health_check_task)
-
         await self._client.close(close_connection_pool=True)
 
     async def ping(self) -> bool:
@@ -180,6 +163,51 @@ class RedisClientSDK:
     async def lock_value(self, lock_name: str) -> str | None:
         output: str | None = await self._client.get(lock_name)
         return output
+
+
+class RedisClientSDKHealthChecked(RedisClientSDK):
+    """
+    Provides access to ``is_healthy`` property, to be used for defining
+    health check handlers.
+    """
+
+    def __init__(
+        self,
+        redis_dsn: str,
+        health_check_interval: datetime.timedelta = datetime.timedelta(seconds=5),
+    ) -> None:
+        super().__init__(redis_dsn)
+        self.health_check_interval: datetime.timedelta = health_check_interval
+        self._health_check_task: Task | None = None
+        self._is_healthy: bool = True
+
+    @property
+    def is_healthy(self) -> bool:
+        """Provides the status of Redis.
+        If redis becomes available, after being not available,
+        it will once more return ``True``
+
+        Returns:
+            ``False``: if the service is no longer reachable
+            ``True``: when service is reachable
+        """
+        return self._is_healthy
+
+    async def _check_health(self) -> None:
+        self._is_healthy = await self.ping()
+
+    async def setup(self) -> None:
+        await super().setup()
+        self._health_check_task = start_periodic_task(
+            self._check_health,
+            interval=self.health_check_interval,
+            task_name="redis_service_health_check",
+        )
+
+    async def shutdown(self) -> None:
+        if self._health_check_task:
+            await stop_periodic_task(self._health_check_task)
+        await super().shutdown()
 
 
 @dataclass
