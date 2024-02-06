@@ -51,7 +51,14 @@ qx.Class.define("osparc.ErrorPage", {
 
     this.getChildControl("logo");
     this.getChildControl("lying-panda");
-    this.getChildControl("code");
+
+    // In a realm ruled by wise and vigilant kings, the Product Owners,
+    // a tale of mystery lingered, cloaked from user's sight.
+    // Their decree was law: let enigmatic silence guard the error status message,
+    // for in the quiet, wisdom often speaks loudest. An that is how
+    // this.getChildControl("code") vanished from the osparc kingdom
+    // SEE https://github.com/ITISFoundation/osparc-issues/issues/1252
+
     this.getChildControl("messages-layout");
   },
 
@@ -72,56 +79,12 @@ qx.Class.define("osparc.ErrorPage", {
   },
 
   statics: {
-    FRIENDLY_HTTP_STATUS: {
-      "200": "OK",
-      "201": "Created",
-      "202": "Accepted",
-      "203": "Non-Authoritative Information",
-      "204": "No Content",
-      "205": "Reset Content",
-      "206": "Partial Content",
-      "300": "Multiple Choices",
-      "301": "Moved Permanently",
-      "302": "Found",
-      "303": "See Other",
-      "304": "Not Modified",
-      "305": "Use Proxy",
-      "306": "Unused",
-      "307": "Temporary Redirect",
-      "400": "Bad Request",
-      "401": "Unauthorized",
-      "402": "Payment Required",
-      "403": "Forbidden",
-      "404": "Not Found",
-      "405": "Method Not Allowed",
-      "406": "Not Acceptable",
-      "407": "Proxy Authentication Required",
-      "408": "Request Timeout",
-      "409": "Conflict",
-      "410": "Gone",
-      "411": "Length Required",
-      "412": "Precondition Required",
-      "413": "Request Entry Too Large",
-      "414": "Request-URI Too Long",
-      "415": "Unsupported Media Type",
-      "416": "Requested Range Not Satisfiable",
-      "417": "Expectation Failed",
-      "418": "I'm a teapot",
-      "429": "Too Many Requests",
-      "500": "Internal Server Error",
-      "501": "Not Implemented",
-      "502": "Bad Gateway",
-      "503": "Service Unavailable",
-      "504": "Gateway Timeout",
-      "505": "HTTP Version Not Supported"
-    },
 
     POS: {
       LOGO: 0,
       PANDA: 1,
-      ERROR: 3,
-      MESSAGES: 4,
-      ACTIONS: 5
+      MESSAGES: 3,
+      ACTIONS: 4
     }
   },
 
@@ -150,28 +113,6 @@ qx.Class.define("osparc.ErrorPage", {
           this._add(control, {
             column: 1,
             row: this.self().POS.PANDA
-          });
-          break;
-        case "code":
-          control = new qx.ui.basic.Label().set({
-            font: "text-18",
-            alignX: "center",
-            selectable: true,
-            rich : true,
-            width: 400
-          });
-          this.bind("code", control, "value", {
-            converter: code => {
-              const errorText = this.tr("Error: ");
-              if (code in this.self().FRIENDLY_HTTP_STATUS) {
-                return errorText + this.self().FRIENDLY_HTTP_STATUS[code];
-              }
-              return errorText + code;
-            }
-          });
-          this._add(control, {
-            column: 1,
-            row: this.self().POS.ERROR
           });
           break;
         case "messages-layout":
