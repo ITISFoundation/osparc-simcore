@@ -96,9 +96,22 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         }
       });
 
-      this.__userWallets.forEach(wallet => {
-        walletSelectBox.add(new qx.ui.form.ListItem(wallet.getName(), null, wallet));
-      });
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        this.__userWallets.forEach(wallet => {
+          walletSelectBox.add(new qx.ui.form.ListItem(wallet.getName(), null, wallet));
+        });
+      } else {
+        lbl.setVisibility("excluded")
+        walletSelectBox.setVisibility("excluded")
+        this.__exportButton.setVisibility("excluded")
+        this.__table = new osparc.desktop.credits.UsageTable(null, this.__dateFilters.getValue()).set({
+          marginTop: 10
+        })
+        this.__table.getTableModel().bind("isFetching", this.__fetchingImg, "visibility", {
+          converter: isFetching => isFetching ? "visible" : "excluded"
+        })
+        container.add(this.__table, { flex: 1 })
+      }
     },
     __handleExport() {
       const reportUrl = new URL("/v0/services/-/usage-report", window.location.origin)
