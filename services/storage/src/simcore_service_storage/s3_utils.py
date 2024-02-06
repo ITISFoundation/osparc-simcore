@@ -1,5 +1,6 @@
 import functools
 import logging
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Final
 
@@ -14,7 +15,7 @@ from servicelib.aiohttp.long_running_tasks.server import (
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_exponential
+from tenacity.wait import wait_random_exponential
 
 from .exceptions import (
     S3AccessError,
@@ -124,9 +125,15 @@ on_timeout_retry_with_exponential_backoff = tenacity.retry(
     retry=retry_if_exception_type(S3ReadTimeoutError),
     reraise=True,
     stop=stop_after_attempt(5),
-    wait=wait_exponential(multiplier=1, min=4, max=60),
+    wait=wait_random_exponential(multiplier=1, min=4, max=30),
     before_sleep=before_sleep_log(_logger, logging.WARNING),
 )
+
+
+async def rollback_copies(s3_client, bucket, objects):
+    for obj_key in objects:
+        with suppress(Exception):
+            await s3_client.delete_object(Bucket=bucket, Key=obj_key)
 
 
 def update_task_progress(
