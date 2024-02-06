@@ -51,7 +51,7 @@ def docker_compose_service_dynamic_scheduler_env_vars(
 
     dynamic_scheduler = yaml.safe_load(services_docker_compose_file.read_text())[
         "services"
-    ]["dynamic-scheduler"]
+    ]["dynamic-schdlr"]
 
     def _substitute(item):
         key, value = item.split("=")

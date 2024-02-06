@@ -28,7 +28,7 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/osparc-gateway-server:${DOCKER_IMAGE_TAG:-latest}
   payments:
     image: ${DOCKER_REGISTRY:-itisfoundation}/payments:${DOCKER_IMAGE_TAG:-latest}
-  dynamic-scheduler:
+  dynamic-schdlr:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
   resource-usage-tracker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
