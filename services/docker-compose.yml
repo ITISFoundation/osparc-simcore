@@ -414,7 +414,7 @@ services:
       S3_SECRET_KEY: ${S3_EXPORT_SECRET_KEY}
       S3_SECURE: ${S3_EXPORT_SECURE}
 
-  dynamic-scheduler:
+  dynamic-schdlr:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
