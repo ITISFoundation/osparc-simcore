@@ -45,7 +45,7 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "dask-scheduler": "/health",
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
-    "dynamic-scheduler": "/",
+    "dynamic-schdlr": "/",
     "invitations": "/",
     "payments": "/",
     "resource-usage-tracker": "/",
@@ -54,6 +54,9 @@ AIOHTTP_BASED_SERVICE_PORT: int = 8080
 FASTAPI_BASED_SERVICE_PORT: int = 8000
 DASK_SCHEDULER_SERVICE_PORT: int = 8787
 
+_SERVICE_NAME_REPLACEMENTS: dict[str, str] = {
+    "dynamic-scheduler": "dynamic-schdlr",
+}
 
 _ONE_SEC_TIMEOUT = ClientTimeout(total=1)  # type: ignore
 
@@ -116,6 +119,7 @@ def services_endpoint(
 
     stack_name = testing_environ_vars["SWARM_STACK_NAME"]
     for service in core_services_selection:
+        service = _SERVICE_NAME_REPLACEMENTS.get(service, service)
         assert f"{stack_name}_{service}" in docker_stack["services"]
         full_service_name = f"{stack_name}_{service}"
 
