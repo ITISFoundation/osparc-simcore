@@ -99,7 +99,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
         resolveWResponse: true
       })
         .then(resp => {
-          this._onRowCountLoaded(resp._meta.total)
+          this._onRowCountLoaded(resp["_meta"].total)
         })
         .catch(() => {
           this._onRowCountLoaded(null)
