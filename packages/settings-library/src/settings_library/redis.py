@@ -16,6 +16,7 @@ class RedisDatabase(int, Enum):
     USER_NOTIFICATIONS = 4
     ANNOUNCEMENTS = 5
     DISTRIBUTED_IDENTIFIERS = 6
+    DISTRIBUTED_CACHES = 7
 
 
 class RedisSettings(BaseCustomSettings):

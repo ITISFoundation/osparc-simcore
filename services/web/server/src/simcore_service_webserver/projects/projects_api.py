@@ -544,6 +544,7 @@ async def _start_dynamic_service(
             service_key=service_key,
             service_version=service_version,
         )
+
         await dynamic_scheduler_api.run_dynamic_service(
             app=request.app,
             rpc_dynamic_service_create=RPCDynamicServiceCreate(
@@ -670,6 +671,7 @@ async def _remove_service_and_its_data_folders(
             node_id=NodeID(node_uuid),
             simcore_user_agent=user_agent,
             save_state=False,
+            user_id=user_id,
         )
 
     # remove the node's data if any

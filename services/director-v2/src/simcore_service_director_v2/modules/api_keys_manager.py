@@ -11,12 +11,12 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.services import RunID
 from models_library.users import UserID
 from pydantic import BaseModel, StrBytes, parse_obj_as
+from servicelib.base_distributed_identifier import BaseDistributedIdentifierManager
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
 
 from ..core.settings import AppSettings
-from ..utils.base_distributed_identifier import BaseDistributedIdentifierManager
 from .rabbitmq import get_rabbitmq_rpc_client
 
 _CLEANUP_INTERVAL = timedelta(minutes=5)
@@ -63,7 +63,7 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupCon
         )
         return bool(scheduler.is_service_tracked(cleanup_context.node_id))
 
-    async def _create(  # type:ignore [override] # pylint:disable=arguments-differ
+    async def _create(  # pylint:disable=arguments-differ
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> tuple[str, ApiKeyGet]:
         result = await self.rpc_client.request(
@@ -75,7 +75,7 @@ class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupCon
         )
         return identifier, ApiKeyGet.parse_obj(result)
 
-    async def get(  # type:ignore [override] # pylint:disable=arguments-differ
+    async def get(  # pylint:disable=arguments-differ
         self, identifier: str, product_name: ProductName, user_id: UserID
     ) -> ApiKeyGet | None:
         result: Any | None = await self.rpc_client.request(

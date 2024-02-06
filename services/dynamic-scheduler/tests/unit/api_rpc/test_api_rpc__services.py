@@ -15,6 +15,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
@@ -24,9 +25,11 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWasNotFoundError,
 )
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 
 pytest_simcore_core_services_selection = [
     "rabbit",
+    "redis",
 ]
 
 
@@ -125,7 +128,9 @@ def mock_director_v2_service_state(
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
+    app_environment: EnvVarsDict,
+    rabbit_service: RabbitSettings,
+    redis_service: RedisSettings,
 ) -> EnvVarsDict:
     return app_environment
 
@@ -336,6 +341,11 @@ def mock_director_v2_service_stop(
         yield None
 
 
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint()
+
+
 @pytest.mark.parametrize("is_legacy", [True, False])
 @pytest.mark.parametrize("save_state", [True, False])
 async def test_stop_dynamic_service(
@@ -347,6 +357,7 @@ async def test_stop_dynamic_service(
     node_id_manual_intervention: NodeID,
     simcore_user_agent: str,
     save_state: bool,
+    user_id: UserID,
 ):
     # service was stopped
     result = await services.stop_dynamic_service(
@@ -354,6 +365,7 @@ async def test_stop_dynamic_service(
         node_id=node_id,
         simcore_user_agent=simcore_user_agent,
         save_state=save_state,
+        user_id=user_id,
         timeout_s=5,
     )
     assert result is None
@@ -365,6 +377,7 @@ async def test_stop_dynamic_service(
             node_id=node_id_not_found,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
+            user_id=user_id,
             timeout_s=5,
         )
 
@@ -375,6 +388,7 @@ async def test_stop_dynamic_service(
             node_id=node_id_manual_intervention,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
+            user_id=user_id,
             timeout_s=5,
         )
 
@@ -400,6 +414,7 @@ async def test_stop_dynamic_service_serializes_generic_errors(
     node_id: NodeID,
     simcore_user_agent: str,
     save_state: bool,
+    user_id: UserID,
 ):
     with pytest.raises(
         RPCServerError, match="While running method 'stop_dynamic_service'"
@@ -409,5 +424,6 @@ async def test_stop_dynamic_service_serializes_generic_errors(
             node_id=node_id,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
+            user_id=user_id,
             timeout_s=5,
         )

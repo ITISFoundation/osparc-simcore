@@ -11,6 +11,9 @@ from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services_utils import (
+    get_service_status_serialization_options,
+)
 from models_library.api_schemas_webserver.projects_nodes import (
     NodeCreate,
     NodeCreated,
@@ -25,7 +28,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
-from models_library.users import GroupID
+from models_library.users import GroupID, UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
@@ -183,9 +186,7 @@ async def get_node(request: web.Request) -> web.Response:
     )
 
     return envelope_json_response(
-        service_data.dict(by_alias=True)
-        if isinstance(service_data, DynamicServiceGet)
-        else service_data.dict()
+        service_data.dict(**get_service_status_serialization_options(service_data))
     )
 
 
@@ -264,6 +265,7 @@ async def _stop_dynamic_service_task(
     node_id: NodeID,
     simcore_user_agent: str,
     save_state: bool,
+    user_id: UserID,
 ):
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
@@ -272,6 +274,7 @@ async def _stop_dynamic_service_task(
             node_id=node_id,
             simcore_user_agent=simcore_user_agent,
             save_state=save_state,
+            user_id=user_id,
         )
         raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
@@ -316,6 +319,7 @@ async def stop_node(request: web.Request) -> web.Response:
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
         save_state=save_state,
+        user_id=req_ctx.user_id,
         fire_and_forget=True,
     )
 

@@ -12,12 +12,10 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel, NonNegativeInt, StrBytes
 from pytest_mock import MockerFixture
+from servicelib.base_distributed_identifier import BaseDistributedIdentifierManager
 from servicelib.redis import RedisClientSDK
 from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
-from simcore_service_director_v2.utils.base_distributed_identifier import (
-    BaseDistributedIdentifierManager,
-)
 
 pytest_simcore_core_services_selection = [
     "redis",

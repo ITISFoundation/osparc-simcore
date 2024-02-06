@@ -528,6 +528,7 @@ async def test_interactive_services_removed_after_logout(
                 node_id=service["service_uuid"],
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
+                user_id=logged_user["id"],
                 progress=mock_progress_bar.sub_progress(1),
             )
 
@@ -647,6 +648,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             node_id=service["service_uuid"],
+            user_id=logged_user["id"],
             progress=mock_progress_bar.sub_progress(1),
         )
     ]
@@ -733,6 +735,7 @@ async def test_interactive_services_removed_per_project(
             node_id=service1["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
+            user_id=logged_user["id"],
             progress=mock_progress_bar.sub_progress(1),
         )
     ]
@@ -758,6 +761,7 @@ async def test_interactive_services_removed_per_project(
             node_id=service2["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
+            user_id=logged_user["id"],
             progress=mock_progress_bar.sub_progress(1),
         ),
         call(
@@ -765,6 +769,7 @@ async def test_interactive_services_removed_per_project(
             node_id=service3["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
+            user_id=logged_user["id"],
             progress=mock_progress_bar.sub_progress(1),
         ),
     ]
@@ -889,6 +894,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             node_id=service["service_uuid"],
+            user_id=logged_user["id"],
             progress=mock_progress_bar.sub_progress(1),
         )
     ]

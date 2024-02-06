@@ -5,10 +5,13 @@ from datetime import timedelta
 from typing import Final, Generic, TypeVar
 
 from pydantic import NonNegativeInt
-from servicelib.background_task import start_periodic_task, stop_periodic_task
-from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import RedisClientSDK, RedisDatabase
-from servicelib.utils import logged_gather
+from settings_library.redis import RedisDatabase
+
+from .background_task import stop_periodic_task
+from .logging_utils import log_catch, log_context
+from .redis import RedisClientSDK
+from .redis_utils import start_exclusive_periodic_task
+from .utils import logged_gather
 
 _logger = logging.getLogger(__name__)
 
@@ -66,10 +69,12 @@ class BaseDistributedIdentifierManager(
         self._cleanup_task: Task | None = None
 
     async def setup(self) -> None:
-        self._cleanup_task = start_periodic_task(
+        self._cleanup_task = start_exclusive_periodic_task(
+            self._redis_client_sdk,
             self._cleanup_unused_identifiers,
-            interval=self.cleanup_interval,
-            task_name="cleanup_unused_identifiers_task",
+            task_period=self.cleanup_interval,
+            retry_after=self.cleanup_interval,
+            task_name=f"{self.class_path()}_cleanup_unused_identifiers_task",
         )
 
     async def shutdown(self) -> None:
@@ -130,10 +135,24 @@ class BaseDistributedIdentifierManager(
         _logger.info("Will remove unused  %s", list(tracked_data.keys()))
 
         for identifier, cleanup_context in tracked_data.items():
-            if await self.is_used(identifier, cleanup_context):
-                continue
+            if not await self.is_used(identifier, cleanup_context):
+                await self.remove(identifier)
 
-            await self.remove(identifier)
+    async def update_cleanup_context(
+        self, identifier: Identifier, cleanup_context: CleanupContext
+    ) -> None:
+        """Used to update an cleanup context required for ``remove`` calls.
+        NOTE: Sometimes the cleanup context can change based on user input.
+        It may differ from the one provided during resource creation.
+
+        Arguments:
+            identifier -- user chosen identifier for the resource
+            cleanup_context -- user defined CleanupContext object
+        """
+        await self._redis_client_sdk.redis.set(
+            self._to_redis_key(identifier),
+            self._serialize_cleanup_context(cleanup_context),
+        )
 
     async def create(
         self, *, cleanup_context: CleanupContext, **extra_kwargs
@@ -148,10 +167,7 @@ class BaseDistributedIdentifierManager(
             tuple[identifier for the resource, resource object]
         """
         identifier, result = await self._create(**extra_kwargs)
-        await self._redis_client_sdk.redis.set(
-            self._to_redis_key(identifier),
-            self._serialize_cleanup_context(cleanup_context),
-        )
+        await self.update_cleanup_context(identifier, cleanup_context)
         return identifier, result
 
     async def remove(self, identifier: Identifier, *, reraise: bool = False) -> None:

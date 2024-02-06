@@ -88,7 +88,6 @@ async def _list_projects(
     expected: type[web.HTTPException],
     query_parameters: dict | None = None,
 ) -> list[ProjectDict]:
-
     assert client.app
 
     # GET /v0/projects
@@ -817,6 +816,7 @@ async def test_close_project(
                 node_id=service["service_uuid"],
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
+                user_id=logged_user["id"],
                 progress=mock_progress_bar.sub_progress(1),
             )
             for service in fake_dynamic_services
