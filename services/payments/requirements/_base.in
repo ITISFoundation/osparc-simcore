@@ -14,9 +14,11 @@
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
+aiosmtplib
 cryptography
 fastapi
 httpx
+Jinja2
 packaging
 python-jose
 python-multipart
