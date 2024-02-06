@@ -273,7 +273,8 @@ async def test_redis_client_sdk_health_checked(redis_service: RedisSettings):
     assert client.redis_dsn == redis_resources_dns
     await client.setup()
 
-    assert await client.ping() is True
+    await client._check_health()  # noqa: SLF001
+    assert client.is_healthy is True
 
     # cleanup
     await client.redis.flushall()
