@@ -97,6 +97,12 @@ def disable_rabbitmq_setup(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
+def disable_redis_setup(mocker: MockerFixture) -> None:
+    base_path = "simcore_service_dynamic_scheduler.core.application"
+    mocker.patch(f"{base_path}.setup_redis")
+
+
+@pytest.fixture
 async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     test_app = create_app()
     async with LifespanManager(
