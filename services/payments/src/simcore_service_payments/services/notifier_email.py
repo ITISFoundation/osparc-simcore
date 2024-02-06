@@ -199,8 +199,8 @@ async def _create_email_session(
         start_tls=settings.SMTP_PROTOCOL == EmailProtocol.STARTTLS,
     ) as smtp:
         if settings.has_credentials:
-            assert settings.SMTP_USERNAME
-            assert settings.SMTP_PASSWORD
+            assert settings.SMTP_USERNAME  # nosec
+            assert settings.SMTP_PASSWORD  # nosec
             await smtp.login(
                 settings.SMTP_USERNAME,
                 settings.SMTP_PASSWORD.get_secret_value(),
