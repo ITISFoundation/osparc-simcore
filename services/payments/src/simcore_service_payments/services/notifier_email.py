@@ -117,6 +117,7 @@ class _ProductData:
 class _PaymentData:
     price_dollars: str
     osparc_credits: str
+    invoice_url: str
 
 
 def _guess_file_type(file_path: Path) -> tuple[str, str]:
@@ -170,6 +171,7 @@ async def _create_user_email(
         "payment": _PaymentData(
             price_dollars=f"{payment.price_dollars:.2f}",
             osparc_credits=f"{payment.osparc_credits:.2f}",
+            invoice_url=payment.invoice_url,
         ),
     }
 

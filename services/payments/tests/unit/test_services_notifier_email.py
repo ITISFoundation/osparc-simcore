@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import base64
+from decimal import Decimal
 from email.headerregistry import Address
 from email.message import EmailMessage
 from email.utils import make_msgid
@@ -113,21 +114,27 @@ def tmp_environment(
     return setenvs_from_envfile(monkeypatch, osparc_simcore_root_dir / ".secrets")
 
 
+@pytest.fixture
+def user(
+    faker: Faker,
+):
+    return _UserData(
+        first_name="Pedrolito", last_name="Crespo", email="crespo@itis.swiss"
+    )
+
+
 @pytest.mark.skip(reason="DEV ONLY")
 async def test_it(
     tmp_environment: EnvVarsDict,
     osparc_simcore_root_dir: Path,
     tmp_path: Path,
     faker: Faker,
+    user: _UserData,
 ):
-
     settings = SMTPSettings.create_from_envs()
     env = Environment(
         loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
         autoescape=select_autoescape(["html", "xml"]),
-    )
-    user = _UserData(
-        first_name="Pedro", last_name="Crespo-Valero", email="crespo@speag.com"
     )
 
     product = _ProductData(
@@ -138,32 +145,22 @@ async def test_it(
     )
     payment = PaymentTransaction(
         payment_id="pt_123234",
-        price_dollars=12.345,
+        price_dollars=Decimal(1),
         wallet_id=12,
-        osparc_credits=12.345,
+        osparc_credits=Decimal(10),
         comment="fake",
         created_at=arrow.now().datetime,
         completed_at=arrow.now().datetime,
         completedStatus="SUCCESS",
         state_message="ok",
-        invoice_url="https://invoices.com?id=pt_123234",
+        invoice_url=faker.image_url(),
     )
 
     msg = await _create_user_email(env, user, payment, product)
 
     attachment = tmp_path / "attachment.txt"
     attachment.write_text(faker.text())
-    _add_attachments(
-        msg,
-        [
-            attachment,
-        ],
-    )
+    _add_attachments(msg, [attachment])
 
     async with _create_email_session(settings) as smtp:
         await smtp.send_message(msg)
-
-        # render a template
-        # common CSS+HTML
-
-        # compose simple email for
