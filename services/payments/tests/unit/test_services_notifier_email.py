@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import base64
 import mimetypes
 from contextlib import asynccontextmanager
 from email.headerregistry import Address
@@ -62,6 +63,27 @@ async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
 
     settings = SMTPSettings.create_from_envs()
 
+    base_template_html = """\
+        <html>
+        <head></head>
+        <body>
+            <div id="content">{% block content %}{% endblock %}</div>
+        </body>
+        </html>
+    """
+
+    movies_template_html = """\
+        {% extends "base.html" %}
+        {% block content %}
+            <h1>Movies</h1>
+            <p>
+            {% for movie in data['movies'] %} {%if movie['title']!="Terminator" %}
+            {{ movie['title'] }}
+            {% endif %} {% endfor %}
+            </p>
+        {% endblock %}
+    """
+
     def compose_branded_email(
         msg: EmailMessage, text_body, html_body, attachments: list[Path]
     ) -> EmailMessage:
@@ -75,14 +97,27 @@ async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
         )
 
         # HTML version
+        logo_path = (
+            osparc_simcore_root_dir
+            / "services/static-webserver/client/source/resource/osparc/z43-logo.png"
+        )
+
+        encoded = base64.b64encode(logo_path.read_bytes()).decode()
+        img_src_as_base64 = f'"data:image/jpg;base64,{encoded}">'
+        assert img_src_as_base64
+
+        # Adding an image as CID attachments (which get embedded with a MIME object)
         logo_cid = make_msgid()
+        img_src_as_cid_atttachment = f'"cid:{logo_cid[1:-1]}"'
+
+        img_src = img_src_as_cid_atttachment
         msg.add_alternative(
             f"""\
         <html>
         <head></head>
         <body>
             {html_body}
-            Done with love at <img src="cid:{logo_cid[1:-1]}" width=30/>
+            Done with love at <img src={img_src} width=30/>
         </body>
         </html>
         """,
@@ -91,10 +126,6 @@ async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
 
         assert msg.is_multipart()
 
-        logo_path = (
-            osparc_simcore_root_dir
-            / "services/static-webserver/client/source/resource/osparc/z43-logo.png"
-        )
         maintype, subtype = guess_file_type(logo_path)
         msg.get_payload(1).add_related(
             logo_path.read_bytes(),
@@ -114,6 +145,7 @@ async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
             )
         return msg
 
+    # this is the new way to cmpose emails
     msg = EmailMessage()
     msg["From"] = Address(display_name="osparc support", addr_spec="support@osparc.io")
     msg["To"] = Address(
@@ -144,3 +176,5 @@ async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
 
         # render a template
         # common CSS+HTML
+
+        # compose simple email for
