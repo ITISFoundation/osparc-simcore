@@ -4,86 +4,31 @@
 # pylint: disable=too-many-arguments
 
 import base64
-import mimetypes
-from contextlib import asynccontextmanager
 from email.headerregistry import Address
 from email.message import EmailMessage
 from email.utils import make_msgid
 from pathlib import Path
 
-import aiosmtplib
+import arrow
 import pytest
+from faker import Faker
+from jinja2 import DictLoader, Environment, select_autoescape
+from models_library.api_schemas_webserver.wallets import PaymentTransaction
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_envfile
-from settings_library.email import EmailProtocol, SMTPSettings
+from settings_library.email import SMTPSettings
+from simcore_service_payments.services.notifier_email import (
+    _PRODUCT_NOTIFICATIONS_TEMPLATES,
+    _add_attachments,
+    _create_email_session,
+    _create_user_email,
+    _guess_file_type,
+    _ProductData,
+    _UserData,
+)
 
 
-@pytest.fixture
-def tmp_environment(
-    osparc_simcore_root_dir: Path, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
-    return setenvs_from_envfile(monkeypatch, osparc_simcore_root_dir / ".secrets")
-
-
-def guess_file_type(file_path: Path) -> tuple[str, str]:
-    assert file_path.is_file()
-    mimetype, _encoding = mimetypes.guess_type(file_path)
-    if mimetype:
-        maintype, subtype = mimetype.split("/", maxsplit=1)
-    else:
-        maintype, subtype = "application", "octet-stream"
-    return maintype, subtype
-
-
-@asynccontextmanager
-async def email_session(settings: SMTPSettings):
-    async with aiosmtplib.SMTP(
-        hostname=settings.SMTP_HOST,
-        port=settings.SMTP_PORT,
-        # FROM https://aiosmtplib.readthedocs.io/en/stable/usage.html#starttls-connections
-        # By default, if the server advertises STARTTLS support, aiosmtplib will upgrade the connection automatically.
-        # Setting use_tls=True for STARTTLS servers will typically result in a connection error
-        # To opt out of STARTTLS on connect, pass start_tls=False.
-        # NOTE: for that reason TLS and STARTLS are mutally exclusive
-        use_tls=settings.SMTP_PROTOCOL == EmailProtocol.TLS,
-        start_tls=settings.SMTP_PROTOCOL == EmailProtocol.STARTTLS,
-    ) as smtp:
-        if settings.has_credentials:
-            assert settings.SMTP_USERNAME
-            assert settings.SMTP_PASSWORD
-            await smtp.login(
-                settings.SMTP_USERNAME,
-                settings.SMTP_PASSWORD.get_secret_value(),
-            )
-
-        yield smtp
-
-
-async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
-
-    settings = SMTPSettings.create_from_envs()
-
-    base_template_html = """\
-        <html>
-        <head></head>
-        <body>
-            <div id="content">{% block content %}{% endblock %}</div>
-        </body>
-        </html>
-    """
-
-    movies_template_html = """\
-        {% extends "base.html" %}
-        {% block content %}
-            <h1>Movies</h1>
-            <p>
-            {% for movie in data['movies'] %} {%if movie['title']!="Terminator" %}
-            {{ movie['title'] }}
-            {% endif %} {% endfor %}
-            </p>
-        {% endblock %}
-    """
-
+def run_trials(osparc_simcore_root_dir: Path):
     def compose_branded_email(
         msg: EmailMessage, text_body, html_body, attachments: list[Path]
     ) -> EmailMessage:
@@ -126,7 +71,7 @@ async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
 
         assert msg.is_multipart()
 
-        maintype, subtype = guess_file_type(logo_path)
+        maintype, subtype = _guess_file_type(logo_path)
         msg.get_payload(1).add_related(
             logo_path.read_bytes(),
             maintype=maintype,
@@ -135,24 +80,13 @@ async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
         )
 
         # Attach files
-        for attachment_path in attachments:
-            maintype, subtype = guess_file_type(attachment_path)
-            msg.add_attachment(
-                attachment_path.read_bytes(),
-                filename=attachment_path.name,
-                maintype=maintype,
-                subtype=subtype,
-            )
+        _add_attachments(msg, attachments)
         return msg
 
     # this is the new way to cmpose emails
     msg = EmailMessage()
     msg["From"] = Address(display_name="osparc support", addr_spec="support@osparc.io")
-    msg["To"] = Address(
-        display_name="Pedro Crespo-Valero", addr_spec="crespo@speag.com"
-    )
     msg["Subject"] = "Payment invoice"
-
     text_body = """\
     Hi there,
 
@@ -171,7 +105,62 @@ async def test_it(tmp_environment: EnvVarsDict, osparc_simcore_root_dir: Path):
         msg, text_body, html_body, attachments=[osparc_simcore_root_dir / "ignore.pdf"]
     )
 
-    async with email_session(settings) as smtp:
+
+@pytest.fixture
+def tmp_environment(
+    osparc_simcore_root_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    return setenvs_from_envfile(monkeypatch, osparc_simcore_root_dir / ".secrets")
+
+
+@pytest.mark.skip(reason="DEV ONLY")
+async def test_it(
+    tmp_environment: EnvVarsDict,
+    osparc_simcore_root_dir: Path,
+    tmp_path: Path,
+    faker: Faker,
+):
+
+    settings = SMTPSettings.create_from_envs()
+    env = Environment(
+        loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+    user = _UserData(
+        first_name="Pedro", last_name="Crespo-Valero", email="crespo@speag.com"
+    )
+
+    product = _ProductData(
+        product_name="osparc",
+        display_name="o²S²PARC",
+        vendor_display_inline="IT'IS Foundation. Zeughausstrasse 43, 8004 Zurich, Switzerland ",
+        support_email="support@osparc.io",
+    )
+    payment = PaymentTransaction(
+        payment_id="pt_123234",
+        price_dollars=12.345,
+        wallet_id=12,
+        osparc_credits=12.345,
+        comment="fake",
+        created_at=arrow.now().datetime,
+        completed_at=arrow.now().datetime,
+        completedStatus="SUCCESS",
+        state_message="ok",
+        invoice_url="https://invoices.com?id=pt_123234",
+    )
+
+    msg = await _create_user_email(env, user, payment, product)
+
+    attachment = tmp_path / "attachment.txt"
+    attachment.write_text(faker.text())
+    _add_attachments(
+        msg,
+        [
+            attachment,
+        ],
+    )
+
+    async with _create_email_session(settings) as smtp:
         await smtp.send_message(msg)
 
         # render a template
