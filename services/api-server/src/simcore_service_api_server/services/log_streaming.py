@@ -64,7 +64,8 @@ class LogDistributor:
             )
             raise e
         _logger.debug(
-            f"LogDistributor._distribute_logs received message message from RabbitMQ: {got.json()}"
+            "LogDistributor._distribute_logs received message message from RabbitMQ: %s",
+            got.json(),
         )
         item = JobLog(
             job_id=got.project_id,
