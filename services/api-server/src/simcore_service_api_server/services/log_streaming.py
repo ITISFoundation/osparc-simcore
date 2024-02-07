@@ -6,7 +6,7 @@ from typing import AsyncIterable, Awaitable, Callable, Final
 
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
-from pydantic import NonNegativeInt, PositiveInt, ValidationError
+from pydantic import NonNegativeInt, ValidationError
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..models.schemas.jobs import JobID, JobLog
@@ -15,7 +15,6 @@ from .director_v2 import DirectorV2Api
 _logger = logging.getLogger(__name__)
 
 _NEW_LINE: Final[str] = "\n"
-_SLEEP_SECONDS_BEFORE_CHECK_JOB_STATUS: Final[PositiveInt] = 10
 
 
 class LogDistributionBaseException(Exception):
