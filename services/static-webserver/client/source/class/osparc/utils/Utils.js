@@ -537,7 +537,6 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     bytesToSize: function(bytes, decimals = 2) {
-
       if (!+bytes) {
         return "0 Bytes";
       }
