@@ -59,6 +59,7 @@ _BASE_HTML: Final[
 </html>
 """
 
+
 _NOTIFY_PAYMENTS_HTML = """
 {% extends 'base.html' %}
 
@@ -91,10 +92,14 @@ _NOTIFY_PAYMENTS_TXT = """
 """
 
 
+_NOTIFY_PAYMENTS_SUBJECT = "Your Payment {{ payment.price_dollars }} USD for {{ payment.osparc_credits }} Credits Was Successful"
+
+
 _PRODUCT_NOTIFICATIONS_TEMPLATES = {
     "base.html": _BASE_HTML,
     "notify_payments.html": _NOTIFY_PAYMENTS_HTML,
     "notify_payments.txt": _NOTIFY_PAYMENTS_TXT,
+    "notify_payments_subject.txt": _NOTIFY_PAYMENTS_SUBJECT,
 }
 
 
@@ -120,6 +125,40 @@ class _PaymentData:
     invoice_url: str
 
 
+async def _create_user_email(
+    env: Environment,
+    user: _UserData,
+    payment: _PaymentData,
+    product: _ProductData,
+) -> EmailMessage:
+    msg = EmailMessage()
+
+    msg["From"] = Address(
+        display_name=f"{product.display_name} support",
+        addr_spec=product.support_email,
+    )
+    msg["To"] = Address(
+        display_name=f"{user.first_name} {user.last_name}",
+        addr_spec=user.email,
+    )
+
+    msg["Subject"] = env.get_template("notify_payments_subject.txt").render(data)
+
+    # body
+    data = {
+        "user": user,
+        "product": product,
+        "payment": payment,
+    }
+
+    text_template = env.get_template("notify_payments.txt")
+    msg.set_content(text_template.render(data))
+
+    html_template = env.get_template("notify_payments.html")
+    msg.add_alternative(html_template.render(data), subtype="html")
+    return msg
+
+
 def _guess_file_type(file_path: Path) -> tuple[str, str]:
     assert file_path.is_file()
     mimetype, _encoding = mimetypes.guess_type(file_path)
@@ -139,48 +178,6 @@ def _add_attachments(msg: EmailMessage, file_paths: list[Path]):
             maintype=maintype,
             subtype=subtype,
         )
-
-
-async def _create_user_email(
-    env: Environment,
-    user: _UserData,
-    payment: PaymentTransaction,
-    product: _ProductData,
-) -> EmailMessage:
-    msg = EmailMessage()
-
-    # from/to
-    msg["From"] = Address(
-        display_name=f"{product.display_name} support",
-        addr_spec=product.support_email,
-    )
-    msg["To"] = Address(
-        display_name=f"{user.first_name} {user.last_name}",
-        addr_spec=user.email,
-    )
-
-    # subject
-    msg[
-        "Subject"
-    ] = f"Your Payment {payment.price_dollars:.2f} USD for {payment.osparc_credits:.2f} Credits Was Successful"
-
-    # body
-    data = {
-        "user": user,
-        "product": product,
-        "payment": _PaymentData(
-            price_dollars=f"{payment.price_dollars:.2f}",
-            osparc_credits=f"{payment.osparc_credits:.2f}",
-            invoice_url=payment.invoice_url,
-        ),
-    }
-
-    text_template = env.get_template("notify_payments.txt")
-    msg.set_content(text_template.render(data))
-
-    html_template = env.get_template("notify_payments.html")
-    msg.add_alternative(html_template.render(data), subtype="html")
-    return msg
 
 
 @asynccontextmanager
@@ -210,7 +207,6 @@ async def _create_email_session(
 
 
 class EmailProvider(NotificationProvider):
-    # interfaces with the notification system
     def __init__(self, settings: SMTPSettings, users_repo: PaymentsUsersRepo):
         self._users_repo = users_repo
         self._settings = settings
@@ -228,24 +224,24 @@ class EmailProvider(NotificationProvider):
         self, user_id: UserID, payment: PaymentTransaction
     ) -> EmailMessage:
 
-        # retrieve info
-        user = await self._users_repo.get_email_info(user_id)
-        product = _ProductData(
-            product_name="osparc",
-            display_name="o²S²PARC",
-            vendor_display_inline="IT'IS Foundation. Zeughausstrasse 43, 8004 Zurich, Switzerland ",
-            support_email="support@osparc.io",
-        )
+        data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
 
-        # TODO: product? via wallet_id?
-        # TODO: ger support email and display name
-
-        # compose email
         msg: EmailMessage = await _create_user_email(
             self._jinja_env,
-            user=user,
-            payment=payment,
-            product=product,
+            user=_UserData(
+                first_name=data.first_name, last_name=data.last_name, email=data.email
+            ),
+            payment=_PaymentData(
+                price_dollars=f"{payment.price_dollars:.2f}",
+                osparc_credits=f"{payment.osparc_credits:.2f}",
+                invoice_url=payment.invoice_url,
+            ),
+            product=_ProductData(
+                product_name=data.product_name,
+                display_name=data.display_name,
+                vendor_display_inline=f"{data.vendor.get('name', '')}. Zeughausstrasse 43, 8004 Zurich, Switzerland ",
+                support_email=data.support_email,
+            ),
         )
 
         return msg
