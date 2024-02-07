@@ -1,6 +1,7 @@
 # pylint: disable=inconsistent-return-statements
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=too-many-return-statements
 
 from collections.abc import AsyncIterator
 from typing import Any
@@ -78,7 +79,7 @@ def _get_default_field_value(model_class: type[BaseModel]) -> Any:
 
 def _get_non_default_value(
     model_class: type[FrontendUserPreference],
-) -> Any:  # pylint: disable=too-many-return-statements
+) -> Any:
     """given a default value transforms into something that is different"""
 
     model_field = _get_model_field(model_class, "value")
