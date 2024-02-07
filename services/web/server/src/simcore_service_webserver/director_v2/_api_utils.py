@@ -56,6 +56,6 @@ async def get_wallet_info(
     )
     if wallet.available_credits <= ZERO_CREDITS:
         raise WalletNotEnoughCreditsError(
-            reason=f"Wallet {wallet.wallet_id} credit balance {wallet.available_credits}"
+            reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
         )
     return WalletInfo(wallet_id=project_wallet_id, wallet_name=wallet.name)

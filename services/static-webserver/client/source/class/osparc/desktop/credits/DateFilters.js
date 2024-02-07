@@ -7,18 +7,24 @@
 
 qx.Class.define("osparc.desktop.credits.DateFilters", {
   extend: qx.ui.core.Widget,
+
   construct() {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox(7));
     this._buildLayout();
   },
+
   events: {
     "change": "qx.event.type.Data"
   },
+
   members: {
     _buildLayout() {
       this._removeAll();
-      this.__from = this.__addDateInput("From");
+      const defaultFrom = new Date()
+      defaultFrom.setMonth(defaultFrom.getMonth() - 1)
+      // Range defaults to previous month
+      this.__from = this.__addDateInput("From", defaultFrom);
       this.__until = this.__addDateInput("Until");
       const lastWeekBtn = new qx.ui.form.Button("Last week").set({
         allowStretchY: false,
@@ -57,17 +63,19 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
       })
       this._add(lastYearBtn);
     },
-    __addDateInput(label) {
+
+    __addDateInput(label, initDate) {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       const lbl = new qx.ui.basic.Label(label);
       container.add(lbl);
       const datepicker = new qx.ui.form.DateField();
-      datepicker.setValue(new Date());
+      datepicker.setValue(initDate ? initDate : new Date());
       datepicker.addListener("changeValue", e => this._changeHandler(e));
       container.add(datepicker);
       this._add(container);
       return datepicker;
     },
+
     _changeHandler(e) {
       const timestampFrom = this.__from.getValue().getTime();
       const timestampUntil = this.__until.getValue().getTime();
@@ -87,6 +95,15 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
         from,
         until
       });
+    },
+
+    getValue() {
+      const from = osparc.utils.Utils.formatDateYyyyMmDd(this.__from.getValue())
+      const until = osparc.utils.Utils.formatDateYyyyMmDd(this.__until.getValue())
+      return {
+        from,
+        until
+      }
     }
   }
 });

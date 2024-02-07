@@ -167,9 +167,7 @@ async def list_resource_usage_services(request: web.Request):
     )
 
 
-@routes.post(
-    f"/{VTAG}/services/-/resource-usages:export", name="export_resource_usage_services"
-)
+@routes.get(f"/{VTAG}/services/-/usage-report", name="export_resource_usage_services")
 @login_required
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
