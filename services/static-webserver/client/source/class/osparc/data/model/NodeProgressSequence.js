@@ -186,17 +186,11 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     __initLayout: function() {
       this.__sequenceLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
-        maxWidth: 250,
+        maxWidth: 280,
         minHeight: 250
       });
 
-      const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling sidecar..."));
-      this.__sequenceLoadingPage.add(pullingSidecarTitle);
-
-      const pullingSidecarPBar = this.__pullingSidecarPBar = this.self().createProgressBar();
-      this.__sequenceLoadingPage.add(pullingSidecarPBar);
-
-      const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Scaling up the cluster..."));
+      const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Increasing system capacity..."));
       this.__sequenceLoadingPage.add(scalingTitle);
 
       const scalingSubtitle = this.__clusterUpScalingSubtitle = new qx.ui.basic.Label(qx.locale.Manager.tr("This step can take up to 3 minutes"));
@@ -206,29 +200,35 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       const clusterUpScalingPBar = this.__clusterUpScalingPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(clusterUpScalingPBar);
 
-      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling inputs..."));
-      this.__sequenceLoadingPage.add(pullingInputsTitle);
+      const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Setting up key components..."));
+      this.__sequenceLoadingPage.add(pullingSidecarTitle);
 
-      const pullingInputsPBar = this.__pullingInputsPBar = this.self().createProgressBar();
-      this.__sequenceLoadingPage.add(pullingInputsPBar);
+      const pullingSidecarPBar = this.__pullingSidecarPBar = this.self().createProgressBar();
+      this.__sequenceLoadingPage.add(pullingSidecarPBar);
 
-      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling outputs..."));
+      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your outputs..."));
       this.__sequenceLoadingPage.add(pullingOutputsTitle);
 
       const pullingOutputsPBar = this.__pullingOutputsPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(pullingOutputsPBar);
 
-      const pullingStateTitle = this.__pullingStateTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling state..."));
+      const pullingStateTitle = this.__pullingStateTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your work..."));
       this.__sequenceLoadingPage.add(pullingStateTitle);
 
       const pullingStatePBar = this.__pullingStatePBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(pullingStatePBar);
 
-      const pullingImagesTitle = this.__pullingImagesTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Pulling images..."));
+      const pullingImagesTitle = this.__pullingImagesTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Installing software..."));
       this.__sequenceLoadingPage.add(pullingImagesTitle);
 
       const pullingImagesPBar = this.__pullingImagesPBar = this.self().createProgressBar();
       this.__sequenceLoadingPage.add(pullingImagesPBar);
+
+      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your inputs..."));
+      this.__sequenceLoadingPage.add(pullingInputsTitle);
+
+      const pullingInputsPBar = this.__pullingInputsPBar = this.self().createProgressBar();
+      this.__sequenceLoadingPage.add(pullingInputsPBar);
     },
 
     __applySidecarPulling: function(value) {

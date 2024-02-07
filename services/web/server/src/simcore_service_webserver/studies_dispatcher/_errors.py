@@ -26,3 +26,7 @@ class InvalidRedirectionParams(PydanticErrorMixin, StudyDispatcherError):
         "The link you provided is invalid because it doesn't contain any information related to data or a service."
         " Please check the link and make sure it is correct."
     )
+
+
+class GuestUsersLimitError(PydanticErrorMixin, StudyDispatcherError):
+    msg_template = "Maximum number of guests was reached. Please login with a registered user or try again later"
