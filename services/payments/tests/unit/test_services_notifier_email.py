@@ -20,6 +20,7 @@ from simcore_service_payments.services.notifier_email import (
     _add_attachments,
     _create_email_session,
     _create_user_email,
+    _PaymentData,
     _ProductData,
     _UserData,
 )
@@ -88,7 +89,8 @@ async def test_send_email_workflow(
         vendor_display_inline="IT'IS Foundation. Zeughausstrasse 43, 8004 Zurich, Switzerland ",
         support_email="support@osparc.io",
     )
-    payment = PaymentTransaction(
+
+    transaction = PaymentTransaction(
         payment_id="pt_123234",
         price_dollars=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
         wallet_id=12,
@@ -99,6 +101,12 @@ async def test_send_email_workflow(
         completedStatus="SUCCESS",
         state_message="ok",
         invoice_url=faker.image_url(),
+    )
+
+    payment = _PaymentData(
+        price_dollars=f"{transaction.price_dollars:.2f}",
+        osparc_credits=f"{transaction.osparc_credits:.2f}",
+        invoice_url=transaction.invoice_url,
     )
 
     msg = await _create_user_email(env, user, payment, product)
