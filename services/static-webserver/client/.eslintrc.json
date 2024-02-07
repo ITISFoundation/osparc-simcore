@@ -39,7 +39,8 @@
     "semi": "off",
     "comma-dangle": "off",
     "object-curly-spacing": "off",
-    "no-implicit-coercion": "off"
+    "no-implicit-coercion": "off",
+    "arrow-body-style": "off"
   },
   "env": {
     "browser": true

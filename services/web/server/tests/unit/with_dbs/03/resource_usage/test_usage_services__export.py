@@ -72,7 +72,7 @@ async def test_export_service_usage_redirection(
     expected: type[web.HTTPException],
 ):
     url = client.app.router["export_resource_usage_services"].url_for()
-    resp = await client.post(f"{url}")
+    resp = await client.get(f"{url}")
     assert resp.status == expected.status_code
 
     if resp.status == web.HTTPOk:
@@ -102,7 +102,7 @@ async def test_list_service_usage(
             order_by=json.dumps(_order_by),
         )
     )
-    resp = await client.post(f"{url}")
+    resp = await client.get(f"{url}")
 
     # checks is a redirection
     assert len(resp.history) == 1

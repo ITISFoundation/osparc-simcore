@@ -154,9 +154,17 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
       });
       this.__autorechargeBtn.addListener("execute", () => {
         const autorecharge = new osparc.desktop.credits.AutoRecharge(this.getKey());
-        const win = osparc.ui.window.Window.popUpInWindow(autorecharge, "Autorecharge", 400, 550);
+        const win = osparc.ui.window.Window.popUpInWindow(autorecharge, "Auto-recharge", 400, 550).set({
+          resizable: false,
+          movable: false
+        });
         autorecharge.addListener("close", () => win.close());
-        // Revert default execute action (toggle the buttons's vale)
+        autorecharge.addListener("addNewPaymentMethod", () => {
+          win.close()
+          const newBillingCenter = osparc.desktop.credits.BillingCenterWindow.openWindow()
+          newBillingCenter.openPaymentMethods()
+        })
+        // Revert default execute action (toggle the buttons's value)
         this.__autorechargeBtn.toggleValue();
       });
       this.bind("autoRecharge", this.__autorechargeBtn, "value", {

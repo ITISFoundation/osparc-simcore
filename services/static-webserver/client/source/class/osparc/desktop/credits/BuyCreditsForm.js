@@ -19,7 +19,9 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
       font: "title-18"
     });
     const subtitle = new qx.ui.basic.Label("A one-off, non recurring payment.").set({
-      font: "text-14"
+      rich: true,
+      font: "text-14",
+      textAlign: "center"
     });
 
     this._add(title);
