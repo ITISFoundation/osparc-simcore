@@ -1,7 +1,7 @@
 # Quick start
 
 ```bash
-make new-draft NEW_FEATURE_NAME
+make new-draft name=new_feature_name
 ```
 Gives you a new proposal base document.
 
