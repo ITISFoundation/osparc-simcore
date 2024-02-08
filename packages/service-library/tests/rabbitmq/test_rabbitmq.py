@@ -344,7 +344,7 @@ async def test_publish_with_no_registered_subscriber(
     async def _unsubscribe_consumer():
         await consumer.unsubscribe_consumer(exchange_name)
 
-    # CASE 1
+    # CASE 1 (subscribe immediately after publishing message)
 
     await _subscribe_consumer_to_queue()
     await _unsubscribe_consumer()
@@ -354,7 +354,7 @@ async def test_publish_with_no_registered_subscriber(
     # expected to receive a message (one per topic)
     await _assert_wait_for_messages(on_message_spy, 1 * topics_count)
 
-    # CASE 2
+    # CASE 2 (no subscriber attached when publishing)
     on_message_spy.reset_mock()
 
     await _unsubscribe_consumer()
