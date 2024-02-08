@@ -14,7 +14,6 @@
 import itertools
 import json
 import random
-import re
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from typing import Any, Final
@@ -171,12 +170,13 @@ def random_product(
         - registration_email_template
     """
 
-    suffix = fake.unique.word()
+    name = overrides.get("name")
+    suffix = fake.unique.word() if name is None else name
 
     data = {
         "name": f"prd_{suffix}",
         "display_name": suffix.capitalize(),
-        "short_name": re.sub(r"[aeiou]", "", suffix, flags=re.IGNORECASE),
+        "short_name": suffix[:4],
         "host_regex": r"[a-zA-Z0-9]+\.com",
         "support_email": fake.email(),
         "twilio_messaging_sid": fake.random_element(elements=(None, fake.uuid4()[:34])),
