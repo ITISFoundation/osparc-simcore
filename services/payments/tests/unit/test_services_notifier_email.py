@@ -75,8 +75,13 @@ def smtp_mock_or_none(
 def transaction(
     faker: Faker, successful_transaction: dict[str, Any]
 ) -> PaymentTransaction:
-    return PaymentTransaction.parse_obj(
-        {k: successful_transaction[k] for k in PaymentTransaction.__fields__}
+    kwargs = {
+        k: successful_transaction[k]
+        for k in PaymentTransaction.__fields__
+        if k in successful_transaction
+    }
+    return PaymentTransaction(
+        created_at=successful_transaction["initiated_at"], **kwargs
     )
 
 

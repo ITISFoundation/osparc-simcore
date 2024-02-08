@@ -26,7 +26,6 @@ from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import random_payment_method_view
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import load_dotenv
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.models.payments_transactions import payments_transactions
@@ -372,47 +371,6 @@ def mock_payments_methods_routes(
     yield _mock
 
     _payment_methods.clear()
-
-
-def pytest_addoption(parser: pytest.Parser):
-    group = parser.getgroup(
-        "external_environment",
-        description="Replaces mocked services with real ones by passing actual environs and connecting directly to external services",
-    )
-    group.addoption(
-        "--external-envfile",
-        action="store",
-        type=Path,
-        default=None,
-        help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
-    )
-    group.addoption(
-        "--external-email",
-        action="store",
-        type=str,
-        default=None,
-        help="An email for test_services_notifier_email",
-    )
-
-
-@pytest.fixture(scope="session")
-def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
-    """
-    If a file under test folder prefixed with `.env-secret` is present,
-    then this fixture captures it.
-
-    This technique allows reusing the same tests to check against
-    external development/production servers
-    """
-    envs = {}
-    if envfile := request.config.getoption("--external-envfile"):
-        assert isinstance(envfile, Path)
-        print("🚨 EXTERNAL: external envs detected. Loading", envfile, "...")
-        envs = load_dotenv(envfile)
-        assert "PAYMENTS_GATEWAY_API_SECRET" in envs
-        assert "PAYMENTS_GATEWAY_URL" in envs
-
-    return envs
 
 
 @pytest.fixture
