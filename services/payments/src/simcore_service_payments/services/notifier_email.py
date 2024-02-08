@@ -99,7 +99,7 @@ _PRODUCT_NOTIFICATIONS_TEMPLATES = {
     "base.html": _BASE_HTML,
     "notify_payments.html": _NOTIFY_PAYMENTS_HTML,
     "notify_payments.txt": _NOTIFY_PAYMENTS_TXT,
-    "notify_payments_subject.txt": _NOTIFY_PAYMENTS_SUBJECT,
+    "notify_payments-subject.txt": _NOTIFY_PAYMENTS_SUBJECT,
 }
 
 
@@ -142,7 +142,7 @@ async def _create_user_email(
         addr_spec=user.email,
     )
 
-    msg["Subject"] = env.get_template("notify_payments_subject.txt").render(data)
+    msg["Subject"] = env.get_template("notify_payments-subject.txt").render(data)
 
     # body
     data = {
