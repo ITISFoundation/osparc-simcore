@@ -30,7 +30,7 @@ test-ci-unit-external: ## runs test-ci against external service defined in $(ext
 	$(MAKE) test-ci-unit pytest-parameters="--external-envfile=$(external) -m can_run_against_external"
 
 
-test-repo-config: ## runs validation against `repo.config` files. e.g. `make SEARCH_ROOT=/path/to/ospar-config/deployments`
+test-repo-config: ## runs validation against `repo.config` files. e.g. `make test-repo-config SEARCH_ROOT=/path/to/ospar-config/deployments`
 	@if [ -z "$(SEARCH_ROOT)" ]; then \
 	    echo "Error: SEARCH_ROOT is not set. Please set SEARCH_ROOT to the directory with repo.config files"; \
 	    exit 1; \
