@@ -38,7 +38,7 @@ class PaymentsUsersRepo(BaseRepository):
                 users.c.first_name,
                 users.c.last_name,
                 users.c.email,
-                products.c.product_name,
+                products.c.name.label("product_name"),
                 products.c.display_name,
                 products.c.vendor,
                 products.c.support_email,

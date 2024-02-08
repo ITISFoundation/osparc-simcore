@@ -216,10 +216,6 @@ class EmailProvider(NotificationProvider):
             autoescape=select_autoescape(["html", "xml"]),
         )
 
-    async def on_app_startup(self):
-        # TODO: get templates from db upon start and not everytime
-        raise NotImplementedError
-
     async def _create_message(
         self, user_id: UserID, payment: PaymentTransaction
     ) -> EmailMessage:
@@ -229,7 +225,9 @@ class EmailProvider(NotificationProvider):
         msg: EmailMessage = await _create_user_email(
             self._jinja_env,
             user=_UserData(
-                first_name=data.first_name, last_name=data.last_name, email=data.email
+                first_name=data.first_name,
+                last_name=data.last_name,
+                email=data.email,
             ),
             payment=_PaymentData(
                 price_dollars=f"{payment.price_dollars:.2f}",
@@ -239,7 +237,7 @@ class EmailProvider(NotificationProvider):
             product=_ProductData(
                 product_name=data.product_name,
                 display_name=data.display_name,
-                vendor_display_inline=f"{data.vendor.get('name', '')}. Zeughausstrasse 43, 8004 Zurich, Switzerland ",
+                vendor_display_inline=f"{data.vendor.get('name', '')}. {data.vendor.get('address', '')}",
                 support_email=data.support_email,
             ),
         )

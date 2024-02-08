@@ -57,9 +57,7 @@ async def _insert_and_get_row(
     assert row[pk_col] == pk_value
 
     result = await conn.execute(sa.select(table).where(pk_col == pk_value))
-    row = result.first()
-    assert row
-    return row
+    return result.first()
 
 
 async def _delete_row(conn, table, pk_col: sa.Column, pk_value: Any):
@@ -76,16 +74,16 @@ async def user(
     injects a user in db
     """
     assert user_id == user["id"]
-    _pk_args = users.c.id, user["id"]
+    pk_args = users.c.id, user["id"]
 
     # NOTE: creation of primary group and setting `groupid`` is automatically triggered after creation of user by postgres
     async with get_engine(app).begin() as conn:
-        row = await _insert_and_get_row(conn, users, user, *_pk_args)
+        row = await _insert_and_get_row(conn, users, user, *pk_args)
 
-    yield dict(row.items())
+    yield dict(row)
 
     async with get_engine(app).begin() as conn:
-        await _delete_row(conn, users, *_pk_args)
+        await _delete_row(conn, users, *pk_args)
 
 
 @pytest.fixture
@@ -103,15 +101,15 @@ async def product(
     """
     # NOTE: this fixture ignores products' group-id but it is fine for this test context
     assert product["group_id"] is None
-    _pk_args = products.c.name, product["name"]
+    pk_args = products.c.name, product["name"]
 
     async with get_engine(app).begin() as conn:
-        row = await _insert_and_get_row(conn, products, product, *_pk_args)
+        row = await _insert_and_get_row(conn, products, product, *pk_args)
 
-    yield dict(row.items())
+    yield dict(row)
 
     async with get_engine(app).begin() as conn:
-        await _delete_row(conn, products, *_pk_args)
+        await _delete_row(conn, products, *pk_args)
 
 
 @pytest.fixture
@@ -121,17 +119,17 @@ async def successful_transaction(
     """
     injects transaction in db
     """
-    _pk_args = payments_transactions.c.payment_id, successful_transaction["paymet_id"]
+    pk_args = payments_transactions.c.payment_id, successful_transaction["payment_id"]
 
     async with get_engine(app).begin() as conn:
         row = await _insert_and_get_row(
-            conn, payments_transactions, successful_transaction, *_pk_args
+            conn, payments_transactions, successful_transaction, *pk_args
         )
 
-    yield dict(row.items())
+    yield dict(row)
 
     async with get_engine(app).begin() as conn:
-        await _delete_row(conn, payments_transactions, *_pk_args)
+        await _delete_row(conn, payments_transactions, *pk_args)
 
 
 async def test_payments_user_repo(
@@ -149,6 +147,16 @@ async def test_get_notification_data(
 ):
     repo = PaymentsUsersRepo(get_engine(app))
 
+    # check once
     data = await repo.get_notification_data(
         user_id=user["id"], payment_id=successful_transaction["payment_id"]
     )
+
+    assert data.payment_id == successful_transaction["payment_id"]
+    assert data.first_name == user["first_name"]
+    assert data.last_name == user["last_name"]
+    assert data.email == user["email"]
+    assert data.product_name == product["name"]
+    assert data.display_name == product["display_name"]
+    assert data.vendor == product["vendor"]
+    assert data.support_email == product["support_email"]
