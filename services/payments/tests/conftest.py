@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 import re
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -17,10 +18,17 @@ from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, parse_obj_as
-from pytest_simcore.helpers.rawdata_fakers import random_product
+from pytest_simcore.helpers.rawdata_fakers import (
+    random_payment_transaction,
+    random_product,
+    random_user,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.utils_secrets import generate_token_secret_key
+from simcore_postgres_database.models.payments_transactions import (
+    PaymentTransactionState,
+)
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
@@ -136,11 +144,6 @@ def user_id(faker: Faker) -> UserID:
 
 
 @pytest.fixture
-def user_primary_group_id(faker: Faker) -> GroupID:
-    return parse_obj_as(GroupID, faker.pyint())
-
-
-@pytest.fixture
 def user_email(faker: Faker) -> EmailStr:
     return parse_obj_as(EmailStr, faker.email())
 
@@ -161,6 +164,30 @@ def user_name(user_email: str) -> IDStr:
 
 
 @pytest.fixture
+def user(
+    faker: Faker,
+    user_id: UserID,
+    user_email: EmailStr,
+    user_first_name: str,
+    user_last_name: str,
+    user_name: IDStr,
+) -> dict[str, Any]:
+    return random_user(
+        id=user_id,
+        email=user_email,
+        name=user_name,
+        first_name=user_first_name,
+        last_name=user_last_name,
+        fake=faker,
+    )
+
+
+@pytest.fixture
+def user_primary_group_id(faker: Faker) -> GroupID:
+    return parse_obj_as(GroupID, faker.pyint())
+
+
+@pytest.fixture
 def wallet_id(faker: Faker) -> WalletID:
     return parse_obj_as(WalletID, faker.pyint())
 
@@ -168,3 +195,28 @@ def wallet_id(faker: Faker) -> WalletID:
 @pytest.fixture
 def wallet_name(faker: Faker) -> IDStr:
     return parse_obj_as(IDStr, f"wallet-{faker.word()}")
+
+
+@pytest.fixture
+def successful_transaction(
+    faker: Faker,
+    wallet_id: WalletID,
+    user_email: EmailStr,
+    user_id: UserID,
+    product_name: ProductName,
+) -> dict[str, Any]:
+    initiated_at = datetime.now(tz=timezone.utc)
+    return random_payment_transaction(
+        payment_id=f"pt_{faker.pyint()}",
+        price_dollars=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
+        state=PaymentTransactionState.SUCCESS,
+        initiated_at=initiated_at,
+        completed_at=initiated_at + timedelta(seconds=10),
+        osparc_credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
+        product_name=product_name,
+        user_id=user_id,
+        user_email=user_email,
+        wallet_id=wallet_id,
+        comment=f"fake fixture in {__name__}.successful_transaction",
+        invoice_url=faker.image_url(),
+    )

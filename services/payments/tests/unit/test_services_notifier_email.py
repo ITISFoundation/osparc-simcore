@@ -8,14 +8,12 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
-import arrow
 import pytest
 from faker import Faker
 from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.api_schemas_webserver.wallets import PaymentTransaction
 from models_library.products import ProductName
 from models_library.users import UserID
-from models_library.wallets import WalletID
 from pydantic import EmailStr, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -65,28 +63,21 @@ def user_email(user_email: EmailStr, external_email: EmailStr | None) -> EmailSt
 
 
 @pytest.fixture
-def transaction(faker: Faker, wallet_id: WalletID) -> PaymentTransaction:
-    return PaymentTransaction(
-        payment_id=f"pt_{faker.pyint()}",
-        price_dollars=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
-        wallet_id=wallet_id,
-        osparc_credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
-        comment=f"fake payment fixture in {__name__}",
-        created_at=arrow.now().datetime,
-        completed_at=arrow.now().datetime,
-        completedStatus="SUCCESS",
-        state_message="ok",
-        invoice_url=faker.image_url(),
-    )
-
-
-@pytest.fixture
 def smtp_mock_or_none(
     mocker: MockerFixture, external_email: EmailStr | None
 ) -> MagicMock | None:
     if not external_email:
         return mocker.patch("simcore_service_payments.services.notifier_email.SMTP")
     return None
+
+
+@pytest.fixture
+def transaction(
+    faker: Faker, successful_transaction: dict[str, Any]
+) -> PaymentTransaction:
+    return PaymentTransaction.parse_obj(
+        {k: successful_transaction[k] for k in PaymentTransaction.__fields__}
+    )
 
 
 async def test_send_email_workflow(

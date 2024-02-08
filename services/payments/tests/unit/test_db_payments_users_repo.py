@@ -5,15 +5,17 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import AsyncIterator
+from typing import Any
+
 import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
-from models_library.basic_types import IDStr
 from models_library.users import GroupID, UserID
-from pydantic import EmailStr
-from pytest_simcore.helpers.rawdata_fakers import random_user
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from simcore_postgres_database.models.payments_transactions import payments_transactions
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
 from simcore_service_payments.services.postgres import get_engine
@@ -47,39 +49,89 @@ def app_environment(
     )
 
 
+async def _insert_and_get_row(
+    conn, table: sa.Table, values: dict[str, Any], pk_col: sa.Column, pk_value: Any
+):
+    result = await conn.execute(table.insert().values(**values).returning(pk_col))
+    row = result.first()
+    assert row[pk_col] == pk_value
+
+    result = await conn.execute(sa.select(table).where(pk_col == pk_value))
+    row = result.first()
+    assert row
+    return row
+
+
+async def _delete_row(conn, table, pk_col: sa.Column, pk_value: Any):
+    await conn.execute(table.delete().where(pk_col == pk_value))
+
+
 @pytest.fixture
 async def user(
     app: FastAPI,
-    user_email: EmailStr,
-    user_name: IDStr,
+    user: dict[str, Any],
     user_id: UserID,
-):
-    async with get_engine(app).begin() as conn:
-        result = await conn.execute(
-            users.insert()
-            .values(
-                **random_user(email=user_email, name=user_name),
-                id=user_id,
-            )
-            .returning(users.c.id)
-        )
-        row = result.first()
-        assert row
-        # NOTE: groupid is triggered afterwards
-        result = await conn.execute(sa.select(users).where(users.c.id == row.id))
-        row = result.first()
+) -> AsyncIterator[dict[str, Any]]:
+    """
+    injects a user in db
+    """
+    assert user_id == user["id"]
+    _pk_args = users.c.id, user["id"]
 
-    assert row
-    yield row
+    # NOTE: creation of primary group and setting `groupid`` is automatically triggered after creation of user by postgres
+    async with get_engine(app).begin() as conn:
+        row = await _insert_and_get_row(conn, users, user, *_pk_args)
+
+    yield dict(row.items())
 
     async with get_engine(app).begin() as conn:
-        await conn.execute(users.delete().where(users.c.id == row.id))
+        await _delete_row(conn, users, *_pk_args)
 
 
 @pytest.fixture
-def user_primary_group_id(user) -> GroupID:
-    # Overrides `user_primary_group_id`
-    return user.primary_gid
+def user_primary_group_id(user: dict[str, Any]) -> GroupID:
+    # Overrides `user_primary_group_id` since new user triggers an automatic creation of a primary group
+    return user["primary_gid"]
+
+
+@pytest.fixture
+async def product(
+    app: FastAPI, product: dict[str, Any]
+) -> AsyncIterator[dict[str, Any]]:
+    """
+    injects product in db
+    """
+    # NOTE: this fixture ignores products' group-id but it is fine for this test context
+    assert product["group_id"] is None
+    _pk_args = products.c.name, product["name"]
+
+    async with get_engine(app).begin() as conn:
+        row = await _insert_and_get_row(conn, products, product, *_pk_args)
+
+    yield dict(row.items())
+
+    async with get_engine(app).begin() as conn:
+        await _delete_row(conn, products, *_pk_args)
+
+
+@pytest.fixture
+async def successful_transaction(
+    app: FastAPI, successful_transaction: dict[str, Any]
+) -> AsyncIterator[dict[str, Any]]:
+    """
+    injects transaction in db
+    """
+    _pk_args = payments_transactions.c.payment_id, successful_transaction["paymet_id"]
+
+    async with get_engine(app).begin() as conn:
+        row = await _insert_and_get_row(
+            conn, payments_transactions, successful_transaction, *_pk_args
+        )
+
+    yield dict(row.items())
+
+    async with get_engine(app).begin() as conn:
+        await _delete_row(conn, payments_transactions, *_pk_args)
 
 
 async def test_payments_user_repo(
@@ -89,10 +141,14 @@ async def test_payments_user_repo(
     assert await repo.get_primary_group_id(user_id) == user_primary_group_id
 
 
-async def test_get_notification_data(app: FastAPI, user_id: UserID, payment_id):
+async def test_get_notification_data(
+    app: FastAPI,
+    user: dict[str, Any],
+    product: dict[str, Any],
+    successful_transaction: dict[str, Any],
+):
     repo = PaymentsUsersRepo(get_engine(app))
 
-    # create product
-    # create payment
-
-    data = await repo.get_notification_data(user_id, payment_id)
+    data = await repo.get_notification_data(
+        user_id=user["id"], payment_id=successful_transaction["payment_id"]
+    )
