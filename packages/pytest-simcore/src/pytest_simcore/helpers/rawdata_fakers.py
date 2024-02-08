@@ -29,7 +29,7 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.products import Vendor, products
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.webserver_models import GroupType, UserStatus
@@ -170,7 +170,6 @@ def random_product(
         - group_id: product group ID. SEE get_or_create_product_group to produce `group_id`
         - registration_email_template
     """
-    from simcore_postgres_database.models.products import Vendor
 
     suffix = fake.unique.word()
 

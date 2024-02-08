@@ -120,14 +120,9 @@ def app_environment(
     )
 
 
-#
-# Fakes
-#
-
-
 @pytest.fixture
 def product(faker: Faker) -> dict[str, Any]:
-    return random_product(fake=faker)
+    return random_product(support_email="support@osparc.io", fake=faker)
 
 
 @pytest.fixture
@@ -148,6 +143,16 @@ def user_primary_group_id(faker: Faker) -> GroupID:
 @pytest.fixture
 def user_email(faker: Faker) -> EmailStr:
     return parse_obj_as(EmailStr, faker.email())
+
+
+@pytest.fixture
+def user_first_name(faker: Faker) -> str:
+    return faker.first_name()
+
+
+@pytest.fixture
+def user_last_name(faker: Faker) -> str:
+    return faker.last_name()
 
 
 @pytest.fixture

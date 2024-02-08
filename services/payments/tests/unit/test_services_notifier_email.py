@@ -80,25 +80,31 @@ def transaction(faker: Faker, wallet_id: WalletID) -> PaymentTransaction:
     )
 
 
+@pytest.fixture
+def smtp_mock_or_none(
+    mocker: MockerFixture, external_email: EmailStr | None
+) -> MagicMock | None:
+    if not external_email:
+        return mocker.patch("simcore_service_payments.services.notifier_email.SMTP")
+    return None
+
+
 async def test_send_email_workflow(
     app_environment: EnvVarsDict,
     tmp_path: Path,
     faker: Faker,
     transaction: PaymentTransaction,
     external_email: str | None,
-    mocker: MockerFixture,
     user_email: EmailStr,
     product_name: ProductName,
     product: dict[str, Any],
+    smtp_mock_or_none: MagicMock | None,
 ):
     """
     Example of usage with external email and envfile
 
         > pytest --external-email=me@email.me --external-envfile=.myenv -k test_send_email_workflow  --pdb tests/unit
     """
-
-    if not external_email:
-        mocker.patch("simcore_service_payments.services.notifier_email.SMTP")
 
     settings = SMTPSettings.create_from_envs()
     env = Environment(
@@ -136,7 +142,8 @@ async def test_send_email_workflow(
     async with _create_email_session(settings) as smtp:
         await smtp.send_message(msg)
 
-    if not external_email:
+    if smtp_mock_or_none:
+        assert smtp_mock_or_none.called
         assert isinstance(smtp, AsyncMock)
         assert smtp.login.called
         assert smtp.send_message.called
@@ -152,6 +159,7 @@ async def test_email_provider(
     product_name: ProductName,
     product: dict[str, Any],
     transaction: PaymentTransaction,
+    smtp_mock_or_none: MagicMock | None,
 ):
     settings = SMTPSettings.create_from_envs()
 
@@ -176,3 +184,6 @@ async def test_email_provider(
 
     await provider.notify_payment_completed(user_id=user_id, payment=transaction)
     assert get_notification_data_mock.called
+
+    if smtp_mock_or_none:
+        assert smtp_mock_or_none.called

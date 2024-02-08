@@ -87,3 +87,12 @@ async def test_payments_user_repo(
 ):
     repo = PaymentsUsersRepo(get_engine(app))
     assert await repo.get_primary_group_id(user_id) == user_primary_group_id
+
+
+async def test_get_notification_data(app: FastAPI, user_id: UserID, payment_id):
+    repo = PaymentsUsersRepo(get_engine(app))
+
+    # create product
+    # create payment
+
+    data = await repo.get_notification_data(user_id, payment_id)

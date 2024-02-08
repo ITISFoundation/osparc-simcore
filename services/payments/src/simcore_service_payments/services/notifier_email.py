@@ -131,6 +131,13 @@ async def _create_user_email(
     payment: _PaymentData,
     product: _ProductData,
 ) -> EmailMessage:
+    # data to interpolate template
+    data = {
+        "user": user,
+        "product": product,
+        "payment": payment,
+    }
+
     msg = EmailMessage()
 
     msg["From"] = Address(
@@ -141,16 +148,9 @@ async def _create_user_email(
         display_name=f"{user.first_name} {user.last_name}",
         addr_spec=user.email,
     )
-
     msg["Subject"] = env.get_template("notify_payments-subject.txt").render(data)
 
-    # body
-    data = {
-        "user": user,
-        "product": product,
-        "payment": payment,
-    }
-
+    # Body
     text_template = env.get_template("notify_payments.txt")
     msg.set_content(text_template.render(data))
 
