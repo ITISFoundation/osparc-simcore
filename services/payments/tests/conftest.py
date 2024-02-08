@@ -6,6 +6,7 @@
 
 import re
 from pathlib import Path
+from typing import Any
 
 import pytest
 import simcore_service_payments
@@ -16,6 +17,7 @@ from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, parse_obj_as
+from pytest_simcore.helpers.rawdata_fakers import random_product
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.utils_secrets import generate_token_secret_key
@@ -124,8 +126,13 @@ def app_environment(
 
 
 @pytest.fixture
-def product_name(faker: Faker) -> ProductName:
-    return parse_obj_as(IDStr, f"product-{faker.word()}")
+def product(faker: Faker) -> dict[str, Any]:
+    return random_product(fake=faker)
+
+
+@pytest.fixture
+def product_name(faker: Faker, product: dict[str, Any]) -> ProductName:
+    return parse_obj_as(IDStr, product["name"])
 
 
 @pytest.fixture

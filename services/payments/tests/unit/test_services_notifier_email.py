@@ -4,19 +4,28 @@
 # pylint: disable=too-many-arguments
 
 from pathlib import Path
-from unittest.mock import AsyncMock
+from types import SimpleNamespace
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock
 
 import arrow
 import pytest
 from faker import Faker
 from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.api_schemas_webserver.wallets import PaymentTransaction
+from models_library.products import ProductName
+from models_library.users import UserID
+from models_library.wallets import WalletID
+from pydantic import EmailStr, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from settings_library.email import SMTPSettings
+from simcore_postgres_database.models.products import Vendor
+from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
 from simcore_service_payments.services.notifier_email import (
     _PRODUCT_NOTIFICATIONS_TEMPLATES,
+    EmailProvider,
     _add_attachments,
     _create_email_session,
     _create_user_email,
@@ -43,20 +52,31 @@ def app_environment(
 
 @pytest.fixture(scope="session")
 def external_email(request: pytest.FixtureRequest) -> str | None:
-    return request.config.getoption("--external-email", default=None)
+    email_or_none = request.config.getoption("--external-email", default=None)
+    return parse_obj_as(EmailStr, email_or_none) if email_or_none else None
 
 
 @pytest.fixture
-def user(faker: Faker, external_email: str | None):
-    email = faker.email()
+def user_email(user_email: EmailStr, external_email: EmailStr | None) -> EmailStr:
     if external_email:
         print("📧 EXTERNAL using in test", f"{external_email=}")
-        email = external_email
+        return external_email
+    return user_email
 
-    return _UserData(
-        first_name=faker.first_name(),
-        last_name=faker.last_name(),
-        email=email,
+
+@pytest.fixture
+def transaction(faker: Faker, wallet_id: WalletID) -> PaymentTransaction:
+    return PaymentTransaction(
+        payment_id=f"pt_{faker.pyint()}",
+        price_dollars=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
+        wallet_id=wallet_id,
+        osparc_credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
+        comment=f"fake payment fixture in {__name__}",
+        created_at=arrow.now().datetime,
+        completed_at=arrow.now().datetime,
+        completedStatus="SUCCESS",
+        state_message="ok",
+        invoice_url=faker.image_url(),
     )
 
 
@@ -64,9 +84,12 @@ async def test_send_email_workflow(
     app_environment: EnvVarsDict,
     tmp_path: Path,
     faker: Faker,
-    user: _UserData,
+    transaction: PaymentTransaction,
     external_email: str | None,
     mocker: MockerFixture,
+    user_email: EmailStr,
+    product_name: ProductName,
+    product: dict[str, Any],
 ):
     """
     Example of usage with external email and envfile
@@ -83,33 +106,28 @@ async def test_send_email_workflow(
         autoescape=select_autoescape(["html", "xml"]),
     )
 
-    product = _ProductData(
-        product_name="osparc",
-        display_name="o²S²PARC",
-        vendor_display_inline="IT'IS Foundation. Zeughausstrasse 43, 8004 Zurich, Switzerland ",
-        support_email="support@osparc.io",
+    user_data = _UserData(
+        first_name=faker.first_name(),
+        last_name=faker.last_name(),
+        email=user_email,
     )
 
-    transaction = PaymentTransaction(
-        payment_id="pt_123234",
-        price_dollars=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
-        wallet_id=12,
-        osparc_credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
-        comment="fake",
-        created_at=arrow.now().datetime,
-        completed_at=arrow.now().datetime,
-        completedStatus="SUCCESS",
-        state_message="ok",
-        invoice_url=faker.image_url(),
+    vendor: Vendor = product["vendor"]
+
+    product_data = _ProductData(  # type: ignore
+        product_name=product_name,
+        display_name=product["display_name"],
+        vendor_display_inline=f"{vendor.get('name','')}, {vendor.get('address','')}",
+        support_email=product["support_email"],
     )
 
-    payment = _PaymentData(
+    payment_data = _PaymentData(
         price_dollars=f"{transaction.price_dollars:.2f}",
         osparc_credits=f"{transaction.osparc_credits:.2f}",
         invoice_url=transaction.invoice_url,
     )
 
-    msg = await _create_user_email(env, user, payment, product)
+    msg = await _create_user_email(env, user_data, payment_data, product_data)
 
     attachment = tmp_path / "test-attachment.txt"
     attachment.write_text(faker.text())
@@ -122,3 +140,39 @@ async def test_send_email_workflow(
         assert isinstance(smtp, AsyncMock)
         assert smtp.login.called
         assert smtp.send_message.called
+
+
+async def test_email_provider(
+    app_environment: EnvVarsDict,
+    mocker: MockerFixture,
+    user_id: UserID,
+    user_first_name: str,
+    user_last_name: str,
+    user_email: EmailStr,
+    product_name: ProductName,
+    product: dict[str, Any],
+    transaction: PaymentTransaction,
+):
+    settings = SMTPSettings.create_from_envs()
+
+    # mock access to db
+    users_repo = PaymentsUsersRepo(MagicMock())
+    get_notification_data_mock = mocker.patch.object(
+        users_repo,
+        "get_notification_data",
+        return_value=SimpleNamespace(
+            payment_id=transaction.payment_id,
+            first_name=user_first_name,
+            last_name=user_last_name,
+            email=user_email,
+            product_name=product_name,
+            display_name=product["display_name"],
+            vendor=product["vendor"],
+            support_email=product["support_email"],
+        ),
+    )
+
+    provider = EmailProvider(settings, users_repo)
+
+    await provider.notify_payment_completed(user_id=user_id, payment=transaction)
+    assert get_notification_data_mock.called
