@@ -14,6 +14,7 @@
 import itertools
 import json
 import random
+import re
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from typing import Any, Final
@@ -169,24 +170,26 @@ def random_product(
         - group_id: product group ID. SEE get_or_create_product_group to produce `group_id`
         - registration_email_template
     """
+    from simcore_postgres_database.models.products import Vendor
 
-    fake_vendor = {
-        "name": fake.company(),
-        "copyright": fake.company_suffix(),
-        "url": fake.url(),
-        "license_url": fake.url(),
-        "invitation_url": fake.url(),
-        "has_landing_page": fake.boolean(),
-    }
+    suffix = fake.unique.word()
 
     data = {
-        "name": fake.unique.first_name(),
-        "display_name": fake.company(),
-        "short_name": fake.user_name()[:10],
+        "name": f"prd_{suffix}",
+        "display_name": suffix.capitalize(),
+        "short_name": re.sub(r"[aeiou]", "", suffix, flags=re.IGNORECASE),
         "host_regex": r"[a-zA-Z0-9]+\.com",
         "support_email": fake.email(),
         "twilio_messaging_sid": fake.random_element(elements=(None, fake.uuid4()[:34])),
-        "vendor": fake.random_element([None, fake_vendor]),
+        "vendor": Vendor(
+            name=fake.company(),
+            copyright=fake.company_suffix(),
+            url=fake.url(),
+            license_url=fake.url(),
+            invitation_url=fake.url(),
+            has_landing_page=fake.boolean(),
+            address=fake.address().replace("\n", ". "),
+        ),
         "registration_email_template": registration_email_template,
         "created": fake.date_time_this_decade(),
         "modified": fake.date_time_this_decade(),
