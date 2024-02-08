@@ -16,7 +16,6 @@ async def persistent_client_session(app: web.Application):
         app.cleanup_ctx.append(persistent_client_session)
 
     """
-    # SEE https://docs.aiohttp.org/en/latest/client_advanced.html#aiohttp-persistent-session
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/4628
 
     # ANE: it is important to have fast connection handshakes
@@ -30,13 +29,15 @@ async def persistent_client_session(app: web.Application):
     )
 
     async with ClientSession(
-        timeout=timeout_settings, json_serialize=json_dumps
+        timeout=timeout_settings,
+        json_serialize=json_dumps,
     ) as session:
         app[APP_CLIENT_SESSION_KEY] = session
         yield session
 
 
 def get_client_session(app: web.Application) -> ClientSession:
+    """Refers to the one-and-only client in the app"""
     assert APP_CLIENT_SESSION_KEY not in app  # nosec
     return app[APP_CLIENT_SESSION_KEY]
 
