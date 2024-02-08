@@ -43,7 +43,6 @@ def get_client_session(app: web.Application) -> ClientSession:
 
 
 __all__: tuple[str, ...] = (
-    "APP_CLIENT_SESSION_KEY",
     "get_client_session",
     "persistent_client_session",
 )
