@@ -125,13 +125,13 @@ async def _setup_publisher_and_subscriber(
         unexpected_error_retry_delay_s=_ON_ERROR_DELAY_S,
     )
 
-    if topics is not None:
+    if topics is None:
+        message = random_rabbit_message()
+        await publisher.publish(exchange_name, message)
+    else:
         for topic in topics:
             message = random_rabbit_message(topic=topic)
             await publisher.publish(exchange_name, message)
-    else:
-        message = random_rabbit_message()
-        await publisher.publish(exchange_name, message)
 
     topics_count: int = 1 if topics is None else len(topics)
     return topics_count
@@ -322,13 +322,14 @@ async def test_publish_with_no_registered_subscriber(
     topics_count: int = 1 if topics is None else len(topics)
 
     async def _publish_random_message():
-        if topics is not None:
+        if topics is None:
+            message = random_rabbit_message()
+            await publisher.publish(exchange_name, message)
+
+        else:
             for topic in topics:
                 message = random_rabbit_message(topic=topic)
                 await publisher.publish(exchange_name, message)
-        else:
-            message = random_rabbit_message()
-            await publisher.publish(exchange_name, message)
 
     async def _subscribe_consumer_to_queue():
         await consumer.subscribe(
