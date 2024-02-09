@@ -58,3 +58,7 @@ class SMTPSettings(BaseCustomSettings):
             msg = "when using SMTP_PROTOCOL other than UNENCRYPTED username and password are required"
             raise ValueError(msg)
         return values
+
+    @property
+    def has_credentials(self) -> bool:
+        return self.SMTP_USERNAME is not None and self.SMTP_PASSWORD is not None

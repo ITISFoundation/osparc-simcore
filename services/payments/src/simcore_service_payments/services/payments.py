@@ -40,7 +40,7 @@ from ..models.db_to_api import to_payments_api_model
 from ..models.payments_gateway import InitPayment, PaymentInitiated
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
-from .notifier import Notifier
+from .notifier import NotifierService
 from .payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger()
@@ -148,7 +148,7 @@ async def acknowledge_one_time_payment(
 async def on_payment_completed(
     transaction: PaymentsTransactionsDB,
     rut_api: ResourceUsageTrackerApi,
-    notifier: Notifier | None,
+    notifier: NotifierService | None,
 ):
     assert transaction.completed_at is not None  # nosec
     assert transaction.initiated_at < transaction.completed_at  # nosec

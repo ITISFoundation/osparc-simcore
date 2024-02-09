@@ -151,6 +151,9 @@ class RabbitMQClient(RabbitMQClientBase):
         - exclusive_queue: False means that only one instance of this application will
             reveice the incoming message
 
+        NOTE: ``message_ttl` is also a soft timeout: if the handler does not finish processing
+        the message before this is reached the message will be redelivered!
+
         specifying a topic will make the client declare a TOPIC type of RabbitMQ Exchange
         instead of FANOUT
         - a FANOUT exchange transmit messages to any connected queue regardless of
