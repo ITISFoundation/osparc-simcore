@@ -125,13 +125,13 @@ async def _setup_publisher_and_subscriber(
         unexpected_error_retry_delay_s=_ON_ERROR_DELAY_S,
     )
 
-    if topics is not None:
+    if topics is None:
+        message = random_rabbit_message()
+        await publisher.publish(exchange_name, message)
+    else:
         for topic in topics:
             message = random_rabbit_message(topic=topic)
             await publisher.publish(exchange_name, message)
-    else:
-        message = random_rabbit_message()
-        await publisher.publish(exchange_name, message)
 
     topics_count: int = 1 if topics is None else len(topics)
     return topics_count
@@ -301,6 +301,72 @@ async def test_subscribe_always_returns_fails_stops(
     assert report == {
         k: set(range(_DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS + 1)) for k in routing_keys
     }
+
+
+@pytest.mark.parametrize("topics", _TOPICS)
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
+async def test_publish_with_no_registered_subscriber(
+    on_message_spy: mock.Mock,
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+    random_exchange_name: Callable[[], str],
+    random_rabbit_message: Callable[..., PytestRabbitMessage],
+    mocked_message_parser: mock.AsyncMock,
+    topics: list[str] | None,
+):
+    publisher = create_rabbitmq_client("publisher")
+    consumer = create_rabbitmq_client("consumer")
+
+    exchange_name = f"{random_exchange_name()}"
+
+    ttl_s: float = 0.1
+    topics_count: int = 1 if topics is None else len(topics)
+
+    async def _publish_random_message():
+        if topics is None:
+            message = random_rabbit_message()
+            await publisher.publish(exchange_name, message)
+
+        else:
+            for topic in topics:
+                message = random_rabbit_message(topic=topic)
+                await publisher.publish(exchange_name, message)
+
+    async def _subscribe_consumer_to_queue():
+        await consumer.subscribe(
+            exchange_name,
+            mocked_message_parser,
+            topics=topics,
+            exclusive_queue=False,
+            message_ttl=int(ttl_s * 1000),
+            unexpected_error_max_attempts=_DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
+            unexpected_error_retry_delay_s=ttl_s,
+        )
+
+    async def _unsubscribe_consumer():
+        await consumer.unsubscribe_consumer(exchange_name)
+
+    # CASE 1 (subscribe immediately after publishing message)
+
+    await _subscribe_consumer_to_queue()
+    await _unsubscribe_consumer()
+    await _publish_random_message()
+    # reconnect immediately
+    await _subscribe_consumer_to_queue()
+    # expected to receive a message (one per topic)
+    await _assert_wait_for_messages(on_message_spy, 1 * topics_count)
+
+    # CASE 2 (no subscriber attached when publishing)
+    on_message_spy.reset_mock()
+
+    await _unsubscribe_consumer()
+    await _publish_random_message()
+    # wait for message to expire (will be dropped)
+    await asyncio.sleep(ttl_s * 2)
+    await _subscribe_consumer_to_queue()
+    # wait for a message to be possibly delivered
+    await asyncio.sleep(ttl_s * 2)
+    # nothing changed from before
+    await _assert_wait_for_messages(on_message_spy, 0)
 
 
 async def test_rabbit_client_pub_sub_message_is_lost_if_no_consumer_present(
