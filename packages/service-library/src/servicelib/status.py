@@ -1,4 +1,4 @@
-# Equivalent to most of the constants in `fastapi.status`
+# Includes most constants in `fastapi.status`
 #
 # These constants include both name and code and are more
 # informative than those found in http.HTTPStatus or aiohttp status_code
