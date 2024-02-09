@@ -1,10 +1,20 @@
-# `aiohttp` alternative to `fastapi.status`
+"""
+HTTP codes: `aiohttp` alternative to `fastapi.status`
+
+See HTTP Status Code Registry:
+https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+
+And RFC 2324 - https://tools.ietf.org/html/rfc2324
+
+
+These constants include both name and code and are more
+informative than those found in http.HTTPStatus or aiohttp status_code
+"""
+
 #
-# These constants include both name and code and are more
-# informative than those found in http.HTTPStatus or aiohttp status_code
+# Copied from https://github.com/encode/starlette/blob/master/starlette/status.py
 #
-# Taken from https://github.com/encode/starlette/blob/master/starlette/status.py
-#
+
 from __future__ import annotations
 
 import warnings
