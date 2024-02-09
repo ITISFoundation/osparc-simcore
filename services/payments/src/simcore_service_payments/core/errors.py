@@ -13,9 +13,9 @@ class _BaseAppError(PydanticErrorMixin, ValueError):
 #
 
 
-class PaymentsGatewayError(_BaseAppError):
+class BasePaymentsGatewayError(_BaseAppError):
     ...
 
 
-class PaymentsGatewayNotReadyError(PaymentsGatewayError):
+class PaymentsGatewayNotReadyError(BasePaymentsGatewayError):
     msg_template = "Payments-Gateway is unresponsive: {checks}"

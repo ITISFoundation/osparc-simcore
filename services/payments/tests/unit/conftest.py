@@ -59,20 +59,38 @@ from toolz.dicttoolz import get_in
 def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
     def _():
         # The following services are affected if rabbitmq is not in place
-        mocker.patch("simcore_service_payments.core.application.setup_notifier")
-        mocker.patch("simcore_service_payments.core.application.setup_socketio")
-        mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
-        mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
         mocker.patch(
-            "simcore_service_payments.core.application.setup_auto_recharge_listener"
+            "simcore_service_payments.core.application.setup_notifier", autospec=True
+        )
+        mocker.patch(
+            "simcore_service_payments.core.application.setup_socketio", autospec=True
+        )
+        mocker.patch(
+            "simcore_service_payments.core.application.setup_rabbitmq", autospec=True
+        )
+        mocker.patch(
+            "simcore_service_payments.core.application.setup_rpc_api_routes",
+            autospec=True,
+        )
+        mocker.patch(
+            "simcore_service_payments.core.application.setup_auto_recharge_listener",
+            autospec=True,
         )
 
     return _
 
 
 @pytest.fixture
-def with_disabled_rabbitmq_and_rpc(disable_rabbitmq_and_rpc_setup: Callable):
+def with_disabled_rabbitmq_and_rpc(disable_rabbitmq_and_rpc_setup: Callable) -> None:
     disable_rabbitmq_and_rpc_setup()
+
+
+@pytest.fixture
+def with_disabled_gateway(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_payments.core.application.setup_payments_gateway",
+        autospec=True,
+    )
 
 
 @pytest.fixture
@@ -190,15 +208,16 @@ async def app(
 
 
 @pytest.fixture
-def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]:
+def mock_payments_gateway_service_api_base(
+    app_environment: EnvVarsDict,
+) -> Iterator[MockRouter]:
     """
     If external_environment is present, then this mock is not really used
     and instead the test runs against some real services
     """
-    settings: ApplicationSettings = app.state.settings
 
     with respx.mock(
-        base_url=settings.PAYMENTS_GATEWAY_URL,
+        base_url=app_environment["PAYMENTS_GATEWAY_URL"],
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
@@ -422,6 +441,9 @@ def mock_payments_gateway_service_or_none(
         return None
 
     # OR tests against mock payments-gateway
+    mock_payments_gateway_service_api_base.get("/", name="healthcheck").mock(
+        return_value=httpx.Response(status_code=status.HTTP_200_OK, text="OK")
+    )
     mock_payments_routes(mock_payments_gateway_service_api_base)
     mock_payments_methods_routes(mock_payments_gateway_service_api_base)
     return mock_payments_gateway_service_api_base
@@ -466,7 +488,7 @@ def mock_resource_usage_tracker_service_api_base(
 
 
 @pytest.fixture
-def mock_resoruce_usage_tracker_service_api(
+def mock_resource_usage_tracker_service_api(
     faker: Faker,
     mock_resource_usage_tracker_service_api_base: MockRouter,
     rut_service_openapi_specs: dict[str, Any],

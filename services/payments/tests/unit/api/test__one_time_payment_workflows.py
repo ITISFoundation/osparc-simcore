@@ -60,11 +60,11 @@ def app_environment(
 )
 async def test_successful_one_time_payment_workflow(
     is_pdb_enabled: bool,
+    mock_payments_gateway_service_or_none: MockRouter | None,
     app: FastAPI,
     client: httpx.AsyncClient,
     faker: Faker,
     rpc_client: RabbitMQRPCClient,
-    mock_payments_gateway_service_or_none: MockRouter | None,
     wallet_id: WalletID,
     wallet_name: IDStr,
     user_id: UserID,

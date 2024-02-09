@@ -172,9 +172,12 @@ async def list_payment_methods(
         [acked.payment_method_id for acked in acked_many]
     )
 
+    # FIXME: if out-of-sync w/ gateway, then this code will raise! because it has strict=True!
+    # FIXME: is order correct? is one-to-one ? is order preserved?
+
     return [
         merge_models(got, acked)
-        for acked, got in zip(acked_many, got_many, strict=True)
+        for got, acked in zip(got_many, acked_many, strict=True)
     ]
 
 

@@ -53,7 +53,10 @@ class ApplicationSettings(_BaseApplicationSettings):
     """
 
     PAYMENTS_GATEWAY_URL: HttpUrl = Field(
-        ..., description="Base url to the payment gateway"
+        ...,
+        description="Base url to the payment gateway."
+        "Used for both internal communication and "
+        "to get an external link to the gateway for the payment form",
     )
 
     PAYMENTS_GATEWAY_API_SECRET: SecretStr = Field(
