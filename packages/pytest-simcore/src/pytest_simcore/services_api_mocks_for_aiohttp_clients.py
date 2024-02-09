@@ -10,7 +10,6 @@ from typing import Any
 from urllib.parse import urlparse, urlunparse
 
 import pytest
-from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
 from faker import Faker
@@ -30,6 +29,7 @@ from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from servicelib.aiohttp import status
 from yarl import URL
 
 pytest_plugins = [
@@ -251,23 +251,23 @@ async def director_v2_service_mock(
     )
 
     aioresponses_mocker.get(
-        get_services_pattern, status=web.HTTPOk.status_code, repeat=True
+        get_services_pattern, status=status.HTTP_200_OK, repeat=True
     )
 
     aioresponses_mocker.post(
         create_computation_pattern,
         callback=create_computation_cb,
-        status=web.HTTPCreated.status_code,
+        status=status.HTTP_201_CREATED,
         repeat=True,
     )
     aioresponses_mocker.post(
         stop_computation_pattern,
-        status=web.HTTPAccepted.status_code,
+        status=status.HTTP_202_ACCEPTED,
         repeat=True,
     )
     aioresponses_mocker.get(
         get_computation_pattern,
-        status=web.HTTPAccepted.status_code,
+        status=status.HTTP_202_ACCEPTED,
         callback=get_computation_cb,
         repeat=True,
     )
@@ -280,7 +280,7 @@ async def director_v2_service_mock(
             r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters\?(\w+(?:=\w+)?\&?){1,}$"
         ),
         callback=create_cluster_cb,
-        status=web.HTTPCreated.status_code,
+        status=status.HTTP_201_CREATED,
         repeat=True,
     )
 
@@ -289,7 +289,7 @@ async def director_v2_service_mock(
             r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters\?(\w+(?:=\w+)?\&?){1,}$"
         ),
         callback=list_clusters_cb,
-        status=web.HTTPCreated.status_code,
+        status=status.HTTP_201_CREATED,
         repeat=True,
     )
 
@@ -298,7 +298,7 @@ async def director_v2_service_mock(
             r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters(/[0-9]+)\?(\w+(?:=\w+)?\&?){1,}$"
         ),
         callback=get_cluster_cb,
-        status=web.HTTPCreated.status_code,
+        status=status.HTTP_201_CREATED,
         repeat=True,
     )
 
@@ -307,7 +307,7 @@ async def director_v2_service_mock(
             r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters/[0-9]+/details\?(\w+(?:=\w+)?\&?){1,}$"
         ),
         callback=get_cluster_details_cb,
-        status=web.HTTPCreated.status_code,
+        status=status.HTTP_201_CREATED,
         repeat=True,
     )
 
@@ -316,20 +316,20 @@ async def director_v2_service_mock(
             r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters(/[0-9]+)\?(\w+(?:=\w+)?\&?){1,}$"
         ),
         callback=patch_cluster_cb,
-        status=web.HTTPCreated.status_code,
+        status=status.HTTP_201_CREATED,
         repeat=True,
     )
     aioresponses_mocker.delete(
         re.compile(
             r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters(/[0-9]+)\?(\w+(?:=\w+)?\&?){1,}$"
         ),
-        status=web.HTTPNoContent.status_code,
+        status=status.HTTP_204_NO_CONTENT,
         repeat=True,
     )
 
     aioresponses_mocker.post(
         re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters:ping$"),
-        status=web.HTTPNoContent.status_code,
+        status=status.HTTP_204_NO_CONTENT,
         repeat=True,
     )
 
@@ -337,7 +337,7 @@ async def director_v2_service_mock(
         re.compile(
             r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters(/[0-9]+):ping\?(\w+(?:=\w+)?\&?){1,}$"
         ),
-        status=web.HTTPNoContent.status_code,
+        status=status.HTTP_204_NO_CONTENT,
         repeat=True,
     )
 
@@ -351,7 +351,7 @@ def get_download_link_cb(url: URL, **kwargs) -> CallbackResult:
     link_type = kwargs["params"]["link_type"]
     scheme = {LinkType.PRESIGNED: "http", LinkType.S3: "s3"}
     return CallbackResult(
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
         payload={"data": {"link": f"{scheme[link_type]}://{file_id}"}},
     )
 
@@ -374,7 +374,7 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
             ),
         )
         return CallbackResult(
-            status=web.HTTPOk.status_code,
+            status=status.HTTP_200_OK,
             payload={"data": jsonable_encoder(upload_schema)},
         )
     # version 1 returns a presigned link
@@ -382,7 +382,7 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
         link=parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")
     )
     return CallbackResult(
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
         payload={"data": jsonable_encoder(presigned_link)},
     )
 
@@ -392,7 +392,7 @@ def list_file_meta_data_cb(url: URL, **kwargs) -> CallbackResult:
     assert "user_id" in kwargs["params"]
     assert "uuid_filter" in kwargs["params"]
     return CallbackResult(
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
         payload=jsonable_encoder(Envelope[list[FileMetaDataGet]](data=[])),
     )
 
@@ -435,7 +435,7 @@ async def storage_v0_service_mock(
 
     aioresponses_mocker.get(
         get_file_metadata_pattern,
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
         payload={"data": FileMetaDataGet.Config.schema_extra["examples"][0]},
         repeat=True,
     )
@@ -450,13 +450,11 @@ async def storage_v0_service_mock(
     aioresponses_mocker.put(
         get_upload_link_pattern, callback=get_upload_link_cb, repeat=True
     )
-    aioresponses_mocker.delete(
-        delete_file_pattern, status=web.HTTPNoContent.status_code
-    )
+    aioresponses_mocker.delete(delete_file_pattern, status=status.HTTP_204_NO_CONTENT)
 
     aioresponses_mocker.get(
         get_locations_link_pattern,
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
         payload={"data": [{"name": "simcore.s3", "id": 0}]},
         repeat=True,
     )
@@ -476,7 +474,7 @@ async def storage_v0_service_mock(
             },
         )
         return CallbackResult(
-            status=web.HTTPOk.status_code,
+            status=status.HTTP_200_OK,
             payload=jsonable_encoder(
                 Envelope[FileUploadCompleteResponse](data=payload)
             ),
@@ -486,7 +484,7 @@ async def storage_v0_service_mock(
 
     aioresponses_mocker.post(
         storage_complete_link_futures,
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
         payload=jsonable_encoder(
             Envelope[FileUploadCompleteFutureResponse](
                 data=FileUploadCompleteFutureResponse(
@@ -499,7 +497,7 @@ async def storage_v0_service_mock(
 
     aioresponses_mocker.post(
         storage_abort_link,
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
     )
 
     return aioresponses_mocker

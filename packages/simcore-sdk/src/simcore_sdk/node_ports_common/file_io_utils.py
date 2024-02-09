@@ -16,12 +16,12 @@ from aiohttp import (
     ClientResponseError,
     ClientSession,
     RequestInfo,
-    web,
 )
 from aiohttp.typedefs import LooseHeaders
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
 from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, NonNegativeInt
+from servicelib.aiohttp import status
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather, partition_gen
@@ -89,7 +89,7 @@ class ExtendedClientResponseError(ClientResponseError):
 
 
 async def _raise_for_status(response: ClientResponse) -> None:
-    if response.status >= web.HTTPBadRequest.status_code:
+    if response.status >= status.HTTP_400_BAD_REQUEST:
         body = await response.text()
         raise ExtendedClientResponseError(
             response.request_info,
@@ -189,7 +189,7 @@ async def download_link_to_file(
         with attempt:
             async with AsyncExitStack() as stack:
                 response = await stack.enter_async_context(session.get(url))
-                if response.status == web.HTTPNotFound.status_code:
+                if response.status == status.HTTP_404_NOT_FOUND:
                     raise exceptions.InvalidDownloadLinkError(url)
                 if response.status > _VALID_HTTP_STATUS_CODES:
                     raise exceptions.TransferError(url)
@@ -237,8 +237,8 @@ def _check_for_aws_http_errors(exc: BaseException) -> bool:
     # form more information see:
     # https://aws.amazon.com/premiumsupport/knowledge-center/http-5xx-errors-s3/
     if exc.status in (
-        web.HTTPInternalServerError.status_code,
-        web.HTTPServiceUnavailable.status_code,
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
+        status.HTTP_503_SERVICE_UNAVAILABLE,
     ):
         return True
 
@@ -264,7 +264,7 @@ async def _session_put(
         await progress_bar.update(file_part_size)
 
         # NOTE: the response from minio does not contain a json body
-        assert response.status == web.HTTPOk.status_code  # nosec
+        assert response.status == status.HTTP_200_OK  # nosec
         assert response.headers  # nosec
         assert "Etag" in response.headers  # nosec
         etag: str = json.loads(response.headers["Etag"])
@@ -351,7 +351,7 @@ async def _process_batch(
         for i, e_tag in upload_results:
             results.append(UploadedPart(number=i + 1, e_tag=e_tag))
     except ExtendedClientResponseError as e:
-        if e.status == web.HTTPBadRequest.status_code and "RequestTimeout" in e.body:
+        if e.status == status.HTTP_400_BAD_REQUEST and "RequestTimeout" in e.body:
             raise exceptions.AwsS3BadRequestRequestTimeoutError(e.body) from e
     except ClientError as exc:
         msg = (

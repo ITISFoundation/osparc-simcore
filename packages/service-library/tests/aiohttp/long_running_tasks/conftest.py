@@ -11,7 +11,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from pydantic import BaseModel, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
-from servicelib.aiohttp import long_running_tasks
+from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks.server import TaskId
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.long_running_tasks._task import TaskContext
@@ -37,7 +37,7 @@ async def _string_list_task(
 
     # NOTE: this code is used just for the sake of not returning the default 200
     return web.json_response(
-        data={"data": generated_strings}, status=web.HTTPCreated.status_code
+        data={"data": generated_strings}, status=status.HTTP_201_CREATED
     )
 
 

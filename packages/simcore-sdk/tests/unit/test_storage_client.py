@@ -9,7 +9,6 @@ from uuid import uuid4
 
 import aiohttp
 import pytest
-from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from models_library.api_schemas_storage import (
@@ -22,6 +21,7 @@ from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
+from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
 from simcore_sdk.node_ports_common.storage_client import (
     LinkType,
@@ -157,7 +157,7 @@ def storage_v0_service_mock_get_file_meta_data_not_found(
         # NOTE: the old storage service did not consider using a 404 for when file is not found
         aioresponses_mocker.get(
             get_file_metadata_pattern,
-            status=web.HTTPOk.status_code,
+            status=status.HTTP_200_OK,
             payload={"error": "No result found", "data": {}},
             repeat=True,
         )
@@ -165,7 +165,7 @@ def storage_v0_service_mock_get_file_meta_data_not_found(
         # NOTE: the new storage service shall do it right one day and we shall be prepared
         aioresponses_mocker.get(
             get_file_metadata_pattern,
-            status=web.HTTPNotFound.status_code,
+            status=status.HTTP_404_NOT_FOUND,
             repeat=True,
         )
     return aioresponses_mocker
