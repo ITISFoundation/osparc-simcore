@@ -6,12 +6,16 @@
     Use this test to emulate situations with scicrunch service API
 
 """
+import asyncio
 import json
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
-from aioresponses.core import aioresponses
+from aiohttp import web
+from aioresponses import aioresponses as AioResponsesMock
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.client_session import get_client_session
 from simcore_service_webserver.application_settings import setup_settings
@@ -23,7 +27,9 @@ from simcore_service_webserver.scicrunch.service_client import (
 
 
 @pytest.fixture
-async def mock_scicrunch_service_api(fake_data_dir: Path, mock_env_devel_environment):
+async def mock_scicrunch_service_api(
+    fake_data_dir: Path, mock_env_devel_environment: EnvVarsDict
+):
     assert mock_env_devel_environment["SCICRUNCH_API_KEY"] == os.environ.get(
         "SCICRUNCH_API_KEY"
     )
@@ -31,7 +37,7 @@ async def mock_scicrunch_service_api(fake_data_dir: Path, mock_env_devel_environ
     API_KEY = os.environ.get("SCICRUNCH_API_KEY")
     assert os.environ.get("SCICRUNCH_API_BASE_URL") == "https://scicrunch.org/api/1"
 
-    with aioresponses() as mock:
+    with AioResponsesMock() as mock:
         # curl -X GET "https://scicrunch.org/api/1/resource/fields/autocomplete?field=Resource%20Name&value=octave" -H "accept: application/json
         mock.get(
             f"https://scicrunch.org/api/1/resource/fields/autocomplete?field=Resource%20Name&value=octave&key={API_KEY}",
@@ -79,8 +85,10 @@ async def mock_scicrunch_service_api(fake_data_dir: Path, mock_env_devel_environ
 
 @pytest.fixture
 async def mock_scicrunch_service_resolver(
-    fake_data_dir: Path, mock_env_devel_environment, aioresponses_mocker
-):
+    fake_data_dir: Path,
+    mock_env_devel_environment: EnvVarsDict,
+    aioresponses_mocker: AioResponsesMock,
+) -> None:
     aioresponses_mocker.get(
         "https://scicrunch.org/resolver/SCR_018997.json",
         status=200,
@@ -91,35 +99,34 @@ async def mock_scicrunch_service_resolver(
 
 
 @pytest.fixture
-async def fake_app(mock_env_devel_environment):
-    # By using .env-devel we ensure all needed variables are at
-    # least defined there
-    print("app's environment variables", format(mock_env_devel_environment))
+def app(
+    mock_env_devel_environment: EnvVarsDict,
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_server: Callable,
+) -> web.Application:
 
-    app = create_safe_application()
+    app_ = create_safe_application()
 
-    setup_settings(app)
-    setup_scicrunch(app)
+    setup_settings(app_)
+    setup_scicrunch(app_)
 
-    yield app
-
-    client = get_client_session(app)
-    await client.close()
-
-
-#
+    server = event_loop.run_until_complete(aiohttp_server(app_))
+    assert server.app == app_
+    return server.app
 
 
-def test_setup_scicrunch_submodule(fake_app):
-    # scicruch should be init
-    scicrunch = SciCrunch.get_instance(fake_app)
+def test_setup_scicrunch_submodule(app: web.Application):
+    scicrunch = SciCrunch.get_instance(app)
     assert scicrunch
-    assert scicrunch.client == get_client_session(fake_app)
+    assert scicrunch.client == get_client_session(app)
 
 
-async def test_get_research_resource(fake_app, mock_scicrunch_service_resolver):
-    # mock_scicrunch_service_api):
-    scicrunch = SciCrunch.get_instance(fake_app)
+async def test_get_research_resource(
+    app: web.Application,
+    mock_scicrunch_service_resolver: None,
+    mock_scicrunch_service_api: AioResponsesMock,
+):
+    scicrunch = SciCrunch.get_instance(app)
     resource: ResearchResource = await scicrunch.get_resource_fields(rrid="SCR_018997")
 
     assert resource.rrid == "RRID:SCR_018997"
