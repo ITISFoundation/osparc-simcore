@@ -65,7 +65,7 @@ def test_jupyterlab(
     page.frame_locator(".qx-main-dark").get_by_role(
         "button", name="New Launcher"
     ).click(timeout=600000)
-    if "jupyter-octave-python-math" in service_key:
+    if "jupyter-octave-python-math" in service_key or "jupyter-math" in service_key:
         # Python Math service
         page.frame_locator(".qx-main-dark").get_by_text("python (maths)").first.click()
         _jupyterlab_ui = page.frame_locator(".qx-main-dark").get_by_role("textbox")
