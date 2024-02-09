@@ -9,6 +9,11 @@ from simcore_service_payments.core.settings import ApplicationSettings
 
 
 def test_valid_web_application_settings(app_environment: EnvVarsDict):
+    """
+    We validate actual envfiles (e.g. repo.config files) by passing them via the CLI
+
+    > pytest --external-envfile=.myenv --pdb tests/unit/test_core_settings.py
+    """
     settings = ApplicationSettings()  # type: ignore
     assert settings
 
