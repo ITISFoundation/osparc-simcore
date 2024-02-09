@@ -37,7 +37,7 @@ class TestEmail(BaseModel):
     template_context: dict[str, Any] = {}
 
 
-class TestFailed(BaseModel):
+class EmailTestFailed(BaseModel):
     test_name: str
     error_type: str
     error_message: str
@@ -53,7 +53,7 @@ class TestFailed(BaseModel):
         )
 
 
-class TestPassed(BaseModel):
+class EmailTestPassed(BaseModel):
     fixtures: dict[str, Any]
     info: dict[str, Any]
 
@@ -98,7 +98,7 @@ async def test_email(request: web.Request):
         )
 
         return envelope_json_response(
-            TestPassed(
+            EmailTestPassed(
                 fixtures=body.dict(),
                 info={
                     "email-server": info,
@@ -113,5 +113,5 @@ async def test_email(request: web.Request):
             f"{settings.json(indent=1)}",
         )
         return envelope_json_response(
-            TestFailed.create_from_exception(error=err, test_name="test_email")
+            EmailTestFailed.create_from_exception(error=err, test_name="test_email")
         )

@@ -9,7 +9,11 @@ from typing import Union
 from fastapi import APIRouter, Header
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.email._handlers import TestEmail, TestFailed, TestPassed
+from simcore_service_webserver.email._handlers import (
+    EmailTestFailed,
+    EmailTestPassed,
+    TestEmail,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -21,7 +25,7 @@ router = APIRouter(
 
 @router.post(
     "/email:test",
-    response_model=Envelope[Union[TestFailed, TestPassed]],
+    response_model=Envelope[Union[EmailTestFailed, EmailTestPassed]],
 )
 async def test_email(
     _test: TestEmail, x_simcore_products_name: str | None = Header(default=None)
