@@ -34,6 +34,7 @@ from pytest_simcore.helpers.utils_tokens import (
     get_token_from_db,
 )
 from redis import Redis
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.products import products
@@ -589,8 +590,7 @@ async def test_create_user_notification_capped_list_length(
     )
     assert (
         all(
-            x.status == web.HTTPNoContent.status_code
-            for x in notifications_create_results
+            x.status == status.HTTP_204_NO_CONTENT for x in notifications_create_results
         )
         is True
     )
@@ -674,7 +674,7 @@ async def test_update_user_notification_at_correct_index(
             assert notification.read is False
 
             resp = await client.patch(url.path, json={"read": True})
-            assert resp.status == web.HTTPNoContent.status_code
+            assert resp.status == status.HTTP_204_NO_CONTENT
 
         notifications_after_update = await _get_stored_notifications()
 

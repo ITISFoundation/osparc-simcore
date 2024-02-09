@@ -17,6 +17,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import RunningState
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.json_serialization import json_dumps
 from settings_library.rabbit import RabbitSettings
@@ -412,7 +413,7 @@ async def test_start_stop_computation(
         )
         # restart the computation, this should produce a 422 since the computation was complete
         resp = await client.post(f"{url_start}")
-        assert resp.status == web.HTTPUnprocessableEntity.status_code
+        assert resp.status == status.HTTP_422_UNPROCESSABLE_ENTITY
         # force restart the computation
         resp = await client.post(f"{url_start}", json={"force_restart": True})
         data, error = await assert_status(resp, expected.created)

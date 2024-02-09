@@ -24,6 +24,7 @@ from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login.utils import notify_user_confirmation
 from simcore_service_webserver.products.api import get_product
@@ -249,6 +250,6 @@ async def test_get_default_wallet_access_rights(
 
     error = err_info.value
     assert error.status in (
-        web.HTTPUnauthorized.status_code,
-        web.HTTPForbidden.status_code,
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
     ), f"{error}"

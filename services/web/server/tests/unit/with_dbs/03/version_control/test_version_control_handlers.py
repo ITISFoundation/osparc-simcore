@@ -14,6 +14,7 @@ from models_library.rest_pagination import Page
 from models_library.users import UserID
 from pydantic.main import BaseModel
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.version_control.models import (
@@ -28,7 +29,7 @@ async def assert_resp_page(
     expected_total: int,
     expected_count: int,
 ):
-    assert resp.status == web.HTTPOk.status_code, f"Got {await resp.text()}"
+    assert resp.status == status.HTTP_200_OK, f"Got {await resp.text()}"
     body = await resp.json()
 
     page = expected_page_cls.parse_obj(body)
@@ -101,7 +102,7 @@ async def test_workflow(
 
     assert CheckpointApiModel.parse_obj(data) == checkpoint1
 
-    assert excinfo.value.status == web.HTTPNotImplemented.status_code
+    assert excinfo.value.status == status.HTTP_501_NOT_IMPLEMENTED
 
     # GET checkpoint with id
     resp = await client.get(

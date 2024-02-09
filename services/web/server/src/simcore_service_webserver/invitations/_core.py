@@ -10,6 +10,7 @@ from models_library.api_schemas_invitations.invitations import (
 )
 from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.error_codes import create_error_code
 
 from ..groups.api import is_user_by_email_in_group
@@ -33,7 +34,7 @@ def _handle_exceptions_as_invitations_errors():
 
     except ClientResponseError as err:
         # check possible errors
-        if err.status == web.HTTPUnprocessableEntity.status_code:
+        if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
             error_code = create_error_code(err)
             _logger.exception(
                 "Invitation request unexpectedly failed [%s]",

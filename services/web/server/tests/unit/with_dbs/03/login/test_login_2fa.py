@@ -16,6 +16,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
+from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
@@ -143,7 +144,7 @@ async def test_workflow_register_and_login_with_2fa(
 
     # 2. confirmation
     response = await client.get(url)
-    assert response.status == web.HTTPOk.status_code
+    assert response.status == status.HTTP_200_OK
 
     # check email+password registered
     user = await db.get_user({"email": fake_user_email})
