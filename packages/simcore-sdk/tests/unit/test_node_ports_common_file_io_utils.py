@@ -3,9 +3,9 @@
 # pylint: disable=protected-access
 
 import asyncio
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncIterable, AsyncIterator, Awaitable, Callable
 from unittest.mock import AsyncMock
 
 import pytest
@@ -237,7 +237,7 @@ async def create_upload_links(
             ),
         )
 
-    yield _creator
+    return _creator
 
 
 @pytest.mark.skip(reason="this will allow to reproduce an issue")

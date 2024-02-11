@@ -132,7 +132,7 @@ def _handle_errors_with_error_page(handler: Handler):
                 message=compose_support_error_msg(
                     msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
                 ),
-                status_code=500,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) from err
 
     return wrapper

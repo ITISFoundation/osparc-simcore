@@ -1,11 +1,11 @@
 import asyncio
 import json
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Coroutine
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import IO, Any, Coroutine, Final, Protocol, runtime_checkable
+from typing import IO, Any, Final, Protocol, runtime_checkable
 
 import aiofiles
 from aiohttp import (
@@ -68,7 +68,7 @@ class ExtendedClientResponseError(ClientResponseError):
             request_info,
             history,
             code=code,
-            status=status,
+            status=status,  # pylint: disable=rdefined-outer-name
             message=message,
             headers=headers,
         )

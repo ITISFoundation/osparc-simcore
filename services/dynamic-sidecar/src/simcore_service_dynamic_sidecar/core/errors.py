@@ -1,5 +1,6 @@
 from typing import Any
 
+from fastapi import status
 from models_library.services import RunID
 from pydantic.errors import PydanticErrorMixin
 
@@ -7,7 +8,9 @@ from pydantic.errors import PydanticErrorMixin
 class BaseDynamicSidecarError(Exception):
     """Used as base for all exceptions"""
 
-    def __init__(self, nessage: str, status: int = 500) -> None:
+    def __init__(
+        self, nessage: str, status: int = status.HTTP_500_INTERNAL_SERVER_ERROR
+    ) -> None:
         self.message: str = nessage
         self.status: int = status
         super().__init__(nessage)
@@ -20,7 +23,7 @@ class VolumeNotFoundError(BaseDynamicSidecarError):
         super().__init__(
             f"Expected 1 got {len(volumes)} volumes labels with {source_label=}, {run_id=}: "
             f"Found {' '.join(v.get('Name', 'UNKNOWN') for v in volumes)}",
-            status=404,
+            status=status.HTTP_404_NOT_FOUND,
         )
 
 

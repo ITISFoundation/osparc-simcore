@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.generics import Envelope
 from pydantic import parse_obj_as
+from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobStatus
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -104,12 +105,12 @@ async def test_get_solver_job_wallet(
         auth=auth,
     )
     if capture == "get_job_wallet_found.json":
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         body = response.json()
         assert isinstance(body, dict)
         assert _wallet_id == body.get("walletId")
     elif capture == "get_job_wallet_not_found.json":
-        assert response.status_code == 404
+        assert response.status_code == status.HTTP_404_NOT_FOUND
         body = response.json()
         assert isinstance(body, dict)
         assert body.get("data") is None
