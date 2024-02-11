@@ -1,4 +1,4 @@
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from aiohttp import ClientSession, ClientTimeout, web
 
