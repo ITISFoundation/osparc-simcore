@@ -43,7 +43,7 @@ def _handle_exceptions_as_invitations_errors():
             )
             raise InvalidInvitation(reason=f"Unexpected error [{error_code}]") from err
 
-        assert err.status >= 400  # nosec
+        assert err.status >= status.HTTP_400_BAD_REQUEST  # nosec
         # any other error status code
         raise InvitationsServiceUnavailable from err
 

@@ -109,5 +109,5 @@ async def get_scheduled_maintenance(request: web.Request):
         return envelope_json_response(maintenance_data)
 
     response = web.json_response(status=status.HTTP_204_NO_CONTENT)
-    assert response.status == 204  # nosec
+    assert response.status == status.HTTP_204_NO_CONTENT  # nosec
     return response

@@ -21,6 +21,7 @@ from models_library.api_schemas_storage import (
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
+from servicelib.aiohttp import status
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.exceptions import AwsS3BadRequestRequestTimeoutError
 from simcore_sdk.node_ports_common.file_io_utils import (
@@ -65,10 +66,10 @@ class _TestParams:
 @pytest.mark.parametrize(
     "test_params",
     [
-        _TestParams(will_retry=True, status_code=500),
-        _TestParams(will_retry=True, status_code=503),
-        _TestParams(will_retry=False, status_code=400),
-        _TestParams(will_retry=False, status_code=200),
+        _TestParams(will_retry=True, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
+        _TestParams(will_retry=True, status_code=status.HTTP_503_SERVICE_UNAVAILABLE),
+        _TestParams(will_retry=False, status_code=status.HTTP_400_BAD_REQUEST),
+        _TestParams(will_retry=False, status_code=status.HTTP_200_OK),
         _TestParams(will_retry=False, status_code=399),
     ],
 )
@@ -178,7 +179,7 @@ async def bucket(aiobotocore_s3_client: AioBaseClient, faker: Faker) -> str:
     response = await aiobotocore_s3_client.create_bucket(Bucket=faker.pystr())
     assert "ResponseMetadata" in response
     assert "HTTPStatusCode" in response["ResponseMetadata"]
-    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+    assert response["ResponseMetadata"]["HTTPStatusCode"] == status.HTTP_200_OK
 
     response = await aiobotocore_s3_client.list_buckets()
     assert response["Buckets"]
