@@ -27,9 +27,11 @@ from simcore_service_webserver.scicrunch.service_client import (
 
 
 @pytest.fixture
-async def mock_scicrunch_service_api(
-    fake_data_dir: Path, mock_env_devel_environment: EnvVarsDict
-):
+def mock_scicrunch_service_api(
+    fake_data_dir: Path,
+    mock_env_devel_environment: EnvVarsDict,
+    aioresponses_mocker: AioResponsesMock,
+) -> AioResponsesMock:
     assert mock_env_devel_environment["SCICRUNCH_API_KEY"] == os.environ.get(
         "SCICRUNCH_API_KEY"
     )
@@ -37,50 +39,49 @@ async def mock_scicrunch_service_api(
     API_KEY = os.environ.get("SCICRUNCH_API_KEY")
     assert os.environ.get("SCICRUNCH_API_BASE_URL") == "https://scicrunch.org/api/1"
 
-    with AioResponsesMock() as mock:
-        # curl -X GET "https://scicrunch.org/api/1/resource/fields/autocomplete?field=Resource%20Name&value=octave" -H "accept: application/json
-        mock.get(
-            f"https://scicrunch.org/api/1/resource/fields/autocomplete?field=Resource%20Name&value=octave&key={API_KEY}",
-            status=200,
-            payload={
-                "data": [
-                    {
-                        "rid": "SCR_000860",
-                        "original_id": "nlx_155680",
-                        "name": "cbiNifti: Matlab/Octave Nifti library",
-                    },
-                    {
-                        "rid": "SCR_009637",
-                        "original_id": "nlx_155924",
-                        "name": "Pipeline System for Octave and Matlab",
-                    },
-                    {
-                        "rid": "SCR_014398",
-                        "original_id": "SCR_014398",
-                        "name": "GNU Octave",
-                    },
-                ],
-                "success": "true",
-            },
-        )
-        # curl -X GET "https://scicrunch.org/api/1/resource/fields/view/SCR_018997" -H "accept: application/json"
-        mock.get(
-            f"https://scicrunch.org/api/1/resource/fields/view/SCR_018997?key={API_KEY}",
-            status=200,
-            payload=json.loads(
-                (fake_data_dir / "get_osparc_resource_payload.json").read_text()
-            ),
-        )
-        # curl -X GET "https://scicrunch.org/api/1/resource/versions/all/SCR_018997" -H "accept: application/json"
-        mock.get(
-            f"https://scicrunch.org/api/1/resource/versions/all/SCR_018997?key={API_KEY}",
-            status=200,
-            payload=json.loads(
-                '{"data":[{"version":2,"status":"Curated","time":1598984801,"uid":34739,"username":"Edyta Vieth","cid":null},{"version":1,"status":"Pending","time":1598898249,"uid":43,"username":"Anita Bandrowski","cid":30}],"success":true}'
-            ),
-        )
+    # curl -X GET "https://scicrunch.org/api/1/resource/fields/autocomplete?field=Resource%20Name&value=octave" -H "accept: application/json
+    aioresponses_mocker.get(
+        f"https://scicrunch.org/api/1/resource/fields/autocomplete?field=Resource%20Name&value=octave&key={API_KEY}",
+        status=200,
+        payload={
+            "data": [
+                {
+                    "rid": "SCR_000860",
+                    "original_id": "nlx_155680",
+                    "name": "cbiNifti: Matlab/Octave Nifti library",
+                },
+                {
+                    "rid": "SCR_009637",
+                    "original_id": "nlx_155924",
+                    "name": "Pipeline System for Octave and Matlab",
+                },
+                {
+                    "rid": "SCR_014398",
+                    "original_id": "SCR_014398",
+                    "name": "GNU Octave",
+                },
+            ],
+            "success": "true",
+        },
+    )
+    # curl -X GET "https://scicrunch.org/api/1/resource/fields/view/SCR_018997" -H "accept: application/json"
+    aioresponses_mocker.get(
+        f"https://scicrunch.org/api/1/resource/fields/view/SCR_018997?key={API_KEY}",
+        status=200,
+        payload=json.loads(
+            (fake_data_dir / "get_osparc_resource_payload.json").read_text()
+        ),
+    )
+    # curl -X GET "https://scicrunch.org/api/1/resource/versions/all/SCR_018997" -H "accept: application/json"
+    aioresponses_mocker.get(
+        f"https://scicrunch.org/api/1/resource/versions/all/SCR_018997?key={API_KEY}",
+        status=200,
+        payload=json.loads(
+            '{"data":[{"version":2,"status":"Curated","time":1598984801,"uid":34739,"username":"Edyta Vieth","cid":null},{"version":1,"status":"Pending","time":1598898249,"uid":43,"username":"Anita Bandrowski","cid":30}],"success":true}'
+        ),
+    )
 
-        yield mock
+    return aioresponses_mocker
 
 
 @pytest.fixture
