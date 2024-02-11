@@ -67,7 +67,7 @@ services:
     ports:
       - "8011:8000"
 
-  dynamic-scheduler:
+  dynamic-schdlr:
     ports:
      - "8012:8000"
      - "3016:3000"

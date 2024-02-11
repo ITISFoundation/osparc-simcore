@@ -73,8 +73,8 @@ assert_handler_signature_against_model(
 )
 
 
-@router.post(
-    "/services/-/resource-usages:export",
+@router.get(
+    "/services/-/usage-report",
     status_code=status.HTTP_302_FOUND,
     responses={
         status.HTTP_302_FOUND: {

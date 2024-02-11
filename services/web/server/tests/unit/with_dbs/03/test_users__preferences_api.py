@@ -1,6 +1,7 @@
 # pylint: disable=inconsistent-return-statements
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+# pylint: disable=too-many-return-statements
 
 from collections.abc import AsyncIterator
 from typing import Any
@@ -12,6 +13,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.users_preferences import Preference
 from models_library.products import ProductName
+from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -22,10 +24,13 @@ from simcore_postgres_database.models.groups_extra_properties import (
 )
 from simcore_postgres_database.models.users import UserStatus
 from simcore_service_webserver.users._preferences_api import (
-    ALL_FRONTEND_PREFERENCES,
     _get_frontend_user_preferences,
     get_frontend_user_preferences_aggregation,
     set_frontend_user_preference,
+)
+from simcore_service_webserver.users._preferences_models import (
+    ALL_FRONTEND_PREFERENCES,
+    BillingCenterUsageColumnOrderFrontendUserPreference,
 )
 
 
@@ -72,7 +77,9 @@ def _get_default_field_value(model_class: type[BaseModel]) -> Any:
     )
 
 
-def _get_non_default_value(model_class: type[BaseModel]) -> Any:
+def _get_non_default_value(
+    model_class: type[FrontendUserPreference],
+) -> Any:
     """given a default value transforms into something that is different"""
 
     model_field = _get_model_field(model_class, "value")
@@ -85,9 +92,15 @@ def _get_non_default_value(model_class: type[BaseModel]) -> Any:
         return {**value, "non_default_key": "non_default_value"}
     if isinstance(value, list):
         return [*value, "non_default_value"]
-    if isinstance(value, (int, str)):
+    if isinstance(value, int | str):
         return value
+
     if value is None:
+        if (
+            model_class.get_preference_name()
+            == BillingCenterUsageColumnOrderFrontendUserPreference.get_preference_name()
+        ):
+            return None
         if value_type == int:
             return 0
         if value_type == str:

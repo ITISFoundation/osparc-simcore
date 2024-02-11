@@ -53,7 +53,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Union_TestFailed__TestPassed__'
+                $ref: '#/components/schemas/Envelope_Union_EmailTestFailed__EmailTestPassed__'
   /v0/announcements:
     get:
       tags:
@@ -3152,8 +3152,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__'
-  /v0/services/-/resource-usages:export:
-    post:
+  /v0/services/-/usage-report:
+    get:
       tags:
       - usage
       summary: Redirects to download CSV link. CSV obtains finished and currently
@@ -5172,6 +5172,7 @@ components:
           - $ref: '#/components/schemas/KerberosAuthentication'
           - $ref: '#/components/schemas/JupyterHubTokenAuthentication'
           - $ref: '#/components/schemas/NoAuthentication'
+          - $ref: '#/components/schemas/TLSAuthentication'
           description: Dask gateway authentication
         accessRights:
           title: Accessrights
@@ -5243,6 +5244,7 @@ components:
           - $ref: '#/components/schemas/KerberosAuthentication'
           - $ref: '#/components/schemas/JupyterHubTokenAuthentication'
           - $ref: '#/components/schemas/NoAuthentication'
+          - $ref: '#/components/schemas/TLSAuthentication'
           description: Dask gateway authentication
     ClusterTypeInModel:
       title: ClusterTypeInModel
@@ -5405,6 +5407,40 @@ components:
       additionalProperties: false
       description: I/O port type to hold a generic download link to a file (e.g. S3
         pre-signed link, etc)
+    EmailTestFailed:
+      title: EmailTestFailed
+      required:
+      - test_name
+      - error_type
+      - error_message
+      - traceback
+      type: object
+      properties:
+        test_name:
+          title: Test Name
+          type: string
+        error_type:
+          title: Error Type
+          type: string
+        error_message:
+          title: Error Message
+          type: string
+        traceback:
+          title: Traceback
+          type: string
+    EmailTestPassed:
+      title: EmailTestPassed
+      required:
+      - fixtures
+      - info
+      type: object
+      properties:
+        fixtures:
+          title: Fixtures
+          type: object
+        info:
+          title: Info
+          type: object
     EmptyModel:
       title: EmptyModel
       type: object
@@ -5774,6 +5810,17 @@ components:
           $ref: '#/components/schemas/ThirdPartyToken'
         error:
           title: Error
+    Envelope_Union_EmailTestFailed__EmailTestPassed__:
+      title: Envelope[Union[EmailTestFailed, EmailTestPassed]]
+      type: object
+      properties:
+        data:
+          title: Data
+          anyOf:
+          - $ref: '#/components/schemas/EmailTestFailed'
+          - $ref: '#/components/schemas/EmailTestPassed'
+        error:
+          title: Error
     Envelope_Union_NodeGetIdle__NodeGetUnknown__RunningDynamicServiceDetails__NodeGet__:
       title: Envelope[Union[NodeGetIdle, NodeGetUnknown, RunningDynamicServiceDetails,
         NodeGet]]
@@ -5794,17 +5841,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/PricingUnitGet'
-        error:
-          title: Error
-    Envelope_Union_TestFailed__TestPassed__:
-      title: Envelope[Union[TestFailed, TestPassed]]
-      type: object
-      properties:
-        data:
-          title: Data
-          anyOf:
-          - $ref: '#/components/schemas/TestFailed'
-          - $ref: '#/components/schemas/TestPassed'
         error:
           title: Error
     Envelope_Union_WalletGet__NoneType__:
@@ -9546,6 +9582,33 @@ components:
         annotations:
           title: Annotations
           type: object
+    TLSAuthentication:
+      title: TLSAuthentication
+      required:
+      - tls_ca_file
+      - tls_client_cert
+      - tls_client_key
+      type: object
+      properties:
+        type:
+          title: Type
+          enum:
+          - tls
+          type: string
+          default: tls
+        tls_ca_file:
+          title: Tls Ca File
+          type: string
+          format: path
+        tls_client_cert:
+          title: Tls Client Cert
+          type: string
+          format: path
+        tls_client_key:
+          title: Tls Client Key
+          type: string
+          format: path
+      additionalProperties: false
     TableSynchronisation:
       title: TableSynchronisation
       required:
@@ -9776,40 +9839,6 @@ components:
           title: Template Context
           type: object
           default: {}
-    TestFailed:
-      title: TestFailed
-      required:
-      - test_name
-      - error_type
-      - error_message
-      - traceback
-      type: object
-      properties:
-        test_name:
-          title: Test Name
-          type: string
-        error_type:
-          title: Error Type
-          type: string
-        error_message:
-          title: Error Message
-          type: string
-        traceback:
-          title: Traceback
-          type: string
-    TestPassed:
-      title: TestPassed
-      required:
-      - fixtures
-      - info
-      type: object
-      properties:
-        fixtures:
-          title: Fixtures
-          type: object
-        info:
-          title: Info
-          type: object
     TextArea:
       title: TextArea
       required:

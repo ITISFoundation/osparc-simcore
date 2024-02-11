@@ -95,6 +95,11 @@ class TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference(
     value: int = 5  # in gigabytes
 
 
+class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference):
+    preference_identifier: PreferenceIdentifier = "billingCenterUsageColumnOrder"
+    value: list[int] | None = None
+
+
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     ConfirmationBackToDashboardFrontendUserPreference,
     ConfirmationDeleteStudyFrontendUserPreference,
@@ -113,6 +118,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     JobConcurrencyLimitFrontendUserPreference,
     AllowMetricsCollectionFrontendUserPreference,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
+    BillingCenterUsageColumnOrderFrontendUserPreference,
 ]
 
 _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING: dict[PreferenceName, PreferenceIdentifier] = {

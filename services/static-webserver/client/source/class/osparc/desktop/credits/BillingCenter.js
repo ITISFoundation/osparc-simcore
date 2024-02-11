@@ -114,21 +114,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       return page;
     },
 
-    __getBuyCreditsPage: function() {
-      const title = this.tr("Buy Credits");
-      const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
-      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
-      const buyCredits = this.__buyCredits = new osparc.desktop.credits.BuyCredits();
-      buyCredits.set({
-        margin: 10
-      });
-      buyCredits.addListener("addNewPaymentMethod", () => this.openPaymentMethods(true), this);
-      buyCredits.addListener("transactionCompleted", () => this.openTransactions(true), this);
-      page.add(buyCredits);
-      return page;
-    },
-
     __getTransactionsPage: function() {
       const title = this.tr("Transactions");
       const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
@@ -138,7 +123,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       transactions.set({
         margin: 10
       });
-      page.add(transactions);
+      page.add(transactions, { flex: 1 });
       return page;
     },
 
@@ -151,7 +136,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       usage.set({
         margin: 10
       });
-      page.add(usage);
+      page.add(usage, { flex: 1 });
       return page;
     },
 

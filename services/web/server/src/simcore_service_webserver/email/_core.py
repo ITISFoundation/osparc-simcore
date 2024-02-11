@@ -8,7 +8,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 from pathlib import Path
-from pprint import pformat
 from typing import Any, NamedTuple, TypedDict, Union
 
 import aiosmtplib
@@ -22,14 +21,12 @@ _logger = logging.getLogger(__name__)
 
 
 def _create_smtp_client(settings: SMTPSettings) -> aiosmtplib.SMTP:
-    smtp_args = {
-        "hostname": settings.SMTP_HOST,
-        "port": settings.SMTP_PORT,
-        "use_tls": settings.SMTP_PROTOCOL == EmailProtocol.TLS,
-        "start_tls": settings.SMTP_PROTOCOL == EmailProtocol.STARTTLS,
-    }
-    _logger.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
-    return aiosmtplib.SMTP(**smtp_args)
+    return aiosmtplib.SMTP(
+        hostname=settings.SMTP_HOST,
+        port=settings.SMTP_PORT,
+        use_tls=settings.SMTP_PROTOCOL == EmailProtocol.TLS,
+        start_tls=settings.SMTP_PROTOCOL == EmailProtocol.STARTTLS,
+    )
 
 
 async def _do_send_mail(

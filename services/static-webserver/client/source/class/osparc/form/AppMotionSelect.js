@@ -10,8 +10,7 @@ qx.Class.define("osparc.form.AppMotionSelect", {
   construct: function() {
     this.base(arguments);
     this.set({
-      appearance: "appmotion-buy-credits-select",
-      decorator: "appmotion-buy-credits-input"
+      appearance: "appmotion-buy-credits-select"
     });
   }
 });

@@ -1,18 +1,20 @@
 import asyncio
+import logging
 from asyncio import Queue
 from datetime import datetime, timezone
 from typing import AsyncIterable, Awaitable, Callable, Final
 
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
-from pydantic import NonNegativeInt, PositiveInt
+from pydantic import NonNegativeInt, ValidationError
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..models.schemas.jobs import JobID, JobLog
 from .director_v2 import DirectorV2Api
 
+_logger = logging.getLogger(__name__)
+
 _NEW_LINE: Final[str] = "\n"
-_SLEEP_SECONDS_BEFORE_CHECK_JOB_STATUS: Final[PositiveInt] = 10
 
 
 class LogDistributionBaseException(Exception):
@@ -52,7 +54,19 @@ class LogDistributor:
         await self.teardown()
 
     async def _distribute_logs(self, data: bytes):
-        got = LoggerRabbitMessage.parse_raw(data)
+        try:
+            got = LoggerRabbitMessage.parse_raw(
+                data
+            )  # rabbitmq client safe_nacks the message if this deserialization fails
+        except ValidationError as e:
+            _logger.debug(
+                "Could not parse log message from RabbitMQ in LogDistributor._distribute_logs"
+            )
+            raise e
+        _logger.debug(
+            "LogDistributor._distribute_logs received message message from RabbitMQ: %s",
+            got.json(),
+        )
         item = JobLog(
             job_id=got.project_id,
             node_id=got.node_id,

@@ -28,7 +28,7 @@ from simcore_postgres_database.models.payments_methods import InitPromptAckFlowS
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.products import Vendor, products
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.webserver_models import GroupType, UserStatus
@@ -170,23 +170,25 @@ def random_product(
         - registration_email_template
     """
 
-    fake_vendor = {
-        "name": fake.company(),
-        "copyright": fake.company_suffix(),
-        "url": fake.url(),
-        "license_url": fake.url(),
-        "invitation_url": fake.url(),
-        "has_landing_page": fake.boolean(),
-    }
+    name = overrides.get("name")
+    suffix = fake.unique.word() if name is None else name
 
     data = {
-        "name": fake.unique.first_name(),
-        "display_name": fake.company(),
-        "short_name": fake.user_name()[:10],
+        "name": f"prd_{suffix}",
+        "display_name": suffix.capitalize(),
+        "short_name": suffix[:4],
         "host_regex": r"[a-zA-Z0-9]+\.com",
         "support_email": fake.email(),
         "twilio_messaging_sid": fake.random_element(elements=(None, fake.uuid4()[:34])),
-        "vendor": fake.random_element([None, fake_vendor]),
+        "vendor": Vendor(
+            name=fake.company(),
+            copyright=fake.company_suffix(),
+            url=fake.url(),
+            license_url=fake.url(),
+            invitation_url=fake.url(),
+            has_landing_page=fake.boolean(),
+            address=fake.address().replace("\n", ". "),
+        ),
         "registration_email_template": registration_email_template,
         "created": fake.date_time_this_decade(),
         "modified": fake.date_time_this_decade(),

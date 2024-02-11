@@ -115,6 +115,7 @@ async def list_service_runs(
                 wallet_id=service.wallet_id,
                 wallet_name=service.wallet_name,
                 user_id=service.user_id,
+                user_email=service.user_email,
                 project_id=service.project_id,
                 project_name=service.project_name,
                 node_id=service.node_id,
