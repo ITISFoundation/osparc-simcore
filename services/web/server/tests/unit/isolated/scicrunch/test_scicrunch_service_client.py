@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 from aiohttp import web
-from aioresponses import aioresponses as AioResponsesMock
+from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.client_session import get_client_session
@@ -120,6 +120,7 @@ def test_setup_scicrunch_submodule(app: web.Application):
     scicrunch = SciCrunch.get_instance(app)
     assert scicrunch
     assert scicrunch.client == get_client_session(app)
+    assert not get_client_session(app).closed
 
 
 async def test_get_research_resource(
