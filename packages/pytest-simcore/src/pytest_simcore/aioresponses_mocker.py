@@ -1,7 +1,7 @@
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
-from aioresponses import aioresponses as AioResponsesMock
+from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 
 from .helpers.utils_host import get_localhost_ip
 
