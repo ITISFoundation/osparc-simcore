@@ -12,7 +12,6 @@ import osparc
 import pytest
 from packaging.version import parse as parse_version
 from pytest_simcore.helpers.utils_public_api import ServiceInfoDict, ServiceNameStr
-from servicelib.aiohttp import status
 
 
 class NameTagTuple(NamedTuple):
@@ -110,5 +109,5 @@ def test_solvers_not_found(solvers_api: osparc.SolversApi):
             "simcore/services/comp/something-not-in-this-registry",
             "1.4.55",
         )
-    assert excinfo.value.status == status.HTTP_404_NOT_FOUND
+    assert excinfo.value.status == 404
     assert "not found" in excinfo.value.reason.lower()

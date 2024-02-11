@@ -9,10 +9,10 @@ class BaseDynamicSidecarError(Exception):
     """Used as base for all exceptions"""
 
     def __init__(
-        self, nessage: str, status: int = status.HTTP_500_INTERNAL_SERVER_ERROR
+        self, nessage: str, status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
     ) -> None:
         self.message: str = nessage
-        self.status: int = status
+        self.status: int = status_code
         super().__init__(nessage)
 
 
@@ -23,14 +23,15 @@ class VolumeNotFoundError(BaseDynamicSidecarError):
         super().__init__(
             f"Expected 1 got {len(volumes)} volumes labels with {source_label=}, {run_id=}: "
             f"Found {' '.join(v.get('Name', 'UNKNOWN') for v in volumes)}",
-            status=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
         )
 
 
 class UnexpectedDockerError(BaseDynamicSidecarError):
-    def __init__(self, message: str, status: int) -> None:
+    def __init__(self, message: str, status_code: int) -> None:
         super().__init__(
-            f"An unexpected Docker error occurred {status=}, {message=}", status=status
+            f"An unexpected Docker error occurred {status_code=}, {message=}",
+            status_code=status_code,
         )
 
 
