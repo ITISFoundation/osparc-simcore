@@ -1,6 +1,12 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
+from collections.abc import Callable
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Callable, Final
+from typing import Any, Final
 from uuid import UUID
 
 import httpx
@@ -14,16 +20,12 @@ from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.generics import Envelope
 from pydantic import parse_obj_as
-from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobStatus
 from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.services.director_v2 import ComputationTaskGet
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from unit.conftest import SideEffectCallback
-
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 
 
 def _start_job_side_effect(
