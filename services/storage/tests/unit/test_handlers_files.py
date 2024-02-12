@@ -655,7 +655,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     assert file_upload_link
     # let's use the storage s3 internal client to upload
     with file.open("rb") as fp:
-        response = await storage_s3_client.client.put_object(
+        response = await storage_s3_client._client.put_object(
             Bucket=storage_s3_bucket, Key=simcore_file_id, Body=fp
         )
         assert "ETag" in response
@@ -697,7 +697,7 @@ async def test_upload_real_file_with_s3_client(
     )
     # let's use the storage s3 internal client to upload
     with file.open("rb") as fp:
-        response = await storage_s3_client.client.put_object(
+        response = await storage_s3_client._client.put_object(
             Bucket=storage_s3_bucket, Key=simcore_file_id, Body=fp
         )
         assert "ETag" in response

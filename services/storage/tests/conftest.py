@@ -39,6 +39,7 @@ from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_obj_as
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import status
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
@@ -85,22 +86,14 @@ def here() -> Path:
 
 
 @pytest.fixture(scope="session")
-def package_dir(here) -> Path:
+def package_dir(here: Path) -> Path:
     dirpath = Path(simcore_service_storage.__file__).parent
     assert dirpath.exists()
     return dirpath
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir(here) -> Path:
-    root_dir = here.parent.parent.parent
-    assert root_dir.exists()
-    assert any(root_dir.glob("services")), "Is this service within osparc-simcore repo?"
-    return root_dir
-
-
-@pytest.fixture(scope="session")
-def osparc_api_specs_dir(osparc_simcore_root_dir) -> Path:
+def osparc_api_specs_dir(osparc_simcore_root_dir: Path) -> Path:
     dirpath = osparc_simcore_root_dir / "api" / "specs"
     assert dirpath.exists()
     return dirpath
@@ -119,8 +112,7 @@ def project_slug_dir(osparc_simcore_root_dir) -> Path:
 def project_env_devel_dict(project_slug_dir: Path) -> dict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
-    environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
-    return environ
+    return dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
 
 
 @pytest.fixture
@@ -182,7 +174,7 @@ async def storage_s3_bucket(app_settings: Settings) -> str:
 def mock_config(
     aiopg_engine: Engine,
     postgres_host_config: dict[str, str],
-    mocked_s3_server_envs,
+    mocked_s3_server_envs: EnvVarsDict,
     datcore_adapter_service_mock: aioresponses.aioresponses,
 ):
     # NOTE: this can be overriden in tests that do not need all dependencies up
@@ -385,6 +377,7 @@ def upload_file(
         file_size: ByteSize,
         file_name: str,
         file_id: SimcoreS3FileID | None = None,
+        *,
         wait_for_completion: bool = True,
         sha256_checksum: SHA256Str | None = None,
     ) -> tuple[Path, SimcoreS3FileID]:

@@ -1,9 +1,9 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=too-many-arguments
-# pylint:disable=no-name-in-module
-
+# pylint: disable=no-name-in-module
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import json
@@ -44,12 +44,11 @@ from simcore_service_storage.s3_client import (
     _list_objects_v2_paginated_gen,
 )
 from simcore_service_storage.settings import Settings
-from types_aiobotocore_s3.type_defs import ObjectTypeDef
-
 from tests.helpers.file_utils import (
     parametrized_file_size,
     upload_file_to_presigned_link,
 )
+from types_aiobotocore_s3.type_defs import ObjectTypeDef
 
 _DEFAULT_EXPIRATION_SECS: Final[int] = 10
 
@@ -64,6 +63,7 @@ def mock_config(
 
 async def test_storage_storage_s3_client_creation(app_settings: Settings):
     assert app_settings.STORAGE_S3
+
     async with AsyncExitStack() as exit_stack:
         storage_s3_client = await StorageS3Client.create(
             exit_stack,
@@ -71,10 +71,11 @@ async def test_storage_storage_s3_client_creation(app_settings: Settings):
             app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
         )
         assert storage_s3_client
-        response = await storage_s3_client.client.list_buckets()
+        response = await storage_s3_client._client.list_buckets()  # noqa: SLF001
         assert not response["Buckets"]
+
     with pytest.raises(botocore.exceptions.HTTPClientError):
-        await storage_s3_client.client.list_buckets()
+        await storage_s3_client._client.list_buckets()
 
 
 @pytest.fixture
@@ -90,7 +91,7 @@ async def storage_s3_client(
         )
         # check that no bucket is lying around
         assert storage_s3_client
-        response = await storage_s3_client.client.list_buckets()
+        response = await storage_s3_client._client.list_buckets()
         assert not response[
             "Buckets"
         ], f"for testing puproses, there should be no bucket lying around! {response=}"
@@ -98,18 +99,20 @@ async def storage_s3_client(
 
 
 async def test_create_bucket(storage_s3_client: StorageS3Client, faker: Faker):
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert not response["Buckets"]
+
     bucket = faker.pystr()
     await storage_s3_client.create_bucket(bucket)
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
     assert "Name" in response["Buckets"][0]
     assert response["Buckets"][0]["Name"] == bucket
+
     # now we create the bucket again, it should silently work even if it exists already
     await storage_s3_client.create_bucket(bucket)
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
     assert "Name" in response["Buckets"][0]
@@ -118,11 +121,12 @@ async def test_create_bucket(storage_s3_client: StorageS3Client, faker: Faker):
 
 @pytest.fixture
 async def storage_s3_bucket(storage_s3_client: StorageS3Client, faker: Faker) -> str:
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert not response["Buckets"]
+
     bucket_name = faker.pystr()
     await storage_s3_client.create_bucket(bucket_name)
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert response["Buckets"]
     assert bucket_name in [
         bucket_struct.get("Name") for bucket_struct in response["Buckets"]
@@ -728,7 +732,7 @@ async def upload_file_with_aioboto3_managed_transfer(
         # there is no response from aioboto3...
         assert not response
         # check the object is uploaded
-        response = await storage_s3_client.client.list_objects_v2(
+        response = await storage_s3_client._client.list_objects_v2(
             Bucket=storage_s3_bucket
         )
         assert "Contents" in response
@@ -802,7 +806,7 @@ async def test_copy_file(
     )
 
     # check the object is uploaded
-    response = await storage_s3_client.client.list_objects_v2(Bucket=storage_s3_bucket)
+    response = await storage_s3_client._client.list_objects_v2(Bucket=storage_s3_bucket)
     assert "Contents" in response
     list_objects = response["Contents"]
     assert len(list_objects) == 2
@@ -952,7 +956,7 @@ async def test_list_objects_v2_paginated_and_list_all_objects_gen(
     listing_requests: list[ObjectTypeDef] = []
 
     async for page_items in _list_objects_v2_paginated_gen(
-        client=storage_s3_client.client,
+        client=storage_s3_client._client,
         bucket=storage_s3_bucket,
         prefix="",  # all items
     ):

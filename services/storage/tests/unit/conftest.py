@@ -210,7 +210,7 @@ async def directory_with_files(
 async def with_versioning_enabled(
     storage_s3_client: StorageS3Client, storage_s3_bucket: str
 ) -> None:
-    await storage_s3_client.client.put_bucket_versioning(
+    await storage_s3_client._client.put_bucket_versioning(
         Bucket=storage_s3_bucket,
         VersioningConfiguration={"MFADelete": "Disabled", "Status": "Enabled"},
     )
