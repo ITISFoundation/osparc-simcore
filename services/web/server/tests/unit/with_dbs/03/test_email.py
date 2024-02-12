@@ -23,7 +23,7 @@ from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver._resources import webserver_resources
 from simcore_service_webserver.email._core import _remove_comments, _render_template
-from simcore_service_webserver.email._handlers import TestFailed, TestPassed
+from simcore_service_webserver.email._handlers import EmailTestFailed, EmailTestPassed
 from simcore_service_webserver.email.plugin import setup_email
 
 
@@ -122,9 +122,9 @@ async def test_email_handlers(
         assert error is None
 
         with pytest.raises(ValidationError):
-            TestFailed.parse_obj(data)
+            EmailTestFailed.parse_obj(data)
 
-        passed = TestPassed.parse_obj(data)
+        passed = EmailTestPassed.parse_obj(data)
         print(passed.json(indent=1))
 
 

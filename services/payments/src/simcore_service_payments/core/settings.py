@@ -5,6 +5,7 @@ from models_library.basic_types import NonNegativeDecimal
 from pydantic import Field, HttpUrl, PositiveFloat, SecretStr, parse_obj_as, validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
+from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
@@ -114,3 +115,8 @@ class ApplicationSettings(_BaseApplicationSettings):
     )
 
     PAYMENTS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+
+    PAYMENTS_EMAIL: SMTPSettings | None = Field(
+        auto_default_from_env=True,
+        description="optional email (see notifier_email service)",
+    )
