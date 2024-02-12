@@ -31,12 +31,13 @@ class Vendor(TypedDict, total=False):
     E.g. company name, address, copyright, etc.
     """
 
-    name: str
+    name: str  # e.g. IT'IS Foundation
     copyright: str
     url: str
     license_url: str  # Which are the license terms? (if applies)
     invitation_url: str  # How to request a trial invitation? (if applies)
     has_landing_page: bool  # Landing page enabled
+    address: str  # e.g. Zeughausstrasse 43, 8004 Zurich, Switzerland
 
 
 class IssueTracker(TypedDict, total=True):
