@@ -16,6 +16,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random_exponential
+from types_aiobotocore_s3.client import Exceptions as BotocoreClientErrorsDef
 
 from .exceptions import (
     S3AccessError,
@@ -59,38 +60,46 @@ def compute_num_file_chunks(file_size: ByteSize) -> tuple[int, ByteSize]:
     )
 
 
+def _map_error_from_aws_services(
+    err: botocore.exceptions.ClientError, *args
+) -> S3AccessError:
+    #
+    # SEE https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html#parsing-error-responses-and-catching-exceptions-from-aws-services
+    #
+    error_code: str | None = err.response.get("Error", {}).get("Code", None)
+    if error_code == "404":
+        if err.operation_name == "HeadObject":
+            return S3KeyNotFoundError(bucket=args[0], key=args[1])
+        if err.operation_name == "HeadBucket":
+            return S3BucketInvalidError(bucket=args[0])
+    if error_code == "403" and err.operation_name == "HeadBucket":
+        return S3BucketInvalidError(bucket=args[0])
+
+    # Still not handled
+    return S3AccessError()
+
+
 def s3_exception_handler(log: logging.Logger):
-    """Converts typical aiobotocore/boto exceptions to storage exceptions
+    """Decorator that handles typical aiobotocore/boto exceptions to storage exceptions
+
+    Based on https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html
+
+    - Botocore (static) exceptions: `botocore.exceptions`
+    - AWS service exceptions: caught with the underlying botocore exception: `ClientError`
+        - types_aiobotocore_s3.client.Exceptions classifies those specific to S3
+
+
     NOTE: this is a work in progress as more exceptions might arise in different
     use-cases
     """
-    # SEE https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html
 
-    def _map_error_from_aws_services(
-        err: botocore.exceptions.ClientError, *args
-    ) -> S3AccessError:
-        #
-        # SEE https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html#parsing-error-responses-and-catching-exceptions-from-aws-services
-        #
-        error_code: str | None = err.response.get("Error", {}).get("Code", None)
-        if error_code == "404":
-            if err.operation_name == "HeadObject":
-                return S3KeyNotFoundError(bucket=args[0], key=args[1])
-            if err.operation_name == "HeadBucket":
-                return S3BucketInvalidError(bucket=args[0])
-        if error_code == "403" and err.operation_name == "HeadBucket":
-            return S3BucketInvalidError(bucket=args[0])
-
-        # Still not handled
-        return S3AccessError()
-
-    def _decorator(func):
-        @functools.wraps(func)
+    def _decorator(member_func):
+        @functools.wraps(member_func)
         async def _wrapper(self, *args, **kwargs):
             try:
-                response = await func(self, *args, **kwargs)
+                response = await member_func(self, *args, **kwargs)
 
-            except self.client.exceptions.NoSuchBucket as err:
+            except BotocoreClientErrorsDef.NoSuchBucket as err:
                 raise S3BucketInvalidError(
                     bucket=err.response.get("Error", {}).get("BucketName", "undefined")
                 ) from err
@@ -99,13 +108,14 @@ def s3_exception_handler(log: logging.Logger):
                 raise S3ReadTimeoutError(error=err) from err
 
             except botocore.exceptions.ClientError as err:
-                raise _map_error_from_aws_services(err, *args) from err
+                storage_exc = _map_error_from_aws_services(err, *args)
+                raise storage_exc from err
 
             except botocore.exceptions.EndpointConnectionError as err:
                 raise S3AccessError from err
 
             except botocore.exceptions.BotoCoreError as err:
-                log.exception("Unexpected error in s3 client: ")
+                log.exception("Unexpected error in s3 client %s", self)
                 raise S3AccessError from err
 
             return response

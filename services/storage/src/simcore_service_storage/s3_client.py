@@ -88,7 +88,7 @@ async def _list_objects_v2_paginated_gen(
 
 @dataclass
 class StorageS3Client:  # pylint: disable=too-many-public-methods
-    session: aioboto3.Session
+    _session: aioboto3.Session
     _client: S3Client
     transfer_max_concurrency: int
 
@@ -113,7 +113,11 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
         await client.list_buckets()
 
-        return cls(session, client, s3_max_concurrency)
+        return cls(
+            _session=session,
+            _client=client,
+            transfer_max_concurrency=s3_max_concurrency,
+        )
 
     @s3_exception_handler(_logger)
     async def create_bucket(self, bucket: S3BucketName) -> None:
