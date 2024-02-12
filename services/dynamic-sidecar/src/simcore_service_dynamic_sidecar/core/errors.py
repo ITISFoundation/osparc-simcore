@@ -12,7 +12,7 @@ class BaseDynamicSidecarError(Exception):
         self, nessage: str, status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
     ) -> None:
         self.message: str = nessage
-        self.status: int = status_code
+        self.status_code: int = status_code
         super().__init__(nessage)
 
 
