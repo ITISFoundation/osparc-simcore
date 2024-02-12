@@ -5,8 +5,8 @@
 # pylint: disable=unused-variable
 
 import datetime
+from collections.abc import AsyncGenerator, Callable
 from decimal import Decimal
-from typing import AsyncGenerator, Callable
 
 import httpx
 import respx
@@ -102,7 +102,7 @@ async def test_product_catalog(
     ).mock(side_effect=_get_service_side_effect)
 
     for key in keys:
-        response = await client.get(
+        await client.get(
             f"{API_VTAG}/solvers/simcore/services/comp/isolve/releases/2.0.24",
             auth=httpx.BasicAuth(key.api_key, key.api_secret),
         )

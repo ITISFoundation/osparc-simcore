@@ -1,8 +1,9 @@
 import asyncio
 import logging
 from asyncio import Queue
+from collections.abc import AsyncIterable, Awaitable, Callable
 from datetime import datetime, timezone
-from typing import AsyncIterable, Awaitable, Callable, Final
+from typing import Final
 
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
@@ -17,15 +18,15 @@ _logger = logging.getLogger(__name__)
 _NEW_LINE: Final[str] = "\n"
 
 
-class LogDistributionBaseException(Exception):
+class LogDistributionBaseError(Exception):
     pass
 
 
-class LogStreamerNotRegistered(LogDistributionBaseException):
+class LogStreamerNotRegisteredError(LogDistributionBaseError):
     pass
 
 
-class LogStreamerRegistionConflict(LogDistributionBaseException):
+class LogStreamerRegistionConflictError(LogDistributionBaseError):
     pass
 
 
@@ -75,9 +76,8 @@ class LogDistributor:
         )
         callback = self._log_streamers.get(item.job_id)
         if callback is None:
-            raise LogStreamerNotRegistered(
-                f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
-            )
+            msg = f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
+            raise LogStreamerNotRegisteredError(msg)
         await callback(item)
         return True
 
@@ -85,9 +85,8 @@ class LogDistributor:
         self, job_id: JobID, callback: Callable[[JobLog], Awaitable[None]]
     ):
         if job_id in self._log_streamers:
-            raise LogStreamerRegistionConflict(
-                f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
-            )
+            msg = f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
+            raise LogStreamerRegistionConflictError(msg)
         self._log_streamers[job_id] = callback
         await self._rabbit_client.add_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
@@ -95,7 +94,8 @@ class LogDistributor:
 
     async def deregister(self, job_id: JobID):
         if job_id not in self._log_streamers:
-            raise LogStreamerNotRegistered(f"No stream was connected to {job_id=}.")
+            msg = f"No stream was connected to {job_id=}."
+            raise LogStreamerNotRegisteredError(msg)
         await self._rabbit_client.remove_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
@@ -137,13 +137,12 @@ class LogStreamer:
 
     async def _project_done(self) -> bool:
         task = await self._director2_api.get_computation(self._job_id, self._user_id)
-        return not task.stopped is None
+        return task.stopped is not None
 
     async def log_generator(self) -> AsyncIterable[str]:
         if not self._is_registered:
-            raise LogStreamerNotRegistered(
-                f"LogStreamer for job_id={self._job_id} is not correctly registered"
-            )
+            msg = f"LogStreamer for job_id={self._job_id} is not correctly registered"
+            raise LogStreamerNotRegisteredError(msg)
         last_log_time: datetime | None = None
         while True:
             while self._queue.empty():

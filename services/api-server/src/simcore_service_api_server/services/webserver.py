@@ -406,8 +406,7 @@ class AuthSession:
             )
 
             response.raise_for_status()
-            data = Envelope[PricingUnitGet].parse_raw(response.text).data
-            return data
+            return Envelope[PricingUnitGet].parse_raw(response.text).data
 
     async def connect_pricing_unit_to_project_node(
         self,
@@ -469,8 +468,7 @@ class AuthSession:
                 cookies=self.session_cookies,
             )
             response.raise_for_status()
-            data = Envelope[WalletGet].parse_raw(response.text).data
-            return data
+            return Envelope[WalletGet].parse_raw(response.text).data
 
     # PRODUCTS -------------------------------------------------
 
@@ -498,8 +496,7 @@ class AuthSession:
                 cookies=self.session_cookies,
             )
             response.raise_for_status()
-            data = Envelope[ServicePricingPlanGet].parse_raw(response.text).data
-            return data
+            return Envelope[ServicePricingPlanGet].parse_raw(response.text).data
 
 
 # MODULES APP SETUP -------------------------------------------------------------
