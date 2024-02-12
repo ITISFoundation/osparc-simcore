@@ -6,7 +6,7 @@ from collections.abc import Callable
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
@@ -17,6 +17,7 @@ from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
 from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
 from starlette.background import BackgroundTask
 
@@ -380,7 +381,9 @@ async def get_job_pricing_unit(
     response_class=LogStreamingResponse,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
+@cancel_on_disconnect
 async def get_log_stream(
+    request: Request,
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
