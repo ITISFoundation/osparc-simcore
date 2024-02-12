@@ -32,7 +32,6 @@ from simcore_service_storage.exceptions import (
     S3AccessError,
     S3BucketInvalidError,
     S3KeyNotFoundError,
-    S3ReadTimeoutError,
 )
 from simcore_service_storage.models import (
     FileMetaDataAtDB,
@@ -45,11 +44,12 @@ from simcore_service_storage.s3_client import (
     _list_objects_v2_paginated_gen,
 )
 from simcore_service_storage.settings import Settings
+from types_aiobotocore_s3.type_defs import ObjectTypeDef
+
 from tests.helpers.file_utils import (
     parametrized_file_size,
     upload_file_to_presigned_link,
 )
-from types_aiobotocore_s3.type_defs import ObjectTypeDef
 
 DEFAULT_EXPIRATION_SECS: Final[int] = 10
 
@@ -744,7 +744,7 @@ async def upload_file_with_aioboto3_managed_transfer(
                 assert "Size" in s3_obj
                 assert s3_obj["Size"] == file.stat().st_size
                 return file, file_id
-        assert False, "Object was not properly uploaded!"
+        pytest.fail("Object was not properly uploaded!")
 
     return _uploader
 
@@ -857,11 +857,10 @@ async def test_list_files(
 
     NUM_FILES = 12
     FILE_SIZE = parse_obj_as(ByteSize, "11Mib")
-    uploaded_files: list[tuple[Path, SimcoreS3FileID]] = []
-    for _ in range(NUM_FILES):
-        uploaded_files.append(
-            await upload_file_with_aioboto3_managed_transfer(FILE_SIZE)
-        )
+    uploaded_files: list[tuple[Path, SimcoreS3FileID]] = [
+        await upload_file_with_aioboto3_managed_transfer(FILE_SIZE)
+        for _ in range(NUM_FILES)
+    ]
 
     list_files = await storage_s3_client.list_files(storage_s3_bucket, prefix="")
     assert len(list_files) == NUM_FILES
@@ -873,7 +872,7 @@ async def test_list_files(
     assert len(list_files) == NUM_FILES - 2
 
     # test with prefix
-    file, file_id = choice(uploaded_files)
+    file, file_id = choice(uploaded_files)  # noqa: S311
     list_files = await storage_s3_client.list_files(storage_s3_bucket, prefix=file_id)
     assert len(list_files) == 1
     assert list_files[0].file_id == file_id
@@ -1013,7 +1012,6 @@ async def test__copy_path_s3_s3(
     src_fmd: FileMetaDataAtDB,
     new_fmd: FileMetaDataAtDB,
 ):
-
     bytes_transfered_cb = mocker.MagicMock()
 
     s3_client = get_s3_client(app)
