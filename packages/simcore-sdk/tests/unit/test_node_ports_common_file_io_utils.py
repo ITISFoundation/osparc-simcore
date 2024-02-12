@@ -25,8 +25,8 @@ from servicelib.aiohttp import status
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.exceptions import AwsS3BadRequestRequestTimeoutError
 from simcore_sdk.node_ports_common.file_io_utils import (
-    ExtendedClientResponseError,
     _check_for_aws_http_errors,
+    _ExtendedClientResponseError,
     _process_batch,
     _raise_for_status,
     upload_file_to_presigned_links,
@@ -51,7 +51,7 @@ async def test_raise_for_status(
     async with client_session.get(A_TEST_ROUTE) as resp:
         assert isinstance(resp, ClientResponse)
 
-        with pytest.raises(ExtendedClientResponseError) as exe_info:
+        with pytest.raises(_ExtendedClientResponseError) as exe_info:
             await _raise_for_status(resp)
         assert "OPSIE there was an error here" in f"{exe_info.value}"
 
@@ -85,7 +85,7 @@ async def test_check_for_aws_http_errors(
     async with client_session.get(A_TEST_ROUTE) as resp:
         try:
             await _raise_for_status(resp)
-        except ExtendedClientResponseError as exception:
+        except _ExtendedClientResponseError as exception:
             assert (  # noqa: PT017
                 _check_for_aws_http_errors(exception) is test_params.will_retry
             )

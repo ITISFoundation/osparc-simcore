@@ -61,7 +61,6 @@ from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils impor
     _RAM_SAFE_MARGIN_RATIO,
 )
 from simcore_service_director_v2.utils.computations import to_node_class
-from starlette import status
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [

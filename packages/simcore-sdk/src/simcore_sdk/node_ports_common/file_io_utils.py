@@ -52,7 +52,7 @@ class UploadableFileObject:
     sha256_checksum: SHA256Str | None = None
 
 
-class ExtendedClientResponseError(ClientResponseError):
+class _ExtendedClientResponseError(ClientResponseError):
     def __init__(
         self,
         request_info: RequestInfo,
@@ -60,7 +60,7 @@ class ExtendedClientResponseError(ClientResponseError):
         body: str,
         *,
         code: int | None = None,
-        status: int | None = None,
+        status_code: int | None = None,
         message: str = "",
         headers: LooseHeaders | None = None,
     ):
@@ -68,7 +68,7 @@ class ExtendedClientResponseError(ClientResponseError):
             request_info,
             history,
             code=code,
-            status=status,  # pylint: disable=rdefined-outer-name
+            status=status_code,
             message=message,
             headers=headers,
         )
@@ -91,11 +91,11 @@ class ExtendedClientResponseError(ClientResponseError):
 async def _raise_for_status(response: ClientResponse) -> None:
     if response.status >= status.HTTP_400_BAD_REQUEST:
         body = await response.text()
-        raise ExtendedClientResponseError(
+        raise _ExtendedClientResponseError(
             response.request_info,
             response.history,
             body,
-            status=response.status,
+            status_code=response.status,
             message=response.reason or "",
             headers=response.headers,
         )
@@ -230,7 +230,7 @@ async def download_link_to_file(
 def _check_for_aws_http_errors(exc: BaseException) -> bool:
     """returns: True if it should retry when http exception is detected"""
 
-    if not isinstance(exc, ExtendedClientResponseError):
+    if not isinstance(exc, _ExtendedClientResponseError):
         return False
 
     # Sometimes AWS responds with a 500 or 503 which shall be retried,
@@ -350,7 +350,7 @@ async def _process_batch(
 
         for i, e_tag in upload_results:
             results.append(UploadedPart(number=i + 1, e_tag=e_tag))
-    except ExtendedClientResponseError as e:
+    except _ExtendedClientResponseError as e:
         if e.status == status.HTTP_400_BAD_REQUEST and "RequestTimeout" in e.body:
             raise exceptions.AwsS3BadRequestRequestTimeoutError(e.body) from e
     except ClientError as exc:
