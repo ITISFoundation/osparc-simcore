@@ -42,12 +42,12 @@ def get_http_client_request_aiohttp_sock_connect_timeout() -> int | None:
     )
 
 
-_EXPECTED: Final = {".github", "packages", "services", ".git"}
+_EXPECTED: Final = {".github", "packages", "services"}
 
 
 def is_osparc_repo_dir(path: Path) -> bool:
-    got = (p.name for p in path.iterdir() if p.is_dir())
-    return all(d in got for d in _EXPECTED)
+    dirnames = [p.name for p in path.iterdir() if p.is_dir()]
+    return all(name in dirnames for name in _EXPECTED)
 
 
 def search_osparc_repo_dir(start: str | Path, max_iterations=8) -> Path | None:
