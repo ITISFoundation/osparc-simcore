@@ -51,7 +51,7 @@ from tests.helpers.file_utils import (
     upload_file_to_presigned_link,
 )
 
-DEFAULT_EXPIRATION_SECS: Final[int] = 10
+_DEFAULT_EXPIRATION_SECS: Final[int] = 10
 
 
 @pytest.fixture
@@ -140,7 +140,7 @@ async def test_create_single_presigned_upload_link(
     file = create_file_of_size(parse_obj_as(ByteSize, "1Mib"))
     file_id = create_simcore_file_id(uuid4(), uuid4(), file.name)
     presigned_url = await storage_s3_client.create_single_presigned_upload_link(
-        storage_s3_bucket, file_id, expiration_secs=DEFAULT_EXPIRATION_SECS
+        storage_s3_bucket, file_id, expiration_secs=_DEFAULT_EXPIRATION_SECS
     )
     assert presigned_url
 
@@ -173,7 +173,7 @@ async def test_create_single_presigned_upload_link_invalid_raises(
         await storage_s3_client.create_single_presigned_upload_link(
             S3BucketName("pytestinvalidbucket"),
             file_id,
-            expiration_secs=DEFAULT_EXPIRATION_SECS,
+            expiration_secs=_DEFAULT_EXPIRATION_SECS,
         )
 
 
@@ -385,7 +385,7 @@ def upload_file_single_presigned_link(
         if not file_id:
             file_id = SimcoreS3FileID(file.name)
         presigned_url = await storage_s3_client.create_single_presigned_upload_link(
-            storage_s3_bucket, file_id, expiration_secs=DEFAULT_EXPIRATION_SECS
+            storage_s3_bucket, file_id, expiration_secs=_DEFAULT_EXPIRATION_SECS
         )
         assert presigned_url
 
@@ -429,7 +429,7 @@ def upload_file_multipart_presigned_link_without_completion(
             storage_s3_bucket,
             file_id,
             ByteSize(file.stat().st_size),
-            expiration_secs=DEFAULT_EXPIRATION_SECS,
+            expiration_secs=_DEFAULT_EXPIRATION_SECS,
             sha256_checksum=parse_obj_as(SHA256Str, faker.sha256()),
         )
         assert upload_links
@@ -668,7 +668,7 @@ async def test_create_single_presigned_download_link(
     file_id = await upload_file_single_presigned_link()
 
     presigned_url = await storage_s3_client.create_single_presigned_download_link(
-        storage_s3_bucket, file_id, expiration_secs=DEFAULT_EXPIRATION_SECS
+        storage_s3_bucket, file_id, expiration_secs=_DEFAULT_EXPIRATION_SECS
     )
 
     assert presigned_url
@@ -701,12 +701,12 @@ async def test_create_single_presigned_download_link_invalid_raises(
         await storage_s3_client.create_single_presigned_download_link(
             S3BucketName("invalidpytestbucket"),
             file_id,
-            expiration_secs=DEFAULT_EXPIRATION_SECS,
+            expiration_secs=_DEFAULT_EXPIRATION_SECS,
         )
     wrong_file_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
     with pytest.raises(S3KeyNotFoundError):
         await storage_s3_client.create_single_presigned_download_link(
-            storage_s3_bucket, wrong_file_id, expiration_secs=DEFAULT_EXPIRATION_SECS
+            storage_s3_bucket, wrong_file_id, expiration_secs=_DEFAULT_EXPIRATION_SECS
         )
 
 

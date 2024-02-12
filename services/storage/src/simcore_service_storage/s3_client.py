@@ -20,7 +20,6 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
-from simcore_service_storage.exceptions import S3KeyNotFoundError
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.type_defs import (
     ListObjectsV2OutputTypeDef,
@@ -356,12 +355,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         dst_file: SimcoreS3FileID,
         bytes_transfered_cb: Callable[[int], None] | None,
     ) -> None:
-        """copy a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)
-
-        :type bucket: S3BucketName
-        :type src_file: SimcoreS3FileID
-        :type dst_file: SimcoreS3FileID
-        """
+        """Copies a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
         copy_options = {
             "CopySource": {"Bucket": bucket, "Key": src_file},
             "Bucket": bucket,
@@ -413,12 +407,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         file_id: SimcoreS3FileID,
         bytes_transfered_cb: Callable[[int], None] | None,
     ) -> None:
-        """upload a file using aioboto3 transfer manager (e.g. works >5Gb and create multiple threads)
-
-        :type bucket: S3BucketName
-        :type file: Path
-        :type file_id: SimcoreS3FileID
-        """
+        """Uploads a file using aioboto3 transfer manager (e.g. works >5Gb and create multiple threads)"""
         upload_options = {
             "Bucket": bucket,
             "Key": file_id,
