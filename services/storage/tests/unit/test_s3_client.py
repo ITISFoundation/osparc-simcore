@@ -55,7 +55,8 @@ _DEFAULT_EXPIRATION_SECS: Final[int] = 10
 
 @pytest.fixture
 def mock_config(
-    mocked_s3_server_envs: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
+    mocked_s3_server_envs: EnvVarsDict,
 ) -> None:
     # NOTE: override services/storage/tests/conftest.py::mock_config
     monkeypatch.setenv("STORAGE_POSTGRES", "null")
