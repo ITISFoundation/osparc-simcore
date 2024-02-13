@@ -5,6 +5,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -113,18 +114,24 @@ async def test__copy_path_s3_s3(
     bytes_transfered_cb = mocker.MagicMock()
 
     src_fmd_object_name = "502fd316-8a9e-11ee-a81b-02420a0b173b"
-    new_fmd_object_name = "destination"
+    src_fmd_object_name = "d0be75f0-ca9a-11ee-9b42-02420a000206"
+    new_fmd_object_name = "pytest_destination"
     assert client.app
     s3_client = get_s3_client(client.app)
 
+    tic = time.time()
     copied_count = await s3_client.copy_directory(
         bucket=simcore_bucket_name,
         src_prefix=src_fmd_object_name,
         dst_prefix=new_fmd_object_name,
         bytes_transfered_cb=bytes_transfered_cb,
     )
-    print(copied_count)
+    toc = time.time() - tic
+    print(copied_count, f"{toc:3.2f}", "secs")
+    # 1002 58.541385
+    # 1002 100.254
     assert bytes_transfered_cb.called
+    assert bytes_transfered_cb.call_count == 2 * copied_count
 
 
 async def test_it():

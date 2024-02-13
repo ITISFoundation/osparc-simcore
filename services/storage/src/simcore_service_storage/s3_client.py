@@ -22,6 +22,7 @@ from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.type_defs import (
+    CopyObjectOutputTypeDef,
     ListObjectsV2OutputTypeDef,
     ObjectTypeDef,
     PaginatorConfigTypeDef,
@@ -39,6 +40,8 @@ _MAX_ITEMS_PER_PAGE: Final[NonNegativeInt] = 500
 
 
 NextContinuationToken: TypeAlias = str
+
+_LARGE_OBJECT_SIZE = 5 * 1024 * 1024 * 1024  # 5GB
 
 
 @dataclass(frozen=True)
@@ -110,7 +113,8 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
             aws_secret_access_key=settings.S3_SECRET_KEY,
             aws_session_token=settings.S3_ACCESS_TOKEN,
             region_name=settings.S3_REGION,
-            config=Config(signature_version="s3v4"),
+            # FIXME: retries should be reconfigurable via settings
+            config=Config(signature_version="s3v4", retries={"mode": "adaptive"}),
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         client = cast(S3Client, await exit_stack.enter_async_context(session_client))
@@ -376,6 +380,39 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
             copy_options |= {"Callback": bytes_transfered_cb}
         await self._client.copy(**copy_options)
 
+    async def _copy_large_objects(
+        self,
+        bucket: S3BucketName,
+        src_file: SimcoreS3FileID,
+        dst_file: SimcoreS3FileID,
+        bytes_transfered_cb: Callable[[int], None] | None,
+    ) -> None:
+        copy_options = {}
+        if bytes_transfered_cb:
+            copy_options |= {"Callback": bytes_transfered_cb}
+
+        await self._client.copy(
+            CopySource={"Bucket": bucket, "Key": src_file},
+            Bucket=bucket,
+            Key=dst_file,
+            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
+            **copy_options,
+        )
+
+    async def _copy_non_large_objects(
+        self,
+        bucket: S3BucketName,
+        src_file: SimcoreS3FileID,
+        dst_file: SimcoreS3FileID,
+    ) -> CopyObjectOutputTypeDef:
+
+        obj: CopyObjectOutputTypeDef = await self._client.copy_object(
+            Bucket=bucket,
+            CopySource={"Bucket": bucket, "Key": src_file},
+            Key=dst_file,
+        )
+        return obj
+
     async def copy_directory(
         self,
         bucket: S3BucketName,
@@ -385,24 +422,39 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
     ) -> NonNegativeInt:
         """Copies multiple objects within the same bucket
 
-        NOTE: No gurarantees on atomicity
+        WARNING: No gurarantees on atomicity
         """
         count = 0
         async for page in self.iter_pages(bucket, prefix=src_prefix):
             for obj in page:
                 assert "Key" in obj  # nosec
+                assert "Size" in obj  # nosec
 
                 src = obj["Key"]
                 new = obj["Key"].replace(src_prefix, dst_prefix, 1)
 
-                # NOTE: copy_file cannot be called concurrently or it will hang.
-                # test this with copying multiple 1GB files if you do not believe me
-                await self.copy_file(
-                    bucket=bucket,
-                    src_file=cast(SimcoreS3FileID, src),
-                    dst_file=cast(SimcoreS3FileID, new),
-                    bytes_transfered_cb=bytes_transfered_cb,
-                )
+                if obj["Size"] >= _LARGE_OBJECT_SIZE:
+                    # NOTE: copy_file cannot be called concurrently or it will hang.
+                    # test this with copying multiple 1GB files if you do not believe me
+                    await self._copy_large_objects(
+                        bucket=bucket,
+                        src_file=cast(SimcoreS3FileID, src),
+                        dst_file=cast(SimcoreS3FileID, new),
+                        bytes_transfered_cb=bytes_transfered_cb,
+                    )
+                else:
+                    if bytes_transfered_cb:
+                        bytes_transfered_cb(0)
+
+                    await self._copy_non_large_objects(
+                        bucket=bucket,
+                        src_file=cast(SimcoreS3FileID, src),
+                        dst_file=cast(SimcoreS3FileID, new),
+                    )
+
+                    if bytes_transfered_cb:
+                        bytes_transfered_cb(obj["Size"])
+
                 count += 1
 
         return count
