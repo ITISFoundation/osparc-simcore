@@ -113,6 +113,8 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
         await client.list_buckets()
 
+        _logger.debug("AWS S3 %s", f"{client.meta.config=}")
+
         return cls(
             _session=session,
             _client=client,
