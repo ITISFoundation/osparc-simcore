@@ -143,12 +143,12 @@ class LogStreamer:
             raise LogStreamerNotRegistered(
                 f"LogStreamer for job_id={self._job_id} is not correctly registered"
             )
-        while True:
+        done: bool = False
+        while not done:
             try:
                 log: JobLog = await asyncio.wait_for(
                     self._queue.get(), timeout=self._log_check_timeout
                 )
                 yield log.json() + _NEW_LINE
             except asyncio.TimeoutError:
-                if await self._project_done():
-                    return
+                done = await self._project_done()
