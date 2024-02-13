@@ -36,7 +36,7 @@ from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
-from ..dependencies.rabbitmq import get_log_distributor, get_max_log_check_seconds
+from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.custom_errors import InsufficientCredits, MissingWallet
@@ -391,9 +391,7 @@ async def get_log_stream(
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     log_distributor: Annotated[LogDistributor, Depends(get_log_distributor)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
-    max_log_check_seconds: Annotated[
-        NonNegativeInt, Depends(get_max_log_check_seconds)
-    ],
+    log_check_timeout: Annotated[NonNegativeInt, Depends(get_log_check_timeout)],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     with log_context(
@@ -406,7 +404,7 @@ async def get_log_stream(
             director2_api=director2_api,
             job_id=job_id,
             log_distributor=log_distributor,
-            max_log_check_seconds=max_log_check_seconds,
+            log_check_timeout=log_check_timeout,
         )
         await log_streamer.setup()
         return LogStreamingResponse(
