@@ -14,78 +14,90 @@ _MINUTE: Final[NonNegativeInt] = 60
 
 
 class ConfirmationBackToDashboardFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "confirmBackToDashboard"
+    preference_identifier: PreferenceIdentifier = "confirmBackToDashboard"
     value: bool = True
 
 
 class ConfirmationDeleteStudyFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "confirmDeleteStudy"
+    preference_identifier: PreferenceIdentifier = "confirmDeleteStudy"
     value: bool = True
 
 
 class ConfirmationDeleteNodeFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "confirmDeleteNode"
+    preference_identifier: PreferenceIdentifier = "confirmDeleteNode"
     value: bool = True
 
 
 class ConfirmationStopNodeFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "confirmStopNode"
+    preference_identifier: PreferenceIdentifier = "confirmStopNode"
     value: bool = True
 
 
 class SnapNodeToGridFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "snapNodeToGrid"
+    preference_identifier: PreferenceIdentifier = "snapNodeToGrid"
     value: bool = True
 
 
 class ConnectPortsAutomaticallyFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "autoConnectPorts"
+    preference_identifier: PreferenceIdentifier = "autoConnectPorts"
     value: bool = True
 
 
 class DoNotShowAnnouncementsFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "dontShowAnnouncements"
+    preference_identifier: PreferenceIdentifier = "dontShowAnnouncements"
     value: list = Field(default_factory=list)
 
 
 class ServicesFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "services"
+    preference_identifier: PreferenceIdentifier = "services"
     value: dict = Field(default_factory=dict)
 
 
 class ThemeNameFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "themeName"
+    preference_identifier: PreferenceIdentifier = "themeName"
     value: str | None = None
 
 
 class LastVcsRefUIFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "lastVcsRefUI"
+    preference_identifier: PreferenceIdentifier = "lastVcsRefUI"
     value: str | None = None
 
 
 class PreferredWalletIdFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "preferredWalletId"
+    preference_identifier: PreferenceIdentifier = "preferredWalletId"
     value: int | None = None
 
 
 class CreditsWarningThresholdFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "creditsWarningThreshold"
+    preference_identifier: PreferenceIdentifier = "creditsWarningThreshold"
     value: int = 200
 
 
 class WalletIndicatorVisibilityFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "walletIndicatorVisibility"
+    preference_identifier: PreferenceIdentifier = "walletIndicatorVisibility"
     value: str | None = "always"
 
 
 class UserInactivityThresholdFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "userInactivityThreshold"
+    preference_identifier: PreferenceIdentifier = "userInactivityThreshold"
     value: int = 30 * _MINUTE  # in seconds
 
 
 class JobConcurrencyLimitFrontendUserPreference(FrontendUserPreference):
-    preference_identifier = "jobConcurrencyLimit"
+    preference_identifier: PreferenceIdentifier = "jobConcurrencyLimit"
     value: int | None = 1
+
+
+class TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference(
+    FrontendUserPreference
+):
+    preference_identifier: PreferenceIdentifier = "lowDiskSpaceThreshold"
+    value: int = 5  # in gigabytes
+
+
+class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference):
+    preference_identifier: PreferenceIdentifier = "billingCenterUsageColumnOrder"
+    value: list[int] | None = None
 
 
 ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
@@ -105,15 +117,22 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     UserInactivityThresholdFrontendUserPreference,
     JobConcurrencyLimitFrontendUserPreference,
     AllowMetricsCollectionFrontendUserPreference,
+    TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
+    BillingCenterUsageColumnOrderFrontendUserPreference,
 ]
 
+_PREFERENCE_NAME_TO_IDENTIFIER_MAPPING: dict[PreferenceName, PreferenceIdentifier] = {
+    p.get_preference_name(): p.__fields__["preference_identifier"].default
+    for p in ALL_FRONTEND_PREFERENCES
+}
+_PREFERENCE_IDENTIFIER_TO_NAME_MAPPING: dict[PreferenceIdentifier, PreferenceName] = {
+    i: n for n, i in _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING.items()
+}
 
-def get_preference_identifier_to_preference_name_map() -> (
-    dict[PreferenceIdentifier, PreferenceName]
-):
-    mapping: dict[PreferenceIdentifier, str] = {}
-    for preference in ALL_FRONTEND_PREFERENCES:
-        preference_identifier = preference.__fields__["preference_identifier"].default
-        mapping[preference_identifier] = preference.get_preference_name()
 
-    return mapping
+def get_preference_name(preference_identifier: PreferenceIdentifier) -> PreferenceName:
+    return _PREFERENCE_IDENTIFIER_TO_NAME_MAPPING[preference_identifier]
+
+
+def get_preference_identifier(preference_name: PreferenceName) -> PreferenceIdentifier:
+    return _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING[preference_name]

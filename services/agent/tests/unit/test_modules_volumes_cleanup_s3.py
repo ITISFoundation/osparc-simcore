@@ -4,7 +4,6 @@
 
 import hashlib
 from pathlib import Path
-from typing import Optional
 
 import aioboto3
 import pytest
@@ -23,7 +22,7 @@ from simcore_service_agent.modules.volumes_cleanup._s3 import (
 
 
 def _get_file_hashes_in_path(
-    path_to_hash: Path, exclude_files: Optional[set[Path]] = None
+    path_to_hash: Path, exclude_files: set[Path] | None = None
 ) -> set[tuple[Path, str]]:
     def _hash_path(path: Path):
         sha256_hash = hashlib.sha256()
@@ -178,7 +177,7 @@ async def test_regression_non_aws_providers(
     unused_volume_path: Path,
     bucket: str,
     settings: ApplicationSettings,
-    caplog_info_debug: LogCaptureFixture,
+    caplog_info_debug: pytest.LogCaptureFixture,
     provider: S3Provider,
 ):
     _create_data(unused_volume_path)

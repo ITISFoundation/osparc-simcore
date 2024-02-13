@@ -67,7 +67,7 @@ services:
     ports:
       - "8011:8000"
 
-  dynamic-scheduler:
+  dynamic-schdlr:
     ports:
      - "8012:8000"
      - "3016:3000"
@@ -132,6 +132,9 @@ services:
   dask-sidecar:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+    # ports:
+      # dashboard UI currently disabled because of dnsrr mode
+      # - "8788:8787"
 
   dask-scheduler:
     environment:

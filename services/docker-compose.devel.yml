@@ -42,7 +42,7 @@ services:
       - ./payments:/devel/services/payments
       - ../packages:/devel/packages
 
-  dynamic-scheduler:
+  dynamic-schdlr:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
       - DYNAMIC_SCHEDULER_LOGLEVEL=DEBUG
@@ -136,6 +136,7 @@ services:
     environment:
       SC_BOOT_MODE: debug-ptvsd
       SIDECAR_LOGLEVEL: DEBUG
+      LOG_LEVEL: DEBUG
     ports:
       - "3000"
     deploy:
@@ -143,6 +144,10 @@ services:
 
   dask-scheduler:
     volumes: *dev-dask-sidecar-volumes
+    environment:
+      SC_BOOT_MODE: debug-ptvsd
+      SIDECAR_LOGLEVEL: DEBUG
+      LOG_LEVEL: DEBUG
     ports:
       - "3000"
     deploy:

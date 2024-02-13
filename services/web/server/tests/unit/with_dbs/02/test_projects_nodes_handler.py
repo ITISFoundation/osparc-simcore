@@ -37,6 +37,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     MockedStorageSubsystem,
     standard_role_response,
 )
+from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects import projects as projects_db_model
 from simcore_service_webserver.db.models import UserRole
@@ -920,7 +921,7 @@ def mock_storage_calls(aioresponses_mocker: aioresponses, faker: Faker) -> None:
 
     aioresponses_mocker.get(
         _get_download_link,
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
         payload=jsonable_encoder(
             Envelope[PresignedLink](data=PresignedLink(link=faker.image_url()))
         ),

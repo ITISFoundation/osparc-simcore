@@ -53,7 +53,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_Union_TestFailed__TestPassed__'
+                $ref: '#/components/schemas/Envelope_Union_EmailTestFailed__EmailTestPassed__'
   /v0/announcements:
     get:
       tags:
@@ -2080,6 +2080,17 @@ paths:
       summary: List Projects
       operationId: list_projects
       parameters:
+      - description: Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date)
+          and direction (asc|desc). The default sorting order is ascending.
+        required: false
+        schema:
+          title: Order By
+          description: Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date)
+            and direction (asc|desc). The default sorting order is ascending.
+          default: '{"field": "last_change_date", "direction": "desc"}'
+        example: '{"field": "last_change_date", "direction": "desc"}'
+        name: order_by
+        in: query
       - required: false
         schema:
           title: Limit
@@ -2908,6 +2919,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
+        '400':
+          description: ValidationError
+        '402':
+          description: WalletNotEnoughCreditsError
+        '403':
+          description: ProjectInvalidRightsError
+        '404':
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+        '409':
+          description: ProjectTooManyProjectOpenedError
+        '422':
+          description: ValidationError
+        '503':
+          description: DirectorServiceError
   /v0/projects/{project_id}:close:
     post:
       tags:
@@ -3084,15 +3109,14 @@ paths:
         are taken from context, optionally wallet_id parameter might be provided).
       operationId: list_resource_usage_services
       parameters:
-      - description: Order by field (started_at|stopped_at|credit_cost) and direction
-          (asc|desc). The default sorting order is ascending.
+      - description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+          and direction (asc|desc). The default sorting order is ascending.
         required: false
         schema:
           title: Order By
-          type: string
-          description: Order by field (started_at|stopped_at|credit_cost) and direction
-            (asc|desc). The default sorting order is ascending.
-          format: json-string
+          description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+            and direction (asc|desc). The default sorting order is ascending.
+          default: '{"field": "started_at", "direction": "desc"}'
         example: '{"field": "started_at", "direction": "desc"}'
         name: order_by
         in: query
@@ -3142,6 +3166,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__'
+  /v0/services/-/usage-report:
+    get:
+      tags:
+      - usage
+      summary: Redirects to download CSV link. CSV obtains finished and currently
+        running user services (user and product are taken from context, optionally
+        wallet_id parameter might be provided).
+      operationId: export_resource_usage_services
+      parameters:
+      - required: false
+        schema:
+          title: Order By
+          default: '{"field": "started_at", "direction": "desc"}'
+        example: '{"field": "started_at", "direction": "desc"}'
+        name: order_by
+        in: query
+      - description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+          and direction (asc|desc). The default sorting order is ascending.
+        required: false
+        schema:
+          title: Filters
+          type: string
+          description: Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status)
+            and direction (asc|desc). The default sorting order is ascending.
+          format: json-string
+        example: '{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}'
+        name: filters
+        in: query
+      - required: false
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: query
+      responses:
+        '302':
+          description: redirection to download link
+          content:
+            application/json:
+              schema: {}
   /v0/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}:
     get:
       tags:
@@ -5120,6 +5186,7 @@ components:
           - $ref: '#/components/schemas/KerberosAuthentication'
           - $ref: '#/components/schemas/JupyterHubTokenAuthentication'
           - $ref: '#/components/schemas/NoAuthentication'
+          - $ref: '#/components/schemas/TLSAuthentication'
           description: Dask gateway authentication
         accessRights:
           title: Accessrights
@@ -5191,6 +5258,7 @@ components:
           - $ref: '#/components/schemas/KerberosAuthentication'
           - $ref: '#/components/schemas/JupyterHubTokenAuthentication'
           - $ref: '#/components/schemas/NoAuthentication'
+          - $ref: '#/components/schemas/TLSAuthentication'
           description: Dask gateway authentication
     ClusterTypeInModel:
       title: ClusterTypeInModel
@@ -5353,6 +5421,40 @@ components:
       additionalProperties: false
       description: I/O port type to hold a generic download link to a file (e.g. S3
         pre-signed link, etc)
+    EmailTestFailed:
+      title: EmailTestFailed
+      required:
+      - test_name
+      - error_type
+      - error_message
+      - traceback
+      type: object
+      properties:
+        test_name:
+          title: Test Name
+          type: string
+        error_type:
+          title: Error Type
+          type: string
+        error_message:
+          title: Error Message
+          type: string
+        traceback:
+          title: Traceback
+          type: string
+    EmailTestPassed:
+      title: EmailTestPassed
+      required:
+      - fixtures
+      - info
+      type: object
+      properties:
+        fixtures:
+          title: Fixtures
+          type: object
+        info:
+          title: Info
+          type: object
     EmptyModel:
       title: EmptyModel
       type: object
@@ -5722,6 +5824,17 @@ components:
           $ref: '#/components/schemas/ThirdPartyToken'
         error:
           title: Error
+    Envelope_Union_EmailTestFailed__EmailTestPassed__:
+      title: Envelope[Union[EmailTestFailed, EmailTestPassed]]
+      type: object
+      properties:
+        data:
+          title: Data
+          anyOf:
+          - $ref: '#/components/schemas/EmailTestFailed'
+          - $ref: '#/components/schemas/EmailTestPassed'
+        error:
+          title: Error
     Envelope_Union_NodeGetIdle__NodeGetUnknown__RunningDynamicServiceDetails__NodeGet__:
       title: Envelope[Union[NodeGetIdle, NodeGetUnknown, RunningDynamicServiceDetails,
         NodeGet]]
@@ -5742,17 +5855,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/PricingUnitGet'
-        error:
-          title: Error
-    Envelope_Union_TestFailed__TestPassed__:
-      title: Envelope[Union[TestFailed, TestPassed]]
-      type: object
-      properties:
-        data:
-          title: Data
-          anyOf:
-          - $ref: '#/components/schemas/TestFailed'
-          - $ref: '#/components/schemas/TestPassed'
         error:
           title: Error
     Envelope_Union_WalletGet__NoneType__:
@@ -9494,6 +9596,33 @@ components:
         annotations:
           title: Annotations
           type: object
+    TLSAuthentication:
+      title: TLSAuthentication
+      required:
+      - tls_ca_file
+      - tls_client_cert
+      - tls_client_key
+      type: object
+      properties:
+        type:
+          title: Type
+          enum:
+          - tls
+          type: string
+          default: tls
+        tls_ca_file:
+          title: Tls Ca File
+          type: string
+          format: path
+        tls_client_cert:
+          title: Tls Client Cert
+          type: string
+          format: path
+        tls_client_key:
+          title: Tls Client Key
+          type: string
+          format: path
+      additionalProperties: false
     TableSynchronisation:
       title: TableSynchronisation
       required:
@@ -9724,40 +9853,6 @@ components:
           title: Template Context
           type: object
           default: {}
-    TestFailed:
-      title: TestFailed
-      required:
-      - test_name
-      - error_type
-      - error_message
-      - traceback
-      type: object
-      properties:
-        test_name:
-          title: Test Name
-          type: string
-        error_type:
-          title: Error Type
-          type: string
-        error_message:
-          title: Error Message
-          type: string
-        traceback:
-          title: Traceback
-          type: string
-    TestPassed:
-      title: TestPassed
-      required:
-      - fixtures
-      - info
-      type: object
-      properties:
-        fixtures:
-          title: Fixtures
-          type: object
-        info:
-          title: Info
-          type: object
     TextArea:
       title: TextArea
       required:

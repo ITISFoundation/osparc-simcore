@@ -48,6 +48,7 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
     if (
         request.path.startswith(f"/{API_VTAG}")
         or request.path == "/static-frontend-data.json"
+        or request.path == "/socket.io/"
     ):
         product_name = (
             _discover_product_by_request_header(request)
@@ -69,8 +70,8 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
 
         request[RQ_PRODUCT_KEY] = product_name
 
-    assert (  # nosec
-        request.get(RQ_PRODUCT_KEY) is not None or request.path == "/socket.io/"
+    assert request.get(RQ_PRODUCT_KEY) is not None or request.path.startswith(  # nosec
+        "/dev/doc"
     )
 
     return await handler(request)

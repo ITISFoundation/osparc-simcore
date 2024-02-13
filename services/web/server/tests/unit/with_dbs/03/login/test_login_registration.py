@@ -14,6 +14,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
+from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
@@ -85,7 +86,7 @@ async def test_register_body_validation(
         },
     )
 
-    assert response.status == web.HTTPUnprocessableEntity.status_code
+    assert response.status == status.HTTP_422_UNPROCESSABLE_ENTITY
     body = await response.json()
     data, error = unwrap_envelope(body)
 
@@ -256,7 +257,7 @@ async def test_registration_with_invalid_confirmation_code(
     # Invalid code redirect to root without any error to the login page
     assert response.ok
     assert f"{response.url.relative()}" == login_options.LOGIN_REDIRECT
-    assert response.history[0].status == web.HTTPFound.status_code
+    assert response.history[0].status == status.HTTP_302_FOUND
 
 
 async def test_registration_without_confirmation(

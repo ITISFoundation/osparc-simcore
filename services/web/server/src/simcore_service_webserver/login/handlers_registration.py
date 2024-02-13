@@ -6,6 +6,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, PositiveInt, SecretStr, validator
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -207,7 +208,7 @@ async def register(request: web.Request):
     #  get authorized user or create new
     user = await _auth_api.get_user_by_email(request.app, email=registration.email)
     if user:
-        await _auth_api.check_authorized_user_or_raise(
+        await _auth_api.check_authorized_user_credentials_or_raise(
             user,
             password=registration.password.get_secret_value(),
             product=product,
@@ -398,7 +399,7 @@ async def register_phone(request: web.Request):
                 "level": "INFO",
                 "logger": "user",
             },
-            status=web.HTTPAccepted.status_code,
+            status=status.HTTP_202_ACCEPTED,
         )
 
     except web.HTTPException:

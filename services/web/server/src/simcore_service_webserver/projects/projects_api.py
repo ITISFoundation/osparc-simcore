@@ -51,7 +51,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.socketio import SocketMessageDict
-from models_library.users import UserID
+from models_library.users import GroupID, UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from pydantic import ByteSize, parse_obj_as
@@ -481,7 +481,7 @@ async def _start_dynamic_service(
             )
             if wallet.available_credits <= ZERO_CREDITS:
                 raise WalletNotEnoughCreditsError(
-                    reason=f"Wallet {wallet.wallet_id} credit balance {wallet.available_credits}"
+                    reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
                 )
             wallet_info = WalletInfo(
                 wallet_id=project_wallet_id, wallet_name=wallet.name
@@ -1458,10 +1458,8 @@ async def notify_project_state_update(
     if notify_only_user:
         await send_messages(app, user_id=f"{notify_only_user}", messages=messages)
     else:
-        rooms_to_notify = [
-            f"{gid}"
-            for gid, rights in project["accessRights"].items()
-            if rights["read"]
+        rooms_to_notify: list[GroupID] = [
+            gid for gid, rights in project["accessRights"].items() if rights["read"]
         ]
         for room in rooms_to_notify:
             await send_group_messages(app, room, messages)
@@ -1476,8 +1474,8 @@ async def notify_project_node_update(
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
 
-    rooms_to_notify = [
-        f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
+    rooms_to_notify: list[GroupID] = [
+        gid for gid, rights in project["accessRights"].items() if rights["read"]
     ]
 
     messages: list[SocketMessageDict] = [

@@ -365,7 +365,7 @@ def create_payment_method_router():
         "/{id}",
         response_model=GetPaymentMethod,
         responses={
-            "404": {
+            status.HTTP_404_NOT_FOUND: {
                 "model": ErrorModel,
                 "description": "Payment method not found: It was not added or incomplete (i.e. create flow failed or canceled)",
             },

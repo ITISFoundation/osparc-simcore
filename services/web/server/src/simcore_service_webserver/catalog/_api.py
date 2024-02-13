@@ -61,6 +61,7 @@ class CatalogRequestContext(BaseModel):
 
 async def list_services(
     app: web.Application,
+    *,
     user_id: UserID,
     product_name: str,
     unit_registry: UnitRegistry,
@@ -214,7 +215,7 @@ async def list_service_outputs(
     outputs = []
     for output_key in service["outputs"]:
         service_output = ServiceOutputGetFactory.from_catalog_service_api_model(
-            service, output_key
+            service, output_key, None
         )
         outputs.append(service_output)
     return outputs

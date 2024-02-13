@@ -21,7 +21,7 @@ def guess_media_type(io: ServiceInput | ServiceOutput) -> str:
     # SEE https://www.iana.org/assignments/media-types/media-types.xhtml
     media_type = io.property_type.removeprefix("data:")
     if media_type == "*/*" and io.file_to_key_map:
-        filename = list(io.file_to_key_map.keys())[0]
+        filename = next(iter(io.file_to_key_map.keys()))
         media_type, _ = mimetypes.guess_type(filename)
         if media_type is None:
             media_type = "*/*"

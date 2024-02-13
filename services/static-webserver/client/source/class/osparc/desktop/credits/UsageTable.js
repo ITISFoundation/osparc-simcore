@@ -12,117 +12,62 @@
 
    Authors:
      * Odei Maiz (odeimaiz)
+     * Ignacio Pascual (ignapas)
 
 ************************************************************************ */
 
 qx.Class.define("osparc.desktop.credits.UsageTable", {
-  extend: osparc.ui.table.Table,
+  extend: qx.ui.table.Table,
 
-  construct: function() {
-    const model = new qx.ui.table.model.Simple();
-    const cols = this.self().COLUMNS;
-    const colNames = Object.values(cols).map(col => col.title);
-    model.setColumns(colNames);
+  construct: function(walletId, filters) {
+    this.base(arguments)
+    const model = new osparc.desktop.credits.UsageTableModel(walletId, filters)
+    this.setTableModel(model)
+    this.setStatusBarVisible(false)
 
-    this.base(arguments, model, {
-      tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
-      statusBarVisible: false
-    });
-    this.makeItLoose();
+    this.setHeaderCellHeight(26);
+    this.setRowHeight(26);
 
     const columnModel = this.getTableColumnModel();
-    columnModel.getBehavior().setWidth(cols.duration.pos, 70);
-    columnModel.getBehavior().setWidth(cols.status.pos, 70);
-    columnModel.getBehavior().setWidth(cols.cost.pos, 60);
 
-    columnModel.setDataCellRenderer(cols.cost.pos, new qx.ui.table.cellrenderer.Number());
+    columnModel.setDataCellRenderer(6, new qx.ui.table.cellrenderer.Number());
 
     if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
-      columnModel.setColumnVisible(cols.cost.pos, false);
-      columnModel.setColumnVisible(cols.user.pos, false);
+      columnModel.setColumnVisible(6, false);
+      columnModel.setColumnVisible(7, false);
     }
-  },
+    columnModel.setColumnVisible(2, false)
 
-  statics: {
-    COLUMNS: {
-      project: {
-        pos: 0,
-        title: osparc.product.Utils.getStudyAlias({firstUpperCase: true})
-      },
-      node: {
-        pos: 1,
-        title: qx.locale.Manager.tr("Node")
-      },
-      service: {
-        pos: 2,
-        title: qx.locale.Manager.tr("Service")
-      },
-      start: {
-        pos: 3,
-        title: qx.locale.Manager.tr("Start")
-      },
-      duration: {
-        pos: 4,
-        title: qx.locale.Manager.tr("Duration")
-      },
-      status: {
-        pos: 5,
-        title: qx.locale.Manager.tr("Status")
-      },
-      cost: {
-        pos: 6,
-        title: qx.locale.Manager.tr("Credits")
-      },
-      user: {
-        pos: 7,
-        title: qx.locale.Manager.tr("User")
-      }
-    },
+    // Array [0, 1, ..., N] where N is column_count - 1 (default column order)
+    this.__columnOrder = [...Array(columnModel.getOverallColumnCount()).keys()]
 
-    respDataToTableRow: async function(data) {
-      const cols = this.COLUMNS;
-      const newData = [];
-      newData[cols["project"].pos] = data["project_name"] ? data["project_name"] : data["project_id"];
-      newData[cols["node"].pos] = data["node_name"] ? data["node_name"] : data["node_id"];
-      if (data["service_key"]) {
-        const parts = data["service_key"].split("/");
-        const serviceName = parts.pop();
-        newData[cols["service"].pos] = serviceName + ":" + data["service_version"];
-      }
-      if (data["started_at"]) {
-        const startTime = new Date(data["started_at"]);
-        newData[cols["start"].pos] = osparc.utils.Utils.formatDateAndTime(startTime);
-        if (data["stopped_at"]) {
-          const stopTime = new Date(data["stopped_at"]);
-          const durationTime = stopTime - startTime;
-          newData[cols["duration"].pos] = osparc.utils.Utils.formatMilliSeconds(durationTime);
-        }
-      }
-      newData[cols["status"].pos] = qx.lang.String.firstUp(data["service_run_status"].toLowerCase());
-      newData[cols["cost"].pos] = data["credit_cost"] ? data["credit_cost"].toFixed(2) : "-";
-      const user = await osparc.store.Store.getInstance().getUser(data["user_id"]);
-      if (user) {
-        newData[cols["user"].pos] = user ? user["label"] : data["user_id"];
-      }
-      return newData;
-    },
-
-    respDataToTableData: async function(datas) {
-      const newDatas = [];
-      if (datas) {
-        for (const data of datas) {
-          const newData = await this.respDataToTableRow(data);
-          newDatas.push(newData);
-        }
-      }
-      return newDatas;
+    if (
+      osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder() &&
+      osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder().length === this.__columnOrder.length
+    ) {
+      columnModel.setColumnsOrder(osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder())
+      this.__columnOrder = osparc.Preferences.getInstance().getBillingCenterUsageColumnOrder()
+    } else {
+      osparc.Preferences.getInstance().setBillingCenterUsageColumnOrder(this.__columnOrder)
     }
-  },
 
-  members: {
-    addData: async function(datas) {
-      const newDatas = await this.self().respDataToTableData(datas);
-      this.setData(newDatas);
-    }
+    columnModel.addListener("orderChanged", e => {
+      // Save new order into preferences
+      if (e.getData()) {
+        const { fromOverXPos, toOverXPos } = e.getData()
+        // Edit current order
+        this.__columnOrder = this.__columnOrder.toSpliced(toOverXPos, 0, this.__columnOrder.splice(fromOverXPos, 1)[0])
+        // Save order
+        osparc.Preferences.getInstance().setBillingCenterUsageColumnOrder(this.__columnOrder)
+      }
+    }, this)
+
+    columnModel.setColumnWidth(0, 130)
+    columnModel.setColumnWidth(1, 130)
+    columnModel.setColumnWidth(3, 125)
+    columnModel.setColumnWidth(4, 70)
+    columnModel.setColumnWidth(5, 70)
+    columnModel.setColumnWidth(6, 56)
+    columnModel.setColumnWidth(7, 130)
   }
-});
+})

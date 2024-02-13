@@ -4,6 +4,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, PositiveInt, SecretStr
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import LogExtra, get_log_record_extra, log_context
@@ -26,7 +27,11 @@ from ._2fa import (
     mask_phone_number,
     send_sms_code,
 )
-from ._auth_api import check_authorized_user_or_raise, get_user_by_email
+from ._auth_api import (
+    check_authorized_user_credentials_or_raise,
+    check_authorized_user_in_product_or_raise,
+    get_user_by_email,
+)
 from ._constants import (
     CODE_2FA_CODE_REQUIRED,
     CODE_PHONE_NUMBER_REQUIRED,
@@ -92,10 +97,14 @@ async def login(request: web.Request):
     )
     login_ = await parse_request_body_as(LoginBody, request)
 
-    user = await check_authorized_user_or_raise(
+    # auth user and has access to product
+    user = await check_authorized_user_credentials_or_raise(
         user=await get_user_by_email(request.app, email=login_.email),
         password=login_.password.get_secret_value(),
         product=product,
+    )
+    await check_authorized_user_in_product_or_raise(
+        request.app, user=user, product=product
     )
 
     # Some roles have login privileges
@@ -103,7 +112,8 @@ async def login(request: web.Request):
     if skip_2fa or not settings.LOGIN_2FA_REQUIRED:
         return await login_granted_response(request, user=user)
 
-    # no phone
+    # 2FA login (continuation)
+    # check phone
     if not user["phone"]:
         return envelope_response(
             # LoginNextPage
@@ -117,7 +127,7 @@ async def login(request: web.Request):
                 "code": CODE_PHONE_NUMBER_REQUIRED,
                 "reason": MSG_PHONE_MISSING,
             },
-            status=web.HTTPAccepted.status_code,
+            status=status.HTTP_202_ACCEPTED,
         )
 
     # create 2FA
@@ -158,7 +168,7 @@ async def login(request: web.Request):
                     phone_number=mask_phone_number(user["phone"])
                 ),
             },
-            status=web.HTTPAccepted.status_code,
+            status=status.HTTP_202_ACCEPTED,
         )
 
     except Exception as exc:

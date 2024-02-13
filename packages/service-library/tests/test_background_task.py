@@ -11,7 +11,6 @@ from unittest import mock
 
 import pytest
 from faker import Faker
-from pytest import FixtureRequest
 from pytest_mock.plugin import MockerFixture
 from servicelib.background_task import (
     periodic_task,
@@ -34,7 +33,7 @@ def task_interval() -> datetime.timedelta:
 
 
 @pytest.fixture(params=[None, 1])
-def stop_task_timeout(request: FixtureRequest) -> float | None:
+def stop_task_timeout(request: pytest.FixtureRequest) -> float | None:
     return request.param
 
 

@@ -49,7 +49,7 @@ RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install --upgrade  \
-  pip~=23.1  \
+  pip~=24.0  \
   wheel \
   setuptools
 

@@ -32,7 +32,6 @@ _faker = Faker()
         ("com.hey_hey.hello", False),
         ("node.labels.standard_worker", False),
         ("Node.labels.standard_worker", False),
-        ("Node.labels.standard_worker", False),
         ("Node.labels.standardworker", False),
         ("node.labels.standardworker", True),
         ("io.simcore.auto-scaler", True),
@@ -77,10 +76,6 @@ def test_docker_label_key(label_key: str, valid: bool):
         ),
         (
             "registry:5000/si.m--c_ore/services/1234/jupyter-smash:_2.3.4",
-            True,
-        ),
-        (
-            "registry:5000/si.m--c_ore/services/1234/jupyter-smash:AUPPER_CASE_TAG_IS_OK_2.3.4",
             True,
         ),
         (

@@ -20,6 +20,7 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.models import UserRole
 
@@ -31,6 +32,7 @@ _SERVICE_RUN_GET = ServiceRunPage(
                 "wallet_id": 1,
                 "wallet_name": "the super wallet!",
                 "user_id": 1,
+                "user_email": "name@email.testing",
                 "project_id": "5c2110be-441b-11ee-a0e8-02420a000040",
                 "project_name": "osparc",
                 "node_id": "3d2133f4-aba4-4364-9f7a-9377dea1221f",
@@ -203,7 +205,7 @@ async def test_list_service_usage_with_order_by_query_param(
     resp = await client.get(f"{url}")
     _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
     assert mock_list_usage_services.called
-    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith(
         "We do not support ordering by provided field"
     )
@@ -217,7 +219,7 @@ async def test_list_service_usage_with_order_by_query_param(
     resp = await client.get(f"{url}")
     _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
     assert mock_list_usage_services.called
-    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith("Invalid JSON")
 
     # with order by without direction
@@ -241,7 +243,7 @@ async def test_list_service_usage_with_order_by_query_param(
     resp = await client.get(f"{url}")
     _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
     assert mock_list_usage_services.called
-    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith(
         "value is not a valid enumeration member"
     )
@@ -256,7 +258,7 @@ async def test_list_service_usage_with_order_by_query_param(
     resp = await client.get(f"{url}")
     _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
     assert mock_list_usage_services.called
-    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith("field required")
 
 
@@ -275,7 +277,7 @@ async def test_list_service_usage_with_filters_query_param(
     )
     resp = await client.get(f"{url}")
     _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
-    assert error["status"] == web.HTTPUnprocessableEntity.status_code
+    assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith("Invalid JSON")
 
     # with correct filter query parameter

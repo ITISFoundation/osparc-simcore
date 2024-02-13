@@ -76,8 +76,6 @@ def test_sim4life(
     page.get_by_test_id("studiesTabBtn").click()
     page.wait_for_timeout(1000)
 
-    # TODO: this is not the way, here we do not test the UI
-
     # The project is closing, wait until it is closed and delete it (currently waits max=5 minutes)
     for attempt in Retrying(
         wait=wait_fixed(5),

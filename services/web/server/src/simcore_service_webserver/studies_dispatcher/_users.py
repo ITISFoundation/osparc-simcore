@@ -8,20 +8,26 @@
 
 """
 import logging
+from contextlib import suppress
 from datetime import datetime
 
 import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, parse_obj_as
+from redis.exceptions import LockNotOwnedError
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
+from servicelib.utils import fire_and_forget_task
 
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
+from ..groups.api import auto_add_user_to_product_group
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import ACTIVE, GUEST, get_random_string
+from ..products.api import get_product_name
 from ..redis import get_redis_lock_manager_client
 from ..security.api import (
-    authorized_userid,
+    check_user_authorized,
     encrypt_password,
     is_anonymous,
     remember_identity,
@@ -29,6 +35,7 @@ from ..security.api import (
 from ..users.api import get_user
 from ..users.exceptions import UserNotFoundError
 from ._constants import MSG_GUESTS_NOT_ALLOWED
+from ._errors import GuestUsersLimitError
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -43,22 +50,28 @@ class UserInfo(BaseModel):
     is_guest: bool = True
 
 
-async def _get_authorized_user(request: web.Request) -> dict:
-    # Returns valid user if it is identified (cookie) and logged in (valid cookie)?
-    user_id = await authorized_userid(request)
-    if user_id is not None:
-        try:
-            user = await get_user(request.app, user_id)
-            return user
-        except UserNotFoundError:
-            return {}
+async def get_authorized_user(request: web.Request) -> dict:
+    """Returns valid user if it is identified (cookie)
+    and logged in (valid cookie)?
+    """
+    with suppress(web.HTTPUnauthorized, UserNotFoundError):
+        user_id = await check_user_authorized(request)
+        user: dict = await get_user(request.app, user_id)
+        return user
     return {}
 
 
-async def _create_temporary_guest_user(request: web.Request):
+async def create_temporary_guest_user(request: web.Request):
+    """Creates a guest user with a random name and
+
+    Raises:
+        MaxGuestUsersError: No more guest users allowed
+
+    """
     db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
+    product_name = get_product_name(request)
 
     random_user_name = get_random_string(min_len=5)
     email = parse_obj_as(LowerCaseEmailStr, f"{random_user_name}@guest-at-osparc.io")
@@ -75,7 +88,7 @@ async def _create_temporary_guest_user(request: web.Request):
     #     - the timeout here is the TTL of the lock in Redis. in case the webserver is overwhelmed and cannot create
     #       a user during that time or crashes, then redis will ensure the lock disappears and let the garbage collector do its work
     #
-    MAX_DELAY_TO_CREATE_USER = 3  # secs
+    MAX_DELAY_TO_CREATE_USER = 5  # secs
     #
     #  2. During initialization
     #     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
@@ -92,28 +105,57 @@ async def _create_temporary_guest_user(request: web.Request):
     #
 
     # (1) read details above
-    async with redis_locks_client.lock(
-        GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
-        timeout=MAX_DELAY_TO_CREATE_USER,
-    ):
-        # NOTE: usr Dict is incomplete, e.g. does not contain primary_gid
-        usr = await db.create_user(
-            {
-                "name": random_user_name,
-                "email": email,
-                "password_hash": encrypt_password(password),
-                "status": ACTIVE,
-                "role": GUEST,
-                "expires_at": expires_at,
-            }
-        )
-        user: dict = await get_user(request.app, usr["id"])
+    usr = {}
+    try:
+        async with redis_locks_client.lock(
+            GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
+            timeout=MAX_DELAY_TO_CREATE_USER,
+        ):
+            # NOTE: usr Dict is incomplete, e.g. does not contain primary_gid
+            usr = await db.create_user(
+                {
+                    "name": random_user_name,
+                    "email": email,
+                    "password_hash": encrypt_password(password),
+                    "status": ACTIVE,
+                    "role": GUEST,
+                    "expires_at": expires_at,
+                }
+            )
+            user: dict = await get_user(request.app, usr["id"])
+            await auto_add_user_to_product_group(
+                request.app, user_id=user["id"], product_name=product_name
+            )
 
-        # (2) read details above
-        await redis_locks_client.lock(
-            GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
-            timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
-        ).acquire()
+            # (2) read details above
+            await redis_locks_client.lock(
+                GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
+                timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
+            ).acquire()
+
+    except LockNotOwnedError as err:
+        # NOTE: The policy on number of GUETS users allowed is bound to the
+        # load of the system.
+        # If the lock times-out it is because a user cannot
+        # be create in less that MAX_DELAY_TO_CREATE_USER seconds.
+        # That shows that the system is really loaded and we rather
+        # stop creating GUEST users.
+
+        # NOTE: here we cleanup but if any trace is left it will be deleted by gc
+        if usr.get("id"):
+
+            async def _cleanup(draft_user):
+                with suppress(Exception):
+                    await db.delete_user(draft_user)
+
+            fire_and_forget_task(
+                _cleanup(usr),
+                task_suffix_name="cleanup_temporary_guest_user",
+                fire_and_forget_tasks_collection=request.app[
+                    APP_FIRE_AND_FORGET_TASKS_KEY
+                ],
+            )
+        raise GuestUsersLimitError from err
 
     return user
 
@@ -144,11 +186,11 @@ async def get_or_create_guest_user(
     is_anonymous_user = await is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
-        user = await _get_authorized_user(request)
+        user = await get_authorized_user(request)
 
     if not user and allow_anonymous_or_guest_users:
         _logger.debug("Anonymous user is accepted as guest...")
-        user = await _create_temporary_guest_user(request)
+        user = await create_temporary_guest_user(request)
         is_anonymous_user = True
 
     if not allow_anonymous_or_guest_users and (not user or user.get("role") == GUEST):
@@ -172,4 +214,8 @@ async def ensure_authentication(
 ):
     if user.needs_login:
         _logger.debug("Auto login for anonymous user %s", user.name)
-        await remember_identity(request, response, user_email=user.email)
+        await remember_identity(
+            request,
+            response,
+            user_email=user.email,
+        )

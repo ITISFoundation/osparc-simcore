@@ -8,6 +8,7 @@ from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerLabelKey,
+    DockerPlacementConstraint,
     StandardSimcoreDockerLabels,
     to_simcore_runtime_docker_label_key,
 )
@@ -21,7 +22,7 @@ from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
-from ....core.settings import AppSettings, PlacementConstraintStr
+from ....core.settings import AppSettings
 from ....models.dynamic_services_scheduler import SchedulerData
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
@@ -47,6 +48,7 @@ def _get_environment_variables(
     *,
     allow_internet_access: bool,
     metrics_collection_allowed: bool,
+    telemetry_enabled: bool,
 ) -> dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
@@ -78,6 +80,7 @@ def _get_environment_variables(
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
         "DY_SIDECAR_RUN_ID": scheduler_data.run_id,
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
+        "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": f"{telemetry_enabled}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
         "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.json(),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
@@ -298,7 +301,7 @@ def _get_ports(
     return ports
 
 
-def get_dynamic_sidecar_spec(
+def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR0913
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
@@ -310,6 +313,7 @@ def get_dynamic_sidecar_spec(
     allow_internet_access: bool,
     hardware_info: HardwareInfo | None,
     metrics_collection_allowed: bool,
+    telemetry_enabled: bool,
 ) -> AioDockerServiceSpec:
     """
     The dynamic-sidecar is responsible for managing the lifecycle
@@ -361,18 +365,31 @@ def get_dynamic_sidecar_spec(
         | standard_simcore_docker_labels
     )
 
+    placement_settings = (
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
+    )
     placement_constraints = deepcopy(
-        app_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+        placement_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
     )
     # if service has a pricing plan apply constraints for autoscaling
     if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
         ec2_instance_type: str = hardware_info.aws_ec2_instances[0]
         placement_constraints.append(
             parse_obj_as(
-                PlacementConstraintStr,
+                DockerPlacementConstraint,
                 f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={ec2_instance_type}",
             )
         )
+
+    placement_substitutions: dict[
+        str, DockerPlacementConstraint
+    ] = (
+        placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
+    )
+    for image_resources in scheduler_data.service_resources.values():
+        for resource_name in image_resources.resources:
+            if resource_name in placement_substitutions:
+                placement_constraints.append(placement_substitutions[resource_name])
 
     #  -----------
     create_service_params = {
@@ -394,6 +411,7 @@ def get_dynamic_sidecar_spec(
                     app_settings,
                     allow_internet_access=allow_internet_access,
                     metrics_collection_allowed=metrics_collection_allowed,
+                    telemetry_enabled=telemetry_enabled,
                 ),
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,

@@ -348,7 +348,7 @@ async def log_streamer_with_distributor(
         director2_api=d2_client,
         job_id=project_id,
         log_distributor=log_distributor,
-        max_log_check_seconds=1,
+        log_check_timeout=1,
     ) as log_streamer:
         yield log_streamer
 
@@ -393,7 +393,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
         "simcore_service_api_server.services.log_streaming.LogStreamer._project_done",
         return_value=True,
     )
-    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=None, max_log_check_seconds=1)  # type: ignore
+    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=None, log_check_timeout=1)  # type: ignore
     log_streamer._is_registered = True
 
     published_logs: list[str] = []
@@ -414,7 +414,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
 
 
 async def test_log_generator_context(mocker: MockFixture, faker: Faker):
-    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=None, max_log_check_seconds=1)  # type: ignore
+    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=None, log_check_timeout=1)  # type: ignore
     with pytest.raises(LogStreamerNotRegistered):
         async for log in log_streamer.log_generator():
             print(log)

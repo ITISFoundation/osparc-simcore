@@ -50,7 +50,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           break;
         case "workbench-mode":
           control = new qx.ui.basic.Image().set({
-            alignY: "bottom"
+            alignY: "middle"
           });
           this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.VIEWER_MODE);
           break;
@@ -72,7 +72,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         case "hits-service":
           control = new qx.ui.basic.Label().set({
             toolTipText: this.tr("Number of times you instantiated it"),
-            alignY: "bottom"
+            alignY: "middle"
           });
           this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.HITS);
           break;

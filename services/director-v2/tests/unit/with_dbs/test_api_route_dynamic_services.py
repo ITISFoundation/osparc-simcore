@@ -90,7 +90,10 @@ def dynamic_sidecar_headers() -> dict[str, str]:
 
 @pytest.fixture()
 def mock_env(
-    disable_postgres: None, disable_rabbitmq: None, monkeypatch: pytest.MonkeyPatch
+    disable_postgres: None,
+    disable_rabbitmq: None,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -109,6 +112,8 @@ def mock_env(
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL", f"{faker.url()}")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", "{}")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
 
     monkeypatch.setenv("RABBIT_HOST", "mocked_host")

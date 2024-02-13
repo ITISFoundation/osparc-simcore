@@ -4,12 +4,14 @@
 # pylint: disable=wildcard-import
 # pylint: disable=unused-wildcard-import
 
+# nopycln: file
+
 import json
 import json.decoder
 import logging
 import os
 from logging.config import fileConfig
-from typing import Optional
+from pathlib import Path
 
 import alembic.command
 import click
@@ -40,10 +42,17 @@ DEFAULT_DB = "simcoredb"
 
 log = logging.getLogger("root")
 
-if __name__ == "__main__":
-    # swallows up all log messages from tests
-    # only enable it during cli invocation
-    fileConfig(DEFAULT_INI)
+
+class PostgresNotFoundError(RuntimeError):
+    def __init__(self) -> None:
+        super().__init__("Postgres db was not discover")
+
+
+class DiscoverConfigMissingError(ValueError):
+    def __init__(self, extra="") -> None:
+        super().__init__(
+            f"Missing discovery config file {extra}. Check for errors in discovery logs to find more details"
+        )
 
 
 @click.group()
@@ -57,7 +66,7 @@ def main():
 @click.option("--host")
 @click.option("--port", type=int)
 @click.option("--database", "-d")
-def discover(**cli_inputs) -> Optional[dict]:
+def discover(**cli_inputs) -> dict | None:
     """Discovers databases and caches configs in ~/.simcore_postgres_database.json (except if --no-cache)"""
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
     # TODO: if multiple candidates online, then query user to select
@@ -95,7 +104,7 @@ def discover(**cli_inputs) -> Optional[dict]:
 
     for test in [_test_cached, _test_env, _test_swarm]:
         try:
-            click.echo("-> {0.__name__}: {0.__doc__}".format(test))
+            click.echo(f"-> {test.__name__}: {test.__doc__}")
 
             cfg: dict = test()
             cfg.update(cli_cfg)  # CLI always overrides
@@ -104,12 +113,10 @@ def discover(**cli_inputs) -> Optional[dict]:
             click.echo(f"ping {test.__name__}: {hide_url_pass(url)} ...")
             raise_if_not_responsive(url, verbose=False)
 
-            print("Saving config ")
             click.echo(f"Saving config at {DISCOVERED_CACHE}: {hide_dict_pass(cfg)}")
-            with open(DISCOVERED_CACHE, "wt") as fh:
+            with Path(DISCOVERED_CACHE).open("w") as fh:
                 json.dump(cfg, fh, sort_keys=True, indent=4)
 
-            print("Saving config at ")
             click.secho(
                 f"{test.__name__} succeeded: {hide_url_pass(url)} is online",
                 blink=False,
@@ -119,7 +126,7 @@ def discover(**cli_inputs) -> Optional[dict]:
 
             return cfg
 
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception as err:  # pylint: disable=broad-except  # noqa: PERF203
             inline_msg = str(err).replace("\n", ". ")
             click.echo(f"<- {test.__name__} failed : {inline_msg}")
 
@@ -156,15 +163,14 @@ def upgrade_and_close():
     for attempt in Retrying(wait=wait_fixed(5), after=after_log(log, logging.ERROR)):
         with attempt:
             if not discover.callback():
-                raise Exception("Postgres db was not discover")  # pylint: disable=broad-exception-raised
+                raise PostgresNotFoundError
 
-    # FIXME: if database is not stampped!?
     try:
         info.callback()
         upgrade.callback(revision="head")
         info.callback()
     except Exception:  # pylint: disable=broad-except
-        log.exception("Unable to upgrade")
+        log.exception("Unable to upgrade to head. Skipping ...")
 
     click.echo("I did my job here. Bye!")
 
@@ -192,7 +198,8 @@ def review(message):
             rev_id=None,
         )
     else:
-        raise ValueError("Missing config")
+        msg = "while auto-generating new review"
+        raise DiscoverConfigMissingError(extra=msg)
 
 
 @main.command()
@@ -216,7 +223,8 @@ def upgrade(revision):
     if config:
         alembic.command.upgrade(config, revision, sql=False, tag=None)
     else:
-        raise ValueError("Missing config")
+        msg = "while upgrading"
+        raise DiscoverConfigMissingError(extra=msg)
 
 
 @main.command()
@@ -240,7 +248,8 @@ def downgrade(revision):
     if config:
         alembic.command.downgrade(config, str(revision), sql=False, tag=None)
     else:
-        raise ValueError("Missing config")
+        msg = "while downgrading"
+        raise DiscoverConfigMissingError(extra=msg)
 
 
 @main.command()
@@ -252,4 +261,11 @@ def stamp(revision):
     if config:
         alembic.command.stamp(config, revision, sql=False, tag=None)
     else:
-        raise ValueError("Missing config")
+        msg = "while stamping"
+        raise DiscoverConfigMissingError(extra=msg)
+
+
+if __name__ == "__main__":
+    # swallows up all log messages from tests
+    # only enable it during cli invocation
+    fileConfig(DEFAULT_INI)

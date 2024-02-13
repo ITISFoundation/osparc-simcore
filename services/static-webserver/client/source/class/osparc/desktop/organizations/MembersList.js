@@ -346,7 +346,6 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         });
     },
 
-    // Fixme - promote to user
     __promoteToUser: function(orgMember) {
       if (this.__currentOrg === null) {
         return;
@@ -373,7 +372,6 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
         });
     },
 
-    // Fixme - promote to restricted user
     __demoteToRestrictedUser: function(orgMember, msg) {
       if (this.__currentOrg === null) {
         return;

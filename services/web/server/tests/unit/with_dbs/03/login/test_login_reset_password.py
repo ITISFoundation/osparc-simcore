@@ -50,7 +50,7 @@ def client(
 
 async def test_unknown_email(
     client: TestClient,
-    capsys: CaptureFixture,
+    capsys: pytest.CaptureFixture,
     fake_user_email: str,
 ):
     assert client.app

@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 
 import pytest
-from pytest import FixtureRequest
 
 _CURRENT_DIR = (
     Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -13,7 +12,7 @@ _ROOT = Path("/")
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir(request: FixtureRequest) -> Path:
+def osparc_simcore_root_dir(request: pytest.FixtureRequest) -> Path:
     """osparc-simcore repo root dir"""
     test_dir = Path(request.session.fspath)  # expected test dir in simcore
 

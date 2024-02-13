@@ -62,7 +62,6 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       }))
       const input = new qx.ui.form.TextField().set({
         appearance: "appmotion-buy-credits-input",
-        decorator: "appmotion-buy-credits-input",
         textAlign: "center",
         width: 80,
         ...inputProps

@@ -9,7 +9,6 @@ import pytest
 import socketio
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
-from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -21,7 +20,7 @@ from yarl import URL
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     overrides = setenvs_from_dict(
         monkeypatch,
         {

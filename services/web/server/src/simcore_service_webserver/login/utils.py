@@ -10,6 +10,7 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.aiohttp import observer
 from servicelib.aiohttp.rest_models import LogMessageType
+from servicelib.aiohttp.status import HTTP_200_OK
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
@@ -125,7 +126,7 @@ def get_random_string(min_len: int, max_len: int | None = None) -> str:
 
 
 def flash_response(
-    message: str, level: str = "INFO", *, status: int = web.HTTPOk.status_code
+    message: str, level: str = "INFO", *, status: int = HTTP_200_OK
 ) -> web.Response:
     return envelope_response(
         data=asdict(LogMessageType(message, level)),
@@ -133,9 +134,7 @@ def flash_response(
     )
 
 
-def envelope_response(
-    data: Any, *, status: int = web.HTTPOk.status_code
-) -> web.Response:
+def envelope_response(data: Any, *, status: int = HTTP_200_OK) -> web.Response:
     return web.json_response(
         {
             "data": data,

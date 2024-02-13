@@ -3,7 +3,6 @@
 
 
 import datetime
-import re
 from functools import cached_property
 
 from models_library.basic_types import (
@@ -17,17 +16,10 @@ from models_library.clusters import (
     DEFAULT_CLUSTER_ID,
     Cluster,
     ClusterAuthentication,
+    ClusterTypeInModel,
     NoAuthentication,
 )
-from pydantic import (
-    AnyHttpUrl,
-    AnyUrl,
-    ConstrainedStr,
-    Field,
-    NonNegativeInt,
-    parse_obj_as,
-    validator,
-)
+from pydantic import AnyHttpUrl, AnyUrl, Field, NonNegativeInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
@@ -41,20 +33,12 @@ from settings_library.resource_usage_tracker import (
 )
 from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
-from simcore_postgres_database.models.clusters import ClusterType
 from simcore_sdk.node_ports_common.settings import (
     NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE,
 )
 from simcore_sdk.node_ports_v2 import FileLinkType
 
 from .dynamic_services_settings import DynamicServicesSettings
-
-
-class PlacementConstraintStr(ConstrainedStr):
-    strip_whitespace = True
-    regex = re.compile(
-        r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
-    )
 
 
 class DirectorV0Settings(BaseCustomSettings):
@@ -85,14 +69,14 @@ class ComputationalBackendSettings(BaseCustomSettings):
         default=True,
     )
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: AnyUrl = Field(
-        parse_obj_as(AnyUrl, "tcp://dask-scheduler:8786"),
+        ...,
         description="This is the cluster that will be used by default"
         " when submitting computational services (typically "
-        "tcp://dask-scheduler:8786 for the internal cluster, or "
+        "tcp://dask-scheduler:8786, tls://dask-scheduler:8786 for the internal cluster, or "
         "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
     )
-    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ClusterAuthentication | None = Field(
-        NoAuthentication(),
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ClusterAuthentication = Field(
+        ...,
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
     )
@@ -117,7 +101,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
             endpoint=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
             authentication=self.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
             owner=1,  # NOTE: currently this is a soft hack (the group of everyone is the group 1)
-            type=ClusterType.ON_PREMISE,
+            type=ClusterTypeInModel.ON_PREMISE,
         )
 
     @validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", pre=True)
@@ -223,13 +207,6 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
         auto_default_from_env=True,
         description="resource usage tracker service client's plugin",
-    )
-
-    # This is just a service placement constraint, see
-    # https://docs.docker.com/engine/swarm/services/#control-service-placement.
-    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[PlacementConstraintStr] = Field(
-        default_factory=list,
-        example='["node.labels.region==east", "one!=yes"]',
     )
 
     @validator("LOG_LEVEL", pre=True)

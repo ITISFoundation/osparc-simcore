@@ -7,6 +7,7 @@ import configparser
 import re
 import sys
 from pathlib import Path
+from typing import TypeAlias
 
 import pytest
 import yaml
@@ -70,13 +71,16 @@ def expected_pip_version(osparc_simcore_root_dir: Path) -> str:
     return version
 
 
+PathVersionTuple: TypeAlias = tuple[Path, str]
+
+
 @pytest.fixture(scope="session")
-def pip_in_dockerfiles(osparc_simcore_root_dir: Path) -> list[tuple[Path, str]]:
+def pip_in_dockerfiles(osparc_simcore_root_dir: Path) -> list[PathVersionTuple]:
     res = []
     for dockerfile_path in osparc_simcore_root_dir.rglob("Dockerfile"):
         found = PIP_INSTALL_UPGRADE_PATTERN.search(dockerfile_path.read_text())
         if found:
-            # spec = found.group(1)
+            _operator = found.group(1)  # != or < or ~=
             version = found.group(2)
             print(
                 str(dockerfile_path.relative_to(osparc_simcore_root_dir)),
@@ -90,7 +94,7 @@ def pip_in_dockerfiles(osparc_simcore_root_dir: Path) -> list[tuple[Path, str]]:
 
 
 @pytest.fixture(scope="session")
-def python_in_dockerfiles(osparc_simcore_root_dir: Path) -> list[tuple[Path, str]]:
+def python_in_dockerfiles(osparc_simcore_root_dir: Path) -> list[PathVersionTuple]:
     res = []
     for dockerfile_path in osparc_simcore_root_dir.rglob("Dockerfile"):
         found = PYTHON_VERSION_DOCKER_PATTERN.search(dockerfile_path.read_text())
@@ -107,7 +111,7 @@ def python_in_dockerfiles(osparc_simcore_root_dir: Path) -> list[tuple[Path, str
 
 
 def test_all_images_have_the_same_python_version(
-    python_in_dockerfiles, expected_python_version
+    python_in_dockerfiles, expected_python_version: tuple[int, ...]
 ):
     for dockerfile, python_version in python_in_dockerfiles:
         if dockerfile.parent.name not in FROZEN_SERVICES:
@@ -123,7 +127,7 @@ def test_all_images_have_the_same_python_version(
             )
 
 
-def test_running_python_version(expected_python_version):
+def test_running_python_version(expected_python_version: tuple[int, ...]):
     current_version, expected_version = make_versions_comparable(
         sys.version_info, expected_python_version
     )
@@ -132,7 +136,9 @@ def test_running_python_version(expected_python_version):
     ), f"Expected python {to_str(tuple(sys.version_info))} installed, got {to_str(expected_python_version)}"
 
 
-def test_all_images_have_the_same_pip_version(expected_pip_version, pip_in_dockerfiles):
+def test_all_images_have_the_same_pip_version(
+    expected_pip_version: str, pip_in_dockerfiles: list[PathVersionTuple]
+):
     for dockerfile, pip_version in pip_in_dockerfiles:
         if dockerfile.parent.name in FROZEN_SERVICES:
             print(
@@ -145,7 +151,7 @@ def test_all_images_have_the_same_pip_version(expected_pip_version, pip_in_docke
 
 
 def test_tooling_pre_commit_config(
-    osparc_simcore_root_dir: Path, expected_python_version
+    osparc_simcore_root_dir: Path, expected_python_version: tuple[int, ...]
 ):
     pre_commit_config = yaml.safe_load(
         (osparc_simcore_root_dir / ".pre-commit-config.yaml").read_text()
@@ -162,7 +168,9 @@ def test_tooling_pre_commit_config(
     assert py_version == expected_python_version
 
 
-def test_tooling_mypy_ini(osparc_simcore_root_dir: Path, expected_python_version):
+def test_tooling_mypy_ini(
+    osparc_simcore_root_dir: Path, expected_python_version: tuple[int, ...]
+):
     mypy_ini_path = osparc_simcore_root_dir / "mypy.ini"
 
     assert mypy_ini_path.exists()

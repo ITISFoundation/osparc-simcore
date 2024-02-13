@@ -11,7 +11,6 @@ from dataclasses import dataclass
 import aiohttp
 import pytest
 from aiohttp.client import ClientTimeout
-from pytest import MonkeyPatch
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -46,7 +45,7 @@ MAP_SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "dask-scheduler": "/health",
     "datcore-adapter": "/v0/live",
     "director-v2": "/",
-    "dynamic-scheduler": "/",
+    "dynamic-schdlr": "/",
     "invitations": "/",
     "payments": "/",
     "resource-usage-tracker": "/",
@@ -55,6 +54,9 @@ AIOHTTP_BASED_SERVICE_PORT: int = 8080
 FASTAPI_BASED_SERVICE_PORT: int = 8000
 DASK_SCHEDULER_SERVICE_PORT: int = 8787
 
+_SERVICE_NAME_REPLACEMENTS: dict[str, str] = {
+    "dynamic-scheduler": "dynamic-schdlr",
+}
 
 _ONE_SEC_TIMEOUT = ClientTimeout(total=1)  # type: ignore
 
@@ -117,6 +119,7 @@ def services_endpoint(
 
     stack_name = testing_environ_vars["SWARM_STACK_NAME"]
     for service in core_services_selection:
+        service = _SERVICE_NAME_REPLACEMENTS.get(service, service)
         assert f"{stack_name}_{service}" in docker_stack["services"]
         full_service_name = f"{stack_name}_{service}"
 
@@ -162,7 +165,7 @@ def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
 
 @pytest.fixture
 def simcore_services_ready(
-    services_endpoint: dict[str, URL], monkeypatch: MonkeyPatch
+    services_endpoint: dict[str, URL], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _wait_for_services_ready(services_endpoint)
     # patches environment variables with right host/port per service
@@ -177,7 +180,7 @@ def simcore_services_ready(
 
 @pytest.fixture(scope="module")
 def simcore_services_ready_module(
-    services_endpoint: dict[str, URL], monkeypatch_module: MonkeyPatch
+    services_endpoint: dict[str, URL], monkeypatch_module: pytest.MonkeyPatch
 ) -> None:
     warnings.warn(
         "This fixture uses deprecated monkeypatch_module fixture"

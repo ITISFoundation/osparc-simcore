@@ -23,6 +23,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from servicelib.aiohttp import status
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
@@ -53,7 +54,11 @@ async def test_project_node_pricing_unit_user_role_access(
         project_id=user_project["uuid"], node_id=node_id
     )
     resp = await client.get(base_url)
-    assert resp.status == 401 if user_role == UserRole.ANONYMOUS else 200
+    assert (
+        resp.status == status.HTTP_401_UNAUTHORIZED
+        if user_role == UserRole.ANONYMOUS
+        else status.HTTP_200_OK
+    )
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])

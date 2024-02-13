@@ -14,6 +14,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.egress_proxy imp
 )
 from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     DynamicSidecarSettings,
+    PlacementSettings,
     RCloneSettings,
 )
 from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
@@ -80,6 +81,9 @@ def test_settings_with_repository_env_devel(
     mock_env_devel_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setenv("SC_BOOT_MODE", "production")  # defined in Dockerfile
+    monkeypatch.setenv(
+        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", "{}"
+    )  # defined in docker-compose
 
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
@@ -173,8 +177,11 @@ def test_services_custom_constraints(
 ) -> None:
     monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
     settings = AppSettings.create_from_envs()
-    assert isinstance(settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS, list)
-    assert expected == settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+    custom_constraints = (
+        settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+    )
+    assert isinstance(custom_constraints, list)
+    assert expected == custom_constraints
 
 
 @pytest.mark.parametrize(
@@ -212,7 +219,10 @@ def test_services_custom_constraints_default_empty_list(
     project_env_devel_environment: EnvVarsDict,
 ) -> None:
     settings = AppSettings.create_from_envs()
-    assert [] == settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+    assert (
+        []
+        == settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+    )
 
 
 def test_class_dynamicsidecarsettings_in_development(
@@ -258,3 +268,16 @@ def test_class_dynamicsidecarsettings_in_production(
 def test_envoy_log_level():
     for enum in (EnvoyLogLevel("WARNING"), EnvoyLogLevel.WARNING):
         assert enum.to_log_level() == "warning"
+
+
+def test_placement_settings(monkeypatch: pytest.MonkeyPatch):
+    assert PlacementSettings()
+
+    monkeypatch.setenv(
+        "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS", "{}"
+    )
+    placement_settings = PlacementSettings()
+    assert (
+        placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
+        == {}
+    )

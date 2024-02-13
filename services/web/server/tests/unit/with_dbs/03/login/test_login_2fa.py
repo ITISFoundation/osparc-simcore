@@ -16,6 +16,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
+from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
@@ -75,7 +76,7 @@ def mocked_twilio_service(mocker: MockerFixture) -> dict[str, Mock]:
             autospec=True,
         ),
         "send_sms_code_for_login": mocker.patch(
-            "simcore_service_webserver.login.handlers_auth.send_sms_code",
+            "simcore_service_webserver.login._auth_handlers.send_sms_code",
             autospec=True,
         ),
     }
@@ -143,7 +144,7 @@ async def test_workflow_register_and_login_with_2fa(
 
     # 2. confirmation
     response = await client.get(url)
-    assert response.status == web.HTTPOk.status_code
+    assert response.status == status.HTTP_200_OK
 
     # check email+password registered
     user = await db.get_user({"email": fake_user_email})
@@ -339,7 +340,7 @@ async def test_2fa_sms_failure_during_login(
 
     # Mocks error in graylog https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
     mocker.patch(
-        "simcore_service_webserver.login.handlers_auth.send_sms_code",
+        "simcore_service_webserver.login._auth_handlers.send_sms_code",
         autospec=True,
         side_effect=TwilioRestException(
             status=400,

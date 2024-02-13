@@ -4,8 +4,14 @@
 import time
 
 import distributed
+import pytest
 from distributed import SpecCluster
 from faker import Faker
+from models_library.clusters import (
+    InternalClusterAuthentication,
+    NoAuthentication,
+    TLSAuthentication,
+)
 from pydantic import AnyUrl, parse_obj_as
 from simcore_service_clusters_keeper.modules.dask import (
     is_scheduler_busy,
@@ -16,11 +22,22 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+_authentication_types = [
+    NoAuthentication(),
+    TLSAuthentication.construct(**TLSAuthentication.Config.schema_extra["examples"][0]),
+]
 
-async def test_ping_scheduler_non_existing_scheduler(faker: Faker):
+
+@pytest.mark.parametrize(
+    "authentication", _authentication_types, ids=lambda p: f"authentication-{p.type}"
+)
+async def test_ping_scheduler_non_existing_scheduler(
+    faker: Faker, authentication: InternalClusterAuthentication
+):
     assert (
         await ping_scheduler(
-            url=parse_obj_as(AnyUrl, f"tcp://{faker.ipv4()}:{faker.port_number()}")
+            parse_obj_as(AnyUrl, f"tcp://{faker.ipv4()}:{faker.port_number()}"),
+            authentication,
         )
         is False
     )
@@ -29,7 +46,8 @@ async def test_ping_scheduler_non_existing_scheduler(faker: Faker):
 async def test_ping_scheduler(dask_spec_local_cluster: SpecCluster):
     assert (
         await ping_scheduler(
-            parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address)
+            parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address),
+            NoAuthentication(),
         )
         is True
     )
@@ -42,7 +60,7 @@ async def test_ping_scheduler(dask_spec_local_cluster: SpecCluster):
 )
 async def _assert_scheduler_is_busy(url: AnyUrl, *, busy: bool) -> None:
     print(f"--> waiting for osparc-dask-scheduler to become {busy=}")
-    assert await is_scheduler_busy(url=url) is busy
+    assert await is_scheduler_busy(url, NoAuthentication()) is busy
     print(f"scheduler is now {busy=}")
 
 
@@ -52,7 +70,7 @@ async def test_is_scheduler_busy(
 ):
     # nothing runs right now
     scheduler_address = parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address)
-    assert await is_scheduler_busy(url=scheduler_address) is False
+    assert await is_scheduler_busy(scheduler_address, NoAuthentication()) is False
     _SLEEP_TIME = 5
 
     def _some_long_running_fct(sleep_time: int) -> str:

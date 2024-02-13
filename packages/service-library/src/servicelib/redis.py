@@ -1,8 +1,10 @@
 import contextlib
 import datetime
 import logging
+from asyncio import Task
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Final
+from typing import Final
 from uuid import uuid4
 
 import redis.asyncio as aioredis
@@ -12,13 +14,13 @@ from pydantic.errors import PydanticErrorMixin
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
-from servicelib.retry_policies import RedisRetryPolicyUponInitialization
-from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import retry
 
-from .background_task import periodic_task
+from .background_task import periodic_task, start_periodic_task, stop_periodic_task
 from .logging_utils import log_catch, log_context
+from .retry_policies import RedisRetryPolicyUponInitialization
+from .utils import logged_gather
 
 _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
 
@@ -161,6 +163,51 @@ class RedisClientSDK:
     async def lock_value(self, lock_name: str) -> str | None:
         output: str | None = await self._client.get(lock_name)
         return output
+
+
+class RedisClientSDKHealthChecked(RedisClientSDK):
+    """
+    Provides access to ``is_healthy`` property, to be used for defining
+    health check handlers.
+    """
+
+    def __init__(
+        self,
+        redis_dsn: str,
+        health_check_interval: datetime.timedelta = datetime.timedelta(seconds=5),
+    ) -> None:
+        super().__init__(redis_dsn)
+        self.health_check_interval: datetime.timedelta = health_check_interval
+        self._health_check_task: Task | None = None
+        self._is_healthy: bool = True
+
+    @property
+    def is_healthy(self) -> bool:
+        """Provides the status of Redis.
+        If redis becomes available, after being not available,
+        it will once more return ``True``
+
+        Returns:
+            ``False``: if the service is no longer reachable
+            ``True``: when service is reachable
+        """
+        return self._is_healthy
+
+    async def _check_health(self) -> None:
+        self._is_healthy = await self.ping()
+
+    async def setup(self) -> None:
+        await super().setup()
+        self._health_check_task = start_periodic_task(
+            self._check_health,
+            interval=self.health_check_interval,
+            task_name="redis_service_health_check",
+        )
+
+    async def shutdown(self) -> None:
+        if self._health_check_task:
+            await stop_periodic_task(self._health_check_task)
+        await super().shutdown()
 
 
 @dataclass

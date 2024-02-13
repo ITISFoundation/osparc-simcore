@@ -20,7 +20,7 @@ import httpx
 import pytest
 import respx
 from faker import Faker
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationCreate,
@@ -61,7 +61,6 @@ from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils impor
     _RAM_SAFE_MARGIN_RATIO,
 )
 from simcore_service_director_v2.utils.computations import to_node_class
-from starlette import status
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [
@@ -286,7 +285,7 @@ def mocked_resource_usage_tracker_service_fcts(
         # otherwise it returns 404s
         if "frontend" in service_key:
             # NOTE: there are typically no frontend services that have pricing plans
-            return httpx.Response(status_code=404)
+            return httpx.Response(status_code=status.HTTP_404_NOT_FOUND)
         return httpx.Response(
             200, json=jsonable_encoder(default_pricing_plan, by_alias=True)
         )

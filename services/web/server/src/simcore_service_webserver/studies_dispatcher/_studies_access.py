@@ -14,27 +14,22 @@ SEE refactoring plan in https://github.com/ITISFoundation/osparc-simcore/issues/
 """
 import functools
 import logging
-from datetime import datetime
 from functools import lru_cache
 from uuid import UUID, uuid5
 
-import redis.asyncio as aioredis
 from aiohttp import web
 from aiohttp_session import get_session
-from models_library.emails import LowerCaseEmailStr
 from models_library.projects import ProjectID
-from pydantic import parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
-from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..products.api import get_current_product, get_product_name
 from ..projects.db import ANY_USER, ProjectDBAPI
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..projects.models import ProjectDict
-from ..redis import get_redis_lock_manager_client
 from ..security.api import is_anonymous, remember_identity
 from ..storage.api import copy_data_folders_from_project
 from ..utils import compose_support_error_msg
@@ -43,9 +38,11 @@ from ._constants import (
     MSG_PROJECT_NOT_FOUND,
     MSG_PROJECT_NOT_PUBLISHED,
     MSG_PUBLIC_PROJECT_NOT_PUBLISHED,
+    MSG_TOO_MANY_GUESTS,
     MSG_UNEXPECTED_ERROR,
 )
-from .settings import StudiesDispatcherSettings, get_plugin_settings
+from ._errors import GuestUsersLimitError
+from ._users import create_temporary_guest_user, get_authorized_user
 
 _logger = logging.getLogger(__name__)
 
@@ -59,8 +56,7 @@ def _compose_uuid(template_uuid, user_id, query="") -> str:
 
     Enforces a constraint: a user CANNOT have multiple copies of the same template
     """
-    new_uuid = str(uuid5(_BASE_UUID, str(template_uuid) + str(user_id) + str(query)))
-    return new_uuid
+    return str(uuid5(_BASE_UUID, str(template_uuid) + str(user_id) + str(query)))
 
 
 async def _get_published_template_project(
@@ -107,89 +103,14 @@ async def _get_published_template_project(
             raise RedirectToFrontEndPageError(
                 MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(support_email=support_email),
                 error_code="PUBLIC_PROJECT_NOT_PUBLISHED",
-                status_code=web.HTTPUnauthorized.status_code,
+                status_code=status.HTTP_401_UNAUTHORIZED,
             ) from err
 
         raise RedirectToFrontEndPageError(
             MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
             error_code="PROJECT_NOT_PUBLISHED",
-            status_code=web.HTTPNotFound.status_code,
+            status_code=status.HTTP_404_NOT_FOUND,
         ) from err
-
-
-async def _create_temporary_user(request: web.Request):
-    from ..login.storage import AsyncpgStorage, get_plugin_storage
-    from ..login.utils import ACTIVE, GUEST, get_random_string
-    from ..security.api import encrypt_password
-
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
-    settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
-
-    # Profile for temporary user
-    random_uname = get_random_string(min_len=5)
-    email = parse_obj_as(LowerCaseEmailStr, f"{random_uname}@guest-at-osparc.io")
-    password = get_random_string(min_len=12)
-    expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
-
-    # GUEST_USER_RC_LOCK:
-    #
-    #   These locks prevents the GC from deleting a GUEST user in to stages of its lifefime:
-    #
-    #  1. During construction:
-    #     - Prevents GC from deleting this GUEST user while it is being created
-    #     - Since the user still does not have an ID assigned, the lock is named with his random_uname
-    #     - the timeout here is the TTL of the lock in Redis. in case the webserver is overwhelmed and cannot create
-    #       a user during that time or crashes, then redis will ensure the lock disappears and let the garbage collector do its work
-    #
-    MAX_DELAY_TO_CREATE_USER = 13  # secs
-    #
-    #  2. During initialization
-    #     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
-    #     - Uses the ID assigned to name the lock
-    #
-    MAX_DELAY_TO_GUEST_FIRST_CONNECTION = 15  # secs
-    #
-    #
-    # NOTES:
-    #   - In case of failure or excessive delay the lock has a timeout that automatically unlocks it
-    #     and the GC can clean up what remains
-    #   - Notice that the ids to name the locks are unique, therefore the lock can be acquired w/o errors
-    #   - These locks are very specific to resources and have timeout so the risk of blocking from GC is small
-    #
-
-    # (1) read details above
-    async with redis_locks_client.lock(
-        GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_uname),
-        timeout=MAX_DELAY_TO_CREATE_USER,
-    ):
-        user = await db.create_user(
-            {
-                "name": random_uname,
-                "email": email,
-                "password_hash": encrypt_password(password),
-                "status": ACTIVE,
-                "role": GUEST,
-                "expires_at": expires_at,
-            }
-        )
-        # (2) read details above
-        await redis_locks_client.lock(
-            GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
-            timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
-        ).acquire()
-
-    return user
-
-
-async def get_authorized_user(request: web.Request) -> dict:
-    from ..login.storage import AsyncpgStorage, get_plugin_storage
-    from ..security.api import authorized_userid
-
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    userid = await authorized_userid(request)
-    user: dict = await db.get_user({"id": userid})
-    return user
 
 
 async def copy_study_to_account(
@@ -294,7 +215,7 @@ def _handle_errors_with_error_page(handler: Handler):
                     msg=MSG_PROJECT_NOT_FOUND.format(project_id=err.project_uuid),
                     error_code="PROJECT_NOT_FOUND",
                 ),
-                status_code=web.HTTPNotFound.status_code,
+                status_code=status.HTTP_404_NOT_FOUND,
             ) from err
 
         except RedirectToFrontEndPageError as err:
@@ -318,7 +239,7 @@ def _handle_errors_with_error_page(handler: Handler):
                 message=compose_support_error_msg(
                     msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
                 ),
-                status_code=500,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) from err
 
     return wrapper
@@ -352,7 +273,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         raise RedirectToFrontEndPageError(
             MSG_PROJECT_NOT_FOUND.format(project_id=project_id),
             error_code="PROJECT_NOT_FOUND",
-            status_code=web.HTTPNotFound.status_code,
+            status_code=status.HTTP_404_NOT_FOUND,
         ) from exc
 
     # Get published PROJECT referenced in link
@@ -364,14 +285,33 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     # Get or create a valid USER
     if not user:
-        _logger.debug("Creating temporary user ...")
-        user = await _create_temporary_user(request)
-        is_anonymous_user = True
+        try:
+            _logger.debug("Creating temporary user ... [%s]", f"{is_anonymous_user=}")
+            user = await create_temporary_guest_user(request)
+            is_anonymous_user = True
+
+        except GuestUsersLimitError as exc:
+            #
+            # NOTE: Creation of guest users is limited. For that
+            # reason we respond with 429 and inform the user that temporarily
+            # we cannot accept any more users.
+            #
+            error_code = create_error_code(exc)
+            _logger.exception(
+                "Failed to create guest user. Responded with 429 Too Many Requests [%s]",
+                f"{error_code}",
+                extra={"error_code": error_code},
+            )
+            raise RedirectToFrontEndPageError(
+                MSG_TOO_MANY_GUESTS,
+                error_code=error_code,
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            ) from exc
 
     # COPY
     try:
         _logger.debug(
-            "Granted access to study '%s' for user %s. Copying study over ...",
+            "Granted access to study name='%s' for user email='%s'. Copying study over ...",
             template_project.get("name"),
             user.get("email"),
         )
@@ -391,7 +331,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         raise RedirectToFrontEndPageError(
             MSG_UNEXPECTED_ERROR.format(hint="while copying your study"),
             error_code=error_code,
-            status_code=web.HTTPInternalServerError.status_code,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         ) from exc
 
     # Creating REDIRECTION LINK
@@ -404,11 +344,15 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     response = web.HTTPFound(location=redirect_url)
     if is_anonymous_user:
         _logger.debug("Auto login for anonymous user %s", user["name"])
-        identity = user["email"]
-        await remember_identity(request, response, user_email=identity)
+
+        await remember_identity(
+            request,
+            response,
+            user_email=user["email"],
+        )
 
         # NOTE: session is encrypted and stored in a cookie in the session middleware
-        assert (await get_session(request))["AIOHTTP_SECURITY"] == identity  # nosec
+        assert (await get_session(request))["AIOHTTP_SECURITY"] is not None  # nosec
 
     # WARNING: do NOT raise this response. From aiohttp 3.7.X, response is rebuild and cookie ignore.
     return response

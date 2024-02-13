@@ -1,5 +1,12 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
+from collections.abc import Callable
+from decimal import Decimal
 from pathlib import Path
-from typing import Any, Callable, Final
+from typing import Any, Final
 from uuid import UUID
 
 import httpx
@@ -10,6 +17,8 @@ from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
+from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
+from models_library.generics import Envelope
 from pydantic import parse_obj_as
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobStatus
@@ -17,9 +26,6 @@ from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.services.director_v2 import ComputationTaskGet
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from unit.conftest import SideEffectCallback
-
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 
 
 def _start_job_side_effect(
@@ -101,12 +107,12 @@ async def test_get_solver_job_wallet(
         auth=auth,
     )
     if capture == "get_job_wallet_found.json":
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         body = response.json()
         assert isinstance(body, dict)
         assert _wallet_id == body.get("walletId")
     elif capture == "get_job_wallet_not_found.json":
-        assert response.status_code == 404
+        assert response.status_code == status.HTTP_404_NOT_FOUND
         body = response.json()
         assert isinstance(body, dict)
         assert body.get("data") is None
@@ -341,3 +347,62 @@ async def test_stop_job(
     assert response.status_code == status.HTTP_200_OK
     status_ = JobStatus.parse_obj(response.json())
     assert status_.job_id == UUID(_job_id)
+
+
+@pytest.mark.parametrize(
+    "sufficient_credits,expected_status_code",
+    [(True, 200), (False, 402)],
+)
+async def test_get_solver_job_outputs(
+    client: AsyncClient,
+    mocked_webserver_service_api_base,
+    mocked_storage_service_api_base,
+    mocked_groups_extra_properties,
+    mocked_solver_job_outputs,
+    respx_mock_from_capture: Callable[
+        [list[respx.MockRouter], Path, list[SideEffectCallback]],
+        list[respx.MockRouter],
+    ],
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+    sufficient_credits: bool,
+    expected_status_code: int,
+):
+    def _sf(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        return capture.response_body
+
+    def _wallet_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ):
+        wallet = parse_obj_as(
+            Envelope[WalletGetWithAvailableCredits], capture.response_body
+        ).data
+        assert wallet is not None
+        wallet.available_credits = (
+            Decimal(10.0) if sufficient_credits else Decimal(-10.0)
+        )
+        envelope = Envelope[WalletGetWithAvailableCredits]()
+        envelope.data = wallet
+        return jsonable_encoder(envelope)
+
+    respx_mock = respx_mock_from_capture(
+        [mocked_webserver_service_api_base, mocked_storage_service_api_base],
+        project_tests_dir / "mocks" / "get_solver_outputs.json",
+        [_sf, _sf, _sf, _wallet_side_effect, _sf],
+    )
+
+    _solver_key: Final[str] = "simcore/services/comp/isolve"
+    _version: Final[str] = "2.1.24"
+    _job_id: Final[str] = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
+    response = await client.get(
+        f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}/outputs",
+        auth=auth,
+    )
+
+    assert response.status_code == expected_status_code

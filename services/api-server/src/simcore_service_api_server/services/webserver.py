@@ -1,3 +1,5 @@
+# pylint: disable=R0904
+
 import json
 import logging
 import urllib.parse
@@ -11,6 +13,7 @@ from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import Response
 from models_library.api_schemas_webserver.computations import ComputationStart
+from models_library.api_schemas_webserver.product import GetCreditPrice
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
@@ -24,6 +27,7 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletGetWithAvailableCredits,
 )
+from models_library.basic_types import NonNegativeDecimal
 from models_library.clusters import ClusterID
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -467,6 +471,19 @@ class AuthSession:
             response.raise_for_status()
             data = Envelope[WalletGet].parse_raw(response.text).data
             return data
+
+    # PRODUCTS -------------------------------------------------
+
+    async def get_product_price(self) -> NonNegativeDecimal | None:
+        with _handle_webserver_api_errors():
+            response = await self.client.get(
+                "/credits-price",
+                cookies=self.session_cookies,
+            )
+            response.raise_for_status()
+            data = Envelope[GetCreditPrice].parse_raw(response.text).data
+            assert data is not None
+            return data.usd_per_credit
 
     # SERVICES -------------------------------------------------
 

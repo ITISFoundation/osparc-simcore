@@ -1,4 +1,5 @@
 # pylint: disable=too-many-arguments
+# pylint: disable=W0613
 
 import logging
 from collections import deque
@@ -6,7 +7,7 @@ from collections.abc import Callable
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi_pagination.api import create_page
@@ -17,6 +18,7 @@ from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
 from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
 from starlette.background import BackgroundTask
 
@@ -35,9 +37,10 @@ from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
-from ..dependencies.rabbitmq import get_log_distributor, get_max_log_check_seconds
+from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
+from ..errors.custom_errors import InsufficientCredits, MissingWallet
 from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
 from .solvers_jobs import (
@@ -177,6 +180,19 @@ async def get_job_outputs(
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
     node_ids = list(project.workbench.keys())
     assert len(node_ids) == 1  # nosec
+
+    product_price = await webserver_api.get_product_price()
+    if product_price is not None:
+        wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
+        if wallet is None:
+            raise MissingWallet(
+                f"Job {project.uuid} does not have an associated wallet."
+            )
+        wallet_with_credits = await webserver_api.get_wallet(wallet_id=wallet.wallet_id)
+        if wallet_with_credits.available_credits < 0.0:
+            raise InsufficientCredits(
+                f"Wallet '{wallet_with_credits.name}' does not have any credits. Please add some before requesting solver ouputs"
+            )
 
     outputs: dict[str, ResultsTypes] = await get_solver_output_results(
         user_id=user_id,
@@ -366,7 +382,9 @@ async def get_job_pricing_unit(
     response_class=LogStreamingResponse,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
+@cancel_on_disconnect
 async def get_log_stream(
+    request: Request,
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
@@ -374,9 +392,7 @@ async def get_log_stream(
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     log_distributor: Annotated[LogDistributor, Depends(get_log_distributor)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
-    max_log_check_seconds: Annotated[
-        NonNegativeInt, Depends(get_max_log_check_seconds)
-    ],
+    log_check_timeout: Annotated[NonNegativeInt, Depends(get_log_check_timeout)],
 ):
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     with log_context(
@@ -389,7 +405,7 @@ async def get_log_stream(
             director2_api=director2_api,
             job_id=job_id,
             log_distributor=log_distributor,
-            max_log_check_seconds=max_log_check_seconds,
+            log_check_timeout=log_check_timeout,
         )
         await log_streamer.setup()
         return LogStreamingResponse(

@@ -635,8 +635,10 @@ async def standard_groups(
             new_user_email=logged_user["email"],
         )
 
-        _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])
-        yield standard_groups
+        _, std_groups, _ = await list_user_groups(client.app, logged_user["id"])
+
+        yield std_groups
+
         # clean groups
         await delete_user_group(client.app, owner_user["id"], sparc_group["gid"])
         await delete_user_group(client.app, owner_user["id"], team_black_group["gid"])

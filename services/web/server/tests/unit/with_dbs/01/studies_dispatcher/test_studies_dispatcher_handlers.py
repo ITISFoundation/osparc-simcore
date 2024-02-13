@@ -22,6 +22,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
+from servicelib.aiohttp import status
 from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
@@ -305,7 +306,7 @@ async def assert_redirected_to_study(
     resp: ClientResponse, session: ClientSession
 ) -> str:
     content = await resp.text()
-    assert resp.status == web.HTTPOk.status_code, f"Got {content}"
+    assert resp.status == status.HTTP_200_OK, f"Got {content}"
 
     # Expects redirection to osparc web
     assert resp.url.path == "/"
@@ -402,7 +403,7 @@ async def test_dispatch_study_anonymously(
     if redirect_type == "file_only":
         message, status_code = assert_error_in_fragment(response)
         assert (
-            status_code == web.HTTPUnauthorized.status_code
+            status_code == status.HTTP_401_UNAUTHORIZED
         ), f"Got instead {status_code=}, {message=}"
 
     else:
@@ -537,7 +538,7 @@ async def test_viewer_redirect_with_file_type_errors(client: TestClient):
 
     message, status_code = assert_error_in_fragment(resp)
 
-    assert status_code == web.HTTPUnprocessableEntity.status_code
+    assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert "type" in message.lower()
 
 
@@ -564,7 +565,7 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
 
     message, status_code = assert_error_in_fragment(resp)
     print(message)
-    assert status_code == web.HTTPUnprocessableEntity.status_code
+    assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.parametrize(
@@ -592,4 +593,4 @@ async def test_missing_file_param(client: TestClient, missing_parameter: str):
     assert response.status == 200
 
     message, status_code = assert_error_in_fragment(response)
-    assert status_code == web.HTTPUnprocessableEntity.status_code, f"Got {message=}"
+    assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got {message=}"

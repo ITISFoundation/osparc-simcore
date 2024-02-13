@@ -1,25 +1,25 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-
 
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from pytest import MonkeyPatch
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
+from simcore_service_webserver.login._auth_handlers import LoginNextPage
 from simcore_service_webserver.login._constants import CODE_2FA_CODE_REQUIRED
-from simcore_service_webserver.login.handlers_auth import LoginNextPage
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: MonkeyPatch):
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     envs_login = setenvs_from_dict(
         monkeypatch,
         {
@@ -68,7 +68,7 @@ async def test_resend_2fa_entrypoint_is_protected(
     )
 
     # protected
-    assert response.status == web.HTTPUnauthorized.status_code
+    assert response.status == status.HTTP_401_UNAUTHORIZED
 
 
 async def test_resend_2fa_workflow(
@@ -83,7 +83,7 @@ async def test_resend_2fa_workflow(
         "simcore_service_webserver.login.handlers_2fa.send_sms_code", autospec=True
     )
     mock_send_sms_code2 = mocker.patch(
-        "simcore_service_webserver.login.handlers_auth.send_sms_code", autospec=True
+        "simcore_service_webserver.login._auth_handlers.send_sms_code", autospec=True
     )
 
     mock_send_email_code = mocker.patch(

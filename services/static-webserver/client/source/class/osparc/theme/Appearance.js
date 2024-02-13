@@ -111,6 +111,15 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "widget/selected-file-layout/download-button/icon": {},
+    "widget/selected-file-layout/delete-button/icon": {},
+    "pb-dynamic/menu-button/icon": {},
+    "pb-template/menu-button/icon": {},
+    "pb-study/menu-button/icon": {},
+    "pb-computational/menu-button/icon": {
+      alias: "image"
+    },
+
     "pb-study/lock-status":  {
       style: function() {
         return {
@@ -399,6 +408,9 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "splitpane/collapsible-view-left/collapse-button": {},
+    "splitpane/collapsible-view-right/collapse-button": {},
+
     /*
     ---------------------------------------------------------------------------
       NodePorts
@@ -509,6 +521,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       Buttons
     ---------------------------------------------------------------------------
     */
+    "widget/reset-button": {},
 
     "form-button": {
       style: function(states) {
@@ -517,8 +530,6 @@ qx.Theme.define("osparc.theme.Appearance", {
           cursor: "pointer",
           textColor: "default-button-text",
           padding: 5,
-          alignY: "middle",
-          alignX: "center",
           backgroundColor: "default-button"
         };
         if (states.hovered) {
@@ -582,8 +593,6 @@ qx.Theme.define("osparc.theme.Appearance", {
           decorator: "fab-button",
           cursor: "pointer",
           padding: 5,
-          alignY: "middle",
-          alignX: "center",
           textColor: "fab_text",
           backgroundColor: "fab-background"
         };
@@ -608,10 +617,9 @@ qx.Theme.define("osparc.theme.Appearance", {
     },
 
     "form-button-text": {
-      include: "form-button",
       style: function(states) {
         const style = {
-          decorator: "text-button",
+          decorator: "form-button-text",
           cursor: "pointer",
           textColor: "link",
           padding: 5,
@@ -620,7 +628,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           backgroundColor: "transparent"
         };
         if (states.hovered) {
-          style.textColor = "default-button-hover";
+          style.textColor = "contrasted-text-dark";
         }
         if (states.focused) {
           style.textColor = "default-button-focus";
@@ -973,7 +981,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     "hint": {
       style: state => ({
-        backgroundColor: "background-main-2",
+        backgroundColor: "window-popup-background",
         decorator: "hint",
         padding: 5
       })
@@ -1172,9 +1180,10 @@ qx.Theme.define("osparc.theme.Appearance", {
     "appmotion-buy-credits-input": {
       include: "textfield",
       style: state => ({
-        backgroundColor: state.readonly ? "transparent" : "background-main-1",
+        backgroundColor: state.disabled ? "transparent" : "background-main-1",
         padding: [10, 15],
-        font: "text-18"
+        font: "text-18",
+        decorator: "appmotion-buy-credits-input"
       })
     },
 
@@ -1182,9 +1191,10 @@ qx.Theme.define("osparc.theme.Appearance", {
       include: "selectbox",
       alias: "selectbox",
       style: state => ({
-        backgroundColor: "background-main-1",
+        backgroundColor: state.disabled ? "transparent" : "background-main-1",
         padding: [10, 15],
-        font: "text-14"
+        font: "text-14",
+        decorator: "appmotion-buy-credits-input"
       })
     },
 
@@ -1193,6 +1203,27 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "selectbox/list",
       style: state => ({
         backgroundColor: "background-main-1"
+      })
+    },
+
+    "appmotion-buy-credits-spinner": {
+      include: "spinner",
+      alias: "spinner"
+    },
+
+    "appmotion-buy-credits-spinner/textfield": {
+      include: "appmotion-buy-credits-input",
+      alias: "appmotion-buy-credits-input",
+      style: state => ({
+        font: "text-14"
+      })
+    },
+
+    "appmotion-buy-credits-checkbox": {
+      include: "checkbox",
+      alias: "checkbox",
+      style: state => ({
+        icon: state.checked ? "@MaterialIcons/check_box/20" : "@MaterialIcons/check_box_outline_blank/20"
       })
     }
   }

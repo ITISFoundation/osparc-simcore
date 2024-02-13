@@ -52,6 +52,8 @@ pluggy==1.3.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
+psutil==5.9.8
+    # via -r requirements/_test.in
 pytest==7.4.3
     # via
     #   -r requirements/_test.in

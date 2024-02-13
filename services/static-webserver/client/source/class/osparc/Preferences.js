@@ -122,6 +122,13 @@ qx.Class.define("osparc.Preferences", {
       check: "Boolean",
       event: "changeAllowMetricsCollection",
       apply: "__patchPreference"
+    },
+
+    billingCenterUsageColumnOrder: {
+      nullable: true,
+      check: "Array",
+      event: "changeBillingCenterUsageColumnOrder",
+      apply: "__patchPreference"
     }
   },
 

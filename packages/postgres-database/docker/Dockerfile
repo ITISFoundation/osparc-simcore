@@ -28,7 +28,7 @@ RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install --upgrade \
-  pip~=23.1  \
+  pip~=24.0  \
   wheel \
   setuptools
 
@@ -43,7 +43,8 @@ FROM base as production
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
-
+# ensure home folder is read/writable for user scu
+RUN chown -R scu /home/scu
 # bring installed package without build tools
 COPY --from=build ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY entrypoint.bash /home/entrypoint.bash

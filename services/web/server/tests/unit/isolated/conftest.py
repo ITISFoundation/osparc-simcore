@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-from pytest import MonkeyPatch
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -75,7 +75,7 @@ def app_config_for_production_legacy(test_data_dir: Path) -> ConfigDict:
 
 
 @pytest.fixture
-def mock_env_auto_deployer_agent(monkeypatch: MonkeyPatch) -> EnvVarsDict:
+def mock_env_auto_deployer_agent(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # git log --tags --simplify-by-decoration --pretty="format:%ci %d"
     #  2023-02-08 18:34:56 +0000  (tag: v1.47.0, tag: staging_ResistanceIsFutile12)
     #  2023-02-06 18:40:07 +0100  (tag: v1.46.0, tag: staging_ResistanceIsFutile11)
@@ -87,4 +87,30 @@ def mock_env_auto_deployer_agent(monkeypatch: MonkeyPatch) -> EnvVarsDict:
             "SIMCORE_VCS_RELEASE_TAG": "staging_ResistanceIsFutile12",
             "SIMCORE_VCS_RELEASE_DATE": "2023-02-10T18:03:35.957601",
         },
+    )
+
+
+@pytest.fixture
+def mocked_login_required(mocker: MockerFixture):
+
+    user_id = 1
+
+    # patches @login_required decorator
+    # avoids having to start database etc...
+    mocker.patch(
+        "simcore_service_webserver.login.decorators.check_user_authorized",
+        spec=True,
+        return_value=user_id,
+    )
+
+    mocker.patch(
+        "simcore_service_webserver.login.decorators.check_user_permission",
+        spec=True,
+        return_value=None,
+    )
+
+    mocker.patch(
+        "simcore_service_webserver.login.decorators.get_product_name",
+        spec=True,
+        return_value="osparc",
     )

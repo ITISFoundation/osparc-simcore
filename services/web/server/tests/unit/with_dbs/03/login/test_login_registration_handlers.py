@@ -14,6 +14,7 @@ from faker import Faker
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login._constants import MSG_USER_DELETED
 from simcore_service_webserver.products.api import get_product
@@ -38,8 +39,8 @@ async def test_unregister_account_access_rights(
 
     error = err_info.value
     assert error.status in (
-        web.HTTPUnauthorized.status_code,
-        web.HTTPForbidden.status_code,
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
     ), f"{error}"
 
 
