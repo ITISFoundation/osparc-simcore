@@ -80,6 +80,20 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 sys.path.append(str(CURRENT_DIR / "helpers"))
 
 
+def pytest_addoption(parser: pytest.Parser):
+    group = parser.getgroup(
+        "external_environment",
+        description="External parameters used to replace some fixture by external environments",
+    )
+    group.addoption(
+        "--external-envfile",
+        action="store",
+        type=Path,
+        default=None,
+        help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
+    )
+
+
 @pytest.fixture(scope="session")
 def here() -> Path:
     return CURRENT_DIR
@@ -149,7 +163,7 @@ async def cleanup_user_projects_file_metadata(aiopg_engine: Engine):
 
 
 @pytest.fixture
-def simcore_s3_dsm(client) -> SimcoreS3DataManager:
+def simcore_s3_dsm(client: TestClient) -> SimcoreS3DataManager:
     return cast(
         SimcoreS3DataManager,
         get_dsm_provider(client.app).get(SimcoreS3DataManager.get_location_id()),

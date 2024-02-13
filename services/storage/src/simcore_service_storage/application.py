@@ -103,3 +103,10 @@ def run(settings: Settings, app: web.Application | None = None):
         port=settings.STORAGE_PORT,
         access_log_format=_ACCESS_LOG_FORMAT,
     )
+
+
+def get_application_settings(app: web.Application) -> Settings:
+    settings = app[APP_CONFIG_KEY]
+    assert settings  # nosec
+    assert isinstance(settings, Settings)  # nosec
+    return settings

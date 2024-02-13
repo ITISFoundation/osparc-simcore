@@ -12,12 +12,12 @@ from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from random import choice
-from typing import Final, cast
+from typing import Final
 from uuid import uuid4
 
 import botocore.exceptions
 import pytest
-from aiohttp import ClientSession, web
+from aiohttp import ClientSession
 from faker import Faker
 from models_library.api_schemas_storage import UploadedPart
 from models_library.basic_types import SHA256Str
@@ -25,7 +25,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
-from pytest_mock import MockerFixture, MockFixture
+from pytest_mock import MockFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from simcore_service_storage.exceptions import (
@@ -33,12 +33,7 @@ from simcore_service_storage.exceptions import (
     S3BucketInvalidError,
     S3KeyNotFoundError,
 )
-from simcore_service_storage.models import (
-    FileMetaDataAtDB,
-    MultiPartUploadLinks,
-    S3BucketName,
-)
-from simcore_service_storage.s3 import get_s3_client
+from simcore_service_storage.models import MultiPartUploadLinks, S3BucketName
 from simcore_service_storage.s3_client import (
     StorageS3Client,
     _list_objects_v2_paginated_gen,
@@ -1004,80 +999,3 @@ async def test_file_exists(
         )
         is False
     )
-
-
-##############################################################
-
-
-@pytest.mark.skip()
-async def test__copy_path_s3_s3(
-    mocker: MockerFixture,
-    app: web.Application,
-    simcore_bucket_name: S3BucketName,
-    src_fmd: FileMetaDataAtDB,
-    new_fmd: FileMetaDataAtDB,
-):
-    bytes_transfered_cb = mocker.MagicMock()
-
-    s3_client = get_s3_client(app)
-
-    async for s3_objects in s3_client.iter_pages(
-        simcore_bucket_name,
-        prefix=src_fmd.object_name,
-    ):
-        s3_objects_src_to_new: dict[str, str] = {
-            x["Key"]: x["Key"].replace(
-                f"{src_fmd.object_name}", f"{new_fmd.object_name}"
-            )
-            for x in s3_objects
-            if "Key" in x
-        }
-
-        for src, new in s3_objects_src_to_new.items():
-            # NOTE: copy_file cannot be called concurrently or it will hang.
-            # test this with copying multiple 1GB files if you do not believe me
-            await s3_client.copy_file(
-                simcore_bucket_name,
-                cast(SimcoreS3FileID, src),
-                cast(SimcoreS3FileID, new),
-                bytes_transfered_cb=bytes_transfered_cb,
-            )
-
-            assert bytes_transfered_cb.called
-
-
-async def test_it():
-    import botocore.exceptions
-    from simcore_service_storage.exceptions import S3ReadTimeoutError
-    from simcore_service_storage.s3_utils import (
-        on_timeout_retry_with_exponential_backoff,
-    )
-
-    for key, value in sorted(botocore.exceptions.__dict__.items()):
-        if isinstance(value, type):
-            print(key)
-
-    with pytest.raises(S3ReadTimeoutError) as err_info:
-        raise S3ReadTimeoutError(
-            error=botocore.exceptions.ReadTimeoutError(
-                endpoint_url="https://foo.endpoint.com", request="foo", response="bar"
-            )
-        )
-
-    print(err_info.value)
-    assert isinstance(err_info.value.error, botocore.exceptions.ReadTimeoutError)
-
-    async def foo():
-        raise S3ReadTimeoutError(
-            error=botocore.exceptions.ReadTimeoutError(
-                endpoint_url="https://failing.point.com", request="foo", response="bar"
-            )
-        )
-
-    foo_with_retry = on_timeout_retry_with_exponential_backoff(foo)
-
-    with pytest.raises(S3ReadTimeoutError):
-        await foo_with_retry()
-
-    print(foo_with_retry.retry.statistics)
-    assert foo_with_retry.retry.statistics["attempt_number"] == 5

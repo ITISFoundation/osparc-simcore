@@ -1108,6 +1108,7 @@ class SimcoreS3DataManager(BaseDataManager):
             f"{dst_file_id=}",
             f"{src_fmd.is_directory=}",
         )
+
         # copying will happen using aioboto3, therefore multipart might happen
         # NOTE: connection must be released to ensure database update
         async with self.engine.acquire() as conn, conn.begin() as transaction:
@@ -1123,25 +1124,22 @@ class SimcoreS3DataManager(BaseDataManager):
             await transaction.commit()
 
             s3_client: StorageS3Client = get_s3_client(self.app)
+            _copy_file = on_timeout_retry_with_exponential_backoff(s3_client.copy_file)
 
             if src_fmd.is_directory:
-
-                _copy_file = on_timeout_retry_with_exponential_backoff(
-                    s3_client.copy_file
-                )
+                # FIXME: create a first empty file and remove at the end if everything went well
 
                 async for page in s3_client.iter_pages(
                     self.simcore_bucket_name,
                     prefix=src_fmd.object_name,
                 ):
-                    s3_objects_src_to_new: dict[str, str] = {
-                        s3obj["Key"]: s3obj["Key"].replace(
-                            f"{src_fmd.object_name}", f"{new_fmd.object_name}"
-                        )
-                        for s3obj in page
+                    s3_objects_map: dict[str, str] = {
+                        s3_obj["Key"]: f"{new_fmd.object_name}"
+                        + s3_obj["Key"].removeprefix(f"{src_fmd.object_name}")
+                        for s3_obj in page
                     }
 
-                    for src, new in s3_objects_src_to_new.items():
+                    for src, new in s3_objects_map.items():
                         # NOTE: copy_file cannot be called concurrently or it will hang.
                         # test this with copying multiple 1GB files if you do not believe me
                         await _copy_file(
@@ -1151,7 +1149,7 @@ class SimcoreS3DataManager(BaseDataManager):
                             bytes_transfered_cb=bytes_transfered_cb,
                         )
             else:
-                await s3_client.copy_file(
+                await _copy_file(
                     self.simcore_bucket_name,
                     src_fmd.object_name,
                     new_fmd.object_name,
