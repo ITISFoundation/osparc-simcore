@@ -5,6 +5,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -66,6 +67,44 @@ def simcore_bucket_name(client: TestClient) -> str:
     return settings.STORAGE_S3.S3_BUCKET_NAME
 
 
+#
+# Concept of marking failed copies
+#
+
+
+async def _mark_copy_start(s3_client, bucket, prefix):
+    marker_key = f"{prefix}.copying"
+    await s3_client.put_object(Bucket=bucket, Key=marker_key, Body="")
+
+
+async def _mark_copy_end(s3_client, bucket, prefix):
+    # NOTE: there is a risk that if this call fails, the GC will delete good copies!
+    marker_key = f"{prefix}.copying"
+    await s3_client.delete_object(Bucket=bucket, Key=marker_key)
+
+
+async def _garbage_collect_failed_copies(s3_client, bucket, prefix, threshold_hours=1):
+    marker_key = f"{prefix}.copying"
+    try:
+        response = await s3_client.get_object(Bucket=bucket, Key=marker_key)
+        last_modified = response["LastModified"]
+        if datetime.now(timezone.utc) - last_modified > timedelta(
+            hours=threshold_hours
+        ):
+            print(f"Found stale marker. Cleaning up failed copy objects in {prefix}")
+            paginator = s3_client.get_paginator("list_objects_v2")
+            async for result in paginator.paginate(Bucket=bucket, Prefix=prefix):
+                if "Contents" in result:
+                    for obj in result["Contents"]:
+                        if not obj["Key"].endswith(".copying"):
+                            print(f'Deleting {obj["Key"]}')
+                            await s3_client.delete_object(Bucket=bucket, Key=obj["Key"])
+            # Finally, delete the marker object
+            await s3_client.delete_object(Bucket=bucket, Key=marker_key)
+    except s3_client.exceptions.NoSuchKey:
+        print("No marker found. No cleanup needed.")
+
+
 async def test__copy_path_s3_s3(
     mocker: MockerFixture,
     client: TestClient,
@@ -78,34 +117,14 @@ async def test__copy_path_s3_s3(
     assert client.app
     s3_client = get_s3_client(client.app)
 
-    start = 1
-    async for page in s3_client.iter_pages(
-        simcore_bucket_name,
-        prefix=src_fmd_object_name,
-    ):
-        objects_names_map: dict[str, str] = {
-            s3_obj[
-                "Key"
-            ]: f"{new_fmd_object_name}{s3_obj['Key'].removeprefix(src_fmd_object_name)}"
-            for s3_obj in page
-        }
-        for s3_obj in page:
-            print(s3_obj)
-
-        n = 0
-        for n, (src, new) in enumerate(objects_names_map.items(), start=start):
-            print(n, "copy_file", src, "->", new)
-        start += n + 1
-        #     # NOTE: copy_file cannot be called concurrently or it will hang.
-        #     # test this with copying multiple 1GB files if you do not believe me
-        #     await s3_client.copy_file(
-        #         simcore_bucket_name,
-        #         cast(SimcoreS3FileID, src),
-        #         cast(SimcoreS3FileID, new),
-        #         bytes_transfered_cb=bytes_transfered_cb,
-        #     )
-
-        #     assert bytes_transfered_cb.called
+    copied_count = await s3_client.copy_directory(
+        bucket=simcore_bucket_name,
+        src_prefix=src_fmd_object_name,
+        dst_prefix=new_fmd_object_name,
+        bytes_transfered_cb=bytes_transfered_cb,
+    )
+    print(copied_count)
+    assert bytes_transfered_cb.called
 
 
 async def test_it():

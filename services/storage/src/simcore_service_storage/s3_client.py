@@ -376,6 +376,37 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
             copy_options |= {"Callback": bytes_transfered_cb}
         await self._client.copy(**copy_options)
 
+    async def copy_directory(
+        self,
+        bucket: S3BucketName,
+        src_prefix: str,
+        dst_prefix: str,
+        bytes_transfered_cb: Callable[[int], None] | None,
+    ) -> NonNegativeInt:
+        """Copies multiple objects within the same bucket
+
+        NOTE: No gurarantees on atomicity
+        """
+        count = 0
+        async for page in self.iter_pages(bucket, prefix=src_prefix):
+            for obj in page:
+                assert "Key" in obj  # nosec
+
+                src = obj["Key"]
+                new = obj["Key"].replace(src_prefix, dst_prefix, 1)
+
+                # NOTE: copy_file cannot be called concurrently or it will hang.
+                # test this with copying multiple 1GB files if you do not believe me
+                await self.copy_file(
+                    bucket=bucket,
+                    src_file=cast(SimcoreS3FileID, src),
+                    dst_file=cast(SimcoreS3FileID, new),
+                    bytes_transfered_cb=bytes_transfered_cb,
+                )
+                count += 1
+
+        return count
+
     @s3_exception_handler(_logger)
     async def list_files(
         self,
