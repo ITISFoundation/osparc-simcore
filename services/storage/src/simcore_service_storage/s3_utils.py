@@ -16,7 +16,6 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random_exponential
-from types_aiobotocore_s3.client import Exceptions as BotocoreClientErrorsDef
 
 from .exceptions import (
     S3AccessError,
@@ -99,7 +98,7 @@ def s3_exception_handler(log: logging.Logger):
             try:
                 response = await member_func(self, *args, **kwargs)
 
-            except BotocoreClientErrorsDef.NoSuchBucket as err:
+            except self.wrapped_client.exceptions.NoSuchBucket as err:
                 raise S3BucketInvalidError(
                     bucket=err.response.get("Error", {}).get("BucketName", "undefined")
                 ) from err

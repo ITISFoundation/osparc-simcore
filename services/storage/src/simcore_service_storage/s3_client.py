@@ -92,6 +92,10 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
     _client: S3Client
     transfer_max_concurrency: int
 
+    @property
+    def inner(self) -> S3Client:
+        return self._client
+
     @classmethod
     async def create(
         cls, exit_stack: AsyncExitStack, settings: S3Settings, s3_max_concurrency: int
