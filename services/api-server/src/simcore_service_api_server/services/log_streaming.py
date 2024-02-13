@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from asyncio import Queue
-from datetime import datetime, timezone
 from typing import AsyncIterable, Awaitable, Callable, Final
 
 from models_library.rabbitmq_messages import LoggerRabbitMessage
@@ -110,7 +109,7 @@ class LogStreamer:
         director2_api: DirectorV2Api,
         job_id: JobID,
         log_distributor: LogDistributor,
-        max_log_check_seconds: NonNegativeInt,
+        log_check_timeout: NonNegativeInt,
     ):
         self._user_id = user_id
         self._director2_api = director2_api
@@ -118,7 +117,7 @@ class LogStreamer:
         self._job_id: JobID = job_id
         self._log_distributor: LogDistributor = log_distributor
         self._is_registered: bool = False
-        self._max_log_check_seconds: NonNegativeInt = max_log_check_seconds
+        self._log_check_timeout: NonNegativeInt = log_check_timeout
 
     async def setup(self):
         await self._log_distributor.register(self._job_id, self._queue.put)
@@ -137,26 +136,19 @@ class LogStreamer:
 
     async def _project_done(self) -> bool:
         task = await self._director2_api.get_computation(self._job_id, self._user_id)
-        return not task.stopped is None
+        return task.stopped is not None
 
     async def log_generator(self) -> AsyncIterable[str]:
         if not self._is_registered:
             raise LogStreamerNotRegistered(
                 f"LogStreamer for job_id={self._job_id} is not correctly registered"
             )
-        last_log_time: datetime | None = None
-        while True:
-            while self._queue.empty():
-                if await self._project_done():
-                    return
-                await asyncio.sleep(
-                    0.2
-                    if last_log_time is None
-                    else min(
-                        (datetime.now(tz=timezone.utc) - last_log_time).total_seconds(),
-                        self._max_log_check_seconds,
-                    )
+        done: bool = False
+        while not done:
+            try:
+                log: JobLog = await asyncio.wait_for(
+                    self._queue.get(), timeout=self._log_check_timeout
                 )
-            log: JobLog = await self._queue.get()
-            last_log_time = datetime.now(tz=timezone.utc)
-            yield log.json() + _NEW_LINE
+                yield log.json() + _NEW_LINE
+            except asyncio.TimeoutError:
+                done = await self._project_done()
