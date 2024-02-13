@@ -136,7 +136,7 @@ class LogStreamer:
 
     async def _project_done(self) -> bool:
         task = await self._director2_api.get_computation(self._job_id, self._user_id)
-        return not (task.stopped is None)
+        return task.stopped is not None
 
     async def log_generator(self) -> AsyncIterable[str]:
         if not self._is_registered:
