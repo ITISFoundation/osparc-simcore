@@ -63,16 +63,28 @@ def test_jupyterlab(
 
     # Wait until iframe is shown and create new notebook with print statement
     page.frame_locator(".qx-main-dark").get_by_role(
-        "button", name="New Launcher (Ctrl+Shift+L)"
+        "button", name="New Launcher"
     ).click(timeout=600000)
-    page.frame_locator(".qx-main-dark").locator(".jp-LauncherCard-icon").first.click()
-    _jupyterlab_ui = (
-        page.frame_locator(".qx-main-dark")
-        .get_by_label("Untitled.ipynb")
-        .get_by_role("textbox")
-    )
-    _jupyterlab_ui.fill("print('test')")
-    _jupyterlab_ui.press("Shift+Enter")
+    if "jupyter-octave-python-math" in service_key or "jupyter-math" in service_key:
+        # Python Math service
+        page.frame_locator(".qx-main-dark").get_by_text("python (maths)").first.click()
+        _jupyterlab_ui = page.frame_locator(".qx-main-dark").get_by_role("textbox")
+        _jupyterlab_ui.fill("print('test')")
+        _jupyterlab_ui.press("Shift+Enter")
+    elif "jupyter-smash" in service_key:
+        # Jupyter smash service
+        page.frame_locator(".qx-main-dark").locator(
+            ".jp-LauncherCard-icon"
+        ).first.click()
+        _jupyterlab_ui = (
+            page.frame_locator(".qx-main-dark")
+            .get_by_label("Untitled.ipynb")
+            .get_by_role("textbox")
+        )
+        _jupyterlab_ui.fill("print('test')")
+        _jupyterlab_ui.press("Shift+Enter")
+    else:
+        raise ValueError("Not supported service key")
     page.wait_for_timeout(1000)
 
     # Going back to dashboard

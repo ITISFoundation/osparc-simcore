@@ -20,6 +20,7 @@ from models_library.products import ProductName
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.products import LOGIN_SETTINGS_DEFAULT, products
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
@@ -253,9 +254,7 @@ async def test_product_in_session(
 ):
 
     resp = await client.post("/v0/public")
-    assert (
-        resp.status == web.HTTPUnauthorized.status_code
-    ), f"error: {await resp.text()}"
+    assert resp.status == status.HTTP_401_UNAUTHORIZED, f"error: {await resp.text()}"
 
     # inits session by getting front-end
     resp = await client.get("/")
@@ -305,7 +304,7 @@ async def test_auth_in_session(
             "password": "secret",
         },
     )
-    assert resp.status == web.HTTPForbidden.status_code
+    assert resp.status == status.HTTP_403_FORBIDDEN
 
     # login 'foo' (has access to product)
     resp = await client.post(
@@ -333,14 +332,10 @@ async def test_auth_in_session(
     assert resp.ok, f"error: {await resp.text()}"
 
     resp = await client.post("/v0/admin")
-    assert (
-        resp.status == web.HTTPUnauthorized.status_code
-    ), f"error: {await resp.text()}"
+    assert resp.status == status.HTTP_401_UNAUTHORIZED, f"error: {await resp.text()}"
 
     resp = await client.post("/v0/logout")
-    assert (
-        resp.status == web.HTTPUnauthorized.status_code
-    ), f"error: {await resp.text()}"
+    assert resp.status == status.HTTP_401_UNAUTHORIZED, f"error: {await resp.text()}"
 
 
 async def test_hack_product_session(
@@ -354,7 +349,7 @@ async def test_hack_product_session(
 
     # not logged in
     resp = await client.post("/v0/admin")
-    assert resp.status == web.HTTPUnauthorized.status_code
+    assert resp.status == status.HTTP_401_UNAUTHORIZED
 
     # login 'foo' (w/o access to s4l)
     resp = await client.post(
@@ -364,7 +359,7 @@ async def test_hack_product_session(
             "password": "secret",
         },
     )
-    assert resp.status == web.HTTPForbidden.status_code
+    assert resp.status == status.HTTP_403_FORBIDDEN
 
 
 @pytest.fixture

@@ -29,6 +29,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_file_as, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
@@ -133,7 +134,7 @@ async def test_copy_folders_from_non_existing_project(
             dst_project,
             nodes_map={},
         )
-    assert exc_info.value.status == web.HTTPNotFound.status_code
+    assert exc_info.value.status == status.HTTP_404_NOT_FOUND
 
     with pytest.raises(
         ClientResponseError, match=f"{incorrect_dst_project['uuid']} was not found"
@@ -145,7 +146,7 @@ async def test_copy_folders_from_non_existing_project(
             incorrect_dst_project,
             nodes_map={},
         )
-    assert exc_info.value.status == web.HTTPNotFound.status_code
+    assert exc_info.value.status == status.HTTP_404_NOT_FOUND
 
 
 async def test_copy_folders_from_empty_project(

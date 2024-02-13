@@ -9,7 +9,6 @@ from urllib.parse import quote
 
 from aiohttp import ClientResponse, ClientSession
 from aiohttp import client as aiohttp_client_module
-from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from models_library.api_schemas_storage import (
     FileLocationArray,
@@ -25,6 +24,7 @@ from models_library.generics import Envelope
 from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
+from servicelib.aiohttp import status
 from tenacity import RetryCallState
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -49,19 +49,19 @@ def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
         try:
             return await handler(*args, **kwargs)
         except ClientResponseError as err:
-            if err.status == web.HTTPNotFound.status_code:
+            if err.status == status.HTTP_404_NOT_FOUND:
                 msg = kwargs.get("file_id", "unknown file id")
                 raise exceptions.S3InvalidPathError(msg) from err
-            if err.status == web.HTTPUnprocessableEntity.status_code:
+            if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
                 msg = f"Invalid call to storage: {err.message}"
                 raise exceptions.StorageInvalidCall(msg) from err
             if (
-                web.HTTPInternalServerError.status_code
+                status.HTTP_500_INTERNAL_SERVER_ERROR
                 > err.status
-                >= web.HTTPBadRequest.status_code
+                >= status.HTTP_400_BAD_REQUEST
             ):
                 raise exceptions.StorageInvalidCall(err.message) from err
-            if err.status > web.HTTPInternalServerError.status_code:
+            if err.status > status.HTTP_500_INTERNAL_SERVER_ERROR:
                 raise exceptions.StorageServerIssue(err.message) from err
         except ClientConnectionError as err:
             msg = f"{err}"
@@ -141,7 +141,7 @@ async def get_storage_locations(
         session,
         "GET",
         f"{_base_url()}/locations",
-        expected_status=web.HTTPOk.status_code,
+        expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}"},
     ) as response:
         locations_enveloped = Envelope[FileLocationArray].parse_obj(
@@ -170,7 +170,7 @@ async def get_download_file_link(
         session,
         "GET",
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
-        expected_status=web.HTTPOk.status_code,
+        expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}", "link_type": link_type.value},
     ) as response:
         presigned_link_enveloped = Envelope[PresignedLink].parse_obj(
@@ -215,7 +215,7 @@ async def get_upload_file_links(
         session,
         "PUT",
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
-        expected_status=web.HTTPOk.status_code,
+        expected_status=status.HTTP_200_OK,
         params=query_params,
     ) as response:
         file_upload_links_enveloped = Envelope[FileUploadSchema].parse_obj(
@@ -239,7 +239,7 @@ async def get_file_metadata(
         session,
         "GET",
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}/metadata",
-        expected_status=web.HTTPOk.status_code,
+        expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}"},
     ) as response:
         file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(
@@ -262,7 +262,7 @@ async def list_file_metadata(
         session,
         "GET",
         f"{_base_url()}/locations/{location_id}/files/metadata",
-        expected_status=web.HTTPOk.status_code,
+        expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}", "uuid_filter": uuid_filter},
     ) as resp:
         envelope = Envelope[list[FileMetaDataGet]].parse_obj(await resp.json())
@@ -283,7 +283,7 @@ async def delete_file(
         session,
         "DELETE",
         f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
-        expected_status=web.HTTPNoContent.status_code,
+        expected_status=status.HTTP_204_NO_CONTENT,
         params={"user_id": f"{user_id}"},
     ):
         ...

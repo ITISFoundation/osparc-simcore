@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from inspect import isawaitable
 from typing import Final, Optional, Protocol, runtime_checkable
 
-from servicelib.logging_utils import log_catch
+from .logging_utils import log_catch
 
 logger = logging.getLogger(__name__)
 _MIN_PROGRESS_UPDATE_PERCENT: Final[float] = 0.01

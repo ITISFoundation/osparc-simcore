@@ -6,7 +6,8 @@
 
 import asyncio
 import logging
-from typing import Any, MutableMapping
+from collections.abc import MutableMapping
+from typing import Any
 
 from aiohttp import ClientSession, client_exceptions
 from pydantic import HttpUrl, ValidationError, parse_obj_as

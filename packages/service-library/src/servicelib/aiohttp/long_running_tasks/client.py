@@ -3,7 +3,8 @@ from collections.abc import AsyncGenerator, Coroutine
 from dataclasses import dataclass
 from typing import Any, Final, TypeAlias
 
-from aiohttp import ClientConnectionError, ClientSession, web
+from aiohttp import ClientConnectionError, ClientSession
+from servicelib.aiohttp import status
 from tenacity import TryAgain, retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -79,7 +80,7 @@ async def _wait_for_completion(
 async def _task_result(session: ClientSession, result_url: URL) -> Any:
     async with session.get(result_url) as response:
         response.raise_for_status()
-        if response.status != web.HTTPNoContent.status_code:
+        if response.status != status.HTTP_204_NO_CONTENT:
             data, error = unwrap_envelope(await response.json())
             assert not error  # nosec
             assert data  # nosec

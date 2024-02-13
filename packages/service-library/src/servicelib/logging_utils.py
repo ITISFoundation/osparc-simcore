@@ -122,7 +122,7 @@ def test_logger_propagation(logger: logging.Logger):
     This should help to visually test a given configuration
 
     USAGE:
-        from servicelib.logging_utils import test_logger_propagation
+        from .logging_utils import test_logger_propagation
         for n in ("aiohttp.access", "gunicorn.access"):
             test_logger_propagation(logging.getLogger(n))
     """

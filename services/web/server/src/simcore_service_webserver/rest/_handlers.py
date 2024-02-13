@@ -9,6 +9,7 @@ from typing import Any
 from aiohttp import web
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
 from pydantic import BaseModel, parse_obj_as
+from servicelib.aiohttp import status
 
 from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
 from .._meta import API_VTAG
@@ -107,6 +108,6 @@ async def get_scheduled_maintenance(request: web.Request):
         )
         return envelope_json_response(maintenance_data)
 
-    response = web.json_response(status=web.HTTPNoContent.status_code)
-    assert response.status == 204  # nosec
+    response = web.json_response(status=status.HTTP_204_NO_CONTENT)
+    assert response.status == status.HTTP_204_NO_CONTENT  # nosec
     return response

@@ -11,6 +11,7 @@ from pytest_mock import MockFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.login._auth_handlers import LoginNextPage
@@ -67,7 +68,7 @@ async def test_resend_2fa_entrypoint_is_protected(
     )
 
     # protected
-    assert response.status == web.HTTPUnauthorized.status_code
+    assert response.status == status.HTTP_401_UNAUTHORIZED
 
 
 async def test_resend_2fa_workflow(
