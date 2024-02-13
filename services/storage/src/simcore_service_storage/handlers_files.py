@@ -18,6 +18,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -288,7 +289,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         )
     )
     return web.json_response(
-        status=web.HTTPAccepted.status_code,
+        status=status.HTTP_202_ACCEPTED,
         data={"data": jsonable_encoder(response, by_alias=True)},
         dumps=json_dumps,
     )

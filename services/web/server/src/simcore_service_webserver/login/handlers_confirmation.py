@@ -15,6 +15,7 @@ from pydantic import (
     parse_obj_as,
     validator,
 )
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -188,7 +189,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
                 message=f"Sorry, we cannot confirm your {action}."
                 "Please try again in a few moments. "
                 "If the problem persist please contact support attaching this code ({error_code})",
-                status_code=web.HTTPServiceUnavailable.status_code,
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             ) from err
 
     raise web.HTTPFound(location=redirect_to_login_url)

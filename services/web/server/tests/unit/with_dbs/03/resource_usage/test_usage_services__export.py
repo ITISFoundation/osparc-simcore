@@ -18,6 +18,7 @@ from models_library.rest_ordering import OrderBy
 from pydantic import AnyUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.models import UserRole
 
@@ -78,7 +79,7 @@ async def test_export_service_usage_redirection(
     if resp.status == web.HTTPOk:
         # checks is a redirection
         assert len(resp.history) == 1
-        assert resp.history[0].status == web.HTTPFound.status_code
+        assert resp.history[0].status == status.HTTP_302_FOUND
 
         assert mock_export_usage_services.called
 
@@ -106,7 +107,7 @@ async def test_list_service_usage(
 
     # checks is a redirection
     assert len(resp.history) == 1
-    assert resp.history[0].status == web.HTTPFound.status_code
+    assert resp.history[0].status == status.HTTP_302_FOUND
 
     assert mock_export_usage_services.called
     args = mock_export_usage_services.call_args[1]

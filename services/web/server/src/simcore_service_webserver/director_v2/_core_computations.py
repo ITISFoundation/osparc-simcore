@@ -22,6 +22,7 @@ from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
 from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
+from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
 from settings_library.utils_cli import create_json_encoder_wo_secrets
 
@@ -178,7 +179,7 @@ async def get_computation_task(
         _logger.debug("found computation task: %s", f"{task_out=}")
         return task_out
     except DirectorServiceError as exc:
-        if exc.status == web.HTTPNotFound.status_code:
+        if exc.status == status.HTTP_404_NOT_FOUND:
             # the pipeline might not exist and that is ok
             return None
         _logger.warning(
@@ -256,11 +257,11 @@ async def get_cluster(
         ),
         expected_status=web.HTTPOk,
         on_error={
-            web.HTTPNotFound.status_code: (
+            status.HTTP_404_NOT_FOUND: (
                 ClusterNotFoundError,
                 {"cluster_id": cluster_id},
             ),
-            web.HTTPForbidden.status_code: (
+            status.HTTP_403_FORBIDDEN: (
                 ClusterAccessForbidden,
                 {"cluster_id": cluster_id},
             ),
@@ -285,11 +286,11 @@ async def get_cluster_details(
         ),
         expected_status=web.HTTPOk,
         on_error={
-            web.HTTPNotFound.status_code: (
+            status.HTTP_404_NOT_FOUND: (
                 ClusterNotFoundError,
                 {"cluster_id": cluster_id},
             ),
-            web.HTTPForbidden.status_code: (
+            status.HTTP_403_FORBIDDEN: (
                 ClusterAccessForbidden,
                 {"cluster_id": cluster_id},
             ),
@@ -322,11 +323,11 @@ async def update_cluster(
             )
         ),
         on_error={
-            web.HTTPNotFound.status_code: (
+            status.HTTP_404_NOT_FOUND: (
                 ClusterNotFoundError,
                 {"cluster_id": cluster_id},
             ),
-            web.HTTPForbidden.status_code: (
+            status.HTTP_403_FORBIDDEN: (
                 ClusterAccessForbidden,
                 {"cluster_id": cluster_id},
             ),
@@ -350,11 +351,11 @@ async def delete_cluster(
         ),
         expected_status=web.HTTPNoContent,
         on_error={
-            web.HTTPNotFound.status_code: (
+            status.HTTP_404_NOT_FOUND: (
                 ClusterNotFoundError,
                 {"cluster_id": cluster_id},
             ),
-            web.HTTPForbidden.status_code: (
+            status.HTTP_403_FORBIDDEN: (
                 ClusterAccessForbidden,
                 {"cluster_id": cluster_id},
             ),
@@ -377,7 +378,7 @@ async def ping_cluster(app: web.Application, cluster_ping: ClusterPing) -> None:
             )
         ),
         on_error={
-            web.HTTPUnprocessableEntity.status_code: (
+            status.HTTP_422_UNPROCESSABLE_ENTITY: (
                 ClusterPingError,
                 {"endpoint": f"{cluster_ping.endpoint}"},
             )
@@ -397,7 +398,7 @@ async def ping_specific_cluster(
         ),
         expected_status=web.HTTPNoContent,
         on_error={
-            web.HTTPUnprocessableEntity.status_code: (
+            status.HTTP_422_UNPROCESSABLE_ENTITY: (
                 ClusterDefinedPingError,
                 {"cluster_id": f"{cluster_id}"},
             )

@@ -2919,6 +2919,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
+        '400':
+          description: ValidationError
+        '402':
+          description: WalletNotEnoughCreditsError
+        '403':
+          description: ProjectInvalidRightsError
+        '404':
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+        '409':
+          description: ProjectTooManyProjectOpenedError
+        '422':
+          description: ValidationError
+        '503':
+          description: DirectorServiceError
   /v0/projects/{project_id}:close:
     post:
       tags:

@@ -28,6 +28,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (  # nopycln: im
     ExpectedResponse,
     standard_role_response,
 )
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.director_v2.exceptions import (
@@ -71,7 +72,7 @@ def mocked_director_v2_with_error(
         "simcore_service_webserver.clusters._handlers.director_v2_api", autospec=True
     )
     error = director_v2_error(
-        status=web.HTTPServiceUnavailable.status_code,
+        status=status.HTTP_503_SERVICE_UNAVAILABLE,
         reason="no director-v2",
         url=faker.uri(),
         cluster_id=faker.pyint(min_value=1),

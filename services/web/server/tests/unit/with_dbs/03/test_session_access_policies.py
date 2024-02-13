@@ -11,6 +11,7 @@ import pytest
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.aiohttp import status
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.login._constants import (
@@ -37,7 +38,7 @@ def client(
 
     def _handler_impl(request: web.Request, name: str):
         return_status = int(request.query.get("return_status", 200))
-        ok = return_status < 400
+        ok = return_status < status.HTTP_400_BAD_REQUEST
         if ok:
             return web.Response(text=f"{name} ok", status=return_status)
 
@@ -149,18 +150,20 @@ async def test_login_then_submit_code(
 
     # one_time_access=True, then after success is not auth
     response = await do_request(client, "auth_login_2fa")
-    assert response.status == 401
+    assert response.status == status.HTTP_401_UNAUTHORIZED
 
 
 async def test_login_fails_then_no_access(
     client: TestClient, do_request: ClientRequestCallable
 ):
 
-    response = await do_request(client, "auth_login", return_status=500)
-    assert response.status == 500
+    response = await do_request(
+        client, "auth_login", return_status=status.HTTP_500_INTERNAL_SERVER_ERROR
+    )
+    assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
     response = await do_request(client, "auth_login_2fa")
-    assert response.status == 401
+    assert response.status == status.HTTP_401_UNAUTHORIZED
 
 
 async def test_login_then_multiple_resend_and_submit_code(
@@ -179,7 +182,7 @@ async def test_login_then_multiple_resend_and_submit_code(
 
     # one_time_access=True, then after success is not auth
     response = await do_request(client, "auth_login_2fa")
-    assert response.status == 401
+    assert response.status == status.HTTP_401_UNAUTHORIZED
 
 
 async def test_login_then_register_phone_then_multiple_resend_and_confirm_code(
@@ -201,7 +204,7 @@ async def test_login_then_register_phone_then_multiple_resend_and_confirm_code(
 
     # one_time_access=True, then after success is not auth
     response = await do_request(client, "auth_phone_confirmation")
-    assert response.status == 401
+    assert response.status == status.HTTP_401_UNAUTHORIZED
 
 
 @pytest.mark.parametrize(
@@ -220,7 +223,7 @@ async def test_routes_with_session_access_required(
 ):
     # no access
     response = await do_request(client, route_name)
-    assert response.status == 401
+    assert response.status == status.HTTP_401_UNAUTHORIZED
 
     # grant access after this request
     response = await do_request(client, granted_at)

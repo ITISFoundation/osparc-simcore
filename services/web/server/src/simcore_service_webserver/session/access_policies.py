@@ -8,6 +8,7 @@ from typing import Final, TypedDict
 from aiohttp import web
 from aiohttp_session import Session
 from pydantic import PositiveInt, validate_arguments
+from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 
 from .api import get_session
@@ -18,7 +19,7 @@ _SESSION_GRANTED_ACCESS_TOKENS_KEY: Final = (
 )
 
 # Errors start in this code https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
-_HTTP_400_BAD_REQUEST: Final = web.HTTPBadRequest.status_code
+_HTTP_400_BAD_REQUEST: Final = status.HTTP_400_BAD_REQUEST
 
 _logger = logging.getLogger(__name__)
 

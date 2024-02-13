@@ -45,6 +45,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
 )
+from servicelib.aiohttp import status
 from servicelib.aiohttp.web_exceptions_extension import HTTPLockedError
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
@@ -348,7 +349,7 @@ async def test_open_project(
 
     await assert_status(resp, expected)
 
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         # calls notifications to subscribe to this project
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
@@ -429,7 +430,7 @@ async def test_open_template_project_for_edition(
     resp = await client.post(f"{url}", json=client_session_id_factory())
     await assert_status(resp, expected)
 
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(template_project["uuid"])
         )
@@ -777,7 +778,7 @@ async def test_close_project(
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
 
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
         )
@@ -793,7 +794,7 @@ async def test_close_project(
     resp = await client.post(url, json=client_id)
     await assert_status(resp, expected.no_content)
 
-    if resp.status == web.HTTPNoContent.status_code:
+    if resp.status == status.HTTP_204_NO_CONTENT:
         mocked_notifications_plugin["unsubscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
         )
@@ -866,7 +867,7 @@ async def test_get_active_project(
     )
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         assert not data
         assert not error
 
@@ -879,7 +880,7 @@ async def test_get_active_project(
 
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
         )
@@ -910,7 +911,7 @@ async def test_get_active_project(
     )
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         assert not data
         assert not error
 
@@ -957,7 +958,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     resp = await client.post(url.path, json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
     node_id = None
-    if resp.status == web.HTTPCreated.status_code:
+    if resp.status == status.HTTP_201_CREATED:
         mocked_director_v2_api[
             "dynamic_scheduler.api.run_dynamic_service"
         ].assert_called_once()
@@ -978,7 +979,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     resp = await client.post(f"{url}", json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
     node_id_2 = None
-    if resp.status == web.HTTPCreated.status_code:
+    if resp.status == status.HTTP_201_CREATED:
         mocked_director_v2_api[
             "dynamic_scheduler.api.run_dynamic_service"
         ].assert_not_called()
@@ -1008,7 +1009,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
     resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_get)
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         assert "service_state" in data
         assert data["service_state"] == "running"
 
@@ -1028,7 +1029,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
     resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_get)
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         assert "service_state" in data
         assert data["service_state"] == "idle"
 
@@ -1041,7 +1042,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
     resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_delete)
-    if resp.status == web.HTTPNoContent.status_code:
+    if resp.status == status.HTTP_204_NO_CONTENT:
         mocked_director_v2_api[
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_called_once()
@@ -1061,7 +1062,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
     resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_delete)
-    if resp.status == web.HTTPNoContent.status_code:
+    if resp.status == status.HTTP_204_NO_CONTENT:
         mocked_director_v2_api[
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
@@ -1420,7 +1421,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     await assert_status(
         resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
     )
-    if resp.status != web.HTTPOk.status_code:
+    if resp.status != status.HTTP_200_OK:
         return
 
     # the project is opened, now let's simulate a refresh

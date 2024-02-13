@@ -6,13 +6,13 @@
 from typing import Any
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
 )
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 
 
@@ -34,7 +34,7 @@ async def test_long_running_tasks_access_restricted_to_logged_users(
     assert client.app
     url = client.app.router[entrypoint].url_for(**request_params)
     resp = await client.request(method, f"{url}")
-    assert resp.status == web.HTTPUnauthorized.status_code
+    assert resp.status == status.HTTP_401_UNAUTHORIZED
 
 
 def _tasks_role_responses() -> tuple[str, list[tuple[UserRole, ExpectedResponse]]]:

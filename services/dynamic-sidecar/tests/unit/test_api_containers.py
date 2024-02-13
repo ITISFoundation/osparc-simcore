@@ -475,7 +475,7 @@ async def test_container_docker_error(
     def _expected_error_string(status_code: int) -> dict[str, Any]:
         return {
             "errors": [
-                f"An unexpected Docker error occurred status={status_code}, message='aiodocker_mocked_error'"
+                f"An unexpected Docker error occurred status_code={status_code}, message='aiodocker_mocked_error'"
             ]
         }
 

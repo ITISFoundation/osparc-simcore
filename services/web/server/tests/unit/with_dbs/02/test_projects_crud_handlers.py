@@ -31,6 +31,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     MockedStorageSubsystem,
     standard_role_response,
 )
+from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
@@ -786,7 +787,7 @@ def mock_director_v2_inactivity(
     )
     aioresponses_mocker.get(
         get_services_pattern,
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
         repeat=True,
         payload={"is_inactive": is_inactive},
     )
