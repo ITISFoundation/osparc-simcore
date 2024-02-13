@@ -1,4 +1,5 @@
 # pylint: disable=too-many-arguments
+# pylint: disable=W0613
 
 import logging
 from collections import deque
