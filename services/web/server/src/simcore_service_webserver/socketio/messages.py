@@ -14,7 +14,6 @@ from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from socketio import AsyncServer
 
-from ..resource_manager.user_sessions import managed_resource
 from ._utils import get_socket_server
 
 _logger = logging.getLogger(__name__)
@@ -33,24 +32,19 @@ SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
 SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT: Final[str] = "walletOsparcCreditsUpdated"
 
 
-async def send_messages(
+async def send_messages_to_user(
     app: Application, user_id: UserID, messages: Sequence[SocketMessageDict]
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
-
-    socket_ids: list[str] = []
-    with managed_resource(user_id, None, app) as user_session:
-        socket_ids = await user_session.find_socket_ids()
 
     await logged_gather(
         *(
             sio.emit(
                 message["event_type"],
                 json_dumps(message["data"]),
-                room=SocketIORoomStr.from_socket_id(sid),
+                room=SocketIORoomStr.from_user_id(user_id=user_id),
             )
             for message in messages
-            for sid in socket_ids
         ),
         reraise=False,
         log=_logger,
@@ -58,7 +52,7 @@ async def send_messages(
     )
 
 
-async def send_group_messages(
+async def send_messages_to_group(
     app: Application, group_id: GroupID, messages: Sequence[SocketMessageDict]
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
