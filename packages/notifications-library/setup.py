@@ -54,6 +54,8 @@ SETUP = {
     "package_data": {
         "": [
             "templates/**/*.jinja2",
+            "templates/**/*.html",
+            "templates/**/*.txt",
         ]
     },
     "test_suite": "tests",
