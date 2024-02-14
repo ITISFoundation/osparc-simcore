@@ -17,7 +17,6 @@ cfgv==3.4.0
 click==8.1.7
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
     #   black
     #   pip-tools
 dill==0.3.8
@@ -78,7 +77,6 @@ tomlkit==0.12.3
 typing-extensions==4.9.0
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
     #   astroid
     #   black
 virtualenv==20.25.0

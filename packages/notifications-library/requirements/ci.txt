@@ -13,7 +13,6 @@
 
 # installs this repo's packages
 ../pytest-simcore/
-../models-library/
 ../postgres-database/
 ../settings-library/
 
