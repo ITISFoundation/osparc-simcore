@@ -47,6 +47,11 @@ SETUP = {
     "packages": find_packages(where="src"),
     "package_dir": {"": "src"},
     "include_package_data": True,
+    "package_data": {
+        "": [
+            "templates/**/*.jinja2",
+        ]
+    },
     "test_suite": "tests",
     "tests_require": TEST_REQUIREMENTS,
     "extras_require": {"test": TEST_REQUIREMENTS},
