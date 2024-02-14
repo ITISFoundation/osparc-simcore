@@ -97,7 +97,7 @@ from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
     send_group_messages,
-    send_messages,
+    send_messages_to_user,
 )
 from ..storage import api as storage_api
 from ..users.api import FullNameDict, get_user_fullname, get_user_role
@@ -1456,7 +1456,9 @@ async def notify_project_state_update(
     ]
 
     if notify_only_user:
-        await send_messages(app, user_id=f"{notify_only_user}", messages=messages)
+        await send_messages_to_user(
+            app, user_id=f"{notify_only_user}", messages=messages
+        )
     else:
         rooms_to_notify: list[GroupID] = [
             gid for gid, rights in project["accessRights"].items() if rights["read"]
