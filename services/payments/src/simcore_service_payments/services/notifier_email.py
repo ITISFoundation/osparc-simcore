@@ -20,7 +20,6 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.file_utils import remove_directory
 from settings_library.email import EmailProtocol, SMTPSettings
-from test_utils_tags import user
 
 from ..core.errors import TemplatesNotFoundError
 from ..db.payment_users_repo import PaymentsUsersRepo
