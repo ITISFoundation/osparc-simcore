@@ -49,17 +49,31 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
   },
 
   statics: {
+    defaultTemplates: [
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/Thumbnail.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/bright_coulomb.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/dynamic_hertz.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/electric_heaviside.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/energetic_ampere.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/glowing_tesla.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/illuminated_volta.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/luminous_ohm.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/magnetic_lorentz.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/radiant_maxwell.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/vibrant_faraday.png"
+    ],
     extractThumbnailSuggestions: function(study) {
       const suggestions = new Set([]);
       const wb = study.getWorkbench();
       const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
       Object.values(nodes).forEach(node => {
-        const srvMetadata = osparc.service.Utils.getMetaData(node["key"], node["version"]);
+        const srvMetadata = osparc.service.Utils.getMetaData(node.getKey(), node.getVersion());
         if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
           suggestions.add(srvMetadata["thumbnail"]);
         }
       });
-      return Array.from(suggestions);
+      const amendedArray = [...suggestions, ...this.defaultTemplates]
+      return Array.from(amendedArray);
     }
   },
 
@@ -122,12 +136,17 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
     },
 
     thumbnailTapped: function(thumbnail) {
-      this.getChildren().forEach(thumbnailImg => osparc.utils.Utils.hideBorder(thumbnailImg));
+      this.getChildren().forEach(thumbnailImg => {
+        osparc.utils.Utils.updateBorderColor(thumbnailImg, qx.theme.manager.Color.getInstance().resolve("box-shadow"));
+        osparc.utils.Utils.addBackground(thumbnailImg, qx.theme.manager.Color.getInstance().resolve("fab-background"));
+      });
       const color = qx.theme.manager.Color.getInstance().resolve("background-selected-dark");
-      osparc.utils.Utils.addBorder(thumbnail, 1, color);
+      const bgColor = qx.theme.manager.Color.getInstance().resolve("background-selected");
+      osparc.utils.Utils.updateBorderColor(thumbnail, color);
+      osparc.utils.Utils.addBackground(thumbnail, bgColor);
       this.fireDataEvent("thumbnailTapped", {
-        type: thumbnail.thumbnailType,
-        source: thumbnail.thumbnailFileUrl
+        type: thumbnail.thumbnailType || "templateThumbnail",
+        source: thumbnail.thumbnailFileUrl || thumbnail.getSource()
       });
     },
 
@@ -135,12 +154,16 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       this.removeAll();
       suggestions.forEach(suggestion => {
         const maxHeight = this.getMaxHeight();
-        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion["thumbnailUrl"], maxHeight, parseInt(maxHeight*2/3));
-        thumbnail.thumbnailType = suggestion["type"];
-        thumbnail.thumbnailFileUrl = suggestion["fileUrl"];
-        thumbnail.setMarginLeft(1); // give some extra space to the selection border
-        thumbnail.addListener("mouseover", () => thumbnail.set({decorator: "selected-light"}), this);
-        thumbnail.addListener("mouseout", () => thumbnail.set({decorator: "fab-button"}), this);
+        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion["thumbnailUrl"] || suggestion, maxHeight, parseInt(maxHeight*2/3));
+        thumbnail.set({
+          minWidth: 97,
+          margin: 0,
+          decorator: "thumbnail"
+        });
+        thumbnail.thumbnailType = suggestion["type"] || "templateThumbnail";
+        thumbnail.thumbnailFileUrl = suggestion["fileUrl"] || suggestion;
+        thumbnail.addListener("mouseover", () => thumbnail.set({decorator: "thumbnail-selected"}), this);
+        thumbnail.addListener("mouseout", () => thumbnail.set({decorator: "thumbnail"}), this);
         thumbnail.addListener("tap", () => {
           this.thumbnailTapped(thumbnail);
         }, this);
