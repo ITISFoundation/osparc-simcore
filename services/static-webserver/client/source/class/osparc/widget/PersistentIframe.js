@@ -105,6 +105,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     __iframe: null,
     __syncScheduled: null,
     __buttonContainer: null,
+    __diskUsageIndicator: null,
     __reloadButton: null,
     __zoomButton: null,
 
@@ -132,7 +133,10 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         alignX: "right",
         alignY: "middle"
       }));
-
+      if (this.__lowDiskThreshold) {
+        const testIndicator = this.__diskUsageIndicator = new osparc.ui.basic.DiskUsageIndicator();
+      }
+      buttonContainer.add(testIndicator);
       const reloadButton = this.__reloadButton = this.self().createToolbarButton().set({
         label: this.tr("Reload"),
         icon: "@FontAwesome5Solid/redo-alt/14",
@@ -228,12 +232,18 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           height: divSize.height - this.getToolbarHeight()
         });
 
-        this.__buttonContainer.setLayoutProperties({
+        const rightOffest = this.hasState("maximized") ? 90 : 100;
+        this.__reloadButton.setLayoutProperties({
+          top: (divPos.top - iframeParentPos.top),
+          right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + rightOffest
+        });
+        this.__zoomButton.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
         });
 
-        this.__buttonContainer.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
+        this.__reloadButton.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
+        this.__zoomButton.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
       }, 0);
     },
 
