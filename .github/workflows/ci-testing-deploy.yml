@@ -53,6 +53,7 @@ jobs:
       aws-library: ${{ steps.filter.outputs.aws-library }}
       dask-task-models-library: ${{ steps.filter.outputs.dask-task-models-library }}
       models-library: ${{ steps.filter.outputs.models-library }}
+      notifications-library: ${{ steps.filter.outputs.notifications-library }}
       postgres-database: ${{ steps.filter.outputs.postgres-database }}
       service-integration: ${{ steps.filter.outputs.service-integration }}
       service-library: ${{ steps.filter.outputs.service-library }}
@@ -102,6 +103,13 @@ jobs:
               - 'mypy.ini'
             models-library:
               - 'packages/models-library/**'
+              - 'packages/postgres-database/**'
+              - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
+            notifications-library:
+              - 'packages/notifications-library/**'
               - 'packages/postgres-database/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
@@ -1529,6 +1537,44 @@ jobs:
         with:
           flags: unittests #optional
 
+  unit-test-notifications-library:
+    needs: changes
+    if: ${{ needs.changes.outputs.notifications-library == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit]notifications-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.10"]
+        os: [ubuntu-22.04]
+        docker_buildx: [v0.10.4]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/notifications-library/requirements/ci.txt"
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/notifications-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/notifications-library.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/notifications-library.bash test
+      - uses: codecov/codecov-action@v3.1.4
+        with:
+          flags: unittests #optional
+
   unit-test-simcore-sdk:
     needs: changes
     if: ${{ needs.changes.outputs.simcore-sdk == 'true' || github.event_name == 'push' }}
@@ -1593,6 +1639,7 @@ jobs:
         unit-test-dynamic-sidecar,
         unit-test-frontend,
         unit-test-models-library,
+        unit-test-notifications-library,
         unit-test-osparc-gateway-server,
         unit-test-payments,
         unit-test-dynamic-scheduler,
