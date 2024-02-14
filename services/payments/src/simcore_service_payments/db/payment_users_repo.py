@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 from models_library.api_schemas_webserver.wallets import PaymentID
 from models_library.users import GroupID, UserID
+from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
@@ -63,3 +64,13 @@ class PaymentsUsersRepo(BaseRepository):
 
         msg = f"{payment_id=} for {user_id=} was not found"
         raise ValueError(msg)
+
+    async def get_email_templates(self, names: set[str]):
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(
+                sa.select(
+                    jinja2_templates.c.name,
+                    jinja2_templates.c.content,
+                ).where(jinja2_templates.c.name.in_(names))
+            )
+            return result.fetchall()

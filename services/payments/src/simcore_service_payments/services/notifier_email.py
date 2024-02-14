@@ -23,7 +23,6 @@ from .notifier_abc import NotificationProvider
 
 _logger = logging.getLogger(__name__)
 
-
 _BASE_HTML: Final[
     str
 ] = """
@@ -97,9 +96,9 @@ _NOTIFY_PAYMENTS_SUBJECT = "Your Payment {{ payment.price_dollars }} USD for {{ 
 
 _PRODUCT_NOTIFICATIONS_TEMPLATES = {
     "base.html": _BASE_HTML,
-    "notify_payments.html": _NOTIFY_PAYMENTS_HTML,
-    "notify_payments.txt": _NOTIFY_PAYMENTS_TXT,
-    "notify_payments-subject.txt": _NOTIFY_PAYMENTS_SUBJECT,
+    "notify_payments.email.html": _NOTIFY_PAYMENTS_HTML,
+    "notify_payments.email.txt": _NOTIFY_PAYMENTS_TXT,
+    "notify_payments.email.subject.txt": _NOTIFY_PAYMENTS_SUBJECT,
 }
 
 
@@ -148,13 +147,13 @@ async def _create_user_email(
         display_name=f"{user.first_name} {user.last_name}",
         addr_spec=user.email,
     )
-    msg["Subject"] = env.get_template("notify_payments-subject.txt").render(data)
+    msg["Subject"] = env.get_template("notify_payments.email.subject.txt").render(data)
 
     # Body
-    text_template = env.get_template("notify_payments.txt")
+    text_template = env.get_template("notify_payments.email.txt")
     msg.set_content(text_template.render(data))
 
-    html_template = env.get_template("notify_payments.html")
+    html_template = env.get_template("notify_payments.email.html")
     msg.add_alternative(html_template.render(data), subtype="html")
     return msg
 
