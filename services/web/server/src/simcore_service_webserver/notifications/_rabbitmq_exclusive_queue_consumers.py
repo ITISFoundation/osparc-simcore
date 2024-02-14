@@ -1,6 +1,6 @@
 import logging
-from collections.abc import AsyncIterator
-from typing import Final, Generator
+from collections.abc import AsyncIterator, Generator
+from typing import Final
 
 from aiohttp import web
 from models_library.rabbitmq_messages import (
