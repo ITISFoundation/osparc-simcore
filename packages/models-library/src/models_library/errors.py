@@ -1,5 +1,7 @@
 from typing import Any, TypedDict
 
+from pydantic.errors import PydanticErrorMixin
+
 Loc = tuple[int | str, ...]
 
 
@@ -32,6 +34,21 @@ class ErrorDict(_ErrorDictRequired, total=False):
 
 RABBITMQ_CLIENT_UNHEALTHY_MSG = "RabbitMQ client is in a bad state!"
 REDIS_CLIENT_UNHEALTHY_MSG = "Redis cannot be reached!"
+
+
+class _OsparcErrorMixin(PydanticErrorMixin):
+    @classmethod
+    def get_full_class_name(cls) -> str:
+        relevant_classes = [
+            c.__name__
+            for c in cls.__mro__[:-1]
+            if c.__name__ not in ("PydanticErrorMixin", "_OsparcErrorMixin")
+        ]
+        return ".".join(reversed(relevant_classes))
+
+
+class OsparcBaseError(_OsparcErrorMixin):
+    ...
 
 
 # NOTE: Here we do not just import as 'from pydantic.error_wrappers import ErrorDict'
