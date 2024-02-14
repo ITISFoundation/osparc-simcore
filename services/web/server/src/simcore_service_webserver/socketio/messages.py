@@ -10,7 +10,7 @@ from aiohttp.web import Application
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID, UserID
-from servicelib.json_serialization import json_dumps
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.utils import logged_gather
 from socketio import AsyncServer
 
@@ -40,8 +40,8 @@ async def send_messages_to_user(
     await logged_gather(
         *(
             sio.emit(
-                message["event_type"],
-                json_dumps(message["data"]),
+                event=message["event_type"],
+                data=jsonable_encoder(message["data"]),
                 room=SocketIORoomStr.from_user_id(user_id=user_id),
             )
             for message in messages
@@ -58,8 +58,8 @@ async def send_messages_to_group(
     sio: AsyncServer = get_socket_server(app)
     send_tasks = [
         sio.emit(
-            message["event_type"],
-            json_dumps(message["data"]),
+            event=message["event_type"],
+            data=jsonable_encoder(message["data"]),
             room=SocketIORoomStr.from_group_id(group_id),
         )
         for message in messages
