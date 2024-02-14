@@ -122,12 +122,6 @@ qx.Theme.define("osparc.theme.Font", {
       size: 9
     },
 
-    "small-bold": {
-      include: "defaults",
-      size: 10,
-      bold: true
-    },
-
     "workbench-start-hint": {
       include: "defaults",
       size: 20,
