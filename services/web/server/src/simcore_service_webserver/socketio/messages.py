@@ -52,7 +52,7 @@ async def send_messages_to_user(
     )
 
 
-async def send_group_messages(
+async def send_messages_to_group(
     app: Application, group_id: GroupID, messages: Sequence[SocketMessageDict]
 ) -> None:
     sio: AsyncServer = get_socket_server(app)

@@ -1,6 +1,6 @@
 import logging
 from collections.abc import AsyncIterator
-from typing import Final
+from typing import Final, Generator
 
 from aiohttp import web
 from models_library.rabbitmq_messages import (
@@ -28,7 +28,7 @@ from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_PROGRESS_EVENT,
     SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
-    send_group_messages,
+    send_messages_to_group,
     send_messages_to_user,
 )
 from ..wallets import api as wallets_api
@@ -153,9 +153,11 @@ async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> b
     wallet_groups = await wallets_api.list_wallet_groups_with_read_access_by_wallet(
         app, wallet_id=rabbit_message.wallet_id
     )
-    rooms_to_notify: list[GroupID] = [item.gid for item in wallet_groups]
+    rooms_to_notify: Generator[GroupID, None, None] = (
+        item.gid for item in wallet_groups
+    )
     for room in rooms_to_notify:
-        await send_group_messages(app, room, socket_messages)
+        await send_messages_to_group(app, room, socket_messages)
     return True
 
 
