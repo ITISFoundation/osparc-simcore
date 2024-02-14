@@ -30,11 +30,3 @@ class NotificationProvider(ABC):
     @classmethod
     def get_name(cls):
         return cls.__name__
-
-    @abstractmethod
-    async def on_startup(self):
-        ...
-
-    @abstractmethod
-    async def on_shutdown(self):
-        ...

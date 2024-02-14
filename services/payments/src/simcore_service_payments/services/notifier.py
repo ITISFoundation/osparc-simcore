@@ -92,18 +92,11 @@ def setup_notifier(app: FastAPI):
                 )
             )
 
-        for provider in providers:
-            await provider.on_startup()
-
         notifier = NotifierService(*providers)
         notifier.set_to_app_state(app)
         assert NotifierService.get_from_app_state(app) == notifier  # nosec
 
     async def _on_shutdown() -> None:
-        notifier = NotifierService.get_from_app_state(app)
-        for provider in notifier.providers:
-            await provider.on_shutdown()
-
         with contextlib.suppress(AttributeError):
             NotifierService.pop_from_app_state(app)
 

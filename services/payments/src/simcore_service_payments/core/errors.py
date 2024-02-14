@@ -19,11 +19,3 @@ class PaymentsGatewayError(_BaseAppError):
 
 class PaymentsGatewayNotReadyError(PaymentsGatewayError):
     msg_template = "Payments-Gateway is unresponsive: {checks}"
-
-
-class NotifierError(_BaseAppError):
-    ...
-
-
-class TemplatesNotFoundError(NotifierError):
-    msg_template = "Could not find {templates}"

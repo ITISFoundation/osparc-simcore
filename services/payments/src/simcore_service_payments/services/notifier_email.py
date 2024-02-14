@@ -1,7 +1,5 @@
-import contextlib
 import logging
 import mimetypes
-import tempfile
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from email.headerregistry import Address
@@ -11,21 +9,20 @@ from typing import Final, cast
 
 from aiosmtplib import SMTP
 from attr import dataclass
-from jinja2 import DictLoader, Environment, FileSystemLoader, select_autoescape
+from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodTransaction,
     PaymentTransaction,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.file_utils import remove_directory
 from settings_library.email import EmailProtocol, SMTPSettings
 
-from ..core.errors import TemplatesNotFoundError
 from ..db.payment_users_repo import PaymentsUsersRepo
 from .notifier_abc import NotificationProvider
 
 _logger = logging.getLogger(__name__)
+
 
 _BASE_HTML: Final[
     str
@@ -100,9 +97,9 @@ _NOTIFY_PAYMENTS_SUBJECT = "Your Payment {{ payment.price_dollars }} USD for {{ 
 
 _PRODUCT_NOTIFICATIONS_TEMPLATES = {
     "base.html": _BASE_HTML,
-    "notify_payments.email.html": _NOTIFY_PAYMENTS_HTML,
-    "notify_payments.email.txt": _NOTIFY_PAYMENTS_TXT,
-    "notify_payments.email.subject.txt": _NOTIFY_PAYMENTS_SUBJECT,
+    "notify_payments.html": _NOTIFY_PAYMENTS_HTML,
+    "notify_payments.txt": _NOTIFY_PAYMENTS_TXT,
+    "notify_payments-subject.txt": _NOTIFY_PAYMENTS_SUBJECT,
 }
 
 
@@ -151,13 +148,13 @@ async def _create_user_email(
         display_name=f"{user.first_name} {user.last_name}",
         addr_spec=user.email,
     )
-    msg["Subject"] = env.get_template("notify_payments.email.subject.txt").render(data)
+    msg["Subject"] = env.get_template("notify_payments-subject.txt").render(data)
 
     # Body
-    text_template = env.get_template("notify_payments.email.txt")
+    text_template = env.get_template("notify_payments.txt")
     msg.set_content(text_template.render(data))
 
-    html_template = env.get_template("notify_payments.email.html")
+    html_template = env.get_template("notify_payments.html")
     msg.add_alternative(html_template.render(data), subtype="html")
     return msg
 
@@ -209,48 +206,15 @@ async def _create_email_session(
         yield cast(SMTP, smtp)
 
 
-@contextlib.asynccontextmanager
-async def _jinja_environment_lifespan(repo: PaymentsUsersRepo):
-    expected = set(_PRODUCT_NOTIFICATIONS_TEMPLATES.keys())
-    templates = await repo.get_email_templates(names=expected)
-
-    if not templates:
-        raise TemplatesNotFoundError(templates=expected)
-
-    temp_dir = Path(tempfile.mkdtemp(suffix="templates_{__name__}"))
-    assert temp_dir.is_dir()  # nosec
-
-    for name, content in templates.items():
-        (temp_dir / name).write_text(content)
-
-    env = Environment(
-        loader=FileSystemLoader(searchpath=temp_dir),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
-
-    yield env
-
-    await remove_directory(temp_dir, ignore_errors=True)
-
-
 class EmailProvider(NotificationProvider):
     def __init__(self, settings: SMTPSettings, users_repo: PaymentsUsersRepo):
         self._users_repo = users_repo
         self._settings = settings
-        self._lifespan = contextlib.AsyncExitStack()
 
         self._jinja_env = Environment(
             loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
             autoescape=select_autoescape(["html", "xml"]),
         )
-
-    async def on_startup(self):
-        self._jinja_env: Environment = await self._lifespan.enter_async_context(
-            _jinja_environment_lifespan(self._users_repo)
-        )
-
-    async def on_shutdown(self):
-        await self._lifespan.aclose()
 
     async def _create_successful_payments_message(
         self, user_id: UserID, payment: PaymentTransaction
