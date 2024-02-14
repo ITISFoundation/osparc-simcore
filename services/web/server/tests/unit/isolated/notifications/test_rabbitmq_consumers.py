@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=protected-access
 
-from typing import Iterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -19,7 +18,7 @@ _faker = Faker()
 
 
 @pytest.fixture
-def mock_send_messages(mocker: MockerFixture) -> Iterator[dict]:
+def mock_send_messages(mocker: MockerFixture) -> dict:
     reference = {}
 
     async def mock_send_message(*args) -> None:
@@ -27,11 +26,11 @@ def mock_send_messages(mocker: MockerFixture) -> Iterator[dict]:
 
     mocker.patch.object(
         _rabbitmq_exclusive_queue_consumers,
-        "send_messages",
+        "send_messages_to_user",
         side_effect=mock_send_message,
     )
 
-    yield reference
+    return reference
 
 
 @pytest.mark.parametrize(
