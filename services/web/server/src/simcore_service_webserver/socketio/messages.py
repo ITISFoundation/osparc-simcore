@@ -32,22 +32,37 @@ SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
 SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT: Final[str] = "walletOsparcCreditsUpdated"
 
 
-async def send_messages_to_user(
-    app: Application, user_id: UserID, messages: Sequence[SocketMessageDict]
-) -> None:
-    sio: AsyncServer = get_socket_server(app)
-
+async def _logged_gather_emit(
+    sio: AsyncServer,
+    *,
+    room: SocketIORoomStr,
+    messages: Sequence[SocketMessageDict],
+    max_concurrency: int = 100,
+):
     await logged_gather(
         *(
             sio.emit(
                 event=message["event_type"],
                 data=jsonable_encoder(message["data"]),
-                room=SocketIORoomStr.from_user_id(user_id=user_id),
+                room=room,
             )
             for message in messages
         ),
         reraise=False,
         log=_logger,
+        max_concurrency=max_concurrency,
+    )
+
+
+async def send_messages_to_user(
+    app: Application, user_id: UserID, messages: Sequence[SocketMessageDict]
+) -> None:
+    sio: AsyncServer = get_socket_server(app)
+
+    await _logged_gather_emit(
+        sio,
+        room=SocketIORoomStr.from_user_id(user_id),
+        messages=messages,
         max_concurrency=100,
     )
 
@@ -56,13 +71,10 @@ async def send_messages_to_group(
     app: Application, group_id: GroupID, messages: Sequence[SocketMessageDict]
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
-    send_tasks = [
-        sio.emit(
-            event=message["event_type"],
-            data=jsonable_encoder(message["data"]),
-            room=SocketIORoomStr.from_group_id(group_id),
-        )
-        for message in messages
-    ]
 
-    await logged_gather(*send_tasks, reraise=False, log=_logger, max_concurrency=10)
+    await _logged_gather_emit(
+        sio,
+        room=SocketIORoomStr.from_group_id(group_id),
+        messages=messages,
+        max_concurrency=10,
+    )
