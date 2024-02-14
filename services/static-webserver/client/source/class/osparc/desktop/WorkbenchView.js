@@ -620,6 +620,28 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
 
+      // workbench.addListener("diskTelemetry", e => {
+      //   debugger
+      //   // one click
+      //   const data = e.getData();
+      //   const nodeId = data["node_id"];
+      //   console.log("Telemetry data", JSON.stringify(data, null, 2))
+      //   this.__diskUsageToUI(data["node_id"], data.usage["/"]);
+      //   // if (nodeId) {
+      //   //   studyTreeItem.resetSelection();
+      //   //   this.__nodesTree.nodeSelected(nodeId);
+      //   //   const workbench = this.getStudy().getWorkbench();
+      //   //   const node = workbench.getNode(nodeId);
+      //   //   this.__populateSecondPanel(node);
+      //   //   this.__evalIframe(node);
+      //   //   this.__loggerView.setCurrentNodeId(nodeId);
+      //   //   this.fireDataEvent("changeSelectedNode", nodeId);
+      //   // } else {
+      //   //   // empty selection
+      //   //   this.__studyTreeItem.selectStudyItem();
+      //   // }
+      // }, this);
+
       workbench.addListener("showInLogger", e => {
         const data = e.getData();
         const nodeId = data.nodeId;
@@ -715,6 +737,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.listenToNodeProgress();
 
       this.listenToNoMoreCreditsEvents();
+      // this.listenToDiskTelemetry();
 
       // callback for events
       if (!socket.slotExists("event")) {
@@ -786,19 +809,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    listenToDiskTelemetry: function() {
-      const socket = osparc.wrapper.WebSocket.getInstance();
-
-      const slotName = "serviceDiskUsage";
-      if (!socket.slotExists(slotName)) {
-        // debugger
-        socket.on(slotName, diskUsage => {
-          const data = diskUsage;
-          console.log('data', JSON.stringify(data, null, 2));
-          // this.getStudy().nodeNodeProgressSequence(data);
-        }, this);
-      }
-    },
+    // listenToDiskTelemetry: function() {
+    //   const socket = osparc.wrapper.WebSocket.getInstance();
+    //
+    //   const slotName = "serviceDiskUsage";
+    //   if (!socket.slotExists(slotName)) {
+    //     socket.on(slotName, diskUsage => {
+    //       const data = diskUsage;
+    //       const diskState = this.__diskUsage = data.usage["/"];
+    //
+    //       this.__diskUsageToUI(data["node_id"], diskState);
+    //       this.fireDataEvent("diskTelemetry", data);
+    //     }, this);
+    //   }
+    // },
 
     getStartStopButtons: function() {
       return this.__workbenchPanel.getToolbar().getChildControl("start-stop-btns");
