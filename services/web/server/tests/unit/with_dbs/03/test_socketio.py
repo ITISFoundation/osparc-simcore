@@ -54,9 +54,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
     return app_environment | overrides
 
 
-@pytest.mark.skip(
-    reason="Pending https://github.com/ITISFoundation/osparc-simcore/issues/3387"
-)
 @pytest.mark.parametrize("user_role", (UserRole.USER,))
 async def test_socketio_session_client_to_server(
     logged_user: UserInfoDict,
@@ -64,9 +61,6 @@ async def test_socketio_session_client_to_server(
     user_role: UserRole,
     mocker: MockerFixture,
 ):
-    #
-    mock = mocker.patch("simcore_service_webserver.socketio._handlers.managed_resource")
-    mock.__enter__.side_effect = mocker.MagicMock()
 
     assert client.app
     assert client.server
