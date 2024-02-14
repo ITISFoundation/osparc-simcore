@@ -96,7 +96,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
           .then(data => {
             const gatewayWindow = this.__popUpPaymentGateway(data.paymentMethodId, data.paymentMethodFormUrl);
             osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentMethodAcknowledged", wsData => {
-              const {paymentMethodId} = JSON.parse(wsData);
+              const { paymentMethodId } = typeof wsData === 'string' ? JSON.parse(wsData) : wsData
               if (paymentMethodId === data.paymentMethodId) {
                 gatewayWindow.close();
                 this.__fetchPaymentMethods();
