@@ -1,5 +1,7 @@
+import contextlib
 import logging
 import mimetypes
+import tempfile
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from email.headerregistry import Address
@@ -9,15 +11,18 @@ from typing import Final, cast
 
 from aiosmtplib import SMTP
 from attr import dataclass
-from jinja2 import DictLoader, Environment, select_autoescape
+from jinja2 import DictLoader, Environment, FileSystemLoader, select_autoescape
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodTransaction,
     PaymentTransaction,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from servicelib.file_utils import remove_directory
 from settings_library.email import EmailProtocol, SMTPSettings
+from test_utils_tags import user
 
+from ..core.errors import TemplatesNotFoundError
 from ..db.payment_users_repo import PaymentsUsersRepo
 from .notifier_abc import NotificationProvider
 
@@ -205,15 +210,48 @@ async def _create_email_session(
         yield cast(SMTP, smtp)
 
 
+@contextlib.asynccontextmanager
+async def _jinja_environment_lifespan(repo: PaymentsUsersRepo):
+    expected = set(_PRODUCT_NOTIFICATIONS_TEMPLATES.keys())
+    templates = await repo.get_email_templates(names=expected)
+
+    if not templates:
+        raise TemplatesNotFoundError(templates=expected)
+
+    temp_dir = Path(tempfile.mkdtemp(suffix="templates_{__name__}"))
+    assert temp_dir.is_dir()  # nosec
+
+    for name, content in templates.items():
+        (temp_dir / name).write_text(content)
+
+    env = Environment(
+        loader=FileSystemLoader(searchpath=temp_dir),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+
+    yield env
+
+    await remove_directory(temp_dir, ignore_errors=True)
+
+
 class EmailProvider(NotificationProvider):
     def __init__(self, settings: SMTPSettings, users_repo: PaymentsUsersRepo):
         self._users_repo = users_repo
         self._settings = settings
+        self._lifespan = contextlib.AsyncExitStack()
 
         self._jinja_env = Environment(
             loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
             autoescape=select_autoescape(["html", "xml"]),
         )
+
+    async def on_startup(self):
+        self._jinja_env: Environment = await self._lifespan.enter_async_context(
+            _jinja_environment_lifespan(self._users_repo)
+        )
+
+    async def on_shutdown(self):
+        await self._lifespan.aclose()
 
     async def _create_successful_payments_message(
         self, user_id: UserID, payment: PaymentTransaction

@@ -26,6 +26,12 @@ class WebSocketProvider(NotificationProvider):
         self._sio_manager = sio_manager
         self._users_repo = users_repo
 
+    async def on_startup(self):
+        ...
+
+    async def on_shutdown(self):
+        ...
+
     async def notify_payment_completed(
         self,
         user_id: UserID,

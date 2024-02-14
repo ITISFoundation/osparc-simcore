@@ -202,3 +202,5 @@ async def test_get_payments_templates(
     )
 
     assert templates == _PRODUCT_NOTIFICATIONS_TEMPLATES
+
+    # TODO: see expore dependencies and pull all
