@@ -17,6 +17,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -127,7 +128,7 @@ async def test_get_file_metadata(
     # await assert_status(response, web.HTTPNotFound)
 
     # NOTE: This needs to be a Ok response with empty data until ALL legacy services are gone, then it should be changed to 404! see test above
-    assert response.status == web.HTTPOk.status_code
+    assert response.status == status.HTTP_200_OK
     assert await response.json() == {"data": {}, "error": "No result found"}
 
     # now add some stuff there

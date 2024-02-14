@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.wallets import WalletGet
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
@@ -43,7 +44,11 @@ async def test_project_wallets_user_role_access(
         project_id=user_project["uuid"]
     )
     resp = await client.get(base_url)
-    assert resp.status == 401 if user_role == UserRole.ANONYMOUS else 200
+    assert (
+        resp.status == status.HTTP_401_UNAUTHORIZED
+        if user_role == UserRole.ANONYMOUS
+        else status.HTTP_200_OK
+    )
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])

@@ -5,9 +5,10 @@ from typing import Final
 
 import aiofiles
 import pytest
-from aiohttp import ClientSession, web
+from aiohttp import ClientSession
 from models_library.api_schemas_storage import FileUploadSchema
 from pydantic import AnyUrl, ByteSize, parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.utils import logged_gather
 from simcore_service_storage.s3_client import ETag, MultiPartUploadLinks, UploadedPart
 
@@ -58,7 +59,7 @@ async def upload_file_part(
     )
     response.raise_for_status()
     # NOTE: the response from minio does not contain a json body
-    assert response.status == web.HTTPOk.status_code
+    assert response.status == status.HTTP_200_OK
     assert response.headers
     assert "Etag" in response.headers
     received_e_tag = json.loads(response.headers["Etag"])

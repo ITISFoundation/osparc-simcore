@@ -12,18 +12,19 @@ async def http_error_handler(
 ) -> JSONResponse:
     return JSONResponse(
         content=jsonable_encoder({"errors": [exception.message]}),
-        status_code=exception.status,
+        status_code=exception.status_code,
     )
 
 
 async def node_not_found_error_handler(
     _: Request, exception: NodeNotFound
 ) -> JSONResponse:
-    error_fields = dict(
-        code="dynamic_sidecar.nodeports.node_not_found",
-        message=f"{exception}",
-        node_uuid=f"{exception.node_uuid}",
-    )
+    error_fields = {
+        "code": "dynamic_sidecar.nodeports.node_not_found",
+        "message": f"{exception}",
+        "node_uuid": f"{exception.node_uuid}",
+    }
     return JSONResponse(
-        content=jsonable_encoder(error_fields), status_code=status.HTTP_404_NOT_FOUND
+        content=jsonable_encoder(error_fields),
+        status_code=status.HTTP_404_NOT_FOUND,
     )

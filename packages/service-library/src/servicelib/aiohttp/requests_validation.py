@@ -14,6 +14,7 @@ from typing import TypeAlias, TypeVar, Union
 
 from aiohttp import web
 from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
+from servicelib.aiohttp import status
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -81,7 +82,7 @@ def handle_validation_as_http_error(
             error_str = json_dumps(
                 {
                     "error": {
-                        "status": web.HTTPUnprocessableEntity.status_code,
+                        "status": status.HTTP_422_UNPROCESSABLE_ENTITY,
                         "errors": errors,
                     }
                 }

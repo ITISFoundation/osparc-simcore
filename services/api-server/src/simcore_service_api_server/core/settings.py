@@ -137,7 +137,7 @@ class ApplicationSettings(BasicSettings):
     API_SERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
         auto_default_from_env=True
     )
-    API_SERVER_MAX_LOG_CHECK_SECONDS: NonNegativeInt = 30
+    API_SERVER_LOG_CHECK_TIMEOUT_SECONDS: NonNegativeInt = 3 * 60
     API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     # DEV-TOOLS
     API_SERVER_DEV_HTTP_CALLS_LOGS_PATH: Path | None = Field(
