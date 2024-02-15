@@ -10,11 +10,10 @@ from aiohttp.web import Application
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID, UserID
-from servicelib.json_serialization import json_dumps
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.utils import logged_gather
 from socketio import AsyncServer
 
-from ..resource_manager.user_sessions import managed_resource
 from ._utils import get_socket_server
 
 _logger = logging.getLogger(__name__)
@@ -33,42 +32,49 @@ SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
 SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT: Final[str] = "walletOsparcCreditsUpdated"
 
 
-async def send_messages(
+async def _logged_gather_emit(
+    sio: AsyncServer,
+    *,
+    room: SocketIORoomStr,
+    messages: Sequence[SocketMessageDict],
+    max_concurrency: int = 100,
+):
+    await logged_gather(
+        *(
+            sio.emit(
+                event=message["event_type"],
+                data=jsonable_encoder(message["data"]),
+                room=room,
+            )
+            for message in messages
+        ),
+        reraise=False,
+        log=_logger,
+        max_concurrency=max_concurrency,
+    )
+
+
+async def send_messages_to_user(
     app: Application, user_id: UserID, messages: Sequence[SocketMessageDict]
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
 
-    socket_ids: list[str] = []
-    with managed_resource(user_id, None, app) as user_session:
-        socket_ids = await user_session.find_socket_ids()
-
-    await logged_gather(
-        *(
-            sio.emit(
-                message["event_type"],
-                json_dumps(message["data"]),
-                room=SocketIORoomStr.from_socket_id(sid),
-            )
-            for message in messages
-            for sid in socket_ids
-        ),
-        reraise=False,
-        log=_logger,
+    await _logged_gather_emit(
+        sio,
+        room=SocketIORoomStr.from_user_id(user_id),
+        messages=messages,
         max_concurrency=100,
     )
 
 
-async def send_group_messages(
+async def send_messages_to_group(
     app: Application, group_id: GroupID, messages: Sequence[SocketMessageDict]
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
-    send_tasks = [
-        sio.emit(
-            message["event_type"],
-            json_dumps(message["data"]),
-            room=SocketIORoomStr.from_group_id(group_id),
-        )
-        for message in messages
-    ]
 
-    await logged_gather(*send_tasks, reraise=False, log=_logger, max_concurrency=10)
+    await _logged_gather_emit(
+        sio,
+        room=SocketIORoomStr.from_group_id(group_id),
+        messages=messages,
+        max_concurrency=10,
+    )

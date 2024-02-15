@@ -91,10 +91,8 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __listenToWalletSocket: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
-      const slotName = "walletOsparcCreditsUpdated";
-      if (!socket.slotExists(slotName)) {
-        socket.on(slotName, jsonString => {
-          const data = JSON.parse(jsonString);
+      if (!socket.slotExists("walletOsparcCreditsUpdated")) {
+        socket.on("walletOsparcCreditsUpdated", data => {
           const store = osparc.store.Store.getInstance();
           const walletFound = store.getWallets().find(wallet => wallet.getWalletId() === parseInt(data["wallet_id"]));
           if (walletFound) {
