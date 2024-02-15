@@ -576,5 +576,5 @@ async def set_node_osparc_ready(
         docker_client,
         node,
         tags=new_tags,
-        available=node.Spec.Availability is Availability.active,
+        available=Availability.active,
     )

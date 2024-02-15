@@ -50,6 +50,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     is_node_ready_and_available,
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
+    set_node_availability,
     set_node_osparc_ready,
     tag_node,
 )
@@ -1011,8 +1012,26 @@ def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Fake
 async def test_set_node_osparc_ready(
     autoscaling_docker: AutoscalingDocker, host_node: Node
 ):
-    assert not is_node_osparc_ready(host_node)
-    await set_node_osparc_ready(autoscaling_docker, host_node, ready=True)
-    assert is_node_osparc_ready(host_node)
-    await set_node_osparc_ready(autoscaling_docker, host_node, ready=False)
-    assert not is_node_osparc_ready(host_node)
+    # initial state
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
+    # set the node to drain
+    updated_node = await set_node_availability(
+        autoscaling_docker, host_node, available=False
+    )
+    assert is_node_ready_and_available(updated_node, availability=Availability.drain)
+    # the node is also not osparc ready
+    assert not is_node_osparc_ready(updated_node)
+
+    # this implicitely make the node active as well
+    updated_node = await set_node_osparc_ready(
+        autoscaling_docker, host_node, ready=True
+    )
+    assert is_node_ready_and_available(updated_node, availability=Availability.active)
+    assert is_node_osparc_ready(updated_node)
+    # make it not osparc ready
+    updated_node = await set_node_osparc_ready(
+        autoscaling_docker, host_node, ready=False
+    )
+    assert not is_node_osparc_ready(updated_node)
+    # check the node is still active
+    assert is_node_ready_and_available(updated_node, availability=Availability.active)
