@@ -564,3 +564,17 @@ def is_node_osparc_ready(node: Node) -> bool:
         and _OSPARC_SERVICE_READY_LABEL_KEY in node.Spec.Labels
         and node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] == "true"
     )
+
+
+async def set_node_osparc_ready(
+    docker_client: AutoscalingDocker, node: Node, *, ready: bool
+) -> Node:
+    assert node.Spec  # nosec
+    new_tags = cast(dict[DockerLabelKey, str], node.Spec.Labels)
+    new_tags[_OSPARC_SERVICE_READY_LABEL_KEY] = "true" if ready else "false"
+    return await tag_node(
+        docker_client,
+        node,
+        tags=new_tags,
+        available=node.Spec.Availability is Availability.active,
+    )

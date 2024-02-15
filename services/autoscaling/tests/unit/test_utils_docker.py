@@ -50,6 +50,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     is_node_ready_and_available,
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
+    set_node_osparc_ready,
     tag_node,
 )
 
@@ -1005,3 +1006,13 @@ def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Fake
     # make it ready
     fake_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
     assert is_node_osparc_ready(fake_node)
+
+
+async def test_set_node_osparc_ready(
+    autoscaling_docker: AutoscalingDocker, host_node: Node
+):
+    assert not is_node_osparc_ready(host_node)
+    await set_node_osparc_ready(autoscaling_docker, host_node, ready=True)
+    assert is_node_osparc_ready(host_node)
+    await set_node_osparc_ready(autoscaling_docker, host_node, ready=False)
+    assert not is_node_osparc_ready(host_node)
