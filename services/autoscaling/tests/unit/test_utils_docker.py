@@ -46,6 +46,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_node_total_resources,
     get_osparc_ready_docker_tag,
     get_worker_nodes,
+    is_node_osparc_ready,
     is_node_ready_and_available,
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
@@ -988,3 +989,19 @@ def test_get_osparc_ready_docker_tag(service_ready: bool):
     assert get_osparc_ready_docker_tag(service_ready=service_ready) == {
         _OSPARC_SERVICE_READY_LABEL_KEY: "true" if service_ready else "false"
     }
+
+
+def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Faker):
+    fake_node = create_fake_node()
+    # no labels
+    assert not is_node_osparc_ready(fake_node)
+    # add some random labels
+    assert fake_node.Spec
+    fake_node.Spec.Labels = faker.pydict(allowed_types=(str,))
+    assert not is_node_osparc_ready(fake_node)
+    # add the expected label
+    fake_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
+    assert not is_node_osparc_ready(fake_node)
+    # make it ready
+    fake_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
+    assert is_node_osparc_ready(fake_node)
