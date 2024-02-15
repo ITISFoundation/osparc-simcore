@@ -523,7 +523,7 @@ async def set_node_availability(
     )
 
 
-def get__new_node_docker_tags(
+def get_new_node_docker_tags(
     app_settings: ApplicationSettings, ec2_instance: EC2InstanceData
 ) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec

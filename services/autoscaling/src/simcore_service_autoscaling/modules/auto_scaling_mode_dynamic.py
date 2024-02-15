@@ -33,7 +33,7 @@ class DynamicAutoscaling(BaseAutoscaling):
         app: FastAPI, ec2_instance_data: EC2InstanceData
     ) -> dict[DockerLabelKey, str]:
         app_settings = get_application_settings(app)
-        return utils_docker.get__new_node_docker_tags(app_settings, ec2_instance_data)
+        return utils_docker.get_new_node_docker_tags(app_settings, ec2_instance_data)
 
     @staticmethod
     async def list_unrunnable_tasks(app: FastAPI) -> list[Task]:
