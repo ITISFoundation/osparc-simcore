@@ -553,11 +553,9 @@ _OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
 )
 
 
-def get_osparc_ready_docker_tag(*, service_ready: bool) -> dict[DockerLabelKey, str]:
-    return {_OSPARC_SERVICE_READY_LABEL_KEY: "true" if service_ready else "false"}
-
-
 def is_node_osparc_ready(node: Node) -> bool:
+    if not is_node_ready_and_available(node, availability=Availability.active):
+        return False
     assert node.Spec  # nosec
     return bool(
         node.Spec.Labels
@@ -576,5 +574,16 @@ async def set_node_osparc_ready(
         docker_client,
         node,
         tags=new_tags,
-        available=Availability.active,
+        available=True,
+    )
+
+
+async def attach_node(
+    docker_client: AutoscalingDocker, node: Node, *, tags: dict[DockerLabelKey, str]
+) -> Node:
+    return await tag_node(
+        docker_client,
+        node,
+        tags=tags | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
+        available=True,
     )

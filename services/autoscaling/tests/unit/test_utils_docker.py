@@ -33,6 +33,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICE_READY_LABEL_KEY,
     Node,
     _by_created_dt,
+    attach_node,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
     compute_node_used_resources,
@@ -44,7 +45,6 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_max_resources_from_docker_task,
     get_monitored_nodes,
     get_node_total_resources,
-    get_osparc_ready_docker_tag,
     get_worker_nodes,
     is_node_osparc_ready,
     is_node_ready_and_available,
@@ -986,13 +986,6 @@ def test_is_node_ready_and_available(create_fake_node: Callable[..., Node]):
     )
 
 
-@pytest.mark.parametrize("service_ready", [True, False])
-def test_get_osparc_ready_docker_tag(service_ready: bool):
-    assert get_osparc_ready_docker_tag(service_ready=service_ready) == {
-        _OSPARC_SERVICE_READY_LABEL_KEY: "true" if service_ready else "false"
-    }
-
-
 def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Faker):
     fake_node = create_fake_node()
     # no labels
@@ -1035,3 +1028,23 @@ async def test_set_node_osparc_ready(
     assert not is_node_osparc_ready(updated_node)
     # check the node is still active
     assert is_node_ready_and_available(updated_node, availability=Availability.active)
+
+
+async def test_attach_node(
+    autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker
+):
+    # initial state
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
+    # set the node to drain
+    updated_node = await set_node_availability(
+        autoscaling_docker, host_node, available=False
+    )
+    assert is_node_ready_and_available(updated_node, availability=Availability.drain)
+    # now attach the node
+    updated_node = await attach_node(
+        autoscaling_docker, updated_node, tags=faker.pydict(allowed_types=(str,))
+    )
+    # expected the node to be active
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
+    # but not osparc ready
+    assert not is_node_osparc_ready(updated_node)

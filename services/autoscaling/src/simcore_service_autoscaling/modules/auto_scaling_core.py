@@ -75,10 +75,7 @@ async def _analyze_current_cluster(
         docker_nodes, existing_ec2_instances
     )
 
-    def _node_not_ready(node: Node) -> bool:
-        assert node.Status  # nosec
-        return bool(node.Status.State != NodeState.ready)
-
+    # analyse attached ec2s
     active_nodes, pending_nodes, all_drained_nodes = [], [], []
     for instance in attached_ec2s:
         if await auto_scaling_mode.is_instance_active(app, instance):
@@ -96,6 +93,10 @@ async def _analyze_current_cluster(
             all_drained_nodes.append(instance)
         else:
             pending_nodes.append(instance)
+
+    def _node_not_ready(node: Node) -> bool:
+        assert node.Status  # nosec
+        return bool(node.Status.State != NodeState.ready)
 
     cluster = Cluster(
         active_nodes=active_nodes,
@@ -152,14 +153,13 @@ async def _try_attach_pending_ec2s(
             if new_node := await utils_docker.find_node_with_name(
                 get_docker_client(app), node_host_name
             ):
-                # it is attached, let's label it, but keep it as drained
-                new_node = await utils_docker.tag_node(
+                # it is attached, let's label it
+                new_node = await utils_docker.attach_node(
                     get_docker_client(app),
                     new_node,
                     tags=auto_scaling_mode.get_new_node_docker_tags(
                         app, instance_data.ec2_instance
                     ),
-                    available=False,
                 )
                 new_found_instances.append(
                     AssociatedInstance(
@@ -222,8 +222,8 @@ async def _activate_and_notify(
     drained_node: AssociatedInstance,
 ) -> None:
     await asyncio.gather(
-        utils_docker.set_node_availability(
-            get_docker_client(app), drained_node.node, available=True
+        utils_docker.set_node_osparc_ready(
+            get_docker_client(app), drained_node.node, ready=True
         ),
         auto_scaling_mode.log_message_from_tasks(
             app,
@@ -700,10 +700,10 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     # drain this empty nodes
     updated_nodes: list[Node] = await asyncio.gather(
         *(
-            utils_docker.set_node_availability(
+            utils_docker.set_node_osparc_ready(
                 docker_client,
                 node.node,
-                available=False,
+                ready=False,
             )
             for node in active_empty_instances
         )
