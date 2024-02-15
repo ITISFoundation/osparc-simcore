@@ -540,9 +540,18 @@ def get_new_node_docker_tags(
     )
 
 
-def is_node_ready_and_available(node: Node, availability: Availability) -> bool:
+def is_node_ready_and_available(node: Node, *, availability: Availability) -> bool:
     assert node.Status  # nosec
     assert node.Spec  # nosec
     return bool(
         node.Status.State == NodeState.ready and node.Spec.Availability == availability
     )
+
+
+_OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
+    DockerLabelKey, "osparc-services-ready"
+)
+
+
+def get_osparc_ready_docker_tag(*, service_ready: bool) -> dict[DockerLabelKey, str]:
+    return {_OSPARC_SERVICE_READY_LABEL_KEY: "true" if service_ready else "false"}

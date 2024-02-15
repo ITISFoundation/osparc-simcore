@@ -31,6 +31,8 @@ from models_library.generated_models.docker_rest_api import (
     Node,
     NodeDescription,
     NodeSpec,
+    NodeState,
+    NodeStatus,
     ObjectVersion,
     ResourceObject,
     Service,
@@ -318,6 +320,7 @@ def create_fake_node(faker: Faker) -> Callable[..., Node]:
                 Role=None,
                 Availability=Availability.drain,
             ),
+            "Status": NodeStatus(State=NodeState.unknown, Message=None, Addr=None),
         }
         default_config.update(**node_overrides)
         return Node(**default_config)

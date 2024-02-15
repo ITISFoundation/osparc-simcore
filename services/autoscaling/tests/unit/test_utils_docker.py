@@ -19,7 +19,9 @@ from models_library.docker import DockerGenericTag, DockerLabelKey
 from models_library.generated_models.docker_rest_api import (
     Availability,
     NodeDescription,
+    NodeSpec,
     NodeState,
+    NodeStatus,
     Service,
     Task,
 )
@@ -28,6 +30,7 @@ from pytest_mock.plugin import MockerFixture
 from servicelib.docker_utils import to_datetime
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
+    _OSPARC_SERVICE_READY_LABEL_KEY,
     Node,
     _by_created_dt,
     compute_cluster_total_resources,
@@ -41,7 +44,9 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_max_resources_from_docker_task,
     get_monitored_nodes,
     get_node_total_resources,
+    get_osparc_ready_docker_tag,
     get_worker_nodes,
+    is_node_ready_and_available,
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
     tag_node,
@@ -943,3 +948,43 @@ def test_get_docker_pull_images_crontab(
     interval: datetime.timedelta, expected_cmd: str
 ):
     assert get_docker_pull_images_crontab(interval) == expected_cmd
+
+
+def test_is_node_ready_and_available(create_fake_node: Callable[..., Node]):
+    # check not ready state return false
+    for node_status in [
+        NodeStatus(State=s, Message=None, Addr=None)
+        for s in NodeState
+        if s is not NodeState.ready
+    ]:
+        fake_node = create_fake_node(Status=node_status)
+        assert not is_node_ready_and_available(
+            fake_node, availability=Availability.drain
+        )
+
+    node_ready_status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
+    fake_drained_node = create_fake_node(
+        Status=node_ready_status,
+        Spec=NodeSpec(
+            Name=None,
+            Labels=None,
+            Role=None,
+            Availability=Availability.drain,
+        ),
+    )
+    assert is_node_ready_and_available(
+        fake_drained_node, availability=Availability.drain
+    )
+    assert not is_node_ready_and_available(
+        fake_drained_node, availability=Availability.active
+    )
+    assert not is_node_ready_and_available(
+        fake_drained_node, availability=Availability.pause
+    )
+
+
+@pytest.mark.parametrize("service_ready", [True, False])
+def test_get_osparc_ready_docker_tag(service_ready: bool):
+    assert get_osparc_ready_docker_tag(service_ready=service_ready) == {
+        _OSPARC_SERVICE_READY_LABEL_KEY: "true" if service_ready else "false"
+    }
