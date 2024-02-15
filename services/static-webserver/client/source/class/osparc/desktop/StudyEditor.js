@@ -404,9 +404,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           osparc.store.Store.getInstance().getStudyState(pipelineId);
         }, 60000);
         const socket = osparc.wrapper.WebSocket.getInstance();
-        socket.getSocket().once("projectStateUpdated", jsonStr => {
-          const study = JSON.parse(jsonStr);
-          if (study["project_uuid"] === pipelineId) {
+        socket.getSocket().once("projectStateUpdated", ({ "project_uuid": projectUuid }) => {
+          if (projectUuid === pipelineId) {
             clearTimeout(timer);
           }
         });
