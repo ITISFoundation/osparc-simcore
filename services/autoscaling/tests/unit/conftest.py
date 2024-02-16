@@ -316,7 +316,7 @@ def create_fake_node(faker: Faker) -> Callable[..., Node]:
             ),
             "Spec": NodeSpec(
                 Name=None,
-                Labels=None,
+                Labels=faker.pydict(allowed_types=(str,)),
                 Role=None,
                 Availability=Availability.drain,
             ),

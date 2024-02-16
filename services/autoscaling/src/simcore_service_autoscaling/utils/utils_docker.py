@@ -9,6 +9,7 @@ import datetime
 import logging
 import re
 from contextlib import suppress
+from copy import deepcopy
 from pathlib import Path
 from typing import Final, cast
 
@@ -572,7 +573,7 @@ async def set_node_osparc_ready(
     ready: bool,
 ) -> Node:
     assert node.Spec  # nosec
-    new_tags = cast(dict[DockerLabelKey, str], node.Spec.Labels)
+    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.Spec.Labels))
     new_tags[_OSPARC_SERVICE_READY_LABEL_KEY] = "true" if ready else "false"
     # NOTE: docker drain sometimes impeed on performance when undraining see https://github.com/ITISFoundation/osparc-simcore/issues/5339
     tag_available = app_settings.AUTOSCALING_LABELIZE_DRAINED_NODES or ready
@@ -591,10 +592,12 @@ async def attach_node(
     *,
     tags: dict[DockerLabelKey, str],
 ) -> Node:
-
+    assert node.Spec  # nosec
+    current_tags = cast(dict[DockerLabelKey, str], node.Spec.Labels or {})
+    new_tags = current_tags | tags | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"}
     return await tag_node(
         docker_client,
         node,
-        tags=tags | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
+        tags=new_tags,
         available=app_settings.AUTOSCALING_LABELIZE_DRAINED_NODES,  # NOTE: full drain sometimes impeed on performance
     )
