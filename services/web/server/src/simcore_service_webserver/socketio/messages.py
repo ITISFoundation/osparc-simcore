@@ -72,9 +72,6 @@ async def send_message_to_user(
     Keyword Arguments:
         has_direct_connection_to_client -- set to False when this message is delivered from a server that has no direct connection to the client (default: {True})
         An example where this is value is False, is sending messages to a user in the GC
-
-    QUESTION: a user might have different tabs opened or connect with a different browser/computer. Does stickiness
-    make all these connection associated to the same server?
     """
     sio: AsyncServer = get_socket_server(app)
 
