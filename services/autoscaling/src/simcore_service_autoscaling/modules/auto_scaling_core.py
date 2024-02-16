@@ -155,6 +155,7 @@ async def _try_attach_pending_ec2s(
             ):
                 # it is attached, let's label it
                 new_node = await utils_docker.attach_node(
+                    app_settings,
                     get_docker_client(app),
                     new_node,
                     tags=auto_scaling_mode.get_new_node_docker_tags(
