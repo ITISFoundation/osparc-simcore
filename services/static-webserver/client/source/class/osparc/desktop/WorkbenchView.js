@@ -33,6 +33,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     this.getChildControl("main-panel-tabs");
     this.__workbenchPanel = new osparc.desktop.WorkbenchPanel();
     this.__workbenchUI = this.__workbenchPanel.getMainView();
+    const preferencesSettings = osparc.Preferences.getInstance();
+    this.__lowDiskThreshold = preferencesSettings.getLowDiskSpaceThreshold();
 
     this.__attachEventHandlers();
   },
@@ -114,6 +116,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __editSlidesButton: null,
     __startAppButtonTB: null,
     __collapseWithUserMenu: null,
+    __lowDiskThreshold: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -222,36 +225,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           break;
         }
         case "disk-indicator": {
-          control = new qx.ui.container.Composite(
-            new qx.ui.layout.VBox().set({
-              alignY: "middle",
-              alignX: "center"
-            })
-          ).set({
-            decorator: "indicator-border",
-            padding: [3, 10],
-            alignY: "middle",
-            allowShrinkX: false,
-            allowShrinkY: false,
-            allowGrowX: false,
-            allowGrowY: false,
-            marginRight: 10,
-            marginTop: 7,
-            visibility: "excluded"
-          });
-          break;
-        }
-        case "disk-indicator-label": {
-          const indicator = this.getChildControl("disk-indicator")
-          control = new qx.ui.basic.Label().set({
-            value: "0GB",
-            font: "small-bold",
-            textColor: "contrasted-text-light",
-            alignX: "center",
-            alignY: "middle",
-            rich: false
-          })
-          indicator.add(control);
+          control = new osparc.workbench.DiskUsageIndicator();
           break;
         }
       }
@@ -481,8 +455,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       tabViewMain.add(logsPage);
 
       this.__addTopBarSpacer(topBar);
-      if (this.__lowDiskThreshold) {
-        topBar.add(this.updateDiskIndicator());
+
+      if (this.__lowDiskThreshold && this.getSelectedNodeIDs()) {
+        const diskIndicator = this.getChildControl("disk-indicator");
+        topBar.add(diskIndicator);
       }
       const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
@@ -556,6 +532,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const workbench = this.getStudy().getWorkbench();
         const node = workbench.getNode(nodeId);
         if (node) {
+          this.__populateDisKUsageIndicator(node);
           this.__populateSecondPanel(node);
           this.__openIframeTab(node);
         }
@@ -573,6 +550,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__nodesTree.nodeSelected(nodeId);
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
+            this.__populateDisKUsageIndicator(node);
             this.__populateSecondPanel(node);
             this.__evalIframe(node);
             this.__loggerView.setCurrentNodeId(nodeId);
@@ -590,6 +568,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__nodesTree.nodeSelected(nodeId);
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
+            this.__populateDisKUsageIndicator(node);
             this.__populateSecondPanel(node);
             this.__openIframeTab(node);
             this.__loggerView.setCurrentNodeId(nodeId);
@@ -606,6 +585,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           if (node) {
             this.__populateSecondPanel(node);
             this.__openIframeTab(node);
+            this.__populateDisKUsageIndicator(node);
             node.getLoadingPage().maximizeIFrame(true);
             node.getIFrame().maximizeIFrame(true);
           }
@@ -939,6 +919,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       } else if (node) {
         this.__populateSecondPanelNode(node);
       }
+    },
+
+    __populateDisKUsageIndicator: function(node) {
+      try {
+        const diskIndicator = this.getChildControl("disk-indicator");
+        diskIndicator.setCurrentNode(node);
+        diskIndicator.set({
+          visibility: node ? "visible" : "excluded"
+        });
+      } catch (e) {
+        console.error("Failed to load indicator", e)
+      }
+      console.log("node", node)
     },
 
     __populateSecondPanelStudy: function(study) {
