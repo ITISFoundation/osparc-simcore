@@ -565,25 +565,36 @@ def is_node_osparc_ready(node: Node) -> bool:
 
 
 async def set_node_osparc_ready(
-    docker_client: AutoscalingDocker, node: Node, *, ready: bool
+    app_settings: ApplicationSettings,
+    docker_client: AutoscalingDocker,
+    node: Node,
+    *,
+    ready: bool,
 ) -> Node:
     assert node.Spec  # nosec
     new_tags = cast(dict[DockerLabelKey, str], node.Spec.Labels)
     new_tags[_OSPARC_SERVICE_READY_LABEL_KEY] = "true" if ready else "false"
+    # NOTE: docker drain sometimes impeed on performance when undraining see https://github.com/ITISFoundation/osparc-simcore/issues/5339
+    tag_available = app_settings.AUTOSCALING_LABELIZE_DRAINED_NODES or ready
     return await tag_node(
         docker_client,
         node,
         tags=new_tags,
-        available=True,
+        available=tag_available,
     )
 
 
 async def attach_node(
-    docker_client: AutoscalingDocker, node: Node, *, tags: dict[DockerLabelKey, str]
+    app_settings: ApplicationSettings,
+    docker_client: AutoscalingDocker,
+    node: Node,
+    *,
+    tags: dict[DockerLabelKey, str],
 ) -> Node:
+
     return await tag_node(
         docker_client,
         node,
         tags=tags | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
-        available=True,
+        available=app_settings.AUTOSCALING_LABELIZE_DRAINED_NODES,  # NOTE: full drain sometimes impeed on performance
     )
