@@ -8,10 +8,10 @@
 #
 --constraint _base.txt
 
-# testing
 coverage
 faker
 pytest
+pytest-asyncio
 pytest-cov
 pytest-icdiff
 pytest-instafail
