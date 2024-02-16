@@ -838,6 +838,7 @@ async def test__deactivate_empty_nodes(
     host_node: Node,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
     mock_docker_set_node_availability: mock.Mock,
+    mock_docker_tag_node: mock.Mock,
 ):
     # since we have no service running, we expect the passed node to be set to drain
     active_cluster = cluster(
@@ -848,8 +849,12 @@ async def test__deactivate_empty_nodes(
     updated_cluster = await _deactivate_empty_nodes(initialized_app, active_cluster)
     assert not updated_cluster.active_nodes
     assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
-    mock_docker_set_node_availability.assert_called_once_with(
-        mock.ANY, host_node, available=False
+    mock_docker_set_node_availability.assert_not_called()
+    mock_docker_tag_node.assert_called_once_with(
+        mock.ANY,
+        host_node,
+        tags={_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
+        available=False,
     )
 
 
