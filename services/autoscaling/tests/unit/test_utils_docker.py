@@ -31,6 +31,7 @@ from models_library.generated_models.docker_rest_api import (
 )
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
@@ -919,6 +920,11 @@ async def test_set_node_availability(
 
 
 def test_get_new_node_docker_tags(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_dynamic_service_background_task: None,
     app_settings: ApplicationSettings,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
@@ -1035,7 +1041,15 @@ def test_is_node_ready_and_available(create_fake_node: Callable[..., Node]):
 
 def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Faker):
     fake_node = create_fake_node()
-    # no labels
+    assert fake_node.Spec
+    assert fake_node.Spec.Availability is Availability.drain
+    # no labels, not ready and drained
+    assert not is_node_osparc_ready(fake_node)
+    # no labels, not ready, but active
+    fake_node.Spec.Availability = Availability.active
+    assert not is_node_osparc_ready(fake_node)
+    # no labels, ready and active
+    fake_node.Status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
     assert not is_node_osparc_ready(fake_node)
     # add some random labels
     assert fake_node.Spec
