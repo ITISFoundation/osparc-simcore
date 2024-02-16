@@ -922,8 +922,8 @@ def test_get_new_node_docker_tags(
     app_settings: ApplicationSettings,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
-    fake_ec2_instance_data = fake_ec2_instance_data()
-    node_docker_tags = get_new_node_docker_tags(app_settings, fake_ec2_instance_data)
+    ec2_instance_data = fake_ec2_instance_data()
+    node_docker_tags = get_new_node_docker_tags(app_settings, ec2_instance_data)
     assert node_docker_tags
     assert DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY in node_docker_tags
     assert app_settings.AUTOSCALING_NODES_MONITORING
