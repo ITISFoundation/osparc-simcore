@@ -48,6 +48,7 @@ def smtp_mock_or_none(
 ) -> MagicMock | None:
     if not external_user_email:
         return mocker.patch("notifications_library._email.SMTP")
+    print("🚨 Emails might be sent to", external_user_email)
     return None
 
 
