@@ -1164,6 +1164,10 @@ async def test__activate_drained_nodes_with_drained_node(
     )
     assert updated_cluster.active_nodes == cluster_with_drained_nodes.drained_nodes
     assert drained_host_node.Spec
+    assert drained_host_node.Spec.Labels
     mock_docker_tag_node.assert_called_once_with(
-        mock.ANY, drained_host_node, tags=drained_host_node.Spec.Labels, available=True
+        mock.ANY,
+        drained_host_node,
+        tags=drained_host_node.Spec.Labels | {_OSPARC_SERVICE_READY_LABEL_KEY: "true"},
+        available=True,
     )
