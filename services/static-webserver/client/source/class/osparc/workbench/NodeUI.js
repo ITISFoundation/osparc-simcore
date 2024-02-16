@@ -162,6 +162,18 @@ qx.Class.define("osparc.workbench.NodeUI", {
             colSpan: 3
           });
           break;
+        case "usage-indicator":
+          control = new osparc.workbench.DiskUsageIndicator().set({
+            height: 20,
+            margin: 4,
+            // visibility: "excluded"
+          });
+          this.add(control, {
+            row: 2,
+            column: 0,
+            colSpan: 3
+          });
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -321,6 +333,14 @@ qx.Class.define("osparc.workbench.NodeUI", {
       };
       evaluateLifeCycleIcon();
       this.getNode().addListener("changeVersion", () => evaluateLifeCycleIcon());
+      const indicator = this.getChildControl("usage-indicator");
+      indicator.setCurrentNode(node);
+      // const updateIndicator = () => {
+      //   indicator.set({
+      //     visibility: "visible"
+      //   })
+      // };
+      // updateIndicator();
     },
 
     __applyType: function(type) {

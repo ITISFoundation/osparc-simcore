@@ -21,19 +21,11 @@
  * | XXXXXXXXXXXX______ X GB__________ |
  * |___________________________________|
  */
-qx.Class.define("osparc.ui.basic.DiskUsageIndicator", {
+qx.Class.define("osparc.workbench.DiskUsageIndicator", {
   extend: qx.ui.core.Widget,
 
-  /**
-   *
-   * @param nodeId {String} URL for the iframe content
-   */
-
-  construct: function(nodeId) {
-    // debugger
-    console.log("nodeId", nodeId)
-    this.base(arguments, nodeId);
-
+  construct: function() {
+    this.base(arguments);
     const lowDiskSpacePreferencesSettings = osparc.Preferences.getInstance();
     this.__lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
     this.__prevDiskState = [];
@@ -44,6 +36,13 @@ qx.Class.define("osparc.ui.basic.DiskUsageIndicator", {
   },
 
   properties: {
+    currentNode: {
+      check : "osparc.data.model.Node",
+      init : null,
+      nullable : true,
+      event : "changeCurrentNode",
+      apply: "_applyCurrentNode"
+    },
     diskTelemetry: {
       check : "Any",
       init : null,
@@ -131,7 +130,7 @@ qx.Class.define("osparc.ui.basic.DiskUsageIndicator", {
         return state.nodeId === id;
       }
       function shouldDisplayMessage(state, status) {
-        return state.nodeId === id && state.state !== status
+        return state && state.nodeId === id && state.state !== status
       }
 
       let prevState = this.__prevDiskState.find(getState);
@@ -144,7 +143,7 @@ qx.Class.define("osparc.ui.basic.DiskUsageIndicator", {
         })
       }
       const freeSpace = osparc.utils.Utils.bytesToSize(diskUsage.free);
-      const nodeName = "this.getNodeLabel(nodeId)";
+      const nodeName = this.getCurrentNode().getLabel();
       let message;
       let indicatorColor;
 
@@ -156,21 +155,16 @@ qx.Class.define("osparc.ui.basic.DiskUsageIndicator", {
             message = this.tr(`Out of Disk Space on "Service Filesystem" for ${nodeName}<br />The volume Service Filesystem has only ${freeSpace} disk space remaining. You can free up disk space by removing unused files in your service. Alternatively, you can run your service with a pricing plan that supports your storage requirements.`);
             osparc.FlashMessenger.getInstance().logAs(message, "ERROR");
             this.__prevDiskState[objIndex].state = status;
-            this.fireDataEvent("changeSelectedNode", id);
-            break;
-          } else {
-            break;
           }
+          break;
         case "WARNING":
           indicatorColor = qx.theme.manager.Color.getInstance().resolve("warning")
           if (shouldDisplayMessage(prevState, status)) {
             message = this.tr(`Low Disk Space on "Service Filesystem" for ${nodeName}<br />The volume Service Filesystem has only ${freeSpace} disk space remaining. You can free up disk space by removing unused files in your service. Alternatively, you can run your service with a pricing plan that supports your storage requirements.`);
             osparc.FlashMessenger.getInstance().logAs(message, "WARNING");
             this.__prevDiskState[objIndex].state = status;
-            break;
-          } else {
-            break;
           }
+          break;
         default:
           indicatorColor = qx.theme.manager.Color.getInstance().resolve("success");
           this.__prevDiskState[objIndex].state = "NORMAL";
@@ -199,18 +193,22 @@ qx.Class.define("osparc.ui.basic.DiskUsageIndicator", {
     },
 
     __attachSocketEventHandlers: function() {
-      console.log("Listener", this.getDiskTelemetry())
       // Listen to socket
-      const socket = osparc.wrapper.WebSocket.getInstance();
       const slotName = "serviceDiskUsage";
-      if (!socket.slotExists(slotName)) {
-        socket.on(slotName, diskUsage => {
-          const data = diskUsage;
-          const diskState = this.__diskUsage = data.usage["/"];
-          this.__diskUsageToUI(data["node_id"], diskState);
-        }, this);
-      }
-    }
+      const socket = osparc.wrapper.WebSocket.getInstance().getSocket();
+      socket.on(slotName, diskUsage => {
+        const data = diskUsage;
+        const diskState = this.__diskUsage = data.usage["/"];
+        console.log(data)
+        if (this.getCurrentNode().getNodeId() === data.node_id) {
+          this.__diskUsageToUI(data.node_id, diskState);
+        }
+      }, this);
+    },
+
+    _applyCurrentNode: function(node) {
+      console.log("node", node.getNodeId())
+    },
   },
 
   // destruct : function() {
