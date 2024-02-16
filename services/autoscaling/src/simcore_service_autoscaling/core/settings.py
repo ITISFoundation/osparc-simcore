@@ -230,7 +230,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AUTOSCALING_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    AUTOSCALING_LABELIZE_DRAINED_NODES: bool = True
+    AUTOSCALING_LABELIZE_DRAINED_NODES: bool = False
 
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802
