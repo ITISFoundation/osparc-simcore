@@ -12,10 +12,14 @@ from typing import Any
 
 import aiodocker
 import pytest
-from aws_library.ec2.models import Resources
+from aws_library.ec2.models import EC2InstanceData, Resources
 from deepdiff import DeepDiff
 from faker import Faker
-from models_library.docker import DockerGenericTag, DockerLabelKey
+from models_library.docker import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    DockerGenericTag,
+    DockerLabelKey,
+)
 from models_library.generated_models.docker_rest_api import (
     Availability,
     NodeDescription,
@@ -28,6 +32,7 @@ from models_library.generated_models.docker_rest_api import (
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from servicelib.docker_utils import to_datetime
+from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICE_READY_LABEL_KEY,
@@ -44,6 +49,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
     get_monitored_nodes,
+    get_new_node_docker_tags,
     get_node_total_resources,
     get_worker_nodes,
     is_node_osparc_ready,
@@ -910,6 +916,33 @@ async def test_set_node_availability(
         autoscaling_docker, host_node, available=True
     )
     assert is_node_ready_and_available(updated_node, availability=Availability.active)
+
+
+def test_get_new_node_docker_tags(
+    app_settings: ApplicationSettings,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    fake_ec2_instance_data = fake_ec2_instance_data()
+    node_docker_tags = get_new_node_docker_tags(app_settings, fake_ec2_instance_data)
+    assert node_docker_tags
+    assert DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY in node_docker_tags
+    assert app_settings.AUTOSCALING_NODES_MONITORING
+    for (
+        tag_key
+    ) in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS:
+        assert tag_key in node_docker_tags
+    for (
+        tag_key
+    ) in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS:
+        assert tag_key in node_docker_tags
+
+    all_keys = [
+        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+        *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
+        *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+    ]
+    for tag_key in node_docker_tags:
+        assert tag_key in all_keys
 
 
 @pytest.mark.parametrize(
