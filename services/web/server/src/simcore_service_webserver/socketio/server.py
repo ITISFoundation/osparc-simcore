@@ -26,7 +26,7 @@ async def _socketio_server_cleanup_ctx(app: web.Application) -> AsyncIterator[No
     )
     sio_server = AsyncServer(
         async_mode="aiohttp",
-        logger=use_logger,  # type: ignore
+        logger=use_logger,
         engineio_logger=False,
         client_manager=server_manager,
     )
