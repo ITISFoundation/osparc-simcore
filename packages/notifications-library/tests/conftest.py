@@ -8,16 +8,15 @@ from pathlib import Path
 
 import notifications_library
 import pytest
+from pydantic import EmailStr, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import load_dotenv
 
 pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.repository_paths",
-    "pytest_simcore.faker_products",
-    "pytest_simcore.faker_user_extension",
-    # "pytest_simcore.pydantic_models",
-    # "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.faker_products_data",
+    "pytest_simcore.faker_users_data",
 ]
 
 
@@ -34,11 +33,11 @@ def pytest_addoption(parser: pytest.Parser):
         help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
     )
     group.addoption(
-        "--external-email",
+        "--external-user-email",
         action="store",
         type=str,
         default=None,
-        help="An email for test_services_notifier_email",
+        help="Overrides `user_email` fixture",
     )
 
 
@@ -60,6 +59,21 @@ def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
         assert "PAYMENTS_GATEWAY_URL" in envs
 
     return envs
+
+
+@pytest.fixture(scope="session")
+def external_user_email(request: pytest.FixtureRequest) -> str | None:
+    email_or_none = request.config.getoption("--external-email", default=None)
+    return parse_obj_as(EmailStr, email_or_none) if email_or_none else None
+
+
+@pytest.fixture
+def user_email(user_email: EmailStr, external_user_email: EmailStr | None) -> EmailStr:
+    """Overrides pytest_simcore.faker_users_data.user_email"""
+    if external_user_email:
+        print("📧 EXTERNAL using in test", f"{external_user_email=}")
+        return external_user_email
+    return user_email
 
 
 @pytest.fixture(scope="session")

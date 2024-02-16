@@ -1,3 +1,8 @@
+"""
+    Fixtures to produce fake data for a user:
+        - it is self-consistent
+        - granular customization by overriding fixtures
+"""
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable

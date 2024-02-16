@@ -19,7 +19,7 @@ from notifications_library._email import (
 )
 from notifications_library._render import ProductData, UserData, render_email_parts
 from notifications_library.payments import PaymentData
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -42,25 +42,11 @@ def app_environment(
     )
 
 
-@pytest.fixture(scope="session")
-def external_email(request: pytest.FixtureRequest) -> str | None:
-    email_or_none = request.config.getoption("--external-email", default=None)
-    return parse_obj_as(EmailStr, email_or_none) if email_or_none else None
-
-
-@pytest.fixture
-def user_email(user_email: EmailStr, external_email: EmailStr | None) -> EmailStr:
-    if external_email:
-        print("📧 EXTERNAL using in test", f"{external_email=}")
-        return external_email
-    return user_email
-
-
 @pytest.fixture
 def smtp_mock_or_none(
-    mocker: MockerFixture, external_email: EmailStr | None
+    mocker: MockerFixture, external_user_email: EmailStr | None
 ) -> MagicMock | None:
-    if not external_email:
+    if not external_user_email:
         return mocker.patch("notifications_library._email.SMTP")
     return None
 
@@ -76,7 +62,7 @@ async def test_send_email_workflow(
     """
     Example of usage with external email and envfile
 
-        > pytest --external-email=me@email.me --external-envfile=.myenv -k test_send_email_workflow  --pdb tests/unit
+        > pytest --external-user-email=me@email.me --external-envfile=.myenv -k test_send_email_workflow  --pdb tests/unit
     """
 
     settings = SMTPSettings.create_from_envs()
