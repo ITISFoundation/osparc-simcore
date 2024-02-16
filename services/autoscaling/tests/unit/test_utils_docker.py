@@ -901,15 +901,15 @@ async def test_tag_node_out_of_sequence_error(
 async def test_set_node_availability(
     autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker
 ):
-    assert is_node_ready_and_available(host_node)
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
     updated_node = await set_node_availability(
         autoscaling_docker, host_node, available=False
     )
-    assert not is_node_ready_and_available(updated_node)
+    assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     updated_node = await set_node_availability(
         autoscaling_docker, host_node, available=True
     )
-    assert is_node_ready_and_available(updated_node)
+    assert is_node_ready_and_available(updated_node, availability=Availability.active)
 
 
 @pytest.mark.parametrize(
