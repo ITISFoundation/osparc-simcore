@@ -145,7 +145,7 @@ async def connect(
                 event_type=SOCKET_IO_HEARTBEAT_EVENT,
                 data={"interval": _EMIT_INTERVAL_S},
             ),
-            has_direct_connection_to_client=True,
+            ignore_queue=True,
         )
 
     except web.HTTPUnauthorized as exc:

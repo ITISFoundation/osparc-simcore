@@ -29,7 +29,7 @@ async def notify_payment_completed(
             event_type=SOCKET_IO_PAYMENT_COMPLETED_EVENT,
             data=jsonable_encoder(payment, by_alias=True),
         ),
-        has_direct_connection_to_client=True,
+        ignore_queue=True,
     )
 
 
@@ -46,5 +46,5 @@ async def notify_payment_method_acked(
             event_type=SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT,
             data=jsonable_encoder(payment_method_transaction, by_alias=True),
         ),
-        has_direct_connection_to_client=True,
+        ignore_queue=True,
     )

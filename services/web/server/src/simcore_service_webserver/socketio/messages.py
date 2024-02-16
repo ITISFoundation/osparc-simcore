@@ -66,11 +66,11 @@ async def send_message_to_user(
     user_id: UserID,
     message: SocketMessageDict,
     *,
-    has_direct_connection_to_client: bool = True,
+    ignore_queue: bool,
 ) -> None:
     """
     Keyword Arguments:
-        has_direct_connection_to_client -- set to False when this message is delivered from a server that has no direct connection to the client (default: {True})
+        ignore_queue -- set to False when this message is delivered from a server that has no direct connection to the client (default: {True})
         An example where this is value is False, is sending messages to a user in the GC
     """
     sio: AsyncServer = get_socket_server(app)
@@ -79,7 +79,7 @@ async def send_message_to_user(
         sio,
         room=SocketIORoomStr.from_user_id(user_id),
         message=message,
-        ignore_queue=has_direct_connection_to_client,
+        ignore_queue=ignore_queue,
     )
 
 
@@ -100,7 +100,7 @@ async def send_message_to_standard_group(
         sio,
         room=SocketIORoomStr.from_group_id(group_id),
         message=message,
-        ignore_queue=False,
         # NOTE: A standard group refers to different users
         # that might be connected to different replicas
+        ignore_queue=False,
     )
