@@ -27,7 +27,6 @@ from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Availability
-from models_library.generated_models.docker_rest_api import Node
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
     NodeDescription,
@@ -295,15 +294,15 @@ async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
 async def host_node(
     docker_swarm: None,
     async_docker_client: aiodocker.Docker,
-) -> Node:
-    nodes = parse_obj_as(list[Node], await async_docker_client.nodes.list())
+) -> DockerNode:
+    nodes = parse_obj_as(list[DockerNode], await async_docker_client.nodes.list())
     assert len(nodes) == 1
     return nodes[0]
 
 
 @pytest.fixture
-def create_fake_node(faker: Faker) -> Callable[..., Node]:
-    def _creator(**node_overrides) -> Node:
+def create_fake_node(faker: Faker) -> Callable[..., DockerNode]:
+    def _creator(**node_overrides) -> DockerNode:
         default_config = {
             "ID": faker.uuid4(),
             "Version": ObjectVersion(Index=faker.pyint()),
@@ -324,13 +323,13 @@ def create_fake_node(faker: Faker) -> Callable[..., Node]:
             "Status": NodeStatus(State=NodeState.unknown, Message=None, Addr=None),
         }
         default_config.update(**node_overrides)
-        return Node(**default_config)
+        return DockerNode(**default_config)
 
     return _creator
 
 
 @pytest.fixture
-def fake_node(create_fake_node: Callable[..., Node]) -> Node:
+def fake_node(create_fake_node: Callable[..., DockerNode]) -> DockerNode:
     return create_fake_node()
 
 
@@ -634,8 +633,8 @@ async def create_dask_task(
 @pytest.fixture
 def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
     async def _fake_set_node_availability(
-        docker_client: AutoscalingDocker, node: Node, *, available: bool
-    ) -> Node:
+        docker_client: AutoscalingDocker, node: DockerNode, *, available: bool
+    ) -> DockerNode:
         returned_node = deepcopy(node)
         assert returned_node.Spec
         returned_node.Spec.Availability = (
