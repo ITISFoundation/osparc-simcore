@@ -10,7 +10,7 @@ coverage==7.4.1
     #   pytest-cov
 exceptiongroup==1.2.0
     # via pytest
-faker==23.1.0
+faker==23.2.1
     # via -r requirements/_test.in
 icdiff==2.0.7
     # via pytest-icdiff
@@ -45,7 +45,9 @@ pytest-runner==6.0.1
 pytest-sugar==1.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via faker
+    # via
+    #   -c requirements/_base.txt
+    #   faker
 python-dotenv==1.0.1
     # via -r requirements/_test.in
 pyyaml==6.0.1
@@ -53,7 +55,9 @@ pyyaml==6.0.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
 six==1.16.0
-    # via python-dateutil
+    # via
+    #   -c requirements/_base.txt
+    #   python-dateutil
 termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1

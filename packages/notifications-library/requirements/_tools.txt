@@ -44,7 +44,7 @@ packaging==23.2
     #   build
 pathspec==0.12.1
     # via black
-pip-tools==7.3.0
+pip-tools==7.4.0
     # via -r requirements/../../../requirements/devenv.txt
 platformdirs==4.2.0
     # via
@@ -56,7 +56,9 @@ pre-commit==3.6.1
 pylint==3.0.3
     # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.0.0
-    # via build
+    # via
+    #   build
+    #   pip-tools
 pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
