@@ -333,14 +333,13 @@ qx.Class.define("osparc.workbench.NodeUI", {
       };
       evaluateLifeCycleIcon();
       this.getNode().addListener("changeVersion", () => evaluateLifeCycleIcon());
-      const indicator = this.getChildControl("usage-indicator");
+      const indicator = new osparc.workbench.DiskUsageIndicator();
       indicator.setCurrentNode(node);
-      // const updateIndicator = () => {
-      //   indicator.set({
-      //     visibility: "visible"
-      //   })
-      // };
-      // updateIndicator();
+      this.add(indicator, {
+        row: 2,
+        column: 0,
+        colSpan: 4
+      });
     },
 
     __applyType: function(type) {
