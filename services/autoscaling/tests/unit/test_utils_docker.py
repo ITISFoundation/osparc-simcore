@@ -348,7 +348,7 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
 
     # start a service with a part of the labels, we should not find it
     partial_service_labels = dict(itertools.islice(service_labels.items(), 2))
-    _service_with_partial_labels = await create_service(
+    await create_service(
         task_template_with_too_many_resource, partial_service_labels, "pending"
     )
 
@@ -1050,7 +1050,9 @@ def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Fake
 
 
 async def test_set_node_osparc_ready(
-    autoscaling_docker: AutoscalingDocker, host_node: Node
+    app_settings: ApplicationSettings,
+    autoscaling_docker: AutoscalingDocker,
+    host_node: Node,
 ):
     # initial state
     assert is_node_ready_and_available(host_node, availability=Availability.active)
@@ -1064,13 +1066,13 @@ async def test_set_node_osparc_ready(
 
     # this implicitely make the node active as well
     updated_node = await set_node_osparc_ready(
-        autoscaling_docker, host_node, ready=True
+        app_settings, autoscaling_docker, host_node, ready=True
     )
     assert is_node_ready_and_available(updated_node, availability=Availability.active)
     assert is_node_osparc_ready(updated_node)
     # make it not osparc ready
     updated_node = await set_node_osparc_ready(
-        autoscaling_docker, host_node, ready=False
+        app_settings, autoscaling_docker, host_node, ready=False
     )
     assert not is_node_osparc_ready(updated_node)
     # check the node is still active
@@ -1078,7 +1080,10 @@ async def test_set_node_osparc_ready(
 
 
 async def test_attach_node(
-    autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker
+    app_settings: ApplicationSettings,
+    autoscaling_docker: AutoscalingDocker,
+    host_node: Node,
+    faker: Faker,
 ):
     # initial state
     assert is_node_ready_and_available(host_node, availability=Availability.active)
@@ -1089,7 +1094,10 @@ async def test_attach_node(
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     # now attach the node
     updated_node = await attach_node(
-        autoscaling_docker, updated_node, tags=faker.pydict(allowed_types=(str,))
+        app_settings,
+        autoscaling_docker,
+        updated_node,
+        tags=faker.pydict(allowed_types=(str,)),
     )
     # expected the node to be active
     assert is_node_ready_and_available(host_node, availability=Availability.active)
