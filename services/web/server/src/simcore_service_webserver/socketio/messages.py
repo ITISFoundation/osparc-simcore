@@ -37,14 +37,20 @@ async def _logged_gather_emit(
     *,
     room: SocketIORoomStr,
     messages: Sequence[SocketMessageDict],
+    ignore_queue: bool,
     max_concurrency: int = 100,
 ):
+    # NOTE: that we configured message queue (i.e. socketio servers are backed with rabbitMQ)
+    # so if `ignore_queue=True` then the server can directly communicate with the
+    # client without having to send his message first to rabbitMQ and then back to itself.
+    #
     await logged_gather(
         *(
             sio.emit(
                 event=message["event_type"],
                 data=json_dumps(message["data"]),
                 room=room,
+                ignore_queue=ignore_queue,
             )
             for message in messages
         ),
@@ -55,8 +61,16 @@ async def _logged_gather_emit(
 
 
 async def send_messages_to_user(
-    app: Application, user_id: UserID, messages: Sequence[SocketMessageDict]
+    app: Application,
+    user_id: UserID,
+    messages: Sequence[SocketMessageDict],
+    *,
+    has_direct_connection_to_client: bool = True,
 ) -> None:
+    """
+    Keyword Arguments:
+        has_direct_connection_to_client -- set to False when this message is delivered from a server that has no direct connection to the client (default: {True})
+    """
     sio: AsyncServer = get_socket_server(app)
 
     await _logged_gather_emit(
@@ -64,12 +78,21 @@ async def send_messages_to_user(
         room=SocketIORoomStr.from_user_id(user_id),
         messages=messages,
         max_concurrency=100,
+        ignore_queue=has_direct_connection_to_client,
     )
 
 
 async def send_messages_to_group(
-    app: Application, group_id: GroupID, messages: Sequence[SocketMessageDict]
+    app: Application,
+    group_id: GroupID,
+    messages: Sequence[SocketMessageDict],
+    *,
+    has_direct_connection_to_client: bool = True,
 ) -> None:
+    """
+    Keyword Arguments:
+        has_direct_connection_to_client -- set to False when this message is delivered from a server that has no direct connection to the client (default: {True})
+    """
     sio: AsyncServer = get_socket_server(app)
 
     await _logged_gather_emit(
@@ -77,4 +100,5 @@ async def send_messages_to_group(
         room=SocketIORoomStr.from_group_id(group_id),
         messages=messages,
         max_concurrency=10,
+        ignore_queue=has_direct_connection_to_client,
     )
