@@ -23,12 +23,12 @@ INSTALL_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.in")
     | {
         "simcore-postgres-database",
-        "simcore-service-library",
+        "simcore-settings-library",
     }
 )  # WEAK requirements
 
 TEST_REQUIREMENTS = tuple(
-    read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
+    read_reqs(CURRENT_DIR / "requirements" / "_test.txt") | {"pytest-simcore"}
 )  # STRICT requirements
 
 
