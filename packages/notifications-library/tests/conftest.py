@@ -53,7 +53,7 @@ def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
     envs = {}
     if envfile := request.config.getoption("--external-envfile"):
         assert isinstance(envfile, Path)
-        print("🚨 EXTERNAL: external envs detected. Loading", envfile, "...")
+        print("🚨 EXTERNAL `envfile` option detected. Loading", envfile, "...")
         envs = load_dotenv(envfile)
         assert "PAYMENTS_GATEWAY_API_SECRET" in envs
         assert "PAYMENTS_GATEWAY_URL" in envs
@@ -63,7 +63,7 @@ def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
 
 @pytest.fixture(scope="session")
 def external_user_email(request: pytest.FixtureRequest) -> str | None:
-    email_or_none = request.config.getoption("--external-email", default=None)
+    email_or_none = request.config.getoption("--external-user-email", default=None)
     return parse_obj_as(EmailStr, email_or_none) if email_or_none else None
 
 
@@ -71,7 +71,9 @@ def external_user_email(request: pytest.FixtureRequest) -> str | None:
 def user_email(user_email: EmailStr, external_user_email: EmailStr | None) -> EmailStr:
     """Overrides pytest_simcore.faker_users_data.user_email"""
     if external_user_email:
-        print("📧 EXTERNAL using in test", f"{external_user_email=}")
+        print(
+            f"📧 EXTERNAL `user_email` detected. Setting user_email={external_user_email}"
+        )
         return external_user_email
     return user_email
 

@@ -53,6 +53,7 @@ def smtp_mock_or_none(
 
 
 async def test_send_email_workflow(
+    app_environment: EnvVarsDict,
     tmp_path: Path,
     faker: Faker,
     user_email: EmailStr,
@@ -99,7 +100,7 @@ async def test_send_email_workflow(
             template_prefix="notify_payments",
             user=user_data,
             product=product_data,
-            extra={"payments": payment_data},
+            extra={"payment": payment_data},
         )
     )
 
