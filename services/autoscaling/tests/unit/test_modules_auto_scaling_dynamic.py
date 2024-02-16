@@ -865,6 +865,7 @@ async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missin
     host_node: Node,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
     mock_docker_set_node_availability: mock.Mock,
+    mock_docker_tag_node: mock.Mock,
     create_service: Callable[
         [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
@@ -889,8 +890,12 @@ async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missin
     updated_cluster = await _deactivate_empty_nodes(initialized_app, active_cluster)
     assert not updated_cluster.active_nodes
     assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
-    mock_docker_set_node_availability.assert_called_once_with(
-        mock.ANY, host_node, available=False
+    mock_docker_set_node_availability.assert_not_called()
+    mock_docker_tag_node.assert_called_once_with(
+        mock.ANY,
+        host_node,
+        tags={_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
+        available=False,
     )
 
 
@@ -902,6 +907,7 @@ async def test__deactivate_empty_nodes_does_not_drain_if_service_is_running_with
     host_node: Node,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
     mock_docker_set_node_availability: mock.Mock,
+    mock_docker_tag_node: mock.Mock,
     create_service: Callable[
         [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
@@ -952,6 +958,7 @@ async def test__deactivate_empty_nodes_does_not_drain_if_service_is_running_with
     updated_cluster = await _deactivate_empty_nodes(initialized_app, active_cluster)
     assert updated_cluster == active_cluster
     mock_docker_set_node_availability.assert_not_called()
+    mock_docker_tag_node.assert_not_called()
 
 
 async def test__find_terminateable_nodes_with_no_hosts(
