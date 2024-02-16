@@ -1441,7 +1441,7 @@ async def remove_project_dynamic_services(
 async def notify_project_state_update(
     app: web.Application,
     project: ProjectDict,
-    notify_only_user: int | None = None,
+    notify_only_user: UserID | None = None,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
@@ -1456,7 +1456,7 @@ async def notify_project_state_update(
     if notify_only_user:
         await send_message_to_user(
             app,
-            user_id=parse_obj_as(UserID, notify_only_user),
+            user_id=notify_only_user,
             message=message,
             has_direct_connection_to_client=True,
         )
