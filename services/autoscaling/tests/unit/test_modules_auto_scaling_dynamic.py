@@ -179,6 +179,7 @@ async def drained_host_node(
 
 @pytest.fixture
 def minimal_configuration(
+    with_labelize_drain_nodes: EnvVarsDict,
     docker_swarm: None,
     mocked_ec2_server_envs: EnvVarsDict,
     enabled_dynamic_mode: EnvVarsDict,
@@ -448,6 +449,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     docker_service_ram: ByteSize,
     expected_ec2_type: InstanceTypeType,
     async_docker_client: aiodocker.Docker,
+    labelize_drain_nodes: bool,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -503,6 +505,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
 
     fake_attached_node = deepcopy(fake_node)
     assert fake_attached_node.Spec
+    fake_attached_node.Spec.Availability = (
+        Availability.active if labelize_drain_nodes else Availability.drain
+    )
     assert fake_attached_node.Spec.Labels
     assert app_settings.AUTOSCALING_NODES_MONITORING
     expected_docker_node_tags = {
@@ -549,7 +554,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
                 tags=fake_node.Spec.Labels
                 | expected_docker_node_tags
                 | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
-                available=False,
+                available=labelize_drain_nodes,
             ),
             mock.call(
                 get_docker_client(initialized_app),
@@ -649,7 +654,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         fake_attached_node,
         tags=fake_attached_node.Spec.Labels
         | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
-        available=False,
+        available=labelize_drain_nodes,
     )
     mock_docker_tag_node.reset_mock()
 
@@ -661,7 +666,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         fake_attached_node,
         tags=fake_attached_node.Spec.Labels
         | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
-        available=False,
+        available=labelize_drain_nodes,
     )
     mock_docker_tag_node.reset_mock()
 
@@ -839,6 +844,7 @@ async def test__deactivate_empty_nodes(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
     mock_docker_set_node_availability: mock.Mock,
     mock_docker_tag_node: mock.Mock,
+    labelize_drain_nodes: bool,
 ):
     # since we have no service running, we expect the passed node to be set to drain
     active_cluster = cluster(
@@ -854,7 +860,7 @@ async def test__deactivate_empty_nodes(
         mock.ANY,
         host_node,
         tags={_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
-        available=False,
+        available=labelize_drain_nodes,
     )
 
 
@@ -872,6 +878,7 @@ async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missin
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     host_cpu_count: int,
+    labelize_drain_nodes: bool,
 ):
     # create a service that runs without task labels
     task_template_that_runs = task_template | create_task_reservations(
@@ -895,7 +902,7 @@ async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missin
         mock.ANY,
         host_node,
         tags={_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
-        available=False,
+        available=labelize_drain_nodes,
     )
 
 

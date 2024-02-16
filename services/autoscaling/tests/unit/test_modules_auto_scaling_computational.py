@@ -64,6 +64,7 @@ def local_dask_scheduler_server_envs(
 
 @pytest.fixture
 def minimal_configuration(
+    with_labelize_drain_nodes: EnvVarsDict,
     docker_swarm: None,
     mocked_ec2_server_envs: EnvVarsDict,
     enabled_computational_mode: EnvVarsDict,
@@ -384,6 +385,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     dask_task_imposed_ec2_type: InstanceTypeType | None,
     dask_ram: ByteSize | None,
     expected_ec2_type: InstanceTypeType,
+    labelize_drain_nodes: bool,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -461,6 +463,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert fake_node.Spec.Labels
     fake_attached_node = deepcopy(fake_node)
     assert fake_attached_node.Spec
+    fake_attached_node.Spec.Availability = (
+        Availability.active if labelize_drain_nodes else Availability.drain
+    )
     assert fake_attached_node.Spec.Labels
     fake_attached_node.Spec.Labels |= expected_docker_node_tags | {
         _OSPARC_SERVICE_READY_LABEL_KEY: "false"
@@ -474,7 +479,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
                 tags=fake_node.Spec.Labels
                 | expected_docker_node_tags
                 | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
-                available=False,
+                available=labelize_drain_nodes,
             ),
             mock.call(
                 get_docker_client(initialized_app),
@@ -563,7 +568,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         fake_attached_node,
         tags=fake_attached_node.Spec.Labels
         | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
-        available=False,
+        available=labelize_drain_nodes,
     )
     mock_docker_tag_node.reset_mock()
 

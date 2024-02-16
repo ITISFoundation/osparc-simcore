@@ -105,6 +105,30 @@ def mocked_ec2_server_envs(
     return setenvs_from_dict(monkeypatch, changed_envs)
 
 
+@pytest.fixture(
+    params=[
+        "with_AUTOSCALING_LABELIZE_DRAINED_NODES",
+        "without_AUTOSCALING_LABELIZE_DRAINED_NODES",
+    ]
+)
+def labelize_drain_nodes(request: pytest.FixtureRequest) -> bool:
+    return bool(request.param == "with_AUTOSCALING_LABELIZE_DRAINED_NODES")
+
+
+@pytest.fixture
+def with_labelize_drain_nodes(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    labelize_drain_nodes: bool,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "AUTOSCALING_LABELIZE_DRAINED_NODES": f"{labelize_drain_nodes}",
+        },
+    )
+
+
 @pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
