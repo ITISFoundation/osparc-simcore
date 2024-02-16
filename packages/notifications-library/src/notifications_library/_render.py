@@ -24,12 +24,13 @@ class ProductData:
     support_email: str
 
 
-async def render_email_parts(
+def render_email_parts(
     env: Environment,
     template_prefix: str,
+    *,
     user: UserData,
     product: ProductData,
-    data: dict[str, Any],
+    extra: dict[str, Any] | None = None,
 ) -> tuple:
     from_ = Address(
         display_name=f"{product.display_name} support",
@@ -39,6 +40,8 @@ async def render_email_parts(
         display_name=f"{user.first_name} {user.last_name}",
         addr_spec=user.email,
     )
+
+    data = (extra or {}) | {"user": user, "product": product}
 
     # NOTE: assumes template convention!
     subject = env.get_template(f"{template_prefix}.email.subject.txt").render(data)

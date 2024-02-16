@@ -13,7 +13,7 @@ from settings_library.email import EmailProtocol, SMTPSettings
 _logger = logging.getLogger(__name__)
 
 
-async def compose_email(
+def compose_email(
     from_: Address,
     to: Address,
     subject: str,
