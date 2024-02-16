@@ -70,6 +70,10 @@ async def send_messages_to_user(
     """
     Keyword Arguments:
         has_direct_connection_to_client -- set to False when this message is delivered from a server that has no direct connection to the client (default: {True})
+        An example where this is value is False, is sending messages to a user in the GC
+
+    QUESTION: a user might have different tabs opened or connect with a different browser/computer. Does stickiness
+    make all these connection associated to the same server?
     """
     sio: AsyncServer = get_socket_server(app)
 
@@ -86,13 +90,7 @@ async def send_messages_to_group(
     app: Application,
     group_id: GroupID,
     messages: Sequence[SocketMessageDict],
-    *,
-    has_direct_connection_to_client: bool = True,
 ) -> None:
-    """
-    Keyword Arguments:
-        has_direct_connection_to_client -- set to False when this message is delivered from a server that has no direct connection to the client (default: {True})
-    """
     sio: AsyncServer = get_socket_server(app)
 
     await _logged_gather_emit(
@@ -100,5 +98,6 @@ async def send_messages_to_group(
         room=SocketIORoomStr.from_group_id(group_id),
         messages=messages,
         max_concurrency=10,
-        ignore_queue=has_direct_connection_to_client,
+        ignore_queue=False,  # NOTE: Except for the primary group, a group refers to different users that might be
+        # connected to different replicas
     )

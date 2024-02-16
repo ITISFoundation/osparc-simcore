@@ -145,9 +145,7 @@ async def connect(
             }
         ]
         await send_messages_to_user(
-            app,
-            user_id,
-            heart_beat_messages,
+            app, user_id, heart_beat_messages, has_direct_connection_to_client=True
         )
 
     except web.HTTPUnauthorized as exc:

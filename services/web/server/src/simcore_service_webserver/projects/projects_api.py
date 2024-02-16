@@ -1457,7 +1457,10 @@ async def notify_project_state_update(
 
     if notify_only_user:
         await send_messages_to_user(
-            app, user_id=f"{notify_only_user}", messages=messages
+            app,
+            user_id=f"{notify_only_user}",
+            messages=messages,
+            has_direct_connection_to_client=True,
         )
     else:
         rooms_to_notify: Generator[GroupID, None, None] = (

@@ -105,7 +105,12 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
     else:
         socket_message = _convert_to_node_progress_event(rabbit_message)
     if socket_message:
-        await send_messages_to_user(app, rabbit_message.user_id, [socket_message])
+        await send_messages_to_user(
+            app,
+            rabbit_message.user_id,
+            [socket_message],
+            has_direct_connection_to_client=True,
+        )
 
     return True
 
@@ -118,7 +123,12 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
             "data": rabbit_message.dict(exclude={"user_id", "channel_name"}),
         }
     ]
-    await send_messages_to_user(app, rabbit_message.user_id, socket_messages)
+    await send_messages_to_user(
+        app,
+        rabbit_message.user_id,
+        socket_messages,
+        has_direct_connection_to_client=True,
+    )
     return True
 
 
@@ -134,7 +144,12 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
             },
         }
     ]
-    await send_messages_to_user(app, rabbit_message.user_id, socket_messages)
+    await send_messages_to_user(
+        app,
+        rabbit_message.user_id,
+        socket_messages,
+        has_direct_connection_to_client=True,
+    )
     return True
 
 

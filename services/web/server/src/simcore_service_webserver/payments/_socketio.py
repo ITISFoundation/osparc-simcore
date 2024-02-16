@@ -28,7 +28,9 @@ async def notify_payment_completed(
             "data": jsonable_encoder(payment, by_alias=True),
         }
     ]
-    await send_messages_to_user(app, user_id, messages)
+    await send_messages_to_user(
+        app, user_id, messages, has_direct_connection_to_client=True
+    )
 
 
 async def notify_payment_method_acked(
@@ -43,4 +45,6 @@ async def notify_payment_method_acked(
             "data": jsonable_encoder(payment_method_transaction, by_alias=True),
         }
     ]
-    await send_messages_to_user(app, user_id, messages)
+    await send_messages_to_user(
+        app, user_id, messages, has_direct_connection_to_client=True
+    )
