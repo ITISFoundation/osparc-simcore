@@ -29,7 +29,7 @@ from ..socketio.messages import (
     SOCKET_IO_PROJECT_PROGRESS_EVENT,
     SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
     send_message_to_standard_group,
-    send_messages_to_user,
+    send_message_to_user,
 )
 from ..wallets import api as wallets_api
 from ._constants import APP_RABBITMQ_CONSUMERS_KEY
@@ -108,7 +108,7 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
         message = _convert_to_node_progress_event(rabbit_message)
 
     if message:
-        await send_messages_to_user(
+        await send_message_to_user(
             app,
             rabbit_message.user_id,
             message=message,
@@ -119,7 +119,7 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
 
 async def _log_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = LoggerRabbitMessage.parse_raw(data)
-    await send_messages_to_user(
+    await send_message_to_user(
         app,
         rabbit_message.user_id,
         message=SocketMessageDict(
@@ -133,7 +133,7 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
 
 async def _events_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = EventRabbitMessage.parse_raw(data)
-    await send_messages_to_user(
+    await send_message_to_user(
         app,
         rabbit_message.user_id,
         message=SocketMessageDict(

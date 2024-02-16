@@ -11,7 +11,7 @@ from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
-from ..socketio.messages import send_messages_to_user
+from ..socketio.messages import send_message_to_user
 
 
 async def notify_payment_completed(
@@ -22,7 +22,7 @@ async def notify_payment_completed(
 ):
     assert payment.completed_at is not None  # nosec
 
-    await send_messages_to_user(
+    await send_message_to_user(
         app,
         user_id,
         message=SocketMessageDict(
@@ -39,7 +39,7 @@ async def notify_payment_method_acked(
     user_id: UserID,
     payment_method_transaction: PaymentMethodTransaction,
 ):
-    await send_messages_to_user(
+    await send_message_to_user(
         app,
         user_id,
         message=SocketMessageDict(

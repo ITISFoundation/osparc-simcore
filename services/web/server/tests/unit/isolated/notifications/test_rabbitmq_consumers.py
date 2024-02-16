@@ -52,14 +52,14 @@ async def test_regression_progress_message_parser(
     mocker: MockerFixture, raw_data: bytes, class_type: type[BaseModel]
 ):
     send_messages_to_user_mock = mocker.patch(
-        "simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers.send_messages_to_user",
+        "simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers.send_message_to_user",
         autospec=True,
     )
 
     app = AsyncMock()
     assert await _progress_message_parser(app, raw_data)
 
-    # tests how send_messages_to_user is called
+    # tests how send_message_to_user is called
     assert send_messages_to_user_mock.call_count == 1
     message = send_messages_to_user_mock.call_args.kwargs["message"]
 

@@ -97,7 +97,7 @@ from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
     send_message_to_standard_group,
-    send_messages_to_user,
+    send_message_to_user,
 )
 from ..storage import api as storage_api
 from ..users.api import FullNameDict, get_user_fullname, get_user_role
@@ -1454,7 +1454,7 @@ async def notify_project_state_update(
     )
 
     if notify_only_user:
-        await send_messages_to_user(
+        await send_message_to_user(
             app,
             user_id=parse_obj_as(UserID, notify_only_user),
             message=message,

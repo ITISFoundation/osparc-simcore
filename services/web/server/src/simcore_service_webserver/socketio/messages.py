@@ -61,7 +61,7 @@ async def _safe_emit(
         )
 
 
-async def send_messages_to_user(
+async def send_message_to_user(
     app: Application,
     user_id: UserID,
     message: SocketMessageDict,
@@ -93,7 +93,7 @@ async def send_message_to_standard_group(
 ) -> None:
     """
     WARNING: please do not use primary groups here. To transmit to the
-    user use instead send_messages_to_user
+    user use instead send_message_to_user
 
     NOTE: despite the name, it can also be used for EVERYONE
     """
