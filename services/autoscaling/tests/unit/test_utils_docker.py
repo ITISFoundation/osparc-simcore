@@ -1098,6 +1098,11 @@ async def test_set_node_osparc_ready(
 
 
 async def test_attach_node(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_dynamic_service_background_task: None,
     app_settings: ApplicationSettings,
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
