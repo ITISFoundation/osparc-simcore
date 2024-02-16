@@ -66,10 +66,8 @@ def smtp_mock_or_none(
 
 
 async def test_send_email_workflow(
-    app_environment: EnvVarsDict,
     tmp_path: Path,
     faker: Faker,
-    external_email: str | None,
     user_email: EmailStr,
     product_name: ProductName,
     product: dict[str, Any],
