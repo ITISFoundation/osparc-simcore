@@ -2,21 +2,21 @@ import contextlib
 import logging
 import tempfile
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from email.headerregistry import Address
 from email.message import EmailMessage
 from pathlib import Path
 
-from attr import dataclass
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodTransaction,
     PaymentTransaction,
 )
-from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.file_utils import remove_directory
 
-from .db import TemplatesRepo
+from ._db import TemplatesRepo
+from ._render import ProductData, UserData
 
 _logger = logging.getLogger(__name__)
 
@@ -30,22 +30,7 @@ _PRODUCT_NOTIFICATIONS_TEMPLATES = {
 
 
 @dataclass
-class _UserData:
-    first_name: str
-    last_name: str
-    email: str
-
-
-@dataclass
-class _ProductData:
-    product_name: ProductName
-    display_name: str
-    vendor_display_inline: str
-    support_email: str
-
-
-@dataclass
-class _PaymentData:
+class PaymentData:
     price_dollars: str
     osparc_credits: str
     invoice_url: str
@@ -53,9 +38,9 @@ class _PaymentData:
 
 async def _create_user_email(
     env: Environment,
-    user: _UserData,
-    payment: _PaymentData,
-    product: _ProductData,
+    user: UserData,
+    payment: PaymentData,
+    product: ProductData,
 ) -> EmailMessage:
     # data to interpolate template
     data = {

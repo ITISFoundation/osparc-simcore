@@ -1,8 +1,8 @@
 import logging
+from dataclasses import dataclass
 from email.headerregistry import Address
 from typing import Any
 
-from attr import dataclass
 from jinja2 import Environment
 from models_library.products import ProductName
 
@@ -10,14 +10,14 @@ _logger = logging.getLogger(__name__)
 
 
 @dataclass
-class _UserData:
+class UserData:
     first_name: str
     last_name: str
     email: str
 
 
 @dataclass
-class _ProductData:
+class ProductData:
     product_name: ProductName
     display_name: str
     vendor_display_inline: str
@@ -27,8 +27,8 @@ class _ProductData:
 async def render_email_parts(
     env: Environment,
     template_prefix: str,
-    user: _UserData,
-    product: _ProductData,
+    user: UserData,
+    product: ProductData,
     data: dict[str, Any],
 ) -> tuple:
     from_ = Address(
