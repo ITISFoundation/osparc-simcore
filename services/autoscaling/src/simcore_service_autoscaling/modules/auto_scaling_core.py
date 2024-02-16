@@ -221,9 +221,11 @@ async def _activate_and_notify(
     auto_scaling_mode: BaseAutoscaling,
     drained_node: AssociatedInstance,
 ) -> None:
+    app_settings = get_application_settings(app)
+    docker_client = get_docker_client(app)
     await asyncio.gather(
         utils_docker.set_node_osparc_ready(
-            get_docker_client(app), drained_node.node, ready=True
+            app_settings, docker_client, drained_node.node, ready=True
         ),
         auto_scaling_mode.log_message_from_tasks(
             app,
@@ -682,6 +684,7 @@ async def _scale_up_cluster(
 
 
 async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
+    app_settings = get_application_settings(app)
     docker_client = get_docker_client(app)
     active_empty_instances: list[AssociatedInstance] = []
     active_non_empty_instances: list[AssociatedInstance] = []
@@ -701,6 +704,7 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     updated_nodes: list[Node] = await asyncio.gather(
         *(
             utils_docker.set_node_osparc_ready(
+                app_settings,
                 docker_client,
                 node.node,
                 ready=False,
