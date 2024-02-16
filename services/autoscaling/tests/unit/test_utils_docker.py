@@ -1064,6 +1064,11 @@ def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Fake
 
 
 async def test_set_node_osparc_ready(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_dynamic_service_background_task: None,
     app_settings: ApplicationSettings,
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
@@ -1089,8 +1094,7 @@ async def test_set_node_osparc_ready(
         app_settings, autoscaling_docker, host_node, ready=False
     )
     assert not is_node_osparc_ready(updated_node)
-    # check the node is still active
-    assert is_node_ready_and_available(updated_node, availability=Availability.active)
+    assert is_node_ready_and_available(updated_node, availability=Availability.drain)
 
 
 async def test_attach_node(
