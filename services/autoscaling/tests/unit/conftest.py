@@ -318,10 +318,30 @@ async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
 async def host_node(
     docker_swarm: None,
     async_docker_client: aiodocker.Docker,
-) -> DockerNode:
+) -> AsyncIterator[DockerNode]:
     nodes = parse_obj_as(list[DockerNode], await async_docker_client.nodes.list())
     assert len(nodes) == 1
-    return nodes[0]
+    old_node = deepcopy(nodes[0])
+    assert old_node.Spec
+    assert old_node.Spec.Role
+    assert old_node.Spec.Availability
+    yield nodes[0]
+    # revert state
+    current_node = parse_obj_as(
+        DockerNode, await async_docker_client.nodes.inspect(node_id=host_node.ID)
+    )
+    assert current_node.ID
+    assert current_node.Version
+    assert current_node.Version.Index
+    await async_docker_client.nodes.update(
+        node_id=current_node.ID,
+        version=current_node.Version.Index,
+        spec={
+            "Availability": old_node.Spec.Availability.value,
+            "Labels": old_node.Spec.Labels,
+            "Role": old_node.Spec.Role.value,
+        },
+    )
 
 
 @pytest.fixture
