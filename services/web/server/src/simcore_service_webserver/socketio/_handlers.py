@@ -138,14 +138,14 @@ async def connect(
             product_name,
         )
 
-        heart_beat_messages: list[SocketMessageDict] = [
-            {
-                "event_type": SOCKET_IO_HEARTBEAT_EVENT,
-                "data": {"interval": _EMIT_INTERVAL_S},
-            }
-        ]
         await send_messages_to_user(
-            app, user_id, heart_beat_messages, has_direct_connection_to_client=True
+            app,
+            user_id,
+            message=SocketMessageDict(
+                event_type=SOCKET_IO_HEARTBEAT_EVENT,
+                data={"interval": _EMIT_INTERVAL_S},
+            ),
+            has_direct_connection_to_client=True,
         )
 
     except web.HTTPUnauthorized as exc:

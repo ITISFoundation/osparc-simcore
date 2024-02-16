@@ -96,7 +96,7 @@ from ..resource_usage import api as rut_api
 from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
-    send_messages_to_group,
+    send_message_to_standard_group,
     send_messages_to_user,
 )
 from ..storage import api as storage_api
@@ -1445,21 +1445,19 @@ async def notify_project_state_update(
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
-    messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_PROJECT_UPDATED_EVENT,
-            "data": {
-                "project_uuid": project["uuid"],
-                "data": project["state"],
-            },
-        }
-    ]
+    message = SocketMessageDict(
+        event_type=SOCKET_IO_PROJECT_UPDATED_EVENT,
+        data={
+            "project_uuid": project["uuid"],
+            "data": project["state"],
+        },
+    )
 
     if notify_only_user:
         await send_messages_to_user(
             app,
-            user_id=f"{notify_only_user}",
-            messages=messages,
+            user_id=parse_obj_as(UserID, notify_only_user),
+            message=message,
             has_direct_connection_to_client=True,
         )
     else:
@@ -1467,7 +1465,7 @@ async def notify_project_state_update(
             gid for gid, rights in project["accessRights"].items() if rights["read"]
         )
         for room in rooms_to_notify:
-            await send_messages_to_group(app, room, messages)
+            await send_message_to_standard_group(app, group_id=room, message=message)
 
 
 async def notify_project_node_update(
@@ -1483,22 +1481,20 @@ async def notify_project_node_update(
         gid for gid, rights in project["accessRights"].items() if rights["read"]
     ]
 
-    messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
-            "data": {
-                "project_id": project["uuid"],
-                "node_id": f"{node_id}",
-                # as GET projects/{project_id}/nodes/{node_id}
-                "data": project["workbench"][f"{node_id}"],
-                # as GET projects/{project_id}/nodes/{node_id}/errors
-                "errors": errors,
-            },
-        }
-    ]
+    message = SocketMessageDict(
+        event_type=SOCKET_IO_NODE_UPDATED_EVENT,
+        data={
+            "project_id": project["uuid"],
+            "node_id": f"{node_id}",
+            # as GET projects/{project_id}/nodes/{node_id}
+            "data": project["workbench"][f"{node_id}"],
+            # as GET projects/{project_id}/nodes/{node_id}/errors
+            "errors": errors,
+        },
+    )
 
     for room in rooms_to_notify:
-        await send_messages_to_group(app, room, messages)
+        await send_message_to_standard_group(app, room, message)
 
 
 async def retrieve_and_notify_project_locked_state(

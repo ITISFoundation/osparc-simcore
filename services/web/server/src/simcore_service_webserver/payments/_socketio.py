@@ -22,14 +22,14 @@ async def notify_payment_completed(
 ):
     assert payment.completed_at is not None  # nosec
 
-    messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_PAYMENT_COMPLETED_EVENT,
-            "data": jsonable_encoder(payment, by_alias=True),
-        }
-    ]
     await send_messages_to_user(
-        app, user_id, messages, has_direct_connection_to_client=True
+        app,
+        user_id,
+        message=SocketMessageDict(
+            event_type=SOCKET_IO_PAYMENT_COMPLETED_EVENT,
+            data=jsonable_encoder(payment, by_alias=True),
+        ),
+        has_direct_connection_to_client=True,
     )
 
 
@@ -39,12 +39,12 @@ async def notify_payment_method_acked(
     user_id: UserID,
     payment_method_transaction: PaymentMethodTransaction,
 ):
-    messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT,
-            "data": jsonable_encoder(payment_method_transaction, by_alias=True),
-        }
-    ]
     await send_messages_to_user(
-        app, user_id, messages, has_direct_connection_to_client=True
+        app,
+        user_id,
+        message=SocketMessageDict(
+            event_type=SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT,
+            data=jsonable_encoder(payment_method_transaction, by_alias=True),
+        ),
+        has_direct_connection_to_client=True,
     )

@@ -3,7 +3,6 @@ This module takes care of sending events to the connected webclient through the 
 """
 
 import logging
-from collections.abc import Sequence
 from typing import Final
 
 from aiohttp.web import Application
@@ -11,7 +10,6 @@ from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID, UserID
 from servicelib.json_serialization import json_dumps
-from servicelib.utils import logged_gather
 from socketio import AsyncServer
 
 from ._utils import get_socket_server
@@ -32,38 +30,41 @@ SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
 SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT: Final[str] = "walletOsparcCreditsUpdated"
 
 
-async def _logged_gather_emit(
+async def _safe_emit(
     sio: AsyncServer,
     *,
     room: SocketIORoomStr,
-    messages: Sequence[SocketMessageDict],
+    message: SocketMessageDict,
     ignore_queue: bool,
-    max_concurrency: int = 100,
 ):
-    # NOTE: that we configured message queue (i.e. socketio servers are backed with rabbitMQ)
+    # NOTE 1 : we configured message queue (i.e. socketio servers are backed with rabbitMQ)
     # so if `ignore_queue=True` then the server can directly communicate with the
     # client without having to send his message first to rabbitMQ and then back to itself.
     #
-    await logged_gather(
-        *(
-            sio.emit(
-                event=message["event_type"],
-                data=json_dumps(message["data"]),
-                room=room,
-                ignore_queue=ignore_queue,
-            )
-            for message in messages
-        ),
-        reraise=False,
-        log=_logger,
-        max_concurrency=max_concurrency,
-    )
+    # NOTE 2: `emit` method is not designed to be used concurrently
+    try:
+        event = message["event_type"]
+        data = json_dumps(message["data"])
+        await sio.emit(
+            event=event,
+            data=data,
+            room=room,
+            ignore_queue=ignore_queue,
+        )
+    except Exception:  # pylint: disable=broad-exception-caught
+        _logger.warning(
+            "Failed to deliver %s message to %s size=%d",
+            f"{event=}",
+            f"{room=}",
+            len(data),
+            exc_info=True,
+        )
 
 
 async def send_messages_to_user(
     app: Application,
     user_id: UserID,
-    messages: Sequence[SocketMessageDict],
+    message: SocketMessageDict,
     *,
     has_direct_connection_to_client: bool = True,
 ) -> None:
@@ -77,27 +78,32 @@ async def send_messages_to_user(
     """
     sio: AsyncServer = get_socket_server(app)
 
-    await _logged_gather_emit(
+    await _safe_emit(
         sio,
         room=SocketIORoomStr.from_user_id(user_id),
-        messages=messages,
-        max_concurrency=100,
+        message=message,
         ignore_queue=has_direct_connection_to_client,
     )
 
 
-async def send_messages_to_group(
+async def send_message_to_standard_group(
     app: Application,
     group_id: GroupID,
-    messages: Sequence[SocketMessageDict],
+    message: SocketMessageDict,
 ) -> None:
+    """
+    WARNING: please do not use primary groups here. To transmit to the
+    user use instead send_messages_to_user
+
+    NOTE: despite the name, it can also be used for EVERYONE
+    """
     sio: AsyncServer = get_socket_server(app)
 
-    await _logged_gather_emit(
+    await _safe_emit(
         sio,
         room=SocketIORoomStr.from_group_id(group_id),
-        messages=messages,
-        max_concurrency=10,
-        ignore_queue=False,  # NOTE: Except for the primary group, a group refers to different users that might be
-        # connected to different replicas
+        message=message,
+        ignore_queue=False,
+        # NOTE: A standard group refers to different users
+        # that might be connected to different replicas
     )
