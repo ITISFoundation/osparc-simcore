@@ -51,7 +51,7 @@ _faker = Faker()
 async def test_regression_progress_message_parser(
     mocker: MockerFixture, raw_data: bytes, class_type: type[BaseModel]
 ):
-    mock = mocker.patch(
+    send_messages_to_user_mock = mocker.patch(
         "simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers.send_messages_to_user",
         autospec=True,
     )
@@ -60,8 +60,8 @@ async def test_regression_progress_message_parser(
     assert await _progress_message_parser(app, raw_data)
 
     # tests how send_messages_to_user is called
-    assert mock.call_count == 1
-    message = mock.call_args.kwargs["message"]
+    assert send_messages_to_user_mock.call_count == 1
+    message = send_messages_to_user_mock.call_args.kwargs["message"]
 
     # check that all fields are sent as expected
     assert class_type.parse_obj(message["data"])
