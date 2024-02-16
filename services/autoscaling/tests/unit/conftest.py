@@ -26,9 +26,10 @@ from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.generated_models.docker_rest_api import Availability
+from models_library.generated_models.docker_rest_api import Node
+from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
-    Availability,
-    Node,
     NodeDescription,
     NodeSpec,
     NodeState,
@@ -649,4 +650,28 @@ def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.set_node_availability",
         autospec=True,
         side_effect=_fake_set_node_availability,
+    )
+
+
+@pytest.fixture
+def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
+    async def fake_tag_node(
+        docker_client: AutoscalingDocker,
+        node: DockerNode,
+        *,
+        tags: dict[DockerLabelKey, str],
+        available: bool,
+    ) -> DockerNode:
+        updated_node = deepcopy(node)
+        assert updated_node.Spec
+        updated_node.Spec.Labels = deepcopy(cast(dict[str, str], tags))
+        updated_node.Spec.Availability = (
+            Availability.active if available else Availability.drain
+        )
+        return updated_node
+
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.tag_node",
+        autospec=True,
+        side_effect=fake_tag_node,
     )

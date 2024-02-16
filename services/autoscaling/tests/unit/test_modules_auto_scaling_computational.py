@@ -14,7 +14,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterator
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 from unittest import mock
 
 import distributed
@@ -25,10 +25,7 @@ from dask_task_models_library.resource_constraints import (
 )
 from faker import Faker
 from fastapi import FastAPI
-from models_library.docker import (
-    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
-    DockerLabelKey,
-)
+from models_library.docker import DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
 from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import NodeState, NodeStatus
@@ -43,10 +40,7 @@ from simcore_service_autoscaling.modules.auto_scaling_mode_computational import 
     ComputationalAutoscaling,
 )
 from simcore_service_autoscaling.modules.dask import DaskTaskResources
-from simcore_service_autoscaling.modules.docker import (
-    AutoscalingDocker,
-    get_docker_client,
-)
+from simcore_service_autoscaling.modules.docker import get_docker_client
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICE_READY_LABEL_KEY,
 )
@@ -167,30 +161,6 @@ def _assert_rabbit_autoscaling_message_sent(
     mock_rabbitmq_post_message.assert_called_once_with(
         app,
         expected_message,
-    )
-
-
-@pytest.fixture
-def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
-    async def fake_tag_node(
-        docker_client: AutoscalingDocker,
-        node: DockerNode,
-        *,
-        tags: dict[DockerLabelKey, str],
-        available: bool,
-    ) -> DockerNode:
-        updated_node = deepcopy(node)
-        assert updated_node.Spec
-        updated_node.Spec.Labels = deepcopy(cast(dict[str, str], tags))
-        updated_node.Spec.Availability = (
-            Availability.active if available else Availability.drain
-        )
-        return updated_node
-
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.tag_node",
-        autospec=True,
-        side_effect=fake_tag_node,
     )
 
 
@@ -529,6 +499,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     fake_attached_node.Spec.Availability = Availability.active
     assert fake_attached_node.Description
     fake_attached_node.Description.Hostname = internal_dns_name
+
     auto_scaling_mode = ComputationalAutoscaling()
     mocker.patch.object(
         auto_scaling_mode,
