@@ -11,7 +11,7 @@ from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
-from ..socketio.messages import send_messages
+from ..socketio.messages import send_messages_to_user
 
 
 async def notify_payment_completed(
@@ -28,7 +28,7 @@ async def notify_payment_completed(
             "data": jsonable_encoder(payment, by_alias=True),
         }
     ]
-    await send_messages(app, user_id, messages)
+    await send_messages_to_user(app, user_id, messages)
 
 
 async def notify_payment_method_acked(
@@ -43,4 +43,4 @@ async def notify_payment_method_acked(
             "data": jsonable_encoder(payment_method_transaction, by_alias=True),
         }
     ]
-    await send_messages(app, user_id, messages)
+    await send_messages_to_user(app, user_id, messages)
