@@ -35,6 +35,7 @@ fi
 #
 
 APP_LOG_LEVEL=${API_SERVER_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
+AUTOSCALING_REMOTE_DEBUGGING_PORT=3000
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
@@ -43,7 +44,7 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 
   exec sh -c "
     cd services/autoscaling/src/simcore_service_autoscaling && \
-    uvicorn main:the_app \
+    python -m debugpy --listen 0.0.0.0:${AUTOSCALING_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages

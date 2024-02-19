@@ -70,7 +70,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   fi
 fi
 
-if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
   pip install --no-cache-dir debugpy
 fi
