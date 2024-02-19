@@ -9,6 +9,7 @@ import datetime
 import logging
 import re
 from contextlib import suppress
+from copy import deepcopy
 from pathlib import Path
 from typing import Final, cast
 
@@ -523,7 +524,7 @@ async def set_node_availability(
     )
 
 
-def get__new_node_docker_tags(
+def get_new_node_docker_tags(
     app_settings: ApplicationSettings, ec2_instance: EC2InstanceData
 ) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
@@ -540,9 +541,63 @@ def get__new_node_docker_tags(
     )
 
 
-def is_node_ready_and_available(node: Node, availability: Availability) -> bool:
+def is_node_ready_and_available(node: Node, *, availability: Availability) -> bool:
     assert node.Status  # nosec
     assert node.Spec  # nosec
     return bool(
         node.Status.State == NodeState.ready and node.Spec.Availability == availability
+    )
+
+
+_OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
+    DockerLabelKey, "osparc-services-ready"
+)
+
+
+def is_node_osparc_ready(node: Node) -> bool:
+    if not is_node_ready_and_available(node, availability=Availability.active):
+        return False
+    assert node.Spec  # nosec
+    return bool(
+        node.Spec.Labels
+        and _OSPARC_SERVICE_READY_LABEL_KEY in node.Spec.Labels
+        and node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] == "true"
+    )
+
+
+async def set_node_osparc_ready(
+    app_settings: ApplicationSettings,
+    docker_client: AutoscalingDocker,
+    node: Node,
+    *,
+    ready: bool,
+) -> Node:
+    assert node.Spec  # nosec
+    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.Spec.Labels))
+    new_tags[_OSPARC_SERVICE_READY_LABEL_KEY] = "true" if ready else "false"
+    # NOTE: docker drain sometimes impeed on performance when undraining see https://github.com/ITISFoundation/osparc-simcore/issues/5339
+    available = app_settings.AUTOSCALING_DRAIN_NODES_WITH_LABELS or ready
+    return await tag_node(
+        docker_client,
+        node,
+        tags=new_tags,
+        available=available,
+    )
+
+
+async def attach_node(
+    app_settings: ApplicationSettings,
+    docker_client: AutoscalingDocker,
+    node: Node,
+    *,
+    tags: dict[DockerLabelKey, str],
+) -> Node:
+    assert node.Spec  # nosec
+    current_tags = cast(dict[DockerLabelKey, str], node.Spec.Labels or {})
+    new_tags = current_tags | tags | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"}
+    return await tag_node(
+        docker_client,
+        node,
+        tags=new_tags,
+        available=app_settings.AUTOSCALING_DRAIN_NODES_WITH_LABELS,  # NOTE: full drain sometimes impede on performance
     )
