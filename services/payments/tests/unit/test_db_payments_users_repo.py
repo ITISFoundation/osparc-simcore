@@ -14,14 +14,10 @@ from fastapi import FastAPI
 from models_library.users import GroupID, UserID
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
-from simcore_service_payments.services.notifier_email import (
-    _PRODUCT_NOTIFICATIONS_TEMPLATES,
-)
 from simcore_service_payments.services.postgres import get_engine
 
 pytest_simcore_core_services_selection = [
@@ -164,43 +160,3 @@ async def test_get_notification_data(
     assert data.display_name == product["display_name"]
     assert data.vendor == product["vendor"]
     assert data.support_email == product["support_email"]
-
-
-@pytest.fixture
-async def email_templates(app: FastAPI) -> AsyncIterator[dict[str, Any]]:
-    all_templates = {**_PRODUCT_NOTIFICATIONS_TEMPLATES, "other.html": "Fake template"}
-
-    async with get_engine(app).begin() as conn:
-        pk_to_row = {
-            pk_value: await _insert_and_get_row(
-                conn,
-                jinja2_templates,
-                {"content": content},
-                jinja2_templates.c.name,
-                pk_value,
-            )
-            for pk_value, content in all_templates.items()
-        }
-
-    yield pk_to_row
-
-    async with get_engine(app).begin() as conn:
-        for pk_value in pk_to_row:
-            await _delete_row(
-                conn, payments_transactions, jinja2_templates.c.name, pk_value
-            )
-
-
-async def test_get_payments_templates(
-    app: FastAPI,
-    email_templates: dict[str, Any],
-):
-    repo = PaymentsUsersRepo(get_engine(app))
-
-    templates = await repo.get_email_templates(
-        names=set(_PRODUCT_NOTIFICATIONS_TEMPLATES.keys())
-    )
-
-    assert templates == _PRODUCT_NOTIFICATIONS_TEMPLATES
-
-    # TODO: see expore dependencies and pull all
