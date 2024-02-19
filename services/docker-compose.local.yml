@@ -13,6 +13,8 @@
 version: "3.8"
 services:
   api-server:
+    environment:
+      - API_SERVER_REMOTE_DEBUG_PORT=3000
     ports:
       - "8006:8000"
       - "3006:3000"
