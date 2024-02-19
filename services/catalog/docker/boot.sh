@@ -28,7 +28,6 @@ fi
 
 # RUNNING application ----------------------------------------
 APP_LOG_LEVEL=${CATALOG_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
-CATALOG_REMOTE_DEBUGGING_PORT=3000
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
