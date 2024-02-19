@@ -24,7 +24,7 @@ attrs==21.4.0
     #   jschema-to-python
     #   jsonschema
     #   sarif-om
-aws-sam-translator==1.83.0
+aws-sam-translator==1.85.0
     # via cfn-lint
 aws-xray-sdk==2.12.1
     # via moto
@@ -51,7 +51,7 @@ certifi==2023.7.22
     #   requests
 cffi==1.16.0
     # via cryptography
-cfn-lint==0.84.0
+cfn-lint==0.85.2
     # via moto
 charset-normalizer==3.1.0
     # via
@@ -61,17 +61,17 @@ click==8.1.3
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.3.2
+coverage==7.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==41.0.7
+cryptography==42.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   moto
     #   python-jose
     #   sshpubkeys
-docker==6.1.3
+docker==7.0.0
     # via
     #   -r requirements/_test.in
     #   moto
@@ -80,13 +80,13 @@ ecdsa==0.18.0
     #   moto
     #   python-jose
     #   sshpubkeys
-exceptiongroup==1.1.3
+exceptiongroup==1.2.0
     # via pytest
-faker==19.13.0
+faker==23.2.1
     # via -r requirements/_test.in
-fakeredis==2.20.0
+fakeredis==2.21.1
     # via -r requirements/_test.in
-flask==3.0.1
+flask==3.0.2
     # via
     #   flask-cors
     #   moto
@@ -164,11 +164,11 @@ markupsafe==2.1.3
     #   jinja2
     #   mako
     #   werkzeug
-moto==4.1.5
+moto==4.2.6
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
-mypy==1.6.1
+mypy==1.8.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -188,8 +188,10 @@ pbr==6.0.0
     # via
     #   jschema-to-python
     #   sarif-om
-pluggy==1.3.0
+pluggy==1.4.0
     # via pytest
+py-partiql-parser==0.4.0
+    # via moto
 pyasn1==0.5.1
     # via
     #   python-jose
@@ -209,22 +211,22 @@ pyrsistent==0.19.3
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==7.4.3
+pytest==8.0.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.21.1
+pytest-asyncio==0.23.5
     # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-mock==3.12.0
     # via -r requirements/_test.in
-pytest-runner==6.0.0
+pytest-runner==6.0.1
     # via -r requirements/_test.in
-pytest-sugar==0.9.7
+pytest-sugar==1.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
@@ -266,7 +268,7 @@ requests==2.30.0
     #   responses
 requests-mock==1.11.0
     # via -r requirements/_test.in
-responses==0.24.1
+responses==0.25.0
     # via moto
 respx==0.20.2
     # via -r requirements/_test.in
@@ -303,13 +305,13 @@ sqlalchemy==1.4.48
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
-sqlalchemy2-stubs==0.0.2a36
+sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 sshpubkeys==3.3.1
     # via moto
 sympy==1.12
     # via cfn-lint
-termcolor==2.3.0
+termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1
     # via
@@ -332,8 +334,6 @@ urllib3==2.0.2
     #   docker
     #   requests
     #   responses
-websocket-client==1.6.4
-    # via docker
 werkzeug==3.0.1
     # via
     #   flask
