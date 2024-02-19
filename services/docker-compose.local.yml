@@ -34,6 +34,8 @@ services:
       - "3005:3000"
 
   clusters-keeper:
+    environment:
+      - CLUSTERS_KEEPER_REMOTE_DEBUGGING_PORT=3000
     ports:
       - "8010:8000"
       - "3015:3000"
