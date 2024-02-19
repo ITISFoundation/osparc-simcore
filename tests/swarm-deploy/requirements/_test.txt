@@ -25,7 +25,7 @@ aiofiles==23.2.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-aiohttp==3.9.3
+aiohttp==3.8.6
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -94,6 +94,7 @@ certifi==2024.2.2
 charset-normalizer==3.3.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
+    #   aiohttp
     #   requests
 click==8.1.7
     # via

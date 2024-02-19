@@ -12,7 +12,7 @@ aiodocker==0.21.0
     # via -r requirements/_base.in
 aiofiles==23.2.1
     # via -r requirements/_base.in
-aiohttp==3.9.3
+aiohttp==3.8.6
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -35,6 +35,8 @@ attrs==23.2.0
     #   aiohttp
     #   jsonschema
     #   referencing
+charset-normalizer==3.3.2
+    # via aiohttp
 click==8.1.7
     # via typer
 dnspython==2.6.1

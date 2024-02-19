@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.9.3
+aiohttp==3.8.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -26,7 +26,9 @@ certifi==2024.2.2
     #   httpx
     #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   aiohttp
+    #   requests
 docker==7.0.0
     # via -r requirements/_test.in
 exceptiongroup==1.2.0

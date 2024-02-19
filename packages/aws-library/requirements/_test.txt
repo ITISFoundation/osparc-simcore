@@ -38,7 +38,9 @@ cffi==1.16.0
 cfn-lint==0.85.2
     # via moto
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.1.7
     # via
     #   -c requirements/_base.txt

@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements.txt --strip-extras requirements.in
 #
-aiohttp==3.9.3
+aiohttp==3.8.6
     # via
     #   -c ../../requirements/constraints.txt
     #   -r requirements.in
@@ -22,7 +22,9 @@ certifi==2024.2.2
     #   -c ../../requirements/constraints.txt
     #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   aiohttp
+    #   requests
 coverage==7.4.1
     # via
     #   -r requirements.in

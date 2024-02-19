@@ -29,6 +29,7 @@ certifi==2024.2.2
 charset-normalizer==3.3.2
     # via
     #   -c requirements/_aiohttp.txt
+    #   -c requirements/_base.txt
     #   requests
 coverage==7.4.1
     # via
