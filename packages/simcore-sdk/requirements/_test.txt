@@ -9,9 +9,7 @@ aioboto3==9.6.0
     #   -c requirements/./constraints.txt
     #   -r requirements/_test.in
 aiobotocore==2.3.0
-    # via
-    #   aioboto3
-    #   aiobotocore
+    # via aioboto3
 aiohttp==3.9.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -228,7 +226,6 @@ pytest==8.0.1
     #   pytest-cov
     #   pytest-icdiff
     #   pytest-instafail
-    #   pytest-lazy-fixture
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
@@ -241,8 +238,6 @@ pytest-cov==4.1.0
 pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
-    # via -r requirements/_test.in
-pytest-lazy-fixture==0.6.3
     # via -r requirements/_test.in
 pytest-mock==3.12.0
     # via -r requirements/_test.in

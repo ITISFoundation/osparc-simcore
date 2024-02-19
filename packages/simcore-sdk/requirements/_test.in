@@ -23,7 +23,6 @@ pytest-aiohttp
 pytest-cov
 pytest-icdiff
 pytest-instafail
-pytest-lazy-fixture
 pytest-mock
 pytest-runner
 pytest-sugar

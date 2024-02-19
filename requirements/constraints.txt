@@ -82,3 +82,6 @@ aiofile>=999999999
 # directly use http calls.
 # SEE https://github.com/Pennsieve/pennsieve-python/issues/17
 pennsieve>=999999999
+
+# User alternative e.g. parametrized fixture or request.getfixturevalue(.)
+pytest-lazy-fixture>=999999999

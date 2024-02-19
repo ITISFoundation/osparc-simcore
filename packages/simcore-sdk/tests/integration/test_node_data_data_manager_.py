@@ -119,16 +119,6 @@ def random_tmp_dir_generator(temp_dir: Path) -> Callable[[bool], Path]:
 
 
 @pytest.fixture
-def dir_content_one_file_path(temp_dir: Path) -> Path:
-    return _make_dir_with_files(temp_dir, file_count=1)
-
-
-@pytest.fixture
-def dir_content_multiple_files_path(temp_dir: Path) -> Path:
-    return _make_dir_with_files(temp_dir, file_count=2)
-
-
-@pytest.fixture
 def project_id(project_id: str) -> ProjectID:
     return ProjectID(project_id)
 
@@ -138,14 +128,15 @@ def node_uuid(faker: Faker) -> NodeID:
     return NodeID(faker.uuid4())
 
 
-@pytest.mark.parametrize(
-    "content_path",
-    [
-        # pylint: disable=no-member
-        pytest.lazy_fixture("dir_content_one_file_path"),
-        pytest.lazy_fixture("dir_content_multiple_files_path"),
-    ],
-)
+@pytest.fixture(params=["dir_content_one_file_path", "dir_content_multiple_files_path"])
+def content_path(request: pytest.FixtureRequest, temp_dir: Path) -> Path:
+    match request.param:
+        case "dir_content_one_file_path":
+            return _make_dir_with_files(temp_dir, file_count=1)
+        case "dir_content_multiple_files_path":
+            return _make_dir_with_files(temp_dir, file_count=2)
+
+
 async def test_valid_upload_download(
     node_ports_config,
     content_path: Path,
@@ -188,14 +179,6 @@ async def test_valid_upload_download(
     assert uploaded_hashes == downloaded_hashes
 
 
-@pytest.mark.parametrize(
-    "content_path",
-    [
-        # pylint: disable=no-member
-        pytest.lazy_fixture("dir_content_one_file_path"),
-        pytest.lazy_fixture("dir_content_multiple_files_path"),
-    ],
-)
 async def test_valid_upload_download_saved_to(
     node_ports_config,
     content_path: Path,
@@ -242,14 +225,6 @@ async def test_valid_upload_download_saved_to(
     assert uploaded_hashes == downloaded_hashes
 
 
-@pytest.mark.parametrize(
-    "content_path",
-    [
-        # pylint: disable=no-member
-        pytest.lazy_fixture("dir_content_one_file_path"),
-        pytest.lazy_fixture("dir_content_multiple_files_path"),
-    ],
-)
 async def test_delete_legacy_archive(
     node_ports_config,
     content_path: Path,
