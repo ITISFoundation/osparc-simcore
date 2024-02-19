@@ -599,5 +599,5 @@ async def attach_node(
         docker_client,
         node,
         tags=new_tags,
-        available=app_settings.AUTOSCALING_DRAIN_NODES_WITH_LABELS,  # NOTE: full drain sometimes impeed on performance
+        available=app_settings.AUTOSCALING_DRAIN_NODES_WITH_LABELS,  # NOTE: full drain sometimes impede on performance
     )
