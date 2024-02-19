@@ -50,6 +50,11 @@ from .ec2 import get_ec2_client
 _logger = logging.getLogger(__name__)
 
 
+def _node_not_ready(node: Node) -> bool:
+    assert node.Status  # nosec
+    return bool(node.Status.State != NodeState.ready)
+
+
 async def _analyze_current_cluster(
     app: FastAPI, auto_scaling_mode: BaseAutoscaling
 ) -> Cluster:
@@ -93,10 +98,6 @@ async def _analyze_current_cluster(
             all_drained_nodes.append(instance)
         else:
             pending_nodes.append(instance)
-
-    def _node_not_ready(node: Node) -> bool:
-        assert node.Status  # nosec
-        return bool(node.Status.State != NodeState.ready)
 
     cluster = Cluster(
         active_nodes=active_nodes,
