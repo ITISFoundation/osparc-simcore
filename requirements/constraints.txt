@@ -83,5 +83,9 @@ aiofile>=999999999
 # SEE https://github.com/Pennsieve/pennsieve-python/issues/17
 pennsieve>=999999999
 
+
+# Use instead pytest-asyncio and eventually aiohttp
+pytest-aiohttp>=999999999
+
 # User alternative e.g. parametrized fixture or request.getfixturevalue(.)
 pytest-lazy-fixture>=999999999

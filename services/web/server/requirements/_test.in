@@ -20,7 +20,7 @@ jsonref
 jsonschema
 openapi-spec-validator
 pytest
-pytest-aiohttp
+pytest-asyncio
 pytest-benchmark
 pytest-cov
 pytest-docker

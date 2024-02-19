@@ -20,7 +20,7 @@ Faker
 jsonschema # 'services/catalog/tests/unit' dependencies
 ptvsd
 pytest
-pytest-aiohttp
+pytest-asyncio
 pytest-benchmark
 pytest-cov
 pytest-docker
