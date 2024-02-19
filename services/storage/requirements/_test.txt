@@ -9,6 +9,7 @@ aiohttp==3.8.6
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aioresponses
+    #   pytest-aiohttp
     #   simcore-service-storage-sdk
 aioresponses==0.7.6
     # via -r requirements/_test.in
@@ -218,16 +219,20 @@ pyparsing==3.1.1
 pytest==8.0.1
     # via
     #   -r requirements/_test.in
+    #   pytest-aiohttp
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
+pytest-aiohttp==1.0.5
+    # via -r requirements/_test.in
 pytest-asyncio==0.21.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
+    #   pytest-aiohttp
 pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-icdiff==0.9
