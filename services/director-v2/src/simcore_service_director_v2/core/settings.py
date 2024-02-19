@@ -176,9 +176,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="forwarded to sidecars which use nodeports",
     )
 
-    # ptvsd settings
-    DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = PortInt(3000)
-
+    # debug settings
     CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
 
     # App modules settings ---------------------
