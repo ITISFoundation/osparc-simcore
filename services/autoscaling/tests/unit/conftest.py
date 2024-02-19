@@ -102,7 +102,7 @@ def mocked_ec2_server_envs(
         f"{AUTOSCALING_ENV_PREFIX}{k}": v
         for k, v in mocked_ec2_server_settings.dict().items()
     }
-    return setenvs_from_dict(monkeypatch, changed_envs)
+    return setenvs_from_dict(monkeypatch, changed_envs)  # type: ignore
 
 
 @pytest.fixture(
@@ -438,7 +438,7 @@ async def create_service(
         placement_constraints: list[str] | None = None,
     ) -> Service:
         service_name = f"pytest_{faker.pystr()}"
-        base_labels = {}
+        base_labels: dict[DockerLabelKey, Any] = {}
         task_labels = task_template.setdefault("ContainerSpec", {}).setdefault(
             "Labels", base_labels
         )
@@ -452,7 +452,7 @@ async def create_service(
         service = await async_docker_client.services.create(
             task_template=task_template,
             name=service_name,
-            labels=base_labels,
+            labels=base_labels,  # type: ignore
         )
         assert service
         service = parse_obj_as(
@@ -589,7 +589,7 @@ def aws_allowed_ec2_instance_type_names_env(
     monkeypatch: pytest.MonkeyPatch,
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
 ) -> EnvVarsDict:
-    changed_envs = {
+    changed_envs: dict[str, str | bool] = {
         "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(aws_allowed_ec2_instance_type_names),
     }
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
