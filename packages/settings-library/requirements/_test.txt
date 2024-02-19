@@ -4,11 +4,11 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-coverage==7.3.2
+coverage==7.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.1.3
+exceptiongroup==1.2.0
     # via pytest
 iniconfig==2.0.0
     # via pytest
@@ -16,9 +16,9 @@ packaging==23.2
     # via
     #   pytest
     #   pytest-sugar
-pluggy==1.3.0
+pluggy==1.4.0
     # via pytest
-pytest==7.4.3
+pytest==8.0.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -31,13 +31,13 @@ pytest-instafail==0.5.0
     # via -r requirements/_test.in
 pytest-mock==3.12.0
     # via -r requirements/_test.in
-pytest-runner==6.0.0
+pytest-runner==6.0.1
     # via -r requirements/_test.in
-pytest-sugar==0.9.7
+pytest-sugar==1.0.0
     # via -r requirements/_test.in
-python-dotenv==1.0.0
+python-dotenv==1.0.1
     # via -r requirements/_test.in
-termcolor==2.3.0
+termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1
     # via

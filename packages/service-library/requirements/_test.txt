@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.8.6
+aiohttp==3.9.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
@@ -15,10 +15,10 @@ aiosignal==1.3.1
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
-anyio==4.0.0
+anyio==4.3.0
     # via
     #   -c requirements/_fastapi.txt
-    #   httpcore
+    #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 async-timeout==4.0.3
@@ -26,7 +26,7 @@ async-timeout==4.0.3
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   aiohttp
-attrs==23.1.0
+attrs==23.2.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
@@ -35,7 +35,7 @@ attrs==23.1.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-certifi==2023.7.22
+certifi==2024.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
@@ -46,27 +46,25 @@ certifi==2023.7.22
 charset-normalizer==3.3.2
     # via
     #   -c requirements/_aiohttp.txt
-    #   -c requirements/_base.txt
-    #   aiohttp
     #   requests
-coverage==7.3.2
+coverage==7.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-docker==6.1.3
+docker==7.0.0
     # via -r requirements/_test.in
-exceptiongroup==1.1.3
+exceptiongroup==1.2.0
     # via
     #   -c requirements/_fastapi.txt
     #   anyio
     #   pytest
 execnet==2.0.2
     # via pytest-xdist
-faker==19.13.0
+faker==23.2.1
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
-frozenlist==1.4.0
+frozenlist==1.4.1
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
@@ -76,16 +74,16 @@ h11==0.14.0
     # via
     #   -c requirements/_fastapi.txt
     #   httpcore
-httpcore==0.18.0
+httpcore==1.0.3
     # via
     #   -c requirements/_fastapi.txt
     #   httpx
-httpx==0.25.0
+httpx==0.26.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_fastapi.txt
     #   respx
-idna==3.4
+idna==3.6
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
@@ -96,14 +94,14 @@ idna==3.4
     #   yarl
 iniconfig==2.0.0
     # via pytest
-jsonschema==4.19.2
+jsonschema==4.21.1
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   openapi-schema-validator
     #   openapi-spec-validator
-jsonschema-spec==0.2.4
+jsonschema-path==0.3.2
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-spec-validator
@@ -114,11 +112,11 @@ jsonschema-specifications==2023.7.1
     #   -c requirements/_fastapi.txt
     #   jsonschema
     #   openapi-schema-validator
-lazy-object-proxy==1.9.0
+lazy-object-proxy==1.10.0
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-spec-validator
-multidict==6.0.4
+multidict==6.0.5
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
@@ -128,7 +126,7 @@ openapi-schema-validator==0.6.2
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-spec-validator
-openapi-spec-validator==0.6.0
+openapi-spec-validator==0.7.1
     # via
     #   -c requirements/_aiohttp.txt
     #   -r requirements/_test.in
@@ -140,12 +138,12 @@ packaging==23.2
 pathable==0.4.3
     # via
     #   -c requirements/_aiohttp.txt
-    #   jsonschema-spec
-pluggy==1.3.0
+    #   jsonschema-path
+pluggy==1.4.0
     # via pytest
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pytest==7.4.3
+pytest==8.0.1
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -159,23 +157,23 @@ pytest==7.4.3
     #   pytest-xdist
 pytest-aiohttp==1.0.5
     # via -r requirements/_test.in
-pytest-asyncio==0.21.1
+pytest-asyncio==0.23.5
     # via pytest-aiohttp
 pytest-benchmark==4.0.0
     # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-docker==2.0.1
+pytest-docker==3.1.1
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
 pytest-mock==3.12.0
     # via -r requirements/_test.in
-pytest-runner==6.0.0
+pytest-runner==6.0.1
     # via -r requirements/_test.in
-pytest-sugar==0.9.7
+pytest-sugar==1.0.0
     # via -r requirements/_test.in
-pytest-xdist==3.3.1
+pytest-xdist==3.5.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
@@ -183,34 +181,34 @@ python-dateutil==2.8.2
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   faker
-python-dotenv==1.0.0
+python-dotenv==1.0.1
     # via -r requirements/_test.in
 pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
-    #   jsonschema-spec
+    #   jsonschema-path
 referencing==0.29.3
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   jsonschema
-    #   jsonschema-spec
+    #   jsonschema-path
     #   jsonschema-specifications
 requests==2.31.0
     # via
     #   -c requirements/_aiohttp.txt
     #   docker
-    #   jsonschema-spec
+    #   jsonschema-path
 respx==0.20.2
     # via -r requirements/_test.in
 rfc3339-validator==0.1.4
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-schema-validator
-rpds-py==0.10.6
+rpds-py==0.18.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
@@ -229,23 +227,26 @@ sniffio==1.3.0
     #   -c requirements/_fastapi.txt
     #   anyio
     #   asgi-lifespan
-    #   httpcore
     #   httpx
-termcolor==2.3.0
+termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1
     # via
     #   coverage
     #   pytest
-urllib3==2.0.7
+typing-extensions==4.9.0
+    # via
+    #   -c requirements/_aiohttp.txt
+    #   -c requirements/_base.txt
+    #   -c requirements/_fastapi.txt
+    #   anyio
+urllib3==2.2.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
     #   docker
     #   requests
-websocket-client==1.6.4
-    # via docker
-yarl==1.9.2
+yarl==1.9.4
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
