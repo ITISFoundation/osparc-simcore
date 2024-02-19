@@ -111,7 +111,7 @@ def mocked_ec2_server_envs(
         "without_AUTOSCALING_DRAIN_NODES_WITH_LABELS",
     ]
 )
-def labelize_drain_nodes(request: pytest.FixtureRequest) -> bool:
+def with_drain_nodes_labelled(request: pytest.FixtureRequest) -> bool:
     return bool(request.param == "with_AUTOSCALING_DRAIN_NODES_WITH_LABELS")
 
 
@@ -119,12 +119,12 @@ def labelize_drain_nodes(request: pytest.FixtureRequest) -> bool:
 def with_labelize_drain_nodes(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    labelize_drain_nodes: bool,
+    with_drain_nodes_labelled: bool,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
-            "AUTOSCALING_DRAIN_NODES_WITH_LABELS": f"{labelize_drain_nodes}",
+            "AUTOSCALING_DRAIN_NODES_WITH_LABELS": f"{with_drain_nodes_labelled}",
         },
     )
 
