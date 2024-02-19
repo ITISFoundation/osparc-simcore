@@ -58,6 +58,7 @@ from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from yarl import URL
 
 pytest_plugins = [
+    "aiohttp.pytest_plugin",
     "pytest_simcore.aioresponses_mocker",
     "pytest_simcore.aws_server",
     "pytest_simcore.cli_runner",
