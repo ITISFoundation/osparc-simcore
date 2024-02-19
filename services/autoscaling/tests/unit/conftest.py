@@ -327,6 +327,7 @@ async def host_node(
     assert old_node.Spec.Availability
     yield nodes[0]
     # revert state
+    assert old_node.ID
     current_node = parse_obj_as(
         DockerNode, await async_docker_client.nodes.inspect(node_id=old_node.ID)
     )
