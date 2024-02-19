@@ -107,12 +107,12 @@ def mocked_ec2_server_envs(
 
 @pytest.fixture(
     params=[
-        "with_AUTOSCALING_LABELIZE_DRAINED_NODES",
-        "without_AUTOSCALING_LABELIZE_DRAINED_NODES",
+        "with_AUTOSCALING_DRAIN_NODES_WITH_LABELS",
+        "without_AUTOSCALING_DRAIN_NODES_WITH_LABELS",
     ]
 )
 def labelize_drain_nodes(request: pytest.FixtureRequest) -> bool:
-    return bool(request.param == "with_AUTOSCALING_LABELIZE_DRAINED_NODES")
+    return bool(request.param == "with_AUTOSCALING_DRAIN_NODES_WITH_LABELS")
 
 
 @pytest.fixture
