@@ -230,7 +230,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AUTOSCALING_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    AUTOSCALING_LABELIZE_DRAINED_NODES: bool = False
+    AUTOSCALING_DRAIN_NODES_WITH_LABELS: bool = Field(
+        default=False,
+        description="If true, drained nodes"
+        " are maintained as active (in the docker terminology) "
+        "but a docker node label named osparc-services-ready is attached",
+    )
 
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802

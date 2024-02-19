@@ -124,7 +124,7 @@ def with_labelize_drain_nodes(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
-            "AUTOSCALING_LABELIZE_DRAINED_NODES": f"{labelize_drain_nodes}",
+            "AUTOSCALING_DRAIN_NODES_WITH_LABELS": f"{labelize_drain_nodes}",
         },
     )
 
