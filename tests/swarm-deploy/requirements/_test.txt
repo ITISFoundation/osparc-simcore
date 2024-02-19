@@ -42,7 +42,6 @@ aiohttp==3.9.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiodocker
-    #   pytest-aiohttp
 aiopg==1.4.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiormq==6.8.0
@@ -223,15 +222,26 @@ pyinstrument==4.6.2
 pytest==8.0.1
     # via
     #   -r requirements/_test.in
-    #   pytest-aiohttp
     #   pytest-asyncio
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-aiohttp==1.0.5
-    # via -r requirements/_test.in
-pytest-asyncio==0.23.5
-    # via pytest-aiohttp
+pytest-asyncio==0.21.1
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
 pytest-mock==3.12.0

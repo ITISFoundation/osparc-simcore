@@ -4,23 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.8.5
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   pytest-aiohttp
-aiosignal==1.3.1
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
-async-timeout==4.0.3
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
 attrs==23.1.0
     # via
     #   -c requirements/_base.txt
-    #   aiohttp
     #   jschema-to-python
     #   jsonschema
     #   referencing
@@ -54,7 +40,6 @@ cfn-lint==0.85.2
 charset-normalizer==3.2.0
     # via
     #   -c requirements/_base.txt
-    #   aiohttp
     #   requests
 click==8.1.7
     # via
@@ -84,11 +69,6 @@ flask==3.0.2
     #   moto
 flask-cors==4.0.0
     # via moto
-frozenlist==1.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
-    #   aiosignal
 graphql-core==3.2.3
     # via moto
 icdiff==2.0.7
@@ -97,7 +77,6 @@ idna==3.4
     # via
     #   -c requirements/_base.txt
     #   requests
-    #   yarl
 iniconfig==2.0.0
     # via pytest
 itsdangerous==2.1.2
@@ -152,11 +131,6 @@ moto==5.0.2
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
-multidict==6.0.4
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
-    #   yarl
 networkx==3.2.1
     # via cfn-lint
 openapi-schema-validator==0.6.0
@@ -197,7 +171,6 @@ pyparsing==3.1.1
 pytest==8.0.1
     # via
     #   -r requirements/_test.in
-    #   pytest-aiohttp
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-icdiff
@@ -205,10 +178,10 @@ pytest==8.0.1
     #   pytest-localftpserver
     #   pytest-mock
     #   pytest-sugar
-pytest-aiohttp==1.0.5
-    # via -r requirements/_test.in
-pytest-asyncio==0.23.5
-    # via pytest-aiohttp
+pytest-asyncio==0.21.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-icdiff==0.9
@@ -304,10 +277,6 @@ wrapt==1.15.0
     #   aws-xray-sdk
 xmltodict==0.13.0
     # via moto
-yarl==1.9.2
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

@@ -4,34 +4,17 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.9.3
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_aiohttp.txt
-    #   -c requirements/_base.txt
-    #   pytest-aiohttp
-aiosignal==1.3.1
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   -c requirements/_base.txt
-    #   aiohttp
 anyio==4.3.0
     # via
     #   -c requirements/_fastapi.txt
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-async-timeout==4.0.3
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   -c requirements/_base.txt
-    #   aiohttp
 attrs==23.2.0
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
-    #   aiohttp
     #   jsonschema
     #   pytest-docker
     #   referencing
@@ -64,12 +47,6 @@ faker==23.2.1
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
-frozenlist==1.4.1
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   -c requirements/_base.txt
-    #   aiohttp
-    #   aiosignal
 h11==0.14.0
     # via
     #   -c requirements/_fastapi.txt
@@ -91,7 +68,6 @@ idna==3.6
     #   anyio
     #   httpx
     #   requests
-    #   yarl
 iniconfig==2.0.0
     # via pytest
 jsonschema==4.21.1
@@ -116,12 +92,6 @@ lazy-object-proxy==1.10.0
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-spec-validator
-multidict==6.0.5
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   -c requirements/_base.txt
-    #   aiohttp
-    #   yarl
 openapi-schema-validator==0.6.2
     # via
     #   -c requirements/_aiohttp.txt
@@ -146,7 +116,6 @@ py-cpuinfo==9.0.0
 pytest==8.0.1
     # via
     #   -r requirements/_test.in
-    #   pytest-aiohttp
     #   pytest-asyncio
     #   pytest-benchmark
     #   pytest-cov
@@ -155,10 +124,10 @@ pytest==8.0.1
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-aiohttp==1.0.5
-    # via -r requirements/_test.in
-pytest-asyncio==0.23.5
-    # via pytest-aiohttp
+pytest-asyncio==0.21.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 pytest-benchmark==4.0.0
     # via -r requirements/_test.in
 pytest-cov==4.1.0
@@ -246,8 +215,3 @@ urllib3==2.2.1
     #   -c requirements/_aiohttp.txt
     #   docker
     #   requests
-yarl==1.9.4
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   -c requirements/_base.txt
-    #   aiohttp

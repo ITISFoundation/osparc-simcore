@@ -20,7 +20,6 @@ aiohttp==3.8.5
     #   -c requirements/_base.txt
     #   aiobotocore
     #   dask-gateway-server
-    #   pytest-aiohttp
 aioitertools==0.11.0
     # via aiobotocore
 aiormq==6.7.6
@@ -47,7 +46,6 @@ async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   dask-gateway-server
 attrs==23.1.0
     # via
     #   -c requirements/_base.txt
@@ -236,17 +234,16 @@ pycparser==2.21
 pytest==8.0.1
     # via
     #   -r requirements/_test.in
-    #   pytest-aiohttp
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-xdist
-pytest-aiohttp==1.0.5
-    # via -r requirements/_test.in
-pytest-asyncio==0.23.5
-    # via pytest-aiohttp
+pytest-asyncio==0.21.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-docker==3.1.1
