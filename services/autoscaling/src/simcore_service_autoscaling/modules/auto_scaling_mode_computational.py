@@ -9,7 +9,7 @@ from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerLabelKey,
 )
-from models_library.generated_models.docker_rest_api import Availability, Node
+from models_library.generated_models.docker_rest_api import Node
 from pydantic import AnyUrl, ByteSize
 from servicelib.logging_utils import LogLevelInt
 from servicelib.utils import logged_gather
@@ -155,9 +155,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
 
     @staticmethod
     async def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
-        if not utils_docker.is_node_ready_and_available(
-            instance.node, Availability.active
-        ):
+        if not utils_docker.is_node_osparc_ready(instance.node):
             return False
 
         # now check if dask-scheduler is available

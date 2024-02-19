@@ -26,11 +26,13 @@ from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.generated_models.docker_rest_api import Availability
+from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
-    Availability,
-    Node,
     NodeDescription,
     NodeSpec,
+    NodeState,
+    NodeStatus,
     ObjectVersion,
     ResourceObject,
     Service,
@@ -100,7 +102,31 @@ def mocked_ec2_server_envs(
         f"{AUTOSCALING_ENV_PREFIX}{k}": v
         for k, v in mocked_ec2_server_settings.dict().items()
     }
-    return setenvs_from_dict(monkeypatch, changed_envs)
+    return setenvs_from_dict(monkeypatch, changed_envs)  # type: ignore
+
+
+@pytest.fixture(
+    params=[
+        "with_AUTOSCALING_DRAIN_NODES_WITH_LABELS",
+        "without_AUTOSCALING_DRAIN_NODES_WITH_LABELS",
+    ]
+)
+def with_drain_nodes_labelled(request: pytest.FixtureRequest) -> bool:
+    return bool(request.param == "with_AUTOSCALING_DRAIN_NODES_WITH_LABELS")
+
+
+@pytest.fixture
+def with_labelize_drain_nodes(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    with_drain_nodes_labelled: bool,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "AUTOSCALING_DRAIN_NODES_WITH_LABELS": f"{with_drain_nodes_labelled}",
+        },
+    )
 
 
 @pytest.fixture
@@ -292,15 +318,36 @@ async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
 async def host_node(
     docker_swarm: None,
     async_docker_client: aiodocker.Docker,
-) -> Node:
-    nodes = parse_obj_as(list[Node], await async_docker_client.nodes.list())
+) -> AsyncIterator[DockerNode]:
+    nodes = parse_obj_as(list[DockerNode], await async_docker_client.nodes.list())
     assert len(nodes) == 1
-    return nodes[0]
+    old_node = deepcopy(nodes[0])
+    assert old_node.Spec
+    assert old_node.Spec.Role
+    assert old_node.Spec.Availability
+    yield nodes[0]
+    # revert state
+    assert old_node.ID
+    current_node = parse_obj_as(
+        DockerNode, await async_docker_client.nodes.inspect(node_id=old_node.ID)
+    )
+    assert current_node.ID
+    assert current_node.Version
+    assert current_node.Version.Index
+    await async_docker_client.nodes.update(
+        node_id=current_node.ID,
+        version=current_node.Version.Index,
+        spec={
+            "Availability": old_node.Spec.Availability.value,
+            "Labels": old_node.Spec.Labels,
+            "Role": old_node.Spec.Role.value,
+        },
+    )
 
 
 @pytest.fixture
-def create_fake_node(faker: Faker) -> Callable[..., Node]:
-    def _creator(**node_overrides) -> Node:
+def create_fake_node(faker: Faker) -> Callable[..., DockerNode]:
+    def _creator(**node_overrides) -> DockerNode:
         default_config = {
             "ID": faker.uuid4(),
             "Version": ObjectVersion(Index=faker.pyint()),
@@ -314,19 +361,20 @@ def create_fake_node(faker: Faker) -> Callable[..., Node]:
             ),
             "Spec": NodeSpec(
                 Name=None,
-                Labels=None,
+                Labels=faker.pydict(allowed_types=(str,)),
                 Role=None,
                 Availability=Availability.drain,
             ),
+            "Status": NodeStatus(State=NodeState.unknown, Message=None, Addr=None),
         }
         default_config.update(**node_overrides)
-        return Node(**default_config)
+        return DockerNode(**default_config)
 
     return _creator
 
 
 @pytest.fixture
-def fake_node(create_fake_node: Callable[..., Node]) -> Node:
+def fake_node(create_fake_node: Callable[..., DockerNode]) -> DockerNode:
     return create_fake_node()
 
 
@@ -390,7 +438,7 @@ async def create_service(
         placement_constraints: list[str] | None = None,
     ) -> Service:
         service_name = f"pytest_{faker.pystr()}"
-        base_labels = {}
+        base_labels: dict[DockerLabelKey, Any] = {}
         task_labels = task_template.setdefault("ContainerSpec", {}).setdefault(
             "Labels", base_labels
         )
@@ -404,7 +452,7 @@ async def create_service(
         service = await async_docker_client.services.create(
             task_template=task_template,
             name=service_name,
-            labels=base_labels,
+            labels=base_labels,  # type: ignore
         )
         assert service
         service = parse_obj_as(
@@ -541,7 +589,7 @@ def aws_allowed_ec2_instance_type_names_env(
     monkeypatch: pytest.MonkeyPatch,
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
 ) -> EnvVarsDict:
-    changed_envs = {
+    changed_envs: dict[str, str | bool] = {
         "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(aws_allowed_ec2_instance_type_names),
     }
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
@@ -630,8 +678,8 @@ async def create_dask_task(
 @pytest.fixture
 def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
     async def _fake_set_node_availability(
-        docker_client: AutoscalingDocker, node: Node, *, available: bool
-    ) -> Node:
+        docker_client: AutoscalingDocker, node: DockerNode, *, available: bool
+    ) -> DockerNode:
         returned_node = deepcopy(node)
         assert returned_node.Spec
         returned_node.Spec.Availability = (
@@ -646,4 +694,28 @@ def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
         "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.set_node_availability",
         autospec=True,
         side_effect=_fake_set_node_availability,
+    )
+
+
+@pytest.fixture
+def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
+    async def fake_tag_node(
+        docker_client: AutoscalingDocker,
+        node: DockerNode,
+        *,
+        tags: dict[DockerLabelKey, str],
+        available: bool,
+    ) -> DockerNode:
+        updated_node = deepcopy(node)
+        assert updated_node.Spec
+        updated_node.Spec.Labels = deepcopy(cast(dict[str, str], tags))
+        updated_node.Spec.Availability = (
+            Availability.active if available else Availability.drain
+        )
+        return updated_node
+
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.tag_node",
+        autospec=True,
+        side_effect=fake_tag_node,
     )
