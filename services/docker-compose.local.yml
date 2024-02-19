@@ -20,11 +20,15 @@ services:
       - "3006:3000"
 
   autoscaling:
+    environment:
+      - AUTOSCALING_REMOTE_DEBUGGING_PORT=3000
     ports:
       - "8007:8000"
       - "3012:3000"
 
   catalog:
+    environment:
+      - CATALOG_REMOTE_DEBUGGING_PORT=3000
     ports:
       - "8005:8000"
       - "3005:3000"
