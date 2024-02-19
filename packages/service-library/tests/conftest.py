@@ -12,6 +12,7 @@ import servicelib
 from faker import Faker
 
 pytest_plugins = [
+    "aiohttp.test_utils",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
