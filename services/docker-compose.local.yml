@@ -77,8 +77,11 @@ services:
       - "3017:3000"
 
   payments:
+    environment:
+      - PAYMENTS_REMOTE_DEBUGGING_PORT=3000
     ports:
       - "8011:8000"
+      - "3018:3000"
 
   dynamic-schdlr:
     environment:
