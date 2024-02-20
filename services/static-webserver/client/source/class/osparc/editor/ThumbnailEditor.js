@@ -145,7 +145,7 @@ qx.Class.define("osparc.editor.ThumbnailEditor", {
       thumbnailSuggestions.setSuggestions(suggestions);
       thumbnailSuggestions.addListener("thumbnailTapped", e => {
         const thumbnailData = e.getData();
-        this.setUrl(thumbnailData["source"] || thumbnailData.getSource());
+        this.setUrl(thumbnailData.source);
       });
       this.getChildControl("thumbnails-layout").setVisibility(suggestions.length ? "visible" : "excluded");
     }

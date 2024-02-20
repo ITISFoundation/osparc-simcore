@@ -23,7 +23,8 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
 
     this.set({
       alignX: "center",
-      maxHeight: 170
+      height: 118,
+      maxHeight: 118
     });
     this.setButtonsWidth(30);
 
@@ -154,14 +155,14 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       this.removeAll();
       suggestions.forEach(suggestion => {
         const maxHeight = this.getMaxHeight();
-        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion["thumbnailUrl"] || suggestion, maxHeight, parseInt(maxHeight*2/3));
+        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion.thumbnailUrl || suggestion, maxHeight, parseInt(maxHeight*2/3));
         thumbnail.set({
           minWidth: 97,
           margin: 0,
           decorator: "thumbnail"
         });
-        thumbnail.thumbnailType = suggestion["type"] || "templateThumbnail";
-        thumbnail.thumbnailFileUrl = suggestion["fileUrl"] || suggestion;
+        thumbnail.thumbnailType = suggestion.type || "templateThumbnail";
+        thumbnail.thumbnailFileUrl = suggestion.fileUrl || suggestion;
         thumbnail.addListener("mouseover", () => thumbnail.set({decorator: "thumbnail-selected"}), this);
         thumbnail.addListener("mouseout", () => thumbnail.set({decorator: "thumbnail"}), this);
         thumbnail.addListener("tap", () => {
