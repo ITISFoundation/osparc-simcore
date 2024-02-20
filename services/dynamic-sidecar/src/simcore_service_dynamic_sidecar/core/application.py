@@ -158,12 +158,11 @@ def create_app():
 
     setup_check_dependencies(app)
 
-    if application_settings.RABBIT_SETTINGS:
-        setup_rabbitmq(app)  # also checks if rabbit is ok before continuing setup
-        setup_background_log_fetcher(app)
-        setup_resource_tracking(app)
-        setup_system_monitor(app)
-        setup_outputs(app)
+    setup_rabbitmq(app)
+    setup_background_log_fetcher(app)
+    setup_resource_tracking(app)
+    setup_system_monitor(app)
+    setup_outputs(app)
 
     setup_mounted_fs(app)
     setup_inputs(app)
@@ -174,8 +173,6 @@ def create_app():
 
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
-
-    # enforce external API available
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(NodeNotFound, node_not_found_error_handler)
