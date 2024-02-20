@@ -15,6 +15,7 @@ from typing import Any
 from unittest import mock
 
 import aiodocker
+import arrow
 import pytest
 from aws_library.ec2.models import EC2InstanceData, Resources
 from faker import Faker
@@ -54,6 +55,7 @@ from simcore_service_autoscaling.modules.docker import (
 )
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICE_READY_LABEL_KEY,
+    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
 from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
@@ -521,11 +523,67 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         _OSPARC_SERVICE_READY_LABEL_KEY: "false"
     }
 
+    # the node is tagged and made active right away since we still have the pending task
+    mock_find_node_with_name.assert_called_once()
+    mock_find_node_with_name.reset_mock()
+
+    assert mock_docker_tag_node.call_count == 2
+    assert fake_node.Spec
+    assert fake_node.Spec.Labels
+    # check attach call
+    assert mock_docker_tag_node.call_args_list[0] == mock.call(
+        get_docker_client(initialized_app),
+        fake_node,
+        tags=fake_node.Spec.Labels
+        | expected_docker_node_tags
+        | {
+            _OSPARC_SERVICE_READY_LABEL_KEY: "false",
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
+        },
+        available=with_drain_nodes_labelled,
+    )
+    # update our fake node
+    fake_attached_node.Spec.Labels[
+        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+    ] = mock_docker_tag_node.call_args_list[0][1]["tags"][
+        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+    ]
+    # check the activate time is later than attach time
+    assert arrow.get(
+        mock_docker_tag_node.call_args_list[1][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    ) > arrow.get(
+        mock_docker_tag_node.call_args_list[0][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    )
     mock_compute_node_used_resources.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_attached_node,
     )
     mock_compute_node_used_resources.reset_mock()
+    # check activate call
+    assert mock_docker_tag_node.call_args_list[1] == mock.call(
+        get_docker_client(initialized_app),
+        fake_attached_node,
+        tags=fake_node.Spec.Labels
+        | expected_docker_node_tags
+        | {
+            _OSPARC_SERVICE_READY_LABEL_KEY: "true",
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
+        },
+        available=True,
+    )
+    # update our fake node
+    fake_attached_node.Spec.Labels[
+        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+    ] = mock_docker_tag_node.call_args_list[1][1]["tags"][
+        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+    ]
+    mock_docker_tag_node.reset_mock()
+    mock_docker_set_node_availability.assert_not_called()
+
     # check the number of instances did not change and is still running
     internal_dns_names = await _assert_ec2_instances(
         ec2_client,
@@ -536,38 +594,6 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     assert len(internal_dns_names) == 1
     internal_dns_name = internal_dns_names[0].removesuffix(".ec2.internal")
-
-    # the node is tagged and made active right away since we still have the pending task
-    mock_find_node_with_name.assert_called_once()
-    mock_find_node_with_name.reset_mock()
-
-    assert mock_docker_tag_node.call_count == 2
-    assert fake_node.Spec
-    assert fake_node.Spec.Labels
-
-    mock_docker_tag_node.assert_has_calls(
-        (
-            # attach node call
-            mock.call(
-                get_docker_client(initialized_app),
-                fake_node,
-                tags=fake_node.Spec.Labels
-                | expected_docker_node_tags
-                | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
-                available=with_drain_nodes_labelled,
-            ),
-            mock.call(
-                get_docker_client(initialized_app),
-                fake_attached_node,
-                tags=fake_node.Spec.Labels
-                | expected_docker_node_tags
-                | {_OSPARC_SERVICE_READY_LABEL_KEY: "true"},
-                available=True,
-            ),
-        )
-    )
-    mock_docker_tag_node.reset_mock()
-    mock_docker_set_node_availability.assert_not_called()
 
     # check rabbit messages were sent, we do have worker
     assert fake_attached_node.Description
@@ -653,8 +679,19 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         get_docker_client(initialized_app),
         fake_attached_node,
         tags=fake_attached_node.Spec.Labels
-        | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
+        | {
+            _OSPARC_SERVICE_READY_LABEL_KEY: "false",
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
+        },
         available=with_drain_nodes_labelled,
+    )
+    # check the datetime was updated
+    assert arrow.get(
+        mock_docker_tag_node.call_args_list[0][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    ) > arrow.get(
+        fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]
     )
     mock_docker_tag_node.reset_mock()
 
@@ -665,7 +702,10 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         get_docker_client(initialized_app),
         fake_attached_node,
         tags=fake_attached_node.Spec.Labels
-        | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
+        | {
+            _OSPARC_SERVICE_READY_LABEL_KEY: "false",
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
+        },
         available=with_drain_nodes_labelled,
     )
     mock_docker_tag_node.reset_mock()
@@ -681,9 +721,10 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # we artifically set the node to drain
     fake_attached_node.Spec.Availability = Availability.drain
     fake_attached_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
-    fake_attached_node.UpdatedAt = datetime.datetime.now(
-        tz=datetime.timezone.utc
-    ).isoformat()
+    fake_attached_node.Spec.Labels[
+        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+    ] = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+
     # the node will be not be terminated before the timeout triggers
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
@@ -706,7 +747,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
 
     # now changing the last update timepoint will trigger the node removal and shutdown the ec2 instance
-    fake_attached_node.UpdatedAt = (
+    fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
         datetime.datetime.now(tz=datetime.timezone.utc)
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         - datetime.timedelta(seconds=1)
@@ -856,10 +897,16 @@ async def test__deactivate_empty_nodes(
     assert not updated_cluster.active_nodes
     assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
     mock_docker_set_node_availability.assert_not_called()
+    assert host_node.Spec
+    assert host_node.Spec.Labels
     mock_docker_tag_node.assert_called_once_with(
         mock.ANY,
         host_node,
-        tags={_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
+        tags=host_node.Spec.Labels
+        | {
+            _OSPARC_SERVICE_READY_LABEL_KEY: "false",
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
+        },
         available=with_drain_nodes_labelled,
     )
 
@@ -898,10 +945,16 @@ async def test__deactivate_empty_nodes_to_drain_when_services_running_are_missin
     assert not updated_cluster.active_nodes
     assert len(updated_cluster.drained_nodes) == len(active_cluster.active_nodes)
     mock_docker_set_node_availability.assert_not_called()
+    assert host_node.Spec
+    assert host_node.Spec.Labels
     mock_docker_tag_node.assert_called_once_with(
         mock.ANY,
         host_node,
-        tags={_OSPARC_SERVICE_READY_LABEL_KEY: "false"},
+        tags=host_node.Spec.Labels
+        | {
+            _OSPARC_SERVICE_READY_LABEL_KEY: "false",
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
+        },
         available=with_drain_nodes_labelled,
     )
 
@@ -1174,6 +1227,9 @@ async def test__activate_drained_nodes_with_drained_node(
     mock_docker_tag_node.assert_called_once_with(
         mock.ANY,
         drained_host_node,
-        tags={_OSPARC_SERVICE_READY_LABEL_KEY: "true"},
+        tags={
+            _OSPARC_SERVICE_READY_LABEL_KEY: "true",
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
+        },
         available=True,
     )

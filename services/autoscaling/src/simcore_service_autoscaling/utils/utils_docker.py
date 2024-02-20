@@ -13,6 +13,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Final, cast
 
+import arrow
 import yaml
 from aws_library.ec2.models import EC2InstanceData, Resources
 from models_library.docker import (
@@ -110,7 +111,7 @@ async def remove_nodes(
 def _is_task_waiting_for_resources(task: Task) -> bool:
     # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
     with log_context(
-        logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task}"
+        logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task.ID}"
     ):
         if (
             not task.Status
@@ -550,7 +551,10 @@ def is_node_ready_and_available(node: Node, *, availability: Availability) -> bo
 
 
 _OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, "osparc-services-ready"
+    DockerLabelKey, "io.simcore.osparc-services-ready"
+)
+_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
+    DockerLabelKey, f"{_OSPARC_SERVICE_READY_LABEL_KEY}-last-changed"
 )
 
 
@@ -575,6 +579,7 @@ async def set_node_osparc_ready(
     assert node.Spec  # nosec
     new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.Spec.Labels))
     new_tags[_OSPARC_SERVICE_READY_LABEL_KEY] = "true" if ready else "false"
+    new_tags[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
     # NOTE: docker drain sometimes impeed on performance when undraining see https://github.com/ITISFoundation/osparc-simcore/issues/5339
     available = app_settings.AUTOSCALING_DRAIN_NODES_WITH_LABELS or ready
     return await tag_node(
@@ -583,6 +588,15 @@ async def set_node_osparc_ready(
         tags=new_tags,
         available=available,
     )
+
+
+def get_node_last_readyness_update(node: Node) -> datetime.datetime:
+    assert node.Spec  # nosec
+    assert node.Spec.Labels  # nosec
+    return cast(
+        datetime.datetime,
+        arrow.get(node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]).datetime,
+    )  # mypy
 
 
 async def attach_node(
@@ -595,6 +609,7 @@ async def attach_node(
     assert node.Spec  # nosec
     current_tags = cast(dict[DockerLabelKey, str], node.Spec.Labels or {})
     new_tags = current_tags | tags | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"}
+    new_tags[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
     return await tag_node(
         docker_client,
         node,
