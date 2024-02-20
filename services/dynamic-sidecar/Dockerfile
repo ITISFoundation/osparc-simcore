@@ -104,7 +104,7 @@ RUN pip install uv
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
-RUN python -m venv "${VIRTUAL_ENV}" \
+RUN uv venv "${VIRTUAL_ENV}" \
   && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \

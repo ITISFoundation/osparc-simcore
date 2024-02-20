@@ -74,7 +74,7 @@ RUN pip install uv
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
-RUN python -m venv "${VIRTUAL_ENV}"
+RUN uv venv "${VIRTUAL_ENV}"
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install --upgrade  \
