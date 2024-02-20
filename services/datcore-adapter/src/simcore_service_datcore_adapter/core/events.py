@@ -32,7 +32,7 @@ def on_shutdown() -> None:
     print(f"{msg:=^100}", flush=True)
 
 
-def create_start_app_handler(app: FastAPI) -> Callable:
+def create_start_app_handler(_app: FastAPI) -> Callable:
     async def start_app() -> None:
         logger.info("Application started")
 
