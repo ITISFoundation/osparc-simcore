@@ -1,7 +1,6 @@
 import logging
 
 from fastapi import FastAPI
-from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
@@ -19,7 +18,6 @@ from ..modules.clusters_management_task import setup as setup_clusters_managemen
 from ..modules.ec2 import setup as setup_ec2
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
-from ..modules.remote_debug import setup_remote_debugging
 from ..rpc.rpc_routes import setup_rpc_routes
 from .settings import ApplicationSettings
 
@@ -46,8 +44,6 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     # PLUGINS SETUP
-    if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
-        setup_remote_debugging(app)
     setup_api_routes(app)
     setup_rabbitmq(app)
     setup_rpc_routes(app)
