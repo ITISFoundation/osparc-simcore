@@ -2,11 +2,10 @@ version: "3.8"
 x-dask-tls-secrets: &dask_tls_secrets
   - source: dask_tls_key
     target: ${DASK_TLS_KEY}
-    mode: 0444
+    mode: 444
   - source: dask_tls_cert
     target: ${DASK_TLS_CERT}
-    mode: 0444
-
+    mode: 444
 
 services:
   api-server:
@@ -72,6 +71,7 @@ services:
     environment:
       - AUTOSCALING_LOGLEVEL=${AUTOSCALING_LOGLEVEL:-${LOG_LEVEL:-WARNING}}
       - AUTOSCALING_POLL_INTERVAL=${AUTOSCALING_POLL_INTERVAL}
+      - AUTOSCALING_DRAIN_NODES_WITH_LABELS=${AUTOSCALING_DRAIN_NODES_WITH_LABELS}
 
       - AUTOSCALING_DASK=${AUTOSCALING_DASK} # comp autoscaling
       - DASK_MONITORING_URL=${DASK_MONITORING_URL}
@@ -193,7 +193,7 @@ services:
       - WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS=${WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS}
       - WORKERS_EC2_INSTANCES_SUBNET_ID=${WORKERS_EC2_INSTANCES_SUBNET_ID}
       - WORKERS_EC2_INSTANCES_CUSTOM_TAGS=${WORKERS_EC2_INSTANCES_CUSTOM_TAGS}
-    secrets:  *dask_tls_secrets
+    secrets: *dask_tls_secrets
 
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
@@ -329,7 +329,7 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
-    secrets:  *dask_tls_secrets
+    secrets: *dask_tls_secrets
 
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
@@ -912,7 +912,7 @@ services:
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
     networks:
       - computational_services_subnet
-    secrets:  *dask_tls_secrets
+    secrets: *dask_tls_secrets
 
   dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -924,7 +924,7 @@ services:
 
     networks:
       - computational_services_subnet
-    secrets:  *dask_tls_secrets
+    secrets: *dask_tls_secrets
 
   datcore-adapter:
     image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
