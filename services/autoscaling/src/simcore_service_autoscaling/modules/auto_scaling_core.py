@@ -112,9 +112,19 @@ async def _analyze_current_cluster(
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
-    _logger.debug(
+    cluster_state = jsonable_encoder(
+        cluster,
+        include={
+            "active_nodes": True,
+            "pending_nodes": True,
+            "drained_nodes": "available_resources",
+            "reserve_drained_nodes": True,
+            "pending_ec2s": "ec2_instance",
+        },
+    )
+    _logger.warning(
         "current state: %s",
-        f"{json.dumps(jsonable_encoder(cluster, include={'active_nodes', 'pending_nodes', 'drained_nodes', 'reserve_drained_nodes', 'pending_ec2s'}), indent=2)}",
+        f"{json.dumps(cluster_state, indent=2)}",
     )
     return cluster
 
@@ -744,11 +754,11 @@ async def _find_terminateable_instances(
     terminateable_nodes: list[AssociatedInstance] = []
 
     for instance in cluster.drained_nodes:
-        assert instance.node.UpdatedAt  # nosec
-        node_last_updated = arrow.get(instance.node.UpdatedAt).datetime
+        node_last_updated = utils_docker.get_node_last_readyness_update(instance.node)
         elapsed_time_since_drained = (
             datetime.datetime.now(datetime.timezone.utc) - node_last_updated
         )
+        _logger.warning("%s", f"{node_last_updated=}, {elapsed_time_since_drained=}")
         if (
             elapsed_time_since_drained
             > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION

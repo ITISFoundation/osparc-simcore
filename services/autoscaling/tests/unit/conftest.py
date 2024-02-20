@@ -14,6 +14,7 @@ from typing import Any, Final, cast
 from unittest import mock
 
 import aiodocker
+import arrow
 import distributed
 import httpx
 import psutil
@@ -50,6 +51,10 @@ from simcore_service_autoscaling.core.settings import (
 )
 from simcore_service_autoscaling.models import Cluster, DaskTaskResources
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
+from simcore_service_autoscaling.utils.utils_docker import (
+    _OSPARC_SERVICE_READY_LABEL_KEY,
+    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
+)
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -321,13 +326,34 @@ async def host_node(
 ) -> AsyncIterator[DockerNode]:
     nodes = parse_obj_as(list[DockerNode], await async_docker_client.nodes.list())
     assert len(nodes) == 1
+    # keep state of node for later revert
     old_node = deepcopy(nodes[0])
+    assert old_node.ID
     assert old_node.Spec
     assert old_node.Spec.Role
     assert old_node.Spec.Availability
-    yield nodes[0]
+    assert old_node.Version
+    assert old_node.Version.Index
+    labels = old_node.Spec.Labels or {}
+    # ensure we have the necessary labels
+    await async_docker_client.nodes.update(
+        node_id=old_node.ID,
+        version=old_node.Version.Index,
+        spec={
+            "Availability": old_node.Spec.Availability.value,
+            "Labels": labels
+            | {
+                _OSPARC_SERVICE_READY_LABEL_KEY: "true",
+                _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: arrow.utcnow().isoformat(),
+            },
+            "Role": old_node.Spec.Role.value,
+        },
+    )
+    modified_host_node = parse_obj_as(
+        DockerNode, await async_docker_client.nodes.inspect(node_id=old_node.ID)
+    )
+    yield modified_host_node
     # revert state
-    assert old_node.ID
     current_node = parse_obj_as(
         DockerNode, await async_docker_client.nodes.inspect(node_id=old_node.ID)
     )
