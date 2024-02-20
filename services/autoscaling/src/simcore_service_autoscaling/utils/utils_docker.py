@@ -593,9 +593,10 @@ async def set_node_osparc_ready(
 def get_node_last_readyness_update(node: Node) -> datetime.datetime:
     assert node.Spec  # nosec
     assert node.Spec.Labels  # nosec
-    return arrow.get(
-        node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]
-    ).datetime
+    return cast(
+        datetime.datetime,
+        arrow.get(node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]).datetime,
+    )  # mypy
 
 
 async def attach_node(
