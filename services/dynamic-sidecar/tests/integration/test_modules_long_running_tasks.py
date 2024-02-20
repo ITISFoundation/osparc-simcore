@@ -41,11 +41,6 @@ from simcore_service_dynamic_sidecar.modules.long_running_tasks import (
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
-pytest_plugins = [
-    "pytest_simcore.postgres_service",
-    "pytest_simcore.simcore_storage_service",
-]
-
 pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
@@ -54,7 +49,7 @@ pytest_simcore_core_services_selection = [
 
 pytest_simcore_ops_services_selection = [
     "minio",
-    "adminer",
+    # "adminer",
 ]
 
 

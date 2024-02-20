@@ -28,10 +28,6 @@ from simcore_service_dynamic_sidecar.modules.user_services_preferences._utils im
     is_feature_enabled,
 )
 
-pytest_plugins = [
-    "pytest_simcore.postgres_service",
-]
-
 pytest_simcore_core_services_selection = [
     "migration",
     "postgres",

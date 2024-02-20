@@ -14,9 +14,11 @@ from models_library.rabbitmq_messages import (
 )
 from pydantic import NonNegativeFloat
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
-from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
+from servicelib.rabbitmq import RabbitMQClient, is_rabbitmq_responsive
+from settings_library.rabbit import RabbitSettings
 
 from ..core.settings import ApplicationSettings
+from ..modules.service_liveness import wait_for_service_liveness
 
 _logger = logging.getLogger(__file__)
 
@@ -78,12 +80,23 @@ async def post_event_reload_iframe(app: FastAPI) -> None:
     await _post_rabbit_message(app, message)
 
 
+async def wait_for_rabbitmq_liveness(app: FastAPI) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    rabbit_settings: RabbitSettings = app_settings.RABBIT_SETTINGS
+
+    await wait_for_service_liveness(
+        is_rabbitmq_responsive,
+        service_name="RabbitMQ",
+        endpoint=rabbit_settings.dsn,
+        url=rabbit_settings.dsn,
+    )
+
+
 def setup_rabbitmq(app: FastAPI) -> None:
     async def on_startup() -> None:
         app_settings: ApplicationSettings = app.state.settings
         assert app_settings.RABBIT_SETTINGS  # nosec
         settings = app_settings.RABBIT_SETTINGS
-        await wait_till_rabbitmq_responsive(settings.dsn)
         with log_context(_logger, logging.INFO, msg="Create RabbitMQClient"):
             app.state.rabbitmq_client = RabbitMQClient(
                 client_name=f"dynamic-sidecar_{app_settings.DY_SIDECAR_NODE_ID}",

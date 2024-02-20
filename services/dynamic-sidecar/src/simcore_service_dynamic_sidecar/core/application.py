@@ -29,6 +29,7 @@ from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
+from .external_dependencies import setup_check_dependencies
 from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
 from .reserved_space import setup as setup_reserved_space
@@ -155,16 +156,17 @@ def create_app():
     if application_settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug_setup(app)
 
+    setup_check_dependencies(app)
+
     if application_settings.RABBIT_SETTINGS:
-        setup_rabbitmq(app)
+        setup_rabbitmq(app)  # also checks if rabbit is ok before continuing setup
         setup_background_log_fetcher(app)
         setup_resource_tracking(app)
         setup_system_monitor(app)
+        setup_outputs(app)
 
-    # also sets up mounted_volumes
     setup_mounted_fs(app)
     setup_inputs(app)
-    setup_outputs(app)
 
     setup_attribute_monitor(app)
 
@@ -172,6 +174,8 @@ def create_app():
 
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
+
+    # enforce external API available
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(NodeNotFound, node_not_found_error_handler)

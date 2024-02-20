@@ -20,6 +20,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.resource_usage_tracker import (
     DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
 )
+from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
@@ -149,14 +150,19 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_SERVICE_VERSION: ServiceVersion | None = None
     DY_SIDECAR_PRODUCT_NAME: ProductName | None = None
 
+    STORAGE_SETTINGS: StorageSettings = Field(auto_default_from_env=True)
+
     SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(auto_default_from_env=True)
 
     REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 
-    RABBIT_SETTINGS: RabbitSettings | None = Field(auto_default_from_env=True)
+    RABBIT_SETTINGS: RabbitSettings = Field(auto_default_from_env=True)
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
-    POSTGRES_SETTINGS: PostgresSettings | None = Field(auto_default_from_env=True)
+    POSTGRES_SETTINGS: PostgresSettings = Field(auto_default_from_env=True)
+
+    # TODO: by default mock postgres settings in all tests
+    # TODO: by defaylt mock rabbit settings ain all tests
 
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
 
