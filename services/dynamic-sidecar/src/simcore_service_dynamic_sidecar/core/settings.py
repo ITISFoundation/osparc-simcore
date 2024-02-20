@@ -63,10 +63,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
-    DYNAMIC_SIDECAR_HOST: str = Field(
-        default="0.0.0.0",  # nosec
-        description="host where to bind the application on which to serve",
-    )
     DYNAMIC_SIDECAR_PORT: PortInt = Field(
         default=8000, description="port where the server will be currently serving"
     )
