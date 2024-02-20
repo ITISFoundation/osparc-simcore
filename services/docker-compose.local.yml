@@ -102,6 +102,7 @@ services:
   storage:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+      - STORAGE_REMOTE_DEBUGGING_PORT=3000
     ports:
       - "8080"
       - "3003:3000"
