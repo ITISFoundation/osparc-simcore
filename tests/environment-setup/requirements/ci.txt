@@ -10,6 +10,6 @@
 --requirement requirements.txt
 
 # installs this repo's packages
-../../packages/pytest-simcore/
-../../packages/settings-library/
-../../packages/service-library/
+--editable ../../packages/pytest-simcore/
+--editable ../../packages/settings-library/
+--editable ../../packages/service-library/

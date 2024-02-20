@@ -10,9 +10,9 @@
 --requirement _base.txt
 
 # installs this repo's packages
-../../packages/aws-library
-../../packages/models-library
-../../packages/service-library[fastapi]
-../../packages/settings-library
+--editable ../../packages/aws-library
+--editable ../../packages/models-library
+--editable ../../packages/service-library[fastapi]
+--editable ../../packages/settings-library
 # installs current package
-.
+--editable .

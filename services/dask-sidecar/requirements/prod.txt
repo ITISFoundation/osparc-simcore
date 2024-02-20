@@ -10,10 +10,10 @@
 --requirement _base.txt
 
 # installs this repo's packages
-../../packages/dask-task-models-library/
-../../packages/models-library/
-../../packages/service-library/
-../../packages/settings-library/
+--editable ../../packages/dask-task-models-library/
+--editable ../../packages/models-library/
+--editable ../../packages/service-library/
+--editable ../../packages/settings-library/
 
 # installs current package
-.
+--editable .

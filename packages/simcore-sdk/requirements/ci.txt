@@ -11,14 +11,14 @@
 --requirement _test.txt
 
 # installs this repo's packages
-../postgres-database
-../pytest-simcore/
-../models-library/
-../settings-library/
+--editable ../postgres-database
+--editable ../pytest-simcore/
+--editable ../models-library/
+--editable ../settings-library/
 
 # FIXME: these dependencies should be removed
-../service-library/
+--editable ../service-library/
 
 
 # installs current package
-.
+--editable .

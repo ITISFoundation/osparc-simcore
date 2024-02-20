@@ -10,8 +10,8 @@
 --requirement _base.txt
 --requirement _test.txt
 
-../models-library/
-../pytest-simcore/
+--editable ../models-library/
+--editable ../pytest-simcore/
 
 # current module
-.
+--editable .

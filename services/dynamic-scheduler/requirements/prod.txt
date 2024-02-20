@@ -10,10 +10,10 @@
 --requirement _base.txt
 
 # installs this repo's packages
-../../packages/models-library
-../../packages/postgres-database
-../../packages/service-library[fastapi]
-../../packages/settings-library
+--editable ../../packages/models-library
+--editable ../../packages/postgres-database
+--editable ../../packages/service-library[fastapi]
+--editable ../../packages/settings-library
 
 # installs current package
-.
+--editable .

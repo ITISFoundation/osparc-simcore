@@ -15,4 +15,4 @@
 --editable ../../packages/pytest-simcore/
 
 # current module
-.
+--editable .

@@ -11,12 +11,12 @@
 --requirement _test.txt
 
 # installs this repo's packages
-../../packages/aws-library
-../../packages/models-library
-../../packages/pytest-simcore
-../../packages/service-library[fastapi]
-../../packages/settings-library
-../../packages/postgres-database
+--editable ../../packages/aws-library
+--editable ../../packages/models-library
+--editable ../../packages/pytest-simcore
+--editable ../../packages/service-library[fastapi]
+--editable ../../packages/settings-library
+--editable ../../packages/postgres-database
 
 # installs current package
-.
+--editable .

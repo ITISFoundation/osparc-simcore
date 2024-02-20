@@ -9,7 +9,7 @@
 # installs base + tests requirements
 --requirement _base.txt
 
-../models-library/
+--editable ../models-library/
 
 # current module
-.
+--editable .
