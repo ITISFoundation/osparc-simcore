@@ -93,6 +93,8 @@ services:
       replicas: 2
 
   resource-usage-tracker:
+    environment:
+      - RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT=3000
     ports:
       - "8009:8000"
       - "3014:3000"
