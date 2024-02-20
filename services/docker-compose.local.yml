@@ -56,7 +56,7 @@ services:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
       - DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS={}
-      - DIRECTOR_V2_REMOTE_DEBUG_PORT=3000
+      - DIRECTOR_V2_REMOTE_DEBUGGING_PORT=3000
     ports:
       - "8000"
       - "3009:3000"

@@ -154,6 +154,8 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
+    DIRECTOR_V2_REMOTE_DEBUGGING_PORT: PortInt
+
     # extras
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
     SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(

@@ -112,6 +112,7 @@ services:
       - ../packages:/devel/packages
     environment:
       &webserver-environment-dev
+      WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
       SC_BOOT_MODE: debug
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-DEBUG}
 

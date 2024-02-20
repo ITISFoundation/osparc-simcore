@@ -101,10 +101,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="If set to True the application will boot into debug mode",
     )
 
-    DYNAMIC_SIDECAR_REMOTE_DEBUG_PORT: PortInt = Field(
-        default=3000, description="ptsvd remote debugger starting port"
-    )
-
     DYNAMIC_SIDECAR_RESERVED_SPACE_SIZE: ByteSize = Field(
         parse_obj_as(ByteSize, "10Mib"),
         description=(
