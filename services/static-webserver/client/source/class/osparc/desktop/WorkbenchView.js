@@ -224,7 +224,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.add(control, 1); // flex 1
           break;
         }
-        case "disk-indicator": {
+        case "disk-telemetry": {
           control = new osparc.workbench.DiskUsageIndicator();
           break;
         }
@@ -456,10 +456,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__addTopBarSpacer(topBar);
 
-      if (this.__lowDiskThreshold && this.getSelectedNodeIDs()) {
-        const diskIndicator = this.getChildControl("disk-indicator");
+      // if (this.__lowDiskThreshold && this.getSelectedNodeIDs()) {
+        const diskIndicator = this.getChildControl("disk-telemetry");
+        diskIndicator.set({
+          marginTop: 7,
+          visibility: "excluded"
+        })
         topBar.add(diskIndicator);
-      }
+      // }
       const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         label: this.tr("App Mode"),
@@ -532,7 +536,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const workbench = this.getStudy().getWorkbench();
         const node = workbench.getNode(nodeId);
         if (node) {
-          this.__populateDisKUsageIndicator(node);
+          this.__populateDiskUsageIndicator(node);
           this.__populateSecondPanel(node);
           this.__openIframeTab(node);
         }
@@ -550,7 +554,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__nodesTree.nodeSelected(nodeId);
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
-            this.__populateDisKUsageIndicator(node);
+            this.__populateDiskUsageIndicator(node);
             this.__populateSecondPanel(node);
             this.__evalIframe(node);
             this.__loggerView.setCurrentNodeId(nodeId);
@@ -568,7 +572,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__nodesTree.nodeSelected(nodeId);
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
-            this.__populateDisKUsageIndicator(node);
+            this.__populateDiskUsageIndicator(node);
             this.__populateSecondPanel(node);
             this.__openIframeTab(node);
             this.__loggerView.setCurrentNodeId(nodeId);
@@ -585,7 +589,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           if (node) {
             this.__populateSecondPanel(node);
             this.__openIframeTab(node);
-            this.__populateDisKUsageIndicator(node);
+            this.__populateDiskUsageIndicator(node);
             node.getLoadingPage().maximizeIFrame(true);
             node.getIFrame().maximizeIFrame(true);
           }
@@ -921,17 +925,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __populateDisKUsageIndicator: function(node) {
-      try {
-        const diskIndicator = this.getChildControl("disk-indicator");
-        diskIndicator.setCurrentNode(node);
-        diskIndicator.set({
-          visibility: node ? "visible" : "excluded"
-        });
-      } catch (e) {
-        console.error("Failed to load indicator", e)
-      }
-      console.log("node", node)
+    __populateDiskUsageIndicator: function(node) {
+      const diskIndicator = this.getChildControl("disk-telemetry");
+      diskIndicator.setCurrentNode(node);
+      diskIndicator.set({
+        visibility: diskIndicator.getCurrentNode().getNodeId() !== diskIndicator.getCurrentTelemetry()["node_id"] ? "excluded" : "visible"
+      })
     },
 
     __populateSecondPanelStudy: function(study) {

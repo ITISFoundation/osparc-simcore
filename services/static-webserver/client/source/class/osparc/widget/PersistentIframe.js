@@ -132,12 +132,6 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         alignX: "right",
         alignY: "middle"
       }));
-      // if (this.__lowDiskThreshold) {
-      //   const node = this._getIframeElement().getNode();
-      //   console.log(node)
-      //   const testIndicator = this.__diskUsageIndicator = new osparc.ui.basic.DiskUsageIndicator();
-      //   buttonContainer.add(testIndicator);
-      // }
 
       const reloadButton = this.__reloadButton = this.self().createToolbarButton().set({
         label: this.tr("Reload"),

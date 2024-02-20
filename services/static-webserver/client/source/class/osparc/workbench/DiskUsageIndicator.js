@@ -29,8 +29,40 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     const lowDiskSpacePreferencesSettings = osparc.Preferences.getInstance();
     this.__lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
     this.__prevDiskUsageStateList = [];
+    this.__testDiskUsage = [];
     const layout = this.__layout = new qx.ui.layout.VBox(2);
     this._setLayout(layout);
+
+    this.addListener("changeCurrentNode", (e) => {
+      const node = this.__node = e.getData();
+      const telemetry = this.__testDiskUsage.find(i => i.nodeId === node.getNodeId());
+      if (telemetry) {
+        this.diskUsageToUI(telemetry["node_id"], telemetry.usage);
+      }
+    }, this);
+
+    this.addListener("changeCurrentTelemetry", (e) => {
+      const nodeId = this.__node.getNodeId();
+      const telemetry = e.getData();
+
+      const newData = {
+        nodeId: telemetry["node_id"],
+        usage: telemetry.usage["/"]
+      };
+
+      const index = this.__testDiskUsage.findIndex(i => i.nodeId === newData.nodeId);
+      if(index === -1) {
+        this.__testDiskUsage.push(newData)
+      } else {
+        this.__testDiskUsage[index] = newData;
+      }
+      const data = this.__testDiskUsage.find(i => i.nodeId === nodeId);
+      if (data) {
+        const usage = this.__diskUsage = data.usage;
+
+        this.diskUsageToUI(nodeId, usage);
+      }
+    }, this)
     this.__attachSocketEventHandlers();
   },
 
@@ -40,15 +72,25 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       init : null,
       nullable : true,
       event : "changeCurrentNode",
-      apply: "_applyCurrentNode"
+      // apply: "_applyCurrentNode"
+    },
+    currentTelemetry: {
+      check : "Object",
+      init : null,
+      nullable : true,
+      event : "changeCurrentTelemetry",
+      // apply: "_applyCurrentTelemetry"
     }
   },
 
   members: {
+    __node: null,
+    __diskTelemetry: null,
     __layout: null,
     __lowDiskThreshold: null,
     __diskUsage: null,
     __prevDiskUsageStateList: null,
+    __testDiskUsage: null,
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -56,7 +98,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
           control = new qx.ui.container.Composite(
             new qx.ui.layout.VBox().set({
               alignY: "middle",
-              alignX: "center",
+              alignX: "center"
             })
           ).set({
             decorator: "indicator-border",
@@ -67,6 +109,8 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
             allowShrinkY: false,
             allowGrowX: true,
             allowGrowY: false,
+            toolTipText: this.tr("Disk usage"),
+            visibility: "excluded"
           });
           this._add(control)
           break;
@@ -118,7 +162,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       return null;
     },
 
-    __diskUsageToUI: function(id, diskUsage) {
+    diskUsageToUI: function(id, diskUsage) {
       function isMatchingNodeId({nodeId}) {
         return nodeId === id;
       }
@@ -136,7 +180,8 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
         })
       }
       const freeSpace = osparc.utils.Utils.bytesToSize(diskUsage.free);
-      const nodeName = this.getCurrentNode().getLabel();
+
+      const nodeName = this.__node.getLabel();
       let message;
       let indicatorColor;
 
@@ -164,7 +209,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
           break;
       }
 
-      this.updateDiskIndicator(indicatorColor, diskUsage.used_percent);
+      this.updateDiskIndicator(indicatorColor, freeSpace);
     },
 
     updateDiskIndicator: function(color, freeSpace) {
@@ -172,7 +217,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       const indicatorLabel = this.getChildControl("disk-indicator-label");
 
       const progress = `${this.getDiskAvailableSpacePercent()}%`;
-      const labelDiskSize = `${freeSpace}%`;
+      const labelDiskSize = `${freeSpace}`;
       const color1 = color || qx.theme.manager.Color.getInstance().resolve("success");
       const bgColor = qx.theme.manager.Color.getInstance().resolve("tab_navigation_bar_background_color");
       const color2 = qx.theme.manager.Color.getInstance().resolve("info");
@@ -180,8 +225,9 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
         "background-color": bgColor,
         "background": `linear-gradient(90deg, ${color1} ${progress}, ${color2} ${progress})`,
       });
-      indicatorLabel.setValue(`${labelDiskSize} Disk Usage`);
-      indicator.setVisibility(this.__lowDiskThreshold && color ? "visible" : "excluded");
+      indicatorLabel.setValue(`${labelDiskSize} Free`);
+      const isIndicatorVisible = this.__testDiskUsage.some(i => i.nodeId === this.__node.getNodeId()) && color;
+      indicator.setVisibility(isIndicatorVisible ? "visible" : "excluded");
       return indicator;
     },
 
@@ -192,10 +238,9 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
         const manager = osparc.workbench.DiskUsageController.getInstance();
         const listener = new osparc.workbench.DiskUsageListener(manager);
         listener.listen(slotName, diskUsage => {
-          const data = diskUsage;
-          const diskState = this.__diskUsage = data.usage["/"];
-          if (this.getCurrentNode().getNodeId() === data["node_id"]) {
-            this.__diskUsageToUI(data["node_id"], diskState);
+
+          if (diskUsage) {
+            this.setCurrentTelemetry(diskUsage);
           }
         });
       } catch (e) {
@@ -204,13 +249,11 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     },
 
     _applyCurrentNode: function(node) {
-      console.log("node", node.getNodeId())
+      return;
     },
   },
 
-  destruct : function() {
-    console.log("exiting Disk usage indicator")
-    this.removeListener("serviceDiskUsage", this.__attachSocketEventHandlers, this);
-    // this.removeListener("pointerout", this._onPointerOut, this);
-  }
+  // destruct : function() {
+  //   this.removeListener("serviceDiskUsage", this._attachSocketEventHandlers, this);
+  // }
 });
