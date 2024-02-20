@@ -69,14 +69,15 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   && apt-get install -y --no-install-recommends \
   build-essential
 
-RUN pip install uv
+# NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
+RUN pip install uv~=0.1
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade  \
+  uv pip install --upgrade  \
   pip~=24.0  \
   wheel \
   setuptools
@@ -88,7 +89,7 @@ WORKDIR /build
 RUN \
   --mount=type=bind,source=services/payments/requirements/_base.txt,target=_base.txt \
   --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
-  pip install \
+  uv pip install \
   --requirement _base.txt
 
 
@@ -109,7 +110,7 @@ RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/payments,target=/build/services/payments,rw \
   --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
-  pip install \
+  uv pip install \
   --requirement requirements/prod.txt \
   && pip list -v
 

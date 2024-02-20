@@ -100,7 +100,8 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   && apt-get install -y --no-install-recommends \
   build-essential
 
-RUN pip install uv
+# NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
+RUN pip install uv~=0.1
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv

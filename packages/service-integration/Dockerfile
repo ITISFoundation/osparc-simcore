@@ -47,14 +47,15 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-RUN pip install uv
+# NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
+RUN pip install uv~=0.1
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade \
+  uv pip install --upgrade \
   pip~=24.0  \
   wheel \
   setuptools
@@ -68,9 +69,9 @@ COPY --chown=scu:scu packages/service-integration packages/service-integration
 # WARNING: keep synced with `make install-prod` (did not use it directly because if would require copying scripts/common.Makefile and other parts of the repo)
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
   cd packages/service-integration \
-  && pip install -r requirements/_base.txt \
-  && pip install ../models-library/ \
-  && pip install .
+  && uv pip install -r requirements/_base.txt \
+  && uv pip install -e ../models-library/ \
+  && uv pip install -e .
 
 
 # -------------------------- Build stage -------------------
