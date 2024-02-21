@@ -4,7 +4,7 @@
 
 
 import pytest
-from models_library.errors import ErrorDict, OsparcBaseError
+from models_library.errors import ErrorDict
 from pydantic import BaseModel, ValidationError, conint
 
 
@@ -44,23 +44,3 @@ def test_pydantic_error_dict():
         # "msg": "value is not a valid integer",
         "type": "type_error.integer",
     }
-
-
-def test_osparc_base_error_class():
-    class A(OsparcBaseError):
-        ...
-
-    class B1(A):
-        ...
-
-    class B2(A):
-        ...
-
-    class C(B2):
-        ...
-
-    assert B1.get_full_class_name() == "OsparcBaseError.A.B1"
-    assert C.get_full_class_name() == "OsparcBaseError.A.B2.C"
-    assert A.get_full_class_name() == "OsparcBaseError.A"
-
-    # TODO: check how pydantic adds code prefix/suffix upon creation
