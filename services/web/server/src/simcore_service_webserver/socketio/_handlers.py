@@ -22,7 +22,7 @@ from ..login.decorators import login_required
 from ..products.api import Product, get_current_product
 from ..resource_manager.user_sessions import managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
-from .messages import SOCKET_IO_HEARTBEAT_EVENT, send_messages_to_user
+from .messages import SOCKET_IO_HEARTBEAT_EVENT, send_message_to_user
 
 _logger = logging.getLogger(__name__)
 
@@ -138,16 +138,14 @@ async def connect(
             product_name,
         )
 
-        heart_beat_messages: list[SocketMessageDict] = [
-            {
-                "event_type": SOCKET_IO_HEARTBEAT_EVENT,
-                "data": {"interval": _EMIT_INTERVAL_S},
-            }
-        ]
-        await send_messages_to_user(
+        await send_message_to_user(
             app,
             user_id,
-            heart_beat_messages,
+            message=SocketMessageDict(
+                event_type=SOCKET_IO_HEARTBEAT_EVENT,
+                data={"interval": _EMIT_INTERVAL_S},
+            ),
+            ignore_queue=True,
         )
 
     except web.HTTPUnauthorized as exc:

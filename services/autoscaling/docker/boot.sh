@@ -43,7 +43,7 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 
   exec sh -c "
     cd services/autoscaling/src/simcore_service_autoscaling && \
-    uvicorn main:the_app \
+    python -m debugpy --listen 0.0.0.0:${AUTOSCALING_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages

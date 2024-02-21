@@ -1,5 +1,8 @@
-# pylint: disable=redefined-outer-name
 # pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from unittest.mock import AsyncMock
 
@@ -12,25 +15,11 @@ from models_library.rabbitmq_messages import (
 )
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
-from simcore_service_webserver.notifications import _rabbitmq_exclusive_queue_consumers
+from simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers import (
+    _progress_message_parser,
+)
 
 _faker = Faker()
-
-
-@pytest.fixture
-def mock_send_messages(mocker: MockerFixture) -> dict:
-    reference = {}
-
-    async def mock_send_message(*args) -> None:
-        reference["args"] = args
-
-    mocker.patch.object(
-        _rabbitmq_exclusive_queue_consumers,
-        "send_messages_to_user",
-        side_effect=mock_send_message,
-    )
-
-    return reference
 
 
 @pytest.mark.parametrize(
@@ -38,25 +27,21 @@ def mock_send_messages(mocker: MockerFixture) -> dict:
     [
         pytest.param(
             ProgressRabbitMessageNode(
-                **{
-                    "project_id": _faker.uuid4(cast_to=None),
-                    "user_id": _faker.uuid4(cast_to=None),
-                    "node_id": _faker.uuid4(cast_to=None),
-                    "progress_type": ProgressType.SERVICE_OUTPUTS_PULLING,
-                    "progress": 0.4,
-                }
+                project_id=_faker.uuid4(cast_to=None),
+                user_id=_faker.uuid4(cast_to=None),
+                node_id=_faker.uuid4(cast_to=None),
+                progress_type=ProgressType.SERVICE_OUTPUTS_PULLING,
+                progress=0.4,
             ).json(),
             ProgressRabbitMessageNode,
             id="node_progress",
         ),
         pytest.param(
             ProgressRabbitMessageProject(
-                **{
-                    "project_id": _faker.uuid4(cast_to=None),
-                    "user_id": _faker.uuid4(cast_to=None),
-                    "progress_type": ProgressType.PROJECT_CLOSING,
-                    "progress": 0.4,
-                }
+                project_id=_faker.uuid4(cast_to=None),
+                user_id=_faker.uuid4(cast_to=None),
+                progress_type=ProgressType.PROJECT_CLOSING,
+                progress=0.4,
             ).json(),
             ProgressRabbitMessageProject,
             id="project_progress",
@@ -64,11 +49,19 @@ def mock_send_messages(mocker: MockerFixture) -> dict:
     ],
 )
 async def test_regression_progress_message_parser(
-    mock_send_messages: dict, raw_data: bytes, class_type: type[BaseModel]
+    mocker: MockerFixture, raw_data: bytes, class_type: type[BaseModel]
 ):
-    await _rabbitmq_exclusive_queue_consumers._progress_message_parser(
-        AsyncMock(), raw_data
+    send_messages_to_user_mock = mocker.patch(
+        "simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers.send_message_to_user",
+        autospec=True,
     )
-    serialized_sent_data = mock_send_messages["args"][2][0]["data"]
+
+    app = AsyncMock()
+    assert await _progress_message_parser(app, raw_data)
+
+    # tests how send_message_to_user is called
+    assert send_messages_to_user_mock.call_count == 1
+    message = send_messages_to_user_mock.call_args.kwargs["message"]
+
     # check that all fields are sent as expected
-    assert class_type.parse_obj(serialized_sent_data)
+    assert class_type.parse_obj(message["data"])
