@@ -9,6 +9,7 @@
 --constraint _base.txt
 
 coverage
+docker
 faker
 pytest
 pytest-asyncio
@@ -20,3 +21,4 @@ pytest-runner
 pytest-sugar
 python-dotenv
 pyyaml
+tenacity

@@ -25,7 +25,7 @@ distlib==0.3.8
     # via virtualenv
 filelock==3.13.1
     # via virtualenv
-identify==2.5.34
+identify==2.5.35
     # via pre-commit
 isort==5.13.2
     # via
@@ -51,7 +51,7 @@ platformdirs==4.2.0
     #   black
     #   pylint
     #   virtualenv
-pre-commit==3.6.1
+pre-commit==3.6.2
     # via -r requirements/../../../requirements/devenv.txt
 pylint==3.0.3
     # via -r requirements/../../../requirements/devenv.txt
@@ -64,7 +64,7 @@ pyyaml==6.0.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   pre-commit
-ruff==0.2.1
+ruff==0.2.2
     # via -r requirements/../../../requirements/devenv.txt
 tomli==2.0.1
     # via

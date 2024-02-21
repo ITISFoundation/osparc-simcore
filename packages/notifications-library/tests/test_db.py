@@ -11,8 +11,8 @@ from typing import Any
 import pytest
 import sqlalchemy as sa
 from models_library.users import GroupID, UserID
-from notification_library._db import TemplatesRepo
-from notification_library.payments import _PRODUCT_NOTIFICATIONS_TEMPLATES
+from notifications_library._db import TemplatesRepo
+from notifications_library.payments import _PRODUCT_NOTIFICATIONS_TEMPLATES
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products

@@ -4,27 +4,40 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-coverage==7.4.1
+certifi==2024.2.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   requests
+charset-normalizer==3.3.2
+    # via requests
+coverage==7.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
+docker==7.0.0
+    # via -r requirements/_test.in
 exceptiongroup==1.2.0
     # via pytest
 faker==23.2.1
     # via -r requirements/_test.in
 icdiff==2.0.7
     # via pytest-icdiff
+idna==3.6
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 iniconfig==2.0.0
     # via pytest
 packaging==23.2
     # via
+    #   docker
     #   pytest
     #   pytest-sugar
 pluggy==1.4.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.0.0
+pytest==8.0.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -57,13 +70,22 @@ pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
+requests==2.31.0
+    # via docker
 six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
+tenacity==8.2.3
+    # via -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1
     # via
     #   coverage
     #   pytest
+urllib3==2.2.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   docker
+    #   requests
