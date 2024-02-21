@@ -1,50 +1,87 @@
 """ General handling of httpx-based exceptions
 
     - httpx-based clients are used to communicate with other backend services
-    - When those respond with 4XX, 5XX status codes, those are generally handled here
+    - any exception raised by a httpx client will be handled here.
 """
 import logging
+from functools import partial
+from inspect import iscoroutinefunction
+from typing import Any
 
-from fastapi import status
-from httpx import HTTPStatusError
-from starlette.requests import Request
-from starlette.responses import JSONResponse
-
-from .http_error import create_error_json_response
+from fastapi import HTTPException, status
+from httpx import HTTPError, HTTPStatusError, TimeoutException
 
 _logger = logging.getLogger(__file__)
 
 
-async def httpx_client_error_handler(_: Request, exc: HTTPStatusError) -> JSONResponse:
-    """
-    This is called when HTTPStatusError was raised and reached the outermost handler
+def httpx_exception_handler(cls):
+    class Wrapper(cls):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
 
-    This handler is used as a "last resource" since it is recommended to handle these exceptions
-    closer to the raising point.
+        def __getattribute__(self, name):
+            attr = super().__getattribute__(name)
+            if iscoroutinefunction(attr):
+                return partial(self._method, attr)
+            else:
+                return attr
 
-    The response had an error HTTP status of 4xx or 5xx, and this is how is
-    transformed in the api-server API
-    """
-    if exc.response.is_client_error:
-        assert exc.response.is_server_error  # nosec
-        # Forward api-server's client from backend client errors
-        status_code = exc.response.status_code
-        errors = exc.response.json()["errors"]
+        async def _method(self, method, *args, **kwargs):
+            try:
+                result = await method(*args, **kwargs)
+            except HTTPError as exc:
+                await _handle_httpx_client_exception(exc)
+            return result
+
+    return Wrapper
+
+
+async def _handle_httpx_client_exception(exc: HTTPError):
+    """See https://www.python-httpx.org/exceptions/"""
+    status_code: Any
+    detail: str
+    headers: dict[str, str] = {}
+    if isinstance(exc, HTTPStatusError):
+        status_code, detail, headers = await _handle_httpx_status_exceptions(exc)
+    elif isinstance(exc, TimeoutException):
+        status_code = status.HTTP_504_GATEWAY_TIMEOUT
+        detail = f"Request to {exc.request.url.host.capitalize()} timed out"
     else:
-        assert exc.response.is_server_error  # nosec
-        # Hide api-server's client from backend server errors
-        status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-        message = f"{exc.request.url.host.capitalize()} service unexpectedly failed"
-        errors = [
-            message,
-        ]
+        status_code = status.HTTP_502_BAD_GATEWAY
+        detail = f"{exc.request.url.host.capitalize()} service unexpectedly failed"
 
-        _logger.exception(
-            "%s. host=%s status-code=%s msg=%s",
-            message,
-            exc.request.url.host,
-            exc.response.status_code,
-            exc.response.text,
-        )
+    _logger.exception(
+        "%s. host=%s",
+        detail,
+        exc.request.url.host,
+    )
+    raise HTTPException(
+        status_code=status_code, detail=detail, headers=headers
+    ) from exc
 
-    return create_error_json_response(*errors, status_code=status_code)
+
+async def _handle_httpx_status_exceptions(
+    exc: HTTPStatusError,
+) -> tuple[int, str, dict[str, str]]:
+    status_code: int
+    detail: str
+    headers: dict[str, str] = {}
+    response_status = exc.response.status_code
+    error_msg = exc.response.json()["errors"].join(", ")
+    if response_status in {
+        status.HTTP_402_PAYMENT_REQUIRED,
+        status.HTTP_403_FORBIDDEN,
+        status.HTTP_404_NOT_FOUND,
+        status.HTTP_409_CONFLICT,
+        status.HTTP_410_GONE,
+        status.HTTP_429_TOO_MANY_REQUESTS,
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+    }:  # status codes mapped directly back to user
+        status_code = response_status
+        if "Retry-After" in exc.response.headers:
+            headers["Retry-After"] = exc.response.headers["Retry-After"]
+    else:
+        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    detail = f"{exc.request.url.host.capitalize()} encountered an issue: {error_msg}"
+    return status_code, detail, headers
