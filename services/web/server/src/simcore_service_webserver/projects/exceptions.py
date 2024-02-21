@@ -117,3 +117,7 @@ class DefaultPricingUnitNotFoundError(BaseProjectError):
 
 class ClustersKeeperNotAvailableError(BaseProjectError):
     """Clusters-keeper service is not available"""
+
+
+class InvalidInputValue(WebServerBaseError):
+    msg_template = "Invalid value for input '{node_id}': {message} for value={value}"
