@@ -141,14 +141,13 @@ def run_docker_compose_config(
         ], "Expected yaml/yml file as destination path"
 
     # SEE https://docs.docker.com/compose/reference/
-
-    global_options = [
+    bash_options = [
         "-p",
         str(project_dir),  # Specify an alternate working directory
     ]
     # https://docs.docker.com/compose/environment-variables/#using-the---env-file--option
-    global_options += [
-        "--env-file",
+    bash_options += [
+        "-e",
         str(env_file_path),  # Custom environment variables
     ]
 
@@ -156,13 +155,13 @@ def run_docker_compose_config(
     #  - When you use multiple Compose files, all paths in the files are relative to the first configuration file specified with -f.
     #    You can use the --project-directory option to override this base path.
     for docker_compose_path in docker_compose_paths:
-        global_options += [os.path.relpath(docker_compose_path, project_dir)]
+        bash_options += [os.path.relpath(docker_compose_path, project_dir)]
 
     # SEE https://docs.docker.com/compose/reference/config/
     docker_compose_path = scripts_dir / "docker" / "docker-compose-config.bash"
     assert docker_compose_path.exists()
 
-    args = [f"{docker_compose_path}", *global_options]
+    args = [f"{docker_compose_path}", *bash_options]
     print(" ".join(args))
 
     process = subprocess.run(
