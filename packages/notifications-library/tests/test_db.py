@@ -5,14 +5,16 @@
 # pylint: disable=unused-variable
 
 
+import importlib.resources
 from collections.abc import AsyncIterator
 from typing import Any
 
+import notifications_library
 import pytest
 import sqlalchemy as sa
+from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from notifications_library._db import TemplatesRepo
-from notifications_library.payments import _PRODUCT_NOTIFICATIONS_TEMPLATES
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
@@ -128,7 +130,7 @@ async def test_get_notification_data(
     repo = TemplatesRepo(sqlalchemy_async_engine)
 
     # check once
-    data = await repo.get_notification_data(
+    data = await repo.get_notify_payments_data(
         user_id=user["id"], payment_id=successful_transaction["payment_id"]
     )
 
@@ -146,7 +148,13 @@ async def test_get_notification_data(
 async def email_templates(
     sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterator[dict[str, Any]]:
-    all_templates = {**_PRODUCT_NOTIFICATIONS_TEMPLATES, "other.html": "Fake template"}
+    all_templates = {"other.html": "Fake template"}
+
+    templates_path = importlib.resources.files(notifications_library).joinpath(
+        "templates"
+    )
+    for path in templates_path.iterdir():
+        all_templates[path.name] = path.read_text()
 
     async with sqlalchemy_async_engine.begin() as conn:
         pk_to_row = {
@@ -172,13 +180,12 @@ async def email_templates(
 async def test_get_payments_templates(
     sqlalchemy_async_engine: AsyncEngine,
     email_templates: dict[str, Any],
+    product_name: ProductName,
 ):
     repo = TemplatesRepo(sqlalchemy_async_engine)
 
     templates = await repo.get_email_templates(
-        names=set(_PRODUCT_NOTIFICATIONS_TEMPLATES.keys())
+        names=set(email_templates.keys()), product=product_name
     )
 
-    assert templates == _PRODUCT_NOTIFICATIONS_TEMPLATES
-
-    # TODO: see expore dependencies and pull all
+    assert templates == email_templates

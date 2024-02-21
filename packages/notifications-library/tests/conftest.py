@@ -44,6 +44,13 @@ def pytest_addoption(parser: pytest.Parser):
         default=None,
         help="Overrides `user_email` fixture",
     )
+    group.addoption(
+        "--external-support-email",
+        action="store",
+        type=str,
+        default=None,
+        help="Overrides `support_email` fixture",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -81,6 +88,25 @@ def user_email(user_email: EmailStr, external_user_email: EmailStr | None) -> Em
         )
         return external_user_email
     return user_email
+
+
+@pytest.fixture(scope="session")
+def external_support_email(request: pytest.FixtureRequest) -> str | None:
+    email_or_none = request.config.getoption("--external-support-email", default=None)
+    return parse_obj_as(EmailStr, email_or_none) if email_or_none else None
+
+
+@pytest.fixture
+def support_email(
+    support_email: EmailStr, external_support_email: EmailStr | None
+) -> EmailStr:
+    """Overrides pytest_simcore.faker_users_data.support_email"""
+    if external_support_email:
+        print(
+            f"📧 EXTERNAL `support_email` detected. Setting support_email={external_support_email}"
+        )
+        return external_support_email
+    return support_email
 
 
 @pytest.fixture(scope="session")
