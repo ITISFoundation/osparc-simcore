@@ -144,6 +144,6 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         default=True,
         description=(
             "when the message indicating there are no more credits left in a wallet "
-            "the director-v2 will shutdown the services via the help of the fronted"
+            "the director-v2 will shutdown the services via the help of the frontend"
         ),
     )
