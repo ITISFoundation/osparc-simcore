@@ -14,7 +14,7 @@ install_all() {
   pushd packages/service-library
   make "install-ci[all]"
   popd
-  .venv/bin/pip list --verbose
+  pip list --verbose
 }
 
 test_all() {

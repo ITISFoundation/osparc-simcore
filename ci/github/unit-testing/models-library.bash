@@ -12,7 +12,7 @@ install() {
   pushd packages/models-library
   make install-ci
   popd
-  .venv/bin/pip list --verbose
+  pip list --verbose
 }
 
 test() {

@@ -11,7 +11,7 @@ install() {
   pushd packages/simcore-sdk
   make install-ci
   popd
-  .venv/bin/pip list --verbose
+  pip list --verbose
   make info-images
 }
 

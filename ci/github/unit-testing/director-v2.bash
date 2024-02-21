@@ -12,7 +12,7 @@ install() {
   pushd services/director-v2
   make install-ci
   popd
-  .venv/bin/pip list --verbose
+  pip list --verbose
 }
 
 test() {

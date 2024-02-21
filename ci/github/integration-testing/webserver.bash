@@ -12,7 +12,7 @@ install() {
   pushd services/web/server
   make install-ci
   popd
-  .venv/bin/pip list --verbose
+  pip list --verbose
   make info-images
 }
 
