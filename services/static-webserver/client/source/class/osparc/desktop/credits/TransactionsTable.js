@@ -30,7 +30,7 @@ qx.Class.define("osparc.desktop.credits.TransactionsTable", {
     columnModel.setColumnWidth(0, 130);
     columnModel.setColumnWidth(1, 70);
     columnModel.setColumnWidth(2, 70);
-    columnModel.setColumnWidth(3, 70);
+    columnModel.setColumnWidth(3, 75);
     columnModel.setColumnWidth(4, 320);
     columnModel.setColumnWidth(5, 60);
 
