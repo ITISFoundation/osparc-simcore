@@ -13,4 +13,4 @@ class _OsparcErrorMixin(PydanticErrorMixin):
 
 
 class OsparcBaseError(_OsparcErrorMixin):
-    ...
+    """THE base class for any custom exception in this repo"""
