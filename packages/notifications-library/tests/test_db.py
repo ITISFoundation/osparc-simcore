@@ -161,7 +161,7 @@ async def email_templates(
             pk_value: await _insert_and_get_row(
                 conn,
                 jinja2_templates,
-                {"content": content},
+                {"name": pk_value, "content": content},
                 jinja2_templates.c.name,
                 pk_value,
             )
@@ -172,9 +172,7 @@ async def email_templates(
 
     async with sqlalchemy_async_engine.begin() as conn:
         for pk_value in pk_to_row:
-            await _delete_row(
-                conn, payments_transactions, jinja2_templates.c.name, pk_value
-            )
+            await _delete_row(conn, jinja2_templates, jinja2_templates.c.name, pk_value)
 
 
 async def test_get_payments_templates(
@@ -188,4 +186,6 @@ async def test_get_payments_templates(
         names=set(email_templates.keys()), product=product_name
     )
 
-    assert templates == email_templates
+    assert templates == {
+        key: value["content"] for key, value in email_templates.items()
+    }
