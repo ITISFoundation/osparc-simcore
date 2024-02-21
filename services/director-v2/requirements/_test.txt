@@ -11,9 +11,7 @@ aio-pika==9.1.2
 aioboto3==12.0.0
     # via -r requirements/_test.in
 aiobotocore==2.7.0
-    # via
-    #   aioboto3
-    #   aiobotocore
+    # via aioboto3
 aiohttp==3.8.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -88,9 +86,7 @@ cloudpickle==2.2.1
 colorlog==6.7.0
     # via dask-gateway-server
 coverage==7.3.2
-    # via
-    #   coverage
-    #   pytest-cov
+    # via pytest-cov
 cryptography==41.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
