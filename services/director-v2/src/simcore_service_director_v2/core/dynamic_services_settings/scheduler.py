@@ -144,11 +144,11 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
     # DEVELOPMENT ONLY config
     #
 
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_IGNORE_SERVICES_SHUTDOWN_WHEN_CREDITS_LIMIT_REACHED: bool = Field(
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: bool = Field(
         default=True,
         description=(
             "when the message indicating there are no more credits left in a wallet "
-            "the director-v2 will shutdown services if True"
+            "the director-v2 will shutdown the services via the help of the fronted"
         ),
     )
 
