@@ -8,7 +8,7 @@ version: "3.8"
 services:
   api-server:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - LOG_LEVEL=DEBUG
       - DEBUG=true
     volumes:
@@ -17,7 +17,7 @@ services:
 
   autoscaling:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - AUTOSCALING_LOGLEVEL=DEBUG
       - DEBUG=true
     volumes:
@@ -26,7 +26,7 @@ services:
 
   invitations:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - INVITATIONS_LOGLEVEL=DEBUG
       - DEBUG=true
     volumes:
@@ -35,7 +35,7 @@ services:
 
   payments:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - PAYMENTS_LOGLEVEL=DEBUG
       - DEBUG=true
     volumes:
@@ -44,7 +44,7 @@ services:
 
   dynamic-schdlr:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - DYNAMIC_SCHEDULER_LOGLEVEL=DEBUG
       - DEBUG=true
     volumes:
@@ -55,7 +55,7 @@ services:
 
   catalog:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - LOG_LEVEL=DEBUG
       - DEBUG=true
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
@@ -65,7 +65,7 @@ services:
 
   clusters-keeper:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - LOG_LEVEL=DEBUG
       - DEBUG=true
     volumes:
@@ -74,7 +74,7 @@ services:
 
   datcore-adapter:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - LOG_LEVEL=DEBUG
     volumes:
       - ./datcore-adapter:/devel/services/datcore-adapter
@@ -82,7 +82,7 @@ services:
 
   director:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - LOGLEVEL=debug
     volumes:
       - ./director:/devel/services/director
@@ -91,7 +91,7 @@ services:
 
   director-v2:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - LOG_LEVEL=debug
       - DEBUG=true
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
@@ -112,7 +112,8 @@ services:
       - ../packages:/devel/packages
     environment:
       &webserver-environment-dev
-      SC_BOOT_MODE: debug-ptvsd
+      WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
+      SC_BOOT_MODE: debug
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-DEBUG}
 
   wb-db-event-listener:
@@ -134,7 +135,7 @@ services:
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
 
     environment:
-      SC_BOOT_MODE: debug-ptvsd
+      SC_BOOT_MODE: debug
       SIDECAR_LOGLEVEL: DEBUG
       LOG_LEVEL: DEBUG
     ports:
@@ -145,7 +146,7 @@ services:
   dask-scheduler:
     volumes: *dev-dask-sidecar-volumes
     environment:
-      SC_BOOT_MODE: debug-ptvsd
+      SC_BOOT_MODE: debug
       SIDECAR_LOGLEVEL: DEBUG
       LOG_LEVEL: DEBUG
     ports:
@@ -156,7 +157,7 @@ services:
 
   resource-usage-tracker:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - RESOURCE_USAGE_TRACKER_LOGLEVEL=DEBUG
       - DEBUG=true
       - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
@@ -183,12 +184,12 @@ services:
       - ./storage:/devel/services/storage
       - ../packages:/devel/packages
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - STORAGE_LOGLEVEL=DEBUG
 
   agent:
     environment:
-      - SC_BOOT_MODE=debug-ptvsd
+      - SC_BOOT_MODE=debug
       - LOGLEVEL=DEBUG
     volumes:
       - ./agent:/devel/services/agent

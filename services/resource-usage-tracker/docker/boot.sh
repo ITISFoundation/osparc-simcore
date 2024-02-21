@@ -38,12 +38,12 @@ APP_LOG_LEVEL=${API_SERVER_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
-if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
   reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
 
   exec sh -c "
     cd services/resource-usage-tracker/src/simcore_service_resource_usage_tracker && \
-    uvicorn web_main:the_app \
+    python -m debugpy --listen 0.0.0.0:${RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT} -m uvicorn web_main:the_app \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages

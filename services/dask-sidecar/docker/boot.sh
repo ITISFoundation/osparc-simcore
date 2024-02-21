@@ -68,7 +68,7 @@ fi
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   scheduler_version=$(dask scheduler --version)
   print_info "Starting as dask scheduler:${scheduler_version}..."
-  if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
+  if [ "${SC_BOOT_MODE}" = "debug" ]; then
     exec watchmedo auto-restart \
       --recursive \
       --pattern="*.py;*/src/*" \
@@ -156,7 +156,7 @@ else
   # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
   print_info "Starting as a dask worker "${DASK_WORKER_VERSION}" -> "${DASK_SCHEDULER_URL}" ..."
   print_info "Worker resources set as: "$resources""
-  if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
+  if [ "${SC_BOOT_MODE}" = "debug" ]; then
     exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
       dask worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \

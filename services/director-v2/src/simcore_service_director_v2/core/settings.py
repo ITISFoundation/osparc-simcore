@@ -154,6 +154,8 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
+    DIRECTOR_V2_REMOTE_DEBUGGING_PORT: PortInt | None
+
     # extras
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
     SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
@@ -176,9 +178,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="forwarded to sidecars which use nodeports",
     )
 
-    # ptvsd settings
-    DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = PortInt(3000)
-
+    # debug settings
     CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
 
     # App modules settings ---------------------
