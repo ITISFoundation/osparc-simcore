@@ -74,13 +74,17 @@ def test_error_with_constructor():
         msg_template = "Wrong value {value}"
 
         # handy e.g. autocompletion
-        def __init__(self, my_value: int = 42):
+        def __init__(self, *, my_value: int = 42, **extra):
+            super().__init__(**extra)
             self.value = my_value
 
-    error = MyError(my_value=33)
+    error = MyError(my_value=33, something_else="yes")
     assert error.value == 33
     assert str(error) == "Wrong value 33"
     assert not hasattr(error, "my_value")
+
+    # the autocompletion does not see this
+    assert error.something_else == "yes"
 
 
 @pytest.mark.parametrize(
