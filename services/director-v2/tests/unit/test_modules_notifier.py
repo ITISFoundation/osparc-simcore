@@ -76,19 +76,14 @@ def mock_env(
 
 
 @pytest.fixture
-async def app(mocker: MockerFixture, initialized_app: FastAPI) -> FastAPI:
-    return initialized_app
-
-
-@pytest.fixture
 async def socketio_server(
-    app: FastAPI,
+    initialized_app: FastAPI,
     socketio_server_factory: Callable[
         [RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]
     ],
 ) -> AsyncIterable[AsyncServer]:
     # Same configuration as simcore_service_webserver/socketio/server.py
-    settings: AppSettings = app.state.settings
+    settings: AppSettings = initialized_app.state.settings
     assert settings.DIRECTOR_V2_RABBITMQ
 
     async with socketio_server_factory(settings.DIRECTOR_V2_RABBITMQ) as server:
@@ -134,7 +129,7 @@ async def _assert_call_count(mock: AsyncMock, *, call_count: int) -> None:
 
 async def test_notifier_publish_message(
     socketio_server_events: dict[str, AsyncMock],
-    app: FastAPI,
+    initialized_app: FastAPI,
     user_id: UserID,
     node_id: NodeID,
     socketio_client_factory: Callable[
@@ -171,7 +166,9 @@ async def test_notifier_publish_message(
         ]
 
         # server publishes a message
-        await publish_shutdown_no_more_credits(app, user_id=user_id, node_id=node_id)
+        await publish_shutdown_no_more_credits(
+            initialized_app, user_id=user_id, node_id=node_id
+        )
 
         # check that all clients received it
         for on_no_more_credits_event in no_no_more_credits_events:
