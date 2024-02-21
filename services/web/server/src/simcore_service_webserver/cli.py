@@ -25,7 +25,7 @@ from .login import cli as login_cli
 
 # ptsvd cause issues with ProcessPoolExecutor
 # SEE: https://github.com/microsoft/ptvsd/issues/1443
-if os.environ.get("SC_BOOT_MODE") == "debug-ptvsd":
+if os.environ.get("SC_BOOT_MODE") == "debug":
     import multiprocessing
 
     multiprocessing.set_start_method("spawn", True)

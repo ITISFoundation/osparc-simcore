@@ -53,7 +53,7 @@ class SocketIOEvent:
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:
     data = json.loads(message.removeprefix("42"))
-    return SocketIOEvent(name=data[0], obj=json.loads(data[1]))
+    return SocketIOEvent(name=data[0], obj=data[1])
 
 
 def retrieve_project_state_from_decoded_message(event: SocketIOEvent) -> RunningState:

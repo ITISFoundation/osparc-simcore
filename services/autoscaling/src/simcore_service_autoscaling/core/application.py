@@ -1,7 +1,6 @@
 import logging
 
 from fastapi import FastAPI
-from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
@@ -22,13 +21,27 @@ from ..modules.docker import setup as setup_docker
 from ..modules.ec2 import setup as setup_ec2
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
-from ..modules.remote_debug import setup_remote_debugging
 from .settings import ApplicationSettings
+
+_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+_NOISY_LOGGERS = (
+    "aiobotocore",
+    "aio_pika",
+    "aiormq",
+    "botocore",
+)
 
 logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
+    # keep mostly quiet noisy loggers
+    quiet_level: int = max(
+        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+    )
+    for name in _NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(quiet_level)
+
     logger.info("app settings: %s", settings.json(indent=1))
 
     app = FastAPI(
@@ -48,8 +61,6 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     # PLUGINS SETUP
-    if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
-        setup_remote_debugging(app)
     setup_api_routes(app)
     setup_docker(app)
     setup_rabbitmq(app)
