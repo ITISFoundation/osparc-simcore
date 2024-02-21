@@ -325,6 +325,10 @@ class ProjectDBAPI(BaseProjectDB):
             field="last_change_date", direction=OrderDirection.DESC
         ),
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
+        assert (
+            order_by.field in projects.columns
+        ), "Guaranteed by ProjectListWithJsonStrParams"  # nosec
+
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
 
