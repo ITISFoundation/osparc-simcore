@@ -20,7 +20,7 @@ python -m ensurepip
 
 echo "INFO:" "$(pip --version)" "@" "$(command -v pip)"
 
-uv pip install --upgrade \
+pip install --upgrade \
   pip~=$PIP_VERSION \
   wheel \
   setuptools
