@@ -61,17 +61,19 @@ def get_service_published_port(
 
     services = [s for s in client.services.list() if str(s.name).endswith(service_name)]
     if not services:
-        raise RuntimeError(
+        msg = (
             f"Cannot find published port for service '{service_name}'."
             "Probably services still not started."
         )
+        raise RuntimeError(msg)
 
     service_ports = services[0].attrs["Endpoint"].get("Ports")
     if not service_ports:
-        raise RuntimeError(
+        msg = (
             f"Cannot find published port for service '{service_name}' in endpoint."
             "Probably services still not started."
         )
+        raise RuntimeError(msg)
 
     published_port = None
     msg = ", ".join(
@@ -89,7 +91,7 @@ def get_service_published_port(
 
     else:
         ports_to_look_for: list = (
-            [target_ports] if isinstance(target_ports, (int, str)) else target_ports
+            [target_ports] if isinstance(target_ports, int | str) else target_ports
         )
 
         for target_port in ports_to_look_for:
@@ -100,7 +102,8 @@ def get_service_published_port(
                     break
 
     if published_port is None:
-        raise RuntimeError(f"Cannot find published port for {target_ports}. Got {msg}")
+        msg = f"Cannot find published port for {target_ports}. Got {msg}"
+        raise RuntimeError(msg)
 
     return str(published_port)
 
@@ -161,7 +164,7 @@ def run_docker_compose_config(
     docker_compose_path = scripts_dir / "docker" / "docker-compose-config.bash"
     assert docker_compose_path.exists()
 
-    cmd = [f"{docker_compose_path}"] + global_options
+    cmd = [f"{docker_compose_path}", *global_options]
     print(" ".join(cmd))
 
     process_environment_variables = dict(os.environ)
