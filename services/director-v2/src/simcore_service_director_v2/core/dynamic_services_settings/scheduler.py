@@ -59,6 +59,14 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         description="Prometheus will scrape service placed on these networks",
     )
 
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: bool = Field(
+        default=True,
+        description=(
+            "when the message indicating there are no more credits left in a wallet "
+            "the director-v2 will shutdown the services via the help of the frontend"
+        ),
+    )
+
     #
     # TIMEOUTS AND RETRY dark worlds
     #
@@ -137,13 +145,5 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
             "temporarily disrupted if network between swarm nodes has "
             "issues. To avoid the sidecar being marked as failed, "
             "allow for some time to pass before declaring it failed."
-        ),
-    )
-
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: bool = Field(
-        default=True,
-        description=(
-            "when the message indicating there are no more credits left in a wallet "
-            "the director-v2 will shutdown the services via the help of the frontend"
         ),
     )
