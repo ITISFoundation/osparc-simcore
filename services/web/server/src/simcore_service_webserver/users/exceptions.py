@@ -26,3 +26,10 @@ class UserDefaultWalletNotFoundError(UsersBaseError):
 
     def __init__(self, uid: int | None = None):
         self.uid = uid
+
+
+class FrontendUserPreferenceIsNotDefinedError(UsersBaseError):
+    msg_template = "Provided {frontend_preference_name} not found"
+
+    def __init__(self, frontend_preference_name: str):
+        self.frontend_preference_name = frontend_preference_name
