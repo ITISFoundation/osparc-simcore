@@ -2,17 +2,15 @@
 
 from typing import Any
 
-from pydantic.errors import PydanticErrorMixin
+from ..errors import WebServerError
 
 
-class DirectorServiceError(PydanticErrorMixin, RuntimeError):
+class DirectorServiceError(WebServerError, RuntimeError):
     """Basic exception for errors raised by director-v2"""
 
     msg_template = "Unexpected error: director-v2 returned {status!r}, reason {reason!r} after calling {url!r}"
 
     def __init__(self, *, status: int, reason: str, **ctx: Any) -> None:
-        self.status = status
-        self.reason = reason
         super().__init__(status=status, reason=reason, **ctx)
 
 
