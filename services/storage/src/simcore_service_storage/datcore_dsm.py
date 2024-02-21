@@ -58,7 +58,32 @@ class DatCoreDataManager(BaseDataManager):
         )
 
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
-        raise NotImplementedError
+        api_token, api_secret = await self._get_datcore_tokens(user_id)
+
+        package_files = await datcore_adapter.get_package_files(
+            self.app, api_token, api_secret, file_id
+        )
+        assert (
+            len(package_files) == 0
+        ), "More than one file in package, this breaks the current assumption"
+        resp_data = package_files[0]["content"]
+
+        return FileMetaData.construct(
+            file_uuid=file_id,
+            location_id=DATCORE_ID,
+            location=DATCORE_STR,
+            bucket_name=resp_data["s3bucket"],
+            object_name=file_id,
+            file_name=resp_data["filename"],
+            file_id=file_id,
+            file_size=resp_data["size"],
+            created_at=resp_data["createdAt"],
+            last_modified=resp_data["updatedAt"],
+            project_id=None,
+            node_id=None,
+            user_id=user_id,
+            is_soft_link=False,
+        )
 
     async def create_file_upload_links(
         self,
