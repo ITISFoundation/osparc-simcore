@@ -21,7 +21,7 @@ import sys
 from contextlib import suppress
 from urllib.request import urlopen
 
-# Disabled if boots with debugger (e.g. debug, pdb-debug, debug-ptvsd, etc)
+# Disabled if boots with debugger (e.g. debug, pdb-debug, debug-ptvsd, debugpy, etc)
 SC_BOOT_MODE = os.environ.get("SC_BOOT_MODE", "")
 
 

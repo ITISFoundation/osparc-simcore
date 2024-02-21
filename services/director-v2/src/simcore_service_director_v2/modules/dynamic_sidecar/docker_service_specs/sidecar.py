@@ -295,7 +295,7 @@ def _get_ports(
                 # debugger port
                 {
                     "Protocol": "tcp",
-                    "TargetPort": app_settings.DIRECTOR_V2_REMOTE_DEBUG_PORT,
+                    "TargetPort": app_settings.DIRECTOR_V2_REMOTE_DEBUGGING_PORT,
                 }
             )
     return ports
