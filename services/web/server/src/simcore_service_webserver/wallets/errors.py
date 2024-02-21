@@ -3,10 +3,10 @@
 """
 
 
-from ..errors import WebServerError
+from ..errors import WebServerBaseError
 
 
-class WalletsValueError(WebServerError, ValueError):
+class WalletsValueError(WebServerBaseError, ValueError):
     ...
 
 

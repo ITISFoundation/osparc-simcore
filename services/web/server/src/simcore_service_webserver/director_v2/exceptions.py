@@ -2,10 +2,10 @@
 
 from typing import Any
 
-from ..errors import WebServerError
+from ..errors import WebServerBaseError
 
 
-class DirectorServiceError(WebServerError, RuntimeError):
+class DirectorServiceError(WebServerBaseError, RuntimeError):
     """Basic exception for errors raised by director-v2"""
 
     msg_template = "Unexpected error: director-v2 returned {status!r}, reason {reason!r} after calling {url!r}"

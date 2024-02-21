@@ -3,10 +3,10 @@
 """
 
 
-from ..errors import WebServerError
+from ..errors import WebServerBaseError
 
 
-class ProductError(WebServerError, ValueError):
+class ProductError(WebServerBaseError, ValueError):
     ...
 
 

@@ -1,9 +1,9 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
 
-from ..errors import WebServerError
+from ..errors import WebServerBaseError
 
 
-class GroupsError(WebServerError):
+class GroupsError(WebServerBaseError):
     msg_template = "{msg}"
 
     def __init__(self, msg: str = None):

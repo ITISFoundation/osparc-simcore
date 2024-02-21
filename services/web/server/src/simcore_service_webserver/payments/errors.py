@@ -7,7 +7,7 @@ from models_library.api_schemas_payments.errors import (
     PaymentServiceUnavailableError,
 )
 
-from ..errors import WebServerError
+from ..errors import WebServerBaseError
 
 __all__ = (
     "InvalidPaymentMethodError",
@@ -19,7 +19,7 @@ __all__ = (
 )
 
 
-class PaymentsPluginError(WebServerError, ValueError):
+class PaymentsPluginError(WebServerBaseError, ValueError):
     ...
 
 

@@ -3,13 +3,13 @@
 """
 
 
-from ..errors import WebServerError
+from ..errors import WebServerBaseError
 
 MSG_INVALID_INVITATION_URL = "Link seems corrupted or incomplete"
 MSG_INVITATION_ALREADY_USED = "This invitation was already used"
 
 
-class InvitationsError(WebServerError, ValueError):
+class InvitationsError(WebServerBaseError, ValueError):
     ...
 
 

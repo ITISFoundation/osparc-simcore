@@ -3,12 +3,12 @@ import logging
 from aiohttp import web_exceptions
 from servicelib.aiohttp import status
 
-from ..errors import WebServerError
+from ..errors import WebServerBaseError
 
 _logger = logging.getLogger(__name__)
 
 
-class ScicrunchError(WebServerError):
+class ScicrunchError(WebServerBaseError):
     msg_template = "{reason}"
 
 

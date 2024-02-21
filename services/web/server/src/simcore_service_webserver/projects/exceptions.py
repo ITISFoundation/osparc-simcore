@@ -5,10 +5,10 @@ import redis.exceptions
 from models_library.projects import ProjectID
 from models_library.users import UserID
 
-from ..errors import WebServerError
+from ..errors import WebServerBaseError
 
 
-class BaseProjectError(WebServerError):
+class BaseProjectError(WebServerBaseError):
     msg_template = "{msg}"
 
     def __init__(self, msg=None):
