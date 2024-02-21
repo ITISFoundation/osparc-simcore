@@ -6,7 +6,6 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
-  bash ci/helpers/ensure_python_pip.bash
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
@@ -30,7 +29,7 @@ typecheck() {
   popd
 }
 
-openapi-diff(){
+openapi-diff() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/api-server

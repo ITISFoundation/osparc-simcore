@@ -9,7 +9,6 @@ DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
 install() {
-  bash ci/helpers/ensure_python_pip.bash
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
