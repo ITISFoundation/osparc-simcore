@@ -186,6 +186,6 @@ async def test_get_payments_templates(
         names=set(email_templates.keys()), product=product_name
     )
 
-    assert templates == {
+    assert {t.name: t.content for t in templates} == {
         key: value["content"] for key, value in email_templates.items()
     }
