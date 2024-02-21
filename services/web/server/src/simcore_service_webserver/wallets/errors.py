@@ -3,10 +3,10 @@
 """
 
 
-from pydantic.errors import PydanticErrorMixin
+from ..errors import WebServerError
 
 
-class WalletsValueError(PydanticErrorMixin, ValueError):
+class WalletsValueError(WebServerError, ValueError):
     ...
 
 
