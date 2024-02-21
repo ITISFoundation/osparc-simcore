@@ -63,3 +63,17 @@ def test_error_msg_template_override():
     error = MyError(value=42)
     assert hasattr(error, "value")
     assert str(error) == f"Wrong value {error.value}"
+
+
+def test_error_with_constructor():
+    class MyError(OsparcErrorMixin, ValueError):
+        msg_template = "Wrong value {value}"
+
+        # handy e.g. autocompletion
+        def __init__(self, my_value: int = 42):
+            self.value = my_value
+
+    error = MyError(my_value=33)
+    assert error.value == 33
+    assert str(error) == "Wrong value 33"
+    assert not hasattr(error, "my_value")
