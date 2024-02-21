@@ -976,28 +976,37 @@ qx.Class.define("osparc.data.model.Node", {
       return true;
     },
 
-    requestStopNode: function() {
-      const preferencesSettings = osparc.Preferences.getInstance();
-      if (preferencesSettings.getConfirmStopNode()) {
-        const msg = this.tr("Do you really want Stop and Save the current state?");
-        const win = new osparc.ui.window.Confirmation(msg).set({
-          confirmText: this.tr("Stop")
-        });
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            const params = {
-              url: {
-                studyId: this.getStudy().getUuid(),
-                nodeId: this.getNodeId()
-              }
-            };
-            osparc.data.Resources.fetch("studies", "stopNode", params)
-              .then(() => this.stopDynamicService())
-              .catch(err => console.error(err));
+    requestStopNode: function(withConfirmationDialog=false) {
+      const self = this;
+      const stopService = function(){
+        const params = {
+          url: {
+            studyId: self.getStudy().getUuid(),
+            nodeId: self.getNodeId()
           }
-        }, this);
+        };
+        osparc.data.Resources.fetch("studies", "stopNode", params)
+          .then(() => self.stopDynamicService())
+          .catch(err => console.error(err));
+      };
+
+      if (withConfirmationDialog){
+        const preferencesSettings = osparc.Preferences.getInstance();
+        if (preferencesSettings.getConfirmStopNode()) {
+          const msg = this.tr("Do you really want Stop and Save the current state?");
+          const win = new osparc.ui.window.Confirmation(msg).set({
+            confirmText: this.tr("Stop")
+          });
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              stopService();
+            }
+          }, this);
+        }
+      }else{
+        stopService();
       }
     },
 
