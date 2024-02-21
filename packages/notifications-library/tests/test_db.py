@@ -5,21 +5,19 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
 import sqlalchemy as sa
-from fastapi import FastAPI
 from models_library.users import GroupID, UserID
 from notification_library._db import TemplatesRepo
 from notification_library.payments import _PRODUCT_NOTIFICATIONS_TEMPLATES
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
+from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -27,35 +25,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
-
-
-@pytest.fixture
-def app_environment(
-    monkeypatch: pytest.MonkeyPatch,
-    app_environment: EnvVarsDict,
-    postgres_env_vars_dict: EnvVarsDict,
-    with_disabled_rabbitmq_and_rpc: None,
-    wait_for_postgres_ready_and_db_migrated: None,
-) -> EnvVarsDict:
-    # set environs
-    monkeypatch.delenv("PAYMENTS_POSTGRES", raising=False)
-
-    return setenvs_from_dict(
-        monkeypatch,
-        {
-            **app_environment,
-            **postgres_env_vars_dict,
-            "POSTGRES_CLIENT_NAME": "payments-service-pg-client",
-        },
-    )
-
-
-@pytest.fixture
-def get_engine(app_environment: EnvVarsDict):
-    def _():
-        raise NotImplementedError
-
-    return _
 
 
 async def _insert_and_get_row(
@@ -75,23 +44,23 @@ async def _delete_row(conn, table, pk_col: sa.Column, pk_value: Any):
 
 @pytest.fixture
 async def user(
-    get_engine: Callable,
+    sqlalchemy_async_engine: AsyncEngine,
     user: dict[str, Any],
     user_id: UserID,
 ) -> AsyncIterator[dict[str, Any]]:
-    """
-    injects a user in db
+    """Overrides pytest_simcore.faker_users_data.user
+    and injects a user in db
     """
     assert user_id == user["id"]
     pk_args = users.c.id, user["id"]
 
     # NOTE: creation of primary group and setting `groupid`` is automatically triggered after creation of user by postgres
-    async with get_engine().begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         row = await _insert_and_get_row(conn, users, user, *pk_args)
 
     yield dict(row)
 
-    async with get_engine().begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await _delete_row(conn, users, *pk_args)
 
 
@@ -103,58 +72,60 @@ def user_primary_group_id(user: dict[str, Any]) -> GroupID:
 
 @pytest.fixture
 async def product(
-    get_engine: Callable, product: dict[str, Any]
+    sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
 ) -> AsyncIterator[dict[str, Any]]:
-    """
-    injects product in db
+    """Overrides pytest_simcore.faker_products_data.product
+    and injects product in db
     """
     # NOTE: this fixture ignores products' group-id but it is fine for this test context
     assert product["group_id"] is None
     pk_args = products.c.name, product["name"]
 
-    async with get_engine().begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         row = await _insert_and_get_row(conn, products, product, *pk_args)
 
     yield dict(row)
 
-    async with get_engine().begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await _delete_row(conn, products, *pk_args)
 
 
 @pytest.fixture
 async def successful_transaction(
-    get_engine: Callable, successful_transaction: dict[str, Any]
+    sqlalchemy_async_engine: AsyncEngine, successful_transaction: dict[str, Any]
 ) -> AsyncIterator[dict[str, Any]]:
-    """
-    injects transaction in db
+    """Overrides pytest_simcore.faker_payments_data.successful_transaction
+    and injects transaction in db
     """
     pk_args = payments_transactions.c.payment_id, successful_transaction["payment_id"]
 
-    async with get_engine().begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         row = await _insert_and_get_row(
             conn, payments_transactions, successful_transaction, *pk_args
         )
 
     yield dict(row)
 
-    async with get_engine().begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await _delete_row(conn, payments_transactions, *pk_args)
 
 
-async def test_payments_user_repo(
-    get_engine: Callable, user_id: UserID, user_primary_group_id: GroupID
+async def test_templates_repo(
+    sqlalchemy_async_engine: AsyncEngine,
+    user_id: UserID,
+    user_primary_group_id: GroupID,
 ):
-    repo = TemplatesRepo(get_engine())
+    repo = TemplatesRepo(sqlalchemy_async_engine)
     assert await repo.get_primary_group_id(user_id) == user_primary_group_id
 
 
 async def test_get_notification_data(
-    get_engine: Callable,
+    sqlalchemy_async_engine: AsyncEngine,
     user: dict[str, Any],
     product: dict[str, Any],
     successful_transaction: dict[str, Any],
 ):
-    repo = TemplatesRepo(get_engine())
+    repo = TemplatesRepo(sqlalchemy_async_engine)
 
     # check once
     data = await repo.get_notification_data(
@@ -172,10 +143,12 @@ async def test_get_notification_data(
 
 
 @pytest.fixture
-async def email_templates(app: FastAPI) -> AsyncIterator[dict[str, Any]]:
+async def email_templates(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[dict[str, Any]]:
     all_templates = {**_PRODUCT_NOTIFICATIONS_TEMPLATES, "other.html": "Fake template"}
 
-    async with get_engine().begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         pk_to_row = {
             pk_value: await _insert_and_get_row(
                 conn,
@@ -189,7 +162,7 @@ async def email_templates(app: FastAPI) -> AsyncIterator[dict[str, Any]]:
 
     yield pk_to_row
 
-    async with get_engine().begin() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         for pk_value in pk_to_row:
             await _delete_row(
                 conn, payments_transactions, jinja2_templates.c.name, pk_value
@@ -197,10 +170,10 @@ async def email_templates(app: FastAPI) -> AsyncIterator[dict[str, Any]]:
 
 
 async def test_get_payments_templates(
-    get_engine: Callable,
+    sqlalchemy_async_engine: AsyncEngine,
     email_templates: dict[str, Any],
 ):
-    repo = TemplatesRepo(get_engine())
+    repo = TemplatesRepo(sqlalchemy_async_engine)
 
     templates = await repo.get_email_templates(
         names=set(_PRODUCT_NOTIFICATIONS_TEMPLATES.keys())

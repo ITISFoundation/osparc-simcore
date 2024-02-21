@@ -15,8 +15,10 @@ from pytest_simcore.helpers.utils_envs import load_dotenv
 pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.repository_paths",
+    "pytest_simcore.faker_payments_data",
     "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_users_data",
+    "pytest_simcore.docker_compose",
 ]
 
 

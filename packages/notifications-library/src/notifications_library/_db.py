@@ -30,7 +30,7 @@ class TemplatesRepo:
         msg = f"{user_id=} not found"
         raise ValueError(msg)
 
-    async def get_notification_data(self, user_id: UserID, payment_id: PaymentID):
+    async def get_notify_payments_data(self, user_id: UserID, payment_id: PaymentID):
         """Retrives data that will be injected in a notification for the user on this payment"""
         if row := await self._get(
             sa.select(
