@@ -110,9 +110,6 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    # DEBUGGING
-    API_SERVER_REMOTE_DEBUG_PORT: int = 3000
-
     @validator("LOG_LEVEL", pre=True)
     @classmethod
     def _validate_loglevel(cls, value) -> str:
