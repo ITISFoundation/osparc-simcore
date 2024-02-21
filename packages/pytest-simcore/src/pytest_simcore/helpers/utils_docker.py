@@ -9,7 +9,6 @@ from typing import Any
 
 import docker
 import yaml
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
@@ -114,7 +113,6 @@ def run_docker_compose_config(
     project_dir: Path,
     env_file_path: Path,
     destination_path: Path | None = None,
-    additional_envs: EnvVarsDict | None = None,
 ) -> dict:
     """Runs docker compose config to validate and resolve a compose file configuration
 
@@ -150,7 +148,7 @@ def run_docker_compose_config(
     ]
     # https://docs.docker.com/compose/environment-variables/#using-the---env-file--option
     global_options += [
-        "-e",
+        "--env-file",
         str(env_file_path),  # Custom environment variables
     ]
 
@@ -164,20 +162,16 @@ def run_docker_compose_config(
     docker_compose_path = scripts_dir / "docker" / "docker-compose-config.bash"
     assert docker_compose_path.exists()
 
-    cmd = [f"{docker_compose_path}", *global_options]
-    print(" ".join(cmd))
-
-    process_environment_variables = dict(os.environ)
-    if additional_envs:
-        process_environment_variables |= additional_envs
+    args = [f"{docker_compose_path}", *global_options]
+    print(" ".join(args))
 
     process = subprocess.run(
-        cmd,
+        args,
         shell=False,
-        check=True,
         cwd=project_dir,
         capture_output=True,
-        env=process_environment_variables,
+        check=True,
+        env=None,  # NOTE: Do not use since since we pass all necessary env vars via --env-file option of  docker compose
     )
 
     compose_file_str = process.stdout.decode("utf-8")
