@@ -93,7 +93,6 @@ RUN --mount=type=cache,id=pip36,mode=0755,target=/root/.cache/pip \
 RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/director,target=/build/services/director,rw \
-  --mount=type=cache,id=pip36,mode=0755,target=/root/.cache/pip \
   pip install \
   -r /build/services/director/requirements/_base.txt
 
@@ -116,7 +115,6 @@ ENV SC_BUILD_TARGET=prod-only-deps
 RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/director,target=/build/services/director,rw \
-  --mount=type=cache,id=pip36,mode=0755,target=/root/.cache/pip \
   pip install -r requirements/prod.txt
 
 # --------------------------Production stage -------------------
