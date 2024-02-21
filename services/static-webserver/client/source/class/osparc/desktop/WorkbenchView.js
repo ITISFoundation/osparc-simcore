@@ -698,8 +698,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       // callback for events
       if (!socket.slotExists("event")) {
-        socket.on("event", ({ action, "node_id": nodeId }) => {
-          const data = JSON.parse(jsonString);
+        socket.on("event", data => {
+          const { action, "node_id": nodeId } = data
           if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
             // Filtering out logs from other studies
             return;
