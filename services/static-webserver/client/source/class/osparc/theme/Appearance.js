@@ -19,6 +19,7 @@ qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.common.Appearance,
 
   appearances: {
+    "material-button-invalid": {},
     "pb-list": {
       include: "list",
       alias:   "list",
@@ -595,6 +596,37 @@ qx.Theme.define("osparc.theme.Appearance", {
           padding: 5,
           textColor: "fab_text",
           backgroundColor: "fab-background"
+        };
+        if (states.hovered) {
+          style.decorator = "form-button-hovered";
+        }
+        if (states.focused) {
+          style.decorator = "form-button-focused";
+        }
+        if (states.active) {
+          style.decorator = "form-button-active";
+        }
+        if (states.disabled) {
+          style.cursor = "not-allowed";
+          style.decorator = "form-button-disabled";
+        }
+        if (states.checked || states.selected) {
+          style.decorator = "form-button-checked";
+        }
+        return style;
+      }
+    },
+
+    "thumbnail": {
+      include: "form-button",
+      style: function(states) {
+        const style = {
+          decorator: "thumbnail",
+          cursor: "pointer",
+          padding: 5,
+          textColor: "fab_text",
+          backgroundColor: "fab-background",
+          center: true
         };
         if (states.hovered) {
           style.decorator = "form-button-hovered";
