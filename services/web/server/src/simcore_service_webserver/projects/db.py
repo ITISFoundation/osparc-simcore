@@ -370,9 +370,9 @@ class ProjectDBAPI(BaseProjectDB):
                 )
 
             if order_by.direction == OrderDirection.ASC:
-                query = query.order_by(sa.asc(order_by.field))
+                query = query.order_by(sa.asc(getattr(projects.c, order_by.field)))
             else:
-                query = query.order_by(sa.desc(order_by.field))
+                query = query.order_by(sa.desc(getattr(projects.c, order_by.field)))
 
             total_number_of_projects = await conn.scalar(
                 query.with_only_columns(func.count()).order_by(None)
