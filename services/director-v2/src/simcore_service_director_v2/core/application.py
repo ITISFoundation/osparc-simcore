@@ -2,7 +2,6 @@ import logging
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
-from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -31,7 +30,6 @@ from ..modules import (
     notifier,
     osparc_variables_substitutions,
     rabbitmq,
-    remote_debug,
     resource_usage_tracker_client,
     socketio,
     storage,
@@ -140,9 +138,6 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     assert settings  # nosec
 
     osparc_variables_substitutions.setup(app)
-
-    if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
-        remote_debug.setup(app)
 
     if settings.DIRECTOR_V0.DIRECTOR_V0_ENABLED:
         director_v0.setup(app, settings.DIRECTOR_V0)

@@ -2,10 +2,8 @@ import logging
 from typing import Callable
 
 from fastapi import FastAPI
-from models_library.basic_types import BootModeEnum
 
 from .._meta import PROJECT_NAME, __version__
-from ..modules.remote_debug import setup_remote_debugging
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +32,9 @@ def on_shutdown() -> None:
     print(f"{msg:=^100}", flush=True)
 
 
-def create_start_app_handler(app: FastAPI) -> Callable:
+def create_start_app_handler(_app: FastAPI) -> Callable:
     async def start_app() -> None:
         logger.info("Application started")
-
-        # setup connection to remote debugger (if applies)
-        setup_remote_debugging(
-            force_enabled=app.state.settings.SC_BOOT_MODE == BootModeEnum.DEBUG
-        )
 
     return start_app
 

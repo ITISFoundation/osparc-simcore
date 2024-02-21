@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseSettings, Field, NonNegativeInt, PositiveInt
 
@@ -12,7 +11,7 @@ class BootModeEnum(str, Enum):
 
     DEFAULT = "default"
     LOCAL = "local-development"
-    DEBUG = "debug-ptvsd"
+    DEBUG = "debug"
     PRODUCTION = "production"
     DEVELOPMENT = "development"
 
@@ -21,7 +20,7 @@ class AppSettings(BaseSettings):
     COMPUTATIONAL_SIDECAR_IMAGE: str = Field(
         ..., description="The computational sidecar image in use"
     )
-    COMPUTATIONAL_SIDECAR_LOG_LEVEL: Optional[str] = Field(
+    COMPUTATIONAL_SIDECAR_LOG_LEVEL: str | None = Field(
         default="WARNING",
         description="The computational sidecar log level",
         env=[
@@ -45,7 +44,7 @@ class AppSettings(BaseSettings):
         description="Amount of RAM in bytes, the sidecar should not advertise/use",
     )
 
-    COMPUTATION_SIDECAR_DASK_NTHREADS: Optional[PositiveInt] = Field(
+    COMPUTATION_SIDECAR_DASK_NTHREADS: PositiveInt | None = Field(
         default=None,
         description="Allows to override the default number of threads used by the dask-sidecars",
     )
@@ -59,7 +58,7 @@ class AppSettings(BaseSettings):
         description="The hostname of the gateway server in the GATEWAY_WORKERS_NETWORK network",
     )
 
-    SC_BOOT_MODE: Optional[BootModeEnum]
+    SC_BOOT_MODE: BootModeEnum | None
 
     GATEWAY_SERVER_ONE_WORKER_PER_NODE: bool = Field(
         default=True,
