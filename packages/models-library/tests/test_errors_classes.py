@@ -4,11 +4,11 @@
 # pylint: disable=unused-variable
 
 
-from models_library.errors_classes import OsparcBaseError
+from models_library.errors_classes import OsparcErrorMixin
 
 
 def test_get_full_class_name():
-    class A(OsparcBaseError):
+    class A(OsparcErrorMixin):
         ...
 
     class B1(A):
@@ -32,7 +32,7 @@ def test_get_full_class_name():
 
 
 def test_error_codes_and_msg_template():
-    class MyBaseError(OsparcBaseError):
+    class MyBaseError(OsparcErrorMixin, Exception):
         ...
 
     class MyValueError(MyBaseError, ValueError):
@@ -51,3 +51,15 @@ def test_error_codes_and_msg_template():
 
     assert error.code == "i_want_this"
     assert f"{error}" == "Wrong type int"
+
+
+def test_error_msg_template_override():
+    class MyError(OsparcErrorMixin, Exception):
+        msg_template = "Wrong value {value}"
+
+    error_override_msg = MyError(msg_template="I want this message")
+    assert str(error_override_msg) == "I want this message"
+
+    error = MyError(value=42)
+    assert hasattr(error, "value")
+    assert str(error) == f"Wrong value {error.value}"

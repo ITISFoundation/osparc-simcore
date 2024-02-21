@@ -1,7 +1,7 @@
 from pydantic.errors import PydanticErrorMixin
 
 
-class OsparcBaseError(PydanticErrorMixin):
+class OsparcErrorMixin(PydanticErrorMixin):
     """THE base class used for any custom exception in this repo"""
 
     @classmethod
@@ -12,7 +12,7 @@ class OsparcBaseError(PydanticErrorMixin):
             if c.__name__
             not in (
                 "PydanticErrorMixin",
-                "OsparcBaseError",
+                "OsparcErrorMixin",
                 "Exception",
                 "BaseException",
             )
