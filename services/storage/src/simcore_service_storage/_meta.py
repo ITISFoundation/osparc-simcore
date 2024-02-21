@@ -1,10 +1,12 @@
 """ Current version of the simcore_service_storage application and its API
 
 """
-import pkg_resources
+
+from importlib.metadata import version
+
 from semantic_version import Version
 
-__version__: str = pkg_resources.get_distribution("simcore-service-storage").version
+__version__: str = version("simcore-service-storage")
 
 version = Version(__version__)
 
