@@ -28,10 +28,9 @@ def httpx_exception_handler(cls):
 
         async def _method(self, method, *args, **kwargs):
             try:
-                result = await method(*args, **kwargs)
+                return await method(*args, **kwargs)
             except HTTPError as exc:
                 await _handle_httpx_client_exception(exc)
-            return result
 
     return Wrapper
 
