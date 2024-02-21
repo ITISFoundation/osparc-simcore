@@ -2,7 +2,10 @@ from pydantic.errors import PydanticErrorMixin
 
 
 class OsparcErrorMixin(PydanticErrorMixin):
-    """THE base class used for any custom exception in this repo"""
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "code"):
+            cls.code = cls._get_full_class_name()
+        return super().__new__(cls, *args, **kwargs)
 
     @classmethod
     def _get_full_class_name(cls) -> str:
@@ -18,8 +21,3 @@ class OsparcErrorMixin(PydanticErrorMixin):
             )
         ]
         return ".".join(reversed(relevant_classes))
-
-    def __new__(cls, *args, **kwargs):
-        if not hasattr(cls, "code"):
-            cls.code = cls._get_full_class_name()
-        return super().__new__(cls, *args, **kwargs)

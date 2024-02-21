@@ -4,6 +4,10 @@
 # pylint: disable=unused-variable
 
 
+from datetime import datetime
+from typing import Any
+
+import pytest
 from models_library.errors_classes import OsparcErrorMixin
 
 
@@ -77,3 +81,32 @@ def test_error_with_constructor():
     assert error.value == 33
     assert str(error) == "Wrong value 33"
     assert not hasattr(error, "my_value")
+
+
+@pytest.mark.parametrize(
+    "str_format,ctx,expected",
+    [
+        pytest.param("{value:10}", {"value": "Python"}, "Python    ", id="left-align"),
+        pytest.param(
+            "{value:>10}", {"value": "Python"}, "    Python", id="right-align"
+        ),
+        pytest.param(
+            "{value:^10}", {"value": "Python"}, "  Python  ", id="center-align"
+        ),
+        pytest.param("{v:.2f}", {"v": 3.1415926}, "3.14", id="decimals"),
+        pytest.param(
+            "{dt:%Y-%m-%d %H:%M}",
+            {"dt": datetime(2020, 5, 17, 18, 45)},
+            "2020-05-17 18:45",
+            id="datetime",
+        ),
+    ],
+)
+def test_mst_template_with_different_formats(
+    str_format: str, ctx: dict[str, Any], expected: str
+):
+    class MyError(OsparcErrorMixin, ValueError):
+        msg_template = str_format
+
+    error = MyError(**ctx)
+    assert str(error) == expected
