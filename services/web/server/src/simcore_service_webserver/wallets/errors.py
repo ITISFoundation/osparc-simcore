@@ -1,8 +1,3 @@
-"""
-    API plugin errors
-"""
-
-
 from ..errors import WebServerBaseError
 
 
