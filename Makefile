@@ -459,13 +459,13 @@ push-version: tag-version
 				printf "\033[34mcurl -LsSf https://astral.sh/uv/install.sh | sh\033[0m\n"; \
 				exit 1; \
 		else \
-				printf "\033[32m'uv' is installed.\033[0m\n"; \
+				printf "\033[32m'uv' is installed. Version: \033[0m"; \
+				uv --version; \
 		fi
 
 
 .venv: .check-uv-installed
-	@python3 --version
-	uv venv $@
+	@uv venv $@
 	## upgrading tools to latest version in $(shell python3 --version)
 	@uv pip --quiet install --upgrade \
 		pip~=24.0 \
@@ -474,7 +474,7 @@ push-version: tag-version
 	@$@/bin/pip list --verbose
 
 devenv: .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
-	uv pip --quiet install -r requirements/devenv.txt
+	@uv pip --quiet install -r requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
 	@echo "To activate the venv, execute 'source .venv/bin/activate'"
