@@ -50,6 +50,11 @@ from .ec2 import get_ec2_client
 _logger = logging.getLogger(__name__)
 
 
+def _node_not_ready(node: Node) -> bool:
+    assert node.Status  # nosec
+    return bool(node.Status.State != NodeState.ready)
+
+
 async def _analyze_current_cluster(
     app: FastAPI, auto_scaling_mode: BaseAutoscaling
 ) -> Cluster:
@@ -75,10 +80,7 @@ async def _analyze_current_cluster(
         docker_nodes, existing_ec2_instances
     )
 
-    def _node_not_ready(node: Node) -> bool:
-        assert node.Status  # nosec
-        return bool(node.Status.State != NodeState.ready)
-
+    # analyse attached ec2s
     active_nodes, pending_nodes, all_drained_nodes = [], [], []
     for instance in attached_ec2s:
         if await auto_scaling_mode.is_instance_active(app, instance):
@@ -110,9 +112,19 @@ async def _analyze_current_cluster(
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
     )
-    _logger.debug(
+    cluster_state = jsonable_encoder(
+        cluster,
+        include={
+            "active_nodes": True,
+            "pending_nodes": True,
+            "drained_nodes": "available_resources",
+            "reserve_drained_nodes": True,
+            "pending_ec2s": "ec2_instance",
+        },
+    )
+    _logger.warning(
         "current state: %s",
-        f"{json.dumps(jsonable_encoder(cluster, include={'active_nodes', 'pending_nodes', 'drained_nodes', 'reserve_drained_nodes', 'pending_ec2s'}), indent=2)}",
+        f"{json.dumps(cluster_state, indent=2)}",
     )
     return cluster
 
@@ -152,14 +164,14 @@ async def _try_attach_pending_ec2s(
             if new_node := await utils_docker.find_node_with_name(
                 get_docker_client(app), node_host_name
             ):
-                # it is attached, let's label it, but keep it as drained
-                new_node = await utils_docker.tag_node(
+                # it is attached, let's label it
+                new_node = await utils_docker.attach_node(
+                    app_settings,
                     get_docker_client(app),
                     new_node,
                     tags=auto_scaling_mode.get_new_node_docker_tags(
                         app, instance_data.ec2_instance
                     ),
-                    available=False,
                 )
                 new_found_instances.append(
                     AssociatedInstance(
@@ -221,9 +233,11 @@ async def _activate_and_notify(
     auto_scaling_mode: BaseAutoscaling,
     drained_node: AssociatedInstance,
 ) -> None:
+    app_settings = get_application_settings(app)
+    docker_client = get_docker_client(app)
     await asyncio.gather(
-        utils_docker.set_node_availability(
-            get_docker_client(app), drained_node.node, available=True
+        utils_docker.set_node_osparc_ready(
+            app_settings, docker_client, drained_node.node, ready=True
         ),
         auto_scaling_mode.log_message_from_tasks(
             app,
@@ -682,6 +696,7 @@ async def _scale_up_cluster(
 
 
 async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
+    app_settings = get_application_settings(app)
     docker_client = get_docker_client(app)
     active_empty_instances: list[AssociatedInstance] = []
     active_non_empty_instances: list[AssociatedInstance] = []
@@ -700,10 +715,11 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     # drain this empty nodes
     updated_nodes: list[Node] = await asyncio.gather(
         *(
-            utils_docker.set_node_availability(
+            utils_docker.set_node_osparc_ready(
+                app_settings,
                 docker_client,
                 node.node,
-                available=False,
+                ready=False,
             )
             for node in active_empty_instances
         )
@@ -738,11 +754,11 @@ async def _find_terminateable_instances(
     terminateable_nodes: list[AssociatedInstance] = []
 
     for instance in cluster.drained_nodes:
-        assert instance.node.UpdatedAt  # nosec
-        node_last_updated = arrow.get(instance.node.UpdatedAt).datetime
+        node_last_updated = utils_docker.get_node_last_readyness_update(instance.node)
         elapsed_time_since_drained = (
             datetime.datetime.now(datetime.timezone.utc) - node_last_updated
         )
+        _logger.warning("%s", f"{node_last_updated=}, {elapsed_time_since_drained=}")
         if (
             elapsed_time_since_drained
             > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION

@@ -52,7 +52,7 @@ async def test_payment_method_worfklow(
     assert settings.PAYMENTS_FAKE_COMPLETION is False
 
     send_message = mocker.patch(
-        "simcore_service_webserver.payments._socketio.send_messages_to_user",
+        "simcore_service_webserver.payments._socketio.send_message_to_user",
         autospec=True,
     )
 
@@ -342,7 +342,7 @@ async def test_one_time_payment_with_payment_method(
     assert client.app
 
     send_message = mocker.patch(
-        "simcore_service_webserver.payments._socketio.send_messages_to_user",
+        "simcore_service_webserver.payments._socketio.send_message_to_user",
         autospec=True,
     )
     mock_rut_add_credits_to_wallet = mocker.patch(

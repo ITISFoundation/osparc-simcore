@@ -48,7 +48,7 @@ services:
     environment:
       - MINIO_ROOT_USER=${S3_ACCESS_KEY:?access_key_required}
       - MINIO_ROOT_PASSWORD=${S3_SECRET_KEY:?secret_key_required}
-      - MINIO_VOLUMES="/data"
+      - MINIO_VOLUMES=/data
     ports:
       - "9001:9000"
       - "9090:9090"
