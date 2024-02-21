@@ -296,7 +296,7 @@ def _handle_scicrunch_exceptions(handler: Handler):
             return await handler(request)
 
         except InvalidRRIDError as err:
-            raise web.HTTPBadRequest(reason=err.reason) from err
+            raise web.HTTPBadRequest(reason=f"{err}") from err
 
         except ScicrunchError as err:
             user_msg = "Cannot get RRID since scicrunch.org service is not reachable."

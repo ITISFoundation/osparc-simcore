@@ -117,7 +117,8 @@ class DefaultPricingUnitNotFoundError(BaseProjectError):
         "Default pricing unit not found for node {node_uuid} in project {project_uuid}"
     )
 
-    def __init__(self, project_uuid: str, node_uuid: str):
+    def __init__(self, *, project_uuid: str, node_uuid: str, **extras):
+        super().__init__(**extras)
         self.node_uuid = node_uuid
         self.project_uuid = project_uuid
 
