@@ -169,6 +169,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
           movable: false
         });
         buyView.addListener("completed", () => win.close());
+        win.addListener("close", () => buyView.cancelPayment())
       }
     },
 
