@@ -978,7 +978,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     requestStopNode: function(withConfirmationDialog=false) {
       const self = this;
-      const stopService = function(){
+      const stopService = function() {
         const params = {
           url: {
             studyId: self.getStudy().getUuid(),
@@ -990,7 +990,7 @@ qx.Class.define("osparc.data.model.Node", {
           .catch(err => console.error(err));
       };
 
-      if (withConfirmationDialog){
+      if (withConfirmationDialog) {
         const preferencesSettings = osparc.Preferences.getInstance();
         if (preferencesSettings.getConfirmStopNode()) {
           const msg = this.tr("Do you really want Stop and Save the current state?");
@@ -1005,7 +1005,7 @@ qx.Class.define("osparc.data.model.Node", {
             }
           }, this);
         }
-      }else{
+      } else {
         stopService();
       }
     },
