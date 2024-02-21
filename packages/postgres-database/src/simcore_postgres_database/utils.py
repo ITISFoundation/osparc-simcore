@@ -25,7 +25,7 @@ def build_url(
         user=user,
         password=password,
         host=host,
-        port=port,
+        port=int(port),
         path=f"/{database}",
     )
     # _kwargs allows expand on larger dicts without raising exceptions
