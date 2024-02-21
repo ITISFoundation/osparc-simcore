@@ -1,5 +1,5 @@
-from models_library.errors_classes import OsparcBaseError
+from models_library.errors_classes import OsparcErrorMixin
 
 
-class WebServerError(OsparcBaseError):
+class WebServerError(OsparcErrorMixin, Exception):
     ...
