@@ -11,9 +11,7 @@ def test_settings_with_mock_environment(mock_environment: EnvVarsDict):
 
 
 def test_settings_with_envdevel_file(mock_environment_with_envdevel: EnvVarsDict):
-    settings = ApplicationSettings.create_from_envs()
-    assert settings
-    assert settings.NODE_PORTS_STORAGE_AUTH is None
+    assert ApplicationSettings.create_from_envs()
 
 
 @pytest.mark.parametrize(
@@ -42,3 +40,19 @@ def test_settings_with_node_ports_storage_auth(
     )
     # json serializes password to plain text
     assert "passwd" in settings.NODE_PORTS_STORAGE_AUTH.json()
+
+
+@pytest.mark.parametrize(
+    "envs",
+    [
+        {},
+        {"NODE_PORTS_STORAGE_AUTH": "null"},
+    ],
+)
+def test_settings_with_node_ports_storage_auth_as_missing(
+    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, envs: dict[str, str]
+):
+    setenvs_from_dict(monkeypatch, envs)
+
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.NODE_PORTS_STORAGE_AUTH is None

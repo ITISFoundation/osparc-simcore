@@ -133,7 +133,7 @@ def _get_environment_variables(
         "NODE_PORTS_STORAGE_AUTH": (
             app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.json()
             if app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
-            else "None"
+            else "null"
         ),
     }
 
