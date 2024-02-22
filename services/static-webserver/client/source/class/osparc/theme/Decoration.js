@@ -20,6 +20,7 @@ qx.Theme.define("osparc.theme.Decoration", {
   extend: osparc.theme.common.Decoration,
 
   decorations: {
+    "material-button-invalid": {},
     "material-button": {
       style: {
         radius: 4,
@@ -552,6 +553,26 @@ qx.Theme.define("osparc.theme.Decoration", {
         width: 1,
         color: "background-selected-dark",
         backgroundColor: "background-selected-dark"
+      }
+    },
+
+    "thumbnail": {
+      include: "material-button",
+      style: {
+        style: "solid",
+        width: 1,
+        color: "box-shadow",
+        backgroundColor: "fab-background",
+      }
+    },
+
+    "thumbnail-selected": {
+      include: "thumbnail",
+      style: {
+        style: "solid",
+        width: 1,
+        color: "background-selected-dark",
+        backgroundColor: "background-selected"
       }
     },
 

@@ -78,8 +78,7 @@ qx.Class.define("osparc.editor.ThumbnailEditor", {
       switch (id) {
         case "url-field":
           control = new qx.ui.form.TextField().set({
-            font: "text-14",
-            backgroundColor: "background-main",
+            appearance: "form-input",
             placeholder: this.tr("url")
           });
           this.bind("url", control, "value");
@@ -87,7 +86,7 @@ qx.Class.define("osparc.editor.ThumbnailEditor", {
           break;
         case "thumbnails-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          const label = new qx.ui.basic.Label(this.tr("or pick one from the list of services:"));
+          const label = new qx.ui.basic.Label(this.tr("or pick one from the list below:"));
           control.add(label);
           this._add(control, {
             flex: 1
@@ -96,6 +95,10 @@ qx.Class.define("osparc.editor.ThumbnailEditor", {
         }
         case "scroll-thumbnails": {
           control = new osparc.editor.ThumbnailSuggestions();
+          control.set({
+            padding: 2,
+            backgroundColor: "transparent"
+          })
           const thumbnailsLayout = this.getChildControl("thumbnails-layout");
           thumbnailsLayout.add(control);
           break;
@@ -109,6 +112,9 @@ qx.Class.define("osparc.editor.ThumbnailEditor", {
         case "cancel-btn": {
           const buttons = this.getChildControl("buttons-layout");
           control = new qx.ui.form.Button(this.tr("Cancel"));
+          control.set({
+            appearance: "form-button-text"
+          });
           control.addListener("execute", () => this.fireEvent("cancel"), this);
           buttons.add(control);
           break;
@@ -116,6 +122,9 @@ qx.Class.define("osparc.editor.ThumbnailEditor", {
         case "save-btn": {
           const buttons = this.getChildControl("buttons-layout");
           control = new qx.ui.form.Button(this.tr("Save"));
+          control.set({
+            appearance: "form-button"
+          });
           control.addListener("execute", () => {
             const urlField = this.getChildControl("url-field");
             const validUrl = this.self().sanitizeUrl(urlField.getValue());
@@ -136,7 +145,7 @@ qx.Class.define("osparc.editor.ThumbnailEditor", {
       thumbnailSuggestions.setSuggestions(suggestions);
       thumbnailSuggestions.addListener("thumbnailTapped", e => {
         const thumbnailData = e.getData();
-        this.setUrl(thumbnailData["source"]);
+        this.setUrl(thumbnailData.source);
       });
       this.getChildControl("thumbnails-layout").setVisibility(suggestions.length ? "visible" : "excluded");
     }
