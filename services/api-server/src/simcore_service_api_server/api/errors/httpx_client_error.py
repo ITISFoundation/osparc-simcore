@@ -4,44 +4,24 @@
     - any exception raised by a httpx client will be handled here.
 """
 import logging
-from functools import partial
-from inspect import iscoroutinefunction
 from typing import Any
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, Request, status
 from httpx import HTTPError, HTTPStatusError, TimeoutException
 
 _logger = logging.getLogger(__file__)
 
 
-def httpx_exception_handler(cls):
-    class Wrapper(cls):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-        def __getattribute__(self, name):
-            attr = super().__getattribute__(name)
-            if iscoroutinefunction(attr):
-                return partial(self._method, attr)
-            else:
-                return attr
-
-        async def _method(self, method, *args, **kwargs):
-            try:
-                return await method(*args, **kwargs)
-            except HTTPError as exc:
-                await _handle_httpx_client_exception(exc)
-
-    return Wrapper
-
-
-async def _handle_httpx_client_exception(exc: HTTPError):
-    """See https://www.python-httpx.org/exceptions/"""
+async def handle_httpx_client_exceptions(_: Request, exc: HTTPError):
+    """
+    Default httpx exception handler
+    See https://www.python-httpx.org/exceptions/
+    """
     status_code: Any
     detail: str
     headers: dict[str, str] = {}
     if isinstance(exc, HTTPStatusError):
-        status_code, detail, headers = await _handle_httpx_status_exceptions(exc)
+        status_code, detail, headers = _handle_httpx_status_exceptions(exc)
     elif isinstance(exc, TimeoutException):
         status_code = status.HTTP_504_GATEWAY_TIMEOUT
         detail = f"Request to {exc.request.url.host.capitalize()} timed out"
@@ -59,7 +39,7 @@ async def _handle_httpx_client_exception(exc: HTTPError):
     ) from exc
 
 
-async def _handle_httpx_status_exceptions(
+def _handle_httpx_status_exceptions(
     exc: HTTPStatusError,
 ) -> tuple[int, str, dict[str, str]]:
     status_code: int
