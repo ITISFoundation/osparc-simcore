@@ -758,7 +758,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const nodeId = noMoreCredits["node_id"];
 
           const workbench = this.getStudy().getWorkbench();
-          workbench.getNode(nodeId).requestStopNode();
+          const node = workbench.getNode(nodeId);
+
+          const label = node.getLabel();
+          const text = `The wallet you are using to run '${label}' has run out of credits and was closed.`;
+          osparc.FlashMessenger.getInstance().logAs(this.tr(text), "ERROR");
+
+          node.requestStopNode();
+
         }, this);
       }
     },
