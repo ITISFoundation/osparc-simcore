@@ -417,7 +417,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         const uiModeIcon = this.getChildControl("workbench-mode");
         uiModeIcon.set({
           source,
-          toolTipText
+          toolTipText,
+          alignY: "bottom",
+          marginBottom: 10
         });
       }
     },
