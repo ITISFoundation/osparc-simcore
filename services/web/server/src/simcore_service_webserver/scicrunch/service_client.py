@@ -101,7 +101,7 @@ class SciCrunch:
         try:
             rrid = normalize_rrid_tags(rrid, with_prefix=False)
         except ValueError as err:
-            raise InvalidRRIDError(rrid) from err
+            raise InvalidRRIDError(rrid=rrid) from err
 
         if for_api and not rrid.startswith("SCR_"):
             # "SCR" for the SciCrunch registry of tools
