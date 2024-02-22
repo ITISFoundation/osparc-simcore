@@ -761,7 +761,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const node = workbench.getNode(nodeId);
 
           const label = node.getLabel();
-          const text = `The wallet you are using to run '${label}' has run out of credits and was closed.`;
+          const text = `The wallet used to run '${label}' has run out of credits. Stopping service gracefully.`;
           osparc.FlashMessenger.getInstance().logAs(this.tr(text), "ERROR");
 
           node.requestStopNode();
