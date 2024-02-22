@@ -92,7 +92,7 @@ class ProjectStartsTooManyDynamicNodesError(BaseProjectError):
 
 
 class ProjectTooManyProjectOpenedError(BaseProjectError):
-    msg_template = "You cannot open more than {max_num_projects} stud{'y' if max_num_projects == 1 else 'ies'} at once. Please close another study and retry."
+    msg_template = "You cannot open more than {max_num_projects} study/ies at once. Please close another study and retry."
 
     def __init__(self, *, max_num_projects: int, **extra):
         super().__init__(**extra)

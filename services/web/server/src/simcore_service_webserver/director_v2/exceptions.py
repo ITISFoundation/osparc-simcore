@@ -11,9 +11,9 @@ class DirectorServiceError(WebServerBaseError, RuntimeError):
     msg_template = "Unexpected error: director-v2 returned '{status}', reason '{reason}' after calling '{url}'"
 
     def __init__(self, *, status: int, reason: str, **ctx: Any) -> None:
+        super().__init__(**ctx)
         self.status = status
         self.reason = reason
-        super().__init__(**ctx)
 
 
 class ClusterNotFoundError(DirectorServiceError):
