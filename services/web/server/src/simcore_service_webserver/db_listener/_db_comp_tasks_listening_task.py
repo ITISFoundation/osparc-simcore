@@ -35,7 +35,7 @@ async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveI
         select(projects.c.prj_owner).where(projects.c.uuid == project_uuid)
     )
     if not the_project_owner:
-        raise exceptions.ProjectOwnerNotFoundError(project_uuid)
+        raise exceptions.ProjectOwnerNotFoundError(project_uuid=project_uuid)
     return the_project_owner
 
 

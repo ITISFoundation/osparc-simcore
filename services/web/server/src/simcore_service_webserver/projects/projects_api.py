@@ -14,9 +14,10 @@ import datetime
 import json
 import logging
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import suppress
 from pprint import pformat
-from typing import Any, Final, Generator
+from typing import Any, Final
 from uuid import UUID, uuid4
 
 from aiohttp import web
@@ -1227,7 +1228,7 @@ async def is_project_node_deprecated(
         return await is_service_deprecated(
             app, user_id, project_node["key"], project_node["version"], product_name
         )
-    raise NodeNotFoundError(project["uuid"], f"{node_id}")
+    raise NodeNotFoundError(project_uuid=project["uuid"], node_uuid=f"{node_id}")
 
 
 #
@@ -1257,7 +1258,9 @@ async def get_project_node_resources(
         return node_resources
 
     except ProjectNodesNodeNotFound as exc:
-        raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
+        raise NodeNotFoundError(
+            project_uuid=f"{project_id}", node_uuid=f"{node_id}"
+        ) from exc
 
 
 async def update_project_node_resources(
@@ -1297,7 +1300,9 @@ async def update_project_node_resources(
         )
         return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
     except ProjectNodesNodeNotFound as exc:
-        raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
+        raise NodeNotFoundError(
+            project_uuid=f"{project_id}", node_uuid=f"{node_id}"
+        ) from exc
 
 
 #
