@@ -255,7 +255,7 @@ async def _list_payments_methods(request: web.Request):
         wallet_id=path_params.wallet_id,
         product_name=req_ctx.product_name,
     )
-    return envelope_json_response(payments_methods, web.HTTPServiceUnavailable)
+    return envelope_json_response(payments_methods)
 
 
 @routes.get(
