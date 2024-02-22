@@ -19,6 +19,7 @@ from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.inputs import setup_inputs
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
+from ..modules.outputs import setup_outputs
 from ..modules.prometheus_metrics import setup_prometheus_metrics
 from ..modules.resource_tracking import setup_resource_tracking
 from ..modules.system_monitor import setup_system_monitor
@@ -156,6 +157,7 @@ def create_app():
 
     setup_mounted_fs(app)
     setup_inputs(app)
+    setup_outputs(app)
 
     setup_attribute_monitor(app)
 
