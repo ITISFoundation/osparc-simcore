@@ -765,7 +765,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           osparc.FlashMessenger.getInstance().logAs(this.tr(text), "ERROR");
 
           node.requestStopNode();
-
         }, this);
       }
     },
