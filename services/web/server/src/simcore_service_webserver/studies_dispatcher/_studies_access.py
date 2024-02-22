@@ -95,7 +95,7 @@ async def _get_published_template_project(
             "Project with %s %s was not found. Reason: %s",
             f"{project_uuid=}",
             f"{only_public_projects=}",
-            err.detailed_message(),
+            err.debug_message(),
         )
 
         support_email = get_current_product(request).support_email

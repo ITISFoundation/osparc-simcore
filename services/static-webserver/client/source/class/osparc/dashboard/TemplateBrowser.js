@@ -66,13 +66,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     __attachEventHandlers: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
-      const slotName = "projectStateUpdated";
-      socket.on(slotName, jsonString => {
-        const data = JSON.parse(jsonString);
+      socket.on("projectStateUpdated", data => {
         if (data) {
           const templateId = data["project_uuid"];
-          const state = ("data" in data) ? data["data"] : {};
-          const errors = ("errors" in data) ? data["errors"] : [];
+          const state = ("data" in data) ? data.data : {};
+          const errors = ("errors" in data) ? data.errors : [];
           this.__templateStateReceived(templateId, state, errors);
         }
       }, this);

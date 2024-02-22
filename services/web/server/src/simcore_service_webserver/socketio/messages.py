@@ -9,7 +9,7 @@ from aiohttp.web import Application
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID, UserID
-from servicelib.json_serialization import json_dumps
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from socketio import AsyncServer
 
 from ._utils import get_socket_server
@@ -44,7 +44,7 @@ async def _safe_emit(
     # NOTE 2: `emit` method is not designed to be used concurrently
     try:
         event = message["event_type"]
-        data = json_dumps(message["data"])
+        data = jsonable_encoder(message["data"])
         await sio.emit(
             event=event,
             data=data,

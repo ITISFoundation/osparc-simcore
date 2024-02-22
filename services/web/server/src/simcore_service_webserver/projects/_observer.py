@@ -25,8 +25,10 @@ async def _on_user_disconnected(
     user_id: int,
     client_session_id: str,
     app: web.Application,
-    product_name: ProductName,  # pylint: disable=unused-argument
+    product_name: ProductName,
 ) -> None:
+    assert product_name  # nosec
+
     # check if there is a project resource
     with managed_resource(user_id, client_session_id, app) as user_session:
         projects: list[str] = await user_session.find(PROJECT_ID_KEY)

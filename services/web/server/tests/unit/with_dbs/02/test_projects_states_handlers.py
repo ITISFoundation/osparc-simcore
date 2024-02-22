@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import json
 import time
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
@@ -37,6 +36,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
@@ -217,7 +217,7 @@ async def _assert_project_state_updated(
 
         calls = [
             call(
-                json.dumps(
+                jsonable_encoder(
                     {
                         "project_uuid": shared_project["uuid"],
                         "data": p_state.dict(by_alias=True, exclude_unset=True),
