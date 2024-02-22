@@ -14,7 +14,7 @@ _logger = logging.getLogger(__file__)
 
 async def handle_httpx_client_exceptions(_: Request, exc: HTTPError):
     """
-    Default httpx exception handler
+    Default httpx exception handler.
     See https://www.python-httpx.org/exceptions/
     """
     status_code: Any

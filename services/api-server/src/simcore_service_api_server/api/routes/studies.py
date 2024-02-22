@@ -1,13 +1,16 @@
 import logging
-from typing import Annotated, Any, Final
+from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.api_schemas_webserver.projects_metadata import (
+    ProjectMetadataPortGet,
+)
 
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.studies import Study, StudyID, StudyPort
+from ...models.schemas.studies import Study, StudyID
 from ...services.webserver import AuthSession, ProjectNotFoundError
 from ..dependencies.webserver import get_webserver_session
 from ..errors.http_error import create_error_json_response
@@ -111,7 +114,7 @@ async def clone_study(
 
 @router.get(
     "/{study_id:uuid}/ports",
-    response_model=OnePage[StudyPort],
+    response_model=OnePage[ProjectMetadataPortGet],
     responses={**_COMMON_ERROR_RESPONSES},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
@@ -125,10 +128,9 @@ async def list_study_ports(
     """
     try:
         project_ports: list[
-            dict[str, Any]
+            ProjectMetadataPortGet
         ] = await webserver_api.get_project_metadata_ports(project_id=study_id)
-
-        return OnePage[StudyPort](items=project_ports)  # type: ignore[arg-type]
+        return OnePage[ProjectMetadataPortGet](items=project_ports)
 
     except ProjectNotFoundError:
         return create_error_json_response(
