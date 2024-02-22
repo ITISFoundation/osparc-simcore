@@ -31,7 +31,7 @@ async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
         settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED
     ):
         _logger.warning(
-            "Shutting down (via frontend) service: '%s' for user '%s' because wallet '%s' is out of credits.",
+            "Notifying frontend to shutdown service: '%s' for user '%s' because wallet '%s' is out of credits.",
             message.node_id,
             message.user_id,
             message.wallet_id,
