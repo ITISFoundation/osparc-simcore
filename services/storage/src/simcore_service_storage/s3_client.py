@@ -117,8 +117,8 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
             config=Config(
                 signature_version="s3v4",
                 retries={
-                    "mode": "standard",
-                    "total_max_attempts": 4,
+                    "mode": "adaptive",
+                    "total_max_attempts": 2,
                 },
             ),
         )
@@ -459,6 +459,8 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
                     )
                     total_size += obj["Size"]
                     total_count += 1
+
+                    print(f"{total_size=}", f"{total_count=}")
 
                 except Exception:
                     _logger.exception("%s failed to copy to -> %s", obj, dst)
