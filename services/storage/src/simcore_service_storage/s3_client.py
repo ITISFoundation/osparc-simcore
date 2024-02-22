@@ -419,12 +419,13 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         src_prefix: str,
         dst_prefix: str,
         bytes_transfered_cb: Callable[[int], None] | None,
-    ) -> NonNegativeInt:
+    ) -> tuple[int, int]:
         """Copies multiple objects within the same bucket
 
         WARNING: No gurarantees on atomicity
         """
-        count = 0
+        total_count = 0
+        total_size = 0
         async for page in self.iter_pages(bucket, prefix=src_prefix):
             for obj in page:
                 assert "Key" in obj  # nosec
@@ -455,9 +456,10 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
                     if bytes_transfered_cb:
                         bytes_transfered_cb(obj["Size"])
 
-                count += 1
+                total_size += obj["Size"]
+                total_count += 1
 
-        return count
+        return total_count, total_size
 
     @s3_exception_handler(_logger)
     async def list_files(

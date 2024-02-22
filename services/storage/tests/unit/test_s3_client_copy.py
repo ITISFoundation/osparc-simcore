@@ -113,27 +113,41 @@ async def test__copy_path_s3_s3(
 ):
     bytes_transfered_cb = mocker.MagicMock()
 
-    src_fmd_object_name = "502fd316-8a9e-11ee-a81b-02420a0b173b"
-    src_fmd_object_name = "d0be75f0-ca9a-11ee-9b42-02420a000206"
+    src_fmd_object_name = (
+        "d2504240-cf63-11ee-bf70-02420a0b0228"  # andreas example (s4lio)
+    )
+    src_fmd_object_name = (
+        "502fd316-8a9e-11ee-a81b-02420a0b173b"  # taylor example (NIH prod)
+    )
+    src_fmd_object_name = "d0be75f0-ca9a-11ee-9b42-02420a000206"  # MY example (master)
     new_fmd_object_name = "pytest_destination"
     assert client.app
     s3_client = get_s3_client(client.app)
 
     tic = time.time()
-    copied_count = await s3_client.copy_directory(
+    copied_count, copied_size = await s3_client.copy_directory(
         bucket=simcore_bucket_name,
         src_prefix=src_fmd_object_name,
         dst_prefix=new_fmd_object_name,
         bytes_transfered_cb=bytes_transfered_cb,
     )
-    toc = time.time() - tic
-    print(copied_count, f"{toc:3.2f}", "secs")
+    elapsed = time.time() - tic
+    print(
+        "Copied",
+        src_fmd_object_name,
+        f"{copied_count=}",
+        f"{copied_size=}",
+        f"{elapsed=:3.2f}",
+        "secs",
+    )
+
     # 1002 58.541385
     # 1002 100.254
     assert bytes_transfered_cb.called
     assert bytes_transfered_cb.call_count == 2 * copied_count
 
 
+@pytest.mark.skip(reason="UNDER DEVE")
 async def test_it():
     import botocore.exceptions
     from simcore_service_storage.exceptions import S3ReadTimeoutError
