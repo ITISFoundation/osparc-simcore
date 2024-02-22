@@ -18,17 +18,17 @@ def test_settings_with_envdevel_file(mock_environment_with_envdevel: EnvVarsDict
     "envs",
     [
         {
-            "NODE_PORTS_STORAGE_LOGIN": "login",
-            "NODE_PORTS_STORAGE_PASSWORD": "passwd",
-            "NODE_PORTS_STORAGE_HOST": "host",
-            "NODE_PORTS_STORAGE_PORT": "42",
+            "STORAGE_LOGIN": "login",
+            "STORAGE_PASSWORD": "passwd",
+            "STORAGE_HOST": "host",
+            "STORAGE_PORT": "42",
         },
         {
             "NODE_PORTS_STORAGE_AUTH": (
-                '{"NODE_PORTS_STORAGE_LOGIN": "login", '
-                '"NODE_PORTS_STORAGE_PASSWORD": "passwd", '
-                '"NODE_PORTS_STORAGE_HOST": "host", '
-                '"NODE_PORTS_STORAGE_PORT": "42"}'
+                '{"STORAGE_LOGIN": "login", '
+                '"STORAGE_PASSWORD": "passwd", '
+                '"STORAGE_HOST": "host", '
+                '"STORAGE_PORT": "42"}'
             )
         },
     ],
@@ -40,14 +40,14 @@ def test_settings_with_node_ports_storage_auth(
 
     settings = ApplicationSettings.create_from_envs()
     assert settings.NODE_PORTS_STORAGE_AUTH is not None
-    assert settings.NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_HOST == "host"
-    assert settings.NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_PORT == 42
-    assert settings.NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_LOGIN == "login"
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_HOST == "host"
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PORT == 42
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_LOGIN == "login"
     assert (
-        settings.NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_PASSWORD.get_secret_value()
-        == "passwd"
+        settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD.get_secret_value() == "passwd"
     )
     # json serializes password to plain text
+    assert "passwd" not in settings.NODE_PORTS_STORAGE_AUTH.json()
     assert "passwd" in settings.NODE_PORTS_STORAGE_AUTH.unsafe_json()
 
 

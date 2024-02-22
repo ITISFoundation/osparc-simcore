@@ -1,49 +1,31 @@
 import json
-from typing import Any, ClassVar, Final
+from typing import Any, Final
 
 from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
 from pydantic.json import pydantic_encoder
 
 from ._constants import MINUTE
 from .base import BaseCustomSettings
-from .basic_types import PortInt
 from .postgres import PostgresSettings
 from .storage import StorageSettings
 
 NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE: Final[NonNegativeInt] = 3
 
 
-class StorageAuthSettings(BaseCustomSettings):
-    NODE_PORTS_STORAGE_HOST: str
-    NODE_PORTS_STORAGE_PORT: PortInt
-
-    NODE_PORTS_STORAGE_LOGIN: str
-    NODE_PORTS_STORAGE_PASSWORD: SecretStr
-
-    @property
-    def base_url(self) -> str:
-        return StorageSettings(
-            STORAGE_HOST=self.NODE_PORTS_STORAGE_HOST,
-            STORAGE_PORT=self.NODE_PORTS_STORAGE_PORT,
-        ).base_url
+class StorageAuthSettings(StorageSettings):
+    STORAGE_LOGIN: str
+    STORAGE_PASSWORD: SecretStr
 
     def unsafe_dict(self):
         data: dict[str, Any] = self.dict()
-        data["NODE_PORTS_STORAGE_PASSWORD"] = (
-            self.NODE_PORTS_STORAGE_PASSWORD.get_secret_value()
-            if self.NODE_PORTS_STORAGE_PASSWORD
-            else None
+        data["STORAGE_PASSWORD"] = (
+            self.STORAGE_PASSWORD.get_secret_value() if self.STORAGE_PASSWORD else None
         )
         return data
 
     def unsafe_json(self):
         d = self.unsafe_dict()
         return json.dumps(d, default=pydantic_encoder)
-
-    class Config:
-        json_encoders: ClassVar = {
-            SecretStr: lambda v: v.get_secret_value() if v else None,
-        }
 
 
 class NodePortsSettings(BaseCustomSettings):
