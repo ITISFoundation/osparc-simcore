@@ -71,14 +71,14 @@ _exception_mapper = partial(service_exception_mapper, "Webserver")
 _job_status_map: Mapping = {
     status.HTTP_404_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
-        f"The ports for job could not be found",
+        "The ports for job could not be found",
     )
 }
 
 _profile_status_map: Mapping = {
     status.HTTP_404_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
-        f"Could not find profile",
+        "Could not find profile",
     )
 }
 
@@ -145,7 +145,7 @@ class AuthSession:
             {
                 status.HTTP_404_NOT_FOUND: (
                     status.HTTP_404_NOT_FOUND,
-                    f"Could not list jobs",
+                    "Could not list jobs",
                 )
             },
         ):
@@ -286,7 +286,7 @@ class AuthSession:
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
-                f"The ports for job could not be found",
+                "The ports for job could not be found",
             )
         }
     )
@@ -311,7 +311,7 @@ class AuthSession:
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
-                f"The metadata for the job could not be found",
+                "The metadata for the job could not be found",
             )
         }
     )
@@ -329,7 +329,7 @@ class AuthSession:
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
-                f"The metadata for the job could not be found",
+                "The metadata for the job could not be found",
             )
         }
     )

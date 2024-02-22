@@ -63,13 +63,12 @@ def backend_service_exception_handler(
             if detail is None:
                 detail = exc.response.json()["errors"].join(", ")
             raise HTTPException(status_code=status_code, detail=detail) from exc
-        elif exc.response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
+        if exc.response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=f"The {service_name} service was unavailable",
             ) from exc
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Received unexpected response from {service_name}",
-            ) from exc
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Received unexpected response from {service_name}",
+        ) from exc
