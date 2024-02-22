@@ -27,14 +27,9 @@ from ._preferences_models import (
     get_preference_identifier,
     get_preference_name,
 )
+from .exceptions import FrontendUserPreferenceIsNotDefinedError
 
 _MAX_PARALLEL_DB_QUERIES: Final[NonNegativeInt] = 2
-
-
-class FrontendUserPreferenceIsNotDefinedError(Exception):
-    def __init__(self, frontend_preference_name: str):
-        super().__init__(f"Provided {frontend_preference_name=} not found")
-        self.frontend_preference_name = frontend_preference_name
 
 
 async def _get_frontend_user_preferences(
