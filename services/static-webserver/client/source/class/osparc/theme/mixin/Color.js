@@ -19,12 +19,12 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "error_bg": "rgba(255, 108, 108, 0.1)", // #FF6C6C1A
 
     "pb-new": "rgba(10, 182, 255, 0.25)",
-    "pb-study": "rgba(10, 182, 255, 0.5)",
-    "pb-template": "rgba(9, 89, 122, 0.5)",
-    "pb-service": "rgba(248, 219, 31, 0.5)",
-    "pb-computational": "rgba(255, 165, 0, 0.5)",
-    "pb-dynamic": "rgba(248, 219, 31, 0.5)",
-    "pb-locked": "rgba(113, 157, 181, 0.5)",
+    "pb-study": "rgba(10, 182, 255, 0.4)",
+    "pb-template": "rgba(9, 89, 122, 0.4)",
+    "pb-service": "rgba(248, 219, 31, 0.4)",
+    "pb-computational": "rgba(255, 165, 0, 0.4)",
+    "pb-dynamic": "rgba(248, 219, 31, 0.4)",
+    "pb-locked": "rgba(113, 157, 181, 0.4)",
 
     // button
     "default-button-text": "rgba(255, 255, 255, 1)",

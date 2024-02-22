@@ -79,9 +79,9 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     __getThumbnailSuggestions: function() {
       const thumbnailSuggestions = new osparc.editor.ThumbnailSuggestions().set({
         minHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
-        maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
+        maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT + 2,
         backgroundColor: "transparent",
-        padding: [3, 0]
+        padding: 3
       });
       return thumbnailSuggestions;
     },
