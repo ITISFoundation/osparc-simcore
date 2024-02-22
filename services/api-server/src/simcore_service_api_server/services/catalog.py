@@ -2,17 +2,19 @@ import logging
 import urllib.parse
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import partial
 from operator import attrgetter
 
 from fastapi import FastAPI
 from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceDockerData, ServiceType
-from pydantic import Extra, ValidationError, parse_obj_as
+from pydantic import Extra, ValidationError, parse_obj_as, parse_raw_as
 from settings_library.catalog import CatalogSettings
 
 from ..models.basic_types import VersionStr
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+from ._service_exception_handling import service_exception_mapper
 
 _logger = logging.getLogger(__name__)
 
@@ -61,6 +63,8 @@ class TruncatedCatalogServiceOut(ServiceDockerData):
 # - Error handling: What do we reraise, suppress, transform???
 #
 
+_exception_mapper = partial(service_exception_mapper, "Catalog")
+
 
 @dataclass
 class CatalogApi(BaseServiceClientApi):
@@ -71,6 +75,7 @@ class CatalogApi(BaseServiceClientApi):
     SEE osparc-simcore/services/catalog/openapi.json
     """
 
+    @_exception_mapper({})
     async def list_solvers(
         self,
         user_id: int,
@@ -85,10 +90,10 @@ class CatalogApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
+        services = parse_raw_as(list[TruncatedCatalogServiceOut], response.text)
         solvers = []
-        for data in response.json():
+        for service in services:
             try:
-                service = TruncatedCatalogServiceOut.parse_obj(data)
                 if service.service_type == ServiceType.COMPUTATIONAL:
                     solver = service.to_solver()
                     if predicate is None or predicate(solver):
@@ -100,11 +105,12 @@ class CatalogApi(BaseServiceClientApi):
                 #       invalid items instead of returning error
                 _logger.warning(
                     "Skipping invalid service returned by catalog '%s': %s",
-                    data,
+                    service.json(),
                     err,
                 )
         return solvers
 
+    @_exception_mapper({})
     async def get_service(
         self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
     ) -> Solver:
@@ -121,7 +127,7 @@ class CatalogApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        service = TruncatedCatalogServiceOut.parse_obj(response.json())
+        service = TruncatedCatalogServiceOut.parse_raw(response.text)
         assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
         ), "Expected by SolverName regex"
@@ -129,6 +135,7 @@ class CatalogApi(BaseServiceClientApi):
         solver: Solver = service.to_solver()
         return solver
 
+    @_exception_mapper({})
     async def get_service_ports(
         self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
     ):
