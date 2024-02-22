@@ -25,7 +25,6 @@ def products_regex() -> dict:
 
 @pytest.fixture
 def products_names(products_regex: dict) -> list[str]:
-    # NOTE: ProductName is defined in models_library!
     return list(products_regex)
 
 

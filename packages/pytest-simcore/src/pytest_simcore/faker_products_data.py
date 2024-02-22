@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 """
-    Fixtures to produce fake data for a products:
+    Fixtures to produce fake data for a product:
         - it is self-consistent
         - granular customization by overriding fixtures
 """
@@ -20,13 +20,13 @@ from .helpers.rawdata_fakers import random_product
 
 
 @pytest.fixture
-def product_name() -> ProductName:
-    return ProductName("osparcli")
+def product_name(faker: Faker) -> ProductName:
+    return ProductName(faker.word())
 
 
 @pytest.fixture
 def support_email(product_name: ProductName) -> EmailStr:
-    return EmailStr(f"support@{product_name}.io")
+    return EmailStr(f"support@{product_name}.info")
 
 
 @pytest.fixture
