@@ -1,10 +1,10 @@
 from typing import ClassVar, Final
 
-from models_library.basic_types import PortInt
 from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
 
 from ._constants import MINUTE
 from .base import BaseCustomSettings
+from .basic_types import PortInt
 from .postgres import PostgresSettings
 from .storage import StorageSettings
 
