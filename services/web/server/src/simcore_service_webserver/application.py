@@ -35,7 +35,6 @@ from .projects.plugin import setup_projects
 from .publications.plugin import setup_publications
 from .rabbitmq import setup_rabbitmq
 from .redis import setup_redis
-from .remote_debug import setup_remote_debugging
 from .resource_manager.plugin import setup_resource_manager
 from .resource_usage.plugin import setup_resource_tracker
 from .rest.plugin import setup_rest
@@ -78,8 +77,6 @@ def create_application() -> web.Application:
 
     # WARNING: setup order matters
     # NOTE: compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
-
-    setup_remote_debugging(app)
 
     # core modules
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware

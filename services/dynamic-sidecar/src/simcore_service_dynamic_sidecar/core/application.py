@@ -3,7 +3,6 @@ from asyncio import Lock
 from typing import Any, ClassVar
 
 from fastapi import FastAPI
-from models_library.basic_types import BootModeEnum
 from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi import long_running_tasks
 from servicelib.fastapi.openapi import (
@@ -20,7 +19,6 @@ from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.inputs import setup_inputs
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
-from ..modules.outputs import setup_outputs
 from ..modules.prometheus_metrics import setup_prometheus_metrics
 from ..modules.resource_tracking import setup_resource_tracking
 from ..modules.system_monitor import setup_system_monitor
@@ -29,9 +27,7 @@ from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
-from .external_dependencies import setup_check_dependencies
 from .rabbitmq import setup_rabbitmq
-from .remote_debug import setup as remote_debug_setup
 from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
 from .utils import login_registry, volumes_fix_permissions
@@ -153,16 +149,10 @@ def create_app():
     app.state.application_health = ApplicationHealth()
     application_settings: ApplicationSettings = app.state.settings
 
-    if application_settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
-        remote_debug_setup(app)
-
-    setup_check_dependencies(app)
-
     setup_rabbitmq(app)
     setup_background_log_fetcher(app)
     setup_resource_tracking(app)
     setup_system_monitor(app)
-    setup_outputs(app)
 
     setup_mounted_fs(app)
     setup_inputs(app)

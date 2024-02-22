@@ -64,10 +64,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
-    DYNAMIC_SIDECAR_HOST: str = Field(
-        default="0.0.0.0",  # nosec
-        description="host where to bind the application on which to serve",
-    )
     DYNAMIC_SIDECAR_PORT: PortInt = Field(
         default=8000, description="port where the server will be currently serving"
     )
@@ -100,10 +96,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DEBUG: bool = Field(
         default=False,
         description="If set to True the application will boot into debug mode",
-    )
-
-    DYNAMIC_SIDECAR_REMOTE_DEBUG_PORT: PortInt = Field(
-        default=3000, description="ptsvd remote debugger starting port"
     )
 
     DYNAMIC_SIDECAR_RESERVED_SPACE_SIZE: ByteSize = Field(
