@@ -16,8 +16,3 @@ requirements: ## compiles pip requirements (.in -> .txt)
 .PHONY: openapi-specs
 openapi-specs: ## updates and validates openapi specifications
 	$(MAKE_C) $(REPO_BASE_DIR)/api/specs/web-server all
-
-
-.PHONY: echo-errors
-echo-errors: _check_venv_active ## echo exceptions tree
-	@python "${SCRIPTS_DIR}/print_exceptions_tree.py" "${PY_PACKAGE_NAME}" "${PY_PACKAGE_NAME}.errors.WebServerBaseError"
