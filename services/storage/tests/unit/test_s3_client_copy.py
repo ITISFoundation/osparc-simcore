@@ -136,9 +136,7 @@ async def test_copy_directory_from_s3_to_s3(
         "Copied",
         src_fmd_object_name,
         f"{copied_count=}",
-        f"{sum(copied_count)=}",
         f"{copied_size=}",
-        f"{sum(copied_size)=}",
         f"{elapsed=:3.2f}",
         "secs",
     )
@@ -147,7 +145,7 @@ async def test_copy_directory_from_s3_to_s3(
     #
 
     assert bytes_transfered_cb.called
-    assert bytes_transfered_cb.call_count == 2 * sum(copied_count)
+    assert bytes_transfered_cb.call_count == 2 * copied_count
 
 
 @pytest.mark.skip(reason="UNDER DEVE")
