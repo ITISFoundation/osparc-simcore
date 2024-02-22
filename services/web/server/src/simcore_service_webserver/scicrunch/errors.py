@@ -3,13 +3,13 @@ import logging
 from aiohttp import web_exceptions
 from servicelib.aiohttp import status
 
-logger = logging.getLogger(__name__)
+from ..errors import WebServerBaseError
+
+_logger = logging.getLogger(__name__)
 
 
-class ScicrunchError(Exception):
-    def __init__(self, reason: str) -> None:
-        self.reason = reason.strip()
-        super().__init__(self.reason)
+class ScicrunchError(WebServerBaseError):
+    msg_template = "{reason}"
 
 
 class ScicrunchServiceError(ScicrunchError):
@@ -35,9 +35,8 @@ class ScicrunchConfigError(ScicrunchError):
     """
 
 
-class InvalidRRID(ScicrunchError):
-    def __init__(self, rrid_or_msg) -> None:
-        super().__init__(reason=f"Invalid RRID {rrid_or_msg}")
+class InvalidRRIDError(ScicrunchError):
+    msg_template = "Invalid RRID {rrid}"
 
 
 def map_to_scicrunch_error(rrid: str, error_code: int, message: str) -> ScicrunchError:
@@ -48,17 +47,17 @@ def map_to_scicrunch_error(rrid: str, error_code: int, message: str) -> Scicrunc
         <= status.HTTP_511_NETWORK_AUTHENTICATION_REQUIRED
     ), error_code  # nosec
 
-    custom_error = ScicrunchError("Unexpected error in scicrunch.org")
+    custom_error = ScicrunchError(reason="Unexpected error in scicrunch.org")
 
     if error_code == web_exceptions.HTTPBadRequest.status_code:
-        custom_error = InvalidRRID(rrid)
+        custom_error = InvalidRRIDError(rrid=rrid)
 
     elif error_code == web_exceptions.HTTPNotFound.status_code:
-        custom_error = InvalidRRID(f". Did not find any '{rrid}'")
+        custom_error = InvalidRRIDError(msg_template=f"Did not find any '{rrid}'")
 
     elif error_code == web_exceptions.HTTPUnauthorized.status_code:
         custom_error = ScicrunchConfigError(
-            "osparc was not authorized to access scicrunch.org."
+            reason="osparc was not authorized to access scicrunch.org."
             "Please check API access tokens."
         )
 
@@ -66,8 +65,8 @@ def map_to_scicrunch_error(rrid: str, error_code: int, message: str) -> Scicrunc
         error_code >= status.HTTP_500_INTERNAL_SERVER_ERROR
     ):  # scicrunch.org server error
         custom_error = ScicrunchServiceError(
-            "scicrunch.org cannot perform our requests"
+            reason="scicrunch.org cannot perform our requests"
         )
 
-    logger.error("%s: %s", custom_error, message)
+    _logger.error("%s: %s", custom_error, message)
     return custom_error

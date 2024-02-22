@@ -325,6 +325,10 @@ class ProjectDBAPI(BaseProjectDB):
             field="last_change_date", direction=OrderDirection.DESC
         ),
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
+        assert (
+            order_by.field in projects.columns
+        ), "Guaranteed by ProjectListWithJsonStrParams"  # nosec
+
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
 
@@ -370,9 +374,9 @@ class ProjectDBAPI(BaseProjectDB):
                 )
 
             if order_by.direction == OrderDirection.ASC:
-                query = query.order_by(sa.asc(order_by.field))
+                query = query.order_by(sa.asc(getattr(projects.c, order_by.field)))
             else:
-                query = query.order_by(sa.desc(order_by.field))
+                query = query.order_by(sa.desc(getattr(projects.c, order_by.field)))
 
             total_number_of_projects = await conn.scalar(
                 query.with_only_columns(func.count()).order_by(None)
@@ -482,7 +486,9 @@ class ProjectDBAPI(BaseProjectDB):
             check_project_permissions(current_project, user_id, user_groups, "write")
             # uuid can ONLY be set upon creation
             if current_project["uuid"] != new_project_data["uuid"]:
-                raise ProjectInvalidRightsError(user_id, new_project_data["uuid"])
+                raise ProjectInvalidRightsError(
+                    user_id=user_id, project_uuid=new_project_data["uuid"]
+                )
             # ensure the prj owner is always in the access rights
             owner_primary_gid = await self._get_user_primary_group_gid(
                 db_connection, current_project[projects.c.prj_owner.key]

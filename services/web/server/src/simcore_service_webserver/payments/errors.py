@@ -6,7 +6,8 @@ from models_library.api_schemas_payments.errors import (
     PaymentNotFoundError,
     PaymentServiceUnavailableError,
 )
-from pydantic.errors import PydanticErrorMixin
+
+from ..errors import WebServerBaseError
 
 __all__ = (
     "InvalidPaymentMethodError",
@@ -18,7 +19,7 @@ __all__ = (
 )
 
 
-class PaymentsPluginError(PydanticErrorMixin, ValueError):
+class PaymentsPluginError(WebServerBaseError, ValueError):
     ...
 
 
