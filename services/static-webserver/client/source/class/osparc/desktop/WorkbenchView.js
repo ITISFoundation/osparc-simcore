@@ -656,22 +656,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
       // callback for incoming logs
-      const slotName = "logger";
-      if (!socket.slotExists(slotName)) {
-        socket.on(slotName, jsonString => {
-          const data = JSON.parse(jsonString);
+      if (!socket.slotExists("logger")) {
+        socket.on("logger", data => {
           if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
             // Filtering out logs from other studies
             return;
           }
           const nodeId = data["node_id"];
-          const messages = data["messages"];
+          const messages = data.messages;
           const logLevelMap = osparc.widget.logger.LoggerView.LOG_LEVEL_MAP;
           const logLevel = ("log_level" in data) ? logLevelMap[data["log_level"]] : "INFO";
           this.__logsToLogger(nodeId, messages, logLevel);
         }, this);
       }
-      socket.emit(slotName);
+      socket.emit("logger");
 
       // callback for incoming progress
       const slotName2 = "progress";
@@ -699,20 +697,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.listenToNodeProgress();
 
       // callback for events
-      const slotName3 = "event";
-      if (!socket.slotExists(slotName3)) {
-        socket.on(slotName3, jsonString => {
-          const data = JSON.parse(jsonString);
+      if (!socket.slotExists("event")) {
+        socket.on("event", data => {
+          const { action, "node_id": nodeId } = data
           if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
             // Filtering out logs from other studies
             return;
           }
-          const action = data["action"];
           if (action == "RELOAD_IFRAME") {
             // TODO: maybe reload iframe in the future
             // for now a message is displayed to the user
-            const nodeId = data["node_id"];
-
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
             const label = node.getLabel();
@@ -726,10 +720,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     listenToNodeUpdated: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
-      const slotName = "nodeUpdated";
-      if (!socket.slotExists(slotName)) {
-        socket.on(slotName, jsonString => {
-          const data = JSON.parse(jsonString);
+      if (!socket.slotExists("nodeUpdated")) {
+        socket.on("nodeUpdated", data => {
           this.getStudy().nodeUpdated(data);
         }, this);
       }
@@ -738,10 +730,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     listenToNodeProgress: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
-      const slotName = "nodeProgress";
-      if (!socket.slotExists(slotName)) {
-        socket.on(slotName, jsonString => {
-          const data = JSON.parse(jsonString);
+      if (!socket.slotExists("nodeProgress")) {
+        socket.on("nodeProgress", data => {
           this.getStudy().nodeNodeProgressSequence(data);
         }, this);
       }
