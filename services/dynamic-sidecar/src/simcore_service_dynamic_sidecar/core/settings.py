@@ -143,20 +143,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_PRODUCT_NAME: ProductName | None = None
 
     STORAGE_SETTINGS: StorageSettings = Field(auto_default_from_env=True)
-
-    SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(auto_default_from_env=True)
-
-    REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
-
-    RABBIT_SETTINGS: RabbitSettings = Field(auto_default_from_env=True)
     DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     POSTGRES_SETTINGS: PostgresSettings = Field(auto_default_from_env=True)
+    RABBIT_SETTINGS: RabbitSettings = Field(auto_default_from_env=True)
 
-    # TODO: by default mock postgres settings in all tests
-    # TODO: by defaylt mock rabbit settings ain all tests
+    REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
+
+    SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(auto_default_from_env=True)
 
     @property
     def are_prometheus_metrics_enabled(self) -> bool:
