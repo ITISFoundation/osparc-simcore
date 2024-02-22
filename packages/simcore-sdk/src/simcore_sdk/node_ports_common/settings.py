@@ -10,8 +10,17 @@ from .constants import MINUTE
 NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE: Final[NonNegativeInt] = 3
 
 
+class StorageAuthSettings(BaseCustomSettings):
+    NODE_PORTS_STORAGE_LOGIN: str
+    NODE_PORTS_STORAGE_PASSWORD: str
+
+
 class NodePortsSettings(BaseCustomSettings):
     NODE_PORTS_STORAGE: StorageSettings = Field(auto_default_from_env=True)
+    NODE_PORTS_STORAGE_AUTH: StorageAuthSettings | None = Field(
+        auto_default_from_env=True
+    )
+
     POSTGRES_SETTINGS: PostgresSettings = Field(auto_default_from_env=True)
 
     NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S: NonNegativeInt = 5 * MINUTE

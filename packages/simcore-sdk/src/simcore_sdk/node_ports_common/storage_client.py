@@ -7,7 +7,7 @@ from json import JSONDecodeError
 from typing import Any, TypeAlias
 from urllib.parse import quote
 
-from aiohttp import ClientResponse, ClientSession
+from aiohttp import BasicAuth, ClientResponse, ClientSession
 from aiohttp import client as aiohttp_client_module
 from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from models_library.api_schemas_storage import (
@@ -80,6 +80,21 @@ def _base_url() -> str:
     return base_url
 
 
+@lru_cache
+def _get_basic_auth() -> BasicAuth | None:
+    settings = NodePortsSettings.create_from_envs()
+    node_ports_storage_auth = settings.NODE_PORTS_STORAGE_AUTH
+
+    return (
+        BasicAuth(
+            login=node_ports_storage_auth.NODE_PORTS_STORAGE_LOGIN,
+            password=node_ports_storage_auth.NODE_PORTS_STORAGE_PASSWORD,
+        )
+        if node_ports_storage_auth
+        else None
+    )
+
+
 def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
     def log_it(retry_state: RetryCallState) -> None:
         assert retry_state.outcome  # nosec
@@ -96,7 +111,7 @@ def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
 def _session_method(
     session: ClientSession, method: str, url: str, **kwargs
 ) -> RequestContextManager:
-    return session.request(method, url, **kwargs)
+    return session.request(method, url, auth=_get_basic_auth(), **kwargs)
 
 
 @asynccontextmanager
