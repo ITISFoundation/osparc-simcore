@@ -1,6 +1,6 @@
-from typing import Final
+from typing import ClassVar, Final
 
-from pydantic import Field, NonNegativeInt, PositiveInt
+from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
 
 from ._constants import MINUTE
 from .base import BaseCustomSettings
@@ -12,7 +12,12 @@ NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE: Final[NonNegativeInt] = 3
 
 class StorageAuthSettings(BaseCustomSettings):
     NODE_PORTS_STORAGE_LOGIN: str
-    NODE_PORTS_STORAGE_PASSWORD: str
+    NODE_PORTS_STORAGE_PASSWORD: SecretStr
+
+    class Config:
+        json_encoders: ClassVar = {
+            SecretStr: lambda v: v.get_secret_value() if v else None,
+        }
 
 
 class NodePortsSettings(BaseCustomSettings):
