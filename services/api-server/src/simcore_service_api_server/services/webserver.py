@@ -3,7 +3,7 @@
 import logging
 import urllib.parse
 from dataclasses import dataclass
-from functools import wraps
+from functools import partial
 from typing import Any, Mapping
 from uuid import UUID
 
@@ -49,7 +49,10 @@ from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
 from ..models.schemas.profiles import Profile, ProfileUpdate
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
-from ._service_exception_handling import backend_service_exception_handler
+from ._service_exception_handling import (
+    backend_service_exception_handler,
+    service_status_mapper,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -63,17 +66,7 @@ class ProjectNotFoundError(WebServerValueError):
     msg_template = "Project '{project_id}' not found"
 
 
-def status_map(http_status_map: Mapping[int, tuple[int, str | None]]):
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            with backend_service_exception_handler("Webserver", http_status_map):
-                return await func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
+_status_mapper = partial(service_status_mapper, "Webserver")
 
 _job_status_map: Mapping = {
     status.HTTP_404_NOT_FOUND: (
@@ -202,7 +195,7 @@ class AuthSession:
 
     # PROFILE --------------------------------------------------
 
-    @status_map(_profile_status_map)
+    @_status_mapper(_profile_status_map)
     async def getme(self) -> Profile:
         response = await self.client.get("/me", cookies=self.session_cookies)
         response.raise_for_status()
@@ -210,7 +203,7 @@ class AuthSession:
         assert profile is not None
         return profile
 
-    @status_map(_profile_status_map)
+    @_status_mapper(_profile_status_map)
     async def update_me(self, profile_update: ProfileUpdate) -> Profile:
         response = await self.client.put(
             "/me",
@@ -222,7 +215,7 @@ class AuthSession:
 
     # PROJECTS -------------------------------------------------
 
-    @status_map({})
+    @_status_mapper({})
     async def create_project(self, project: ProjectCreateNew) -> ProjectGet:
         # POST /projects --> 202 Accepted
         response = await self.client.post(
@@ -238,7 +231,7 @@ class AuthSession:
         result = await self._wait_for_long_running_task_results(data)
         return ProjectGet.parse_obj(result)
 
-    @status_map(_job_status_map)
+    @_status_mapper(_job_status_map)
     async def clone_project(self, project_id: UUID) -> ProjectGet:
         response = await self.client.post(
             f"/projects/{project_id}:clone",
@@ -251,7 +244,7 @@ class AuthSession:
         result = await self._wait_for_long_running_task_results(data)
         return ProjectGet.parse_obj(result)
 
-    @status_map(_job_status_map)
+    @_status_mapper(_job_status_map)
     async def get_project(self, project_id: UUID) -> ProjectGet:
         response = await self.client.get(
             f"/projects/{project_id}",
@@ -281,7 +274,7 @@ class AuthSession:
             show_hidden=False,
         )
 
-    @status_map(_job_status_map)
+    @_status_mapper(_job_status_map)
     async def delete_project(self, project_id: ProjectID) -> None:
         response = await self.client.delete(
             f"/projects/{project_id}",
@@ -289,7 +282,7 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @status_map(
+    @_status_mapper(
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
@@ -314,7 +307,7 @@ class AuthSession:
         assert isinstance(data, list)
         return data
 
-    @status_map(
+    @_status_mapper(
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
@@ -332,7 +325,7 @@ class AuthSession:
         assert data  # nosec
         return data
 
-    @status_map(
+    @_status_mapper(
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
@@ -353,7 +346,7 @@ class AuthSession:
         assert data  # nosec
         return data
 
-    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_status_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_project_node_pricing_unit(
         self, project_id: UUID, node_id: UUID
     ) -> PricingUnitGet | None:
@@ -366,7 +359,7 @@ class AuthSession:
         data = Envelope[PricingUnitGet].parse_raw(response.text).data
         return data
 
-    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_status_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def connect_pricing_unit_to_project_node(
         self,
         project_id: UUID,
@@ -380,7 +373,7 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @status_map(_job_status_map)
+    @_status_mapper(_job_status_map)
     async def start_project(
         self, project_id: UUID, cluster_id: ClusterID | None = None
     ) -> None:
@@ -397,7 +390,7 @@ class AuthSession:
 
     # WALLETS -------------------------------------------------
 
-    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_status_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_default_wallet(self) -> WalletGetWithAvailableCredits:
         response = await self.client.get(
             "/wallets/default",
@@ -408,7 +401,7 @@ class AuthSession:
         assert data  # nosec
         return data
 
-    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_status_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_wallet(self, wallet_id: int) -> WalletGetWithAvailableCredits:
         response = await self.client.get(
             f"/wallets/{wallet_id}",
@@ -419,7 +412,7 @@ class AuthSession:
         assert data  # nosec
         return data
 
-    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_status_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_project_wallet(self, project_id: ProjectID) -> WalletGet | None:
         response = await self.client.get(
             f"/projects/{project_id}/wallet",
@@ -431,7 +424,7 @@ class AuthSession:
 
     # PRODUCTS -------------------------------------------------
 
-    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_status_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_product_price(self) -> NonNegativeDecimal | None:
         response = await self.client.get(
             "/credits-price",
@@ -444,7 +437,7 @@ class AuthSession:
 
     # SERVICES -------------------------------------------------
 
-    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_status_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_service_pricing_plan(
         self, solver_key: SolverKeyId, version: VersionStr
     ) -> ServicePricingPlanGet | None:
