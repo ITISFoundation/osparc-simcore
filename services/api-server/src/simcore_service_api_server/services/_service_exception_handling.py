@@ -61,7 +61,7 @@ def backend_service_exception_handler(
         if code_detail_tuple := http_status_map.get(exc.response.status_code):
             status_code, detail = code_detail_tuple
             if detail is None:
-                detail = exc.response.json()["errors"].join(", ")
+                detail = f"{exc}"
             raise HTTPException(status_code=status_code, detail=detail) from exc
         if exc.response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
             raise HTTPException(

@@ -69,10 +69,11 @@ class ProjectNotFoundError(WebServerValueError):
 _exception_mapper = partial(service_exception_mapper, "Webserver")
 
 _job_status_map: Mapping = {
+    status.HTTP_402_PAYMENT_REQUIRED: (status.HTTP_402_PAYMENT_REQUIRED, None),
     status.HTTP_404_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
         "The ports for job could not be found",
-    )
+    ),
 }
 
 _profile_status_map: Mapping = {
