@@ -72,7 +72,7 @@ _job_status_map: Mapping = {
     status.HTTP_402_PAYMENT_REQUIRED: (status.HTTP_402_PAYMENT_REQUIRED, None),
     status.HTTP_404_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
-        "The ports for job could not be found",
+        "The job/study could not be found",
     ),
 }
 
@@ -170,10 +170,10 @@ class AuthSession:
 
             return Page[ProjectGet].parse_raw(resp.text)
 
-    async def _wait_for_long_running_task_results(self, data):
+    async def _wait_for_long_running_task_results(self, data: TaskGet):
         # NOTE: /v0 is already included in the http client base_url
-        status_url = data["status_href"].lstrip(f"/{self.vtag}")
-        result_url = data["result_href"].lstrip(f"/{self.vtag}")
+        status_url = data.status_href.lstrip(f"/{self.vtag}")
+        result_url = data.result_href.lstrip(f"/{self.vtag}")
 
         # GET task status now until done
         async for attempt in AsyncRetrying(

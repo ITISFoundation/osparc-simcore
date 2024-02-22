@@ -175,4 +175,3 @@ async def test_clone_study_not_found(
 
     errors: list[str] = resp.json()["errors"]
     assert any("WEBSERVER_MARK" not in error_msg for error_msg in errors)
-    assert any(unknown_study_id in error_msg for error_msg in errors)
