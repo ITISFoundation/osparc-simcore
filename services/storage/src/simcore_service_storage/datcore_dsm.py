@@ -9,6 +9,7 @@ from pydantic import AnyUrl, ByteSize
 
 from .constants import DATCORE_ID, DATCORE_STR
 from .datcore_adapter import datcore_adapter
+from .datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterMultipleFilesError
 from .db_tokens import get_api_token_and_secret
 from .dsm_factory import BaseDataManager
 from .models import DatasetMetaData, FileMetaData, UploadLinks
@@ -63,9 +64,11 @@ class DatCoreDataManager(BaseDataManager):
         package_files = await datcore_adapter.get_package_files(
             self.app, api_token, api_secret, file_id
         )
-        assert (
-            len(package_files) == 1
-        ), "More than one file in package, this breaks the current assumption"
+
+        if not len(package_files) == 1:
+            raise DatcoreAdapterMultipleFilesError(
+                msg="More than one file in package, this breaks the current assumption"
+            )
         resp_data = package_files[0]["content"]
 
         return FileMetaData(
