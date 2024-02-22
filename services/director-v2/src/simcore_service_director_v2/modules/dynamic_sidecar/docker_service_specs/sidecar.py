@@ -70,7 +70,7 @@ def _get_environment_variables(
         )
         callbacks_mapping.metrics = None
 
-    return {
+    envvars: dict[str, str] = {
         # These environments will be captured by
         # services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/core/settings.py::ApplicationSettings
         #
@@ -123,12 +123,24 @@ def _get_environment_variables(
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "STORAGE_HOST": app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST,
         "STORAGE_PORT": f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}",
+        "NODE_PORTS_STORAGE_LOGIN": "",
+        "NODE_PORTS_STORAGE_PASSWORD": "",
         "DY_SIDECAR_SERVICE_KEY": scheduler_data.key,
         "DY_SIDECAR_SERVICE_VERSION": scheduler_data.version,
         "DY_SIDECAR_USER_PREFERENCES_PATH": f"{scheduler_data.user_preferences_path}",
         "DY_SIDECAR_PRODUCT_NAME": f"{scheduler_data.product_name}",
         "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": f"{app_settings.DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS}",
     }
+
+    if app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH:
+        envvars.update(
+            {
+                "NODE_PORTS_STORAGE_LOGIN": app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_LOGIN,
+                "NODE_PORTS_STORAGE_PASSWORD": app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_PASSWORD,
+            }
+        )
+
+    return envvars
 
 
 def get_prometheus_service_labels(

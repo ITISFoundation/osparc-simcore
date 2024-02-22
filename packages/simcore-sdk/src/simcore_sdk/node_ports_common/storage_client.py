@@ -25,6 +25,7 @@ from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from servicelib.aiohttp import status
+from settings_library.node_ports import NodePortsSettings
 from tenacity import RetryCallState
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -33,7 +34,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
 from . import exceptions
-from .settings import NodePortsSettings
 
 _logger = logging.getLogger(__name__)
 

@@ -1,11 +1,11 @@
 from typing import Final
 
 from pydantic import Field, NonNegativeInt, PositiveInt
-from settings_library.base import BaseCustomSettings
-from settings_library.postgres import PostgresSettings
-from settings_library.storage import StorageSettings
 
-from .constants import MINUTE
+from ._constants import MINUTE
+from .base import BaseCustomSettings
+from .postgres import PostgresSettings
+from .storage import StorageSettings
 
 NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE: Final[NonNegativeInt] = 3
 
