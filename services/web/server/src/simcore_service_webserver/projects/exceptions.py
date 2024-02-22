@@ -11,8 +11,11 @@ from ..errors import WebServerBaseError
 class BaseProjectError(WebServerBaseError):
     msg_template = "{msg}"
 
-    def __init__(self, msg=None):
-        self.msg = msg or "Unexpected error occured in projects submodule"
+    def __init__(
+        self, msg="Unexpected error occured in projects submodule", **ctx: Any
+    ) -> None:
+        super().__init__(**ctx)
+        self.msg = msg
 
     def debug_message(self):
         # Override in subclass
