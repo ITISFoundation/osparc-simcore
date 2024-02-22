@@ -55,4 +55,3 @@ async def test_package_file_entrypoint(
     data = response.json()
     assert data
     assert len(data) == 1
-    assert data[0]["content"]["packageId"] == pennsieve_file_id

@@ -64,11 +64,11 @@ class DatCoreDataManager(BaseDataManager):
             self.app, api_token, api_secret, file_id
         )
         assert (
-            len(package_files) == 0
+            len(package_files) == 1
         ), "More than one file in package, this breaks the current assumption"
         resp_data = package_files[0]["content"]
 
-        return FileMetaData.construct(
+        return FileMetaData(
             file_uuid=file_id,
             location_id=DATCORE_ID,
             location=DATCORE_STR,
