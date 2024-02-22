@@ -18,6 +18,13 @@ class StorageAuthSettings(BaseCustomSettings):
     NODE_PORTS_STORAGE_LOGIN: str
     NODE_PORTS_STORAGE_PASSWORD: SecretStr
 
+    @property
+    def base_url(self) -> str:
+        return StorageSettings(
+            STORAGE_HOST=self.NODE_PORTS_STORAGE_HOST,
+            STORAGE_PORT=self.NODE_PORTS_STORAGE_PORT,
+        ).base_url
+
     class Config:
         json_encoders: ClassVar = {
             SecretStr: lambda v: v.get_secret_value() if v else None,
