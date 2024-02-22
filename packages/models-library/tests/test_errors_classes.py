@@ -71,6 +71,24 @@ def test_error_msg_template_override():
     assert str(error) == f"Wrong value {error.value}"
 
 
+def test_error_msg_template_nicer_override():
+    class MyError(OsparcErrorMixin, Exception):
+        msg_template = "Wrong value {value}"
+
+        def __init__(self, msg=None, **ctx: Any) -> None:
+            super().__init__(**ctx)
+            # positional argument msg (if defined) overrides the msg_template
+            if msg:
+                self.msg_template = msg
+
+    error_override_msg = MyError("I want this message")
+    assert str(error_override_msg) == "I want this message"
+
+    error = MyError(value=42)
+    assert hasattr(error, "value")
+    assert str(error) == f"Wrong value {error.value}"
+
+
 def test_error_with_constructor():
     class MyError(OsparcErrorMixin, ValueError):
         msg_template = "Wrong value {value}"
@@ -108,7 +126,7 @@ def test_error_with_constructor():
         ),
     ],
 )
-def test_mst_template_with_different_formats(
+def test_msg_template_with_different_formats(
     str_format: str, ctx: dict[str, Any], expected: str
 ):
     class MyError(OsparcErrorMixin, ValueError):
