@@ -100,6 +100,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       event: "changeMultiSelection",
       apply: "__applyMultiSelection"
     },
+    // Ordering by Posibilities:
+    // field: type | uuid | name | description | prj_owner | creation_date | last_change_date
+    // direction: asc | desc
     orderBy: {
       check: "Object",
       init: {
@@ -108,8 +111,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     }
   },
-  // field: type | uuid | name | description | prj_owner | creation_date | last_change_date
-  // direction: asc | desc
 
   members: {
     // overridden
@@ -436,7 +437,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (nextRequestParams) {
         params.url.offset = nextRequestParams.offset;
         params.url.limit = nextRequestParams.limit;
-        // params.url.orderBy = JSON.stringify(this.getOrderBy());
       }
       const options = {
         resolveWResponse: true

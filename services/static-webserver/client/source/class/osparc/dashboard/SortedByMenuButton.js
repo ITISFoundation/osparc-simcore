@@ -19,7 +19,7 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
   extend: qx.ui.form.MenuButton,
 
   construct: function(resource = "study") {
-    this.base(arguments, this.tr("Sort by..."), "@FontAwesome5Solid/chevron-down/10");
+    this.base(arguments, this.tr("Sort by"), "@FontAwesome5Solid/chevron-down/10");
 
     osparc.utils.Utils.setIdToWidget(this, "sortedByButton");
 
