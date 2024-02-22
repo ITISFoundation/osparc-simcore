@@ -83,6 +83,11 @@ _profile_status_map: Mapping = {
     )
 }
 
+_wallet_status_map: Mapping = {
+    status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None),
+    status.HTTP_403_FORBIDDEN: (status.HTTP_403_FORBIDDEN, None),
+}
+
 
 class WebserverApi(BaseServiceClientApi):
     """Access to web-server API
@@ -391,7 +396,7 @@ class AuthSession:
 
     # WALLETS -------------------------------------------------
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper(_wallet_status_map)
     async def get_default_wallet(self) -> WalletGetWithAvailableCredits:
         response = await self.client.get(
             "/wallets/default",
@@ -402,7 +407,7 @@ class AuthSession:
         assert data  # nosec
         return data
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper(_wallet_status_map)
     async def get_wallet(self, wallet_id: int) -> WalletGetWithAvailableCredits:
         response = await self.client.get(
             f"/wallets/{wallet_id}",
@@ -413,7 +418,7 @@ class AuthSession:
         assert data  # nosec
         return data
 
-    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    @_exception_mapper(_wallet_status_map)
     async def get_project_wallet(self, project_id: ProjectID) -> WalletGet | None:
         response = await self.client.get(
             f"/projects/{project_id}/wallet",
