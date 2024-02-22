@@ -2,14 +2,13 @@
 
 import logging
 import urllib.parse
-from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any
+from functools import wraps
+from typing import Any, Mapping
 from uuid import UUID
 
-import httpx
 from cryptography import fernet
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.api_schemas_webserver.product import GetCreditPrice
@@ -64,27 +63,31 @@ class ProjectNotFoundError(WebServerValueError):
     msg_template = "Project '{project_id}' not found"
 
 
-@contextmanager
-def _handle_webserver_api_errors(http_status_map: dict[int, tuple[int, str | None]]):
-    """Handles httpx.HTTPStatusError and pydantic.ValidationErrors.
-    HTTPStatusErrors are mapped to user-facing errors according to the 'http_status_map',
-    allowing customization within a single endpoint
-    """
-    try:
-        with backend_service_exception_handler("Webserver"):
-            yield
+def status_map(http_status_map: Mapping[int, tuple[int, str | None]]):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            with backend_service_exception_handler("Webserver", http_status_map):
+                return await func(*args, **kwargs)
 
-    except httpx.HTTPStatusError as exc:
-        if code_detail_tuple := http_status_map.get(exc.response.status_code):
-            status_code, detail = code_detail_tuple
-            if detail is None:
-                detail = exc.response.json()["errors"].join(", ")
-            raise HTTPException(status_code=status_code, detail=detail) from exc
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Received unexpected response from Webserver",
-            )
+        return wrapper
+
+    return decorator
+
+
+_job_status_map: Mapping = {
+    status.HTTP_404_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        f"The ports for job could not be found",
+    )
+}
+
+_profile_status_map: Mapping = {
+    status.HTTP_404_NOT_FOUND: (
+        status.HTTP_404_NOT_FOUND,
+        f"Could not find profile",
+    )
+}
 
 
 class WebserverApi(BaseServiceClientApi):
@@ -144,13 +147,14 @@ class AuthSession:
         if search is not None:
             optional["search"] = search
 
-        with _handle_webserver_api_errors(
+        with backend_service_exception_handler(
+            "Webserver",
             {
                 status.HTTP_404_NOT_FOUND: (
                     status.HTTP_404_NOT_FOUND,
                     f"Could not list jobs",
                 )
-            }
+            },
         ):
             resp = await self.client.get(
                 "/projects",
@@ -198,21 +202,15 @@ class AuthSession:
 
     # PROFILE --------------------------------------------------
 
+    @status_map(_profile_status_map)
     async def getme(self) -> Profile:
-        with _handle_webserver_api_errors(
-            {
-                status.HTTP_404_NOT_FOUND: (
-                    status.HTTP_404_NOT_FOUND,
-                    f"Could not find profile",
-                )
-            }
-        ):
-            response = await self.client.get("/me", cookies=self.session_cookies)
-            response.raise_for_status()
-            profile = Envelope[Profile].parse_raw(response.text).data
-            assert profile is not None
-            return profile
+        response = await self.client.get("/me", cookies=self.session_cookies)
+        response.raise_for_status()
+        profile = Envelope[Profile].parse_raw(response.text).data
+        assert profile is not None
+        return profile
 
+    @status_map(_profile_status_map)
     async def update_me(self, profile_update: ProfileUpdate) -> Profile:
         response = await self.client.put(
             "/me",
@@ -224,6 +222,7 @@ class AuthSession:
 
     # PROJECTS -------------------------------------------------
 
+    @status_map({})
     async def create_project(self, project: ProjectCreateNew) -> ProjectGet:
         # POST /projects --> 202 Accepted
         response = await self.client.post(
@@ -239,43 +238,29 @@ class AuthSession:
         result = await self._wait_for_long_running_task_results(data)
         return ProjectGet.parse_obj(result)
 
+    @status_map(_job_status_map)
     async def clone_project(self, project_id: UUID) -> ProjectGet:
-        with _handle_webserver_api_errors(
-            {
-                status.HTTP_404_NOT_FOUND: (
-                    status.HTTP_404_NOT_FOUND,
-                    f"The job {project_id} could not be found",
-                )
-            }
-        ):
-            response = await self.client.post(
-                f"/projects/{project_id}:clone",
-                cookies=self.session_cookies,
-            )
-            response.raise_for_status()
-            data = Envelope[TaskGet].parse_raw(response.text).data
-            assert data is not None  # nosec
+        response = await self.client.post(
+            f"/projects/{project_id}:clone",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
+        data = Envelope[TaskGet].parse_raw(response.text).data
+        assert data is not None  # nosec
 
-            result = await self._wait_for_long_running_task_results(data)
-            return ProjectGet.parse_obj(result)
+        result = await self._wait_for_long_running_task_results(data)
+        return ProjectGet.parse_obj(result)
 
+    @status_map(_job_status_map)
     async def get_project(self, project_id: UUID) -> ProjectGet:
-        with _handle_webserver_api_errors(
-            {
-                status.HTTP_404_NOT_FOUND: (
-                    status.HTTP_404_NOT_FOUND,
-                    f"The job {project_id} could not be found",
-                )
-            }
-        ):
-            response = await self.client.get(
-                f"/projects/{project_id}",
-                cookies=self.session_cookies,
-            )
-            response.raise_for_status()
-            data = Envelope[ProjectGet].parse_raw(response.text).data
-            assert data is not None
-            return data
+        response = await self.client.get(
+            f"/projects/{project_id}",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
+        data = Envelope[ProjectGet].parse_raw(response.text).data
+        assert data is not None
+        return data
 
     async def get_projects_w_solver_page(
         self, solver_name: str, limit: int, offset: int
@@ -296,21 +281,22 @@ class AuthSession:
             show_hidden=False,
         )
 
+    @status_map(_job_status_map)
     async def delete_project(self, project_id: ProjectID) -> None:
-        with _handle_webserver_api_errors(
-            {
-                status.HTTP_404_NOT_FOUND: (
-                    status.HTTP_404_NOT_FOUND,
-                    f"The job {project_id} could not be found",
-                )
-            }
-        ):
-            response = await self.client.delete(
-                f"/projects/{project_id}",
-                cookies=self.session_cookies,
-            )
-            response.raise_for_status()
+        response = await self.client.delete(
+            f"/projects/{project_id}",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
 
+    @status_map(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                f"The ports for job could not be found",
+            )
+        }
+    )
     async def get_project_metadata_ports(
         self, project_id: ProjectID
     ) -> list[ProjectMetadataPortGet]:
@@ -318,78 +304,69 @@ class AuthSession:
         maps GET "/projects/{study_id}/metadata/ports", unenvelopes
         and returns data
         """
-        with _handle_webserver_api_errors(
-            {
-                status.HTTP_404_NOT_FOUND: (
-                    status.HTTP_404_NOT_FOUND,
-                    f"The ports for job {project_id} could not be found",
-                )
-            }
-        ):
-            response = await self.client.get(
-                f"/projects/{project_id}/metadata/ports",
-                cookies=self.session_cookies,
-            )
-            response.raise_for_status()
-            data = Envelope[list[ProjectMetadataPortGet]].parse_raw(response.text).data
-            assert data is not None
-            assert isinstance(data, list)
-            return data
+        response = await self.client.get(
+            f"/projects/{project_id}/metadata/ports",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
+        data = Envelope[list[ProjectMetadataPortGet]].parse_raw(response.text).data
+        assert data is not None
+        assert isinstance(data, list)
+        return data
 
+    @status_map(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                f"The metadata for the job could not be found",
+            )
+        }
+    )
     async def get_project_metadata(self, project_id: ProjectID) -> ProjectMetadataGet:
-        with _handle_webserver_api_errors(
-            {
-                status.HTTP_404_NOT_FOUND: (
-                    status.HTTP_404_NOT_FOUND,
-                    f"The metadata for job {project_id} could not be found",
-                )
-            }
-        ):
-            response = await self.client.get(
-                f"/projects/{project_id}/metadata",
-                cookies=self.session_cookies,
-            )
-            response.raise_for_status()
-            data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
-            assert data  # nosec
-            return data
+        response = await self.client.get(
+            f"/projects/{project_id}/metadata",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
+        data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
+        assert data  # nosec
+        return data
 
+    @status_map(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                f"The metadata for the job could not be found",
+            )
+        }
+    )
     async def update_project_metadata(
         self, project_id: ProjectID, metadata: dict[str, MetaValueType]
     ) -> ProjectMetadataGet:
-        with _handle_webserver_api_errors(
-            {
-                status.HTTP_404_NOT_FOUND: (
-                    status.HTTP_404_NOT_FOUND,
-                    f"The metadata for job {project_id} could not be found",
-                )
-            }
-        ):
-            response = await self.client.patch(
-                f"/projects/{project_id}/metadata",
-                cookies=self.session_cookies,
-                json=jsonable_encoder(ProjectMetadataUpdate(custom=metadata)),
-            )
-            response.raise_for_status()
-            data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
-            assert data  # nosec
-            return data
+        response = await self.client.patch(
+            f"/projects/{project_id}/metadata",
+            cookies=self.session_cookies,
+            json=jsonable_encoder(ProjectMetadataUpdate(custom=metadata)),
+        )
+        response.raise_for_status()
+        data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
+        assert data  # nosec
+        return data
 
+    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_project_node_pricing_unit(
         self, project_id: UUID, node_id: UUID
     ) -> PricingUnitGet | None:
-        with _handle_webserver_api_errors(
-            {status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)}
-        ):
-            response = await self.client.get(
-                f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
-                cookies=self.session_cookies,
-            )
+        response = await self.client.get(
+            f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
+            cookies=self.session_cookies,
+        )
 
-            response.raise_for_status()
-            data = Envelope[PricingUnitGet].parse_raw(response.text).data
-            return data
+        response.raise_for_status()
+        data = Envelope[PricingUnitGet].parse_raw(response.text).data
+        return data
 
+    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def connect_pricing_unit_to_project_node(
         self,
         project_id: UUID,
@@ -397,109 +374,89 @@ class AuthSession:
         pricing_plan: PositiveInt,
         pricing_unit: PositiveInt,
     ) -> None:
-        with _handle_webserver_api_errors(
-            {status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)}
-        ):
-            response = await self.client.put(
-                f"/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan}/pricing-unit/{pricing_unit}",
-                cookies=self.session_cookies,
-            )
-            response.raise_for_status()
+        response = await self.client.put(
+            f"/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan}/pricing-unit/{pricing_unit}",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
 
+    @status_map(_job_status_map)
     async def start_project(
         self, project_id: UUID, cluster_id: ClusterID | None = None
     ) -> None:
-        with _handle_webserver_api_errors(
-            {
-                status.HTTP_404_NOT_FOUND: (
-                    status.HTTP_404_NOT_FOUND,
-                    f"Job {project_id} could not be found",
-                )
-            }
-        ):
-            body_input: dict[str, Any] = {}
-            if cluster_id:
-                body_input["cluster_id"] = cluster_id
-            body: ComputationStart = ComputationStart(**body_input)
-            response = await self.client.post(
-                f"/computations/{project_id}:start",
-                cookies=self.session_cookies,
-                json=jsonable_encoder(body, exclude_unset=True, exclude_defaults=True),
-            )
-            response.raise_for_status()
+        body_input: dict[str, Any] = {}
+        if cluster_id:
+            body_input["cluster_id"] = cluster_id
+        body: ComputationStart = ComputationStart(**body_input)
+        response = await self.client.post(
+            f"/computations/{project_id}:start",
+            cookies=self.session_cookies,
+            json=jsonable_encoder(body, exclude_unset=True, exclude_defaults=True),
+        )
+        response.raise_for_status()
 
     # WALLETS -------------------------------------------------
 
+    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_default_wallet(self) -> WalletGetWithAvailableCredits:
-        with _handle_webserver_api_errors(
-            {status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)}
-        ):
-            response = await self.client.get(
-                "/wallets/default",
-                cookies=self.session_cookies,
-            )
-            response.raise_for_status()
-            data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
-            assert data  # nosec
-            return data
+        response = await self.client.get(
+            "/wallets/default",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
+        data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
+        assert data  # nosec
+        return data
 
+    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_wallet(self, wallet_id: int) -> WalletGetWithAvailableCredits:
-        with _handle_webserver_api_errors(
-            {status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)}
-        ):
-            response = await self.client.get(
-                f"/wallets/{wallet_id}",
-                cookies=self.session_cookies,
-            )
-            response.raise_for_status()
-            data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
-            assert data  # nosec
-            return data
+        response = await self.client.get(
+            f"/wallets/{wallet_id}",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
+        data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
+        assert data  # nosec
+        return data
 
+    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_project_wallet(self, project_id: ProjectID) -> WalletGet | None:
-        with _handle_webserver_api_errors(
-            {status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)}
-        ):
-            response = await self.client.get(
-                f"/projects/{project_id}/wallet",
-                cookies=self.session_cookies,
-            )
-            response.raise_for_status()
-            data = Envelope[WalletGet].parse_raw(response.text).data
-            return data
+        response = await self.client.get(
+            f"/projects/{project_id}/wallet",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
+        data = Envelope[WalletGet].parse_raw(response.text).data
+        return data
 
     # PRODUCTS -------------------------------------------------
 
+    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_product_price(self) -> NonNegativeDecimal | None:
-        with _handle_webserver_api_errors(
-            {status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)}
-        ):
-            response = await self.client.get(
-                "/credits-price",
-                cookies=self.session_cookies,
-            )
-            response.raise_for_status()
-            data = Envelope[GetCreditPrice].parse_raw(response.text).data
-            assert data is not None
-            return data.usd_per_credit
+        response = await self.client.get(
+            "/credits-price",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
+        data = Envelope[GetCreditPrice].parse_raw(response.text).data
+        assert data is not None
+        return data.usd_per_credit
 
     # SERVICES -------------------------------------------------
 
+    @status_map({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_service_pricing_plan(
         self, solver_key: SolverKeyId, version: VersionStr
     ) -> ServicePricingPlanGet | None:
         service_key = urllib.parse.quote_plus(solver_key)
 
-        with _handle_webserver_api_errors(
-            {status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)}
-        ):
-            response = await self.client.get(
-                f"/catalog/services/{service_key}/{version}/pricing-plan",
-                cookies=self.session_cookies,
-            )
-            response.raise_for_status()
-            data = Envelope[ServicePricingPlanGet].parse_raw(response.text).data
-            return data
+        response = await self.client.get(
+            f"/catalog/services/{service_key}/{version}/pricing-plan",
+            cookies=self.session_cookies,
+        )
+        response.raise_for_status()
+        data = Envelope[ServicePricingPlanGet].parse_raw(response.text).data
+        return data
 
 
 # MODULES APP SETUP -------------------------------------------------------------
