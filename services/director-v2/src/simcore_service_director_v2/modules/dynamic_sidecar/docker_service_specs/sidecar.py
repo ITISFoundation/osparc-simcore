@@ -70,7 +70,7 @@ def _get_environment_variables(
         )
         callbacks_mapping.metrics = None
 
-    envvars: dict[str, str] = {
+    return {
         # These environments will be captured by
         # services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/core/settings.py::ApplicationSettings
         #
@@ -130,17 +130,12 @@ def _get_environment_variables(
         "DY_SIDECAR_USER_PREFERENCES_PATH": f"{scheduler_data.user_preferences_path}",
         "DY_SIDECAR_PRODUCT_NAME": f"{scheduler_data.product_name}",
         "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": f"{app_settings.DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS}",
+        "NODE_PORTS_STORAGE_AUTH": (
+            app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.json()
+            if app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
+            else "None"
+        ),
     }
-
-    if app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH:
-        envvars.update(
-            {
-                "NODE_PORTS_STORAGE_LOGIN": app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_LOGIN,
-                "NODE_PORTS_STORAGE_PASSWORD": app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_PASSWORD,
-            }
-        )
-
-    return envvars
 
 
 def get_prometheus_service_labels(
