@@ -97,6 +97,11 @@ class PlacementSettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
+    DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR: bool = Field(
+        default=False,
+        auto_default_from_env=True,
+        description="Override default endpoint spec mode 'vip' to 'dnsrr'",
+    )
     DYNAMIC_SIDECAR_SC_BOOT_MODE: BootModeEnum = Field(
         ...,
         description="Boot mode used for the dynamic-sidecar services"
