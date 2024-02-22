@@ -106,7 +106,7 @@ async def _garbage_collect_failed_copies(s3_client, bucket, prefix, threshold_ho
         print("No marker found. No cleanup needed.")
 
 
-async def test__copy_path_s3_s3(
+async def test_copy_directory_from_s3_to_s3(
     mocker: MockerFixture,
     client: TestClient,
     simcore_bucket_name: S3BucketName,
@@ -116,10 +116,10 @@ async def test__copy_path_s3_s3(
     src_fmd_object_name = (
         "d2504240-cf63-11ee-bf70-02420a0b0228"  # andreas example (s4lio)
     )
-    src_fmd_object_name = (
-        "502fd316-8a9e-11ee-a81b-02420a0b173b"  # taylor example (NIH prod)
-    )
-    src_fmd_object_name = "d0be75f0-ca9a-11ee-9b42-02420a000206"  # MY example (master)
+    # src_fmd_object_name = (
+    #    "502fd316-8a9e-11ee-a81b-02420a0b173b"  # taylor example (NIH prod)
+    # )
+    # src_fmd_object_name = "d0be75f0-ca9a-11ee-9b42-02420a000206"  # MY example (master)
     new_fmd_object_name = "pytest_destination"
     assert client.app
     s3_client = get_s3_client(client.app)
@@ -136,15 +136,18 @@ async def test__copy_path_s3_s3(
         "Copied",
         src_fmd_object_name,
         f"{copied_count=}",
+        f"{sum(copied_count)=}",
         f"{copied_size=}",
+        f"{sum(copied_size)=}",
         f"{elapsed=:3.2f}",
         "secs",
     )
 
-    # 1002 58.541385
-    # 1002 100.254
+    # 0be75f0-ca9a-11ee-9b42-02420a000206 copied_count=1004 copied_size=1048579839 elapsed=72.92 secs
+    #
+
     assert bytes_transfered_cb.called
-    assert bytes_transfered_cb.call_count == 2 * copied_count
+    assert bytes_transfered_cb.call_count == 2 * sum(copied_count)
 
 
 @pytest.mark.skip(reason="UNDER DEVE")

@@ -114,7 +114,13 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
             aws_session_token=settings.S3_ACCESS_TOKEN,
             region_name=settings.S3_REGION,
             # FIXME: retries should be reconfigurable via settings
-            config=Config(signature_version="s3v4", retries={"mode": "adaptive"}),
+            config=Config(
+                signature_version="s3v4",
+                retries={
+                    "mode": "standard",
+                    "total_max_attempts": 4,
+                },
+            ),
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         client = cast(S3Client, await exit_stack.enter_async_context(session_client))
@@ -419,13 +425,13 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         src_prefix: str,
         dst_prefix: str,
         bytes_transfered_cb: Callable[[int], None] | None,
-    ) -> tuple[int, int]:
+    ) -> tuple[list[int], list[int]]:
         """Copies multiple objects within the same bucket
 
         WARNING: No gurarantees on atomicity
         """
-        total_count = 0
-        total_size = 0
+        total_count = [0, 0]
+        total_size = [0, 0]
         async for page in self.iter_pages(bucket, prefix=src_prefix):
             for obj in page:
                 assert "Key" in obj  # nosec
@@ -443,6 +449,8 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
                         dst_file=cast(SimcoreS3FileID, new),
                         bytes_transfered_cb=bytes_transfered_cb,
                     )
+                    total_size[0] += obj["Size"]
+                    total_count[0] += 1
                 else:
                     if bytes_transfered_cb:
                         bytes_transfered_cb(0)
@@ -456,8 +464,8 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
                     if bytes_transfered_cb:
                         bytes_transfered_cb(obj["Size"])
 
-                total_size += obj["Size"]
-                total_count += 1
+                    total_size[1] += obj["Size"]
+                    total_count[1] += 1
 
         return total_count, total_size
 
