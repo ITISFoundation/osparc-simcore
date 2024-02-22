@@ -1,10 +1,10 @@
 import json
+from datetime import timedelta
 from typing import Any, Final
 
 from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
 from pydantic.json import pydantic_encoder
 
-from ._constants import MINUTE
 from .base import BaseCustomSettings
 from .postgres import PostgresSettings
 from .storage import StorageSettings
@@ -36,7 +36,9 @@ class NodePortsSettings(BaseCustomSettings):
 
     POSTGRES_SETTINGS: PostgresSettings = Field(auto_default_from_env=True)
 
-    NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S: NonNegativeInt = 5 * MINUTE
+    NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S: NonNegativeInt = int(
+        timedelta(minutes=5).total_seconds()
+    )
     NODE_PORTS_IO_NUM_RETRY_ATTEMPTS: PositiveInt = 5
     NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS: NonNegativeInt = (
         NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE
