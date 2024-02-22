@@ -16,6 +16,7 @@ async def handle_httpx_client_exceptions(_: Request, exc: HTTPError):
     """
     Default httpx exception handler.
     See https://www.python-httpx.org/exceptions/
+    With this in place only HTTPStatusErrors need to be customized closer to the httpx client itself.
     """
     status_code: Any
     detail: str
