@@ -17,7 +17,7 @@ from yarl import URL
 from ._resolver import ResolvedItem, resolve_rrid
 from ._rest import autocomplete_by_name, get_resource_fields
 from .errors import (
-    InvalidRRID,
+    InvalidRRIDError,
     ScicrunchAPIError,
     ScicrunchConfigError,
     ScicrunchServiceError,
@@ -101,12 +101,14 @@ class SciCrunch:
         try:
             rrid = normalize_rrid_tags(rrid, with_prefix=False)
         except ValueError as err:
-            raise InvalidRRID(rrid) from err
+            raise InvalidRRIDError(rrid=rrid) from err
 
         if for_api and not rrid.startswith("SCR_"):
             # "SCR" for the SciCrunch registry of tools
             # scicrunch API does not support anything else but tools (see test_scicrunch_services.py)
-            raise InvalidRRID(": only 'SCR' from scicrunch registry of tools allowed")
+            raise InvalidRRIDError(
+                msg_template=": only 'SCR' from scicrunch registry of tools allowed"
+            )
 
         return rrid
 
@@ -133,7 +135,7 @@ class SciCrunch:
                 rrid, self.client, self.settings
             )
             if not resolved_items:
-                raise InvalidRRID(f".Could not resolve {rrid}")
+                raise InvalidRRIDError(msg_template=f".Could not resolve {rrid}")
 
             # WARNING: currently we only take the first, but it might
             # have multiple hits. Nonetheless, test_scicrunch_resolves_all_valid_rrids
@@ -152,7 +154,7 @@ class SciCrunch:
 
         except (ValidationError, client_exceptions.InvalidURL) as err:
             raise ScicrunchAPIError(
-                "scicrunch API response unexpectedly changed"
+                reason="scicrunch API response unexpectedly changed"
             ) from err
 
         except (
@@ -161,7 +163,9 @@ class SciCrunch:
             asyncio.TimeoutError,
         ) as err:
             # https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
-            raise ScicrunchServiceError("Failed to connect scicrunch service") from err
+            raise ScicrunchServiceError(
+                reason="Failed to connect scicrunch service"
+            ) from err
 
     async def search_resource(self, name_as: str) -> list[ResourceHit]:
         # Safe: returns empty string if fails!
