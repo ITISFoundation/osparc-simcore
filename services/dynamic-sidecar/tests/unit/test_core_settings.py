@@ -20,9 +20,16 @@ def test_settings_with_envdevel_file(mock_environment_with_envdevel: EnvVarsDict
         {
             "NODE_PORTS_STORAGE_LOGIN": "login",
             "NODE_PORTS_STORAGE_PASSWORD": "passwd",
+            "NODE_PORTS_STORAGE_HOST": "host",
+            "NODE_PORTS_STORAGE_PORT": "42",
         },
         {
-            "NODE_PORTS_STORAGE_AUTH": '{"NODE_PORTS_STORAGE_LOGIN": "login", "NODE_PORTS_STORAGE_PASSWORD": "passwd"}'
+            "NODE_PORTS_STORAGE_AUTH": (
+                '{"NODE_PORTS_STORAGE_LOGIN": "login", '
+                '"NODE_PORTS_STORAGE_PASSWORD": "passwd", '
+                '"NODE_PORTS_STORAGE_HOST": "host", '
+                '"NODE_PORTS_STORAGE_PORT": "42"}'
+            )
         },
     ],
 )
@@ -33,6 +40,8 @@ def test_settings_with_node_ports_storage_auth(
 
     settings = ApplicationSettings.create_from_envs()
     assert settings.NODE_PORTS_STORAGE_AUTH is not None
+    assert settings.NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_HOST == "host"
+    assert settings.NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_PORT == 42
     assert settings.NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_LOGIN == "login"
     assert (
         settings.NODE_PORTS_STORAGE_AUTH.NODE_PORTS_STORAGE_PASSWORD.get_secret_value()
