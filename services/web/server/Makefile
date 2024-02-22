@@ -19,5 +19,5 @@ openapi-specs: ## updates and validates openapi specifications
 
 
 .PHONY: echo-errors
-echo-errors: ## echo exceptions tree
+echo-errors: _check_venv_active ## echo exceptions tree
 	@python "${SCRIPTS_DIR}/print_exceptions_tree.py" "${PY_PACKAGE_NAME}" "${PY_PACKAGE_NAME}.errors.WebServerBaseError"
