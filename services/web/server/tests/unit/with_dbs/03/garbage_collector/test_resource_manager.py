@@ -5,7 +5,6 @@
 
 
 import asyncio
-import json
 import logging
 from asyncio import Future
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -22,6 +21,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -586,7 +586,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     ):
         with attempt:
             socket_project_state_update_mock_callable.assert_called_with(
-                json.dumps(
+                jsonable_encoder(
                     {
                         "project_uuid": empty_user_project["uuid"],
                         "data": {
