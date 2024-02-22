@@ -33,15 +33,16 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     const layout = this.__layout = new qx.ui.layout.VBox(2);
     this._setLayout(layout);
 
-    this.addListener("changeCurrentNode", (e) => {
+    this.addListener("changeCurrentNode", e => {
       const node = this.__node = e.getData();
       const telemetry = this.__testDiskUsage.find(i => i.nodeId === node.getNodeId());
+      console.log("this.__testDiskUsage", this.__testDiskUsage)
       if (telemetry) {
         this.diskUsageToUI(telemetry["node_id"], telemetry.usage);
       }
     }, this);
 
-    this.addListener("changeCurrentTelemetry", (e) => {
+    this.addListener("changeCurrentTelemetry", e => {
       const nodeId = this.__node.getNodeId();
       const telemetry = e.getData();
 
@@ -51,7 +52,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       };
 
       const index = this.__testDiskUsage.findIndex(i => i.nodeId === newData.nodeId);
-      if(index === -1) {
+      if (index === -1) {
         this.__testDiskUsage.push(newData)
       } else {
         this.__testDiskUsage[index] = newData;
@@ -72,7 +73,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       init : null,
       nullable : true,
       event : "changeCurrentNode",
-      // apply: "_applyCurrentNode"
+      apply: "_applyCurrentNode"
     },
     currentTelemetry: {
       check : "Object",
@@ -138,9 +139,9 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       const warningSize = osparc.utils.Utils.gBToBytes(this.__lowDiskThreshold); // 5 GB Default
       const criticalSize = osparc.utils.Utils.gBToBytes(0.01); // 0 GB
       let warningLevel = "NORMAL"
-      if (this.__diskUsage.free <= criticalSize) {
+      if (this.__diskUsage["free"] <= criticalSize) {
         warningLevel = "CRITICAL"
-      } else if (this.__diskUsage.free <= warningSize) {
+      } else if (this.__diskUsage["free"] <= warningSize) {
         warningLevel = "WARNING"
       } else {
         warningLevel = "NORMAL"
@@ -238,8 +239,9 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
         const manager = osparc.workbench.DiskUsageController.getInstance();
         const listener = new osparc.workbench.DiskUsageListener(manager);
         listener.listen(slotName, diskUsage => {
-
+          console.log(this.getCurrentNode().getNodeId())
           if (diskUsage) {
+
             this.setCurrentTelemetry(diskUsage);
           }
         });
@@ -249,7 +251,8 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     },
 
     _applyCurrentNode: function(node) {
-      return;
+      // console.log("Node added", node.getNodeId())
+      // this.diskUsageToUI(node.getNodeId(), undefined);
     },
   },
 

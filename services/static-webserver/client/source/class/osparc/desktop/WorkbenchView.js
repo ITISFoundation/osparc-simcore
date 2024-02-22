@@ -464,6 +464,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         })
         topBar.add(diskIndicator);
       // }
+
       const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         label: this.tr("App Mode"),
@@ -967,7 +968,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const diskIndicator = this.getChildControl("disk-telemetry");
       diskIndicator.setCurrentNode(node);
       diskIndicator.set({
-        visibility: diskIndicator.getCurrentNode().getNodeId() !== diskIndicator.getCurrentTelemetry()["node_id"] ? "excluded" : "visible"
+        visibility: diskIndicator.getCurrentNode().getNodeId() === diskIndicator.getCurrentTelemetry()["node_id"] ? "visible" : "excluded"
       })
     },
 
