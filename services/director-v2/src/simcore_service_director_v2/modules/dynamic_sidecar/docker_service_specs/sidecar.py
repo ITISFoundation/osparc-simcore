@@ -131,7 +131,7 @@ def _get_environment_variables(
         "DY_SIDECAR_PRODUCT_NAME": f"{scheduler_data.product_name}",
         "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": f"{app_settings.DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS}",
         "NODE_PORTS_STORAGE_AUTH": (
-            app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.json()
+            app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.unsafe_json()
             if app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
             else "null"
         ),

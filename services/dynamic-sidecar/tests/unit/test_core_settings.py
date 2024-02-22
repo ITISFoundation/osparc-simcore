@@ -48,7 +48,7 @@ def test_settings_with_node_ports_storage_auth(
         == "passwd"
     )
     # json serializes password to plain text
-    assert "passwd" in settings.NODE_PORTS_STORAGE_AUTH.json()
+    assert "passwd" in settings.NODE_PORTS_STORAGE_AUTH.unsafe_json()
 
 
 @pytest.mark.parametrize(

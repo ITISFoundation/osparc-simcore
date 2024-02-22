@@ -1,6 +1,8 @@
-from typing import ClassVar, Final
+import json
+from typing import Any, ClassVar, Final
 
 from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
+from pydantic.json import pydantic_encoder
 
 from ._constants import MINUTE
 from .base import BaseCustomSettings
@@ -24,6 +26,19 @@ class StorageAuthSettings(BaseCustomSettings):
             STORAGE_HOST=self.NODE_PORTS_STORAGE_HOST,
             STORAGE_PORT=self.NODE_PORTS_STORAGE_PORT,
         ).base_url
+
+    def unsafe_dict(self):
+        data: dict[str, Any] = self.dict()
+        data["NODE_PORTS_STORAGE_PASSWORD"] = (
+            self.NODE_PORTS_STORAGE_PASSWORD.get_secret_value()
+            if self.NODE_PORTS_STORAGE_PASSWORD
+            else None
+        )
+        return data
+
+    def unsafe_json(self):
+        d = self.unsafe_dict()
+        return json.dumps(d, default=pydantic_encoder)
 
     class Config:
         json_encoders: ClassVar = {
