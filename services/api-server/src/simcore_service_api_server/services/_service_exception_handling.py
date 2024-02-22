@@ -11,7 +11,7 @@ from servicelib.error_codes import create_error_code
 _logger = logging.getLogger(__name__)
 
 
-def service_status_mapper(
+def service_exception_mapper(
     service_name: str, http_status_map: Mapping[int, tuple[int, str | None]]
 ):
     def decorator(func):
