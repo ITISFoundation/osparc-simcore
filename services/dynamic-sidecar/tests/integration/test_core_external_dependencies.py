@@ -1,7 +1,5 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-
-from collections.abc import AsyncIterable
 from unittest.mock import AsyncMock
 
 import pytest
@@ -69,12 +67,7 @@ def app(
     return create_app()
 
 
-@pytest.fixture
-async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
-    async with TestClient(app) as client:
-        yield client
-
-
-async def test_external_dependencies_are_reachable(test_client: TestClient):
-    # TODO: figure out if this is the test we want. no logs are seen here for some reason
-    assert True
+async def test_external_dependencies_are_reachable(app: FastAPI):
+    async with TestClient(app):
+        # checks that client starts properly
+        assert True

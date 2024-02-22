@@ -163,7 +163,10 @@ def docker_swarm(
         with attempt:
             if not _is_docker_swarm_init(docker_client):
                 print("--> initializing docker swarm...")
-                docker_client.swarm.init(advertise_addr=get_localhost_ip())
+                docker_client.swarm.init(
+                    advertise_addr=get_localhost_ip(),
+                    default_addr_pool=["172.16.0.1/16"],
+                )
                 print("--> docker swarm initialized.")
 
             # if still not in swarm, raise an error to try and initialize again
