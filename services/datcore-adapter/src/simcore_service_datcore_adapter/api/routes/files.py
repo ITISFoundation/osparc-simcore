@@ -71,7 +71,7 @@ async def get_package(
     pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
 ) -> list[dict[str, Any]]:
     assert request  # nosec
-    return await pennsieve_client._get_package_files(  # noqa: SLF001
+    return await pennsieve_client.get_package_files(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
         package_id=package_id,
