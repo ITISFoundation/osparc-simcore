@@ -978,7 +978,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     requestStopNode: function(withConfirmationDialog=false) {
       const self = this;
-      const stopService = function() {
+      const stopService = () => {
         const params = {
           url: {
             studyId: self.getStudy().getUuid(),
