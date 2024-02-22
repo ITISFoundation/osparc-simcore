@@ -85,10 +85,11 @@ qx.Class.define("osparc.FlashMessenger", {
       });
     },
 
-    __getTextMessage: function(logMessage){
+    __getTextMessage: function(logMessage) {
       let message = osparc.utils.Utils.isObject(logMessage.message) && "message" in logMessage.message ?
         logMessage.message.message :
         logMessage.message;
+      /* eslint no-underscore-dangle: 0 */
       return message === undefined || message === null ? null : message.__txt;
     },
 
@@ -96,7 +97,7 @@ qx.Class.define("osparc.FlashMessenger", {
       // disallow same message from being displayed again
       let message = this.__getTextMessage(logMessage);
       if (this.__currentlyDisplayedMessages.has(message)) {
-          return;
+        return null;
       }
       this.__currentlyDisplayedMessages.add(message);
 
