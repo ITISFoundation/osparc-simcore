@@ -1,7 +1,11 @@
 import psutil
+import pytest
 from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 
 
+@pytest.skip(
+    "skipped until https://github.com/ITISFoundation/osparc-simcore/issues/5324"
+)
 def test_disk_usage():
     ps_util_disk_usage = psutil.disk_usage("/")
     disk_usage = DiskUsage.from_ps_util_disk_usage(ps_util_disk_usage)
