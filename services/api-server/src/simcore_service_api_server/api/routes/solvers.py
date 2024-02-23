@@ -151,7 +151,7 @@ async def list_solver_releases(
     SEE get_solver_releases_page for a paginated version of this function
     """
     releases: list[Solver] = await catalog_client.list_solver_releases(
-        user_id, solver_key, product_name=product_name
+        user_id=user_id, solver_key=solver_key, product_name=product_name
     )
 
     for solver in releases:

@@ -86,8 +86,8 @@ class CatalogApi(BaseServiceClientApi):
     )
     async def list_solvers(
         self,
-        user_id: int,
         *,
+        user_id: int,
         product_name: str,
         predicate: Callable[[Solver], bool] | None = None,
     ) -> list[Solver]:
@@ -131,7 +131,7 @@ class CatalogApi(BaseServiceClientApi):
         }
     )
     async def get_service(
-        self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
+        self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
     ) -> Solver:
 
         assert version != LATEST_VERSION  # nosec
@@ -167,7 +167,7 @@ class CatalogApi(BaseServiceClientApi):
         }
     )
     async def get_service_ports(
-        self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
+        self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
     ):
 
         assert version != LATEST_VERSION  # nosec
@@ -186,7 +186,7 @@ class CatalogApi(BaseServiceClientApi):
         return parse_obj_as(list[SolverPort], response.json())
 
     async def list_latest_releases(
-        self, user_id: int, *, product_name: str
+        self, *, user_id: int, product_name: str
     ) -> list[Solver]:
         solvers: list[Solver] = await self.list_solvers(
             user_id, product_name=product_name
@@ -201,7 +201,7 @@ class CatalogApi(BaseServiceClientApi):
         return list(latest_releases.values())
 
     async def list_solver_releases(
-        self, user_id: int, solver_key: SolverKeyId, *, product_name: str
+        self, *, user_id: int, solver_key: SolverKeyId, product_name: str
     ) -> list[Solver]:
         def _this_solver(solver: Solver) -> bool:
             return solver.id == solver_key
@@ -215,7 +215,7 @@ class CatalogApi(BaseServiceClientApi):
         self, user_id: int, solver_key: SolverKeyId, *, product_name: str
     ) -> Solver:
         releases = await self.list_solver_releases(
-            user_id, solver_key, product_name=product_name
+            user_id=user_id, solver_key=solver_key, product_name=product_name
         )
 
         # raises IndexError if None
