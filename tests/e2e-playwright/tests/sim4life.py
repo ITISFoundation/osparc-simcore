@@ -5,12 +5,15 @@
 # pylint: disable=too-many-statements
 # pylint: disable=unnecessary-lambda
 
+import logging
 import re
+from contextlib import ExitStack
 from http import HTTPStatus
 from typing import Final
 
 from playwright.sync_api import APIRequestContext, Page
 from pydantic import AnyUrl
+from pytest_simcore.playwright_utils import log_context, test_logger
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -22,10 +25,20 @@ projects_uuid_pattern: Final[re.Pattern] = re.compile(
 
 
 def on_web_socket(ws) -> None:
-    print(f"WebSocket opened: {ws.url}")
-    ws.on("framesent", lambda payload: print(payload))
-    ws.on("framereceived", lambda payload: print(payload))
-    ws.on("close", lambda payload: print("WebSocket closed"))
+    stack = ExitStack()
+    ctx = stack.enter_context(
+        log_context(
+            logging.INFO,
+            (
+                f"WebSocket opened: {ws.url}",
+                "WebSocket closed",
+            ),
+        )
+    )
+
+    ws.on("framesent", lambda payload: ctx.logger.info(payload))
+    ws.on("framereceived", lambda payload: ctx.logger.info(payload))
+    ws.on("close", lambda payload: stack.close())
 
 
 def test_sim4life(
@@ -56,7 +69,7 @@ def test_sim4life(
         page.wait_for_timeout(1000)
 
     # Get project uuid, will be used to delete this project in the end
-    print(f"projects uuid endpoint captured: {response_info.value.url}")
+    test_logger.info(f"projects uuid endpoint captured: %s", response_info.value.url)
     match = projects_uuid_pattern.search(response_info.value.url)
     assert match
     extracted_uuid = match.group(1)
