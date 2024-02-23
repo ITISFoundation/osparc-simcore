@@ -202,7 +202,7 @@ class AuthSession:
     # PROFILE --------------------------------------------------
 
     @_exception_mapper(_profile_status_map)
-    async def getme(self) -> Profile:
+    async def get_me(self) -> Profile:
         response = await self.client.get("/me", cookies=self.session_cookies)
         response.raise_for_status()
         profile = Envelope[Profile].parse_raw(response.text).data
@@ -217,7 +217,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        return await self.getme()
+        return await self.get_me()
 
     # PROJECTS -------------------------------------------------
 

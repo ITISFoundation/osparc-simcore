@@ -17,7 +17,7 @@ router = APIRouter()
 async def get_my_profile(
     webserver_session: Annotated[AuthSession, Depends(get_webserver_session)],
 ) -> Profile:
-    return await webserver_session.getme()
+    return await webserver_session.get_me()
 
 
 @router.put("", response_model=Profile)
