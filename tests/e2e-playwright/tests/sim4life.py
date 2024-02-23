@@ -1,9 +1,11 @@
+# pylint: disable=logging-fstring-interpolation
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
 # pylint: disable=unnecessary-lambda
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 
 import re
 from http import HTTPStatus
@@ -50,7 +52,7 @@ def test_sim4life(
         page.wait_for_timeout(1000)
 
     # Get project uuid, will be used to delete this project in the end
-    test_logger.info(f"projects uuid endpoint captured: %s", response_info.value.url)
+    test_logger.info("projects uuid endpoint captured: %s", response_info.value.url)
     match = projects_uuid_pattern.search(response_info.value.url)
     assert match
     extracted_uuid = match.group(1)

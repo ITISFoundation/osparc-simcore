@@ -1,10 +1,11 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
+# pylint: disable=logging-fstring-interpolation
 # pylint:disable=no-value-for-parameter
+# pylint:disable=protected-access
+# pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 # pylint:disable=too-many-statements
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 
 import datetime
@@ -168,9 +169,7 @@ def test_sleepers(
         logging.INFO,
         (
             f"---> Looking for {expected_file_names=} in all {num_sleepers} sleeper services...",
-            "------------------------------------------------------"
-            "---> All good, we're done here! This was really great!"
-            "------------------------------------------------------",
+            "---> All good, we're done here! This was really great!",
         ),
     ) as ctx:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
@@ -182,7 +181,8 @@ def test_sleepers(
                 page.get_by_test_id("nodeOutputFilesBtn").click()
                 output_file_names_found = _get_file_names(page)
 
-            msg = f"<--- found {output_file_names_found=} in sleeper {index} service outputs."
-            ctx.logger.info(msg)
+            ctx.logger.info(
+                f"<--- found {output_file_names_found=} in sleeper {index} service outputs."
+            )  # noqa: G004
             assert output_file_names_found == expected_file_names
             page.get_by_test_id("nodeDataManagerCloseBtn").click()
