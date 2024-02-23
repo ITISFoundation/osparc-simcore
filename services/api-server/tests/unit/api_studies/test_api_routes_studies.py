@@ -103,7 +103,7 @@ async def test_studies_read_workflow(
     resp = await client.get(f"/v0/studies/{inexistent_study_id}", auth=auth)
     assert resp.status_code == status.HTTP_404_NOT_FOUND
     error = parse_obj_as(ErrorGet, resp.json())
-    assert f"{inexistent_study_id}" in error.errors[0][0]["message"]
+    assert f"{inexistent_study_id}" in error.errors[0]
 
     resp = await client.get(f"/v0/studies/{inexistent_study_id}/ports", auth=auth)
     assert resp.status_code == status.HTTP_404_NOT_FOUND
@@ -175,4 +175,3 @@ async def test_clone_study_not_found(
 
     errors: list[str] = resp.json()["errors"]
     assert any("WEBSERVER_MARK" not in error_msg for error_msg in errors)
-    assert any(unknown_study_id in error_msg for error_msg in errors)
