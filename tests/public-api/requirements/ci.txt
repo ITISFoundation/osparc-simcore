@@ -12,4 +12,4 @@
 osparc==0.6.5
 
 # installs this repo's packages
---editable ../../packages/pytest-simcore/
+pytest-simcore @ ../../packages/pytest-simcore/

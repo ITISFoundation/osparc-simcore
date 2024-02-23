@@ -1,3 +1,3 @@
 
 --requirement _test.txt
---editable ../../packages/pytest-simcore
+pytest-simcore @ ../../packages/pytest-simcore

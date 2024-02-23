@@ -742,7 +742,7 @@ _running_containers = $(shell docker ps -aq)
 
 clean-venv: devenv ## Purges .venv into original configuration
 	# Cleaning your venv
-	.venv/bin/pip-sync --quiet $(CURDIR)/requirements/devenv.txt
+	@uv pip sync  --quiet $(CURDIR)/requirements/devenv.txt
 	@pip list
 
 clean-hooks: ## Uninstalls git pre-commit hooks

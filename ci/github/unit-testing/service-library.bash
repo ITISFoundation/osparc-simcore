@@ -6,7 +6,6 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 # NOTE: notice that the CI uses [all]
-# TODO: add STEPS where pip-sync individual extras and test separately
 install_all() {
   make devenv
   # shellcheck source=/dev/null
