@@ -57,10 +57,17 @@ def backend_service_exception_handler(
             else:
                 detail = detail_callback(endpoint_kwargs)
             raise HTTPException(status_code=status_code, detail=detail) from exc
-        if exc.response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
+        if exc.response.status_code in {
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            status.HTTP_429_TOO_MANY_REQUESTS,
+        }:
+            headers = {}
+            if "Retry-After" in exc.response.headers:
+                headers["Retry-After"] = exc.response.headers["Retry-After"]
             raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                status_code=exc.response.status_code,
                 detail=f"The {service_name} service was unavailable",
+                headers=headers,
             ) from exc
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
