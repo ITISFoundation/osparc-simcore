@@ -205,7 +205,7 @@ class AuthSession:
     async def get_me(self) -> Profile:
         response = await self.client.get("/me", cookies=self.session_cookies)
         response.raise_for_status()
-        profile = Envelope[Profile].parse_raw(response.text).data
+        profile: Profile | None = Envelope[Profile].parse_raw(response.text).data
         assert profile is not None
         return profile
 
