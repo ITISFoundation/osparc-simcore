@@ -9,6 +9,7 @@ import pytest
 from aiohttp import ClientResponseError, ClientSession
 from aiohttp.client_exceptions import ClientConnectionError
 from aioresponses import aioresponses
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_sdk.node_ports_common.storage_client import retry_request
 
 _ROUTE_ALWAYS_200_OK: Final[str] = "http://always-200-ok"
@@ -22,7 +23,20 @@ def mock_responses(aioresponses_mocker: aioresponses) -> None:
 
 
 @pytest.fixture
-async def session() -> AsyncIterable[ClientSession]:
+def mock_postgres(monkeypatch: pytest.MonkeyPatch) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "POSTGRES_HOST": "test",
+            "POSTGRES_USER": "test",
+            "POSTGRES_PASSWORD": "test",
+            "POSTGRES_DB": "test",
+        },
+    )
+
+
+@pytest.fixture
+async def session(mock_postgres: None) -> AsyncIterable[ClientSession]:
     async with ClientSession() as client_session:
         yield client_session
 
