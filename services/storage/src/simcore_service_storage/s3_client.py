@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Final, TypeAlias, cast
 
 import aioboto3
+import arrow
 from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
@@ -114,13 +115,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
             aws_session_token=settings.S3_ACCESS_TOKEN,
             region_name=settings.S3_REGION,
             # FIXME: retries should be reconfigurable via settings
-            config=Config(
-                signature_version="s3v4",
-                retries={
-                    "mode": "adaptive",
-                    "total_max_attempts": 2,
-                },
-            ),
+            config=Config(signature_version="s3v4"),
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         client = cast(S3Client, await exit_stack.enter_async_context(session_client))
@@ -460,7 +455,11 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
                     total_size += obj["Size"]
                     total_count += 1
 
-                    print(f"{total_size=}", f"{total_count=}")
+                    print(
+                        f"{arrow.now().isoformat()=}",
+                        f"{total_size=}",
+                        f"{total_count=}",
+                    )
 
                 except Exception:
                     _logger.exception("%s failed to copy to -> %s", obj, dst)
