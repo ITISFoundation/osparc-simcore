@@ -15,7 +15,6 @@ from models_library.api_schemas_webserver.product import GetCreditPrice
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
-    ProjectMetadataPortGet,
     ProjectMetadataUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import (
@@ -36,6 +35,7 @@ from pydantic import PositiveInt
 from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from simcore_service_api_server.models.schemas.solvers import SolverKeyId
+from simcore_service_api_server.models.schemas.studies import StudyPort
 from starlette import status
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -298,7 +298,7 @@ class AuthSession:
     )
     async def get_project_metadata_ports(
         self, project_id: ProjectID
-    ) -> list[ProjectMetadataPortGet]:
+    ) -> list[StudyPort]:
         """
         maps GET "/projects/{study_id}/metadata/ports", unenvelopes
         and returns data
@@ -308,7 +308,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[list[ProjectMetadataPortGet]].parse_raw(response.text).data
+        data = Envelope[list[StudyPort]].parse_raw(response.text).data
         assert data is not None
         assert isinstance(data, list)
         return data
