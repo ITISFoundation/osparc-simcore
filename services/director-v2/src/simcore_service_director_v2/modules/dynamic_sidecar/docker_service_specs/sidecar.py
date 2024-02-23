@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Any
+from typing import Any, NamedTuple
 
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
@@ -41,6 +41,44 @@ def extract_service_port_service_settings(
     return extract_service_port_from_settings(settings)
 
 
+class _StorageConfig(NamedTuple):
+    host: str
+    port: str
+    username: str
+    password: str
+
+
+def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
+    host: str = app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST
+    port: str = f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}"
+    username: str = "null"
+    password: str = "null"
+
+    if (
+        app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
+        and app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.auth_required
+    ):
+        host = app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_HOST
+        port = f"{app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_PORT}"
+        assert (
+            app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_USERNAME
+        )  # nosec
+        username = app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_USERNAME
+        assert (
+            app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD
+        )  # nosec
+        password = (
+            app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD.get_secret_value()
+        )
+
+    return _StorageConfig(
+        host=host,
+        port=port,
+        username=username,
+        password=password,
+    )
+
+
 def _get_environment_variables(
     compose_namespace: str,
     scheduler_data: SchedulerData,
@@ -69,6 +107,8 @@ def _get_environment_variables(
             scheduler_data.node_uuid,
         )
         callbacks_mapping.metrics = None
+
+    storage_config = _get_storage_config(app_settings)
 
     return {
         # These environments will be captured by
@@ -121,8 +161,10 @@ def _get_environment_variables(
         # For background info on this special env-var above, see
         # - https://stackoverflow.com/questions/31448854/how-to-force-requests-use-the-certificates-on-my-ubuntu-system#comment78596389_37447847
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
-        "STORAGE_HOST": app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST,
-        "STORAGE_PORT": f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}",
+        "STORAGE_HOST": storage_config.host,
+        "STORAGE_PASSWORD": storage_config.password,
+        "STORAGE_PORT": storage_config.port,
+        "STORAGE_USERNAME": storage_config.username,
         "DY_SIDECAR_SERVICE_KEY": scheduler_data.key,
         "DY_SIDECAR_SERVICE_VERSION": scheduler_data.version,
         "DY_SIDECAR_USER_PREFERENCES_PATH": f"{scheduler_data.user_preferences_path}",
@@ -447,6 +489,9 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
             },
         },
     }
+
+    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED:
+        create_service_params["endpoint_spec"] = {"Mode": "dnsrr"}
 
     update_service_params_from_settings(
         labels_service_settings=settings,

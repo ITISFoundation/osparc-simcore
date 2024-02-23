@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi_pagination import add_pagination
-from httpx import HTTPStatusError
+from httpx import HTTPError as HttpxException
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
@@ -24,7 +24,7 @@ from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
 )
-from ..api.errors.httpx_client_error import httpx_client_error_handler
+from ..api.errors.httpx_client_error import handle_httpx_client_exceptions
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
@@ -102,8 +102,8 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_event_handler("shutdown", create_stop_app_handler(app))
 
     app.add_exception_handler(HTTPException, http_error_handler)
+    app.add_exception_handler(HttpxException, handle_httpx_client_exceptions)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
-    app.add_exception_handler(HTTPStatusError, httpx_client_error_handler)
     app.add_exception_handler(LogDistributionBaseException, log_handling_error_handler)
     app.add_exception_handler(CustomBaseError, custom_error_handler)
 

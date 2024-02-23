@@ -17,8 +17,8 @@ router = APIRouter()
 async def get_my_profile(
     webserver_session: Annotated[AuthSession, Depends(get_webserver_session)],
 ) -> Profile:
-    data = await webserver_session.get("/me")
-    return Profile.parse_obj(data)
+    profile: Profile = await webserver_session.get_me()
+    return profile
 
 
 @router.put("", response_model=Profile)
@@ -28,6 +28,5 @@ async def update_my_profile(
         AuthSession, Security(get_webserver_session, scopes=["write"])
     ],
 ) -> Profile:
-    await webserver_session.put("/me", body=profile_update.dict(exclude_none=True))
-    profile: Profile = await get_my_profile(webserver_session)
+    profile: Profile = await webserver_session.update_me(profile_update)
     return profile

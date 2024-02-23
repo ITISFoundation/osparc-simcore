@@ -34,7 +34,7 @@ def register_modified_datetime_auto_update_trigger(table: sa.Table) -> None:
     update of the 'modified' timestamp column when a row is modified.
 
     NOTE: Add a *hard-coded* version in the alembic migration code!!!
-    see [this example](https://github.com/ITISFoundation/osparc-simcore/blob/78bc54e5815e8be5a8ed6a08a7bbe5591bbd2bd9/packages/postgres-database/src/simcore_postgres_database/migration/versions/e0a2557dec27_add_services_limitations.py)
+    SEE https://github.com/ITISFoundation/osparc-simcore/blob/78bc54e5815e8be5a8ed6a08a7bbe5591bbd2bd9/packages/postgres-database/src/simcore_postgres_database/migration/versions/e0a2557dec27_add_services_limitations.py
 
 
     Arguments:
