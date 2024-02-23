@@ -16,4 +16,4 @@ simcore-settings-library @ ../settings-library/
 pytest-simcore @ ../pytest-simcore
 
 # current module
---editable .
+simcore-service-library @ .

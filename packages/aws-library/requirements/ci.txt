@@ -14,8 +14,8 @@
 # installs this repo's packages
 pytest-simcore @ ../pytest-simcore
 simcore-models-library @ ../models-library
---editable ../service-library/
+simcore-service-library @ ../service-library/
 simcore-settings-library @ ../settings-library/
 
 # current module
---editable .
+simcore-aws-library @ .

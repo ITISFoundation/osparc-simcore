@@ -17,4 +17,4 @@ simcore-models-library @ ../models-library
 simcore-settings-library @ ../settings-library/
 
 # current module
---editable .
+simcore-dask-task-models-library @ .
