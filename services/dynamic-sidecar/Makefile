@@ -30,6 +30,6 @@ run-github-action-locally:  ## runs "unit-test-dynamic-sidecar" defined int gith
 # WARNING: tmp using --no-build-isolation due to: https://github.com/yaml/pyyaml/issues/724#issuecomment-1638636728
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# Installing in $(subst install-,,$@) mode
-	pip-sync \
+	@uv pip sync \
 		--pip-args --no-build-isolation \
 		requirements/$(subst install-,,$@).txt

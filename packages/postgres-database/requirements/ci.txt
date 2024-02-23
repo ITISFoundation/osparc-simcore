@@ -15,4 +15,4 @@
 pytest-simcore @ ../../packages/pytest-simcore/
 
 # current module
---editable .
+simcore-postgres-database @ .
