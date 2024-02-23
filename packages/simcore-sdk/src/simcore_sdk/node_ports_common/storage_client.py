@@ -76,7 +76,8 @@ def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
 @lru_cache
 def _base_url() -> str:
     settings = NodePortsSettings.create_from_envs()
-    return settings.NODE_PORTS_STORAGE_AUTH.base_url
+    base_url: str = settings.NODE_PORTS_STORAGE_AUTH.base_url
+    return base_url
 
 
 @lru_cache
