@@ -90,8 +90,8 @@ def _get_basic_auth() -> BasicAuth | None:
 
     return (
         BasicAuth(
-            login=node_ports_storage_auth.NODE_PORTS_STORAGE_LOGIN,
-            password=node_ports_storage_auth.NODE_PORTS_STORAGE_PASSWORD.get_secret_value(),
+            login=node_ports_storage_auth.STORAGE_USERNAME,
+            password=node_ports_storage_auth.STORAGE_PASSWORD.get_secret_value(),
         )
         if node_ports_storage_auth
         else None

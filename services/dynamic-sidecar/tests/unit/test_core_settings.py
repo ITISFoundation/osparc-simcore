@@ -33,7 +33,7 @@ def mock_postgres_data(monkeypatch: pytest.MonkeyPatch) -> None:
     [
         {
             "NODE_PORTS_STORAGE_AUTH": (
-                '{"STORAGE_LOGIN": "login", '
+                '{"STORAGE_USERNAME": "user", '
                 '"STORAGE_PASSWORD": "passwd", '
                 '"STORAGE_HOST": "host", '
                 '"STORAGE_PORT": "42"}'
@@ -53,7 +53,7 @@ def test_settings_with_node_ports_storage_auth(
     assert settings.NODE_PORTS_STORAGE_AUTH is not None
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_HOST == "host"
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PORT == 42
-    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_LOGIN == "login"
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_USERNAME == "user"
     assert (
         settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD.get_secret_value() == "passwd"
     )

@@ -13,7 +13,7 @@ NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE: Final[NonNegativeInt] = 3
 
 
 class StorageAuthSettings(StorageSettings):
-    STORAGE_LOGIN: str
+    STORAGE_USERNAME: str
     STORAGE_PASSWORD: SecretStr
 
     def unsafe_dict(self):
