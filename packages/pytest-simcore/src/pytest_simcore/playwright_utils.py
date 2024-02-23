@@ -52,13 +52,13 @@ DynamicIndentFormatter.setup(test_logger)
 
 @dataclass
 class ContextMessages:
-    start: str
-    ok: str
-    failed: str = field(default="")
+    starting: str
+    done: str
+    raised: str = field(default="")
 
     def __post_init__(self):
-        if not self.failed:
-            self.failed = f"{self.ok} [with error]"
+        if not self.raised:
+            self.raised = f"{self.done} [with error]"
 
 
 LogLevelInt: TypeAlias = int
@@ -78,9 +78,9 @@ def log_context(
 
     if isinstance(msg, str):
         ctx_msg = ContextMessages(
-            start=f"> {msg} starting ...",
-            ok=f"< {msg} done",
-            failed=f"< {msg} errored",
+            starting=f"-> {msg} starting ...",
+            done=f"<- {msg} done",
+            raised=f"! {msg} raised",
         )
     elif isinstance(msg, tuple):
         ctx_msg = ContextMessages(*msg)
@@ -90,14 +90,14 @@ def log_context(
     try:
         DynamicIndentFormatter.increase_indent()
 
-        logger.log(level, ctx_msg.start, *args, **kwargs)
+        logger.log(level, ctx_msg.starting, *args, **kwargs)
 
         yield SimpleNamespace(logger=logger, messages=ctx_msg)
 
-        logger.log(level, ctx_msg.ok, *args, **kwargs)
+        logger.log(level, ctx_msg.done, *args, **kwargs)
 
     except:
-        logger.log(logging.ERROR, ctx_msg.failed, *args, **kwargs)
+        logger.log(logging.ERROR, ctx_msg.raised, *args, **kwargs)
         raise
 
     finally:
