@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Any, Final
+from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination.api import create_page
@@ -124,11 +124,10 @@ async def list_study_ports(
     New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
     """
     try:
-        project_ports: list[
-            dict[str, Any]
-        ] = await webserver_api.get_project_metadata_ports(project_id=study_id)
-
-        return OnePage[StudyPort](items=project_ports)  # type: ignore[arg-type]
+        project_ports: list[StudyPort] = await webserver_api.get_project_metadata_ports(
+            project_id=study_id
+        )
+        return OnePage[StudyPort](items=project_ports)
 
     except ProjectNotFoundError:
         return create_error_json_response(
