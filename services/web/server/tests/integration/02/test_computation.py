@@ -438,7 +438,7 @@ async def test_start_stop_computation(
         )
 
 
-@pytest.mark.timeout(3 * 60, func_only=True)
+@pytest.mark.timeout(2 * 60)
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_run_pipeline_and_check_state(
     client: TestClient,
