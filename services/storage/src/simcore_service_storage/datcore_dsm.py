@@ -67,7 +67,7 @@ class DatCoreDataManager(BaseDataManager):
 
         if not len(package_files) == 1:
             raise DatcoreAdapterMultipleFilesError(
-                msg="More than one file in package, this breaks the current assumption"
+                msg=f"{len(package_files)} files in package, this breaks the current assumption"
             )
         resp_data = package_files[0]["content"]
 
