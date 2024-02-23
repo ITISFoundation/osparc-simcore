@@ -217,7 +217,8 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        return await self.get_me()
+        profile: Profile = await self.get_me()
+        return profile
 
     # PROJECTS -------------------------------------------------
 

@@ -84,7 +84,8 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        return ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        return task
 
     @_exception_mapper({})
     async def start_computation(
@@ -118,7 +119,8 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        return ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        return task
 
     @_exception_mapper(
         {
@@ -138,7 +140,8 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        return ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        return task
 
     @_exception_mapper(
         {
@@ -158,7 +161,8 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        return ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        return task
 
     @_exception_mapper(
         {

@@ -189,7 +189,7 @@ async def get_solver_release(
 ) -> Solver:
     """Gets a specific release of a solver"""
     try:
-        solver = await catalog_client.get_service(
+        solver: Solver = await catalog_client.get_service(
             user_id=user_id,
             name=solver_key,
             version=version,
