@@ -3,7 +3,7 @@
 
 import pytest
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
-from settings_library.node_ports import NodePortsSettings
+from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
 
@@ -50,35 +50,25 @@ def test_settings_with_node_ports_storage_auth(
     setenvs_from_dict(monkeypatch, envs)
 
     settings = ApplicationSettings.create_from_envs()
-    assert settings.NODE_PORTS_STORAGE_AUTH is not None
+    assert settings.NODE_PORTS_STORAGE_AUTH
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_HOST == "host"
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PORT == 42
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_USERNAME == "user"
+    assert settings.NODE_PORTS_STORAGE_AUTH.were_credentials_provided is True
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD
+
+    # enforce avoiding credentials leaks
     assert (
         settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD.get_secret_value() == "passwd"
     )
-    # json serializes password to plain text
     assert "passwd" not in settings.NODE_PORTS_STORAGE_AUTH.json()
     assert "passwd" in settings.NODE_PORTS_STORAGE_AUTH.unsafe_json()
-
-    # check that default storage configuration si different form
-    # the one with authentication
-    node_ports_settings = NodePortsSettings.create_from_envs()
-    assert (
-        node_ports_settings.NODE_PORTS_STORAGE.STORAGE_HOST
-        != settings.NODE_PORTS_STORAGE_AUTH.STORAGE_HOST
-    )
-    assert (
-        node_ports_settings.NODE_PORTS_STORAGE.STORAGE_PORT
-        != settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PORT
-    )
 
 
 @pytest.mark.parametrize(
     "envs",
     [
         {},
-        {"NODE_PORTS_STORAGE_AUTH": "null"},
     ],
 )
 def test_settings_with_node_ports_storage_auth_as_missing(
@@ -87,4 +77,9 @@ def test_settings_with_node_ports_storage_auth_as_missing(
     setenvs_from_dict(monkeypatch, envs)
 
     settings = ApplicationSettings.create_from_envs()
-    assert settings.NODE_PORTS_STORAGE_AUTH is None
+    assert settings.NODE_PORTS_STORAGE_AUTH is not None
+    assert settings.NODE_PORTS_STORAGE_AUTH.were_credentials_provided is False
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_USERNAME is None
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD is None
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_HOST == "storage"
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PORT == DEFAULT_AIOHTTP_PORT

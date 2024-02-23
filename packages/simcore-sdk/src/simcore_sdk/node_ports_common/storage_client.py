@@ -76,11 +76,7 @@ def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
 @lru_cache
 def _base_url() -> str:
     settings = NodePortsSettings.create_from_envs()
-    return (
-        settings.NODE_PORTS_STORAGE_AUTH.base_url
-        if settings.NODE_PORTS_STORAGE_AUTH
-        else settings.NODE_PORTS_STORAGE.api_base_url
-    )
+    return settings.NODE_PORTS_STORAGE_AUTH.base_url
 
 
 @lru_cache
@@ -88,14 +84,14 @@ def _get_basic_auth() -> BasicAuth | None:
     settings = NodePortsSettings.create_from_envs()
     node_ports_storage_auth = settings.NODE_PORTS_STORAGE_AUTH
 
-    return (
-        BasicAuth(
+    if node_ports_storage_auth.were_credentials_provided:
+        assert node_ports_storage_auth.STORAGE_USERNAME is not None  # nosec
+        assert node_ports_storage_auth.STORAGE_PASSWORD is not None  # nosec
+        return BasicAuth(
             login=node_ports_storage_auth.STORAGE_USERNAME,
             password=node_ports_storage_auth.STORAGE_PASSWORD.get_secret_value(),
         )
-        if node_ports_storage_auth
-        else None
-    )
+    return None
 
 
 def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:

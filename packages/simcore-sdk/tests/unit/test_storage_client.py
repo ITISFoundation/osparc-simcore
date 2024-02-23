@@ -4,7 +4,7 @@
 # pylint:disable=too-many-arguments
 
 import re
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 from uuid import uuid4
 
 import aiohttp
@@ -21,10 +21,13 @@ from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
 from simcore_sdk.node_ports_common.storage_client import (
     LinkType,
+    _base_url,
+    _get_basic_auth,
     delete_file,
     get_download_file_link,
     get_file_metadata,
@@ -35,13 +38,18 @@ from simcore_sdk.node_ports_common.storage_client import (
 
 
 @pytest.fixture()
-def mock_environment(monkeypatch: pytest.MonkeyPatch, faker: Faker):
-    monkeypatch.setenv("STORAGE_HOST", "fake_storage")
-    monkeypatch.setenv("STORAGE_PORT", "1535")
-    monkeypatch.setenv("POSTGRES_HOST", faker.pystr())
-    monkeypatch.setenv("POSTGRES_USER", faker.user_name())
-    monkeypatch.setenv("POSTGRES_PASSWORD", faker.password())
-    monkeypatch.setenv("POSTGRES_DB", faker.pystr())
+def mock_environment(monkeypatch: pytest.MonkeyPatch, faker: Faker) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "STORAGE_HOST": "fake_storage",
+            "STORAGE_PORT": "1535",
+            "POSTGRES_HOST": faker.pystr(),
+            "POSTGRES_USER": faker.user_name(),
+            "POSTGRES_PASSWORD": faker.password(),
+            "POSTGRES_DB": faker.pystr(),
+        },
+    )
 
 
 @pytest.fixture()
@@ -62,7 +70,7 @@ async def session() -> AsyncIterator[aiohttp.ClientSession]:
 
 async def test_get_storage_locations(
     session: aiohttp.ClientSession,
-    mock_environment: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
 ):
@@ -79,7 +87,7 @@ async def test_get_storage_locations(
     [(LinkType.PRESIGNED, ("http", "https")), (LinkType.S3, ("s3", "s3a"))],
 )
 async def test_get_download_file_link(
-    mock_environment: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -104,7 +112,7 @@ async def test_get_download_file_link(
     [(LinkType.PRESIGNED, ("http", "https")), (LinkType.S3, ("s3", "s3a"))],
 )
 async def test_get_upload_file_links(
-    mock_environment: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -129,7 +137,7 @@ async def test_get_upload_file_links(
 
 
 async def test_get_file_metada(
-    mock_environment: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -172,7 +180,7 @@ def storage_v0_service_mock_get_file_meta_data_not_found(
 
 
 async def test_get_file_metada_invalid_s3_path(
-    mock_environment: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock_get_file_meta_data_not_found: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -189,7 +197,7 @@ async def test_get_file_metada_invalid_s3_path(
 
 
 async def test_list_file_metadata(
-    mock_environment: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -203,7 +211,7 @@ async def test_list_file_metadata(
 
 
 async def test_delete_file(
-    mock_environment: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -213,3 +221,58 @@ async def test_delete_file(
     await delete_file(
         session=session, file_id=file_id, location_id=location_id, user_id=user_id
     )
+
+
+@pytest.mark.parametrize(
+    "envs",
+    [
+        {
+            "NODE_PORTS_STORAGE_AUTH": (
+                '{"STORAGE_USERNAME": "user", '
+                '"STORAGE_PASSWORD": "passwd", '
+                '"STORAGE_HOST": "host", '
+                '"STORAGE_PORT": "42"}'
+            )
+        },
+        {
+            "STORAGE_USERNAME": "user",
+            "STORAGE_PASSWORD": "passwd",
+            "STORAGE_HOST": "host",
+            "STORAGE_PORT": "42",
+        },
+    ],
+)
+def test_mode_ports_storage_with_auth(
+    mock_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    envs: dict[str, str],
+):
+    setenvs_from_dict(monkeypatch, envs)
+
+    assert _base_url() == "http://host:42"
+    assert _get_basic_auth() == aiohttp.BasicAuth(
+        login="user", password="passwd", encoding="latin1"
+    )
+
+
+@pytest.mark.parametrize(
+    "envs",
+    [
+        {},
+        {
+            "STORAGE_USERNAME": "user",
+            "STORAGE_PASSWORD": "passwd",
+        },
+    ],
+)
+def test_mode_ports_storage_without_auth(
+    mock_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    envs: dict[str, str],
+):
+    setenvs_from_dict(monkeypatch, envs)
+
+    host = mock_environment["STORAGE_HOST"]
+    port = mock_environment["STORAGE_PORT"]
+    assert _base_url() == f"http://{host}:{port}"
+    assert _get_basic_auth() is None
