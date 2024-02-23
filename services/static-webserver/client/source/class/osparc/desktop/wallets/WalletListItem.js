@@ -31,6 +31,11 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   },
 
   properties: {
+    appearance: {
+      refine : true,
+      init : "none"
+    },
+
     creditsAvailable: {
       check: "Number",
       nullable: false,
