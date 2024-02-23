@@ -67,6 +67,7 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
     "STORAGE_HOST",
     "STORAGE_PASSWORD",
     "STORAGE_PORT",
+    "STORAGE_SCHEME",
     "STORAGE_USERNAME",
 }
 
@@ -94,14 +95,16 @@ def test_dynamic_sidecar_env_vars(
     "env_vars, expected_storage_config",
     [
         pytest.param(
-            {}, _StorageConfig("storage", "8080", "null", "null"), id="no_env_vars"
+            {},
+            _StorageConfig("storage", "8080", "null", "null", "http"),
+            id="no_env_vars",
         ),
         pytest.param(
             {
                 "STORAGE_HOST": "just-storage",
                 "STORAGE_PORT": "123",
             },
-            _StorageConfig("just-storage", "123", "null", "null"),
+            _StorageConfig("just-storage", "123", "null", "null", "http"),
             id="host-and-port",
         ),
         pytest.param(
@@ -111,8 +114,19 @@ def test_dynamic_sidecar_env_vars(
                 "STORAGE_PASSWORD": "pass",
                 "STORAGE_USERNAME": "user",
             },
-            _StorageConfig("storage-with-auth", "42", "user", "pass"),
-            id="host-por-pass-user",
+            _StorageConfig("storage-with-auth", "42", "user", "pass", "http"),
+            id="host-port-pass-user",
+        ),
+        pytest.param(
+            {
+                "STORAGE_HOST": "storage-with-auth",
+                "STORAGE_PORT": "42",
+                "STORAGE_PASSWORD": "pass",
+                "STORAGE_USERNAME": "user",
+                "STORAGE_SCHEME": "https",
+            },
+            _StorageConfig("storage-with-auth", "42", "user", "pass", "https"),
+            id="host-port-pass-user-scheme-https",
         ),
         pytest.param(
             {
@@ -123,12 +137,13 @@ def test_dynamic_sidecar_env_vars(
                     '"STORAGE_USERNAME": "overwrite-user", '
                     '"STORAGE_PASSWORD": "overwrite-passwd", '
                     '"STORAGE_HOST": "overwrite-host", '
-                    '"STORAGE_PORT": "44"'
+                    '"STORAGE_PORT": "44", '
+                    '"STORAGE_SCHEME": "https"'
                     "}"
                 ),
             },
             _StorageConfig(
-                "overwrite-host", "44", "overwrite-user", "overwrite-passwd"
+                "overwrite-host", "44", "overwrite-user", "overwrite-passwd", "https"
             ),
             id="host-port-and-node-ports-config",
         ),
@@ -144,7 +159,7 @@ def test_dynamic_sidecar_env_vars(
                 ),
             },
             _StorageConfig(
-                "overwrite-host", "44", "overwrite-user", "overwrite-passwd"
+                "overwrite-host", "44", "overwrite-user", "overwrite-passwd", "http"
             ),
             id="only-node-ports-config",
         ),

@@ -46,6 +46,7 @@ class _StorageConfig(NamedTuple):
     port: str
     username: str
     password: str
+    scheme: str
 
 
 def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
@@ -53,6 +54,7 @@ def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
     port: str = f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}"
     username: str = "null"
     password: str = "null"
+    scheme: str = "http"
 
     if (
         app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
@@ -70,12 +72,14 @@ def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
         password = (
             app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD.get_secret_value()
         )
+        scheme = app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_SCHEME
 
     return _StorageConfig(
         host=host,
         port=port,
         username=username,
         password=password,
+        scheme=scheme,
     )
 
 
@@ -164,6 +168,7 @@ def _get_environment_variables(
         "STORAGE_HOST": storage_config.host,
         "STORAGE_PASSWORD": storage_config.password,
         "STORAGE_PORT": storage_config.port,
+        "STORAGE_SCHEME": storage_config.scheme,
         "STORAGE_USERNAME": storage_config.username,
         "DY_SIDECAR_SERVICE_KEY": scheduler_data.key,
         "DY_SIDECAR_SERVICE_VERSION": scheduler_data.version,
