@@ -189,7 +189,7 @@ class CatalogApi(BaseServiceClientApi):
         self, *, user_id: int, product_name: str
     ) -> list[Solver]:
         solvers: list[Solver] = await self.list_solvers(
-            user_id, product_name=product_name
+            user_id=user_id, product_name=product_name
         )
 
         latest_releases: dict[SolverKeyId, Solver] = {}
@@ -207,7 +207,7 @@ class CatalogApi(BaseServiceClientApi):
             return solver.id == solver_key
 
         releases: list[Solver] = await self.list_solvers(
-            user_id, predicate=_this_solver, product_name=product_name
+            user_id=user_id, predicate=_this_solver, product_name=product_name
         )
         return releases
 
