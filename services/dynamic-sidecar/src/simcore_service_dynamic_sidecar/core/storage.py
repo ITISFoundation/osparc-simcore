@@ -31,6 +31,7 @@ async def _is_storage_responsive(url: str) -> bool:
 async def wait_for_storage_liveness(app: FastAPI) -> None:
     app_settings: ApplicationSettings = app.state.settings
     storage_settings = app_settings.NODE_PORTS_STORAGE_AUTH
+    assert storage_settings  # nosec
 
     url = f"{storage_settings.api_base_url}/"
     await wait_for_service_liveness(
