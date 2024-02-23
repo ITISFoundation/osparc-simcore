@@ -254,10 +254,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         menu = new qx.ui.menu.Menu().set({
           position: "bottom-right"
         });
-
         const editWalletButton = new qx.ui.menu.Button(this.tr("Edit details..."));
         editWalletButton.addListener("execute", () => this.fireDataEvent("openEditWallet", this.getKey()));
         menu.add(editWalletButton);
+        const shareWalletButton = new qx.ui.menu.Button(this.tr("Share"));
+        shareWalletButton.addListener("execute", () => this.fireDataEvent("openShareWallet", this.getKey()));
+        menu.add(shareWalletButton);
       }
       return menu;
     },

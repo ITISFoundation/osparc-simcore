@@ -69,9 +69,10 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         decorator: "no-border",
         spacing: 3,
         backgroundColor: "transparent",
-        height: null
+        height: null,
+        focusable: false
       });
-      walletsUIList.addListener("changeSelection", e => this.__walletSelected(e.getData()), this);
+      walletsUIList.addListener("changeSelection", () => setTimeout(() => walletsUIList.setSelection([])));
       const walletsModel = new qx.data.Array();
       const walletsCtrl = new qx.data.controller.List(walletsModel, walletsUIList, "name");
       walletsCtrl.setDelegate({
@@ -96,6 +97,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           });
 
           item.addListener("openEditWallet", e => this.__openEditWallet(e.getData()));
+          item.addListener("openShareWallet", e => this.__walletSelected(e.getData()));
           item.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
           item.addListener("toggleFavourite", e => {
             const {
@@ -111,11 +113,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       return walletsModel;
     },
 
-    __walletSelected: function(data) {
-      if (data && data.length>0) {
-        const wallet = data[0];
-        this.fireDataEvent("walletSelected", wallet.getModel());
-      }
+    __walletSelected: function(wallet) {
+      this.fireDataEvent("walletSelected", wallet);
     },
 
     loadWallets: function() {
