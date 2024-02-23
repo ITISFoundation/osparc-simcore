@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from fastapi import APIRouter, Depends, Header, Request
 from pydantic import AnyUrl, parse_obj_as
@@ -52,4 +53,28 @@ async def delete_file(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
         obj_id=file_id,
+    )
+
+
+@router.get(
+    "/packages/{package_id}/files",
+    summary="returns a package (i.e. a file)",
+    status_code=status.HTTP_200_OK,
+    response_model=list[dict[str, Any]],
+)
+@cancel_on_disconnect
+async def get_package(
+    request: Request,
+    package_id: str,
+    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
+    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
+    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
+) -> list[dict[str, Any]]:
+    assert request  # nosec
+    return await pennsieve_client.get_package_files(
+        api_key=x_datcore_api_key,
+        api_secret=x_datcore_api_secret,
+        package_id=package_id,
+        limit=1,
+        offset=0,
     )
