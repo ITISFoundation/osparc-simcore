@@ -9,6 +9,7 @@ from pydantic import AnyUrl, ByteSize
 
 from .constants import DATCORE_ID, DATCORE_STR
 from .datcore_adapter import datcore_adapter
+from .datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterMultipleFilesError
 from .db_tokens import get_api_token_and_secret
 from .dsm_factory import BaseDataManager
 from .models import DatasetMetaData, FileMetaData, UploadLinks
@@ -58,7 +59,34 @@ class DatCoreDataManager(BaseDataManager):
         )
 
     async def get_file(self, user_id: UserID, file_id: StorageFileID) -> FileMetaData:
-        raise NotImplementedError
+        api_token, api_secret = await self._get_datcore_tokens(user_id)
+
+        package_files = await datcore_adapter.get_package_files(
+            self.app, api_token, api_secret, file_id
+        )
+
+        if not len(package_files) == 1:
+            raise DatcoreAdapterMultipleFilesError(
+                msg=f"{len(package_files)} files in package, this breaks the current assumption"
+            )
+        resp_data = package_files[0]["content"]
+
+        return FileMetaData(
+            file_uuid=file_id,
+            location_id=DATCORE_ID,
+            location=DATCORE_STR,
+            bucket_name=resp_data["s3bucket"],
+            object_name=file_id,
+            file_name=resp_data["filename"],
+            file_id=file_id,
+            file_size=resp_data["size"],
+            created_at=resp_data["createdAt"],
+            last_modified=resp_data["updatedAt"],
+            project_id=None,
+            node_id=None,
+            user_id=user_id,
+            is_soft_link=False,
+        )
 
     async def create_file_upload_links(
         self,

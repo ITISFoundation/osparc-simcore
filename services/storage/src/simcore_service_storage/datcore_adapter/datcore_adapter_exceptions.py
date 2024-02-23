@@ -26,3 +26,10 @@ class DatcoreAdapterServerError(DatcoreAdapterError):
 
     def __init__(self, msg: str) -> None:
         super().__init__(msg=msg or "Unexpected error in datcore-adapter server")
+
+
+class DatcoreAdapterMultipleFilesError(DatcoreAdapterError):
+    """special error to check the assumption that /packages/{package_id}/files returns only one file"""
+
+    def __init__(self, msg: str) -> None:
+        super().__init__(msg=msg)
