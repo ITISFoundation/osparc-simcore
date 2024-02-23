@@ -82,6 +82,9 @@ async def _assert_monitor_triggers(
     assert len(publish_disk_usage_spy.call_args_list) == expected_events
 
 
+@pytest.skip(
+    "skipped until https://github.com/ITISFoundation/osparc-simcore/issues/5324"
+)
 async def test_disk_usage_monitor(
     mock_disk_usage: Callable[[dict[str, ByteSize]], None],
     publish_disk_usage_spy: Mock,
