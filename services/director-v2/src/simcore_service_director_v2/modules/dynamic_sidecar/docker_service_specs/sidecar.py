@@ -123,8 +123,6 @@ def _get_environment_variables(
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "STORAGE_HOST": app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST,
         "STORAGE_PORT": f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}",
-        "NODE_PORTS_STORAGE_LOGIN": "",
-        "NODE_PORTS_STORAGE_PASSWORD": "",
         "DY_SIDECAR_SERVICE_KEY": scheduler_data.key,
         "DY_SIDECAR_SERVICE_VERSION": scheduler_data.version,
         "DY_SIDECAR_USER_PREFERENCES_PATH": f"{scheduler_data.user_preferences_path}",
