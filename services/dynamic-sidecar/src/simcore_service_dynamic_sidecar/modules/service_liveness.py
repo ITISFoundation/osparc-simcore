@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 
 _DEFAULT_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=1)
-_DEFAULT_TIMEOUT_INTERVAL: Final[timedelta] = timedelta(minutes=3)
+_DEFAULT_TIMEOUT_INTERVAL: Final[timedelta] = timedelta(seconds=30)
 
 
 class CouldNotReachServiceError(PydanticErrorMixin, Exception):
