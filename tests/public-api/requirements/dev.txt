@@ -14,7 +14,7 @@
 # make install-dev
 # make python-client
 #
---editable ../../services/api-server/client
+osparc
 
 
 # installs base + tests requirements

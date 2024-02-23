@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import partial
 from operator import attrgetter
 
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceDockerData, ServiceType
 from pydantic import Extra, ValidationError, parse_obj_as, parse_raw_as
@@ -76,7 +76,14 @@ class CatalogApi(BaseServiceClientApi):
     SEE osparc-simcore/services/catalog/openapi.json
     """
 
-    @_exception_mapper({})
+    @_exception_mapper(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                lambda kwargs: "Could not list solvers/studies",
+            )
+        }
+    )
     async def list_solvers(
         self,
         user_id: int,
@@ -115,7 +122,14 @@ class CatalogApi(BaseServiceClientApi):
                 )
         return solvers
 
-    @_exception_mapper({})
+    @_exception_mapper(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                lambda kwargs: f"Could not get solver/study {kwargs['name']}:{kwargs['version']}",
+            )
+        }
+    )
     async def get_service(
         self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
     ) -> Solver:
@@ -132,10 +146,10 @@ class CatalogApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        service: TruncatedCatalogServiceOut = (
-            await asyncio.get_event_loop().run_in_executor(
-                None, parse_raw_as, TruncatedCatalogServiceOut, response.text
-            )
+        service: (
+            TruncatedCatalogServiceOut
+        ) = await asyncio.get_event_loop().run_in_executor(
+            None, parse_raw_as, TruncatedCatalogServiceOut, response.text
         )
         assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
@@ -144,7 +158,14 @@ class CatalogApi(BaseServiceClientApi):
         solver: Solver = service.to_solver()
         return solver
 
-    @_exception_mapper({})
+    @_exception_mapper(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                lambda kwargs: f"Could not get ports for solver/study {kwargs['name']}:{kwargs['version']}",
+            )
+        }
+    )
     async def get_service_ports(
         self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
     ):
