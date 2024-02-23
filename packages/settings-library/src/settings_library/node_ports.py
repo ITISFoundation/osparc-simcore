@@ -1,9 +1,7 @@
-import json
 from datetime import timedelta
-from typing import Any, Final
+from typing import Final
 
 from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, root_validator
-from pydantic.json import pydantic_encoder
 
 from .base import BaseCustomSettings
 from .postgres import PostgresSettings
@@ -29,17 +27,6 @@ class StorageAuthSettings(StorageSettings):
             msg = f"Both {username=} and {password=} must be either set or unset!"
             raise ValueError(msg)
         return values
-
-    def unsafe_dict(self):
-        data: dict[str, Any] = self.dict()
-        data["STORAGE_PASSWORD"] = (
-            self.STORAGE_PASSWORD.get_secret_value() if self.STORAGE_PASSWORD else None
-        )
-        return data
-
-    def unsafe_json(self):
-        d = self.unsafe_dict()
-        return json.dumps(d, default=pydantic_encoder)
 
 
 class NodePortsSettings(BaseCustomSettings):
