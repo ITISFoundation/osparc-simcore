@@ -91,7 +91,7 @@ class CatalogApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        services = await asyncio.get_event_loop.run_in_executor(
+        services = await asyncio.get_event_loop().run_in_executor(
             None, parse_raw_as, list[TruncatedCatalogServiceOut], response.text
         )
         solvers = []
@@ -130,8 +130,8 @@ class CatalogApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        service = await asyncio.get_event_loop.run_in_executor(
-            None, parse_raw_as, response.text
+        service = await asyncio.get_event_loop().run_in_executor(
+            None, parse_raw_as, TruncatedCatalogServiceOut, response.text
         )
         assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
