@@ -49,19 +49,6 @@ def backend_service_exception_handler(
             detail=f"{service_name} service returned invalid response. {error_code}",
         ) from exc
 
-    except AssertionError as exc:
-        error_code = create_error_code(exc)
-        _logger.exception(
-            "Assertion was raised when processing response from %s service [%s] ",
-            service_name,
-            error_code,
-            extra={"error_code": error_code},
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Could not process request. {error_code}",
-        ) from exc
-
     except httpx.HTTPStatusError as exc:
         if status_detail_tuple := http_status_map.get(exc.response.status_code):
             status_code, detail_callback = status_detail_tuple
