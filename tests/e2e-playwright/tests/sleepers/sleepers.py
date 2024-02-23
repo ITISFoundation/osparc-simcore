@@ -8,6 +8,7 @@
 
 
 import datetime
+import logging
 import re
 from collections.abc import Callable
 from typing import Final
@@ -17,7 +18,9 @@ from pytest_simcore.playwright_utils import (
     MINUTE,
     RunningState,
     SocketIOEvent,
+    log_context,
     retrieve_project_state_from_decoded_message,
+    test_logger,
     wait_for_pipeline_state,
 )
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
@@ -73,23 +76,33 @@ def test_sleepers(
     create_new_project_and_delete(auto_delete=True)
 
     # we are now in the workbench
-    print(f"---> creating {num_sleepers} sleeper(s)...")
-    for _ in range(1, num_sleepers):
-        page.get_by_text("New Node").click()
-        page.get_by_placeholder("Filter").click()
-        page.get_by_placeholder("Filter").fill("sleeper")
-        page.get_by_placeholder("Filter").press("Enter")
-    print(f"<--- {num_sleepers} sleeper(s) created")
+    with log_context(
+        logging.INFO,
+        (
+            f"---> creating {num_sleepers} sleeper(s)...",
+            f"<--- {num_sleepers} sleeper(s) created",
+        ),
+    ):
+        for _ in range(1, num_sleepers):
+            page.get_by_text("New Node").click()
+            page.get_by_placeholder("Filter").click()
+            page.get_by_placeholder("Filter").fill("sleeper")
+            page.get_by_placeholder("Filter").press("Enter")
 
     # set inputs if needed
     if input_sleep_time:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
-            print(f"---> setting sleeper {index} input time to {input_sleep_time}...")
-            sleeper.click()
-            sleep_interval_selector = page.get_by_role("textbox").nth(1)
-            sleep_interval_selector.click()
-            sleep_interval_selector.fill(f"{input_sleep_time}")
-            print(f"<--- sleeper {index} input time set to {input_sleep_time}")
+            with log_context(
+                logging.INFO,
+                (
+                    f"---> setting sleeper {index} input time to {input_sleep_time}...",
+                    f"<--- sleeper {index} input time set to {input_sleep_time}",
+                ),
+            ):
+                sleeper.click()
+                sleep_interval_selector = page.get_by_role("textbox").nth(1)
+                sleep_interval_selector.click()
+                sleep_interval_selector.fill(f"{input_sleep_time}")
 
         workbench_selector = page.get_by_test_id("desktopWindow")
         assert workbench_selector
@@ -101,7 +114,7 @@ def test_sleepers(
     # PUBLISHED -> [WAITING_FOR_CLUSTER] -> (PENDING) -> [WAITING_FOR_RESOURCES] -> (PENDING) -> STARTED -> SUCCESS/FAILED
     socket_io_event = start_and_stop_pipeline()
     current_state = retrieve_project_state_from_decoded_message(socket_io_event)
-    print(f"---> pipeline is in {current_state=}")
+    test_logger.info("---> pipeline is in %s", f"{current_state=}")
 
     # this should not stay like this for long, it will either go to PENDING, WAITING_FOR_CLUSTER/WAITING_FOR_RESOURCES or STARTED or FAILED
     current_state = wait_for_pipeline_state(
@@ -151,24 +164,25 @@ def test_sleepers(
 
     # check the outputs (the first item is the title, so we skip it)
     expected_file_names = ["logs.zip", "single_number.txt"]
-    print(
-        f"---> looking for {expected_file_names=} in all {num_sleepers} sleeper services..."
-    )
+    with log_context(
+        logging.INFO,
+        (
+            f"---> Looking for {expected_file_names=} in all {num_sleepers} sleeper services...",
+            "------------------------------------------------------"
+            "---> All good, we're done here! This was really great!"
+            "------------------------------------------------------",
+        ),
+    ) as ctx:
+        for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
+            sleeper.click()
+            page.get_by_test_id("outputsTabButton").click()
+            # waiting for this response is not enough, the frontend needs some time to show the files
+            # therefore _get_file_names is wrapped with tenacity
+            with page.expect_response(re.compile(r"files/metadata")):
+                page.get_by_test_id("nodeOutputFilesBtn").click()
+                output_file_names_found = _get_file_names(page)
 
-    for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
-        sleeper.click()
-        page.get_by_test_id("outputsTabButton").click()
-        # waiting for this response is not enough, the frontend needs some time to show the files
-        # therefore _get_file_names is wrapped with tenacity
-        with page.expect_response(re.compile(r"files/metadata")):
-            page.get_by_test_id("nodeOutputFilesBtn").click()
-            output_file_names_found = _get_file_names(page)
-        print(
-            f"<--- found {output_file_names_found=} in sleeper {index} service outputs."
-        )
-        assert output_file_names_found == expected_file_names
-        page.get_by_test_id("nodeDataManagerCloseBtn").click()
-
-    print("------------------------------------------------------")
-    print("---> All good, we're done here! This was really great!")
-    print("------------------------------------------------------")
+            msg = f"<--- found {output_file_names_found=} in sleeper {index} service outputs."
+            ctx.logger.info(msg)
+            assert output_file_names_found == expected_file_names
+            page.get_by_test_id("nodeDataManagerCloseBtn").click()
