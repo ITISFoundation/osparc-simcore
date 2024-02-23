@@ -72,7 +72,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         height: null,
         focusable: false
       });
-      // walletsUIList.addListener("changeSelection", () => setTimeout(() => walletsUIList.setSelection([])));
       const walletsModel = new qx.data.Array();
       const walletsCtrl = new qx.data.controller.List(walletsModel, walletsUIList, "name");
       walletsCtrl.setDelegate({
