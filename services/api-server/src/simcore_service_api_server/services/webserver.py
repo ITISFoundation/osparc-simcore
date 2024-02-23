@@ -72,14 +72,14 @@ _job_status_map: Mapping = {
     status.HTTP_402_PAYMENT_REQUIRED: (status.HTTP_402_PAYMENT_REQUIRED, None),
     status.HTTP_404_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
-        "The job/study could not be found",
+        lambda kwargs: f"The job/study {kwargs['project_id']} could not be found",
     ),
 }
 
 _profile_status_map: Mapping = {
     status.HTTP_404_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
-        "Could not find profile",
+        lambda kwargs: "Could not find profile",
     )
 }
 
@@ -151,7 +151,7 @@ class AuthSession:
             {
                 status.HTTP_404_NOT_FOUND: (
                     status.HTTP_404_NOT_FOUND,
-                    "Could not list jobs",
+                    lambda kwargs: "Could not list jobs",
                 )
             },
         ):
@@ -292,7 +292,7 @@ class AuthSession:
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
-                "The ports for job could not be found",
+                lambda kwargs: f"The ports for the job/study {kwargs['project_id']} could not be found",
             )
         }
     )
@@ -317,7 +317,7 @@ class AuthSession:
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
-                "The metadata for the job could not be found",
+                lambda kwargs: f"The metadata for the job/study {kwargs['project_id']} could not be found",
             )
         }
     )
@@ -335,7 +335,7 @@ class AuthSession:
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
-                "The metadata for the job could not be found",
+                lambda kwargs: f"The metadata for the job/study {kwargs['project_id']} could not be found",
             )
         }
     )

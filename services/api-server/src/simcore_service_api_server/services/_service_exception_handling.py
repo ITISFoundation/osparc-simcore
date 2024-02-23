@@ -1,7 +1,7 @@
 import logging
 from contextlib import contextmanager
 from functools import wraps
-from typing import Mapping
+from typing import Any, Callable, Mapping
 
 import httpx
 from fastapi import HTTPException, status
@@ -12,12 +12,15 @@ _logger = logging.getLogger(__name__)
 
 
 def service_exception_mapper(
-    service_name: str, http_status_map: Mapping[int, tuple[int, str | None]]
+    service_name: str,
+    http_status_map: Mapping[int, tuple[int, Callable[[Any], str] | None]],
 ):
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            with backend_service_exception_handler(service_name, http_status_map):
+            with backend_service_exception_handler(
+                service_name, http_status_map, **kwargs
+            ):
                 return await func(*args, **kwargs)
 
         return wrapper
@@ -27,7 +30,9 @@ def service_exception_mapper(
 
 @contextmanager
 def backend_service_exception_handler(
-    service_name: str, http_status_map: Mapping[int, tuple[int, str | None]]
+    service_name: str,
+    http_status_map: Mapping[int, tuple[int, Callable[[dict], str] | None]],
+    **endpoint_kwargs,
 ):
     try:
         yield
@@ -58,10 +63,12 @@ def backend_service_exception_handler(
         ) from exc
 
     except httpx.HTTPStatusError as exc:
-        if code_detail_tuple := http_status_map.get(exc.response.status_code):
-            status_code, detail = code_detail_tuple
-            if detail is None:
+        if status_detail_tuple := http_status_map.get(exc.response.status_code):
+            status_code, detail_callback = status_detail_tuple
+            if detail_callback is None:
                 detail = f"{exc}"
+            else:
+                detail = detail_callback(endpoint_kwargs)
             raise HTTPException(status_code=status_code, detail=detail) from exc
         if exc.response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
             raise HTTPException(

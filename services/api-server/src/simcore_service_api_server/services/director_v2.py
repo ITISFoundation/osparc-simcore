@@ -124,7 +124,7 @@ class DirectorV2Api(BaseServiceClientApi):
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
-                "Could not get solver job",
+                lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
             )
         }
     )
@@ -144,7 +144,7 @@ class DirectorV2Api(BaseServiceClientApi):
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
-                "Could not get solver job",
+                lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
             )
         }
     )
@@ -164,7 +164,7 @@ class DirectorV2Api(BaseServiceClientApi):
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
-                "Could not get solver job",
+                lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
             )
         }
     )
@@ -183,7 +183,7 @@ class DirectorV2Api(BaseServiceClientApi):
         {
             status.HTTP_404_NOT_FOUND: (
                 status.HTTP_404_NOT_FOUND,
-                "Could not get solver job log file",
+                lambda kwargs: f"Could not get logfile for solver/study job {kwargs['project_id']}",
             )
         }
     )
