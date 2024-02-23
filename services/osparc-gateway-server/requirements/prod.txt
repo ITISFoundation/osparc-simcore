@@ -12,4 +12,4 @@
 # installs this repo's packages
 
 # installs current package
---editable .
+osparc-gateway-server @ .

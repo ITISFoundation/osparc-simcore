@@ -10,10 +10,10 @@
 --requirement _base.txt
 
 # installs this repo's packages
---editable ../../packages/models-library/
---editable ../../packages/postgres-database/
---editable ../../packages/service-library[aiohttp]
---editable ../../packages/settings-library/
+simcore-models-library @ ../../packages/models-library/
+simcore-postgres-database @ ../../packages/postgres-database/
+simcore-service-library[aiohttp] @ ../../packages/service-library
+simcore-settings-library @ ../../packages/settings-library/
 
 # installs current package
---editable .
+simcore-service-storage @ .

@@ -11,12 +11,12 @@
 --requirement _test.txt
 
 # installs this repo's packages
---editable ../../../packages/models-library/
---editable ../../../packages/postgres-database/
---editable ../../../packages/settings-library/
---editable ../../../packages/service-library[aiohttp]
---editable ../../../packages/simcore-sdk/
---editable ../../../packages/pytest-simcore/
+simcore-models-library @ ../../../packages/models-library
+simcore-postgres-database @ ../../../packages/postgres-database
+simcore-settings-library @ ../../../packages/settings-library
+simcore-service-library[aiohttp] @ ../../../packages/service-library
+simcore-sdk @ ../../../packages/simcore-sdk
+pytest-simcore @ ../../../packages/pytest-simcore
 
 # installs current package
---editable .
+simcore-service-webserver @ .

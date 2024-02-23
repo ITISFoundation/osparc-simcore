@@ -10,9 +10,9 @@
 --requirement _base.txt
 
 # installs this repo's packages
---editable ../../packages/models-library
---editable ../../packages/service-library[fastapi]
---editable ../../packages/settings-library/
+simcore-models-library @ ../../packages/models-library
+simcore-service-library[fastapi] @ ../../packages/service-library
+simcore-settings-library @ ../../packages/settings-library/
 
 # installs current package
---editable .
+simcore-service-datcore-adapter @ .

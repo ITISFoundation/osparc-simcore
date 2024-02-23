@@ -38,10 +38,7 @@ export APP_VERSION
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# Installing in $(subst install-,,$@) mode
 	@uv pip sync requirements/$(subst install-,,$@).txt
-	@uv pip install --upgrade \
-		pip~=24.0 \
-		wheel \
-		setuptools
+
 
 
 .PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev
