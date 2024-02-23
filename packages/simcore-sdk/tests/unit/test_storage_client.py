@@ -252,22 +252,54 @@ async def test_delete_file(
 
 
 @pytest.mark.parametrize(
-    "envs",
+    "envs, expected_base_url",
     [
-        {
-            "NODE_PORTS_STORAGE_AUTH": (
-                '{"STORAGE_USERNAME": "user", '
-                '"STORAGE_PASSWORD": "passwd", '
-                '"STORAGE_HOST": "host", '
-                '"STORAGE_PORT": "42"}'
-            )
-        },
-        {
-            "STORAGE_USERNAME": "user",
-            "STORAGE_PASSWORD": "passwd",
-            "STORAGE_HOST": "host",
-            "STORAGE_PORT": "42",
-        },
+        pytest.param(
+            {
+                "NODE_PORTS_STORAGE_AUTH": (
+                    '{"STORAGE_USERNAME": "user", '
+                    '"STORAGE_PASSWORD": "passwd", '
+                    '"STORAGE_HOST": "host", '
+                    '"STORAGE_PORT": "42"}'
+                )
+            },
+            "http://host:42/v0",
+            id="json-no-auth",
+        ),
+        pytest.param(
+            {
+                "STORAGE_USERNAME": "user",
+                "STORAGE_PASSWORD": "passwd",
+                "STORAGE_HOST": "host",
+                "STORAGE_PORT": "42",
+            },
+            "http://host:42/v0",
+            id="single-vars+auth",
+        ),
+        pytest.param(
+            {
+                "NODE_PORTS_STORAGE_AUTH": (
+                    '{"STORAGE_USERNAME": "user", '
+                    '"STORAGE_PASSWORD": "passwd", '
+                    '"STORAGE_HOST": "host", '
+                    '"STORAGE_SCHEME": "https",'
+                    '"STORAGE_PORT": "42"}'
+                )
+            },
+            "https://host:42/v0",
+            id="json-no-auth",
+        ),
+        pytest.param(
+            {
+                "STORAGE_USERNAME": "user",
+                "STORAGE_PASSWORD": "passwd",
+                "STORAGE_HOST": "host",
+                "STORAGE_SCHEME": "https",
+                "STORAGE_PORT": "42",
+            },
+            "https://host:42/v0",
+            id="single-vars+auth",
+        ),
     ],
 )
 def test_mode_ports_storage_with_auth(
@@ -275,10 +307,11 @@ def test_mode_ports_storage_with_auth(
     mock_postgres: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     envs: dict[str, str],
+    expected_base_url: str,
 ):
     setenvs_from_dict(monkeypatch, envs)
 
-    assert _base_url() == "http://host:42/v0"
+    assert _base_url() == expected_base_url
     assert _get_basic_auth() == aiohttp.BasicAuth(
         login="user", password="passwd", encoding="latin1"
     )
