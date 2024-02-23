@@ -5,16 +5,14 @@
 
 import functools
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from aiohttp import web
-from models_library.api_schemas_webserver.projects_metadata import (
-    ProjectMetadataPortGet,
-)
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.services_io import JsonSchemaDict
 from pydantic import BaseConfig, BaseModel, Extra, Field, parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -239,6 +237,18 @@ async def get_project_outputs(request: web.Request) -> web.Response:
 #
 # projects/*/metadata/ports sub-collection -------------------------
 #
+
+
+class ProjectMetadataPortGet(BaseModel):
+    key: NodeID = Field(
+        ...,
+        description="Project port's unique identifer. Same as the UUID of the associated port node",
+    )
+    kind: Literal["input", "output"]
+    content_schema: JsonSchemaDict | None = Field(
+        None,
+        description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
+    )
 
 
 @routes.get(
