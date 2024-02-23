@@ -9,7 +9,12 @@ from simcore_service_api_server.services._service_exception_handling import (
 async def test_backend_service_exception_mapper():
     @service_exception_mapper(
         "DummyService",
-        {status.HTTP_400_BAD_REQUEST: (status.HTTP_200_OK, "error message")},
+        {
+            status.HTTP_400_BAD_REQUEST: (
+                status.HTTP_200_OK,
+                lambda kwargs: "error message",
+            )
+        },
     )
     async def my_endpoint(status_code: int):
         raise HTTPStatusError(
