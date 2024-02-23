@@ -68,7 +68,7 @@ class ProjectNotFoundError(WebServerValueError):
 
 _exception_mapper = partial(service_exception_mapper, "Webserver")
 
-_job_status_map: Mapping = {
+_JOB_STATUS_MAP: Mapping = {
     status.HTTP_402_PAYMENT_REQUIRED: (status.HTTP_402_PAYMENT_REQUIRED, None),
     status.HTTP_404_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
@@ -76,14 +76,14 @@ _job_status_map: Mapping = {
     ),
 }
 
-_profile_status_map: Mapping = {
+_PROFILE_STATUS_MAP: Mapping = {
     status.HTTP_404_NOT_FOUND: (
         status.HTTP_404_NOT_FOUND,
         lambda kwargs: "Could not find profile",
     )
 }
 
-_wallet_status_map: Mapping = {
+_WALLET_STATUS_MAP: Mapping = {
     status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None),
     status.HTTP_403_FORBIDDEN: (status.HTTP_403_FORBIDDEN, None),
 }
@@ -201,7 +201,7 @@ class AuthSession:
 
     # PROFILE --------------------------------------------------
 
-    @_exception_mapper(_profile_status_map)
+    @_exception_mapper(_PROFILE_STATUS_MAP)
     async def get_me(self) -> Profile:
         response = await self.client.get("/me", cookies=self.session_cookies)
         response.raise_for_status()
@@ -209,7 +209,7 @@ class AuthSession:
         assert profile is not None
         return profile
 
-    @_exception_mapper(_profile_status_map)
+    @_exception_mapper(_PROFILE_STATUS_MAP)
     async def update_me(self, profile_update: ProfileUpdate) -> Profile:
         response = await self.client.put(
             "/me",
@@ -237,7 +237,7 @@ class AuthSession:
         result = await self._wait_for_long_running_task_results(data)
         return ProjectGet.parse_obj(result)
 
-    @_exception_mapper(_job_status_map)
+    @_exception_mapper(_JOB_STATUS_MAP)
     async def clone_project(self, project_id: UUID) -> ProjectGet:
         response = await self.client.post(
             f"/projects/{project_id}:clone",
@@ -250,7 +250,7 @@ class AuthSession:
         result = await self._wait_for_long_running_task_results(data)
         return ProjectGet.parse_obj(result)
 
-    @_exception_mapper(_job_status_map)
+    @_exception_mapper(_JOB_STATUS_MAP)
     async def get_project(self, project_id: UUID) -> ProjectGet:
         response = await self.client.get(
             f"/projects/{project_id}",
@@ -280,7 +280,7 @@ class AuthSession:
             show_hidden=False,
         )
 
-    @_exception_mapper(_job_status_map)
+    @_exception_mapper(_JOB_STATUS_MAP)
     async def delete_project(self, project_id: ProjectID) -> None:
         response = await self.client.delete(
             f"/projects/{project_id}",
@@ -379,7 +379,7 @@ class AuthSession:
         )
         response.raise_for_status()
 
-    @_exception_mapper(_job_status_map)
+    @_exception_mapper(_JOB_STATUS_MAP)
     async def start_project(
         self, project_id: UUID, cluster_id: ClusterID | None = None
     ) -> None:
@@ -396,7 +396,7 @@ class AuthSession:
 
     # WALLETS -------------------------------------------------
 
-    @_exception_mapper(_wallet_status_map)
+    @_exception_mapper(_WALLET_STATUS_MAP)
     async def get_default_wallet(self) -> WalletGetWithAvailableCredits:
         response = await self.client.get(
             "/wallets/default",
@@ -407,7 +407,7 @@ class AuthSession:
         assert data  # nosec
         return data
 
-    @_exception_mapper(_wallet_status_map)
+    @_exception_mapper(_WALLET_STATUS_MAP)
     async def get_wallet(self, wallet_id: int) -> WalletGetWithAvailableCredits:
         response = await self.client.get(
             f"/wallets/{wallet_id}",
@@ -418,7 +418,7 @@ class AuthSession:
         assert data  # nosec
         return data
 
-    @_exception_mapper(_wallet_status_map)
+    @_exception_mapper(_WALLET_STATUS_MAP)
     async def get_project_wallet(self, project_id: ProjectID) -> WalletGet | None:
         response = await self.client.get(
             f"/projects/{project_id}/wallet",
