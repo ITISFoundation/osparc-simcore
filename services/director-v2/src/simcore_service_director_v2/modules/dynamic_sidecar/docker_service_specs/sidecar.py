@@ -56,7 +56,7 @@ def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
 
     if (
         app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
-        and app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.were_credentials_provided
+        and app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.auth_required
     ):
         host = app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_HOST
         port = f"{app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_PORT}"

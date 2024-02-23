@@ -54,7 +54,7 @@ def test_settings_with_node_ports_storage_auth(
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_HOST == "host"
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PORT == 42
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_USERNAME == "user"
-    assert settings.NODE_PORTS_STORAGE_AUTH.were_credentials_provided is True
+    assert settings.NODE_PORTS_STORAGE_AUTH.auth_required is True
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD
 
     # enforce avoiding credentials leaks
@@ -77,7 +77,7 @@ def test_settings_with_node_ports_storage_auth_as_missing(
 
     settings = ApplicationSettings.create_from_envs()
     assert settings.NODE_PORTS_STORAGE_AUTH is not None
-    assert settings.NODE_PORTS_STORAGE_AUTH.were_credentials_provided is False
+    assert settings.NODE_PORTS_STORAGE_AUTH.auth_required is False
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_USERNAME is None
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD is None
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_HOST == "storage"

@@ -15,12 +15,12 @@ class StorageAuthSettings(StorageSettings):
     STORAGE_PASSWORD: SecretStr | None
 
     @property
-    def were_credentials_provided(self) -> bool:
+    def auth_required(self) -> bool:
         return self.STORAGE_USERNAME is not None and self.STORAGE_PASSWORD is not None
 
     @classmethod
     @root_validator
-    def both_fields_set_or_unset(cls, values):
+    def validate_auth_fields(cls, values):
         username = values["STORAGE_USERNAME"]
         password = values["STORAGE_PASSWORD"]
         if (username is None) != (password is None):

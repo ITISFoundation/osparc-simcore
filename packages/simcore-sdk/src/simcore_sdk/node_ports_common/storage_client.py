@@ -84,7 +84,7 @@ def _get_basic_auth() -> BasicAuth | None:
     settings = NodePortsSettings.create_from_envs()
     node_ports_storage_auth = settings.NODE_PORTS_STORAGE_AUTH
 
-    if node_ports_storage_auth.were_credentials_provided:
+    if node_ports_storage_auth.auth_required:
         assert node_ports_storage_auth.STORAGE_USERNAME is not None  # nosec
         assert node_ports_storage_auth.STORAGE_PASSWORD is not None  # nosec
         return BasicAuth(
