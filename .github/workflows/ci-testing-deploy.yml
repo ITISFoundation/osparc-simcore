@@ -310,8 +310,6 @@ jobs:
           cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -356,8 +354,6 @@ jobs:
           cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -396,8 +392,6 @@ jobs:
           cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -436,8 +430,6 @@ jobs:
           cache-dependency-path: "services/storage/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -481,8 +473,6 @@ jobs:
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -524,8 +514,6 @@ jobs:
           cache-dependency-path: "api/tests/requirements.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install api
@@ -561,8 +549,6 @@ jobs:
           cache-dependency-path: "services/api-server/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -607,8 +593,6 @@ jobs:
           cache-dependency-path: "services/autoscaling/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -650,8 +634,6 @@ jobs:
           cache-dependency-path: "services/catalog/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -699,8 +681,6 @@ jobs:
           cache-dependency-path: "services/clusters-keeper/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -752,8 +732,6 @@ jobs:
           cache-dependency-path: "services/datcore-adapter/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -803,8 +781,6 @@ jobs:
           cache-dependency-path: "services/director/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -843,8 +819,6 @@ jobs:
           cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -892,8 +866,6 @@ jobs:
           cache-dependency-path: "packages/aws-library/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -935,8 +907,6 @@ jobs:
           cache-dependency-path: "packages/dask-task-models-library/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -978,8 +948,6 @@ jobs:
           cache-dependency-path: "services/dask-sidecar/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1021,8 +989,6 @@ jobs:
           cache-dependency-path: "services/osparc-gateway-server/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1074,8 +1040,6 @@ jobs:
           cache-dependency-path: "services/payments/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1117,8 +1081,6 @@ jobs:
           cache-dependency-path: "services/dynamic-scheduler/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1160,8 +1122,6 @@ jobs:
           cache-dependency-path: "services/resource-usage-tracker/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1213,8 +1173,6 @@ jobs:
           cache-dependency-path: "services/dynamic-sidecar/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1254,8 +1212,6 @@ jobs:
           cache: "npm"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1291,8 +1247,6 @@ jobs:
           cache-dependency-path: "packages/service-library/requirements/_test.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1328,8 +1282,6 @@ jobs:
           cache-dependency-path: "packages/postgres-database/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1371,8 +1323,6 @@ jobs:
           cache-dependency-path: "services/invitations/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1414,8 +1364,6 @@ jobs:
           cache-dependency-path: "packages/service-integration/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1457,8 +1405,6 @@ jobs:
           cache-dependency-path: "packages/service-library/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1500,8 +1446,6 @@ jobs:
           cache-dependency-path: "packages/settings-library/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1543,8 +1487,6 @@ jobs:
           cache-dependency-path: "packages/models-library/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1587,8 +1529,6 @@ jobs:
           cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1689,8 +1629,6 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1752,8 +1690,6 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1815,8 +1751,6 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1882,8 +1816,6 @@ jobs:
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1947,8 +1879,6 @@ jobs:
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2011,8 +1941,6 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2088,8 +2016,6 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2175,8 +2101,6 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2237,8 +2161,6 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2310,8 +2232,6 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -2386,8 +2306,6 @@ jobs:
         run: make devenv
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -2440,8 +2358,6 @@ jobs:
           cache-dependency-path: "tests/environment-setup/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v1
-        with:
-          uv-version: "0.1.6"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
