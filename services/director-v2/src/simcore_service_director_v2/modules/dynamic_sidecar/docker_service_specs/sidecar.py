@@ -48,7 +48,7 @@ class _StorageConfig(NamedTuple):
     password: str
 
 
-def get_storage_config(app_settings: AppSettings) -> _StorageConfig:
+def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
     host: str = app_settings.DIRECTOR_V2_STORAGE.STORAGE_HOST
     port: str = f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}"
     username: str = "null"
@@ -108,7 +108,7 @@ def _get_environment_variables(
         )
         callbacks_mapping.metrics = None
 
-    storage_config = get_storage_config(app_settings)
+    storage_config = _get_storage_config(app_settings)
 
     return {
         # These environments will be captured by
