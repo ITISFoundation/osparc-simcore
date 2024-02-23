@@ -2293,6 +2293,8 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "tests/e2e-playwright/requirements/dev.txt"
+      - name: install uv
+        uses: yezz123/setup-uv@v1
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
@@ -2304,8 +2306,6 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: prepare devenv
         run: make devenv
-      - name: install uv
-        uses: yezz123/setup-uv@v1
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
