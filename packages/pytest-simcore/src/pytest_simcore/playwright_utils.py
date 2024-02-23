@@ -1,7 +1,7 @@
 import json
 import logging
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass, field
 from enum import Enum, unique
 from types import SimpleNamespace
@@ -197,3 +197,27 @@ def wait_for_pipeline_state(
             )
         print(f"<-- pipeline is in {current_state=}")
     return current_state
+
+
+def on_web_socket(ws) -> None:
+    """Usage
+
+    from pytest_simcore.playwright_utils import on_web_socket
+
+    page.on("websocket", on_web_socket)
+
+    """
+    stack = ExitStack()
+    ctx = stack.enter_context(
+        log_context(
+            logging.INFO,
+            (
+                f"WebSocket opened: {ws.url}",
+                "WebSocket closed",
+            ),
+        )
+    )
+
+    ws.on("framesent", lambda payload: ctx.logger.info("⬇️ %s", payload))
+    ws.on("framereceived", lambda payload: ctx.logger.info("⬆️ %s", payload))
+    ws.on("close", lambda payload: stack.close())
