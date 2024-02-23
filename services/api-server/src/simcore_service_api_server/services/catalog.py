@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import urllib.parse
 from collections.abc import Callable
@@ -90,7 +91,9 @@ class CatalogApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        services = parse_raw_as(list[TruncatedCatalogServiceOut], response.text)
+        services = await asyncio.get_event_loop.run_in_executor(
+            None, parse_raw_as, list[TruncatedCatalogServiceOut], response.text
+        )
         solvers = []
         for service in services:
             try:
@@ -127,7 +130,9 @@ class CatalogApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        service = TruncatedCatalogServiceOut.parse_raw(response.text)
+        service = await asyncio.get_event_loop.run_in_executor(
+            None, parse_raw_as, response.text
+        )
         assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
         ), "Expected by SolverName regex"
