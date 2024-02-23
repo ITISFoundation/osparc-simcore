@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
 from collections.abc import AsyncIterator, Iterator
 from typing import Final
 
@@ -11,7 +12,6 @@ import sqlalchemy as sa
 import tenacity
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from servicelib.json_serialization import json_dumps
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
@@ -170,7 +170,7 @@ def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engi
             )
             with engine.connect():
                 print(
-                    f"Connection to {dsn} succeeded [{json_dumps(attempt.retry_state.retry_object.statistics)}]"
+                    f"Connection to {dsn} succeeded [{json.dumps(attempt.retry_state.retry_object.statistics)}]"
                 )
 
     yield engine

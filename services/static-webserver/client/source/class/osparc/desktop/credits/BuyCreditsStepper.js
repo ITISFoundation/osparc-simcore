@@ -41,8 +41,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
           osparc.data.Resources.fetch("payments", "payWithPaymentMethod", params)
             .then(data => {
               const { paymentId } = data
-              osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentCompleted", wsData => {
-                const paymentData = JSON.parse(wsData);
+              osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentCompleted", paymentData => {
                 if (paymentId === paymentData.paymentId) {
                   this.__paymentCompleted(paymentData)
                   this.__form.setFetching(false);
@@ -62,8 +61,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
                 decorator: "no-border-2"
               });
               this.add(this.__iframe);
-              osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentCompleted", wsData => {
-                const paymentData = JSON.parse(wsData);
+              osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentCompleted", paymentData => {
                 if (paymentId === paymentData.paymentId) {
                   this.__paymentCompleted(paymentData);
                 }

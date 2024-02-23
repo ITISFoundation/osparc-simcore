@@ -4,7 +4,6 @@
 # pylint: disable=too-many-arguments
 
 import asyncio
-import json
 from collections.abc import Awaitable, Callable
 from random import choice
 from typing import Any
@@ -125,7 +124,7 @@ async def _assert_handler_called_with_json(
             )
             handler.assert_called_once()
             call_args, _call_kwargs = handler.call_args
-            assert json.loads(call_args[0]) == expected_call
+            assert call_args[0] == expected_call
             print(f"calls received! {attempt.retry_state.retry_object.statistics}")
 
 
