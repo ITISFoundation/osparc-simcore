@@ -448,7 +448,7 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
         },
     }
 
-    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR:
+    if dynamic_sidecar_settings.DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED:
         create_service_params["endpoint_spec"] = {"Mode": "dnsrr"}
 
     update_service_params_from_settings(
