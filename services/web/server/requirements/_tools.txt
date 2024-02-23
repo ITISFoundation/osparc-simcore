@@ -78,7 +78,7 @@ typing-extensions==4.3.0
     # via
     #   astroid
     #   black
-virtualenv==20.25.0
+virtualenv==20.25.1
     # via pre-commit
 wheel==0.42.0
     # via pip-tools
