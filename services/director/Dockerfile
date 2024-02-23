@@ -113,8 +113,6 @@ FROM build as prod-only-deps
 WORKDIR /build/services/director
 ENV SC_BUILD_TARGET=prod-only-deps
 RUN \
-  --mount=type=bind,source=packages,target=/build/packages,rw \
-  --mount=type=bind,source=services/director,target=/build/services/director,rw \
   pip install -r requirements/prod.txt
 
 # --------------------------Production stage -------------------

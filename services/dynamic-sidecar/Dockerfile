@@ -110,7 +110,7 @@ RUN uv venv "${VIRTUAL_ENV}" \
   && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade  \
+  uv pip install --upgrade  \
   pip~=24.0  \
   wheel \
   setuptools
@@ -123,8 +123,7 @@ WORKDIR /build
 RUN \
   --mount=type=bind,source=services/dynamic-sidecar/requirements/_base.txt,target=_base.txt \
   --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install \
-  --no-build-isolation \
+  uv pip install \
   --requirement _base.txt
 
 # copy utility devops scripts
@@ -147,8 +146,7 @@ RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/dynamic-sidecar,target=/build/services/dynamic-sidecar,rw \
   --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
-  pip install \
-  --no-build-isolation \
+  uv pip install \
   --requirement requirements/prod.txt \
   && pip list -v
 
