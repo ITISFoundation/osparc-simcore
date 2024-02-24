@@ -7,8 +7,25 @@ import httpx
 from fastapi import HTTPException, status
 from pydantic import ValidationError
 from servicelib.error_codes import create_error_code
+from simcore_service_api_server.models.basic_types import HTTPExceptionModel
 
 _logger = logging.getLogger(__name__)
+
+
+SERVICE_DEFAULT_STATUS_CODES: dict[int | str, dict[str, Any]] | None = {
+    status.HTTP_502_BAD_GATEWAY: {
+        "description": "Returned when an unexpected error occured when communicating with a backend service.",
+        "model": HTTPExceptionModel,
+    },
+    status.HTTP_503_SERVICE_UNAVAILABLE: {
+        "description": "Returned when the service (or a backend service) is unavailable. In this case a 'Retry-After' header might also be returned.",
+        "model": HTTPExceptionModel,
+    },
+    status.HTTP_429_TOO_MANY_REQUESTS: {
+        "description": "Returned if too many requests have been sent to the service (or a backend service).",
+        "model": HTTPExceptionModel,
+    },
+}
 
 
 def service_exception_mapper(
