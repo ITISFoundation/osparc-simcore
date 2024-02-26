@@ -10,9 +10,6 @@ all: install test-dev
 requirements.txt: requirements.in
 	# pip compiling $<
 	uv pip compile $(UPGRADE_OPTION) \
-		--build-isolation \
-		--strip-extras \
-		--resolver=backtracking \
 		--output-file $@ $<
 reqs: requirements.txt ## alias to compile requirements.txt
 
