@@ -486,7 +486,9 @@ class ProjectDBAPI(BaseProjectDB):
             check_project_permissions(current_project, user_id, user_groups, "write")
             # uuid can ONLY be set upon creation
             if current_project["uuid"] != new_project_data["uuid"]:
-                raise ProjectInvalidRightsError(user_id, new_project_data["uuid"])
+                raise ProjectInvalidRightsError(
+                    user_id=user_id, project_uuid=new_project_data["uuid"]
+                )
             # ensure the prj owner is always in the access rights
             owner_primary_gid = await self._get_user_primary_group_gid(
                 db_connection, current_project[projects.c.prj_owner.key]

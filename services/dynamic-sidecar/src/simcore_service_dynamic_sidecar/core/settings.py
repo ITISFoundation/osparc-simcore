@@ -14,6 +14,7 @@ from models_library.users import UserID
 from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.node_ports import StorageAuthSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
@@ -151,6 +152,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     POSTGRES_SETTINGS: PostgresSettings | None = Field(auto_default_from_env=True)
 
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
+
+    NODE_PORTS_STORAGE_AUTH: StorageAuthSettings | None = Field(
+        auto_default_from_env=True
+    )
 
     @property
     def are_prometheus_metrics_enabled(self) -> bool:

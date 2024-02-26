@@ -4,7 +4,8 @@
 # pylint:disable=too-many-arguments
 
 import re
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Iterable
 from uuid import uuid4
 
 import aiohttp
@@ -21,10 +22,13 @@ from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
 from simcore_sdk.node_ports_common.storage_client import (
     LinkType,
+    _base_url,
+    _get_basic_auth,
     delete_file,
     get_download_file_link,
     get_file_metadata,
@@ -34,14 +38,39 @@ from simcore_sdk.node_ports_common.storage_client import (
 )
 
 
+def _clear_caches():
+    _base_url.cache_clear()
+    _get_basic_auth.cache_clear()
+
+
+@pytest.fixture
+def clear_caches() -> Iterable[None]:
+    _clear_caches()
+    yield
+    _clear_caches()
+
+
 @pytest.fixture()
-def mock_environment(monkeypatch: pytest.MonkeyPatch, faker: Faker):
-    monkeypatch.setenv("STORAGE_HOST", "fake_storage")
-    monkeypatch.setenv("STORAGE_PORT", "1535")
-    monkeypatch.setenv("POSTGRES_HOST", faker.pystr())
-    monkeypatch.setenv("POSTGRES_USER", faker.user_name())
-    monkeypatch.setenv("POSTGRES_PASSWORD", faker.password())
-    monkeypatch.setenv("POSTGRES_DB", faker.pystr())
+def mock_postgres(monkeypatch: pytest.MonkeyPatch, faker: Faker) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "POSTGRES_HOST": faker.pystr(),
+            "POSTGRES_USER": faker.user_name(),
+            "POSTGRES_PASSWORD": faker.password(),
+            "POSTGRES_DB": faker.pystr(),
+        },
+    )
+
+
+@pytest.fixture()
+def mock_environment(
+    mock_postgres: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {"STORAGE_HOST": "fake_storage", "STORAGE_PORT": "1535", **mock_postgres},
+    )
 
 
 @pytest.fixture()
@@ -61,9 +90,10 @@ async def session() -> AsyncIterator[aiohttp.ClientSession]:
 
 
 async def test_get_storage_locations(
-    session: aiohttp.ClientSession,
-    mock_environment: None,
+    clear_caches: None,
     storage_v0_service_mock: AioResponsesMock,
+    mock_postgres: EnvVarsDict,
+    session: aiohttp.ClientSession,
     user_id: UserID,
 ):
     result = await get_storage_locations(session=session, user_id=user_id)
@@ -79,7 +109,8 @@ async def test_get_storage_locations(
     [(LinkType.PRESIGNED, ("http", "https")), (LinkType.S3, ("s3", "s3a"))],
 )
 async def test_get_download_file_link(
-    mock_environment: None,
+    clear_caches: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -104,7 +135,8 @@ async def test_get_download_file_link(
     [(LinkType.PRESIGNED, ("http", "https")), (LinkType.S3, ("s3", "s3a"))],
 )
 async def test_get_upload_file_links(
-    mock_environment: None,
+    clear_caches: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -129,7 +161,8 @@ async def test_get_upload_file_links(
 
 
 async def test_get_file_metada(
-    mock_environment: None,
+    clear_caches: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -172,7 +205,8 @@ def storage_v0_service_mock_get_file_meta_data_not_found(
 
 
 async def test_get_file_metada_invalid_s3_path(
-    mock_environment: None,
+    clear_caches: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock_get_file_meta_data_not_found: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -189,7 +223,8 @@ async def test_get_file_metada_invalid_s3_path(
 
 
 async def test_list_file_metadata(
-    mock_environment: None,
+    clear_caches: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -203,7 +238,8 @@ async def test_list_file_metadata(
 
 
 async def test_delete_file(
-    mock_environment: None,
+    clear_caches: None,
+    mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
@@ -213,3 +249,67 @@ async def test_delete_file(
     await delete_file(
         session=session, file_id=file_id, location_id=location_id, user_id=user_id
     )
+
+
+@pytest.mark.parametrize(
+    "envs",
+    [
+        {
+            "NODE_PORTS_STORAGE_AUTH": (
+                '{"STORAGE_USERNAME": "user", '
+                '"STORAGE_PASSWORD": "passwd", '
+                '"STORAGE_HOST": "host", '
+                '"STORAGE_PORT": "42"}'
+            )
+        },
+        {
+            "STORAGE_USERNAME": "user",
+            "STORAGE_PASSWORD": "passwd",
+            "STORAGE_HOST": "host",
+            "STORAGE_PORT": "42",
+        },
+    ],
+)
+def test_mode_ports_storage_with_auth(
+    clear_caches: None,
+    mock_postgres: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    envs: dict[str, str],
+):
+    setenvs_from_dict(monkeypatch, envs)
+
+    assert _base_url() == "http://host:42/v0"
+    assert _get_basic_auth() == aiohttp.BasicAuth(
+        login="user", password="passwd", encoding="latin1"
+    )
+
+
+@pytest.mark.parametrize(
+    "envs, expected_base_url",
+    [
+        pytest.param(
+            {},
+            "http://storage:8080/v0",
+            id="no-overwrites",
+        ),
+        pytest.param(
+            {
+                "STORAGE_HOST": "a-host",
+                "STORAGE_PORT": "54",
+            },
+            "http://a-host:54/v0",
+            id="custom-host-port",
+        ),
+    ],
+)
+def test_mode_ports_storage_without_auth(
+    clear_caches: None,
+    mock_postgres: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    envs: dict[str, str],
+    expected_base_url: str,
+):
+    setenvs_from_dict(monkeypatch, envs)
+
+    assert _base_url() == expected_base_url
+    assert _get_basic_auth() is None

@@ -20,6 +20,7 @@ from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.progress_bar import ProgressBarData
+from settings_library.node_ports import NodePortsSettings
 from settings_library.r_clone import RCloneSettings
 from tenacity import AsyncRetrying
 from tenacity.after import after_log
@@ -38,7 +39,6 @@ from .file_io_utils import (
     download_link_to_file,
     upload_file_to_presigned_links,
 )
-from .settings import NodePortsSettings
 
 _logger = logging.getLogger(__name__)
 
