@@ -23,7 +23,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from . import exceptions, storage_client
-from .storage_client import get_basic_auth
+from .storage_endpoint import get_basic_auth
 
 _logger = logging.getLogger(__name__)
 
