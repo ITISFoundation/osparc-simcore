@@ -25,6 +25,10 @@ from simcore_service_payments.services.resource_usage_tracker import (
     ResourceUsageTrackerApi,
 )
 
+from services.payments.src.simcore_service_payments.services.notifier import (
+    NotifierService,
+)
+
 from ..core.settings import ApplicationSettings
 from .auto_recharge import get_wallet_auto_recharge
 from .payments import pay_with_payment_method
@@ -150,11 +154,17 @@ async def _perform_auto_recharge(
     payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
     rut_api = ResourceUsageTrackerApi.get_from_app_state(app)
 
+    # FIXME: how can I get these?
+    # wallet_name =
+    # user_name =
+    # user_eamil =
+
     await pay_with_payment_method(
         gateway=payments_gateway,
         rut=rut_api,
         repo_transactions=payments_transactions_repo,
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
+        notifier=NotifierService.get_from_app_state(app),
         payment_method_id=cast(PaymentMethodID, wallet_auto_recharge.payment_method_id),
         amount_dollars=wallet_auto_recharge.top_up_amount_in_usd,
         target_credits=credit_result.credit_amount,

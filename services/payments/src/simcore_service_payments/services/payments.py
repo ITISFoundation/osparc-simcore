@@ -148,7 +148,8 @@ async def acknowledge_one_time_payment(
 async def on_payment_completed(
     transaction: PaymentsTransactionsDB,
     rut_api: ResourceUsageTrackerApi,
-    notifier: NotifierService | None,
+    notifier: NotifierService,
+    exclude: set | None = None,
 ):
     assert transaction.completed_at is not None  # nosec
     assert transaction.initiated_at < transaction.completed_at  # nosec
@@ -183,7 +184,9 @@ async def on_payment_completed(
 
     if notifier:
         await notifier.notify_payment_completed(
-            user_id=transaction.user_id, payment=to_payments_api_model(transaction)
+            user_id=transaction.user_id,
+            payment=to_payments_api_model(transaction),
+            exclude=exclude,
         )
 
 
@@ -192,6 +195,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
     rut: ResourceUsageTrackerApi,
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
+    notifier: NotifierService,
     *,
     payment_method_id: PaymentMethodID,
     amount_dollars: Decimal,
@@ -255,7 +259,9 @@ async def pay_with_payment_method(  # noqa: PLR0913
     )
 
     # NOTE: notifications here are done as background-task after responding `POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay`
-    await on_payment_completed(transaction, rut, notifier=None)
+    await on_payment_completed(
+        transaction, rut, notifier=notifier, exclude={"WebSocketProvider"}
+    )
 
     return to_payments_api_model(transaction)
 

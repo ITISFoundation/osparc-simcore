@@ -19,6 +19,10 @@ from pydantic import EmailStr
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 
+from services.payments.src.simcore_service_payments.services.notifier import (
+    NotifierService,
+)
+
 from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services import payments, payments_methods
@@ -176,6 +180,7 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
             rut=ResourceUsageTrackerApi.get_from_app_state(app),
             repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
             repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
+            notifier=NotifierService.get_from_app_state(app),
             payment_method_id=payment_method_id,
             amount_dollars=amount_dollars,
             target_credits=target_credits,
