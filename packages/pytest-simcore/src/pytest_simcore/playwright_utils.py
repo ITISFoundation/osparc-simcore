@@ -22,7 +22,7 @@ class DynamicIndentFormatter(logging.Formatter):
         assert "message" in dynamic_fmt
         super().__init__(dynamic_fmt, datefmt, style)
 
-    def format(self, record):
+    def format(self, record):  # noqa: A003
         original_message = record.msg
         record.msg = f"{self.indent_char * self._indent_level}{original_message}"
         result = super().format(record)
@@ -199,12 +199,12 @@ def wait_for_pipeline_state(
     return current_state
 
 
-def on_web_socket(ws) -> None:
+def on_web_socket_default_handler(ws) -> None:
     """Usage
 
-    from pytest_simcore.playwright_utils import on_web_socket
+    from pytest_simcore.playwright_utils import on_web_socket_default_handler
 
-    page.on("websocket", on_web_socket)
+    page.on("websocket", on_web_socket_default_handler)
 
     """
     stack = ExitStack()

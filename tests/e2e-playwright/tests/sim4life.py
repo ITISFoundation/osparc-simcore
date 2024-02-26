@@ -13,7 +13,7 @@ from typing import Final
 
 from playwright.sync_api import APIRequestContext, Page
 from pydantic import AnyUrl
-from pytest_simcore.playwright_utils import on_web_socket, test_logger
+from pytest_simcore.playwright_utils import on_web_socket_default_handler, test_logger
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -34,7 +34,7 @@ def test_sim4life(
     service_test_id: str,
 ):
     # connect and listen to websocket
-    page.on("websocket", on_web_socket)
+    page.on("websocket", on_web_socket_default_handler)
 
     # open services tab and filter for sim4life service
     page.get_by_test_id("servicesTabBtn").click()
