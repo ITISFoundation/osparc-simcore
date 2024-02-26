@@ -27,8 +27,7 @@ def get_summary() -> str:
 
 
 SUMMARY: Final[str] = get_summary()
-
-PACKAGE_DATA_FOLDER: Final[Path] = Path(f'{files(APP_NAME.replace("-", "_"))}') / "data"
+PACKAGE_DATA_FOLDER: Final[Path] = Path(f'{files(APP_NAME.replace("-", "_")) / "data"}')
 
 # https://patorjk.com/software/taag/#p=testall&f=Avatar&t=clusters_keeper
 APP_STARTED_BANNER_MSG = r"""

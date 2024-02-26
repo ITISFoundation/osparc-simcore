@@ -32,7 +32,7 @@ class DataResourcesFacade:
         WARNING: existence of file is not guaranteed
         WARNING: resource files are supposed to be used as read-only!
         """
-        ref = files(self.package_name) / resource_name
+        ref = files(self.distribution_name.replace("-", "_")) / resource_name
         return pathlib.Path(f"{ref}")
 
 
