@@ -21,8 +21,8 @@ touch:
 	@$(foreach p,${objects},touch ${p};)
 
 
-check: ## Checks whether pip-compile is installed
-	@which pip-compile > /dev/null
+check: ## Checks whether uv is installed
+	@which uv > /dev/null
 
 
 clean: check ## Cleans all requirements/*.txt

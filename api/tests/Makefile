@@ -9,7 +9,7 @@ all: install test-dev
 .PHONY: reqs
 requirements.txt: requirements.in
 	# pip compiling $<
-	pip-compile $(UPGRADE_OPTION) \
+	uv pip compile $(UPGRADE_OPTION) \
 		--build-isolation \
 		--strip-extras \
 		--resolver=backtracking \
