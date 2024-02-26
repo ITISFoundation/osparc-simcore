@@ -182,12 +182,11 @@ async def on_payment_completed(
             f"{credit_transaction_id=}",
         )
 
-    if notifier:
-        await notifier.notify_payment_completed(
-            user_id=transaction.user_id,
-            payment=to_payments_api_model(transaction),
-            exclude=exclude,
-        )
+    await notifier.notify_payment_completed(
+        user_id=transaction.user_id,
+        payment=to_payments_api_model(transaction),
+        exclude=exclude,
+    )
 
 
 async def pay_with_payment_method(  # noqa: PLR0913

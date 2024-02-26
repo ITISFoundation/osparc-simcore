@@ -25,12 +25,9 @@ from simcore_service_payments.services.resource_usage_tracker import (
     ResourceUsageTrackerApi,
 )
 
-from services.payments.src.simcore_service_payments.services.notifier import (
-    NotifierService,
-)
-
 from ..core.settings import ApplicationSettings
 from .auto_recharge import get_wallet_auto_recharge
+from .notifier import NotifierService
 from .payments import pay_with_payment_method
 from .payments_gateway import PaymentsGatewayApi
 from .rabbitmq import get_rabbitmq_rpc_client
