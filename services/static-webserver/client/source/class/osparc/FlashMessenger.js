@@ -50,8 +50,6 @@ qx.Class.define("osparc.FlashMessenger", {
 
     this.__displayedMessagesCount = 0;
 
-    this.__currentlyDisplayedMessages = new Set();
-
     this.__attachEventHandlers();
   },
 
@@ -66,7 +64,6 @@ qx.Class.define("osparc.FlashMessenger", {
     __messages: null,
     __messageContainer: null,
     __displayedMessagesCount: null,
-    __currentlyDisplayedMessages: null,
 
     /**
      * Public function to log a FlashMessage to the user.
@@ -85,22 +82,11 @@ qx.Class.define("osparc.FlashMessenger", {
       });
     },
 
-    __getTextMessage: function(logMessage) {
+    log: function(logMessage) {
+      // TODO: This doesn't look cool
       let message = osparc.utils.Utils.isObject(logMessage.message) && "message" in logMessage.message ?
         logMessage.message.message :
         logMessage.message;
-      /* eslint no-underscore-dangle: 0 */
-      return message === undefined || message === null ? null : message.__txt;
-    },
-
-    log: function(logMessage) {
-      // disallow same message from being displayed again
-      let message = this.__getTextMessage(logMessage);
-      if (this.__currentlyDisplayedMessages.has(message)) {
-        return null;
-      }
-      this.__currentlyDisplayedMessages.add(message);
-
       let logger = logMessage.logger;
       if (logger) {
         message = logger + ": " + message;
@@ -117,7 +103,7 @@ qx.Class.define("osparc.FlashMessenger", {
     /**
      * Private method to show a message to the user. It will stack it on the previous ones.
      *
-     * @param {osparc.ui.message.FlashMessage} flashMessage FlashMessage element to show.
+     * @param {osparc.ui.message.FlashMessage} flashMessage FlassMessage element to show.
      */
     __showMessage: function(flashMessage) {
       this.__messages.remove(flashMessage);
@@ -142,20 +128,13 @@ qx.Class.define("osparc.FlashMessenger", {
     /**
      * Private method to remove a message. If there are still messages in the queue, it will show the next available one.
      *
-     * @param {osparc.ui.message.FlashMessage} flashMessage FlashMessage element to remove.
+     * @param {osparc.ui.message.FlashMessage} flashMessage FlassMessage element to remove.
      */
     removeMessage: function(flashMessage) {
       if (this.__messageContainer.indexOf(flashMessage) > -1) {
         this.__displayedMessagesCount--;
         this.__messageContainer.setDecorator("flash-container-transitioned");
         this.__messageContainer.remove(flashMessage);
-
-        // allows for same message to be displayed again
-        let message = this.__getTextMessage(flashMessage);
-        if (this.__currentlyDisplayedMessages.has(message)) {
-          this.__currentlyDisplayedMessages.delete(message);
-        }
-
         qx.event.Timer.once(() => {
           if (this.__messages.length) {
             // There are still messages to show
