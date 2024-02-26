@@ -10,7 +10,7 @@ aiohttp==3.8.5
     #   -c requirements/_base.txt
     #   aioresponses
     #   pytest-aiohttp
-aioresponses==0.7.4
+aioresponses==0.7.6
     # via -r requirements/_test.in
 aiosignal==1.2.0
     # via
