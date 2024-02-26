@@ -17,4 +17,4 @@ simcore-settings-library @ ../settings-library/
 pytest-simcore @ ../pytest-simcore
 
 # current module
-simcore-service-library @ .[fastapi]
+simcore-service-library[fastapi] @ .
