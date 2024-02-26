@@ -77,7 +77,9 @@ async def create_temporary_guest_user(request: web.Request):
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
     product_name = get_product_name(request)
 
-    random_user_name = "".join(secrets.choice(string.ascii_letters) for _ in range(10))
+    random_user_name = "".join(
+        secrets.choice(string.ascii_lowercase) for _ in range(10)
+    )
     email = parse_obj_as(LowerCaseEmailStr, f"{random_user_name}@guest-at-osparc.io")
     password = generate_password(length=12)
     expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
