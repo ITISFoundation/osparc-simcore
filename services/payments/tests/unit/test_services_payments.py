@@ -1,10 +1,13 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 
+import asyncio
 from collections.abc import Awaitable, Callable
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi import FastAPI
@@ -24,6 +27,8 @@ from simcore_service_payments.db.payments_transactions_repo import (
 from simcore_service_payments.models.db import PaymentsMethodsDB
 from simcore_service_payments.services import payments
 from simcore_service_payments.services.notifier import NotifierService
+from simcore_service_payments.services.notifier_email import EmailProvider
+from simcore_service_payments.services.notifier_ws import WebSocketProvider
 from simcore_service_payments.services.payments_gateway import PaymentsGatewayApi
 from simcore_service_payments.services.resource_usage_tracker import (
     ResourceUsageTrackerApi,
@@ -59,6 +64,20 @@ def app_environment(
     )
 
 
+@pytest.fixture
+def mock_email_provider(mocker: MockerFixture) -> MagicMock:
+    mock = mocker.MagicMock(EmailProvider)
+    mock.get_name.return_value = EmailProvider.get_name()
+    return mock
+
+
+@pytest.fixture
+def mock_ws_provider(mocker: MockerFixture) -> MagicMock:
+    mock = mocker.MagicMock(WebSocketProvider)
+    mock.get_name.return_value = WebSocketProvider.get_name()
+    return mock
+
+
 async def test_fails_to_pay_with_payment_method_without_funds(
     app: FastAPI,
     create_fake_payment_method_in_db: Callable[
@@ -73,6 +92,8 @@ async def test_fails_to_pay_with_payment_method_without_funds(
     user_email: EmailStr,
     payments_clean_db: None,
     mocker: MockerFixture,
+    mock_email_provider: MagicMock,
+    mock_ws_provider: MagicMock,
 ):
     if mock_payments_gateway_service_or_none is None:
         pytest.skip(
@@ -87,7 +108,9 @@ async def test_fails_to_pay_with_payment_method_without_funds(
 
     rut = ResourceUsageTrackerApi.get_from_app_state(app)
     rut_create_credit_transaction = mocker.spy(rut, "create_credit_transaction")
-    notifier = NotifierService.get_from_app_state(app)
+
+    # Mocker providers
+    notifier = NotifierService(mock_email_provider, mock_ws_provider)
 
     payment = await payments.pay_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
@@ -108,9 +131,28 @@ async def test_fails_to_pay_with_payment_method_without_funds(
         comment="test_failure_in_pay_with_payment_method",
     )
 
+    # should not add credits
     assert not rut_create_credit_transaction.called
 
+    # check resulting payment
     assert payment.completed_at is not None
     assert payment.created_at < payment.completed_at
     assert payment.state == "FAILED"
     assert payment.state_message, "expected reason of failure"
+
+    # check notifications triggered as background tasks
+    await asyncio.sleep(0.1)
+    assert len(notifier._background_tasks) == 0  # noqa: SLF001
+
+    assert mock_email_provider.notify_payment_completed.called
+    assert (
+        mock_email_provider.notify_payment_completed.call_args.kwargs["user_id"]
+        == user_id
+    )
+    assert (
+        mock_email_provider.notify_payment_completed.call_args.kwargs["payment"]
+        == payment
+    )
+
+    # Websockets notification should be in the exclude list
+    assert not mock_ws_provider.notify_payment_completed.called
