@@ -95,26 +95,31 @@ class MixinServiceSettings:
         prefix = prefix.upper()
 
         parts = {
-            "scheme": self._safe_getattr(f"{prefix}_SCHEME", URLPart.OPTIONAL, "http"),
+            "scheme": (
+                "https"
+                if self._safe_getattr(f"{prefix}_SECURE", URLPart.OPTIONAL)
+                else "http"
+            ),
             "host": self._safe_getattr(f"{prefix}_HOST", URLPart.REQUIRED),
             "user": self._safe_getattr(f"{prefix}_USER", user),
             "password": self._safe_getattr(f"{prefix}_PASSWORD", password),
             "port": self._safe_getattr(f"{prefix}_PORT", port),
         }
 
-        if vtag != URLPart.EXCLUDE:
+        if vtag != URLPart.EXCLUDE:  # noqa: SIM102
             if v := self._safe_getattr(f"{prefix}_VTAG", vtag):
                 parts["path"] = f"/{v}"
 
-        # postprocess parts dict
+        # post process parts dict
         kwargs = {}
         for k, v in parts.items():
+            value = v
             if isinstance(v, SecretStr):
-                v = v.get_secret_value()
+                value = v.get_secret_value()
             elif v is not None:
-                v = f"{v}"
+                value = f"{v}"
 
-            kwargs[k] = v
+            kwargs[k] = value
 
         assert all(isinstance(v, str) or v is None for v in kwargs.values())  # nosec
 
