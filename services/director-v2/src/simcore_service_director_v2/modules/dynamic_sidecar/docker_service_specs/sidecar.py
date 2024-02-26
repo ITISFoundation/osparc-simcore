@@ -16,6 +16,7 @@ from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import ByteSize, parse_obj_as
 from servicelib.json_serialization import json_dumps
+from settings_library.node_ports import StorageAuthSettings
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.dynamic_services_settings.scheduler import (
@@ -46,6 +47,7 @@ class _StorageConfig(NamedTuple):
     port: str
     username: str
     password: str
+    secure: str
 
 
 def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
@@ -53,29 +55,27 @@ def _get_storage_config(app_settings: AppSettings) -> _StorageConfig:
     port: str = f"{app_settings.DIRECTOR_V2_STORAGE.STORAGE_PORT}"
     username: str = "null"
     password: str = "null"
+    secure: str = "0"
 
-    if (
+    storage_auth_settings: StorageAuthSettings = (
         app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH
-        and app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.auth_required
-    ):
-        host = app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_HOST
-        port = f"{app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_PORT}"
-        assert (
-            app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_USERNAME
-        )  # nosec
-        username = app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_USERNAME
-        assert (
-            app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD
-        )  # nosec
-        password = (
-            app_settings.DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD.get_secret_value()
-        )
+    )
+
+    if storage_auth_settings and storage_auth_settings.auth_required:
+        host = storage_auth_settings.STORAGE_HOST
+        port = f"{storage_auth_settings.STORAGE_PORT}"
+        assert storage_auth_settings.STORAGE_USERNAME  # nosec
+        username = storage_auth_settings.STORAGE_USERNAME
+        assert storage_auth_settings.STORAGE_PASSWORD  # nosec
+        password = storage_auth_settings.STORAGE_PASSWORD.get_secret_value()
+        secure = "1" if storage_auth_settings.STORAGE_SECURE else "0"
 
     return _StorageConfig(
         host=host,
         port=port,
         username=username,
         password=password,
+        secure=secure,
     )
 
 
@@ -164,6 +164,7 @@ def _get_environment_variables(
         "STORAGE_HOST": storage_config.host,
         "STORAGE_PASSWORD": storage_config.password,
         "STORAGE_PORT": storage_config.port,
+        "STORAGE_SECURE": storage_config.secure,
         "STORAGE_USERNAME": storage_config.username,
         "DY_SIDECAR_SERVICE_KEY": scheduler_data.key,
         "DY_SIDECAR_SERVICE_VERSION": scheduler_data.version,
