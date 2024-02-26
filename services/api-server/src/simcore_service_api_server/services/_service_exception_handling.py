@@ -62,8 +62,8 @@ def backend_service_exception_handler(
             else:
                 detail = f"{detail_callback(endpoint_kwargs)}. {error_code}"
         elif exc.response.status_code in {
-            status.HTTP_503_SERVICE_UNAVAILABLE,
             status.HTTP_429_TOO_MANY_REQUESTS,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
         }:
             status_code = exc.response.status_code
             detail = f"The {service_name} service was unavailable. {error_code}"
