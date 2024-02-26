@@ -75,7 +75,8 @@ def backend_service_exception_handler(
 
         if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
             _logger.exception(
-                "Invalid data exchanged with %s service [%s] ",
+                "Received status code %s from request to %s service [%s]",
+                f"{status_code}",
                 service_name,
                 error_code,
                 extra={"error_code": error_code},
