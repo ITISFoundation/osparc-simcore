@@ -150,21 +150,18 @@ async def _perform_auto_recharge(
     )
     credit_result = parse_obj_as(CreditResultGet, result)
 
-    payments_gateway = PaymentsGatewayApi.get_from_app_state(app)
-    payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
-    rut_api = ResourceUsageTrackerApi.get_from_app_state(app)
-
     # FIXME: how can I get these?
     # wallet_name =
     # user_name =
     # user_eamil =
 
     await pay_with_payment_method(
-        gateway=payments_gateway,
-        rut=rut_api,
-        repo_transactions=payments_transactions_repo,
+        gateway=PaymentsGatewayApi.get_from_app_state(app),
+        rut=ResourceUsageTrackerApi.get_from_app_state(app),
+        repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
         notifier=NotifierService.get_from_app_state(app),
+        #
         payment_method_id=cast(PaymentMethodID, wallet_auto_recharge.payment_method_id),
         amount_dollars=wallet_auto_recharge.top_up_amount_in_usd,
         target_credits=credit_result.credit_amount,
