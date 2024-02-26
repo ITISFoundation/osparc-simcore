@@ -6,8 +6,8 @@ from functools import reduce
 
 import sqlalchemy as sa
 from servicelib.common_aiopg_utils import DSN
+from servicelib.utils_secrets import generate_password
 from simcore_service_webserver.db.models import metadata, tokens, users
-from simcore_service_webserver.login.utils import get_random_string
 from sqlalchemy import JSON, String, cast
 from sqlalchemy.sql import and_  # , or_, not_
 
@@ -24,10 +24,10 @@ async def create_token_in_db(engine, **data):
     # TODO change by faker?
     params = {
         "user_id": random.randint(0, 3),
-        "token_service": get_random_string(5),
+        "token_service": generate_password(5),
         "token_data": {
-            "token_secret": get_random_string(3),
-            "token_key": get_random_string(4),
+            "token_secret": generate_password(3),
+            "token_key": generate_password(4),
         },
     }
     params.update(data)
