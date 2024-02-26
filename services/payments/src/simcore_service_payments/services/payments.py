@@ -41,6 +41,7 @@ from ..models.payments_gateway import InitPayment, PaymentInitiated
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
 from .notifier import NotifierService
+from .notifier_ws import WebSocketProvider
 from .payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger()
@@ -259,7 +260,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
 
     # NOTE: notifications here are done as background-task after responding `POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay`
     await on_payment_completed(
-        transaction, rut, notifier=notifier, exclude={"WebSocketProvider"}
+        transaction, rut, notifier=notifier, exclude={WebSocketProvider.get_name()}
     )
 
     return to_payments_api_model(transaction)
