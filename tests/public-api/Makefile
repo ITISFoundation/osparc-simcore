@@ -48,4 +48,5 @@ test-ci: ## runs ci tests (i.e. w/o debug tools and with code coverage)
 	-vv \
 	--color=yes \
 	--durations=10 \
+	--keep-docker-up \
 	$(CURDIR)

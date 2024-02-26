@@ -18,7 +18,7 @@ install() {
   pushd tests/public-api
   make install-ci
   popd
-  pip list --verbose
+  .venv/bin/pip list --verbose
   make info-images
 }
 
@@ -27,12 +27,8 @@ test() {
   # add too much overhead (e.g. low log-level etc)
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  pytest \
-    --color=yes \
-    --keep-docker-up \
-    --durations=5 \
-    -v \
-    tests/public-api
+  pushd tests/public-api
+  make test-ci
 }
 
 clean_up() {
