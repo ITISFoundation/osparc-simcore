@@ -23,6 +23,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from . import exceptions, storage_client
+from .storage_client import get_basic_auth
 
 _logger = logging.getLogger(__name__)
 
@@ -57,6 +58,7 @@ async def _complete_upload(
     async with session.post(
         upload_completion_link,
         json=jsonable_encoder(FileUploadCompletionBody(parts=parts)),
+        auth=get_basic_auth(),
     ) as resp:
         resp.raise_for_status()
         # now poll for state
@@ -80,7 +82,7 @@ async def _complete_upload(
         before_sleep=before_sleep_log(_logger, logging.DEBUG),
     ):
         with attempt:
-            async with session.post(state_url) as resp:
+            async with session.post(state_url, auth=get_basic_auth()) as resp:
                 resp.raise_for_status()
                 future_enveloped = parse_obj_as(
                     Envelope[FileUploadCompleteFutureResponse], await resp.json()
@@ -127,7 +129,7 @@ async def _abort_upload(
 ) -> None:
     # abort the upload correctly, so it can revert back to last version
     try:
-        async with session.post(abort_upload_link) as resp:
+        async with session.post(abort_upload_link, auth=get_basic_auth()) as resp:
             resp.raise_for_status()
     except ClientError:
         _logger.warning("Error while aborting upload", exc_info=True)
