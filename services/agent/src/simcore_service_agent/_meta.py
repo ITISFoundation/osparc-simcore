@@ -1,30 +1,23 @@
 """ Application's metadata
 
 """
-from contextlib import suppress
+
+from importlib.metadata import distribution, version
 from typing import Final
 
-import pkg_resources
 from packaging.version import Version
 
-_current_distribution = pkg_resources.get_distribution("simcore-service-agent")
-__version__: str = _current_distribution.version
+_current_distribution = distribution("simcore-service-agent")
+__version__: str = version("simcore-service-agent")
 
 
-APP_NAME: Final[str] = _current_distribution.project_name
+APP_NAME: Final[str] = _current_distribution.metadata["Name"]
 VERSION: Final[Version] = Version(__version__)
 API_VTAG: str = f"v{VERSION.major}"
 
 
 def get_summary() -> str:
-    with suppress(Exception):
-        try:
-            metadata = _current_distribution.get_metadata_lines("METADATA")
-        except FileNotFoundError:
-            metadata = _current_distribution.get_metadata_lines("PKG-INFO")
-
-        return next(x.split(":") for x in metadata if x.startswith("Summary:"))[-1]
-    return ""
+    return _current_distribution.metadata.get_all("Summary", [""])[-1]
 
 
 SUMMARY: Final[str] = get_summary()

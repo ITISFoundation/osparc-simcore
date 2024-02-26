@@ -8,13 +8,13 @@ from semantic_version import Version
 
 __version__: str = version("simcore-service-storage")
 
-version = Version(__version__)
-
-api_version_prefix: str = f"v{version.major}"
+version_info = Version(__version__)
+assert version_info.major  # nosec
+api_version_prefix: str = f"v{version_info.major}"
 
 app_name: str = __name__.split(".")[0]
 api_version: str = __version__
-api_vtag: str = f"v{version.major}"
+api_vtag: str = f"v{version_info.major}"
 
 
 ## https://patorjk.com/software/taag/#p=display&f=Standard&t=Storage

@@ -2,6 +2,7 @@
 
 See https://setuptools.readthedocs.io/en/latest/pkg_resources.html
 """
+
 import pathlib
 from dataclasses import dataclass
 from pathlib import Path
