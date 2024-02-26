@@ -270,7 +270,7 @@ def expected_dynamic_sidecar_spec(
                     "STORAGE_USERNAME": "null",
                     "STORAGE_HOST": "storage",
                     "STORAGE_PASSWORD": "null",
-                    "STORAGE_SCHEME": "http",
+                    "STORAGE_SECURE": "0",
                     "STORAGE_PORT": "8080",
                 },
                 "CapabilityAdd": None,
