@@ -36,7 +36,7 @@ def mock_postgres_data(monkeypatch: pytest.MonkeyPatch) -> None:
             "STORAGE_PASSWORD": "passwd",
             "STORAGE_HOST": "host",
             "STORAGE_PORT": "42",
-            "STORAGE_SCHEME": "https",
+            "STORAGE_SECURE": "1",
         },
         {
             "NODE_PORTS_STORAGE_AUTH": (
@@ -45,7 +45,7 @@ def mock_postgres_data(monkeypatch: pytest.MonkeyPatch) -> None:
                 '"STORAGE_PASSWORD": "passwd", '
                 '"STORAGE_HOST": "host", '
                 '"STORAGE_PORT": "42", '
-                '"STORAGE_SCHEME": "https"'
+                '"STORAGE_SECURE": "1"'
                 "}"
             )
         },
@@ -61,7 +61,7 @@ def test_settings_with_node_ports_storage_auth(
 
     settings = ApplicationSettings.create_from_envs()
     assert settings.NODE_PORTS_STORAGE_AUTH
-    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_SCHEME == "https"
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_SECURE is True
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_HOST == "host"
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PORT == 42
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_USERNAME == "user"
@@ -91,6 +91,6 @@ def test_settings_with_node_ports_storage_auth_as_missing(
     assert settings.NODE_PORTS_STORAGE_AUTH.auth_required is False
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_USERNAME is None
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD is None
-    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_SCHEME == "http"
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_SECURE is False
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_HOST == "storage"
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PORT == DEFAULT_AIOHTTP_PORT
