@@ -17,4 +17,4 @@ simcore-settings-library @ ../settings-library/
 pytest-simcore @ ../pytest-simcore
 
 # current module
-.[aiohttp]
+simcore-service-library @ .[aiohttp]
