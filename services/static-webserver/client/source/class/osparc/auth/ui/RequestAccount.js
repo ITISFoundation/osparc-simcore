@@ -151,26 +151,51 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       doubleSpaced.push(message);
       this._form.add(message, this.tr("Message"), null, "message");
 
+      const eula = new qx.ui.form.CheckBox().set({
+        required: true
+      })
+      doubleSpaced.push(eula);
+      this._form.add(eula, this.tr("I accept the below Privacy Policy and EULA"), null, "eula")
+
       // const formRenderer = new qx.ui.form.renderer.Single(this._form);
       const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
       this.add(formRenderer);
 
-      // buttons
-      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      // buttons and eula links
+      const grp = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+      const eulaTextContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow())
+      eulaTextContainer.add(new qx.ui.basic.Label("Please read our").set({
+        rich: true,
+        marginRight: 3
+      }))
+      eulaTextContainer.add(new osparc.ui.basic.LinkLabel("Privacy policy", "https://sim4life.swiss/privacy").set({
+        marginRight: 3
+      }))
+      eulaTextContainer.add(new qx.ui.basic.Label("and").set({
+        rich: true,
+        marginRight: 3
+      }))
+      eulaTextContainer.add(new osparc.ui.basic.LinkLabel("EULA.", "https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt"))
+
+      grp.add(eulaTextContainer)
 
       const submitBtn = this.__requestButton = new qx.ui.form.Button(this.tr("Request")).set({
         center: true,
         appearance: "strong-button"
       });
       osparc.utils.Utils.setIdToWidget(submitBtn, "registrationSubmitBtn");
-      grp.add(submitBtn, {
+      buttons.add(submitBtn, {
         flex:1
       });
 
       const cancelBtn = this.__cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
-      grp.add(cancelBtn, {
+      buttons.add(cancelBtn, {
         flex:1
       });
+
+      grp.add(buttons)
 
       // interaction
       submitBtn.addListener("execute", e => {
