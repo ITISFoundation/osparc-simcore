@@ -147,11 +147,6 @@ async def _perform_auto_recharge(
     )
     credit_result = parse_obj_as(CreditResultGet, result)
 
-    # FIXME: how can I get these?
-    # wallet_name =
-    # user_name =
-    # user_eamil =
-
     await pay_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         rut=ResourceUsageTrackerApi.get_from_app_state(app),
