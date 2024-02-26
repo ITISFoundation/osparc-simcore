@@ -37,7 +37,10 @@ async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
             message.wallet_id,
         )
         await publish_shutdown_no_more_credits(
-            app, user_id=message.user_id, node_id=message.node_id
+            app,
+            user_id=message.user_id,
+            node_id=message.node_id,
+            wallet_id=message.wallet_id,
         )
     else:
         await scheduler.mark_all_services_in_wallet_for_removal(

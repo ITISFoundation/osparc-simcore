@@ -741,20 +741,28 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     listenToNoMoreCreditsEvents: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
+      const flashMessageDisplayDuration = 10000;
+      const ttlMap = new osparc.data.TTLMap(flashMessageDisplayDuration);
+      const store = osparc.store.Store.getInstance();
 
       const slotName = "serviceNoMoreCredits";
       if (!socket.slotExists(slotName)) {
         socket.on(slotName, noMoreCredits => {
+          // stop service
           const nodeId = noMoreCredits["node_id"];
-
           const workbench = this.getStudy().getWorkbench();
-          const node = workbench.getNode(nodeId);
+          workbench.getNode(nodeId).requestStopNode();
 
-          const label = node.getLabel();
-          const text = `The wallet used to run '${label}' has run out of credits. Stopping service gracefully.`;
-          osparc.FlashMessenger.getInstance().logAs(this.tr(text), "ERROR");
-
-          node.requestStopNode();
+          // display flash message if not showing
+          const walletId = noMoreCredits["wallet_id"];
+          if (ttlMap.hasRecentEntry(walletId)) {
+            return;
+          }
+          ttlMap.addOrUpdateEntry(walletId);
+          const usedWallet = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
+          const walletName = usedWallet.getName();
+          const text = `Wallet "${walletName}", running your service(s) has run out of credits. Stopping service(s) gracefully.`;
+          osparc.FlashMessenger.getInstance().logAs(this.tr(text), "ERROR", null, flashMessageDisplayDuration);
         }, this);
       }
     },
