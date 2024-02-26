@@ -282,7 +282,7 @@ async def test_delete_file(
                     '{"STORAGE_USERNAME": "user", '
                     '"STORAGE_PASSWORD": "passwd", '
                     '"STORAGE_HOST": "host", '
-                    '"STORAGE_SCHEME": "https",'
+                    '"STORAGE_SECURE": "1",'
                     '"STORAGE_PORT": "42"}'
                 )
             },
@@ -294,7 +294,7 @@ async def test_delete_file(
                 "STORAGE_USERNAME": "user",
                 "STORAGE_PASSWORD": "passwd",
                 "STORAGE_HOST": "host",
-                "STORAGE_SCHEME": "https",
+                "STORAGE_SECURE": "1",
                 "STORAGE_PORT": "42",
             },
             "https://host:42/v0",
