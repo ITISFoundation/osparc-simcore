@@ -966,10 +966,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __populateDiskUsageIndicator: function(node) {
       const diskIndicator = this.getChildControl("disk-telemetry");
-      diskIndicator.setCurrentNode(node);
       diskIndicator.set({
-        visibility: diskIndicator.getCurrentNode().getNodeId() === diskIndicator.getCurrentTelemetry()["node_id"] ? "visible" : "excluded"
-      })
+        selectedNode: node,
+        visibility: "visible"
+      });
     },
 
     __populateSecondPanelStudy: function(study) {

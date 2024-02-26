@@ -32,39 +32,24 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     this.__testDiskUsage = [];
     const layout = this.__layout = new qx.ui.layout.VBox(2);
     this._setLayout(layout);
+    // this._applyCurrentNode(this.getCurrentNode());
 
-    this.addListener("changeCurrentNode", e => {
-      const node = this.__node = e.getData();
-      const telemetry = this.__testDiskUsage.find(i => i.nodeId === node.getNodeId());
-      console.log("this.__testDiskUsage", this.__testDiskUsage)
-      if (telemetry) {
-        this.diskUsageToUI(telemetry["node_id"], telemetry.usage);
+    this.addListener("changeSelectedNode", e => {
+      const node = e.getData();
+      if (node !== this.getCurrentNode()) {
+        osparc.workbench.DiskUsageController.getInstance().subscribe(node.getNodeId(), data => {
+          if (node.getNodeId() === data["node_id"]) {
+            this.__onNewUsageData(node, data);
+          } else {
+            console.log("changeSelectedNode", data)
+          }
+        })
+      } else {
+        osparc.workbench.DiskUsageController.getInstance().unsubscribe(node.getNodeId(), data => {
+          console.log("Exiting...", this.getCurrentNode().getNodeId())
+        })
       }
     }, this);
-
-    this.addListener("changeCurrentTelemetry", e => {
-      const nodeId = this.__node.getNodeId();
-      const telemetry = e.getData();
-
-      const newData = {
-        nodeId: telemetry["node_id"],
-        usage: telemetry.usage["/"]
-      };
-
-      const index = this.__testDiskUsage.findIndex(i => i.nodeId === newData.nodeId);
-      if (index === -1) {
-        this.__testDiskUsage.push(newData)
-      } else {
-        this.__testDiskUsage[index] = newData;
-      }
-      const data = this.__testDiskUsage.find(i => i.nodeId === nodeId);
-      if (data) {
-        const usage = this.__diskUsage = data.usage;
-
-        this.diskUsageToUI(nodeId, usage);
-      }
-    }, this)
-    this.__attachSocketEventHandlers();
   },
 
   properties: {
@@ -74,6 +59,13 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       nullable : true,
       event : "changeCurrentNode",
       apply: "_applyCurrentNode"
+    },
+    selectedNode: {
+      check : "osparc.data.model.Node",
+      init : null,
+      nullable : true,
+      event : "changeSelectedNode"
+      // apply: "_applySelectedNode"
     },
     currentTelemetry: {
       check : "Object",
@@ -85,7 +77,6 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
   },
 
   members: {
-    __node: null,
     __diskTelemetry: null,
     __layout: null,
     __lowDiskThreshold: null,
@@ -111,7 +102,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
             allowGrowX: true,
             allowGrowY: false,
             toolTipText: this.tr("Disk usage"),
-            visibility: "excluded"
+            // visibility: "excluded"
           });
           this._add(control)
           break;
@@ -153,15 +144,15 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       return this.__diskUsage ? this.__diskUsage["used_percent"] : undefined
     },
 
-    getNodeLabel: function(nodeId) {
-      const nodes = this.getStudy().getWorkbench().getNodes(true);
-      for (const node of Object.values(nodes)) {
-        if (nodeId === node.getNodeId()) {
-          return node.getLabel();
-        }
-      }
-      return null;
-    },
+    // getNodeLabel: function(nodeId) {
+    //   const nodes = this.getStudy().getWorkbench().getNodes(true);
+    //   for (const node of Object.values(nodes)) {
+    //     if (nodeId === node.getNodeId()) {
+    //       return node.getLabel();
+    //     }
+    //   }
+    //   return null;
+    // },
 
     diskUsageToUI: function(id, diskUsage) {
       function isMatchingNodeId({nodeId}) {
@@ -182,7 +173,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       }
       const freeSpace = osparc.utils.Utils.bytesToSize(diskUsage.free);
 
-      const nodeName = this.__node.getLabel();
+      const nodeName = this.getCurrentNode().getLabel();
       let message;
       let indicatorColor;
 
@@ -227,36 +218,35 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
         "background": `linear-gradient(90deg, ${color1} ${progress}, ${color2} ${progress})`,
       });
       indicatorLabel.setValue(`${labelDiskSize} Free`);
-      const isIndicatorVisible = this.__testDiskUsage.some(i => i.nodeId === this.__node.getNodeId()) && color;
+      const isIndicatorVisible = this.getCurrentTelemetry()["node_id"] === this.getCurrentNode().getNodeId();
       indicator.setVisibility(isIndicatorVisible ? "visible" : "excluded");
       return indicator;
     },
 
-    __attachSocketEventHandlers: function() {
-      // Listen to socket
-      try {
-        const slotName = "serviceDiskUsage";
-        const manager = osparc.workbench.DiskUsageController.getInstance();
-        const listener = new osparc.workbench.DiskUsageListener(manager);
-        listener.listen(slotName, diskUsage => {
-          console.log(this.getCurrentNode().getNodeId())
-          if (diskUsage) {
-
-            this.setCurrentTelemetry(diskUsage);
-          }
-        });
-      } catch (e) {
-        console.error("error", e)
-      }
-    },
-
     _applyCurrentNode: function(node) {
-      // console.log("Node added", node.getNodeId())
-      // this.diskUsageToUI(node.getNodeId(), undefined);
+      const indicator = this.getChildControl("disk-indicator");
+      indicator.set({
+        visibility: "excluded"
+      });
+      osparc.workbench.DiskUsageController.getInstance().subscribe(node.getNodeId(), data => {
+        if (node.getNodeId() === data["node_id"]) {
+          this.__onNewUsageData(node, data);
+        }
+      })
     },
+
+    __onNewUsageData: function(node, data) {
+      this.setCurrentNode(node);
+      this.setCurrentTelemetry(data)
+      const usage = this.__diskUsage = data.usage["/"];
+      // if (node.getNodeId() === data["node_id"]) {
+      this.diskUsageToUI(node.getNodeId(), usage);
+      // }
+    }
   },
 
-  // destruct : function() {
-  //   this.removeListener("serviceDiskUsage", this._attachSocketEventHandlers, this);
-  // }
+  destruct : function() {
+    console.log("Exiting")
+    osparc.workbench.DiskUsageController.getInstance().unsubscribe(this.getCurrentNode().getNodeId(), this.__onNewUsageData)
+  }
 });
