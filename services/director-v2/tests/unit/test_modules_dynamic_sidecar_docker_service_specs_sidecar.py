@@ -126,7 +126,7 @@ def test_dynamic_sidecar_env_vars(
                 "STORAGE_SECURE": "1",
             },
             _StorageConfig("storage-with-auth", "42", "user", "pass", "1"),
-            id="host-port-pass-user-scheme-https",
+            id="host-port-pass-user-secure-true",
         ),
         pytest.param(
             {
