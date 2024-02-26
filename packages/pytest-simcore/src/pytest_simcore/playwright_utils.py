@@ -14,8 +14,8 @@ MINUTE: Final[int] = 60 * SECOND
 
 
 class DynamicIndentFormatter(logging.Formatter):
-    indent_char = "\t"
-    _indent_level = 0
+    indent_char: str = "\t"
+    _indent_level: int = 0
 
     def __init__(self, fmt=None, datefmt=None, style="%"):
         dynamic_fmt = fmt or "%(asctime)s %(levelname)s %(message)s"
