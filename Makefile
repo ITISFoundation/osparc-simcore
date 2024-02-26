@@ -470,7 +470,8 @@ push-version: tag-version
 	@uv pip --quiet install --upgrade \
 		pip~=24.0 \
 		wheel \
-		setuptools
+		setuptools \
+		uv \
 	@$@/bin/pip list --verbose
 
 devenv: .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
