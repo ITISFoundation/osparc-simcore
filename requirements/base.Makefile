@@ -45,7 +45,7 @@ help: ## this colorful help
 #
 %.txt: %.in
 	cd ..; \
-	pip-compile $(UPGRADE_OPTION) \
+	uv pip compile $(UPGRADE_OPTION) \
 		--build-isolation \
 		--strip-extras \
 		--resolver=backtracking \
