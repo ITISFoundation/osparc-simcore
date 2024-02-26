@@ -19,13 +19,10 @@ from pydantic import EmailStr
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 
-from services.payments.src.simcore_service_payments.services.notifier import (
-    NotifierService,
-)
-
 from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services import payments, payments_methods
+from ...services.notifier import NotifierService
 from ...services.payments_gateway import PaymentsGatewayApi
 from ...services.resource_usage_tracker import ResourceUsageTrackerApi
 

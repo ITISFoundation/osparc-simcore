@@ -23,6 +23,7 @@ from simcore_service_payments.db.payments_transactions_repo import (
 )
 from simcore_service_payments.models.db import PaymentsMethodsDB
 from simcore_service_payments.services import payments
+from simcore_service_payments.services.notifier import NotifierService
 from simcore_service_payments.services.payments_gateway import PaymentsGatewayApi
 from simcore_service_payments.services.resource_usage_tracker import (
     ResourceUsageTrackerApi,
@@ -86,12 +87,15 @@ async def test_fails_to_pay_with_payment_method_without_funds(
 
     rut = ResourceUsageTrackerApi.get_from_app_state(app)
     rut_create_credit_transaction = mocker.spy(rut, "create_credit_transaction")
+    notifier = NotifierService.get_from_app_state(app)
 
     payment = await payments.pay_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         rut=rut,
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
+        notifier=notifier,
+        #
         payment_method_id=payment_method_without_funds.payment_method_id,
         amount_dollars=100,
         target_credits=100,
