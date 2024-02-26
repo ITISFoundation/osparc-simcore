@@ -9,7 +9,7 @@ from semantic_version import Version
 __version__: str = version("simcore-service-storage")
 
 version_info = Version(__version__)
-assert version_info.major  # nosec
+assert version_info.major is not None  # nosec
 api_version_prefix: str = f"v{version_info.major}"
 
 app_name: str = __name__.split(".")[0]
