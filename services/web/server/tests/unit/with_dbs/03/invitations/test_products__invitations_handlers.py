@@ -9,6 +9,7 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
     InvitationGenerated,
@@ -38,6 +39,7 @@ async def test_role_access_to_generate_invitation(
     logged_user: UserInfoDict,
     expected_status: HTTPStatus,
     guest_email: str,
+    faker: Faker,
 ):
     assert client.app
     assert (
@@ -48,7 +50,16 @@ async def test_role_access_to_generate_invitation(
     response = await client.post(
         "/v0/invitation:generate",
         json={
-            "guest": guest_email,
+            "firstName": faker.first_name(),
+            "lastName": faker.last_name(),
+            "emailAddress": faker.email(),
+            "phoneNumber": faker.phone_number(),
+            "companyName": faker.company(),
+            "billingAddress": faker.address().replace("\n", ", "),
+            "city": faker.city(),
+            "stateOrProvince": faker.state(),
+            "postalCode": faker.postcode(),
+            "country": faker.country(),
         },
     )
     data, error = await assert_status(response, expected_status)
