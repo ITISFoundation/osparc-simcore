@@ -17,6 +17,7 @@ from models_library.api_schemas_directorv2.socketio import (
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from pydantic import NonNegativeInt, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -105,6 +106,11 @@ def room_name(user_id: UserID) -> SocketIORoomStr:
     return SocketIORoomStr.from_user_id(user_id)
 
 
+@pytest.fixture
+def wallet_id(faker: Faker) -> WalletID:
+    return faker.pyint()
+
+
 def _get_on_no_more_credits_event(
     socketio_client: socketio.AsyncClient,
 ) -> AsyncMock:
@@ -132,6 +138,7 @@ async def test_notifier_publish_message(
     initialized_app: FastAPI,
     user_id: UserID,
     node_id: NodeID,
+    wallet_id: WalletID,
     socketio_client_factory: Callable[
         [], _AsyncGeneratorContextManager[socketio.AsyncClient]
     ],
@@ -167,14 +174,16 @@ async def test_notifier_publish_message(
 
         # server publishes a message
         await publish_shutdown_no_more_credits(
-            initialized_app, user_id=user_id, node_id=node_id
+            initialized_app, user_id=user_id, node_id=node_id, wallet_id=wallet_id
         )
 
         # check that all clients received it
         for on_no_more_credits_event in no_no_more_credits_events:
             await _assert_call_count(on_no_more_credits_event, call_count=1)
             on_no_more_credits_event.assert_awaited_once_with(
-                jsonable_encoder(ServiceNoMoreCredits(node_id=node_id))
+                jsonable_encoder(
+                    ServiceNoMoreCredits(node_id=node_id, wallet_id=wallet_id)
+                )
             )
 
     await _assert_call_count(server_disconnect, call_count=number_of_clients)

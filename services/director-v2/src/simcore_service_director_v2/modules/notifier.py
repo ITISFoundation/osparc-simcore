@@ -10,6 +10,7 @@ from models_library.api_schemas_directorv2.socketio import (
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 
@@ -20,20 +21,24 @@ class Notifier(SingletonInAppStateMixin):
         self._sio_manager = sio_manager
 
     async def notify_shutdown_no_more_credits(
-        self, user_id: UserID, node_id: NodeID
+        self, user_id: UserID, node_id: NodeID, wallet_id: WalletID
     ) -> None:
         await self._sio_manager.emit(
             SOCKET_IO_SERVICE_NO_MORE_CREDITS_EVENT,
-            data=jsonable_encoder(ServiceNoMoreCredits(node_id=node_id)),
+            data=jsonable_encoder(
+                ServiceNoMoreCredits(node_id=node_id, wallet_id=wallet_id)
+            ),
             room=SocketIORoomStr.from_user_id(user_id),
         )
 
 
 async def publish_shutdown_no_more_credits(
-    app: FastAPI, *, user_id: UserID, node_id: NodeID
+    app: FastAPI, *, user_id: UserID, node_id: NodeID, wallet_id: WalletID
 ) -> None:
     notifier: Notifier = Notifier.get_from_app_state(app)
-    await notifier.notify_shutdown_no_more_credits(user_id=user_id, node_id=node_id)
+    await notifier.notify_shutdown_no_more_credits(
+        user_id=user_id, node_id=node_id, wallet_id=wallet_id
+    )
 
 
 def setup(app: FastAPI):
