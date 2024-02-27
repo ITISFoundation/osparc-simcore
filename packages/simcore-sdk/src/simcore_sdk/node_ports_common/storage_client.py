@@ -2,7 +2,7 @@ import datetime
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from functools import lru_cache, wraps
+from functools import wraps
 from json import JSONDecodeError
 from typing import Any, TypeAlias
 from urllib.parse import quote
@@ -33,7 +33,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
 from . import exceptions
-from .settings import NodePortsSettings
+from .storage_endpoint import get_base_url, get_basic_auth
 
 _logger = logging.getLogger(__name__)
 
@@ -73,13 +73,6 @@ def handle_client_exception(handler: Callable) -> Callable[..., Awaitable[Any]]:
     return wrapped
 
 
-@lru_cache
-def _base_url() -> str:
-    settings = NodePortsSettings.create_from_envs()
-    base_url: str = settings.NODE_PORTS_STORAGE.api_base_url
-    return base_url
-
-
 def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
     def log_it(retry_state: RetryCallState) -> None:
         assert retry_state.outcome  # nosec
@@ -96,7 +89,7 @@ def _after_log(log: logging.Logger) -> Callable[[RetryCallState], None]:
 def _session_method(
     session: ClientSession, method: str, url: str, **kwargs
 ) -> RequestContextManager:
-    return session.request(method, url, **kwargs)
+    return session.request(method, url, auth=get_basic_auth(), **kwargs)
 
 
 @asynccontextmanager
@@ -140,7 +133,7 @@ async def get_storage_locations(
     async with retry_request(
         session,
         "GET",
-        f"{_base_url()}/locations",
+        f"{get_base_url()}/locations",
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}"},
     ) as response:
@@ -169,7 +162,7 @@ async def get_download_file_link(
     async with retry_request(
         session,
         "GET",
-        f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
+        f"{get_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}", "link_type": link_type.value},
     ) as response:
@@ -214,7 +207,7 @@ async def get_upload_file_links(
     async with retry_request(
         session,
         "PUT",
-        f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
+        f"{get_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
         expected_status=status.HTTP_200_OK,
         params=query_params,
     ) as response:
@@ -238,7 +231,7 @@ async def get_file_metadata(
     async with retry_request(
         session,
         "GET",
-        f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}/metadata",
+        f"{get_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}/metadata",
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}"},
     ) as response:
@@ -261,7 +254,7 @@ async def list_file_metadata(
     async with retry_request(
         session,
         "GET",
-        f"{_base_url()}/locations/{location_id}/files/metadata",
+        f"{get_base_url()}/locations/{location_id}/files/metadata",
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}", "uuid_filter": uuid_filter},
     ) as resp:
@@ -282,7 +275,7 @@ async def delete_file(
     async with retry_request(
         session,
         "DELETE",
-        f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
+        f"{get_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
         expected_status=status.HTTP_204_NO_CONTENT,
         params={"user_id": f"{user_id}"},
     ):

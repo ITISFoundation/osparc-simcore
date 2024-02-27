@@ -69,6 +69,7 @@ def auth_user_factory(socket_id: SocketID):
             socketio_session["user_id"] = user_id
             socketio_session["client_session_id"] = client_session_id
             socketio_session["request"] = request
+            socketio_session["product_name"] = product.name
 
         # REDIS wrapper
         with managed_resource(user_id, client_session_id, app) as resource_registry:
@@ -165,6 +166,7 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
     async with sio.session(socket_id) as socketio_session:
         if user_id := socketio_session.get("user_id"):
             client_session_id = socketio_session["client_session_id"]
+            product_name = socketio_session["product_name"]
 
             with log_context(
                 _logger,
@@ -182,7 +184,7 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
                     user_id,
                     client_session_id,
                     app,
-                    "s4l",  # NOTE: will be changed after https://github.com/ITISFoundation/osparc-simcore/issues/4776
+                    product_name,
                 )
 
         else:

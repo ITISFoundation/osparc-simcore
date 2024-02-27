@@ -5,36 +5,26 @@
 # pylint: disable=unused-variable
 
 import re
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
 
 import pytest
 import simcore_service_payments
 import yaml
 from faker import Faker
-from models_library.basic_types import IDStr
-from models_library.products import ProductName
-from models_library.users import GroupID, UserID
-from models_library.wallets import WalletID
-from pydantic import EmailStr, parse_obj_as
-from pytest_simcore.helpers.rawdata_fakers import (
-    random_payment_transaction,
-    random_product,
-    random_user,
-)
+from models_library.users import GroupID
+from pydantic import parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import load_dotenv, setenvs_from_dict
 from servicelib.utils_secrets import generate_token_secret_key
-from simcore_postgres_database.models.payments_transactions import (
-    PaymentTransactionState,
-)
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_payments_data",
+    "pytest_simcore.faker_products_data",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.httpbin_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_socketio",
@@ -63,16 +53,6 @@ def installed_package_dir() -> Path:
 @pytest.fixture
 def secret_key() -> str:
     return generate_token_secret_key(32)
-
-
-@pytest.fixture
-def fake_user_name(faker: Faker) -> str:
-    return faker.user_name()
-
-
-@pytest.fixture
-def fake_password(faker: Faker) -> str:
-    return faker.password(length=10)
 
 
 def pytest_addoption(parser: pytest.Parser):
@@ -164,109 +144,19 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     docker_compose_service_payments_env_vars: EnvVarsDict,
     secret_key: str,
-    fake_user_name: str,
-    fake_password: str,
+    faker: Faker,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
             **docker_compose_service_payments_env_vars,
             "PAYMENTS_ACCESS_TOKEN_SECRET_KEY": secret_key,
-            "PAYMENTS_USERNAME": fake_user_name,
-            "PAYMENTS_PASSWORD": fake_password,
+            "PAYMENTS_USERNAME": faker.user_name(),
+            "PAYMENTS_PASSWORD": faker.password(),
         },
-    )
-
-
-@pytest.fixture
-def product(faker: Faker) -> dict[str, Any]:
-    return random_product(support_email="support@osparc.io", fake=faker)
-
-
-@pytest.fixture
-def product_name(faker: Faker, product: dict[str, Any]) -> ProductName:
-    return parse_obj_as(IDStr, product["name"])
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return parse_obj_as(UserID, faker.pyint())
-
-
-@pytest.fixture
-def user_email(faker: Faker) -> EmailStr:
-    return parse_obj_as(EmailStr, faker.email())
-
-
-@pytest.fixture
-def user_first_name(faker: Faker) -> str:
-    return faker.first_name()
-
-
-@pytest.fixture
-def user_last_name(faker: Faker) -> str:
-    return faker.last_name()
-
-
-@pytest.fixture
-def user_name(user_email: str) -> IDStr:
-    return parse_obj_as(IDStr, user_email.split("@")[0])
-
-
-@pytest.fixture
-def user(
-    faker: Faker,
-    user_id: UserID,
-    user_email: EmailStr,
-    user_first_name: str,
-    user_last_name: str,
-    user_name: IDStr,
-) -> dict[str, Any]:
-    return random_user(
-        id=user_id,
-        email=user_email,
-        name=user_name,
-        first_name=user_first_name,
-        last_name=user_last_name,
-        fake=faker,
     )
 
 
 @pytest.fixture
 def user_primary_group_id(faker: Faker) -> GroupID:
     return parse_obj_as(GroupID, faker.pyint())
-
-
-@pytest.fixture
-def wallet_id(faker: Faker) -> WalletID:
-    return parse_obj_as(WalletID, faker.pyint())
-
-
-@pytest.fixture
-def wallet_name(faker: Faker) -> IDStr:
-    return parse_obj_as(IDStr, f"wallet-{faker.word()}")
-
-
-@pytest.fixture
-def successful_transaction(
-    faker: Faker,
-    wallet_id: WalletID,
-    user_email: EmailStr,
-    user_id: UserID,
-    product_name: ProductName,
-) -> dict[str, Any]:
-    initiated_at = datetime.now(tz=timezone.utc)
-    return random_payment_transaction(
-        payment_id=f"pt_{faker.pyint()}",
-        price_dollars=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
-        state=PaymentTransactionState.SUCCESS,
-        initiated_at=initiated_at,
-        completed_at=initiated_at + timedelta(seconds=10),
-        osparc_credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),
-        product_name=product_name,
-        user_id=user_id,
-        user_email=user_email,
-        wallet_id=wallet_id,
-        comment=f"fake fixture in {__name__}.successful_transaction",
-        invoice_url=faker.image_url(),
-    )
