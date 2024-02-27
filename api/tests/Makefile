@@ -9,10 +9,7 @@ all: install test-dev
 .PHONY: reqs
 requirements.txt: requirements.in
 	# pip compiling $<
-	pip-compile $(UPGRADE_OPTION) \
-		--build-isolation \
-		--strip-extras \
-		--resolver=backtracking \
+	uv pip compile $(UPGRADE_OPTION) \
 		--output-file $@ $<
 reqs: requirements.txt ## alias to compile requirements.txt
 
@@ -20,7 +17,7 @@ reqs: requirements.txt ## alias to compile requirements.txt
 .PHONY: install
 install: _check_venv_active requirements.txt ## installs dependencies
 	# installing requirements
-	pip-sync requirements.txt
+	@uv pip sync requirements.txt
 
 
 .PHONY: test-dev

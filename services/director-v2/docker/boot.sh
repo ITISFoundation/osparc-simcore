@@ -24,7 +24,8 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   command -v python | sed 's/^/    /'
 
   cd services/director-v2 || exit 1
-  pip --quiet --no-cache-dir install -r requirements/dev.txt
+  pip install uv
+  uv pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
@@ -36,7 +37,6 @@ fi
 APP_LOG_LEVEL=${DIRECTOR_V2_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
-
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)

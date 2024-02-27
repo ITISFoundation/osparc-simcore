@@ -72,11 +72,14 @@ RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   git \
   golang-go
 
+# NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install uv~=0.1
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
-RUN python -m venv "${VIRTUAL_ENV}"
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade  \
+RUN uv venv "${VIRTUAL_ENV}"
+RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
+  uv pip install --upgrade  \
   pip~=24.0  \
   wheel \
   setuptools
@@ -86,8 +89,8 @@ WORKDIR /build
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
 RUN \
   --mount=type=bind,source=services/osparc-gateway-server/requirements/_base.txt,target=_base.txt \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
-  pip install \
+  --mount=type=cache,mode=0755,target=/root/.cache/uv \
+  uv pip install \
   --requirement _base.txt
 
 # in ARM64 mode there is a catch: the piwheels package does not contain the dask-gateway-proxy executable in 64-bit
@@ -95,7 +98,7 @@ RUN dpkgArch="$(dpkg --print-architecture)";\
   case "$dpkgArch" in \
   arm64) git clone --depth 1 --branch 0.9.0 https://github.com/dask/dask-gateway.git \
   && cd dask-gateway/osparc-gateway-server \
-  && pip install .\
+  && uv pip install .\
   ;; \
   esac;
 
@@ -114,8 +117,8 @@ WORKDIR /build/services/osparc-gateway-server
 RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/osparc-gateway-server,target=/build/services/osparc-gateway-server,rw \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
-  pip install \
+  --mount=type=cache,mode=0755,target=/root/.cache/uv \
+  uv pip install \
   --requirement requirements/prod.txt
 
 # --------------------------Production stage -------------------

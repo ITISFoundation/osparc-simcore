@@ -30,14 +30,14 @@ TEST_REQUIREMENTS = tuple(
 
 
 SETUP = {
-    "name": "simcore-settings-library",
-    "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
     "author": ", ".join(
         (
             "Pedro Crespo-Valero (pcrespov)",
             "Sylvain Anderegg (sanderegg)",
         )
     ),
+    "name": "simcore-settings-library",
+    "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
     "description": "Library with common pydantic settings",
     # SEE https://pypi.org/classifiers/
     "classifiers": [

@@ -8,4 +8,4 @@
 --requirement _base.txt
 --requirement _migration.txt
 
-.
+simcore-postgres-database @ .

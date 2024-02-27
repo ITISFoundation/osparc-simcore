@@ -19,7 +19,8 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   command -v python | sed 's/^/    /'
 
   cd services/web/server || exit 1
-  pip --quiet --no-cache-dir install -r requirements/dev.txt
+  pip install uv
+  uv pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
@@ -44,7 +45,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: ptvsd is programmatically enabled inside of the service
   # this way we can have reload in place as well
   exec python -m debugpy --listen 0.0.0.0:"${WEBSERVER_REMOTE_DEBUGGING_PORT}" -m gunicorn simcore_service_webserver.cli:app_factory \
-    --log-level="${SERVER_LOG_LEVEL}"\
+    --log-level="${SERVER_LOG_LEVEL}" \
     --bind 0.0.0.0:8080 \
     --worker-class aiohttp.GunicornWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \

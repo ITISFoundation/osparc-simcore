@@ -15,7 +15,7 @@ install:  install-ci
 
 install-dev install-prod install-ci: _check_venv_active ## install requirements in dev/prod/ci mode
 	# installing in $(subst install-,,$@) mode
-	pip-sync requirements/$(subst install-,,$@).txt
+	@uv pip sync requirements/$(subst install-,,$@).txt
 
 
 .PHONY: tests

@@ -10,10 +10,10 @@
 --requirement _base.txt
 
 # installs this repo's packages
-../../packages/models-library
-../../packages/postgres-database/
-../../packages/service-library
-../../packages/settings-library/
-../../packages/simcore-sdk
+simcore-models-library @ ../../packages/models-library
+simcore-postgres-database @ ../../packages/postgres-database/
+simcore-service-library[fastapi] @ ../../packages/service-library
+simcore-settings-library @ ../../packages/settings-library/
+simcore-sdk @ ../../packages/simcore-sdk
 # installs current package
-.
+simcore-service-api-server @ .

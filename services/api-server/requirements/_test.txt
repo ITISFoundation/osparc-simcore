@@ -9,7 +9,7 @@ aiohttp==3.8.5
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aioresponses
-aioresponses==0.7.5
+aioresponses==0.7.6
     # via -r requirements/_test.in
 aiosignal==1.3.1
     # via
@@ -83,9 +83,7 @@ click==8.1.3
     #   -r requirements/_test.in
     #   flask
 coverage==7.3.2
-    # via
-    #   coverage
-    #   pytest-cov
+    # via pytest-cov
 cryptography==41.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -270,9 +268,7 @@ python-dateutil==2.8.2
     #   faker
     #   moto
 python-jose==3.3.0
-    # via
-    #   moto
-    #   python-jose
+    # via moto
 pytz==2023.3.post1
     # via moto
 pyyaml==6.0.1

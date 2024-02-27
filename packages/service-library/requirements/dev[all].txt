@@ -19,4 +19,4 @@
 --editable ../pytest-simcore/
 
 # current module
---editable ."[all]"
+--editable .[all]
