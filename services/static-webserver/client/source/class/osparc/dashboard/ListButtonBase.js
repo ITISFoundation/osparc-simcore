@@ -81,7 +81,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           break;
         }
         case "title-row":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
             anonymous: true
           });
           this._add(control, {
@@ -92,10 +92,9 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         case "title":
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-light",
-            font: "text-14",
+            font: "text-16",
             alignY: "middle",
             maxWidth: 400,
-            maxHeight: 19,
             rich: true
           });
           titleRow = this.getChildControl("title-row");
@@ -118,23 +117,26 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             column: osparc.dashboard.ListButtonBase.POS.DESCRIPTION
           });
           break;
-        case "description-md":
-          control = new osparc.ui.markdown.Markdown().set({
-            maxHeight: 16,
+        case "owner":
+          control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-dark",
+            font: "text-12",
             alignY: "middle",
             allowGrowX: true
           });
           this._add(control, {
             row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.DESCRIPTION
+            column: osparc.dashboard.ListButtonBase.POS.TAGS
           });
           break;
         case "project-status":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
             anonymous: true
           });
-          titleRow = this.getChildControl("title-row");
-          titleRow.add(control);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.DESCRIPTION
+          });
           break;
         case "project-status-icon":
           control = new qx.ui.basic.Image().set({
@@ -180,8 +182,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
     },
 
     _applyDescription: function(value, old) {
-      const label = this.getChildControl("description-md");
-      label.setValue(value);
+      return
     }
   },
 
