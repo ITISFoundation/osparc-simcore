@@ -9,12 +9,12 @@ from .base import metadata
 from .users import users
 
 #
-# invited_user table hold information provided by the PO of a user before the user
+# invited_users table hold information provided by the PO of a user before the user
 # row is created
 #
 
-invited_user = sa.Table(
-    "invited_user",
+invited_users = sa.Table(
+    "invited_users",
     metadata,
     sa.Column(
         "email",
@@ -65,4 +65,4 @@ invited_user = sa.Table(
     column_modified_datetime(timezone=False),
 )
 
-register_modified_datetime_auto_update_trigger(invited_user)
+register_modified_datetime_auto_update_trigger(invited_users)

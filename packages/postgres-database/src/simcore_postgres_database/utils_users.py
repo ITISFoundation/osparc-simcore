@@ -14,7 +14,7 @@ from aiopg.sa.result import RowProxy
 
 from .errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
-from .models.users_details import invited_user
+from .models.users_details import invited_users
 
 
 class BaseUserRepoError(Exception):
@@ -83,17 +83,17 @@ class UsersRepo:
 
         # link first
         result = await conn.execute(
-            invited_user.update()
-            .where(invited_user.c.email == new_user.email)
+            invited_users.update()
+            .where(invited_users.c.email == new_user.email)
             .values(accepted_by=new_user.id)
         )
 
         if result.rowcount:
             result = await conn.execute(
                 sa.select(
-                    invited_user.c.first_name,
-                    invited_user.c.last_name,
-                ).where(invited_user.c.email == new_user.email)
+                    invited_users.c.first_name,
+                    invited_users.c.last_name,
+                ).where(invited_users.c.email == new_user.email)
             )
             details = await result.fetchone()
 
@@ -113,16 +113,16 @@ class UsersRepo:
             sa.select(
                 users.c.first_name,
                 users.c.last_name,
-                invited_user.c.company_name,
-                invited_user.c.address,
-                invited_user.c.city,
-                invited_user.c.state,
-                invited_user.c.country,
-                invited_user.c.postal_code,
+                invited_users.c.company_name,
+                invited_users.c.address,
+                invited_users.c.city,
+                invited_users.c.state,
+                invited_users.c.country,
+                invited_users.c.postal_code,
                 users.c.phone,
             )
             .select_from(
-                users.join(invited_user, users.c.id == invited_user.c.accepted_by)
+                users.join(invited_users, users.c.id == invited_users.c.accepted_by)
             )
             .where(users.c.id == user_id)
         )
