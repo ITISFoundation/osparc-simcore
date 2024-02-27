@@ -314,7 +314,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -363,7 +363,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -406,7 +406,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -449,7 +449,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -497,7 +497,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -543,7 +543,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install api
@@ -583,7 +583,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -632,7 +632,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -678,7 +678,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -730,7 +730,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -786,7 +786,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -840,7 +840,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -883,7 +883,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -935,7 +935,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -981,7 +981,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1027,7 +1027,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1073,7 +1073,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1129,7 +1129,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1175,7 +1175,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1221,7 +1221,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1277,7 +1277,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1321,7 +1321,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1361,7 +1361,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1401,7 +1401,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1447,7 +1447,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1493,7 +1493,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1539,7 +1539,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1585,7 +1585,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1631,7 +1631,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1678,7 +1678,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1783,7 +1783,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1849,7 +1849,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1915,7 +1915,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1985,7 +1985,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2053,7 +2053,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2120,7 +2120,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2200,7 +2200,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2290,7 +2290,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2355,7 +2355,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2431,7 +2431,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -2499,7 +2499,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
@@ -2567,7 +2567,7 @@ jobs:
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
