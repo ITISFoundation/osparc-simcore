@@ -45,9 +45,10 @@ def backend_service_exception_handler(
         status_code = status.HTTP_502_BAD_GATEWAY
         detail = f"{service_name} service returned invalid response. {error_code}"
         _logger.exception(
-            "Invalid data exchanged with %s service [%s] ",
+            "Invalid data exchanged with %s service [%s]: %s",
             service_name,
             error_code,
+            f"{exc}",
             extra={"error_code": error_code},
         )
         raise HTTPException(
@@ -75,10 +76,12 @@ def backend_service_exception_handler(
 
         if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
             _logger.exception(
-                "Received status code %s from request to %s service [%s]",
-                f"{status_code}",
+                "Converted status code %s from %s service to %s [%s]: %s",
+                f"{exc.response.status_code}",
                 service_name,
+                f"{status_code}",
                 error_code,
+                f"{exc}",
                 extra={"error_code": error_code},
             )
         raise HTTPException(
