@@ -199,46 +199,46 @@ def mock_environment(
 
     Override if new configuration for the app is needed.
     """
-    envs: EnvVarsDict = {
-        # envs in Dockerfile
-        "DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR": f"{dy_volumes}",
-        "DYNAMIC_SIDECAR_SHARED_STORE_DIR": f"{shared_store_dir}",
-        "SC_BOOT_MODE": "production",
-        "SC_BUILD_TARGET": "production",
-        # envs on container
-        "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
-        "DY_SIDECAR_NODE_ID": f"{node_id}",
-        "DY_SIDECAR_PATH_INPUTS": f"{inputs_dir}",
-        "DY_SIDECAR_PATH_OUTPUTS": f"{outputs_dir}",
-        "DY_SIDECAR_PROJECT_ID": f"{project_id}",
-        "DY_SIDECAR_RUN_ID": run_id,
-        "DY_SIDECAR_STATE_EXCLUDE": json_dumps(state_exclude_dirs),
-        "DY_SIDECAR_STATE_PATHS": json_dumps(state_paths_dirs),
-        "DY_SIDECAR_USER_ID": f"{user_id}",
-        "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "false",
-        "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-        "POSTGRES_DB": "test",
-        "POSTGRES_HOST": "test",
-        "POSTGRES_PASSWORD": "test",
-        "POSTGRES_USER": "test",
-        "R_CLONE_PROVIDER": "MINIO",
-        "RABBIT_HOST": "test",
-        "RABBIT_PASSWORD": "test",
-        "RABBIT_SECURE": "false",
-        "RABBIT_USER": "test",
-        "REGISTRY_AUTH": "false",
-        "REGISTRY_PW": "test",
-        "REGISTRY_SSL": "false",
-        "REGISTRY_USER": "test",
-        "S3_ACCESS_KEY": "access_key",
-        "S3_BUCKET_NAME": "bucket_name",
-        "S3_ENDPOINT": "endpoint",
-        "S3_SECRET_KEY": "secret_key",
-        "S3_SECURE": "false",
-    }
-    setenvs_from_dict(monkeypatch, envs)
-
-    return envs
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            # envs in Dockerfile
+            "DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR": f"{dy_volumes}",
+            "DYNAMIC_SIDECAR_SHARED_STORE_DIR": f"{shared_store_dir}",
+            "SC_BOOT_MODE": "production",
+            "SC_BUILD_TARGET": "production",
+            # envs on container
+            "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
+            "DY_SIDECAR_NODE_ID": f"{node_id}",
+            "DY_SIDECAR_PATH_INPUTS": f"{inputs_dir}",
+            "DY_SIDECAR_PATH_OUTPUTS": f"{outputs_dir}",
+            "DY_SIDECAR_PROJECT_ID": f"{project_id}",
+            "DY_SIDECAR_RUN_ID": run_id,
+            "DY_SIDECAR_STATE_EXCLUDE": json_dumps(state_exclude_dirs),
+            "DY_SIDECAR_STATE_PATHS": json_dumps(state_paths_dirs),
+            "DY_SIDECAR_USER_ID": f"{user_id}",
+            "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "false",
+            "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
+            "POSTGRES_DB": "test",
+            "POSTGRES_HOST": "test",
+            "POSTGRES_PASSWORD": "test",
+            "POSTGRES_USER": "test",
+            "R_CLONE_PROVIDER": "MINIO",
+            "RABBIT_HOST": "test",
+            "RABBIT_PASSWORD": "test",
+            "RABBIT_SECURE": "false",
+            "RABBIT_USER": "test",
+            "REGISTRY_AUTH": "false",
+            "REGISTRY_PW": "test",
+            "REGISTRY_SSL": "false",
+            "REGISTRY_USER": "test",
+            "S3_ACCESS_KEY": "access_key",
+            "S3_BUCKET_NAME": "bucket_name",
+            "S3_ENDPOINT": "endpoint",
+            "S3_SECRET_KEY": "secret_key",
+            "S3_SECURE": "false",
+        },
+    )
 
 
 @pytest.fixture
