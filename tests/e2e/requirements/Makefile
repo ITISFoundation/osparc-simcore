@@ -9,4 +9,4 @@ VENV_DIR ?= $(realpath $(REPO_BASE_DIR)/.venv)
 .PHONY: install
 install: $(VENV_DIR) requirements.txt ## installs dependencies
 	# installing requirements
-	@pip install -r requirements.txt
+	@uv pip install -r requirements.txt

@@ -7,7 +7,10 @@
     - resource_manager
 
 """
+
 import logging
+import secrets
+import string
 from contextlib import suppress
 from datetime import datetime
 
@@ -19,11 +22,12 @@ from redis.exceptions import LockNotOwnedError
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import fire_and_forget_task
+from servicelib.utils_secrets import generate_password
 
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..groups.api import auto_add_user_to_product_group
 from ..login.storage import AsyncpgStorage, get_plugin_storage
-from ..login.utils import ACTIVE, GUEST, get_random_string
+from ..login.utils import ACTIVE, GUEST
 from ..products.api import get_product_name
 from ..redis import get_redis_lock_manager_client
 from ..security.api import (
@@ -73,9 +77,11 @@ async def create_temporary_guest_user(request: web.Request):
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
     product_name = get_product_name(request)
 
-    random_user_name = get_random_string(min_len=5)
+    random_user_name = "".join(
+        secrets.choice(string.ascii_lowercase) for _ in range(10)
+    )
     email = parse_obj_as(LowerCaseEmailStr, f"{random_user_name}@guest-at-osparc.io")
-    password = get_random_string(min_len=12)
+    password = generate_password(length=12)
     expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 
     # GUEST_USER_RC_LOCK:

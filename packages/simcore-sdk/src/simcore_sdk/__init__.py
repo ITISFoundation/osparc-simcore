@@ -2,6 +2,6 @@
 
 """
 
-import pkg_resources
+from importlib.metadata import version
 
-__version__: str = pkg_resources.get_distribution("simcore-sdk").version
+__version__: str = version("simcore-sdk")

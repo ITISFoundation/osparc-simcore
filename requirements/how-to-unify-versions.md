@@ -47,7 +47,7 @@ do
 done
 ```
 
-It would also be possible to upgrade them simultaneously by using ``--upgrade`` multiple times as ``pip-compile --upgrade X --upgrade Y ...``
+It would also be possible to upgrade them simultaneously by using ``--upgrade`` multiple times as ``uv pip compile --upgrade X --upgrade Y ...``
 but we prefer to do it one by one and commit changes so that any issue can be tracked to the library upgrade
 
 
