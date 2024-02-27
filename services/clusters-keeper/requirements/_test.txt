@@ -264,9 +264,7 @@ python-dateutil==2.8.2
 python-dotenv==1.0.0
     # via -r requirements/_test.in
 python-jose==3.3.0
-    # via
-    #   moto
-    #   python-jose
+    # via moto
 pyyaml==6.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt

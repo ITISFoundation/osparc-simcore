@@ -2,11 +2,11 @@ import sys
 from datetime import datetime
 
 import typer
+from servicelib.utils_secrets import generate_password
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from yarl import URL
 
 from ._registration import InvitationData, get_invitation_url
-from .utils import get_random_string
 
 
 def invitations(
@@ -21,7 +21,7 @@ def invitations(
 
     invitation = InvitationData(issuer=issuer_email, trial_account_days=trial_days)
 
-    codes = [get_random_string(code_length) for _ in range(num_codes)]
+    codes = [generate_password(code_length) for _ in range(num_codes)]
 
     typer.secho(
         "{:-^100}".format("invitations.md"),

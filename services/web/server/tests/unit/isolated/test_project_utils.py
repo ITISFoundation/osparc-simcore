@@ -1,6 +1,8 @@
 from typing import Any
 
 import pytest
+from models_library.projects import ProjectType as ml_project_type
+from simcore_postgres_database.models.projects import ProjectType as pg_project_type
 from simcore_service_webserver.projects.utils import (
     NodeDict,
     find_changed_node_keys,
@@ -341,3 +343,11 @@ def test_did_node_outputs_change(
         get_frontend_node_outputs_changes(new_node=new_node, old_node=old_node)
         == expected
     )
+
+
+def test_project_type_in_models_package_same_as_in_postgres_database_package():
+
+    # pylint: disable=no-member
+    assert (
+        ml_project_type.__members__.keys() == pg_project_type.__members__.keys()
+    ), f"The enum in models_library package and postgres package shall have the same values. models_pck: {ml_project_type.__members__}, postgres_pck: {pg_project_type.__members__}"

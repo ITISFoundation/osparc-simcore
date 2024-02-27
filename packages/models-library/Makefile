@@ -12,7 +12,7 @@ requirements: ## compiles pip requirements (.in -> .txt)
 .PHONY: install-dev install-prod install-ci
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
-	pip-sync requirements/$(subst install-,,$@).txt
+	@uv pip sync requirements/$(subst install-,,$@).txt
 
 
 .PHONY: tests tests-ci
@@ -84,7 +84,7 @@ docker_rest_api.py: ## auto-generates pydantic models for Docker REST API models
 .PHONY: _erdantic
 _erdantic: _check_venv_active
 	# ensures erdantic installed
-	@python3 -c "import erdantic" 2>/dev/null || pip install erdantic
+	@python3 -c "import erdantic" 2>/dev/null || uv pip install erdantic
 
 erd-Project.svg: _erdantic
 	erdantic models_library.projects.Project \
@@ -112,7 +112,7 @@ DOWNLOADED_TEST_DATA_DIR = "$(CURDIR)/tests/data/.downloaded-ignore"
 .PHONY: _httpx
 _httpx: _check_venv_active
 	# ensures requirements installed
-	@python3 -c "import httpx" 2>/dev/null || pip install httpx
+	@python3 -c "import httpx" 2>/dev/null || uv pip install httpx
 
 PHONY: pull_test_data
 pull_test_data: $(DOT_ENV_FILE) _httpx ## downloads tests data from registry (this can take some time!)

@@ -11,7 +11,7 @@ aiohttp==3.8.6
     #   aioresponses
     #   pytest-aiohttp
     #   simcore-service-storage-sdk
-aioresponses==0.7.4
+aioresponses==0.7.6
     # via -r requirements/_test.in
 aiosignal==1.3.1
     # via
@@ -261,9 +261,7 @@ python-dateutil==2.8.2
 python-dotenv==1.0.0
     # via -r requirements/_test.in
 python-jose==3.3.0
-    # via
-    #   moto
-    #   python-jose
+    # via moto
 pytz==2023.3.post1
     # via pandas
 pyyaml==6.0.1
