@@ -42,7 +42,7 @@ async def validate_confirmation_code(
 
 
 def _url_for_confirmation(app: web.Application, code: str) -> URL:
-    # NOTE: this is in a query parameter, and can contain ? for example
+    # NOTE: this is in a query parameter, and can contain ? for example.
     safe_code = quote(code, safe="")
     return app.router["auth_confirmation"].url_for(code=safe_code)
 
