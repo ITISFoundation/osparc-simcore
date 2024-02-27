@@ -451,18 +451,31 @@ push-version: tag-version
 
 .PHONY: devenv devenv-all node-env
 
-.venv:
-	@python3 --version
-	python3 -m venv $@
+.check-uv-installed:
+		@echo "Checking if 'uv' is installed..."
+		@if ! command -v uv >/dev/null 2>&1; then \
+				printf "\033[31mError: 'uv' is not installed.\033[0m\n"; \
+				printf "To install 'uv', run the following command:\n"; \
+				printf "\033[34mcurl -LsSf https://astral.sh/uv/install.sh | sh\033[0m\n"; \
+				exit 1; \
+		else \
+				printf "\033[32m'uv' is installed. Version: \033[0m"; \
+				uv --version; \
+		fi
+
+
+.venv: .check-uv-installed
+	@uv venv $@
 	## upgrading tools to latest version in $(shell python3 --version)
-	$@/bin/pip3 --quiet install --upgrade \
+	@uv pip --quiet install --upgrade \
 		pip~=24.0 \
 		wheel \
-		setuptools
-	@$@/bin/pip3 list --verbose
+		setuptools \
+		uv
+	@$@/bin/pip list --verbose
 
 devenv: .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
-	$</bin/pip3 --quiet install -r requirements/devenv.txt
+	@uv pip --quiet install -r requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
 	@echo "To activate the venv, execute 'source .venv/bin/activate'"
@@ -730,7 +743,7 @@ _running_containers = $(shell docker ps -aq)
 
 clean-venv: devenv ## Purges .venv into original configuration
 	# Cleaning your venv
-	.venv/bin/pip-sync --quiet $(CURDIR)/requirements/devenv.txt
+	@uv pip sync  --quiet $(CURDIR)/requirements/devenv.txt
 	@pip list
 
 clean-hooks: ## Uninstalls git pre-commit hooks

@@ -10,10 +10,10 @@
 --requirement _base.txt
 
 # installs this repo's packages
-../../packages/dask-task-models-library/
-../../packages/models-library/
-../../packages/service-library/
-../../packages/settings-library/
+simcore-dask-task-models-library @ ../../packages/dask-task-models-library/
+simcore-models-library @ ../../packages/models-library/
+simcore-service-library @ ../../packages/service-library/
+simcore-settings-library @ ../../packages/settings-library/
 
 # installs current package
-.
+simcore-service-dask-sidecar @ .

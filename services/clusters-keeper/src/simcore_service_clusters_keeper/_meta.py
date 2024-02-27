@@ -1,23 +1,21 @@
 """ Application's metadata
 
 """
-from contextlib import suppress
+
+from importlib.metadata import distribution, version
+from importlib.resources import files
 from pathlib import Path
 from typing import Final
 
-import pkg_resources
 from models_library.basic_types import VersionTag
 from packaging.version import Version
 from pydantic import parse_obj_as
 
-_current_distribution = pkg_resources.get_distribution(
-    "simcore-service-clusters-keeper"
-)
-
-__version__: str = _current_distribution.version
+_current_distribution = distribution("simcore-service-clusters-keeper")
+__version__: str = version("simcore-service-clusters-keeper")
 
 
-APP_NAME: Final[str] = _current_distribution.project_name
+APP_NAME: Final[str] = _current_distribution.metadata["Name"]
 API_VERSION: Final[str] = __version__
 VERSION: Final[Version] = Version(__version__)
 API_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, f"v{VERSION.major}")
@@ -25,22 +23,11 @@ RPC_VTAG: Final[VersionTag] = parse_obj_as(VersionTag, f"v{VERSION.major}")
 
 
 def get_summary() -> str:
-    with suppress(Exception):
-        try:
-            metadata = _current_distribution.get_metadata_lines("METADATA")
-        except FileNotFoundError:
-            metadata = _current_distribution.get_metadata_lines("PKG-INFO")
-
-        return next(x.split(":") for x in metadata if x.startswith("Summary:"))[-1]
-    return ""  # pragma: no cover
+    return _current_distribution.metadata.get_all("Summary", [""])[-1]
 
 
 SUMMARY: Final[str] = get_summary()
-PACKAGE_DATA_FOLDER: Final[Path] = Path(
-    pkg_resources.resource_filename(
-        _current_distribution.project_name.replace("-", "_"), "data"
-    )
-)
+PACKAGE_DATA_FOLDER: Final[Path] = Path(f'{files(APP_NAME.replace("-", "_")) / "data"}')
 
 # https://patorjk.com/software/taag/#p=testall&f=Avatar&t=clusters_keeper
 APP_STARTED_BANNER_MSG = r"""
