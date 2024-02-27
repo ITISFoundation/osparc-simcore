@@ -10,10 +10,10 @@
 --requirement _base.txt
 
 # installs this repo's packages
-../../packages/aws-library
-../../packages/models-library
-../../packages/service-library[fastapi]
-../../packages/settings-library
-../../packages/dask-task-models-library
+simcore-aws-library @ ../../packages/aws-library
+simcore-models-library @ ../../packages/models-library
+simcore-service-library[fastapi] @ ../../packages/service-library
+simcore-settings-library @ ../../packages/settings-library
+simcore-dask-task-models-library @ ../../packages/dask-task-models-library
 # installs current package
-.
+simcore-service-autoscaling @ .

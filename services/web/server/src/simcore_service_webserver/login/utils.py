@@ -1,9 +1,6 @@
-import random
 from dataclasses import asdict
-from typing import Any, cast
+from typing import Any
 
-import passlib.hash
-import passlib.pwd
 from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -117,12 +114,6 @@ async def notify_user_logout(
         client_session_id,
         app,
     )
-
-
-def get_random_string(min_len: int, max_len: int | None = None) -> str:
-    max_len = max_len or min_len
-    size = random.randint(min_len, max_len)  # noqa: S311 # nosec # NOSONAR
-    return cast(str, passlib.pwd.genword(entropy=52, length=size))
 
 
 def flash_response(

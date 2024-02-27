@@ -12,9 +12,7 @@ aio-pika==9.3.0
 aioboto3==12.0.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 aiobotocore==2.7.0
-    # via
-    #   aioboto3
-    #   aiobotocore
+    # via aioboto3
 aiocache==0.12.2
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 aiodebug==2.3.0
@@ -156,6 +154,7 @@ fastapi==0.99.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
+    #   prometheus-fastapi-instrumentator
 frozenlist==1.4.0
     # via
     #   aiohttp
@@ -270,6 +269,12 @@ partd==1.4.0
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
+prometheus-client==0.20.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   prometheus-fastapi-instrumentator
+prometheus-fastapi-instrumentator==6.1.0
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 psutil==5.9.5
     # via
     #   -c requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -448,6 +453,8 @@ types-aiobotocore==2.7.0
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 types-aiobotocore-ec2==2.7.0
     # via types-aiobotocore
+types-aiobotocore-s3==2.7.0
+    # via types-aiobotocore
 types-awscrt==0.19.8
     # via botocore-stubs
 types-python-dateutil==2.8.19.14
@@ -461,6 +468,7 @@ typing-extensions==4.8.0
     #   typer
     #   types-aiobotocore
     #   types-aiobotocore-ec2
+    #   types-aiobotocore-s3
     #   uvicorn
 urllib3==1.26.16
     # via

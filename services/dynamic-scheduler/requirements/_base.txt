@@ -104,6 +104,7 @@ fastapi==0.99.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
+    #   prometheus-fastapi-instrumentator
 frozenlist==1.4.0
     # via
     #   aiohttp
@@ -177,6 +178,12 @@ packaging==23.2
     # via -r requirements/_base.in
 pamqp==3.2.1
     # via aiormq
+prometheus-client==0.20.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   prometheus-fastapi-instrumentator
+prometheus-fastapi-instrumentator==6.1.0
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 psycopg2-binary==2.9.9
     # via sqlalchemy
 pydantic==1.10.13
