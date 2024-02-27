@@ -25,11 +25,15 @@ fi
 echo "------------------------------ pip -----------------------------------"
 if command -v pip; then
   pip --version
+  echo "cache location:"
+  pip cache dir
 fi
 
 echo "------------------------------ uv -----------------------------------"
 if command -v uv; then
   uv --version
+  echo "cache location:"
+  uv cache dir
 fi
 
 echo "------------------------------ docker -----------------------------------"
