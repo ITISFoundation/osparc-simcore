@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
-from servicelib.utils import logged_gather
+from servicelib.utils import fire_and_forget_task
 
 from ..core.settings import ApplicationSettings
 from ..db.payment_users_repo import PaymentsUsersRepo
@@ -25,23 +25,34 @@ class NotifierService(SingletonInAppStateMixin):
 
     def __init__(self, *providers):
         self.providers: list[NotificationProvider] = list(providers)
+        self._background_tasks = set()
+
+    def _run_in_background(self, coro, suffix):
+        fire_and_forget_task(
+            coro,
+            task_suffix_name=suffix,
+            fire_and_forget_tasks_collection=self._background_tasks,
+        )
 
     async def notify_payment_completed(
         self,
         user_id: UserID,
         payment: PaymentTransaction,
+        *,
+        exclude: set | None = None,
     ):
         if payment.completed_at is None:
             msg = "Cannot notify incomplete payment"
             raise ValueError(msg)
 
-        await logged_gather(
-            *(
-                provider.notify_payment_completed(user_id=user_id, payment=payment)
-                for provider in self.providers
-            ),
-            reraise=False,
-        )
+        exclude = exclude or set()
+        providers = [p for p in self.providers if p.get_name() not in exclude]
+
+        for provider in providers:
+            self._run_in_background(
+                provider.notify_payment_completed(user_id=user_id, payment=payment),
+                f"{provider.get_name()}_u_{user_id}_p_{payment.payment_id}",
+            )
 
     async def notify_payment_method_acked(
         self,
@@ -52,15 +63,13 @@ class NotifierService(SingletonInAppStateMixin):
             msg = "Cannot notify unAcked payment-method"
             raise ValueError(msg)
 
-        await logged_gather(
-            *(
+        for provider in self.providers:
+            self._run_in_background(
                 provider.notify_payment_method_acked(
                     user_id=user_id, payment_method=payment_method
-                )
-                for provider in self.providers
-            ),
-            reraise=False,
-        )
+                ),
+                f"{provider.get_name()}_u_{user_id}_pm_{payment_method.payment_method_id}",
+            )
 
 
 def setup_notifier(app: FastAPI):
