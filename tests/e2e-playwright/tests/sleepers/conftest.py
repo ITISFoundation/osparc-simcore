@@ -31,4 +31,4 @@ def num_sleepers(request: pytest.FixtureRequest) -> int:
 
 @pytest.fixture
 def input_sleep_time(request: pytest.FixtureRequest) -> int | None:
-    return request.config.getoption("--input-sleep-time")
+    return request.config.getoption("--input-sleep-time", default=None)
