@@ -14,6 +14,7 @@ from aiopg.sa.result import RowProxy
 
 from .errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
+from .models.users_details import users_details
 
 
 class BaseUserRepoError(Exception):
@@ -75,6 +76,54 @@ class UsersRepo:
         row = await result.first()
         assert row  # nosec
         return row
+
+    @staticmethod
+    async def update_details(conn: SAConnection, new_user: RowProxy):
+        """After a user is created, it can be associated with information provided during invitation"""
+
+        # link first
+        result = await conn.execute(
+            users_details.update()
+            .where(users_details.c.email == new_user.email)
+            .values(accepted_by=new_user.user_id)
+        )
+
+        if result.rowcount:
+            result = await conn.execute(
+                sa.select(
+                    users_details.c.first_name,
+                    users_details.c.last_name,
+                ).where(users_details.c.email == new_user.email)
+            )
+            details = await result.fetchone()
+
+            if details:
+                await conn.execute(
+                    users.update()
+                    .where(users.c.id == new_user.id)
+                    .values(
+                        first_name=details.first_name,
+                        last_name=details.last_name,
+                    )
+                )
+
+    @staticmethod
+    async def get_invoice_details(conn: SAConnection, user_id: int) -> RowProxy | None:
+        result = await conn.execute(
+            sa.select(
+                users.c.first_name,
+                users.c.last_name,
+                users_details.c.company_name,
+                users_details.c.address,
+                users_details.c.city,
+                users_details.c.state,
+                users_details.c.country,
+                users_details.c.postal_code,
+            )
+            .select_from(users.join(users_details))
+            .where(users.c.id == user_id)
+        )
+        return await result.fetchone()
 
     @staticmethod
     async def get_role(conn: SAConnection, user_id: int) -> UserRole:
