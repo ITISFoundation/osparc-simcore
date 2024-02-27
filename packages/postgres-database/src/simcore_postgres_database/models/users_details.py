@@ -9,7 +9,7 @@ from .base import metadata
 from .users import users
 
 #
-# invited_users table hold information provided by the PO of a user before the user
+# 'invited_users' table hold information provided by the PO of a user before the user
 # row is created
 #
 
@@ -21,24 +21,27 @@ invited_users = sa.Table(
         sa.String(),
         nullable=False,
         unique=True,
-        doc="Email associated to an invitation. Will be copied into users.email",
+        doc="Invitation issued to this email."
+        "If multiple invitations to the same email (e.g. different products), then we use the same row",
     ),
     sa.Column(
         "first_name",
         sa.String(),
-        doc="First name as provided during invitation. Will be copied into users.first_name",
+        doc="First name upon invitation (copied to users.first_name)",
     ),
     sa.Column(
         "last_name",
         sa.String(),
-        doc="Last name as provided during invitation. Will be copied into users.last_name",
+        doc="Last name upon invitation (copied to users.last_name)",
     ),
     sa.Column("company_name", sa.String()),
-    sa.Column("address", sa.String(), doc="Billing address"),
+    # Billable address
+    sa.Column("address", sa.String()),
     sa.Column("city", sa.String()),
-    sa.Column("state", sa.String(), doc="State or province"),
-    sa.Column("country", sa.String(), doc="Country symbol"),
+    sa.Column("state", sa.String()),
+    sa.Column("country", sa.String()),
     sa.Column("postal_code", sa.String()),
+    #
     sa.Column(
         "created_by",
         sa.Integer,
@@ -48,7 +51,7 @@ invited_users = sa.Table(
             ondelete="SET NULL",
         ),
         nullable=True,
-        doc="PO that created an invitation",
+        doc="PO user that issued this invitation",
     ),
     sa.Column(
         "accepted_by",
@@ -59,7 +62,7 @@ invited_users = sa.Table(
             ondelete="CASCADE",
         ),
         nullable=True,
-        doc="Links this user details with user",
+        doc="Links these details to a final registered user or null if registration is pending",
     ),
     column_created_datetime(timezone=False),
     column_modified_datetime(timezone=False),
