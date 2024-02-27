@@ -6,7 +6,7 @@
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
+from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_user
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
@@ -19,7 +19,7 @@ async def po_user(
     faker: Faker,
     connection: SAConnection,
 ):
-    result = await connection.execute(
+    result: ResultProxy = await connection.execute(
         users.insert().values(**random_user(faker, role=UserRole.PRODUCT_OWNER))
     )
     pk_value = result.inserted_primary_key[0]
@@ -64,7 +64,7 @@ async def test_invited_user(connection: SAConnection, faker: Faker, po_user: Row
     )
     await UsersRepo.update_details(connection, new_user)
 
-    invoice_data = await UsersRepo.get_invoice_details(connection, user_id=new_user.id)
+    invoice_data = await UsersRepo.get_billing_details(connection, user_id=new_user.id)
     assert invoice_data is not None
 
     assert dict(invoice_data) == {key: fake_invitation[key] for key in invoice_data}
