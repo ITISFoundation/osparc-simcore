@@ -106,8 +106,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     orderBy: {
       check: "Object",
       init: {
-        field: "name",
-        direction: "asc"
+        field: "last_change_date",
+        direction: "desc"
       }
     }
   },
@@ -442,13 +442,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      if(params.url.orderBy) {
+      if (params.url.orderBy) {
         return osparc.data.Resources.fetch("studies", "getPageSortBySearch", params, undefined, options);
       } else if (params.url.search) {
         return osparc.data.Resources.fetch("studies", "getPageFilterSearch", params, undefined, options);
-      } else {
-        return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
       }
+      return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
     },
 
     __getTextFilteredNextRequest: function(text) {
@@ -659,7 +658,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       osparc.utils.Utils.setIdToWidget(sortByButton, "sortByButton");
       sortByButton.addListener("sortByChanged", e => {
-        const option = e.getData();
         this.setOrderBy(e.getData())
         this.__reloadSortedByStudies();
       }, this);

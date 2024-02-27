@@ -72,7 +72,8 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             minWidth: 40
           });
           control.getChildControl("image").set({
-            anonymous: true
+            anonymous: true,
+            decorator: "rounded"
           });
           this._add(control, {
             row: 0,
@@ -81,8 +82,9 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           break;
         }
         case "title-row":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
-            anonymous: true
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
+            anonymous: true,
+            allowGrowX: true
           });
           this._add(control, {
             row: 0,
@@ -92,10 +94,11 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         case "title":
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-light",
-            font: "text-16",
+            font: "text-14",
             alignY: "middle",
-            maxWidth: 400,
-            rich: true
+            maxWidth: 300,
+            allowGrowX: true,
+            rich: true,
           });
           titleRow = this.getChildControl("title-row");
           titleRow.addAt(control, 0, {
@@ -124,9 +127,9 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             alignY: "middle",
             allowGrowX: true
           });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.TAGS
+          titleRow = this.getChildControl("title-row");
+          titleRow.addAt(control, 1, {
+            flex: 1
           });
           break;
         case "project-status":
@@ -135,7 +138,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           });
           this._add(control, {
             row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.DESCRIPTION
+            column: osparc.dashboard.ListButtonBase.POS.STATUS
           });
           break;
         case "project-status-icon":

@@ -65,9 +65,9 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           })).set({
             anonymous: true,
           });
-          const titleRow = this.getChildControl("title-row");
-          titleRow.addAt(control, 2, {
-            flex: 1
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.TAGS
           });
           break;
         case "shared-icon":
@@ -210,7 +210,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
     _applyOwner: function(value, old) {
       const label = this.getChildControl("owner");
-      label.setValue(this.tr("Owner: ") + value);
+      label.setValue(value);
       label.setVisibility(value ? "visible" : "excluded");
       return;
     },

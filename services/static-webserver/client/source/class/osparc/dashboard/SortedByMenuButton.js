@@ -64,28 +64,20 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
         label: qx.locale.Manager.tr("Name Desc"),
         icon: "@FontAwesome5Solid/sort-alpha-up/14"
       }, {
-        id: "owner-asc",
-        label: qx.locale.Manager.tr("Owner Asc"),
+        id: "created-asc",
+        label: qx.locale.Manager.tr("Created Asc"),
         icon: "@FontAwesome5Solid/sort-alpha-down/14"
-      }, {
-        id: "owner-desc",
-        label: qx.locale.Manager.tr("Owner Desc"),
-        icon: "@FontAwesome5Solid/sort-alpha-up/14"
       }, {
         id: "created-desc",
-        label: qx.locale.Manager.tr("Created date Desc"),
-        icon: "@FontAwesome5Solid/sort-alpha-down/14"
-      }, {
-        id: "created-asc",
-        label: qx.locale.Manager.tr("Created date Asc"),
-        icon: "@FontAwesome5Solid/sort-alpha-up/14"
-      }, {
-        id: "modified-desc",
-        label: qx.locale.Manager.tr("Modified date Desc"),
+        label: qx.locale.Manager.tr("Created Desc"),
         icon: "@FontAwesome5Solid/sort-alpha-up/14"
       }, {
         id: "modified-asc",
-        label: qx.locale.Manager.tr("Modified date Asc"),
+        label: qx.locale.Manager.tr("Modified Asc"),
+        icon: "@FontAwesome5Solid/sort-alpha-down/14"
+      }, {
+        id: "modified-desc",
+        label: qx.locale.Manager.tr("Modified Desc"),
         icon: "@FontAwesome5Solid/sort-alpha-up/14"
       }];
     }
@@ -122,18 +114,6 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
         case "name-desc":
           sort = {
             field: "name",
-            direction: "desc"
-          };
-          break;
-        case "owner-asc":
-          sort = {
-            field: "prj_owner",
-            direction: "asc"
-          };
-          break;
-        case "owner-desc":
-          sort = {
-            field: "prj_owner",
             direction: "desc"
           };
           break;
