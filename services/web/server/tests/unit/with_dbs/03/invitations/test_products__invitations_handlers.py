@@ -52,8 +52,7 @@ async def test_role_access_to_generate_invitation(
         json={
             "firstName": faker.first_name(),
             "lastName": faker.last_name(),
-            "emailAddress": faker.email(),
-            "phoneNumber": faker.phone_number(),
+            "email": faker.email(),
             "companyName": faker.company(),
             "billingAddress": faker.address().replace("\n", ", "),
             "city": faker.city(),
