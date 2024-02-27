@@ -165,19 +165,24 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const grp = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
-      const eulaTextContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow())
-      eulaTextContainer.add(new qx.ui.basic.Label("Please read our").set({
-        rich: true,
-        marginRight: 3
+      const eulaTextContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow()).set({
+        width: 100
+      })
+      const part1 = "Data will be processed in accordance with"
+      part1.split(" ").forEach(word => eulaTextContainer.add(new qx.ui.basic.Label(word).set({
+        marginRight: 2
+      })))
+      eulaTextContainer.add(new osparc.ui.basic.LinkLabel("our privacy policy.", "https://sim4life.swiss/privacy").set({
+        marginRight: 2,
+        rich: false
       }))
-      eulaTextContainer.add(new osparc.ui.basic.LinkLabel("Privacy policy", "https://sim4life.swiss/privacy").set({
-        marginRight: 3
+      const part2 = "Users are authorized to use the web product in accordance with"
+      part2.split(" ").forEach(word => eulaTextContainer.add(new qx.ui.basic.Label(word).set({
+        marginRight: 2
+      })))
+      eulaTextContainer.add(new osparc.ui.basic.LinkLabel("the EULA.", "https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt").set({
+        rich: false
       }))
-      eulaTextContainer.add(new qx.ui.basic.Label("and").set({
-        rich: true,
-        marginRight: 3
-      }))
-      eulaTextContainer.add(new osparc.ui.basic.LinkLabel("EULA.", "https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt"))
 
       grp.add(eulaTextContainer)
 
@@ -220,7 +225,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
     },
 
     __submit: function(formData) {
-      console.log(formData);
       const msg = this.tr("The request is being processed, you will hear from us in the coming hours");
       osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
       this.fireDataEvent("done");
