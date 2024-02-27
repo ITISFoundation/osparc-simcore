@@ -109,7 +109,7 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
 RUN uv venv "${VIRTUAL_ENV}" \
   && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
   uv pip install --upgrade  \
   pip~=24.0  \
   wheel \
@@ -145,7 +145,7 @@ WORKDIR /build/services/dynamic-sidecar
 RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/dynamic-sidecar,target=/build/services/dynamic-sidecar,rw \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
+  --mount=type=cache,mode=0755,target=/root/.cache/uv \
   uv pip install \
   --requirement requirements/prod.txt \
   && pip list -v

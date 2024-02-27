@@ -29,7 +29,7 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
   uv pip install --upgrade \
   pip~=24.0  \
   wheel \

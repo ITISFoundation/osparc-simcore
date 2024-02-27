@@ -87,7 +87,7 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
   uv pip install --upgrade  \
   pip~=24.0  \
   wheel \
@@ -98,7 +98,7 @@ WORKDIR /build
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
 RUN \
   --mount=type=bind,source=services/dask-sidecar/requirements/_base.txt,target=_base.txt \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
+  --mount=type=cache,mode=0755,target=/root/.cache/uv \
   uv pip install \
   --requirement _base.txt
 
@@ -117,7 +117,7 @@ WORKDIR /build/services/dask-sidecar
 RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/dask-sidecar,target=/build/services/dask-sidecar,rw \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip,sharing=private \
+  --mount=type=cache,mode=0755,target=/root/.cache/uv \
   uv pip install \
   --requirement requirements/prod.txt \
   && pip list -v
