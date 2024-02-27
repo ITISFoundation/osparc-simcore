@@ -18,7 +18,6 @@ install() {
   pushd tests/public-api
   make install-ci
   popd
-  .venv/bin/pip list --verbose
   make info-images
 }
 
