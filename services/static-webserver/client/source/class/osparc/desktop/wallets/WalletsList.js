@@ -184,7 +184,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           });
       }
 
-      button.setFetching(false);
       win.close();
     },
 
