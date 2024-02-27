@@ -14,7 +14,7 @@ from aiopg.sa.result import RowProxy
 
 from .errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
-from .models.users_details import users_details
+from .models.users_details import invited_user
 
 
 class BaseUserRepoError(Exception):
@@ -83,17 +83,17 @@ class UsersRepo:
 
         # link first
         result = await conn.execute(
-            users_details.update()
-            .where(users_details.c.email == new_user.email)
-            .values(accepted_by=new_user.user_id)
+            invited_user.update()
+            .where(invited_user.c.email == new_user.email)
+            .values(accepted_by=new_user.id)
         )
 
         if result.rowcount:
             result = await conn.execute(
                 sa.select(
-                    users_details.c.first_name,
-                    users_details.c.last_name,
-                ).where(users_details.c.email == new_user.email)
+                    invited_user.c.first_name,
+                    invited_user.c.last_name,
+                ).where(invited_user.c.email == new_user.email)
             )
             details = await result.fetchone()
 
@@ -113,14 +113,14 @@ class UsersRepo:
             sa.select(
                 users.c.first_name,
                 users.c.last_name,
-                users_details.c.company_name,
-                users_details.c.address,
-                users_details.c.city,
-                users_details.c.state,
-                users_details.c.country,
-                users_details.c.postal_code,
+                invited_user.c.company_name,
+                invited_user.c.address,
+                invited_user.c.city,
+                invited_user.c.state,
+                invited_user.c.country,
+                invited_user.c.postal_code,
             )
-            .select_from(users.join(users_details))
+            .select_from(users.join(invited_user))
             .where(users.c.id == user_id)
         )
         return await result.fetchone()

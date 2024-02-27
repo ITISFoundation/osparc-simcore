@@ -6,11 +6,23 @@ from ._common import (
     register_modified_datetime_auto_update_trigger,
 )
 from .base import metadata
+from .users import users
 
-users_details = sa.Table(
-    "users_details",
+#
+# invited_user table hold information provided by the PO of a user before the user
+# row is created
+#
+
+invited_user = sa.Table(
+    "invited_user",
     metadata,
-    sa.Column("invite_id", sa.Integer(), primary_key=True, autoincrement=True),
+    sa.Column(
+        "email",
+        sa.String(),
+        nullable=False,
+        unique=True,
+        doc="Email associated to an invitation. Will be copied into users.email",
+    ),
     sa.Column(
         "first_name",
         sa.String(),
@@ -20,13 +32,6 @@ users_details = sa.Table(
         "last_name",
         sa.String(),
         doc="Last name as provided during invitation. Will be copied into users.last_name",
-    ),
-    sa.Column(
-        "email",
-        sa.String(),
-        nullable=False,
-        unique=True,
-        doc="Email associated to an invitation. Will be copied into users.email",
     ),
     sa.Column("company_name", sa.String()),
     sa.Column("address", sa.String(), doc="Billing address"),
@@ -38,25 +43,26 @@ users_details = sa.Table(
         "created_by",
         sa.Integer,
         sa.ForeignKey(
-            "users.user_id",
+            users.c.user_id,
             oupdate="CASCADE",
             ondelete="NULL",
-        ),  # TODO: should be a mark instead of a reference?
-        doc="PO that created this invitation",
+        ),
+        nullable=True,
+        doc="PO user that created an invitation for this user",
     ),
     sa.Column(
         "accepted_by",
         sa.Integer,
         sa.ForeignKey(
-            "users.user_id",
+            users.c.user_id,
             oupdate="CASCADE",
             ondelete="CASCADE",
         ),
         nullable=True,
-        doc="User created from this invitation",
+        doc="Links this user details with user",
     ),
     column_created_datetime(timezone=False),
     column_modified_datetime(timezone=False),
 )
 
-register_modified_datetime_auto_update_trigger(users_details)
+register_modified_datetime_auto_update_trigger(invited_user)
