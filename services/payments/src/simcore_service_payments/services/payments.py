@@ -41,6 +41,7 @@ from ..models.payments_gateway import InitPayment, PaymentInitiated
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
 from .notifier import NotifierService
+from .notifier_ws import WebSocketProvider
 from .payments_gateway import PaymentsGatewayApi
 
 _logger = logging.getLogger()
@@ -148,7 +149,8 @@ async def acknowledge_one_time_payment(
 async def on_payment_completed(
     transaction: PaymentsTransactionsDB,
     rut_api: ResourceUsageTrackerApi,
-    notifier: NotifierService | None,
+    notifier: NotifierService,
+    exclude: set | None = None,
 ):
     assert transaction.completed_at is not None  # nosec
     assert transaction.initiated_at < transaction.completed_at  # nosec
@@ -181,10 +183,11 @@ async def on_payment_completed(
             f"{credit_transaction_id=}",
         )
 
-    if notifier:
-        await notifier.notify_payment_completed(
-            user_id=transaction.user_id, payment=to_payments_api_model(transaction)
-        )
+    await notifier.notify_payment_completed(
+        user_id=transaction.user_id,
+        payment=to_payments_api_model(transaction),
+        exclude=exclude,
+    )
 
 
 async def pay_with_payment_method(  # noqa: PLR0913
@@ -192,6 +195,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
     rut: ResourceUsageTrackerApi,
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
+    notifier: NotifierService,
     *,
     payment_method_id: PaymentMethodID,
     amount_dollars: Decimal,
@@ -255,7 +259,9 @@ async def pay_with_payment_method(  # noqa: PLR0913
     )
 
     # NOTE: notifications here are done as background-task after responding `POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay`
-    await on_payment_completed(transaction, rut, notifier=None)
+    await on_payment_completed(
+        transaction, rut, notifier=notifier, exclude={WebSocketProvider.get_name()}
+    )
 
     return to_payments_api_model(transaction)
 
