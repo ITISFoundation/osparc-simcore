@@ -740,12 +740,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     listenToNoMoreCreditsEvents: function() {
-      const socket = osparc.wrapper.WebSocket.getInstance();
+      const slotName = "serviceNoMoreCredits";
       const flashMessageDisplayDuration = 10000;
+
+      const socket = osparc.wrapper.WebSocket.getInstance();
       const ttlMap = new osparc.data.TTLMap(flashMessageDisplayDuration);
       const store = osparc.store.Store.getInstance();
 
-      const slotName = "serviceNoMoreCredits";
       if (!socket.slotExists(slotName)) {
         socket.on(slotName, noMoreCredits => {
           // stop service
