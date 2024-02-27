@@ -108,7 +108,7 @@ class UsersRepo:
                 )
 
     @staticmethod
-    async def get_invoice_details(conn: SAConnection, user_id: int) -> RowProxy | None:
+    async def get_billing_details(conn: SAConnection, user_id: int) -> RowProxy | None:
         result = await conn.execute(
             sa.select(
                 users.c.first_name,
@@ -119,8 +119,11 @@ class UsersRepo:
                 invited_user.c.state,
                 invited_user.c.country,
                 invited_user.c.postal_code,
+                users.c.phone,
             )
-            .select_from(users.join(invited_user))
+            .select_from(
+                users.join(invited_user, users.c.id == invited_user.c.accepted_by)
+            )
             .where(users.c.id == user_id)
         )
         return await result.fetchone()
