@@ -19,9 +19,14 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
   extend: qx.ui.form.MenuButton,
 
   construct: function(resource = "study") {
-    this.base(arguments, this.tr("Sort by"), "@FontAwesome5Solid/chevron-down/10");
+    this.base(arguments, this.tr("Sort"), "@FontAwesome5Solid/chevron-down/10");
 
     osparc.utils.Utils.setIdToWidget(this, "sortedByButton");
+
+    this.set({
+      iconPosition: "left",
+      marginRight: 8
+    });
 
     const sortedByMenu = new qx.ui.menu.Menu().set({
       font: "text-14"
@@ -30,10 +35,14 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
 
     this.__resourceType = resource;
     const options = this.self().getSortByOptions(resource);
+
     options.forEach((option, idx) => {
-      const btn = new qx.ui.menu.Button(option.label);
+      const btn = new qx.ui.menu.Button();
       btn.btnId = option.id;
-      btn.btnLabel = option.label;
+      btn.set({
+        label: option.label,
+        icon: option.icon
+      });
       sortedByMenu.add(btn);
 
       btn.addListener("execute", () => this.__buttonExecuted(btn));
@@ -48,28 +57,36 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
     getSortByOptions: function() {
       return [{
         id: "name-asc",
-        label: qx.locale.Manager.tr("Name (ASC)")
+        label: qx.locale.Manager.tr("Name Asc"),
+        icon: "@FontAwesome5Solid/sort-alpha-down/14"
       }, {
         id: "name-desc",
-        label: qx.locale.Manager.tr("Name (DESC)")
+        label: qx.locale.Manager.tr("Name Desc"),
+        icon: "@FontAwesome5Solid/sort-alpha-up/14"
       }, {
         id: "owner-asc",
-        label: qx.locale.Manager.tr("Owner (ASC)")
+        label: qx.locale.Manager.tr("Owner Asc"),
+        icon: "@FontAwesome5Solid/sort-alpha-down/14"
       }, {
         id: "owner-desc",
-        label: qx.locale.Manager.tr("Owner (DESC)")
+        label: qx.locale.Manager.tr("Owner Desc"),
+        icon: "@FontAwesome5Solid/sort-alpha-up/14"
       }, {
         id: "created-desc",
-        label: qx.locale.Manager.tr("Created date (DESC)")
+        label: qx.locale.Manager.tr("Created date Desc"),
+        icon: "@FontAwesome5Solid/sort-alpha-down/14"
       }, {
         id: "created-asc",
-        label: qx.locale.Manager.tr("Created date (ASC)")
+        label: qx.locale.Manager.tr("Created date Asc"),
+        icon: "@FontAwesome5Solid/sort-alpha-up/14"
       }, {
         id: "modified-desc",
-        label: qx.locale.Manager.tr("Modified date (DESC)")
+        label: qx.locale.Manager.tr("Modified date Desc"),
+        icon: "@FontAwesome5Solid/sort-alpha-up/14"
       }, {
         id: "modified-asc",
-        label: qx.locale.Manager.tr("Modiefied date (ASC)")
+        label: qx.locale.Manager.tr("Modified date Asc"),
+        icon: "@FontAwesome5Solid/sort-alpha-up/14"
       }];
     }
   },
@@ -83,13 +100,13 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
 
     __buttonExecuted: function(btn) {
       this.set({
-        label: btn.getLabel()
+        label: btn.getLabel(),
+        icon: btn.getIcon()
       });
 
       const data = {
         "id": btn.btnId,
       };
-      console.debug(data.id)
       this.setSortedBy(data.id)
     },
 

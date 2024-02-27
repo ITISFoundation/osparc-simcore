@@ -30,16 +30,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       nullable: false,
       event: "changeMultiSelection",
       apply: "__applyMultiSelection"
-    },
-    // Ordering by Posibilities:
-    // field: type | uuid | name | description | prj_owner | creation_date | last_change_date
-    // direction: asc | desc
-    orderBy: {
-      check: "Object",
-      init: {
-        field: "name",
-        direction: "asc"
-      }
     }
   },
 
@@ -107,28 +97,6 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         .catch(err => {
           console.error(err);
           this.__setResourcesToList([]);
-        });
-    },
-
-    __reloadSortedByTemplates: function() {
-      if (this._loadingResourcesBtn.isFetching()) {
-        return;
-      }
-      this.__resetStudiesList();
-      this._loadingResourcesBtn.setFetching(true);
-      this._loadingResourcesBtn.setVisibility("visible");
-      const request = this.__getSortedByNextRequest();
-      request
-        .then(resp => {
-          const sortedStudies = resp["data"];
-          this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
-          this.__addResourcesToList(sortedStudies);
-        })
-        .catch(err => console.error(err))
-        .finally(() => {
-          this._loadingResourcesBtn.setFetching(false);
-          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
-          this._moreResourcesRequired();
         });
     },
 
@@ -215,69 +183,12 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._toolbar.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
-      this._addSortByButton();
       this._addGroupByButton();
       this._addViewModeButton();
 
       this._resourcesContainer.addListener("changeVisibility", () => this.__evaluateUpdateAllButton());
 
       return this._resourcesContainer;
-    },
-
-    _addSortByButton: function() {
-      const sortByButton = new osparc.dashboard.SortedByMenuButton("template");
-      sortByButton.set({
-        appearance: "form-button-outlined"
-      });
-      osparc.utils.Utils.setIdToWidget(sortByButton, "sortByButton");
-      sortByButton.addListener("sortByChanged", e => {
-        const option = e.getData();
-        this.setOrderBy(e.getData());
-        debugger
-        this.__reloadSortedByStudies();
-      }, this);
-      this._toolbar.add(sortByButton);
-    },
-
-    __reloadSortedByStudies: function() {
-      if (this._loadingResourcesBtn.isFetching()) {
-        return;
-      }
-      this.__resetStudiesList();
-      this._loadingResourcesBtn.setFetching(true);
-      this._loadingResourcesBtn.setVisibility("visible");
-      const request = this.__getSortedByNextRequest();
-      request
-        .then(resp => {
-          const sortedStudies = resp["data"];
-          this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
-          this.__addResourcesToList(sortedStudies);
-        })
-        .catch(err => console.error(err))
-        .finally(() => {
-          this._loadingResourcesBtn.setFetching(false);
-          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
-          this._moreResourcesRequired();
-        });
-    },
-
-    __getSortedByNextRequest: function() {
-      const params = {
-        url: {
-          offset: 0,
-          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
-          orderBy: JSON.stringify(this.getOrderBy())
-        }
-      };
-      const nextRequestParams = this.__getNextRequestParams();
-      if (nextRequestParams) {
-        params.url.offset = nextRequestParams.offset;
-        params.url.limit = nextRequestParams.limit;
-      }
-      const options = {
-        resolveWResponse: true
-      };
-      return osparc.data.Resources.fetch("studies", "getPageSortBySearch", params, undefined, options);
     },
 
     __createUpdateAllButton: function() {
