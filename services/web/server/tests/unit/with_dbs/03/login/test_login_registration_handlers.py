@@ -11,6 +11,7 @@ import pytest
 from aiohttp import ClientResponseError
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
@@ -155,16 +156,15 @@ async def test_request_an_account(
     assert client.app
     # A form similar to the one in https://github.com/ITISFoundation/osparc-simcore/pull/5378
     user_data = {
+        **AccountRequestInfo.Config.schema_extra["example"]["form"],
         # fields required in the form
-        "first_name": faker.first_name(),
-        "last_name": faker.last_name(),
+        "firstName": faker.first_name(),
+        "lastName": faker.last_name(),
         "email": faker.email(),
         "address": f"{faker.address()},  {faker.postcode()} {faker.city()} [{faker.state()}]".replace(
             "\n", ", "
         ),
         "country": faker.country(),
-        #  optional fields in the form
-        "message": faker.sentence(),
     }
 
     response = await client.post(
