@@ -11,9 +11,7 @@ aio-pika==9.3.0
 aioboto3==12.0.0
     # via -r requirements/_base.in
 aiobotocore==2.7.0
-    # via
-    #   aioboto3
-    #   aiobotocore
+    # via aioboto3
 aiodebug==2.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in

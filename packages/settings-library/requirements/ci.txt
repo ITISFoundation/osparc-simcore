@@ -11,7 +11,7 @@
 --requirement _test.txt
 
 # installs this repo's packages
-../pytest-simcore/
+pytest-simcore @ ../pytest-simcore
 
 # current module
-.
+simcore-settings-library @ .

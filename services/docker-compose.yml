@@ -11,7 +11,7 @@ services:
   api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       - API_SERVER_DEV_FEATURES_ENABLED=${API_SERVER_DEV_FEATURES_ENABLED}
       - API_SERVER_DEV_HTTP_CALLS_LOGS_PATH=${API_SERVER_DEV_HTTP_CALLS_LOGS_PATH}
@@ -65,7 +65,7 @@ services:
   autoscaling:
     image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - autoscaling_subnet
     environment:
@@ -127,7 +127,7 @@ services:
   catalog:
     image: ${DOCKER_REGISTRY:-itisfoundation}/catalog:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       - CATALOG_BACKGROUND_TASK_REST_TIME=${CATALOG_BACKGROUND_TASK_REST_TIME:-60}
       - CATALOG_DEV_FEATURES_ENABLED=${CATALOG_DEV_FEATURES_ENABLED}
@@ -149,7 +149,7 @@ services:
   clusters-keeper:
     image: ${DOCKER_REGISTRY:-itisfoundation}/clusters-keeper:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -198,7 +198,7 @@ services:
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       - DEFAULT_MAX_MEMORY=${DEFAULT_MAX_MEMORY:-0}
       - DEFAULT_MAX_NANO_CPUS=${DEFAULT_MAX_NANO_CPUS:-0}
@@ -248,7 +248,7 @@ services:
   director-v2:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       - CATALOG_HOST=${CATALOG_HOST}
       - CATALOG_PORT=${CATALOG_PORT}
@@ -264,7 +264,7 @@ services:
       - DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS=${DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS}
 
       - DIRECTOR_V2_DEV_FEATURES_ENABLED=${DIRECTOR_V2_DEV_FEATURES_ENABLED}
-      - DIRECTOR_V2_DYNAMIC_SCHEDULER_IGNORE_SERVICES_SHUTDOWN_WHEN_CREDITS_LIMIT_REACHED=${DIRECTOR_V2_DYNAMIC_SCHEDULER_IGNORE_SERVICES_SHUTDOWN_WHEN_CREDITS_LIMIT_REACHED}
+      - DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED=${DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED}
       - DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS=${DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS}
 
       - DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED=${DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED}
@@ -336,7 +336,7 @@ services:
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -352,7 +352,7 @@ services:
   payments:
     image: ${DOCKER_REGISTRY:-itisfoundation}/payments:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -390,7 +390,7 @@ services:
   resource-usage-tracker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -425,7 +425,7 @@ services:
   dynamic-schdlr:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -444,7 +444,7 @@ services:
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8000
@@ -496,7 +496,7 @@ services:
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       AIODEBUG_SLOW_DURATION_SECS: ${AIODEBUG_SLOW_DURATION_SECS}
 
@@ -697,7 +697,7 @@ services:
   wb-db-event-listener:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       WEBSERVER_LOGLEVEL: ${WB_DB_EL_LOGLEVEL}
 
@@ -781,7 +781,7 @@ services:
   wb-garbage-collector:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       WEBSERVER_LOGLEVEL: ${WB_GC_LOGLEVEL}
 
@@ -866,7 +866,7 @@ services:
   agent:
     image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     deploy:
       mode: global
       resources:
@@ -892,7 +892,7 @@ services:
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     deploy:
       mode: global
       endpoint_mode: dnsrr
@@ -919,7 +919,7 @@ services:
   dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *sidecar-environment
       DASK_START_AS_SCHEDULER: 1
@@ -931,7 +931,7 @@ services:
   datcore-adapter:
     image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - storage_subnet
     environment:
@@ -941,7 +941,7 @@ services:
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       - BF_API_KEY=${BF_API_KEY}
       - BF_API_SECRET=${BF_API_SECRET}
@@ -969,7 +969,7 @@ services:
   rabbit:
     image: itisfoundation/rabbitmq:3.11.2-management
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
@@ -990,7 +990,7 @@ services:
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
@@ -1004,7 +1004,7 @@ services:
   postgres:
     image: "postgres:14.8-alpine@sha256:150dd39ccb7ae6c7ba6130c3582c39a30bb5d3d22cb08ad0ba37001e3f829abc"
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -1058,7 +1058,7 @@ services:
   redis:
     image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     command:
       # redis server will write a backup every 60 seconds if at least 1 key was changed
       # also aof (append only) is also enabled such that we get full durability at the expense
@@ -1089,7 +1089,7 @@ services:
   traefik:
     image: "traefik:v2.9.8@sha256:553239e27c4614d0477651415205b9b119f7a98f698e6562ef383c9d8ff3b6e6"
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     command:
       - "--api=true"
       - "--api.dashboard=true"

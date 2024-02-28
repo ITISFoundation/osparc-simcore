@@ -13,7 +13,7 @@
 
 # installs this repo's packages
 --editable ../../packages/models-library/
---editable ../../packages/postgres-database/
+--editable ../../packages/postgres-database[migration]
 --editable ../../packages/pytest-simcore/
 --editable ../../packages/service-library/
 --editable ../../packages/settings-library/

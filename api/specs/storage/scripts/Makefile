@@ -8,7 +8,7 @@ _check_venv_active:
 .PHONY: install
 install: _check_venv_active
 	@cd ./../../../../services/storage && make install-dev && cd -
-	pip install -r requirements.txt
+	@uv pip install -r requirements.txt
 
 
 .PHONY: all

@@ -1,11 +1,10 @@
 """  Utilities to implement _meta.py
 
 """
-from contextlib import suppress
 
-import pkg_resources
+from importlib.metadata import distribution
+
 from packaging.version import Version
-from pkg_resources import Distribution
 
 
 class PackageInfo:
@@ -27,11 +26,11 @@ class PackageInfo:
         """
         package_name: as defined in 'setup.name'
         """
-        self._distribution: Distribution = pkg_resources.get_distribution(package_name)
+        self._distribution = distribution(package_name)
 
     @property
     def project_name(self) -> str:
-        return self._distribution.project_name
+        return self._distribution.metadata["Name"]
 
     @property
     def version(self) -> Version:
@@ -47,14 +46,7 @@ class PackageInfo:
         return f"v{self.version.major}"
 
     def get_summary(self) -> str:
-        with suppress(Exception):
-            try:
-                metadata = self._distribution.get_metadata_lines("METADATA")
-            except FileNotFoundError:
-                metadata = self._distribution.get_metadata_lines("PKG-INFO")
-
-            return next(x.split(":") for x in metadata if x.startswith("Summary:"))[-1]
-        return ""
+        return self._distribution.metadata.get_all("Summary", [""])[-1]
 
     def get_finished_banner(self) -> str:
         return "{:=^100}".format(

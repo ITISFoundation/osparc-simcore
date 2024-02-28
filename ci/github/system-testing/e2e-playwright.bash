@@ -12,6 +12,7 @@ export DOCKER_IMAGE_TAG
 
 install() {
   make devenv
+  # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd tests/e2e-playwright
   make install-ci-up-simcore
@@ -19,6 +20,7 @@ install() {
 }
 
 test() {
+  # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd tests/e2e-playwright
   make test-sleepers

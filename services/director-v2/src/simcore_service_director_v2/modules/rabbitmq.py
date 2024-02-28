@@ -16,6 +16,7 @@ from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
 from ..core.settings import AppSettings
+from .notifier import publish_shutdown_no_more_credits
 
 _logger = logging.getLogger(__name__)
 
@@ -27,9 +28,20 @@ async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
     settings: AppSettings = app.state.settings
 
     if (
-        settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_IGNORE_SERVICES_SHUTDOWN_WHEN_CREDITS_LIMIT_REACHED
+        settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED
     ):
-        _logger.debug("Skipped shutting down services for wallet %s", message.wallet_id)
+        _logger.warning(
+            "Notifying frontend to shutdown service: '%s' for user '%s' because wallet '%s' is out of credits.",
+            message.node_id,
+            message.user_id,
+            message.wallet_id,
+        )
+        await publish_shutdown_no_more_credits(
+            app,
+            user_id=message.user_id,
+            node_id=message.node_id,
+            wallet_id=message.wallet_id,
+        )
     else:
         await scheduler.mark_all_services_in_wallet_for_removal(
             wallet_id=message.wallet_id
