@@ -27,7 +27,7 @@ _logger = logging.getLogger(__name__)
 
 _SOLVER_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
-        "description": "Solver not found",
+        "description": "Not found",
         "model": HTTPExceptionModel,
     }
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -81,7 +81,12 @@ async def get_solvers_page(
     raise NotImplementedError(msg)
 
 
-@router.get("/releases", response_model=list[Solver], summary="Lists All Releases")
+@router.get(
+    "/releases",
+    response_model=list[Solver],
+    summary="Lists All Releases",
+    responses=_SOLVER_STATUS_CODES,
+)
 async def list_solvers_releases(
     user_id: Annotated[int, Depends(get_current_user_id)],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
@@ -124,6 +129,7 @@ async def get_solvers_releases_page(
     "/{solver_key:path}/latest",
     response_model=Solver,
     summary="Get Latest Release of a Solver",
+    responses=_SOLVER_STATUS_CODES,
 )
 async def get_solver(
     solver_key: SolverKeyId,
@@ -152,7 +158,11 @@ async def get_solver(
         ) from err
 
 
-@router.get("/{solver_key:path}/releases", response_model=list[Solver])
+@router.get(
+    "/{solver_key:path}/releases",
+    response_model=list[Solver],
+    responses=_SOLVER_STATUS_CODES,
+)
 async def list_solver_releases(
     solver_key: SolverKeyId,
     user_id: Annotated[int, Depends(get_current_user_id)],
@@ -194,6 +204,7 @@ async def get_solver_releases_page(
 @router.get(
     "/{solver_key:path}/releases/{version}",
     response_model=Solver,
+    responses=_SOLVER_STATUS_CODES,
 )
 async def get_solver_release(
     solver_key: SolverKeyId,
@@ -233,6 +244,7 @@ async def get_solver_release(
 @router.get(
     "/{solver_key:path}/releases/{version}/ports",
     response_model=OnePage[SolverPort],
+    responses=_SOLVER_STATUS_CODES,
 )
 async def list_solver_ports(
     solver_key: SolverKeyId,
@@ -268,17 +280,12 @@ async def list_solver_ports(
             detail=f"Port definition of {solver_key}:{version} seems corrupted [{error_code}]",
         ) from err
 
-    except HTTPStatusError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Ports for solver {solver_key}:{version} not found",
-        ) from err
-
 
 @router.get(
     "/{solver_key:path}/releases/{version}/pricing_plan",
     response_model=ServicePricingPlanGet,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    responses=_SOLVER_STATUS_CODES,
 )
 async def get_solver_pricing_plan(
     solver_key: SolverKeyId,
