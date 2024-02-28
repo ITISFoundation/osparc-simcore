@@ -23,7 +23,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from . import exceptions, storage_client
-from .storage_endpoint import get_basic_auth
+from .storage_endpoint import get_basic_auth, is_storage_secure
 
 _logger = logging.getLogger(__name__)
 
@@ -41,6 +41,13 @@ async def _get_location_id_from_location_name(
     raise exceptions.S3InvalidStore(store)
 
 
+def _get_secure_link(url: AnyUrl) -> str:
+    if is_storage_secure() and not f"{url}".startswith("https"):
+        return url.replace("http", "https")
+
+    return url
+
+
 async def _complete_upload(
     session: ClientSession,
     upload_completion_link: AnyUrl,
@@ -56,7 +63,7 @@ async def _complete_upload(
     :rtype: ETag
     """
     async with session.post(
-        upload_completion_link,
+        _get_secure_link(upload_completion_link),
         json=jsonable_encoder(FileUploadCompletionBody(parts=parts)),
         auth=get_basic_auth(),
     ) as resp:
@@ -66,10 +73,11 @@ async def _complete_upload(
             Envelope[FileUploadCompleteResponse], await resp.json()
         )
         assert file_upload_complete_response.data  # nosec
-    state_url = file_upload_complete_response.data.links.state
+    state_url = _get_secure_link(file_upload_complete_response.data.links.state)
     _logger.info(
-        "completed upload of %s",
+        "completed upload of %s\n using %s",
         f"{len(parts)} parts, received {file_upload_complete_response.json(indent=2)}",
+        state_url,
     )
 
     async for attempt in AsyncRetrying(
@@ -129,7 +137,9 @@ async def _abort_upload(
 ) -> None:
     # abort the upload correctly, so it can revert back to last version
     try:
-        async with session.post(abort_upload_link, auth=get_basic_auth()) as resp:
+        async with session.post(
+            _get_secure_link(abort_upload_link), auth=get_basic_auth()
+        ) as resp:
             resp.raise_for_status()
     except ClientError:
         _logger.warning("Error while aborting upload", exc_info=True)

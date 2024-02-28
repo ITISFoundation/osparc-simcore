@@ -5,7 +5,7 @@
 
 import re
 from collections.abc import AsyncIterator
-from typing import Iterable
+from typing import Final, Iterable
 from uuid import uuid4
 
 import aiohttp
@@ -20,11 +20,11 @@ from models_library.api_schemas_storage import (
 )
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize
-from pydantic.networks import AnyUrl
+from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
+from simcore_sdk.node_ports_common._filemanager import _get_secure_link
 from simcore_sdk.node_ports_common.storage_client import (
     LinkType,
     delete_file,
@@ -34,7 +34,11 @@ from simcore_sdk.node_ports_common.storage_client import (
     get_upload_file_links,
     list_file_metadata,
 )
-from simcore_sdk.node_ports_common.storage_endpoint import get_base_url, get_basic_auth
+from simcore_sdk.node_ports_common.storage_endpoint import (
+    get_base_url,
+    get_basic_auth,
+    is_storage_secure,
+)
 
 
 def _clear_caches():
@@ -299,6 +303,17 @@ async def test_delete_file(
             "https://host:42/v0",
             id="single-vars+auth",
         ),
+        pytest.param(
+            {
+                "STORAGE_USERNAME": "admin",
+                "STORAGE_PASSWORD": "adminadmin",
+                "STORAGE_HOST": "storage.osparc-master.speag.com",
+                "STORAGE_SECURE": "1",
+                "STORAGE_PORT": "443",
+            },
+            "https://host:42/v0",
+            id="master-config",
+        ),
     ],
 )
 def test_mode_ports_storage_with_auth(
@@ -345,3 +360,33 @@ def test_mode_ports_storage_without_auth(
 
     assert get_base_url() == expected_base_url
     assert get_basic_auth() is None
+
+
+_HTTP_URL: Final[str] = "http://a"
+_HTTPS_URL: Final[str] = "https://a"
+
+
+@pytest.mark.parametrize(
+    "storage_secure, provided, expected",
+    [
+        (True, _HTTP_URL, _HTTPS_URL),
+        (False, _HTTP_URL, _HTTP_URL),
+        (True, parse_obj_as(AnyUrl, _HTTP_URL), _HTTPS_URL),
+        (False, parse_obj_as(AnyUrl, _HTTP_URL), _HTTP_URL),
+        (True, _HTTPS_URL, _HTTPS_URL),
+        (False, _HTTPS_URL, _HTTPS_URL),
+        (True, parse_obj_as(AnyUrl, _HTTPS_URL), _HTTPS_URL),
+        (False, parse_obj_as(AnyUrl, _HTTPS_URL), _HTTPS_URL),
+    ],
+)
+def test__get_secure_link(
+    mock_postgres: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    storage_secure: bool,
+    provided: str,
+    expected: str,
+):
+    is_storage_secure.cache_clear()
+
+    setenvs_from_dict(monkeypatch, {"STORAGE_SECURE": "1" if storage_secure else "0"})
+    assert _get_secure_link(provided) == expected
