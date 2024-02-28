@@ -23,13 +23,9 @@ qx.Class.define("osparc.desktop.wallets.WalletEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    const manager = this.__validator = new qx.ui.form.validation.Manager();
-    const title = this.getChildControl("title");
-    title.setRequired(true);
-    manager.add(title);
-    this.getChildControl("description");
-    this.getChildControl("thumbnail");
-    this.getChildControl("save");
+    this.__validator = new qx.ui.form.validation.Manager();
+
+    this.__buildLayout()
   },
 
   properties: {
@@ -54,11 +50,11 @@ qx.Class.define("osparc.desktop.wallets.WalletEditor", {
       event: "changeDescription"
     },
 
-    thumbnail: {
-      check: "String",
-      init: "",
-      nullable: true,
-      event: "changeThumbnail"
+    isFetching: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeIsFetching"
     }
   },
 
@@ -68,70 +64,54 @@ qx.Class.define("osparc.desktop.wallets.WalletEditor", {
   },
 
   members: {
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "title": {
-          control = new qx.ui.form.TextField().set({
-            font: "text-14",
-            backgroundColor: "background-main",
-            placeholder: this.tr("Title"),
-            height: 35
-          });
-          this.bind("name", control, "value");
-          control.bind("value", this, "name");
-          this._add(control);
-          break;
-        }
-        case "description": {
-          control = new qx.ui.form.TextArea().set({
-            font: "text-14",
-            placeholder: this.tr("Description"),
-            autoSize: true,
-            minHeight: 70,
-            maxHeight: 140
-          });
-          this.bind("description", control, "value");
-          control.bind("value", this, "description");
-          this._add(control);
-          break;
-        }
-        case "thumbnail": {
-          control = new qx.ui.form.TextField().set({
-            font: "text-14",
-            placeholder: this.tr("Thumbnail"),
-            height: 35
-          });
-          this.bind("thumbnail", control, "value");
-          control.bind("value", this, "thumbnail");
-          this._add(control);
-          break;
-        }
-        case "save": {
-          const buttons = this.getChildControl("buttonsLayout");
-          control = new osparc.ui.form.FetchButton(this.tr("Save"));
-          control.addListener("execute", () => {
-            if (this.__validator.validate()) {
-              control.setFetching(true);
-              this.fireEvent("updateWallet");
-            }
-          }, this);
-          buttons.addAt(control, 0);
-          break;
-        }
-        case "buttonsLayout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
-            alignX: "right"
-          }));
-          const cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
-          cancelButton.addListener("execute", () => this.fireEvent("cancel"), this);
-          control.add(cancelButton);
-          this._add(control);
-          break;
-        }
-      }
+    __buildLayout: function() {
+      this._removeAll()
+      this._add(new qx.ui.basic.Label(this.tr("Title")).set({
+        font: "text-14"
+      }));
+      const title = new qx.ui.form.TextField().set({
+        font: "text-14",
+        backgroundColor: "background-main",
+        placeholder: this.tr("Title"),
+        height: 35,
+        required: true
+      });
+      this.bind("name", title, "value");
+      title.bind("value", this, "name");
+      this._add(title);
+      this.__validator.add(title)
 
-      return control || this.base(arguments, id);
+      this._add(new qx.ui.basic.Label(this.tr("Description")).set({
+        font: "text-14",
+        marginTop: 10
+      }));
+      const description = new qx.ui.form.TextArea().set({
+        font: "text-14",
+        placeholder: this.tr("Description"),
+        autoSize: true,
+        minHeight: 70,
+        maxHeight: 140
+      });
+      this.bind("description", description, "value");
+      description.bind("value", this, "description");
+      this._add(description);
+
+      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+        alignX: "right"
+      }));
+      const cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
+      cancelButton.addListener("execute", () => this.fireEvent("cancel"), this);
+      buttons.add(cancelButton);
+
+      const saveButton = new osparc.ui.form.FetchButton(this.tr("Save"));
+      saveButton.addListener("execute", () => {
+        if (this.__validator.validate()) {
+          this.fireEvent("updateWallet");
+        }
+      }, this);
+      this.bind("isFetching", saveButton, "fetching")
+      buttons.addAt(saveButton, 0);
+      this._add(buttons);
     }
   }
 });

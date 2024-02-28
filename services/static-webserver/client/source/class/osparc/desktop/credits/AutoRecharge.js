@@ -59,7 +59,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         marginTop: 25,
         font: "title-18"
       });
-      const subtitle = new qx.ui.basic.Label("Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.").set({
+      const subtitle = new qx.ui.basic.Label(this.tr("Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.")).set({
         rich: true,
         font: "text-14",
         textAlign: "center"
@@ -69,6 +69,32 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       this.__mainContent.add(this.__getAutoRechargeForm())
       this.__mainContent.add(this.__getButtons())
       this.add(this.__mainContent)
+
+      this.__noPaymentMethodsContent = new qx.ui.container.Composite(new qx.ui.layout.VBox(15).set({
+        alignX: "center"
+      }))
+      this.__noPaymentMethodsContent.add(new qx.ui.basic.Label("Auto-recharge").set({
+        marginTop: 25,
+        font: "title-18"
+      }))
+      this.__noPaymentMethodsContent.add(new qx.ui.basic.Label(this.tr("Keep your balance running smoothly by automatically setting your credits to be recharged when it runs low.")).set({
+        rich: true,
+        font: "text-14",
+        textAlign: "center"
+      }))
+      this.__noPaymentMethodsContent.add(new qx.ui.basic.Label(this.tr("Before the auto-recharge function can be activated you need to add your first payment method")).set({
+        rich: true,
+        font: "text-14",
+        textAlign: "center"
+      }))
+      const addNewPaymentMethod = new qx.ui.basic.Label(this.tr("Add Payment Method")).set({
+        cursor: "pointer",
+        font: "link-label-14",
+        textAlign: "center"
+      });
+      addNewPaymentMethod.addListener("tap", () => this.fireEvent("addNewPaymentMethod"));
+      this.__noPaymentMethodsContent.add(addNewPaymentMethod)
+      this.add(this.__noPaymentMethodsContent)
 
       this.__fetchingView = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
         alignX: "center",
@@ -97,18 +123,21 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       const wallet = this.getWallet();
       const paymentMethodSB = this.__paymentMethodField;
       await osparc.desktop.credits.Utils.populatePaymentMethodSelector(wallet, paymentMethodSB);
-
-      this.setSelection([this.__fetchingView])
-
-      // populate the form
-      const params = {
-        url: {
-          walletId: wallet.getWalletId()
-        }
-      };
-      osparc.data.Resources.fetch("autoRecharge", "get", params)
-        .then(arData => this.__populateForm(arData))
-        .catch(err => console.error(err.message));
+      if (paymentMethodSB.getChildren().length) {
+        this.setSelection([this.__fetchingView])
+        // Get auto-recharge data
+        const params = {
+          url: {
+            walletId: wallet.getWalletId()
+          }
+        };
+        osparc.data.Resources.fetch("autoRecharge", "get", params)
+          .then(arData => this.__populateForm(arData))
+          .catch(err => console.error(err.message));
+      } else {
+        // Wallet has no payment methods
+        this.setSelection([this.__noPaymentMethodsContent])
+      }
     },
 
     __populateForm: function(arData) {
