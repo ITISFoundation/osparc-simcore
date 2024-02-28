@@ -92,6 +92,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
         can=[
             "product.details.*",
             "product.invitations.create",
+            "users.others.*",
         ],
         inherits=[UserRole.TESTER],
     ),

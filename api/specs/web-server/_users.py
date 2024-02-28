@@ -12,14 +12,19 @@ from models_library.generics import Envelope
 from models_library.user_preferences import PreferenceIdentifier
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.users._handlers import (
-    _NotificationPathParams,
-    _TokenPathParams,
+    PreUserProfile,
+    UserProfile,
+    _SearchQueryParams,
 )
 from simcore_service_webserver.users._notifications import (
     UserNotification,
     UserNotificationCreate,
     UserNotificationPatch,
 )
+from simcore_service_webserver.users._notifications_handlers import (
+    _NotificationPathParams,
+)
+from simcore_service_webserver.users._tokens_handlers import _TokenPathParams
 from simcore_service_webserver.users.schemas import (
     PermissionGet,
     ProfileGet,
@@ -123,4 +128,14 @@ async def mark_notification_as_read(
     response_model=Envelope[list[PermissionGet]],
 )
 async def list_user_permissions():
+    ...
+
+
+@router.post("/users:search", response_model=Envelope[list[UserProfile]])
+async def search_users(_params: Annotated[_SearchQueryParams, Depends()]):
+    ...
+
+
+@router.post("/users:pre-register", response_model=Envelope[UserProfile])
+async def pre_register_user(_body: PreUserProfile):
     ...

@@ -127,9 +127,10 @@ async def test_pre_registration_and_invitation_workflow(
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
         "email": guest_email,
-        "companyName": faker.company(),
+        "company": faker.company(),
         "phone": faker.phone_number(),
-        "billingAddress": faker.address().replace("\n", ", "),
+        # billing info
+        "address": faker.address().replace("\n", ", "),
         "city": faker.city(),
         "state": faker.state(),
         "postalCode": faker.postcode(),
@@ -143,7 +144,7 @@ async def test_pre_registration_and_invitation_workflow(
     ).dict()
 
     # Search user -> nothing
-    response = await client.get("/v0/users:search", params={"email": guest_email})
+    response = await client.post("/v0/users:search", params={"email": guest_email})
     data, _ = await assert_status(response, expected_status)
     # i.e. no info of requester is found, i.e. needs pre-registration
     assert data == []
