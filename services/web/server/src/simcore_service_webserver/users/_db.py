@@ -7,6 +7,7 @@ from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.models.users import UserStatus, users
+from simcore_postgres_database.models.users_details import invited_users
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
     GroupExtraPropertiesRepo,
@@ -95,4 +96,47 @@ async def update_user_status(
     async with engine.acquire() as conn:
         await conn.execute(
             users.update().values(status=new_status).where(users.c.id == user_id)
+        )
+
+
+async def search_users_and_get_profile(engine: Engine, *, email_like: str):
+    async with engine.acquire() as conn:
+        result = await conn.execute(
+            sa.select(
+                users.c.first_name,
+                users.c.last_name,
+                users.c.email,
+                invited_users.c.email.label("invitation_email"),
+                invited_users.c.first_name.label("invitation_first_name"),
+                invited_users.c.last_name.label("invitation_last_name"),
+                invited_users.c.company_name,
+                invited_users.c.phone.label("invitation_phone"),
+                invited_users.c.address,
+                invited_users.c.city,
+                invited_users.c.state,
+                invited_users.c.postal_code,
+                invited_users.c.country,
+                invited_users.c.accepted_by,
+                users.c.status,
+            )
+            .select_from(
+                invited_users.outerjoin(
+                    users, users.c.id == invited_users.c.accepted_by
+                )
+            )
+            .where(
+                invited_users.c.email.like(email_like) | users.c.email.like(email_like)
+            )
+        )
+        return await result.fetchall() or []
+
+
+async def new_invited_user(
+    engine: Engine, email: str, created_by: UserID, **other_values
+):
+    async with engine.acquire() as conn:
+        await conn.execute(
+            sa.insert(invited_users).values(
+                created_by=created_by, email=email, **other_values
+            )
         )

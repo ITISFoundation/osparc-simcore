@@ -1,12 +1,9 @@
 import functools
 import logging
 
-import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
-from models_library.emails import LowerCaseEmailStr
 from models_library.users import UserID
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_query_parameters_as,
@@ -14,15 +11,15 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_postgres_database.models.users import UserStatus
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from . import api
-from .exceptions import UserNotFoundError
+from . import _api, api
+from ._schemas import PreUserProfile
+from .exceptions import AlreadyPreRegisteredError, UserNotFoundError
 from .schemas import ProfileGet, ProfileUpdate
 
 _logger = logging.getLogger(__name__)
@@ -71,34 +68,7 @@ async def update_my_profile(request: web.Request) -> web.Response:
 
 
 class _SearchQueryParams(BaseModel):
-    email: str
-
-
-class UserProfile(OutputSchema):
-    first_name: str
-    last_name: str
-    email: LowerCaseEmailStr
-    company: str | None
-    phone: str | None
-    address: str
-    city: str
-    state: str | None = Field(description="State, province, canton, region etc")
-    postal_code: str
-    country: str
-
-    # user status
-    registered: bool
-    status: UserStatus | None
-
-    @validator("status")
-    @classmethod
-    def _consistency_check(cls, v, values):
-        registered = values["registered"]
-        status = v
-        if not registered and status is not None:
-            msg = f"{registered=} and {status=} is not allowed"
-            raise ValueError(msg)
-        return v
+    email: str = Field(min_length=3)
 
 
 @routes.post(f"/{API_VTAG}/users:search", name="search_users")
@@ -109,39 +79,10 @@ async def search_users(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
     query_params = parse_request_query_parameters_as(_SearchQueryParams, request)
 
-    if query_params:
-        raise NotImplementedError
+    found = _api.search_users(request.app, email=query_params.email)
+    # TODO: consider showing products these are registered
 
-    found: list[UserProfile] = []
     return envelope_json_response(found)
-
-
-class PreUserProfile(InputSchema):
-    first_name: str
-    last_name: str
-    email: LowerCaseEmailStr
-    company: str | None
-    phone: str | None
-    # billing details
-    address: str
-    city: str
-    state: str | None
-    postal_code: str
-    country: str
-
-    @validator("country")
-    @classmethod
-    def valid_country(cls, v):
-        if v:
-            try:
-                pycountry.countries.lookup(v)
-            except LookupError as err:
-                raise ValueError(v) from err
-        return v
-
-
-# helps sync models
-assert set(PreUserProfile.__fields__).issubset(UserProfile.__fields__)  # nosec
 
 
 @routes.post(f"/{API_VTAG}/users:pre-register", name="pre_register_user")
@@ -150,10 +91,12 @@ assert set(PreUserProfile.__fields__).issubset(UserProfile.__fields__)  # nosec
 @_handle_users_exceptions
 async def pre_register_user(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
-    user_info = await parse_request_body_as(PreUserProfile, request)
+    pre_user_profile = await parse_request_body_as(PreUserProfile, request)
 
-    # if user exists, no need to pre-register just returne UserProfile
-
-    # user : UserProfile
-
-    raise NotImplementedError
+    try:
+        user_profile = await _api.pre_register_user(
+            request.app, profile=pre_user_profile, creator_user_id=req_ctx.user_id
+        )
+        return envelope_json_response(user_profile)
+    except AlreadyPreRegisteredError as err:
+        raise web.HTTPConflict(reason=f"{err}") from err
