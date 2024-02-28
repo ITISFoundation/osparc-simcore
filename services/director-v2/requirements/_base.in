@@ -29,6 +29,7 @@ networkx
 ordered-set
 orjson
 pydantic[dotenv]
+python-socketio
 redis
 rich
 tenacity
