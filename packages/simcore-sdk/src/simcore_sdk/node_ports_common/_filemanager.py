@@ -21,6 +21,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+from yarl import URL
 
 from . import exceptions, storage_client
 from .storage_endpoint import get_basic_auth, is_storage_secure
@@ -42,8 +43,9 @@ async def _get_location_id_from_location_name(
 
 
 def _get_https_link_if_storage_secure(url: AnyUrl) -> str:
-    if is_storage_secure() and not f"{url}".startswith("https"):
-        return url.replace("http", "https", 1)
+    parsed_url = URL(url)
+    if is_storage_secure() and parsed_url.scheme != "https":
+        return f'{parsed_url.with_scheme("https")}'
 
     return url
 
