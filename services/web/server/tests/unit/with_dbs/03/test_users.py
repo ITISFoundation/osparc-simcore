@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, Mock
 import pytest
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
+from faker import Faker
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -200,7 +201,7 @@ async def test_get_profile_with_failing_db_connection(
         (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
     ],
 )
-async def test_users_api_access_rights(
+async def test_users_api_only_accessed_by_po(
     client: TestClient,
     logged_user: UserInfoDict,
     expected: HTTPStatus,
@@ -214,13 +215,22 @@ async def test_users_api_access_rights(
     await assert_status(resp, expected)
 
 
+@pytest.mark.acceptance_test(
+    "pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
+)
 @pytest.mark.parametrize(
     "user_role",
     [
         UserRole.PRODUCT_OWNER,
     ],
 )
-async def test_pre_registration(client: TestClient, logged_user: UserInfoDict):
+async def test_search_and_pre_registration(
+    client: TestClient, logged_user: UserInfoDict, faker: Faker
+):
+
+    # TODO: test_search_registed_user_wo_pre_registration
+    # i.e. all users prior to pre-registration feature
+
     resp = await client.get("/v0/users:search", params={"email": logged_user["email"]})
     assert resp.status == status.HTTP_200_OK
 
@@ -241,4 +251,34 @@ async def test_pre_registration(client: TestClient, logged_user: UserInfoDict):
         "country": None,
         "registered": True,
         "status": "ACTIVE",
+    }
+
+    # create pre-registration
+    requester_info = {
+        "firstName": faker.first_name(),
+        "lastName": faker.last_name(),
+        "email": faker.email(),
+        "companyName": faker.company(),
+        "phone": faker.phone_number(),
+        # billing info
+        "address": faker.address().replace("\n", ", "),
+        "city": faker.city(),
+        "state": faker.state(),
+        "postalCode": faker.postcode(),
+        "country": faker.country(),
+    }
+
+    resp = await client.post("/v0/users:pre-register", json=requester_info)
+    assert resp.status == status.HTTP_200_OK
+
+    resp = await client.get(
+        "/v0/users:search", params={"email": requester_info["email"]}
+    )
+    data, _ = await assert_status(resp, web.HTTPOk)
+    assert len(data) == 1
+
+    assert data[0] == {
+        **requester_info,
+        "registered": False,
+        "status": None,
     }

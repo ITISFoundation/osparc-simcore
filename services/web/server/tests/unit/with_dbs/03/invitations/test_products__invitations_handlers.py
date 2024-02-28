@@ -18,7 +18,6 @@ from pydantic import PositiveInt
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
-from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 
 
@@ -127,7 +126,7 @@ async def test_pre_registration_and_invitation_workflow(
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
         "email": guest_email,
-        "company": faker.company(),
+        "companyName": faker.company(),
         "phone": faker.phone_number(),
         # billing info
         "address": faker.address().replace("\n", ", "),
@@ -149,9 +148,10 @@ async def test_pre_registration_and_invitation_workflow(
     # i.e. no info of requester is found, i.e. needs pre-registration
     assert data == []
 
-    # Cannot generate anymore an invitation for users that are not registered or pre-registered
-    response = await client.post("/v0/invitation:generate", json=invitation)
-    assert response.status == status.HTTP_409_CONFLICT
+    # Cannot generate anymore an invitation for users that are not registered or pre-registered.
+    # Cannot do that because otherwise old users willing a new product will not work!
+    # response = await client.post("/v0/invitation:generate", json=invitation)
+    # assert response.status == status.HTTP_409_CONFLICT
 
     # Accept user for registration and create invitation for her
     response = await client.post("/v0/users:pre-register", json=requester_info)

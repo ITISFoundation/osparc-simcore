@@ -103,34 +103,45 @@ async def search_users_and_get_profile(
     engine: Engine, *, email_like: str
 ) -> list[RowProxy]:
     async with engine.acquire() as conn:
-        result = await conn.execute(
-            sa.select(
-                users.c.first_name,
-                users.c.last_name,
-                users.c.email,
-                users.c.phone,
-                invited_users.c.email.label("invitation_email"),
-                invited_users.c.first_name.label("invitation_first_name"),
-                invited_users.c.last_name.label("invitation_last_name"),
-                invited_users.c.company_name,
-                invited_users.c.phone.label("invitation_phone"),
-                invited_users.c.address,
-                invited_users.c.city,
-                invited_users.c.state,
-                invited_users.c.postal_code,
-                invited_users.c.country,
-                invited_users.c.accepted_by,
-                users.c.status,
+        columns = (
+            users.c.first_name,
+            users.c.last_name,
+            users.c.email,
+            users.c.phone,
+            invited_users.c.email.label("invitation_email"),
+            invited_users.c.first_name.label("invitation_first_name"),
+            invited_users.c.last_name.label("invitation_last_name"),
+            invited_users.c.company_name,
+            invited_users.c.phone.label("invitation_phone"),
+            invited_users.c.address,
+            invited_users.c.city,
+            invited_users.c.state,
+            invited_users.c.postal_code,
+            invited_users.c.country,
+            invited_users.c.accepted_by,
+            users.c.status,
+        )
+
+        left_outer_join = (
+            sa.select(*columns)
+            .select_from(
+                invited_users.outerjoin(
+                    users, users.c.id == invited_users.c.accepted_by
+                )
             )
+            .where(invited_users.c.email.like(email_like))
+        )
+        right_outer_join = (
+            sa.select(*columns)
             .select_from(
                 users.outerjoin(
                     invited_users, users.c.id == invited_users.c.accepted_by
                 )
             )
-            .where(
-                invited_users.c.email.like(email_like) | users.c.email.like(email_like)
-            )
+            .where(users.c.email.like(email_like))
         )
+
+        result = await conn.execute(sa.union(left_outer_join, right_outer_join))
         return await result.fetchall() or []
 
 
