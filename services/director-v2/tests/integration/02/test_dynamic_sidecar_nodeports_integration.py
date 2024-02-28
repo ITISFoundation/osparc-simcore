@@ -140,9 +140,6 @@ WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA = 30
 logger = logging.getLogger(__name__)
 
 
-# patch env vars for storage
-
-
 @pytest.fixture
 async def minimal_configuration(
     wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
