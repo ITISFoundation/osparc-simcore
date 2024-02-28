@@ -35,6 +35,7 @@ invited_users = sa.Table(
         doc="Last name upon invitation (copied to users.last_name)",
     ),
     sa.Column("company_name", sa.String()),
+    sa.Column("phone", sa.String()),
     # Billable address
     sa.Column("address", sa.String()),
     sa.Column("city", sa.String()),

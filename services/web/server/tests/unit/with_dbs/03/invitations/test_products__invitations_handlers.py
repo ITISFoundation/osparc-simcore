@@ -49,20 +49,10 @@ async def test_role_access_to_generate_invitation(
 
     response = await client.post(
         "/v0/invitation:generate",
-        json={
-            "firstName": faker.first_name(),
-            "lastName": faker.last_name(),
-            "email": faker.email(),
-            "companyName": faker.company(),
-            "billingAddress": faker.address().replace("\n", ", "),
-            "city": faker.city(),
-            "stateOrProvince": faker.state(),
-            "postalCode": faker.postcode(),
-            "country": faker.country(),
-        },
+        json={"guest": guest_email},
     )
     data, error = await assert_status(response, expected_status)
-    if data:
+    if not error:
         got = InvitationGenerated.parse_obj(data)
         assert got.guest == guest_email
     else:
@@ -114,3 +104,67 @@ async def test_product_owner_generates_invitation(
     assert got.invitation_link.startswith(product_base_url)
     assert before_dt < got.created
     assert got.created < datetime.now(tz=timezone.utc)
+
+
+@pytest.mark.acceptance_test(
+    "pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
+)
+@pytest.mark.parametrize(
+    "user_role,expected_status",
+    [
+        (UserRole.PRODUCT_OWNER, web.HTTPOk),
+    ],
+)
+async def test_pre_registration_and_invitation_workflow(
+    client: TestClient,
+    mock_invitations_service_http_api: AioResponsesMock,
+    logged_user: UserInfoDict,
+    expected_status: type[web.HTTPException],
+    guest_email: str,
+    faker: Faker,
+):
+    requester_info = {
+        "firstName": faker.first_name(),
+        "lastName": faker.last_name(),
+        "email": guest_email,
+        "companyName": faker.company(),
+        "phone": faker.phone_number(),
+        "billingAddress": faker.address().replace("\n", ", "),
+        "city": faker.city(),
+        "state": faker.state(),
+        "postalCode": faker.postcode(),
+        "country": faker.country(),
+    }
+
+    invitation = GenerateInvitation(
+        guest=guest_email,
+        trial_account_days=None,
+        extra_credits_in_usd=10,
+    ).dict()
+
+    # Search user -> nothing
+    response = await client.get("/v0/users:search", params={"email": guest_email})
+    data, _ = await assert_status(response, expected_status)
+    # i.e. no info of requester is found, i.e. needs pre-registration
+    assert data == []
+
+    # Cannot generate anymore an invitation for users that are not registered or pre-registered
+    response = await client.post("/v0/invitation:generate", json=invitation)
+    assert response.status == status.HTTP_409_CONFLICT
+
+    # Accept user for registration and create invitation for her
+    response = await client.post("/v0/users:pre-register", json=requester_info)
+    data, _ = await assert_status(response, expected_status)
+
+    # Search user again
+    response = await client.get("/v0/users:search", params={"email": guest_email})
+    data, _ = await assert_status(response, expected_status)
+    assert len(data) == 1
+    assert not data[0]["registered"]
+    assert data[0]["email"] == guest_email
+
+    # now i can make as many invitations
+    for _ in range(2):
+        response = await client.post("/v0/invitation:generate", json=invitation)
+        data, _ = await assert_status(response, web.HTTPOk)
+        assert data["guest"] == guest_email
