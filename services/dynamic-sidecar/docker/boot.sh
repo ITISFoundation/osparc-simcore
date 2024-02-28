@@ -23,9 +23,8 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
 
-  cd services/dynamic-sidecar || exit 1
-  pip install uv
-  uv pip --quiet --no-cache-dir install -r requirements/dev.txt
+  # NOTE: uv does not like this requirement file...
+  pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
