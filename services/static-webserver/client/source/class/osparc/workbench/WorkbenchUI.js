@@ -1235,7 +1235,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         },
         stopDynService: {
           "text": "\uf04d", // stop
-          "action": () => nodeUI.getNode().requestStopNode()
+          "action": () => nodeUI.getNode().requestStopNode(true)
         },
         addRemoveMarker: {
           "text": "\uf097", // marker
