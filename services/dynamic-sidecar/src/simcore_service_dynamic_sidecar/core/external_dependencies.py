@@ -7,6 +7,11 @@ from .storage import wait_for_storage_liveness
 
 
 def setup_check_dependencies(app: FastAPI) -> None:
+    # NOTE: in most situations these checks would live
+    # inside each individual module's setup function
+    # The dynamic-sidecar is created and expected to
+    # start rapidly, for this reason they are run in
+    # parallel.
     async def on_startup() -> None:
         await logged_gather(
             *[
