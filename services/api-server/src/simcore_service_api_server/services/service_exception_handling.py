@@ -12,17 +12,25 @@ from simcore_service_api_server.models.basic_types import HTTPExceptionModel
 _logger = logging.getLogger(__name__)
 
 
-SERVICE_DEFAULT_STATUS_CODES: dict[int | str, dict[str, Any]] | None = {
+DEFAULT_BACKEND_SERVICE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_429_TOO_MANY_REQUESTS: {
+        "description": "Too many requests",
+        "model": HTTPExceptionModel,
+    },
+    status.HTTP_500_INTERNAL_SERVER_ERROR: {
+        "description": "Internal server error",
+        "model": HTTPExceptionModel,
+    },
     status.HTTP_502_BAD_GATEWAY: {
-        "description": "Returned when an unexpected error occured when communicating with a backend service.",
+        "description": "Unexpected error when communicating with backend service",
         "model": HTTPExceptionModel,
     },
     status.HTTP_503_SERVICE_UNAVAILABLE: {
-        "description": "Returned when the service (or a backend service) is unavailable. In this case a 'Retry-After' header might also be returned.",
+        "description": "Service unavailable",
         "model": HTTPExceptionModel,
     },
-    status.HTTP_429_TOO_MANY_REQUESTS: {
-        "description": "Returned if too many requests have been sent to the service (or a backend service).",
+    status.HTTP_504_GATEWAY_TIMEOUT: {
+        "description": "Request to a backend service timed out.",
         "model": HTTPExceptionModel,
     },
 }

@@ -3,7 +3,7 @@ import datetime
 import io
 import logging
 from textwrap import dedent
-from typing import IO, Annotated, Final
+from typing import IO, Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends
@@ -26,12 +26,15 @@ from simcore_sdk.node_ports_common.filemanager import (
     get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
+from simcore_service_api_server.models.basic_types import HTTPExceptionModel
+from simcore_service_api_server.services.service_exception_handling import (
+    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+)
 from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
 from ...models.pagination import Page, PaginationParams
-from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import (
     ClientFile,
     ClientFileUploadData,
@@ -59,12 +62,12 @@ router = APIRouter()
 #
 #
 
-_COMMON_ERROR_RESPONSES: Final[dict] = {
+_FILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "File not found",
-        "model": ErrorGet,
-    },
-}
+        "model": HTTPExceptionModel,
+    }
+} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
 
 async def _get_file(
@@ -102,10 +105,7 @@ async def _get_file(
         ) from err
 
 
-@router.get(
-    "",
-    response_model=list[File],
-)
+@router.get("", response_model=list[File], responses=_FILE_STATUS_CODES)
 async def list_files(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     user_id: Annotated[int, Depends(get_current_user_id)],
@@ -143,6 +143,7 @@ async def list_files(
     "/page",
     response_model=Page[File],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    responses=_FILE_STATUS_CODES,
 )
 async def get_files_page(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
@@ -163,10 +164,7 @@ def _get_spooled_file_size(file_io: IO) -> int:
     return file_size
 
 
-@router.put(
-    "/content",
-    response_model=File,
-)
+@router.put("/content", response_model=File, responses=_FILE_STATUS_CODES)
 @cancel_on_disconnect
 async def upload_file(
     request: Request,
@@ -238,6 +236,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
     "/content",
     response_model=ClientFileUploadData,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    responses=_FILE_STATUS_CODES,
 )
 @cancel_on_disconnect
 async def get_upload_links(
@@ -279,7 +278,7 @@ async def get_upload_links(
 @router.get(
     "/{file_id}",
     response_model=File,
-    responses={**_COMMON_ERROR_RESPONSES},
+    responses=_FILE_STATUS_CODES,
 )
 async def get_file(
     file_id: UUID,
@@ -299,7 +298,7 @@ async def get_file(
 @router.get(
     ":search",
     response_model=Page[File],
-    responses={**_COMMON_ERROR_RESPONSES},
+    responses=_FILE_STATUS_CODES,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def search_files_page(
@@ -310,38 +309,31 @@ async def search_files_page(
     file_id: UUID | None = None,
 ):
     """Search files"""
-    try:
-        stored_files: list[StorageFileMetaData] = await storage_client.search_files(
-            user_id=user_id,
-            file_id=file_id,
-            sha256_checksum=sha256_checksum,
-            access_right="read",
-        )
-        error_message: str = "Not found in storage"
-        if page_params.offset > len(stored_files):
-            raise ValueError(error_message)
-        stored_files = stored_files[page_params.offset :]
-        if len(stored_files) > page_params.limit:
-            stored_files = stored_files[: page_params.limit]
-        return create_page(
-            [to_file_api_model(fmd) for fmd in stored_files],
-            len(stored_files),
-            page_params,
-        )
-
-    except (ValueError, ValidationError) as err:
-        _logger.debug(
-            "File with sha256_checksum=%d not found: %s", sha256_checksum, err
-        )
+    stored_files: list[StorageFileMetaData] = await storage_client.search_files(
+        user_id=user_id,
+        file_id=file_id,
+        sha256_checksum=sha256_checksum,
+        access_right="read",
+    )
+    if page_params.offset > len(stored_files):
+        _logger.debug("File with sha256_checksum=%d not found.", sha256_checksum)
         raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail=f"File with {sha256_checksum=} not found",
-        ) from err
+            status_code=status.HTTP_404_NOT_FOUND, detail="Not found in storage"
+        )
+    stored_files = stored_files[page_params.offset :]
+    if len(stored_files) > page_params.limit:
+        stored_files = stored_files[: page_params.limit]
+    return create_page(
+        [to_file_api_model(fmd) for fmd in stored_files],
+        len(stored_files),
+        page_params,
+    )
 
 
 @router.delete(
     "/{file_id}",
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    responses=_FILE_STATUS_CODES,
 )
 async def delete_file(
     file_id: UUID,
@@ -362,6 +354,7 @@ async def delete_file(
 @router.post(
     "/{file_id}:abort",
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    responses=DEFAULT_BACKEND_SERVICE_STATUS_CODES,
 )
 async def abort_multipart_upload(
     request: Request,
@@ -388,6 +381,7 @@ async def abort_multipart_upload(
     "/{file_id}:complete",
     response_model=File,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    responses=_FILE_STATUS_CODES,
 )
 @cancel_on_disconnect
 async def complete_multipart_upload(
@@ -421,20 +415,7 @@ async def complete_multipart_upload(
 
 
 @router.get(
-    "/{file_id}/content",
-    response_class=RedirectResponse,
-    responses={
-        **_COMMON_ERROR_RESPONSES,
-        200: {
-            "content": {
-                "application/octet-stream": {
-                    "schema": {"type": "string", "format": "binary"}
-                },
-                "text/plain": {"schema": {"type": "string"}},
-            },
-            "description": "Returns a arbitrary binary data",
-        },
-    },
+    "/{file_id}/content", response_class=RedirectResponse, responses=_FILE_STATUS_CODES
 )
 async def download_file(
     file_id: UUID,
