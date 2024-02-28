@@ -41,9 +41,9 @@ async def _get_location_id_from_location_name(
     raise exceptions.S3InvalidStore(store)
 
 
-def _get_secure_link(url: AnyUrl) -> str:
+def _get_https_link_if_storage_secure(url: AnyUrl) -> str:
     if is_storage_secure() and not f"{url}".startswith("https"):
-        return url.replace("http", "https")
+        return url.replace("http", "https", 1)
 
     return url
 
@@ -63,7 +63,7 @@ async def _complete_upload(
     :rtype: ETag
     """
     async with session.post(
-        _get_secure_link(upload_completion_link),
+        _get_https_link_if_storage_secure(upload_completion_link),
         json=jsonable_encoder(FileUploadCompletionBody(parts=parts)),
         auth=get_basic_auth(),
     ) as resp:
@@ -73,12 +73,10 @@ async def _complete_upload(
             Envelope[FileUploadCompleteResponse], await resp.json()
         )
         assert file_upload_complete_response.data  # nosec
-    state_url = _get_secure_link(file_upload_complete_response.data.links.state)
-    _logger.info(
-        "completed upload of %s\n using %s",
-        f"{len(parts)} parts, received {file_upload_complete_response.json(indent=2)}",
-        state_url,
+    state_url = _get_https_link_if_storage_secure(
+        file_upload_complete_response.data.links.state
     )
+    _logger.info("completed upload of %s", f"{len(parts)} parts, received {state_url}")
 
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -138,7 +136,7 @@ async def _abort_upload(
     # abort the upload correctly, so it can revert back to last version
     try:
         async with session.post(
-            _get_secure_link(abort_upload_link), auth=get_basic_auth()
+            _get_https_link_if_storage_secure(abort_upload_link), auth=get_basic_auth()
         ) as resp:
             resp.raise_for_status()
     except ClientError:

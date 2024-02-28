@@ -24,7 +24,7 @@ from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
-from simcore_sdk.node_ports_common._filemanager import _get_secure_link
+from simcore_sdk.node_ports_common._filemanager import _get_https_link_if_storage_secure
 from simcore_sdk.node_ports_common.storage_client import (
     LinkType,
     delete_file,
@@ -377,6 +377,8 @@ _HTTPS_URL: Final[str] = "https://a"
         (False, _HTTPS_URL, _HTTPS_URL),
         (True, parse_obj_as(AnyUrl, _HTTPS_URL), _HTTPS_URL),
         (False, parse_obj_as(AnyUrl, _HTTPS_URL), _HTTPS_URL),
+        (True, "http://http", "https://http"),
+        (True, "https://http", "https://http"),
     ],
 )
 def test__get_secure_link(
@@ -389,4 +391,4 @@ def test__get_secure_link(
     is_storage_secure.cache_clear()
 
     setenvs_from_dict(monkeypatch, {"STORAGE_SECURE": "1" if storage_secure else "0"})
-    assert _get_secure_link(provided) == expected
+    assert _get_https_link_if_storage_secure(provided) == expected
