@@ -43,6 +43,7 @@ orjson  # json
 packaging
 passlib
 pint # units
+pycountry
 pydantic[email] # models
 python-magic # excel
 python-socketio # web-sockets
