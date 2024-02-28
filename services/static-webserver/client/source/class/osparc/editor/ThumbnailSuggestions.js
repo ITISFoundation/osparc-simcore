@@ -82,6 +82,22 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-13.png",
       "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-14.png"
     ],
+    tipTemplates: [
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-01.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-02.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-03.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-04.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-05.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-06.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-07.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-08.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-09.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-10.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-11.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-12.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-13.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-14.png"
+    ],
     extractThumbnailSuggestions: function(study) {
       const defaultThumbnails = this.self().setThumbnailTemplates();
       const suggestions = new Set([]);
@@ -98,17 +114,10 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
     },
     setThumbnailTemplates: function() {
       switch (osparc.product.Utils.getProductName()) {
-        case "s4llite":
-          return this.self().defaultTemplates;
-        case "s4lacad":
-          return this.self().defaultTemplates;
-        case "s4ldesktop":
-          return this.self().defaultTemplates;
-        case "s4ldesktopacad":
-          return this.self().defaultTemplates;
         case "osparc":
           return this.self().osparcTemplates;
-        case "s4l":
+        case "tis":
+          return this.self().tipTemplates;
         default:
           return this.self().defaultTemplates;
       }
