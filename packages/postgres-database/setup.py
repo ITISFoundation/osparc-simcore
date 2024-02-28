@@ -64,7 +64,6 @@ SETUP = {
         "console_scripts": [
             "simcore-service-postgres-database=simcore_postgres_database.cli:main",
             "sc-pg=simcore_postgres_database.cli:main",
-            "simcore-service=simcore_postgres_database.cli:main",
         ]
     },
     "zip_safe": False,
