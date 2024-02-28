@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 import simcore_service_webserver
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
@@ -115,7 +116,7 @@ def fake_project(tests_data_dir: Path) -> ProjectDict:
 
 @pytest.fixture
 async def logged_user(
-    client: TestClient, user_role: UserRole
+    client: TestClient, user_role: UserRole, faker: Faker
 ) -> AsyncIterator[UserInfoDict]:
     """adds a user in db and logs in with client
 
@@ -123,7 +124,12 @@ async def logged_user(
     """
     async with LoggedUser(
         client,
-        {"role": user_role.name},
+        {
+            "role": user_role.name,
+            "first_name": faker.first_name(),
+            "last_name": faker.last_name(),
+            "phone": faker.phone(),
+        },
         check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:
         print("-----> logged in user", user["name"], user_role)

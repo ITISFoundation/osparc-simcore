@@ -596,7 +596,7 @@ async def test_add_user_gets_added_to_group(
             user = await users_stack.enter_async_context(
                 LoggedUser(
                     client,
-                    params={"role": user_role.name, "email": email},
+                    user_data={"role": user_role.name, "email": email},
                     check_if_succeeds=user_role != UserRole.ANONYMOUS,
                 )
             )
