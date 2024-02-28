@@ -165,7 +165,13 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
           }
         })
         .finally(() => this.__fetchingMsg.setVisibility("excluded"))
-        .catch(err => console.error(err));
+        .catch(err => {
+          console.error(err)
+          osparc.FlashMessenger.getInstance().logAs(
+            this.tr("We could not retreive your saved payment methods. Please try again later."),
+            "ERROR"
+          );
+        });
     },
 
     __populatePaymentMethodsList: function(allPaymentMethods) {

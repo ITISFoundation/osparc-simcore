@@ -71,7 +71,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
         if (this.__idlingTime >= timeoutT) {
           if (!this.__frontendTimedout) {
             // User was inactive in oSPARC, we can test services (ask every minute until response is true or we detect activity again)
-            this.__removeIdleFlashMessage();
+            this.stop()
             const checkInactivity = () => {
               osparc.data.Resources.fetch("studies", "getInactivity", {
                 url: {
@@ -81,11 +81,11 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
                 if (data["is_inactive"]) {
                   this.__userIdled();
                 } else {
-                  this.__inactivityInterval = setTimeout(checkInactivity, this.self().INACTIVITY_REQUEST_PERIOD);
+                  this.start()
                 }
               }).catch(err => {
                 console.error(err);
-                this.__inactivityInterval = setTimeout(checkInactivity, this.self().INACTIVITY_REQUEST_PERIOD);
+                this.start()
               });
             };
             checkInactivity();
@@ -114,8 +114,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
     },
 
     start: function() {
-      this.__idlingTime = 0;
-
+      this.__resetIdlingTime()
       const cb = this.__resetIdlingTimeBound;
       window.addEventListener("mousemove", cb);
       window.addEventListener("mousedown", cb);

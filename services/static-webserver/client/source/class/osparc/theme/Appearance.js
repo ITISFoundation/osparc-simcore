@@ -175,6 +175,8 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "none": {},
+
     /*
     ---------------------------------------------------------------------------
       WINDOW-SMALL-CAP CHOOSER

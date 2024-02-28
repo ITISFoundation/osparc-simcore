@@ -348,11 +348,14 @@ qx.Class.define("osparc.utils.Utils", {
       return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
     },
 
-    formatMilliSeconds: function(milliseconds) {
-      const date = new Date(0);
-      date.setMilliseconds(milliseconds);
-      const timeString = date.toISOString().substring(11, 19); // hh:mm:ss
-      return timeString;
+    formatMsToHHMMSS: function(ms) {
+      const absMs = Math.abs(ms)
+      const nHours = Math.floor(absMs / 3600000)
+      const remaining1 = absMs - (nHours * 3600000)
+      const nMinutes = Math.floor(remaining1 / 60000)
+      const remaining2 = remaining1 - (nMinutes * 60000)
+      const nSeconds = Math.round(remaining2 / 1000)
+      return `${ms < 0 ? "-" : ""}${nHours}:${nMinutes.toString().padStart(2, "0")}:${nSeconds.toString().padStart(2, "0")}`
     },
 
     formatSeconds: function(seconds) {
