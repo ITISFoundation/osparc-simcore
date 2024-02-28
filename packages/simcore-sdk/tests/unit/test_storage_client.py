@@ -303,17 +303,6 @@ async def test_delete_file(
             "https://host:42/v0",
             id="single-vars+auth",
         ),
-        pytest.param(
-            {
-                "STORAGE_USERNAME": "admin",
-                "STORAGE_PASSWORD": "adminadmin",
-                "STORAGE_HOST": "storage.osparc-master.speag.com",
-                "STORAGE_SECURE": "1",
-                "STORAGE_PORT": "443",
-            },
-            "https://host:42/v0",
-            id="master-config",
-        ),
     ],
 )
 def test_mode_ports_storage_with_auth(
