@@ -107,7 +107,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = [
-    "adminer",
+    # "adminer",
     "minio",
 ]
 
@@ -138,6 +138,9 @@ WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA = 30
 
 
 logger = logging.getLogger(__name__)
+
+
+# patch env vars for storage
 
 
 @pytest.fixture

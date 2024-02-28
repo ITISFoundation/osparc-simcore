@@ -49,6 +49,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = [
+    # "adminer",
     "minio",
 ]
 
@@ -65,6 +66,7 @@ def mock_env(
     storage_service: URL,
     network_name: str,
 ) -> EnvVarsDict:
+    # TODO patch env vars for storage
     env_vars: EnvVarsDict = {
         "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
         "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",

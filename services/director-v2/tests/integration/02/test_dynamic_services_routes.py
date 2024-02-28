@@ -41,6 +41,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from utils import ensure_network_cleanup, patch_dynamic_service_url
+from yarl import URL
 
 SERVICE_IS_READY_TIMEOUT = 2 * 60
 
@@ -55,8 +56,12 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "redis",
+    "storage",
 ]
-pytest_simcore_ops_services_selection = ["adminer", "minio"]
+pytest_simcore_ops_services_selection = [
+    # "adminer",
+    "minio",
+]
 
 
 @pytest.fixture
@@ -67,6 +72,7 @@ def minimal_configuration(
     dy_static_file_server_dynamic_sidecar_service: dict,
     simcore_services_ready: None,
     rabbit_service: RabbitSettings,
+    storage_service: URL,
 ):
     ...
 
