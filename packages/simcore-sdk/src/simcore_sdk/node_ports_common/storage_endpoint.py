@@ -8,7 +8,8 @@ from settings_library.node_ports import NodePortsSettings
 def is_storage_secure() -> bool:
     settings = NodePortsSettings.create_from_envs()
     node_ports_storage_auth = settings.NODE_PORTS_STORAGE_AUTH
-    return node_ports_storage_auth.STORAGE_SECURE
+    is_secure: bool = node_ports_storage_auth.STORAGE_SECURE
+    return is_secure
 
 
 @lru_cache
