@@ -17,6 +17,7 @@ from psycopg2 import OperationalError
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.users._preferences_api import (
@@ -181,3 +182,47 @@ async def test_get_profile_with_failing_db_connection(
     resp = await client.get(url.path)
 
     await assert_status(resp, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        *(
+            (role, web.HTTPForbidden)
+            for role in UserRole
+            if role not in {UserRole.PRODUCT_OWNER, UserRole.ANONYMOUS}
+        ),
+        (UserRole.PRODUCT_OWNER, web.HTTPOk),
+    ],
+)
+async def test_users_api_access_rights(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    expected: type[web.HTTPException],
+):
+    assert client.app
+
+    url = client.app.router["search_users"].url_for()
+    assert url.path == "/v0/users:search"
+
+    resp = await client.get(url.path, params={"email": "do-not-exists@foo.com"})
+    await assert_status(resp, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.PRODUCT_OWNER,
+    ],
+)
+async def test_pre_registration(client: TestClient, logged_user: UserInfoDict):
+
+    resp = await client.get("/v0/users:search", params={"email": logged_user["email"]})
+    assert resp.status == status.HTTP_200_OK
+
+    body = await resp.json()
+
+    data = body["data"]
+    assert data["email"] == logged_user["email"]
+    assert data == logged_user
