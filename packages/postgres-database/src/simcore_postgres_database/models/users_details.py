@@ -8,14 +8,24 @@ from ._common import (
 from .base import metadata
 from .users import users
 
-#
-# 'invited_users' table hold information provided by the PO of a user before the user
-# row is created
-#
-
 invited_users = sa.Table(
     "invited_users",
+    # Extension of the `users` table that holds information necessary for invoicing, etc
+    # This information is optional for non-billable products and for that reason it is
+    # added as a separate table
     metadata,
+    sa.Column(
+        "accepted_by",
+        sa.Integer,
+        sa.ForeignKey(
+            users.c.id,
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        nullable=True,
+        doc="Links these details to a final registered user or null if registration is pending",
+    ),
+    # Pre-registration data, i.e. copied to `users` upon registration
     sa.Column(
         "email",
         sa.String(),
@@ -34,15 +44,17 @@ invited_users = sa.Table(
         sa.String(),
         doc="Last name upon invitation (copied to users.last_name)",
     ),
-    sa.Column("company_name", sa.String()),
-    sa.Column("phone", sa.String()),
+    sa.Column(
+        "phone", sa.String(), doc="Phone upon invitation (copied to users.phone)"
+    ),
     # Billable address
+    sa.Column("company_name", sa.String()),
     sa.Column("address", sa.String()),
     sa.Column("city", sa.String()),
     sa.Column("state", sa.String()),
     sa.Column("country", sa.String()),
     sa.Column("postal_code", sa.String()),
-    #
+    # Details on the pre-registration issuer
     sa.Column(
         "created_by",
         sa.Integer,
@@ -53,17 +65,6 @@ invited_users = sa.Table(
         ),
         nullable=True,
         doc="PO user that issued this invitation",
-    ),
-    sa.Column(
-        "accepted_by",
-        sa.Integer,
-        sa.ForeignKey(
-            users.c.id,
-            onupdate="CASCADE",
-            ondelete="CASCADE",
-        ),
-        nullable=True,
-        doc="Links these details to a final registered user or null if registration is pending",
     ),
     column_created_datetime(timezone=False),
     column_modified_datetime(timezone=False),
