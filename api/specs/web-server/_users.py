@@ -131,8 +131,9 @@ async def list_user_permissions():
     ...
 
 
-@router.post("/users:search", response_model=Envelope[list[UserProfile]])
+@router.get("/users:search", response_model=Envelope[list[UserProfile]])
 async def search_users(_params: Annotated[_SearchQueryParams, Depends()]):
+    # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
 
 

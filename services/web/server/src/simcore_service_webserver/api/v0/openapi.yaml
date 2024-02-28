@@ -3868,7 +3868,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users.schemas.PermissionGet__'
   /v0/users:search:
-    post:
+    get:
       tags:
       - user
       summary: Search Users

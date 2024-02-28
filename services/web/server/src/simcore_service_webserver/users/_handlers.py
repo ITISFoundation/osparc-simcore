@@ -71,7 +71,7 @@ class _SearchQueryParams(BaseModel):
     email: str = Field(min_length=3)
 
 
-@routes.post(f"/{API_VTAG}/users:search", name="search_users")
+@routes.get(f"/{API_VTAG}/users:search", name="search_users")
 @login_required
 @permission_required("users.others.*")
 @_handle_users_exceptions
