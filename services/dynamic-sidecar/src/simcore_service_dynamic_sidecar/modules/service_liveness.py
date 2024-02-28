@@ -94,9 +94,12 @@ async def wait_for_service_liveness(
             timeout=timeout,
             **kwargs,
         )
-        elapsed = (time.time() - start) * 1000
+        elapsed_ms = (time.time() - start) * 1000
         _logger.info(
-            "Service '%s' found at '%s' after %.2f ms", service_name, endpoint, elapsed
+            "Service '%s' found at '%s' after %.2f ms",
+            service_name,
+            endpoint,
+            elapsed_ms,
         )
     except Exception as e:
         raise CouldNotReachServiceError(
