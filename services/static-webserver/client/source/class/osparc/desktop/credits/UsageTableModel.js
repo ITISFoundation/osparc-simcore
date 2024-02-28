@@ -139,7 +139,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
               if (rawRow["started_at"]) {
                 start = osparc.utils.Utils.formatDateAndTime(new Date(rawRow["started_at"]))
                 if (rawRow["stopped_at"]) {
-                  duration = osparc.utils.Utils.formatMilliSeconds(new Date(rawRow["stopped_at"]) - new Date(rawRow["started_at"]))
+                  duration = osparc.utils.Utils.formatMsToHHMMSS(new Date(rawRow["stopped_at"]) - new Date(rawRow["started_at"]))
                 }
               }
               data.push({
