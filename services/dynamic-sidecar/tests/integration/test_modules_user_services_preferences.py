@@ -59,7 +59,7 @@ def product_name() -> ProductName:
 
 
 @pytest.fixture
-def mock_environment(
+def mock_environment(  # pylint:disable=too-many-arguments
     mock_rabbit_check: None,
     mock_storage_check: None,
     postgres_host_config: PostgresTestConfig,
