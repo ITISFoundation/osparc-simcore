@@ -67,17 +67,13 @@ def mock_environment(
 async def app(
     mock_environment: EnvVarsDict,
     mock_registry_service: AsyncMock,
+    mock_storage_check: None,
+    mock_postgres_check: None,
     mocker: MockerFixture,
 ) -> AsyncIterable[FastAPI]:
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage._get_monitored_paths",
         return_value=[],
-    )
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.core.external_dependencies.wait_for_storage_liveness",
-    )
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.core.external_dependencies.wait_for_postgres_liveness",
     )
 
     app: FastAPI = create_app()

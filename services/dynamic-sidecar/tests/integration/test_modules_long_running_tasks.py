@@ -81,6 +81,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[ProjectI
 
 @pytest.fixture
 def mock_environment(
+    mock_rabbit_check: None,
     postgres_host_config: PostgresTestConfig,
     storage_endpoint: URL,
     minio_s3_settings_envs: EnvVarsDict,
@@ -98,6 +99,10 @@ def mock_environment(
         "DY_SIDECAR_PROJECT_ID": f"{project_id}",
         "R_CLONE_PROVIDER": "MINIO",
         "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
+        "RABBIT_HOST": "test",
+        "RABBIT_PASSWORD": "test",
+        "RABBIT_SECURE": "0",
+        "RABBIT_USER": "test",
         **base_mock_envs,
     }
 
