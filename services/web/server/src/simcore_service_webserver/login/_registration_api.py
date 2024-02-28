@@ -42,7 +42,7 @@ async def send_close_account_email(
 
 
 async def send_account_request_email_to_support(
-    request: web.Request, *, product: Product, request_form: dict[str, Any]
+    request: web.Request, *, product: Product, request_form: dict[str, Any], ipinfo: str
 ):
     template_name = "request_account.jinja2"
     support_email = product.support_email
@@ -67,6 +67,7 @@ async def send_account_request_email_to_support(
                     }
                 ),
                 "request_form": request_form,
+                "ipinfo": ipinfo,
             },
         )
     except Exception:  # pylint: disable=broad-except

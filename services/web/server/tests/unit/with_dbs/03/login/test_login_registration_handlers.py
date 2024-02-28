@@ -153,16 +153,23 @@ async def test_request_an_account(
     client: TestClient, faker: Faker, mocked_send_email: MagicMock
 ):
     assert client.app
+    # A form similar to the one in https://github.com/ITISFoundation/osparc-simcore/pull/5378
+    user_data = {
+        # fields required in the form
+        "first_name": faker.first_name(),
+        "last_name": faker.last_name(),
+        "email": faker.email(),
+        "address": f"{faker.address()},  {faker.postcode()} {faker.city()} [{faker.state()}]".replace(
+            "\n", ", "
+        ),
+        "country": faker.country(),
+        #  optional fields in the form
+        "message": faker.sentence(),
+    }
 
     response = await client.post(
         "/v0/auth/request-account",
-        json={
-            "form": {
-                "first_name": faker.first_name(),
-                "last_name": faker.last_name(),
-                "email": faker.email(),
-            }
-        },
+        json={"form": user_data},
     )
 
     await assert_status(response, status.HTTP_204_NO_CONTENT)

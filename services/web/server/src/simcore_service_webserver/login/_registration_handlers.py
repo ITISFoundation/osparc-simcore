@@ -45,10 +45,16 @@ async def request_product_account(request: web.Request):
     body = await parse_request_body_as(AccountRequestInfo, request)
     assert body.form  # nosec
 
+    # gets ipinfo
+    peername = (
+        request.transport.get_extra_info("peername") if request.transport else None
+    )
+    ipinfo = f"https://ipinfo.io/{peername}/json" if peername else "Unknown IP address"
+
     # send email to fogbugz or user itself
     fire_and_forget_task(
         send_account_request_email_to_support(
-            request, product=product, request_form=body.form
+            request, product=product, request_form=body.form, ipinfo=ipinfo
         ),
         task_suffix_name=f"{__name__}.request_product_account.send_account_request_email_to_support",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
