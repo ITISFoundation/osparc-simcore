@@ -31,6 +31,11 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
   },
 
   properties: {
+    appearance: {
+      refine : true,
+      init : "none"
+    },
+
     creditsAvailable: {
       check: "Number",
       nullable: false,
@@ -68,6 +73,30 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "thumbnail":
+          control = null
+          break
+        case "title":
+          control = new qx.ui.basic.Label().set({
+            font: "text-14"
+          });
+          this._add(control, {
+            row: 0,
+            column: 0,
+            colSpan: 2
+          });
+          break;
+        case "subtitle":
+          control = new qx.ui.basic.Label().set({
+            font: "text-13",
+            rich: true
+          });
+          this._add(control, {
+            row: 1,
+            column: 0,
+            colSpan: 2
+          });
+          break;
         case "credits-indicator":
           control = new osparc.desktop.credits.CreditsIndicator().set({
             allowStretchY: false
@@ -179,6 +208,20 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         column: 5,
         rowSpan: 2
       });
+
+      this.__shareButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/users/14").set({
+        maxHeight: 30,
+        alignX: "center",
+        alignY: "middle",
+        focusable: false,
+        visibility: this.__canIWrite() ? "visible" : "excluded",
+      });
+      this.__shareButton.addListener("execute", () => this.fireDataEvent("openShareWallet", this.getKey()));
+      this._add(this.__shareButton, {
+        row: 0,
+        column: 4,
+        rowSpan: 2
+      });
     },
 
     __applyCreditsAvailable: function(creditsAvailable) {
@@ -254,7 +297,6 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         menu = new qx.ui.menu.Menu().set({
           position: "bottom-right"
         });
-
         const editWalletButton = new qx.ui.menu.Button(this.tr("Edit details..."));
         editWalletButton.addListener("execute", () => this.fireDataEvent("openEditWallet", this.getKey()));
         menu.add(editWalletButton);
@@ -264,24 +306,6 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
     // overridden
     _applyThumbnail: function(value) {
-      const thumbnail = this.getChildControl("thumbnail");
-      if (value) {
-        thumbnail.setSource(value);
-      } else {
-        this.__setDefaultThumbnail();
-      }
-    },
-
-    __setDefaultThumbnail: function() {
-      if (this.getThumbnail() === null) {
-        // default thumbnail only if it's null
-        const thumbnail = this.getChildControl("thumbnail");
-        if (this.getAccessRights() && this.getAccessRights().length > 1) {
-          thumbnail.setSource(osparc.utils.Icons.organization(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
-        } else {
-          thumbnail.setSource(osparc.utils.Icons.user(osparc.ui.list.ListItemWithMenu.ICON_SIZE));
-        }
-      }
     },
 
     __applyStatus: function(status) {
@@ -313,6 +337,12 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           icon: "@FontAwesome5Solid/circle/20"
         });
         favouriteButtonIcon.setTextColor("text");
+      }
+    },
+
+    excludeShareButton: function() {
+      if (this.__shareButton) {
+        this.__shareButton.exclude()
       }
     }
   }
