@@ -7,7 +7,7 @@
 import asyncio
 import functools
 import random
-from collections.abc import AsyncIterable, AsyncIterator, Callable
+from collections.abc import AsyncIterable, AsyncIterator
 from contextlib import asynccontextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -26,31 +26,19 @@ from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_tokens import (
     create_token_in_db,
     delete_all_tokens_from_db,
     get_token_from_db,
 )
-from redis import Redis
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application import create_safe_application
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver._meta import API_VTAG as API_VERSION
-from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db.plugin import get_database_engine, setup_db
-from simcore_service_webserver.groups.plugin import setup_groups
-from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.redis import (
-    get_redis_user_notifications_client,
-    setup_redis,
-)
-from simcore_service_webserver.rest.plugin import setup_rest
-from simcore_service_webserver.security.plugin import setup_security
-from simcore_service_webserver.session.plugin import setup_session
-from simcore_service_webserver.users._handlers import _get_user_notifications
+from simcore_service_webserver.db.plugin import get_database_engine
+from simcore_service_webserver.redis import get_redis_user_notifications_client
 from simcore_service_webserver.users._notifications import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
@@ -59,45 +47,26 @@ from simcore_service_webserver.users._notifications import (
     UserNotificationCreate,
     get_notification_key,
 )
+from simcore_service_webserver.users._notifications_handlers import (
+    _get_user_notifications,
+)
 from simcore_service_webserver.users._preferences_api import (
     get_frontend_user_preferences_aggregation,
 )
-from simcore_service_webserver.users.plugin import setup_users
 from simcore_service_webserver.users.schemas import PermissionGet, ProfileGet
 
 
 @pytest.fixture
-def client(
-    event_loop,
-    aiohttp_client: Callable,
-    app_cfg,
-    postgres_db,
-    redis_client: Redis,
-    monkeypatch_setenv_from_app_config: Callable,
-) -> TestClient:
-    cfg = deepcopy(app_cfg)
-
-    port = cfg["main"]["port"]
-
-    assert cfg["rest"]["version"] == API_VERSION
-
-    monkeypatch_setenv_from_app_config(cfg)
-
-    # fake config
-    app = create_safe_application(cfg)
-    assert setup_settings(app)
-
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-    setup_login(app)
-    setup_users(app)
-    setup_groups(app)
-    setup_redis(app)
-
-    return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    # disables GC and DB-listener
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_DB_LISTENER": "0",
+        },
     )
 
 
