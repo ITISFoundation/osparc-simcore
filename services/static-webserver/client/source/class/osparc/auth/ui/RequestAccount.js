@@ -151,26 +151,56 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       doubleSpaced.push(message);
       this._form.add(message, this.tr("Message"), null, "message");
 
+      const eula = new qx.ui.form.CheckBox().set({
+        required: true
+      })
+      doubleSpaced.push(eula);
+      this._form.add(eula, this.tr("I accept the below Privacy Policy and EULA"), null, "eula")
+
       // const formRenderer = new qx.ui.form.renderer.Single(this._form);
       const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
       this.add(formRenderer);
 
-      // buttons
-      const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      // buttons and eula links
+      const grp = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+      const eulaTextContainer = new qx.ui.container.Composite(new qx.ui.layout.Flow()).set({
+        width: 100
+      })
+      const part1 = "Data will be processed in accordance with"
+      part1.split(" ").forEach(word => eulaTextContainer.add(new qx.ui.basic.Label(word).set({
+        marginRight: 2
+      })))
+      eulaTextContainer.add(new osparc.ui.basic.LinkLabel("our privacy policy.", "https://sim4life.swiss/privacy").set({
+        marginRight: 2,
+        rich: false
+      }))
+      const part2 = "Users are authorized to use the web product in accordance with"
+      part2.split(" ").forEach(word => eulaTextContainer.add(new qx.ui.basic.Label(word).set({
+        marginRight: 2
+      })))
+      eulaTextContainer.add(new osparc.ui.basic.LinkLabel("the EULA.", "https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt").set({
+        rich: false
+      }))
+
+      grp.add(eulaTextContainer)
 
       const submitBtn = this.__requestButton = new qx.ui.form.Button(this.tr("Request")).set({
         center: true,
         appearance: "strong-button"
       });
       osparc.utils.Utils.setIdToWidget(submitBtn, "registrationSubmitBtn");
-      grp.add(submitBtn, {
+      buttons.add(submitBtn, {
         flex:1
       });
 
       const cancelBtn = this.__cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
-      grp.add(cancelBtn, {
+      buttons.add(cancelBtn, {
         flex:1
       });
+
+      grp.add(buttons)
 
       // interaction
       submitBtn.addListener("execute", e => {
@@ -195,7 +225,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
     },
 
     __submit: function(formData) {
-      console.log(formData);
       const msg = this.tr("The request is being processed, you will hear from us in the coming hours");
       osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
       this.fireDataEvent("done");
