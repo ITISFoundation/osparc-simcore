@@ -342,7 +342,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
 
     excludeShareButton: function() {
       if (this.__shareButton) {
-        return this.__shareButton.exclude()
+        this.__shareButton.exclude()
       }
     }
   }

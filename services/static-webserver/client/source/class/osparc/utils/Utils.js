@@ -355,7 +355,7 @@ qx.Class.define("osparc.utils.Utils", {
       const nMinutes = Math.floor(remaining1 / 60000)
       const remaining2 = remaining1 - (nMinutes * 60000)
       const nSeconds = Math.round(remaining2 / 1000)
-      return `${ms < 0 ? '-' : ''}${nHours}:${nMinutes.toString().padStart(2, '0')}:${nSeconds.toString().padStart(2, '0')}`
+      return `${ms < 0 ? "-" : ""}${nHours}:${nMinutes.toString().padStart(2, "0")}:${nSeconds.toString().padStart(2, "0")}`
     },
 
     formatSeconds: function(seconds) {
