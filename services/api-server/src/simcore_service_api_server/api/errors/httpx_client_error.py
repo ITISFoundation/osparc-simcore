@@ -29,11 +29,7 @@ async def handle_httpx_client_exceptions(_: Request, exc: HTTPError):
         detail = f"{exc.request.url.host.capitalize()} service unexpectedly failed"
 
     if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
-        _logger.exception(
-            "%s. host=%s",
-            detail,
-            exc.request.url.host,
-        )
+        _logger.exception("%s. host=%s. %s", detail, exc.request.url.host, f"{exc}")
     raise HTTPException(
         status_code=status_code, detail=detail, headers=headers
     ) from exc

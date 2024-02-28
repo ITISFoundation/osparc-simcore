@@ -182,6 +182,7 @@ fastapi==0.99.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
+    #   prometheus-fastapi-instrumentator
 frozenlist==1.4.0
     # via
     #   aiohttp
@@ -352,6 +353,12 @@ partd==1.4.0
     #   dask
 pint==0.22
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+prometheus-client==0.20.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   prometheus-fastapi-instrumentator
+prometheus-fastapi-instrumentator==6.1.0
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 psutil==5.9.5
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt

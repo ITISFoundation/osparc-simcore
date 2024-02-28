@@ -27,8 +27,6 @@ from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
 from simcore_sdk.node_ports_common.storage_client import (
     LinkType,
-    _base_url,
-    _get_basic_auth,
     delete_file,
     get_download_file_link,
     get_file_metadata,
@@ -36,11 +34,12 @@ from simcore_sdk.node_ports_common.storage_client import (
     get_upload_file_links,
     list_file_metadata,
 )
+from simcore_sdk.node_ports_common.storage_endpoint import get_base_url, get_basic_auth
 
 
 def _clear_caches():
-    _base_url.cache_clear()
-    _get_basic_auth.cache_clear()
+    get_base_url.cache_clear()
+    get_basic_auth.cache_clear()
 
 
 @pytest.fixture
@@ -252,22 +251,54 @@ async def test_delete_file(
 
 
 @pytest.mark.parametrize(
-    "envs",
+    "envs, expected_base_url",
     [
-        {
-            "NODE_PORTS_STORAGE_AUTH": (
-                '{"STORAGE_USERNAME": "user", '
-                '"STORAGE_PASSWORD": "passwd", '
-                '"STORAGE_HOST": "host", '
-                '"STORAGE_PORT": "42"}'
-            )
-        },
-        {
-            "STORAGE_USERNAME": "user",
-            "STORAGE_PASSWORD": "passwd",
-            "STORAGE_HOST": "host",
-            "STORAGE_PORT": "42",
-        },
+        pytest.param(
+            {
+                "NODE_PORTS_STORAGE_AUTH": (
+                    '{"STORAGE_USERNAME": "user", '
+                    '"STORAGE_PASSWORD": "passwd", '
+                    '"STORAGE_HOST": "host", '
+                    '"STORAGE_PORT": "42"}'
+                )
+            },
+            "http://host:42/v0",
+            id="json-no-auth",
+        ),
+        pytest.param(
+            {
+                "STORAGE_USERNAME": "user",
+                "STORAGE_PASSWORD": "passwd",
+                "STORAGE_HOST": "host",
+                "STORAGE_PORT": "42",
+            },
+            "http://host:42/v0",
+            id="single-vars+auth",
+        ),
+        pytest.param(
+            {
+                "NODE_PORTS_STORAGE_AUTH": (
+                    '{"STORAGE_USERNAME": "user", '
+                    '"STORAGE_PASSWORD": "passwd", '
+                    '"STORAGE_HOST": "host", '
+                    '"STORAGE_SECURE": "1",'
+                    '"STORAGE_PORT": "42"}'
+                )
+            },
+            "https://host:42/v0",
+            id="json-no-auth",
+        ),
+        pytest.param(
+            {
+                "STORAGE_USERNAME": "user",
+                "STORAGE_PASSWORD": "passwd",
+                "STORAGE_HOST": "host",
+                "STORAGE_SECURE": "1",
+                "STORAGE_PORT": "42",
+            },
+            "https://host:42/v0",
+            id="single-vars+auth",
+        ),
     ],
 )
 def test_mode_ports_storage_with_auth(
@@ -275,11 +306,12 @@ def test_mode_ports_storage_with_auth(
     mock_postgres: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     envs: dict[str, str],
+    expected_base_url: str,
 ):
     setenvs_from_dict(monkeypatch, envs)
 
-    assert _base_url() == "http://host:42/v0"
-    assert _get_basic_auth() == aiohttp.BasicAuth(
+    assert get_base_url() == expected_base_url
+    assert get_basic_auth() == aiohttp.BasicAuth(
         login="user", password="passwd", encoding="latin1"
     )
 
@@ -311,5 +343,5 @@ def test_mode_ports_storage_without_auth(
 ):
     setenvs_from_dict(monkeypatch, envs)
 
-    assert _base_url() == expected_base_url
-    assert _get_basic_auth() is None
+    assert get_base_url() == expected_base_url
+    assert get_basic_auth() is None

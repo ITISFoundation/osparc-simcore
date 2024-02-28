@@ -216,12 +216,12 @@ class EmailProvider(NotificationProvider):
             autoescape=select_autoescape(["html", "xml"]),
         )
 
-    async def _create_message(
+    async def _create_successful_payments_message(
         self, user_id: UserID, payment: PaymentTransaction
     ) -> EmailMessage:
-
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
 
+        # email for successful payment
         msg: EmailMessage = await _create_user_email(
             self._jinja_env,
             user=_UserData(
@@ -249,10 +249,17 @@ class EmailProvider(NotificationProvider):
         user_id: UserID,
         payment: PaymentTransaction,
     ):
-        msg = await self._create_message(user_id, payment)
-
-        async with _create_email_session(self._settings) as smtp:
-            await smtp.send_message(msg)
+        # NOTE: we only have an email for successful payments
+        if payment.state == "SUCCESS":
+            msg = await self._create_successful_payments_message(user_id, payment)
+            async with _create_email_session(self._settings) as smtp:
+                await smtp.send_message(msg)
+        else:
+            _logger.debug(
+                "No email sent when %s did a non-SUCCESS %s",
+                f"{user_id=}",
+                f"{payment=}",
+            )
 
     async def notify_payment_method_acked(
         self,

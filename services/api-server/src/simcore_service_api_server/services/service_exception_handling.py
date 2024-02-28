@@ -51,42 +51,56 @@ def backend_service_exception_handler(
     http_status_map: Mapping[int, tuple[int, Callable[[dict], str] | None]],
     **endpoint_kwargs,
 ):
+    status_code: int
+    error_code: str
+    detail: str
+    headers: dict[str, str] = {}
     try:
         yield
     except ValidationError as exc:
         error_code = create_error_code(exc)
+        status_code = status.HTTP_502_BAD_GATEWAY
+        detail = f"{service_name} service returned invalid response. {error_code}"
         _logger.exception(
-            "Invalid data exchanged with %s service [%s] ",
+            "Invalid data exchanged with %s service [%s]: %s",
             service_name,
             error_code,
+            f"{exc}",
             extra={"error_code": error_code},
         )
         raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"{service_name} service returned invalid response. {error_code}",
+            status_code=status_code, detail=detail, headers=headers
         ) from exc
-
     except httpx.HTTPStatusError as exc:
+        error_code = create_error_code(exc)
         if status_detail_tuple := http_status_map.get(exc.response.status_code):
             status_code, detail_callback = status_detail_tuple
             if detail_callback is None:
-                detail = f"{exc}"
+                detail = f"{exc}. {error_code}"
             else:
-                detail = detail_callback(endpoint_kwargs)
-            raise HTTPException(status_code=status_code, detail=detail) from exc
-        if exc.response.status_code in {
-            status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail = f"{detail_callback(endpoint_kwargs)}. {error_code}"
+        elif exc.response.status_code in {
             status.HTTP_429_TOO_MANY_REQUESTS,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
         }:
-            headers = {}
-            if "Retry-After" in exc.response.headers:
-                headers["Retry-After"] = exc.response.headers["Retry-After"]
-            raise HTTPException(
-                status_code=exc.response.status_code,
-                detail=f"The {service_name} service was unavailable",
-                headers=headers,
-            ) from exc
+            status_code = exc.response.status_code
+            detail = f"The {service_name} service was unavailable. {error_code}"
+            if retry_after := exc.response.headers.get("Retry-After"):
+                headers["Retry-After"] = retry_after
+        else:
+            status_code = status.HTTP_502_BAD_GATEWAY
+            detail = f"Received unexpected response from {service_name}. {error_code}"
+
+        if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
+            _logger.exception(
+                "Converted status code %s from %s service to %s [%s]: %s",
+                f"{exc.response.status_code}",
+                service_name,
+                f"{status_code}",
+                error_code,
+                f"{exc}",
+                extra={"error_code": error_code},
+            )
         raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Received unexpected response from {service_name}",
+            status_code=status_code, detail=detail, headers=headers
         ) from exc

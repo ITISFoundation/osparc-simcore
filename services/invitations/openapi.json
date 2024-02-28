@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "simcore-service-invitations web API",
-    "description": " Service that manages creation and validation of registration invitations",
+    "description": "Service that manages creation and validation of registration invitations",
     "version": "1.2.0"
   },
   "paths": {
