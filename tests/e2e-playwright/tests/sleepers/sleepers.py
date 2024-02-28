@@ -14,9 +14,12 @@ import re
 from collections.abc import Callable
 from typing import Final
 
+from packaging.version import Version
+from packaging.version import parse as parse_version
 from playwright.sync_api import Page, WebSocket
 from pytest_simcore.playwright_utils import (
     MINUTE,
+    ContextMessages,
     RunningState,
     SocketIOEvent,
     log_context,
@@ -36,6 +39,20 @@ _WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[
 _WAITING_FOR_FILE_NAMES_WAIT_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
     seconds=1
 )
+
+_VERSION_TO_EXPECTED_FILE_NAMES: Final[dict[Version, list[str]]] = {
+    parse_version("1.0.0"): ["logs.zip", "single_number.txt"],
+    parse_version("2.2.0"): ["dream.txt", "logs.zip", "single_number.txt"],
+}
+
+
+def _get_expected_file_names_for_version(version: Version) -> list[str]:
+    for base_version, expected_file_names in reversed(
+        _VERSION_TO_EXPECTED_FILE_NAMES.items()
+    ):
+        if version >= base_version:
+            return expected_file_names
+    return []
 
 
 @retry(
@@ -90,6 +107,40 @@ def test_sleepers(
             page.get_by_placeholder("Filter").fill("sleeper")
             page.get_by_placeholder("Filter").press("Enter")
 
+    # get sleeper version
+    sleeper_version = parse_version("1.0.0")
+    sleeper_expected_output_files = _get_expected_file_names_for_version(
+        sleeper_version
+    )
+    for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
+        with log_context(
+            logging.INFO,
+            f"---> getting sleeper {index} version...",
+        ) as ctx:
+            sleeper.click()
+            page.keyboard.press("i")
+            version_title_selector = page.get_by_text("VERSION")
+            version_selector = version_title_selector.locator(
+                "xpath=following-sibling::div"
+            ).nth(0)
+            version_string = version_selector.text_content()
+            ctx.logger.info("found sleeper version: %s", version_string)
+            assert version_string
+            sleeper_version = parse_version(version_string)
+            sleeper_expected_output_files = _get_expected_file_names_for_version(
+                sleeper_version
+            )
+            ctx.logger.info(
+                "we will expect the following outputs: %s",
+                sleeper_expected_output_files,
+            )
+            page.keyboard.press("Escape")
+
+            workbench_selector = page.get_by_test_id("desktopWindow")
+            assert workbench_selector
+            workbench_selector.click()
+        break
+
     # set inputs if needed
     if input_sleep_time:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
@@ -108,7 +159,6 @@ def test_sleepers(
         workbench_selector = page.get_by_test_id("desktopWindow")
         assert workbench_selector
         workbench_selector.click()
-
     # start the pipeline (depending on the state of the cluster, we might receive one of
     # in [] are optional states depending on the state of the clusters and if we have external clusters
     # sometimes they may jump
@@ -164,12 +214,12 @@ def test_sleepers(
     )
 
     # check the outputs (the first item is the title, so we skip it)
-    expected_file_names = ["logs.zip", "single_number.txt"]
     with log_context(
         logging.INFO,
-        (
-            f"---> Looking for {expected_file_names=} in all {num_sleepers} sleeper services...",
-            "---> All good, we're done here! This was really great!",
+        ContextMessages(
+            starting=f"---> Looking for {sleeper_expected_output_files=} in all {num_sleepers} sleeper services...",
+            done="---> All good, we're done here! This was really great!",
+            raised="--> Error checking outputs!",
         ),
     ) as ctx:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
@@ -181,8 +231,7 @@ def test_sleepers(
                 page.get_by_test_id("nodeOutputFilesBtn").click()
                 output_file_names_found = _get_file_names(page)
 
-            ctx.logger.info(
-                f"<--- found {output_file_names_found=} in sleeper {index} service outputs."
-            )  # noqa: G004
-            assert output_file_names_found == expected_file_names
+            msg = f"<--- found {output_file_names_found=} in sleeper {index} service outputs."
+            ctx.logger.info(msg)
+            assert output_file_names_found == sleeper_expected_output_files
             page.get_by_test_id("nodeDataManagerCloseBtn").click()
