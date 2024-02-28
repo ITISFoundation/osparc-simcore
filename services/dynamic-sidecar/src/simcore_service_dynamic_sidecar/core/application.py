@@ -28,6 +28,7 @@ from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
+from .external_dependencies import setup_check_dependencies
 from .rabbitmq import setup_rabbitmq
 from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
@@ -145,6 +146,8 @@ def create_app():
     app = create_base_app()
 
     # MODULES SETUP --------------
+
+    setup_check_dependencies(app)
 
     setup_shared_store(app)
     app.state.application_health = ApplicationHealth()
