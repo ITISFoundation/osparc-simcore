@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import auto
-from typing import Final
+from typing import Any, ClassVar, Final
 from uuid import uuid4
 
 from models_library.users import UserID
@@ -59,7 +59,7 @@ class UserNotification(BaseUserNotification):
         return cls.construct(id=f"{uuid4()}", read=False, **request_data.dict())
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
                     "id": "3fb96d89-ff5d-4d27-b5aa-d20d46e20eb8",
