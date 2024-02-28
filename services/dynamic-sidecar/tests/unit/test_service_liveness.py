@@ -7,8 +7,16 @@ from simcore_service_dynamic_sidecar.modules.service_liveness import (
 )
 
 
-@pytest.mark.parametrize("check_interval", [timedelta(seconds=0.1)])
-@pytest.mark.parametrize("timeout", [timedelta(seconds=1)])
+@pytest.fixture
+def check_interval() -> timedelta:
+    return timedelta(seconds=0.1)
+
+
+@pytest.fixture
+def timeout() -> timedelta:
+    return timedelta(seconds=1)
+
+
 @pytest.mark.parametrize("handler_return", [None, True])
 async def test_wait_for_service_liveness_ok(
     check_interval: timedelta, timeout: timedelta, handler_return: bool | None
@@ -25,8 +33,6 @@ async def test_wait_for_service_liveness_ok(
     )
 
 
-@pytest.mark.parametrize("check_interval", [timedelta(seconds=0.1)])
-@pytest.mark.parametrize("timeout", [timedelta(seconds=1)])
 @pytest.mark.parametrize("handler_return", [Exception("Ohh no, I failed!"), False])
 async def test_wait_for_service_liveness_fails(
     check_interval: timedelta,
