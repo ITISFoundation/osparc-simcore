@@ -61,7 +61,7 @@ def product_name() -> ProductName:
 @pytest.fixture
 def mock_environment(
     mock_rabbit_check: None,
-    mock_storage_checks: None,
+    mock_storage_check: None,
     postgres_host_config: PostgresTestConfig,
     monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
