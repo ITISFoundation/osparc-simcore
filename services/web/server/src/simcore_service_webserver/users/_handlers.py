@@ -63,7 +63,9 @@ async def get_my_profile(request: web.Request) -> web.Response:
 async def update_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
     profile_update = await parse_request_body_as(ProfileUpdate, request)
-    await api.update_user_profile(request.app, req_ctx.user_id, profile_update)
+    await api.update_user_profile(
+        request.app, req_ctx.user_id, profile_update, as_patch=False
+    )
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
@@ -77,10 +79,11 @@ class _SearchQueryParams(BaseModel):
 @_handle_users_exceptions
 async def search_users(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
+    assert req_ctx.product_name  # nosec
+
     query_params = parse_request_query_parameters_as(_SearchQueryParams, request)
 
-    found = _api.search_users(request.app, email=query_params.email)
-    # TODO: consider showing products these are registered
+    found = await _api.search_users(request.app, email=query_params.email)
 
     return envelope_json_response(found)
 

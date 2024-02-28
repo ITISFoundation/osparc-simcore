@@ -36,6 +36,7 @@ class UserInfoDict(_UserInfoDictRequired, total=False):
     password_hash: str
     first_name: str
     last_name: str
+    phone: str
 
 
 TEST_MARKS = re.compile(r"TEST (\w+):(.*)")
@@ -91,6 +92,7 @@ async def _create_user(app: web.Application, data=None) -> UserInfoDict:
                 "password_hash",
                 "first_name",
                 "last_name",
+                "phone",
             ]
         },
         **extras,

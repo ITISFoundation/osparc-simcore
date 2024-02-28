@@ -128,7 +128,7 @@ async def logged_user(
             "role": user_role.name,
             "first_name": faker.first_name(),
             "last_name": faker.last_name(),
-            "phone": faker.phone(),
+            "phone": faker.phone_number(),
         },
         check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:

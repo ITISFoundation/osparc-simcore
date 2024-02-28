@@ -99,13 +99,16 @@ async def update_user_status(
         )
 
 
-async def search_users_and_get_profile(engine: Engine, *, email_like: str):
+async def search_users_and_get_profile(
+    engine: Engine, *, email_like: str
+) -> list[RowProxy]:
     async with engine.acquire() as conn:
         result = await conn.execute(
             sa.select(
                 users.c.first_name,
                 users.c.last_name,
                 users.c.email,
+                users.c.phone,
                 invited_users.c.email.label("invitation_email"),
                 invited_users.c.first_name.label("invitation_first_name"),
                 invited_users.c.last_name.label("invitation_last_name"),
@@ -120,8 +123,8 @@ async def search_users_and_get_profile(engine: Engine, *, email_like: str):
                 users.c.status,
             )
             .select_from(
-                invited_users.outerjoin(
-                    users, users.c.id == invited_users.c.accepted_by
+                users.outerjoin(
+                    invited_users, users.c.id == invited_users.c.accepted_by
                 )
             )
             .where(
@@ -133,7 +136,7 @@ async def search_users_and_get_profile(engine: Engine, *, email_like: str):
 
 async def new_invited_user(
     engine: Engine, email: str, created_by: UserID, **other_values
-):
+) -> None:
     async with engine.acquire() as conn:
         await conn.execute(
             sa.insert(invited_users).values(

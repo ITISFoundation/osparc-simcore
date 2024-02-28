@@ -132,21 +132,31 @@ async def get_user_profile(
 
 
 async def update_user_profile(
-    app: web.Application, user_id: UserID, profile_update: ProfileUpdate
+    app: web.Application,
+    user_id: UserID,
+    update: ProfileUpdate,
+    *,
+    as_patch: bool = True
 ) -> None:
     """
-    :raises UserNotFoundError:
+    Keyword Arguments:
+        as_patch -- set False if PUT and True if PATCH (default: {True})
+
+    Raises:
+        UserNotFoundError
     """
     user_id = _parse_as_user(user_id)
 
     async with get_database_engine(app).acquire() as conn:
-        first_name = profile_update.first_name
-        last_name = profile_update.last_name
-
+        to_update = update.dict(
+            include={
+                "first_name",
+                "last_name",
+            },
+            exclude_unset=as_patch,
+        )
         resp = await conn.execute(
-            users.update()
-            .where(users.c.id == user_id)
-            .values(first_name=first_name, last_name=last_name)
+            users.update().where(users.c.id == user_id).values(**to_update)
         )
         assert resp.rowcount == 1  # nosec
 

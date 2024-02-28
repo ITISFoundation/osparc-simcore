@@ -11,16 +11,16 @@ from simcore_postgres_database.models.users import UserStatus
 
 
 class UserProfile(OutputSchema):
-    first_name: str
-    last_name: str
+    first_name: str | None
+    last_name: str | None
     email: LowerCaseEmailStr
     company_name: str | None
     phone: str | None
-    address: str
-    city: str
-    state: str | None = Field(description="State, province, canton, region etc")
-    postal_code: str
-    country: str
+    address: str | None
+    city: str | None
+    state: str | None = Field(description="State, province, canton, ...")
+    postal_code: str | None
+    country: str | None
 
     # user status
     registered: bool

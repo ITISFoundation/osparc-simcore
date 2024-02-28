@@ -23,7 +23,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.users._preferences_api import (
     get_frontend_user_preferences_aggregation,
 )
-from simcore_service_webserver.users.schemas import ProfileGet
+from simcore_service_webserver.users.schemas import ProfileGet, ProfileUpdate
 
 
 @pytest.fixture
@@ -122,17 +122,18 @@ async def test_update_profile(
 ):
     assert client.app
 
-    url = f"{client.app.router['update_my_profile'].url_for()}"
-    assert str(url) == "/v0/me"
+    url = client.app.router["update_my_profile"].url_for()
+    assert url.path == "/v0/me"
 
-    resp = await client.put(url, json={"last_name": "Foo"})
+    resp = await client.put(url.path, json={"last_name": "Foo"})
     _, error = await assert_status(resp, expected)
 
     if not error:
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-        assert data["first_name"] == logged_user.get("first_name")
+        # This is a PUT! i.e. full replace of profile variable fields!
+        assert data["first_name"] == ProfileUpdate.__fields__["first_name"].default
         assert data["last_name"] == "Foo"
         assert data["role"] == user_role.name
 
@@ -149,6 +150,9 @@ def mock_failing_database_connection(mocker: Mock) -> MagicMock:
         "MOCK: server closed the connection unexpectedly"
     )
     return conn_execute
+
+
+from http import HTTPStatus
 
 
 @pytest.mark.parametrize(
@@ -187,19 +191,19 @@ async def test_get_profile_with_failing_db_connection(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
         *(
-            (role, web.HTTPForbidden)
+            (role, status.HTTP_403_FORBIDDEN)
             for role in UserRole
             if role not in {UserRole.PRODUCT_OWNER, UserRole.ANONYMOUS}
         ),
-        (UserRole.PRODUCT_OWNER, web.HTTPOk),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
     ],
 )
 async def test_users_api_access_rights(
     client: TestClient,
     logged_user: UserInfoDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     assert client.app
 
@@ -217,12 +221,24 @@ async def test_users_api_access_rights(
     ],
 )
 async def test_pre_registration(client: TestClient, logged_user: UserInfoDict):
-
     resp = await client.get("/v0/users:search", params={"email": logged_user["email"]})
     assert resp.status == status.HTTP_200_OK
 
     body = await resp.json()
 
     data = body["data"]
-    assert data["email"] == logged_user["email"]
-    assert data == logged_user
+    assert len(data) == 1
+    assert data[0] == {
+        "firstName": logged_user.get("first_name"),
+        "lastName": logged_user.get("last_name"),
+        "email": logged_user["email"],
+        "companyName": None,
+        "phone": logged_user.get("phone"),
+        "address": None,
+        "city": None,
+        "state": None,
+        "postalCode": None,
+        "country": None,
+        "registered": True,
+        "status": "ACTIVE",
+    }
