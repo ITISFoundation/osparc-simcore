@@ -38,6 +38,7 @@ pytest_plugins = [
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.pytest_socketio",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
@@ -237,7 +238,7 @@ def fake_workbench_as_dict(fake_workbench_file: Path) -> dict[str, Any]:
 
 @pytest.fixture
 def fake_workbench_without_outputs(
-    fake_workbench_as_dict: dict[str, Any]
+    fake_workbench_as_dict: dict[str, Any],
 ) -> dict[str, Any]:
     workbench = deepcopy(fake_workbench_as_dict)
     # remove all the outputs from the workbench

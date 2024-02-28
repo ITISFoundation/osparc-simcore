@@ -19,12 +19,12 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   command -v python | sed 's/^/    /'
 
   cd services/catalog || exit 1
-  pip --quiet --no-cache-dir install -r requirements/dev.txt
+  pip install uv
+  uv pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
 fi
-
 
 # RUNNING application ----------------------------------------
 APP_LOG_LEVEL=${CATALOG_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
