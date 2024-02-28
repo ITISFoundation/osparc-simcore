@@ -145,7 +145,31 @@ def ensure_shared_store_dir(shared_store_dir: Path) -> Iterator[Path]:
 
 
 @pytest.fixture
+def mock_storage_check(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.core.external_dependencies.wait_for_storage_liveness",
+    )
+
+
+@pytest.fixture
+def mock_postgres_check(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.core.external_dependencies.wait_for_postgres_liveness",
+    )
+
+
+@pytest.fixture
+def mock_rabbit_check(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.core.external_dependencies.wait_for_rabbitmq_liveness",
+    )
+
+
+@pytest.fixture
 def base_mock_envs(
+    mock_storage_check: None,
+    mock_postgres_check: None,
+    mock_rabbit_check: None,
     dy_volumes: Path,
     shared_store_dir: Path,
     compose_namespace: str,
@@ -312,24 +336,3 @@ def cleanup_reserved_disk_space() -> AsyncIterable[None]:
     remove_reserved_disk_space()
     yield
     remove_reserved_disk_space()
-
-
-@pytest.fixture
-def mock_storage_check(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.core.external_dependencies.wait_for_storage_liveness",
-    )
-
-
-@pytest.fixture
-def mock_postgres_check(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.core.external_dependencies.wait_for_postgres_liveness",
-    )
-
-
-@pytest.fixture
-def mock_rabbit_check(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.core.external_dependencies.wait_for_rabbitmq_liveness",
-    )
