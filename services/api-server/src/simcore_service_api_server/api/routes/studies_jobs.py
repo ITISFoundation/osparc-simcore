@@ -14,7 +14,7 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.studies import StudyID
-from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
+from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -129,7 +129,6 @@ async def get_study_job_outputs(
     "/{study_id}/jobs/{job_id}/outputs/logfile",
     response_class=RedirectResponse,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    responses=job_output_logfile_responses,
 )
 async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
     msg = f"get study job output logfile study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"

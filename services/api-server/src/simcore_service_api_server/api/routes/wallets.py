@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-_WALLET_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+WALLET_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "Wallet not found",
         "model": HTTPExceptionModel,
@@ -31,7 +31,7 @@ _WALLET_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     "/default",
     response_model=WalletGetWithAvailableCredits,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    responses=_WALLET_STATUS_CODES,
+    responses=WALLET_STATUS_CODES,
 )
 async def get_default_wallet(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
@@ -43,7 +43,7 @@ async def get_default_wallet(
     "/{wallet_id}",
     response_model=WalletGetWithAvailableCredits,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    responses=_WALLET_STATUS_CODES,
+    responses=WALLET_STATUS_CODES,
 )
 async def get_wallet(
     wallet_id: int,

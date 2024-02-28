@@ -143,7 +143,8 @@ async def list_files(
     "/page",
     response_model=Page[File],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    responses=_FILE_STATUS_CODES,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def get_files_page(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
