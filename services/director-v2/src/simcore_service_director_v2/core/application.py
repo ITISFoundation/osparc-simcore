@@ -27,9 +27,11 @@ from ..modules import (
     director_v0,
     dynamic_services,
     dynamic_sidecar,
+    notifier,
     osparc_variables_substitutions,
     rabbitmq,
     resource_usage_tracker_client,
+    socketio,
     storage,
 )
 from .errors import (
@@ -165,6 +167,8 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if dynamic_scheduler_enabled:
         dynamic_sidecar.setup(app)
         api_keys_manager.setup(app)
+        socketio.setup(app)
+        notifier.setup(app)
 
     if (
         settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED
@@ -174,8 +178,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if computational_backend_enabled:
         comp_scheduler.setup(app)
 
-    if settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER:
-        resource_usage_tracker_client.setup(app)
+    resource_usage_tracker_client.setup(app)
 
     if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
