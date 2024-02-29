@@ -25,7 +25,7 @@ class AccountRequestInfo(InputSchema):
                     "address": "Infinite Loop. California",
                     "country": "USA",
                     "application": "Antenna_Design",
-                    "description": "Description of sometin",
+                    "description": "Description of something",
                     "hear": "Search_Engine",
                     "message": "I would love to use your tool",
                 }
