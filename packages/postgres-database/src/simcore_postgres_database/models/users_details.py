@@ -21,7 +21,7 @@ user_details = sa.Table(
             ondelete="CASCADE",
         ),
         nullable=True,
-        doc="None if this row was added during pre-registration or join column with `users` after registration",
+        doc="None if row was added during pre-registration or join column with `users` after registration",
     ),
     # Pre-registration columns: i.e. fields copied to `users` upon registration
     sa.Column(
