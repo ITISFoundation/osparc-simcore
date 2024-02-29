@@ -75,7 +75,7 @@ async def test_export_service_usage_redirection(
     assert client.app
     url = client.app.router["export_resource_usage_services"].url_for()
     resp = await client.get(f"{url}")
-    assert resp.status == expected.status_code
+    assert resp.status == expected
 
     if resp.status == status.HTTP_200_OK:
         # checks is a redirection
