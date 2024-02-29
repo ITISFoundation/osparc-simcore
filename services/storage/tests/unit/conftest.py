@@ -11,7 +11,6 @@ from pathlib import Path
 
 import openapi_core
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_storage import (
     FileUploadCompleteFutureResponse,
@@ -26,6 +25,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from simcore_service_storage._meta import api_vtag
 from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName
@@ -74,7 +74,7 @@ async def create_empty_directory(
             json=jsonable_encoder(FileUploadCompletionBody(parts=[])),
         )
         response.raise_for_status()
-        data, error = await assert_status(response, web.HTTPAccepted)
+        data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
         assert not error
         assert data
         file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
@@ -95,7 +95,7 @@ async def create_empty_directory(
                     f"--> checking for upload {state_url=}, {attempt.retry_state.attempt_number}..."
                 )
                 response = await client.post(f"{state_url}")
-                data, error = await assert_status(response, web.HTTPOk)
+                data, error = await assert_status(response, status.HTTP_200_OK)
                 assert not error
                 assert data
                 future = FileUploadCompleteFutureResponse.parse_obj(data)
@@ -166,7 +166,7 @@ async def delete_directory(
             .with_query(user_id=user_id)
         )
         response = await client.delete(f"{delete_url}")
-        await assert_status(response, web.HTTPNoContent)
+        await assert_status(response, status.HTTP_204_NO_CONTENT)
 
         # NOTE: ensures no more files are left in the directory,
         # even if one file is left this will detect it
