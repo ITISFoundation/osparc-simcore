@@ -105,7 +105,7 @@ async def test_list_tasks(
     # the list should be empty if we do not pass the expected context
     list_url = client_with_task_context.app.router["list_tasks"].url_for()
     result = await client_with_task_context.get(f"{list_url}")
-    data, error = await assert_status(result, web.HTTPOk)
+    data, error = await assert_status(result, status.HTTP_200_OK)
     assert not error
     list_of_tasks = parse_obj_as(list[TaskGet], data)
     assert len(list_of_tasks) == 0
@@ -114,7 +114,7 @@ async def test_list_tasks(
     result = await client_with_task_context.get(
         f"{list_url.update_query(task_context)}"
     )
-    data, error = await assert_status(result, web.HTTPOk)
+    data, error = await assert_status(result, status.HTTP_200_OK)
     assert not error
     list_of_tasks = parse_obj_as(list[TaskGet], data)
     assert len(list_of_tasks) == 1
@@ -133,10 +133,10 @@ async def test_get_task_status(
         task_id=task_id
     )
     resp = await client_with_task_context.get(f"{status_url}")
-    await assert_status(resp, web.HTTPNotFound)
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
     # calling with context should find the task
     resp = await client_with_task_context.get(f"{status_url.with_query(task_context)}")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
 
 
 async def test_get_task_result(
@@ -153,10 +153,10 @@ async def test_get_task_result(
         task_id=task_id
     )
     resp = await client_with_task_context.get(f"{result_url}")
-    await assert_status(resp, web.HTTPNotFound)
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
     # calling with context should find the task
     resp = await client_with_task_context.get(f"{result_url.with_query(task_context)}")
-    await assert_status(resp, web.HTTPCreated)
+    await assert_status(resp, status.HTTP_201_CREATED)
 
 
 async def test_cancel_task(
@@ -171,14 +171,14 @@ async def test_cancel_task(
     )
     # calling cancel without task context should find nothing
     resp = await client_with_task_context.delete(f"{cancel_url}")
-    await assert_status(resp, web.HTTPNotFound)
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
     # calling with context should find and delete the task
     resp = await client_with_task_context.delete(
         f"{cancel_url.update_query(task_context)}"
     )
-    await assert_status(resp, web.HTTPNoContent)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
     # calling with context a second time should find nothing
     resp = await client_with_task_context.delete(
         f"{cancel_url.update_query(task_context)}"
     )
-    await assert_status(resp, web.HTTPNotFound)
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
