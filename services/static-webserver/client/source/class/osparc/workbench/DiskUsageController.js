@@ -33,6 +33,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
     this.__socket.on("serviceDiskUsage", data => {
       if (data["node_id"] && this.__callbacks[data["node_id"]]) {
         //  notify
+        this.diskUsageToUI(data["node_id"], data.usage["/"]);
         this.__callbacks[data["node_id"]].forEach(cb => {
           cb(data);
         })
@@ -42,34 +43,16 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
     console.log("Executed!!!!")
   },
 
-  // switch (warningLevel) {
-  // case "CRITICAL":
-  //   indicatorColor = qx.theme.manager.Color.getInstance().resolve("error");
-  //   if (shouldDisplayMessage(prevDiskUsageState, warningLevel)) {
-  //     message = this.tr(`Out of Disk Space on "Service Filesystem" for ${nodeName}<br />The volume Service Filesystem has only ${freeSpace} disk space remaining. You can free up disk space by removing unused files in your service. Alternatively, you can run your service with a pricing plan that supports your storage requirements.`);
-  //     osparc.FlashMessenger.getInstance().logAs(message, "ERROR");
-  //     this.__prevDiskUsageStateList[objIndex].state = warningLevel;
-  //   }
-  //   break;
-  // case "WARNING":
-  //   indicatorColor = qx.theme.manager.Color.getInstance().resolve("warning")
-  //   if (shouldDisplayMessage(prevDiskUsageState, warningLevel)) {
-  //     message = this.tr(`Low Disk Space on "Service Filesystem" for ${nodeName}<br />The volume Service Filesystem has only ${freeSpace} disk space remaining. You can free up disk space by removing unused files in your service. Alternatively, you can run your service with a pricing plan that supports your storage requirements.`);
-  //     osparc.FlashMessenger.getInstance().logAs(message, "WARNING");
-  //     this.__prevDiskUsageStateList[objIndex].state = warningLevel;
-  //   }
-  //   break;
-  // default:
-  //   indicatorColor = qx.theme.manager.Color.getInstance().resolve("success");
-  //   this.__prevDiskUsageStateList[objIndex].state = "NORMAL";
-  //   break;
-  // }
 
   members: {
     __socket: null,
     __callbacks: null,
+    __lowDiskThreshold: null,
+    __prevDiskUsageStateList: null,
+    __diskUsage: null,
 
     subscribe: function(nodeId, callback) {
+      debugger
       if (this.__callbacks[nodeId]) {
         this.__callbacks[nodeId].push(callback);
       } else {
@@ -85,8 +68,8 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
 
     getDiskUsage: function() {
       const lowDiskSpacePreferencesSettings = osparc.Preferences.getInstance();
-      const lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
-      const warningSize = osparc.utils.Utils.gBToBytes(lowDiskThreshold); // 5 GB Default
+      this.__lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
+      const warningSize = osparc.utils.Utils.gBToBytes(this.__lowDiskThreshold); // 5 GB Default
       const criticalSize = osparc.utils.Utils.gBToBytes(0.01); // 0 GB
       let warningLevel = "NORMAL"
       if (this.__diskUsage["free"] <= criticalSize) {
@@ -98,21 +81,60 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       }
       return warningLevel
     },
+
+    getDiskAvailableSpacePercent: function() {
+      return this.__diskUsage ? this.__diskUsage["used_percent"] : undefined
+    },
+
+    diskUsageToUI: function(id, diskUsage) {
+      debugger
+      function isMatchingNodeId({nodeId}) {
+        return nodeId === id;
+      }
+      function shouldDisplayMessage(prevDiskUsageState, warningLevel) {
+        return prevDiskUsageState && prevDiskUsageState.nodeId === id && prevDiskUsageState.state !== warningLevel
+      }
+
+      let prevDiskUsageState = this.__prevDiskUsageStateList.find(isMatchingNodeId);
+
+      const warningLevel = this.getDiskUsage();
+      if (prevDiskUsageState === undefined) {
+        this.__prevDiskUsageStateList.push({
+          nodeId: id,
+          state: "NORMAL"
+        })
+      }
+      const freeSpace = osparc.utils.Utils.bytesToSize(diskUsage.free);
+
+      const nodeName = this.getCurrentNode().getLabel();
+      let message;
+      let indicatorColor;
+
+      const objIndex = this.__prevDiskUsageStateList.findIndex((obj => obj.nodeId === id));
+      switch (warningLevel) {
+        case "CRITICAL":
+          indicatorColor = qx.theme.manager.Color.getInstance().resolve("error");
+          if (shouldDisplayMessage(prevDiskUsageState, warningLevel)) {
+            message = this.tr(`Out of Disk Space on "Service Filesystem" for ${nodeName}<br />The volume Service Filesystem has only ${freeSpace} disk space remaining. You can free up disk space by removing unused files in your service. Alternatively, you can run your service with a pricing plan that supports your storage requirements.`);
+            osparc.FlashMessenger.getInstance().logAs(message, "ERROR");
+            this.__prevDiskUsageStateList[objIndex].state = warningLevel;
+          }
+          break;
+        case "WARNING":
+          indicatorColor = qx.theme.manager.Color.getInstance().resolve("warning")
+          if (shouldDisplayMessage(prevDiskUsageState, warningLevel)) {
+            message = this.tr(`Low Disk Space on "Service Filesystem" for ${nodeName}<br />The volume Service Filesystem has only ${freeSpace} disk space remaining. You can free up disk space by removing unused files in your service. Alternatively, you can run your service with a pricing plan that supports your storage requirements.`);
+            osparc.FlashMessenger.getInstance().logAs(message, "WARNING");
+            this.__prevDiskUsageStateList[objIndex].state = warningLevel;
+          }
+          break;
+        default:
+          indicatorColor = qx.theme.manager.Color.getInstance().resolve("success");
+          this.__prevDiskUsageStateList[objIndex].state = "NORMAL";
+          break;
+      }
+
+      this.updateDiskIndicator(indicatorColor, freeSpace);
+    },
   }
 });
-//
-// qx.Class.define("osparc.workbench.DiskUsageListener", {
-//   extend: qx.core.Object,
-//   construct: function(manager) {
-//     this.base(arguments);
-//     this.__manager = manager;
-//   },
-//
-//   members: {
-//     __manager: null,
-//
-//     listen: function(eventName, callback) {
-//       this.__manager.subscribe(eventName, callback);
-//     }
-//   }
-// });

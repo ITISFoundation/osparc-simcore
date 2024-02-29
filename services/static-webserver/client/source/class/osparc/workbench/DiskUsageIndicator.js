@@ -29,8 +29,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     const lowDiskSpacePreferencesSettings = osparc.Preferences.getInstance();
     this.__lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
     this.__prevDiskUsageStateList = [];
-    this.__testDiskUsage = [];
-    const layout = this.__layout = new qx.ui.layout.VBox(2);
+    const layout = new qx.ui.layout.VBox(2);
     this._setLayout(layout);
     // this._applyCurrentNode(this.getCurrentNode());
 
@@ -39,15 +38,14 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       if (node !== this.getCurrentNode()) {
         osparc.workbench.DiskUsageController.getInstance().subscribe(node.getNodeId(), data => {
           if (node.getNodeId() === data["node_id"]) {
-            this.__onNewUsageData(node, data);
-          } else {
             console.log("changeSelectedNode", data)
+          //   this.__onNewUsageData(node, data);
+          // } else {
+          //   console.log("changeSelectedNode", data)
+          } else {
+            console.log("changeSelectedNode - no data", node.getNodeId())
           }
-        })
-      } else {
-        osparc.workbench.DiskUsageController.getInstance().unsubscribe(node.getNodeId(), data => {
-          console.log("Exiting...", this.getCurrentNode().getNodeId())
-        })
+        });
       }
     }, this);
   },
@@ -77,12 +75,9 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
   },
 
   members: {
-    __diskTelemetry: null,
-    __layout: null,
     __lowDiskThreshold: null,
     __diskUsage: null,
     __prevDiskUsageStateList: null,
-    __testDiskUsage: null,
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -144,16 +139,6 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       return this.__diskUsage ? this.__diskUsage["used_percent"] : undefined
     },
 
-    // getNodeLabel: function(nodeId) {
-    //   const nodes = this.getStudy().getWorkbench().getNodes(true);
-    //   for (const node of Object.values(nodes)) {
-    //     if (nodeId === node.getNodeId()) {
-    //       return node.getLabel();
-    //     }
-    //   }
-    //   return null;
-    // },
-
     diskUsageToUI: function(id, diskUsage) {
       function isMatchingNodeId({nodeId}) {
         return nodeId === id;
@@ -205,6 +190,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     },
 
     updateDiskIndicator: function(color, freeSpace) {
+      debugger
       const indicator = this.getChildControl("disk-indicator");
       const indicatorLabel = this.getChildControl("disk-indicator-label");
 
