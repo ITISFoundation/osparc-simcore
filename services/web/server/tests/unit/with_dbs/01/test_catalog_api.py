@@ -7,6 +7,7 @@ import urllib.parse
 from http import HTTPStatus
 
 import pytest
+from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -81,7 +82,7 @@ def mock_catalog_service_api_responses_not_found(
     settings: CatalogSettings = get_plugin_settings(client.app)
     url_pattern = re.compile(f"^{settings.base_url}+/.*$")
 
-    aioresponses_mocker.get(url_pattern, exception=status.HTTP_404_NOT_FOUND)
+    aioresponses_mocker.get(url_pattern, exception=web.HTTPNotFound)
     return aioresponses_mocker
 
 

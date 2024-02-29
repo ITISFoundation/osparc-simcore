@@ -388,7 +388,7 @@ async def test_start_stop_computation(
     if not error:
         # starting again should be disallowed, since it's already running
         resp = await client.post(f"{url_start}")
-        assert resp.status == expected.forbidden.status_code
+        assert resp.status == expected.forbidden
 
         assert "pipeline_id" in data
         assert data["pipeline_id"] == project_id

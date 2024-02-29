@@ -287,7 +287,7 @@ async def test_create_node_returns_422_if_body_is_missing(
         },
     ]:
         response = await client.post(url.path, json=partial_body)
-        assert response.status == expected.unprocessable.status_code
+        assert response.status == expected.unprocessable
     # this does not start anything in the backend
     mocked_director_v2_api[
         "dynamic_scheduler.api.run_dynamic_service"
