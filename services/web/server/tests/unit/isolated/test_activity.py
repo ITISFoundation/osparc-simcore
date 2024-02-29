@@ -10,7 +10,6 @@ from unittest.mock import MagicMock
 
 import pytest
 import yaml
-from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionError
 from aiohttp.test_utils import TestClient
 from pytest_mock import MockerFixture
@@ -88,7 +87,7 @@ def client(
 
 async def test_has_login_required(client: TestClient):
     resp = await client.get("/v0/activity/status")
-    await assert_status(resp, web.HTTPUnauthorized)
+    await assert_status(resp, status.HTTP_401_UNAUTHORIZED)
 
 
 async def test_monitoring_up(
@@ -97,7 +96,7 @@ async def test_monitoring_up(
     RUNNING_NODE_ID = "894dd8d5-de3b-4767-950c-7c3ed8f51d8c"
 
     resp = await client.get("/v0/activity/status")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert RUNNING_NODE_ID in data, "Running node not present"
 
     prometheus = data.get(RUNNING_NODE_ID, {})
@@ -118,4 +117,4 @@ async def test_monitoring_down(
     mocked_login_required: None, mocked_monitoring_down: None, client: TestClient
 ):
     resp = await client.get("/v0/activity/status")
-    await assert_status(resp, web.HTTPNoContent)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)

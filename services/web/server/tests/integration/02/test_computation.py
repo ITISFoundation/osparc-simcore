@@ -13,7 +13,6 @@ from typing import Any, Callable, NamedTuple
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import RunningState
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -73,7 +72,7 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
-class ExpectedResponse(NamedTuple):
+class _ExpectedResponseTuple(NamedTuple):
     """
     Stores respons status to an API request in function of the user
 
@@ -81,14 +80,10 @@ class ExpectedResponse(NamedTuple):
     will have no access, therefore ExpectedResponse.ok = HTTPUnauthorized
     """
 
-    ok: type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPOk]
-    created: (
-        type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPCreated]
-    )
-    no_content: (
-        type[web.HTTPUnauthorized] | type[web.HTTPForbidden] | type[web.HTTPNoContent]
-    )
-    forbidden: (type[web.HTTPUnauthorized] | type[web.HTTPForbidden])
+    ok: int
+    created: int
+    no_content: int
+    forbidden: int
 
     # pylint: disable=no-member
     def __str__(self) -> str:
@@ -96,44 +91,46 @@ class ExpectedResponse(NamedTuple):
         return f"{self.__class__.__name__}({items})"
 
 
-def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse]]]:
+def standard_role_response() -> tuple[
+    str, list[tuple[UserRole, _ExpectedResponseTuple]]
+]:
     return (
         "user_role,expected",
         [
             (
                 UserRole.ANONYMOUS,
-                ExpectedResponse(
-                    ok=web.HTTPUnauthorized,
-                    created=web.HTTPUnauthorized,
-                    no_content=web.HTTPUnauthorized,
-                    forbidden=web.HTTPUnauthorized,
+                _ExpectedResponseTuple(
+                    ok=status.HTTP_401_UNAUTHORIZED,
+                    created=status.HTTP_401_UNAUTHORIZED,
+                    no_content=status.HTTP_401_UNAUTHORIZED,
+                    forbidden=status.HTTP_401_UNAUTHORIZED,
                 ),
             ),
             (
                 UserRole.GUEST,
-                ExpectedResponse(
-                    ok=web.HTTPOk,
-                    created=web.HTTPCreated,
-                    no_content=web.HTTPNoContent,
-                    forbidden=web.HTTPForbidden,
+                _ExpectedResponseTuple(
+                    ok=status.HTTP_200_OK,
+                    created=status.HTTP_201_CREATED,
+                    no_content=status.HTTP_204_NO_CONTENT,
+                    forbidden=status.HTTP_403_FORBIDDEN,
                 ),
             ),
             (
                 UserRole.USER,
-                ExpectedResponse(
-                    ok=web.HTTPOk,
-                    created=web.HTTPCreated,
-                    no_content=web.HTTPNoContent,
-                    forbidden=web.HTTPForbidden,
+                _ExpectedResponseTuple(
+                    ok=status.HTTP_200_OK,
+                    created=status.HTTP_201_CREATED,
+                    no_content=status.HTTP_204_NO_CONTENT,
+                    forbidden=status.HTTP_403_FORBIDDEN,
                 ),
             ),
             (
                 UserRole.TESTER,
-                ExpectedResponse(
-                    ok=web.HTTPOk,
-                    created=web.HTTPCreated,
-                    no_content=web.HTTPNoContent,
-                    forbidden=web.HTTPForbidden,
+                _ExpectedResponseTuple(
+                    ok=status.HTTP_200_OK,
+                    created=status.HTTP_201_CREATED,
+                    no_content=status.HTTP_204_NO_CONTENT,
+                    forbidden=status.HTTP_403_FORBIDDEN,
                 ),
             ),
         ],
@@ -290,7 +287,7 @@ async def _assert_and_wait_for_pipeline_state(
     client: TestClient,
     project_id: str,
     expected_state: RunningState,
-    expected_api_response: ExpectedResponse,
+    expected_api_response: _ExpectedResponseTuple,
 ) -> None:
     assert client.app
     url_project_state = client.app.router["get_project_state"].url_for(
@@ -375,7 +372,7 @@ async def test_start_stop_computation(
     user_project: dict[str, Any],
     fake_workbench_adjacency_list: dict[str, Any],
     user_role: UserRole,
-    expected: ExpectedResponse,
+    expected: _ExpectedResponseTuple,
 ):
     assert client.app
     project_id = user_project["uuid"]
@@ -448,7 +445,7 @@ async def test_run_pipeline_and_check_state(
     user_project: dict[str, Any],
     fake_workbench_adjacency_list: dict[str, Any],
     # user_role: UserRole,
-    expected: ExpectedResponse,
+    expected: _ExpectedResponseTuple,
 ):
     assert client.app
     project_id = user_project["uuid"]
