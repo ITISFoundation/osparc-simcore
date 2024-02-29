@@ -47,7 +47,8 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
 
       btn.addListener("execute", () => this.__buttonExecuted(btn));
 
-      if (idx === 0) {
+      // Sort by last modified date
+      if (idx === options.length) {
         btn.execute();
       }
     });
