@@ -76,7 +76,7 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["created_by"], ["users.id"], onupdate="CASCADE", ondelete="SET NULL"
         ),
-        sa.UniqueConstraint("email"),
+        sa.UniqueConstraint("pre_email"),
     )
     # ### end Alembic commands ###
 
