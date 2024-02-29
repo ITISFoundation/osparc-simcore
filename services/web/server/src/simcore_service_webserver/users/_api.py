@@ -67,20 +67,18 @@ async def search_users(app: web.Application, email: str) -> list[_schemas.UserPr
     )
     return [
         _schemas.UserProfile(
-            first_name=r.first_name or r.invitation_first_name,
-            last_name=r.last_name or r.invitation_last_name,
-            email=r.email or r.invitation_email,
+            first_name=r.first_name or r.pre_first_name,
+            last_name=r.last_name or r.pre_last_name,
+            email=r.email or r.pre_email,
             company_name=r.company_name,
-            phone=r.phone or r.invitation_phone,
+            phone=r.phone or r.pre_phone,
             address=r.address,
             city=r.city,
             state=r.state,
             postal_code=r.postal_code,
             country=r.country,
             # NOTE: old users will not have extra details
-            registered=r.user_id is not None
-            if r.invitation_email
-            else r.status is not None,
+            registered=r.user_id is not None if r.pren_email else r.status is not None,
             status=r.status,
         )
         for r in rows
@@ -95,24 +93,30 @@ async def pre_register_user(
     if found:
         raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
 
+    other_data = profile.dict(
+        include={
+            "first_name",
+            "last_name",
+            "phone",
+            "company_name",
+            "address",
+            "city",
+            "state",
+            "country",
+            "postal_code",
+        },
+        exclude_none=True,
+    )
+
+    for pre_key in ("first_name", "last_name", "phone"):
+        if pre_key in other_data:
+            other_data["pre_{key}"] = other_data.pop(pre_key)
+
     await _db.new_invited_user(
         get_database_engine(app),
         email=profile.email,
         created_by=creator_user_id,
-        **profile.dict(
-            include={
-                "first_name",
-                "last_name",
-                "phone",
-                "company_name",
-                "address",
-                "city",
-                "state",
-                "country",
-                "postal_code",
-            },
-            exclude_none=True,
-        )
+        **other_data
     )
 
     # FIXME: revert transaction above if len(found)!=1 (e.g. a user has changed the email to another invitation_email)
