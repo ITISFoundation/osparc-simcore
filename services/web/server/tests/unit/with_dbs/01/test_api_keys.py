@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import asyncio
+from collections.abc import AsyncIterable
 from datetime import timedelta
 from http import HTTPStatus
 
@@ -23,7 +24,7 @@ async def fake_user_api_keys(
     client: TestClient,
     logged_user: UserInfoDict,
     osparc_product_name: ProductName,
-):
+) -> AsyncIterable[list[str]]:
     assert client.app
     names = ["foo", "bar", "beta", "alpha"]
     repo = ApiKeyRepo.create_from_app(app=client.app)
@@ -48,20 +49,21 @@ async def fake_user_api_keys(
         )
 
 
-_USER_ACCESS_PARAMETERS = [
-    (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-    (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
-    *(
-        (UserRole.USER, status.HTTP_200_OK)
-        for role in UserRole
-        if role > UserRole.GUEST
-    ),
-]
+def _get_user_access_parametrizations(expected_authed_status_code):
+    return [
+        pytest.param(UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        pytest.param(UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        *(
+            pytest.param(r, expected_authed_status_code)
+            for r in UserRole
+            if r > UserRole.GUEST
+        ),
+    ]
 
 
 @pytest.mark.parametrize(
     "user_role,expected",
-    _USER_ACCESS_PARAMETERS,
+    _get_user_access_parametrizations(status.HTTP_200_OK),
 )
 async def test_list_api_keys(
     client: TestClient,
@@ -77,7 +79,10 @@ async def test_list_api_keys(
         assert not data
 
 
-@pytest.mark.parametrize("user_role,expected", _USER_ACCESS_PARAMETERS)
+@pytest.mark.parametrize(
+    "user_role,expected",
+    _get_user_access_parametrizations(status.HTTP_200_OK),
+)
 async def test_create_api_keys(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -102,19 +107,11 @@ async def test_create_api_keys(
 
 @pytest.mark.parametrize(
     "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
-        *(
-            (UserRole.USER, status.HTTP_204_NO_CONTENT)
-            for role in UserRole
-            if role > UserRole.GUEST
-        ),
-    ],
+    _get_user_access_parametrizations(status.HTTP_204_NO_CONTENT),
 )
 async def test_delete_api_keys(
     client: TestClient,
-    fake_user_api_keys,
+    fake_user_api_keys: list[str],
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: HTTPStatus,
@@ -128,7 +125,10 @@ async def test_delete_api_keys(
         await assert_status(resp, expected)
 
 
-@pytest.mark.parametrize("user_role,expected", _USER_ACCESS_PARAMETERS)
+@pytest.mark.parametrize(
+    "user_role,expected",
+    _get_user_access_parametrizations(status.HTTP_200_OK),
+)
 async def test_create_api_key_with_expiration(
     client: TestClient,
     logged_user: UserInfoDict,
