@@ -23,7 +23,7 @@ from http import HTTPStatus
 def get_display_phrase(status_code: int | HTTPStatus) -> str:
     try:
         status_code = HTTPStatus(status_code)
-        return f"{status_code}-{status_code.phrase}"
+        return f"{status_code}:{status_code.phrase}"
     except ValueError:
         return ""
 
