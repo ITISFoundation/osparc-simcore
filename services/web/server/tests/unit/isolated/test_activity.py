@@ -14,6 +14,7 @@ from aiohttp.client_exceptions import ClientConnectionError
 from aiohttp.test_utils import TestClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.activity.plugin import setup_activity
 from simcore_service_webserver.application_settings import setup_settings

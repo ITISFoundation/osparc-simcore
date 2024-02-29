@@ -13,7 +13,7 @@ from typing import Any
 import pytest
 import simcore_service_webserver.studies_dispatcher._redirects_handlers
 import sqlalchemy as sa
-from aiohttp import ClientResponse, ClientSession, web
+from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
@@ -163,7 +163,7 @@ def _get_base_url(client: TestClient) -> str:
 
 async def test_api_get_viewer_for_file(client: TestClient):
     resp = await client.get("/v0/viewers/default?file_type=JPEG")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     base_url = _get_base_url(client)
     assert data == [
@@ -177,14 +177,14 @@ async def test_api_get_viewer_for_file(client: TestClient):
 
 async def test_api_get_viewer_for_unsupported_type(client: TestClient):
     resp = await client.get("/v0/viewers/default?file_type=UNSUPPORTED_TYPE")
-    data, error = await assert_status(resp, web.HTTPOk)
+    data, error = await assert_status(resp, status.HTTP_200_OK)
     assert data == []
     assert error is None
 
 
 async def test_api_list_supported_filetypes(client: TestClient):
     resp = await client.get("/v0/viewers/default")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     base_url = _get_base_url(client)
     assert data == [
@@ -251,7 +251,7 @@ async def test_api_list_services(client: TestClient):
     url = client.app.router["list_latest_services"].url_for()
     response = await client.get(f"{url}")
 
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
 
     services = parse_obj_as(list[ServiceGet], data)
     assert services
@@ -413,7 +413,7 @@ async def test_dispatch_study_anonymously(
         me_url = client.app.router["get_my_profile"].url_for()
         response = await client.get(f"{me_url}")
 
-        data, _ = await assert_status(response, web.HTTPOk)
+        data, _ = await assert_status(response, status.HTTP_200_OK)
         assert data["login"].endswith("guest-at-osparc.io")
         assert data["gravatar_id"]
         assert data["role"].upper() == UserRole.GUEST.name
@@ -425,7 +425,7 @@ async def test_dispatch_study_anonymously(
         payload = await response.json()
         assert response.status == 200, payload
 
-        projects, error = await assert_status(response, web.HTTPOk)
+        projects, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
 
         assert len(projects) == 1
@@ -468,7 +468,7 @@ async def test_dispatch_logged_in_user(
     me_url = client.app.router["get_my_profile"].url_for()
     response = await client.get(f"{me_url}")
 
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     assert data["role"].upper() == UserRole.USER.name
 
     # guest user only a copy of the template project
@@ -478,7 +478,7 @@ async def test_dispatch_logged_in_user(
     payload = await response.json()
     assert response.status == 200, payload
 
-    projects, error = await assert_status(response, web.HTTPOk)
+    projects, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
 
     assert len(projects) == 1

@@ -6,7 +6,6 @@
 import json
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.projects_metadata import (
@@ -54,7 +53,9 @@ async def test_custom_metadata_handlers(
     )
     response = await client.get(f"{url}")
 
-    _, error = await assert_status(response, expected_cls=web.HTTPNotFound)
+    _, error = await assert_status(
+        response, expected_status_code=status.HTTP_404_NOT_FOUND
+    )
     error_message = error["errors"][0]["message"]
     assert invalid_project_id in error_message
     assert "project" in error_message.lower()
@@ -64,7 +65,7 @@ async def test_custom_metadata_handlers(
         project_id=user_project["uuid"]
     )
     response = await client.get(f"{url}")
-    data, _ = await assert_status(response, expected_cls=web.HTTPOk)
+    data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
     assert data["custom"] == {}
 
     # replace metadata
@@ -78,14 +79,14 @@ async def test_custom_metadata_handlers(
         f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
     )
 
-    data, _ = await assert_status(response, expected_cls=web.HTTPOk)
+    data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
 
     assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
 
     # delete project
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
     response = await client.delete(f"{url}")
-    await assert_status(response, expected_cls=web.HTTPNoContent)
+    await assert_status(response, expected_status_code=status.HTTP_204_NO_CONTENT)
 
     async def _wait_until_deleted():
         tasks = _crud_api_delete.get_scheduled_tasks(
@@ -100,4 +101,4 @@ async def test_custom_metadata_handlers(
         project_id=user_project["uuid"]
     )
     response = await client.get(f"{url}")
-    await assert_status(response, expected_cls=web.HTTPNotFound)
+    await assert_status(response, expected_status_code=status.HTTP_404_NOT_FOUND)

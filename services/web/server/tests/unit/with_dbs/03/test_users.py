@@ -4,7 +4,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
 import asyncio
 import functools
 import random
@@ -12,6 +11,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
+from http import HTTPStatus
 from itertools import repeat
 from typing import Any
 from unittest.mock import MagicMock, Mock
@@ -19,7 +19,6 @@ from unittest.mock import MagicMock, Mock
 import aiopg.sa
 import pytest
 import redis.asyncio as aioredis
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from faker import Faker
@@ -144,17 +143,17 @@ async def fake_tokens(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_get_profile(
     logged_user: UserInfoDict,
     client: TestClient,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     primary_group: dict[str, Any],
     standard_groups: list[dict[str, Any]],
     all_group: dict[str, str],
@@ -209,17 +208,17 @@ async def test_get_profile(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_204_NO_CONTENT),
+        (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
     ],
 )
 async def test_update_profile(
     logged_user: UserInfoDict,
     client: TestClient,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     assert client.app
 
@@ -231,7 +230,7 @@ async def test_update_profile(
 
     if not error:
         resp = await client.get(url)
-        data, _ = await assert_status(resp, web.HTTPOk)
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
 
         assert data["first_name"] == logged_user.get("first_name")
         assert data["last_name"] == "Foo"
@@ -241,17 +240,17 @@ async def test_update_profile(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated),
-        (UserRole.TESTER, web.HTTPCreated),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_201_CREATED),
+        (UserRole.TESTER, status.HTTP_201_CREATED),
     ],
 )
 async def test_create_token(
     client: TestClient,
     logged_user: UserInfoDict,
     tokens_db_cleanup: None,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     faker: Faker,
 ):
     assert client.app
@@ -279,10 +278,10 @@ async def test_create_token(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_read_token(
@@ -290,7 +289,7 @@ async def test_read_token(
     logged_user: UserInfoDict,
     tokens_db_cleanup: None,
     fake_tokens,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     assert client.app
     # list all
@@ -317,10 +316,10 @@ async def test_read_token(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_204_NO_CONTENT),
+        (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
     ],
 )
 async def test_delete_token(
@@ -364,14 +363,14 @@ def mock_failing_database_connection(mocker: Mock) -> MagicMock:
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.USER, web.HTTPServiceUnavailable),
+        (UserRole.USER, status.HTTP_503_SERVICE_UNAVAILABLE),
     ],
 )
 async def test_get_profile_with_failing_db_connection(
     logged_user: UserInfoDict,
     client: TestClient,
     mock_failing_database_connection: MagicMock,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     """
     Reproduces issue https://github.com/ITISFoundation/osparc-simcore/pull/1160
@@ -440,10 +439,10 @@ async def _create_notifications(
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 @pytest.mark.parametrize(
@@ -460,7 +459,7 @@ async def test_list_user_notifications(
     notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_count: int,
-    expected_response: type[web.HTTPException],
+    expected_response: HTTPStatus,
 ):
     assert client.app
     url = client.app.router["list_user_notifications"].url_for()
@@ -487,10 +486,10 @@ async def test_list_user_notifications(
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_204_NO_CONTENT),
+        (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
     ],
 )
 @pytest.mark.parametrize(
@@ -527,7 +526,7 @@ async def test_create_user_notification(
     notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_dict: dict[str, Any],
-    expected_response: type[web.HTTPException],
+    expected_response: HTTPStatus,
 ):
     assert client.app
     url = client.app.router["create_user_notification"].url_for()
@@ -605,17 +604,17 @@ async def test_create_user_notification_capped_list_length(
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_204_NO_CONTENT),
+        (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
     ],
 )
 async def test_update_user_notification(
     logged_user: UserInfoDict,
     notification_redis_client: aioredis.Redis,
     client: TestClient,
-    expected_response: type[web.HTTPException],
+    expected_response: HTTPStatus,
 ):
     async with _create_notifications(
         notification_redis_client, logged_user, 1
@@ -693,16 +692,16 @@ async def test_update_user_notification_at_correct_index(
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_list_permissions(
     logged_user: UserInfoDict,
     client: TestClient,
-    expected_response: type[web.HTTPException],
+    expected_response: HTTPStatus,
 ):
     assert client.app
     url = client.app.router["list_user_permissions"].url_for()
@@ -726,13 +725,13 @@ async def test_list_permissions(
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
-        (UserRole.USER, web.HTTPOk),
+        (UserRole.USER, status.HTTP_200_OK),
     ],
 )
 async def test_list_permissions_with_overriden_extra_properties(
     logged_user: UserInfoDict,
     client: TestClient,
-    expected_response: type[web.HTTPException],
+    expected_response: HTTPStatus,
     with_permitted_override_services_specifications: None,
 ):
     assert client.app
@@ -788,13 +787,13 @@ async def with_no_product_name_defined(
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
-        (UserRole.USER, web.HTTPOk),
+        (UserRole.USER, status.HTTP_200_OK),
     ],
 )
 async def test_list_permissions_with_no_group_defined_returns_default_false_for_services_override(
     logged_user: UserInfoDict,
     client: TestClient,
-    expected_response: type[web.HTTPException],
+    expected_response: HTTPStatus,
     with_no_product_name_defined: None,
 ):
     assert client.app

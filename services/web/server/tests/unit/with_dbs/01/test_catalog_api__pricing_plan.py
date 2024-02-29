@@ -4,9 +4,9 @@
 
 import re
 import urllib.parse
+from http import HTTPStatus
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     ServicePricingPlanGet,
@@ -16,6 +16,7 @@ from pydantic import parse_obj_as
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.resource_usage.settings import get_plugin_settings
@@ -43,17 +44,17 @@ def mock_rut_api_responses(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_get_service_pricinp_plan_role_access_rights(
     client: TestClient,
     logged_user: UserInfoDict,
     mock_rut_api_responses: AioResponsesMock,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     assert client.app
     assert client.app.router
@@ -73,21 +74,21 @@ def mock_catalog_get_service_pricing_plan_not_found(
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
     url_pattern = re.compile(f"^{settings.base_url}+/.*$")
 
-    aioresponses_mocker.get(url_pattern, exception=web.HTTPNotFound)
+    aioresponses_mocker.get(url_pattern, exception=status.HTTP_404_NOT_FOUND)
     return aioresponses_mocker
 
 
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.TESTER, web.HTTPNotFound),
+        (UserRole.TESTER, status.HTTP_404_NOT_FOUND),
     ],
 )
 async def test_get_service_pricing_plan_raises_not_found_error(
     client: TestClient,
     logged_user: UserInfoDict,
     mock_catalog_get_service_pricing_plan_not_found: AioResponsesMock,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     assert client.app
     assert client.app.router

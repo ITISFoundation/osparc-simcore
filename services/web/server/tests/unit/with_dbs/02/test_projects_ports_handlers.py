@@ -5,10 +5,10 @@
 
 from copy import deepcopy
 from datetime import datetime
+from http import HTTPStatus
 from typing import Any
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aiohttp.web_exceptions import HTTPOk
 from models_library.api_schemas_webserver.projects import ProjectGet
@@ -19,6 +19,7 @@ from pytest_simcore.helpers.faker_webserver import (
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -39,10 +40,10 @@ def fake_project(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_io_workflow(
@@ -50,7 +51,7 @@ async def test_io_workflow(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mock_catalog_service_api_responses: None,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     """This tests implements a minimal workflow
 
@@ -68,7 +69,7 @@ async def test_io_workflow(
     assert URL(f"/v0/projects/{project_id}/metadata/ports") == expected_url
 
     resp = await client.get(f"/v0/projects/{project_id}/metadata/ports")
-    ports_meta, error = await assert_status(resp, expected_cls=expected)
+    ports_meta, error = await assert_status(resp, expected_status_code=expected)
 
     if not error:
         assert ports_meta == [
@@ -130,7 +131,7 @@ async def test_io_workflow(
     assert URL(f"/v0/projects/{project_id}/inputs") == expected_url
 
     resp = await client.get(f"/v0/projects/{project_id}/inputs")
-    project_inputs, error = await assert_status(resp, expected_cls=expected)
+    project_inputs, error = await assert_status(resp, expected_status_code=expected)
 
     if not error:
         assert project_inputs == {
@@ -161,7 +162,7 @@ async def test_io_workflow(
         f"/v0/projects/{project_id}/inputs",
         json=[{"key": "38a0d401-af4b-4ea7-ab4c-5005c712a546", "value": 42}],
     )
-    project_inputs, error = await assert_status(resp, expected_cls=expected)
+    project_inputs, error = await assert_status(resp, expected_status_code=expected)
 
     if not error:
         assert project_inputs == {
@@ -189,7 +190,7 @@ async def test_io_workflow(
     assert URL(f"/v0/projects/{project_id}/outputs") == expected_url
 
     resp = await client.get(f"/v0/projects/{project_id}/outputs")
-    project_outputs, error = await assert_status(resp, expected_cls=expected)
+    project_outputs, error = await assert_status(resp, expected_status_code=expected)
 
     if not error:
         assert project_outputs == {
@@ -257,7 +258,7 @@ async def test_clone_project_and_set_inputs(
     assert f"/v0/projects/{cloned_project.uuid}/inputs" == url.path
 
     response = await client.get(url.path)
-    project_inputs, _ = await assert_status(response, expected_cls=HTTPOk)
+    project_inputs, _ = await assert_status(response, expected_status_code=HTTPOk)
 
     # Emulates transformation between JobInputs.values and body format which relies on keys
     update_inputs = []
@@ -274,7 +275,7 @@ async def test_clone_project_and_set_inputs(
         == url
     )
     response = await client.patch(url.path, json=update_inputs)
-    project_inputs, _ = await assert_status(response, expected_cls=HTTPOk)
+    project_inputs, _ = await assert_status(response, expected_status_code=HTTPOk)
     assert (
         next(p for p in project_inputs.values() if p["label"] == "X")["value"]
         == job_inputs_values["X"]

@@ -4,7 +4,6 @@
 
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectID
@@ -15,6 +14,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     standard_role_response,
 )
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMock
+from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.director_v2 import api
 
@@ -38,7 +38,8 @@ async def test_start_computation(
     url = client.app.router["start_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.post(f"{url}")
     data, error = await assert_status(
-        rsp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
+        rsp,
+        status.HTTP_201_CREATED if user_role == UserRole.GUEST else expected.created,
     )
 
     if user_role != UserRole.ANONYMOUS:
@@ -66,7 +67,8 @@ async def test_start_partial_computation(
         f"{url}", json={"subgraph": ["node_id1", "node_id2", "node_id498"]}
     )
     data, error = await assert_status(
-        rsp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
+        rsp,
+        status.HTTP_201_CREATED if user_role == UserRole.GUEST else expected.created,
     )
 
     if user_role != UserRole.ANONYMOUS:
@@ -90,7 +92,9 @@ async def test_get_computation(
     assert client.app
     url = client.app.router["get_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.get(f"{url}")
-    await assert_status(rsp, web.HTTPOk if user_role == UserRole.GUEST else expected.ok)
+    await assert_status(
+        rsp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
@@ -106,7 +110,10 @@ async def test_stop_computation(
     url = client.app.router["stop_computation"].url_for(project_id=f"{project_id}")
     rsp = await client.post(f"{url}")
     await assert_status(
-        rsp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content
+        rsp,
+        status.HTTP_204_NO_CONTENT
+        if user_role == UserRole.GUEST
+        else expected.no_content,
     )
 
 

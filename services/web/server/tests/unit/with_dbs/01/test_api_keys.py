@@ -5,13 +5,14 @@
 
 import asyncio
 from datetime import timedelta
+from http import HTTPStatus
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.products import ProductName
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from simcore_service_webserver.api_keys._api import prune_expired_api_keys
 from simcore_service_webserver.api_keys._db import ApiKeyRepo
 from simcore_service_webserver.db.models import UserRole
@@ -48,9 +49,13 @@ async def fake_user_api_keys(
 
 
 _USER_ACCESS_PARAMETERS = [
-    (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-    (UserRole.GUEST, web.HTTPForbidden),
-    *((UserRole.USER, web.HTTPOk) for role in UserRole if role > UserRole.GUEST),
+    (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+    (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+    *(
+        (UserRole.USER, status.HTTP_200_OK)
+        for role in UserRole
+        if role > UserRole.GUEST
+    ),
 ]
 
 
@@ -62,7 +67,7 @@ async def test_list_api_keys(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     disable_gc_manual_guest_users: None,
 ):
     resp = await client.get("/v0/auth/api-keys")
@@ -77,7 +82,7 @@ async def test_create_api_keys(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     disable_gc_manual_guest_users: None,
 ):
     display_name = "foo"
@@ -98,10 +103,10 @@ async def test_create_api_keys(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
         *(
-            (UserRole.USER, web.HTTPNoContent)
+            (UserRole.USER, status.HTTP_204_NO_CONTENT)
             for role in UserRole
             if role > UserRole.GUEST
         ),
@@ -112,7 +117,7 @@ async def test_delete_api_keys(
     fake_user_api_keys,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     disable_gc_manual_guest_users: None,
 ):
     resp = await client.delete("/v0/auth/api-keys", json={"display_name": "foo"})
@@ -128,7 +133,7 @@ async def test_create_api_key_with_expiration(
     client: TestClient,
     logged_user: UserInfoDict,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     disable_gc_manual_guest_users: None,
 ):
     assert client.app

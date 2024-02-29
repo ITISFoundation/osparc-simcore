@@ -5,11 +5,11 @@
 import asyncio
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pytest import CaptureFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
+from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_password
 from simcore_service_webserver.db.models import ConfirmationAction, UserStatus
 from simcore_service_webserver.login._constants import (
@@ -66,7 +66,7 @@ async def test_unknown_email(
 
     assert response.url.path == reset_url.path
     await assert_status(
-        response, web.HTTPOk, MSG_EMAIL_SENT.format(email=fake_user_email)
+        response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(email=fake_user_email)
     )
 
     out, _ = capsys.readouterr()
@@ -98,7 +98,7 @@ async def test_blocked_user(
         )
 
     assert response.url.path == reset_url.path
-    await assert_status(response, web.HTTPOk, MSG_EMAIL_SENT.format(**user))
+    await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
 
     out, _ = capsys.readouterr()
     # expected_msg contains {support_email} at the end of the string
@@ -120,7 +120,7 @@ async def test_inactive_user(client: TestClient, capsys: CaptureFixture):
         )
 
     assert response.url.path == reset_url.path
-    await assert_status(response, web.HTTPOk, MSG_EMAIL_SENT.format(**user))
+    await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
 
     out, _ = capsys.readouterr()
     assert parse_test_marks(out)["reason"] == MSG_ACTIVATION_REQUIRED
@@ -147,7 +147,7 @@ async def test_too_often(
         await db.delete_confirmation(confirmation)
 
     assert response.url.path == reset_url.path
-    await assert_status(response, web.HTTPOk, MSG_EMAIL_SENT.format(**user))
+    await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
 
     out, _ = capsys.readouterr()
     assert parse_test_marks(out)["reason"] == MSG_OFTEN_RESET_PASSWORD
@@ -167,7 +167,7 @@ async def test_reset_and_confirm(
             },
         )
         assert response.url.path == reset_url.path
-        await assert_status(response, web.HTTPOk, MSG_EMAIL_SENT.format(**user))
+        await assert_status(response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(**user))
 
         out, err = capsys.readouterr()
         confirmation_url = parse_link(out)
@@ -198,13 +198,13 @@ async def test_reset_and_confirm(
         payload = await response.json()
         assert response.status == 200, payload
         assert response.url.path == reset_allowed_url.path
-        await assert_status(response, web.HTTPOk, MSG_PASSWORD_CHANGED)
+        await assert_status(response, status.HTTP_200_OK, MSG_PASSWORD_CHANGED)
 
         # Try new password
         logout_url = client.app.router["auth_logout"].url_for()
         response = await client.post(f"{logout_url}")
         assert response.url.path == logout_url.path
-        await assert_status(response, web.HTTPUnauthorized, "Unauthorized")
+        await assert_status(response, status.HTTP_401_UNAUTHORIZED, "Unauthorized")
 
         login_url = client.app.router["auth_login"].url_for()
         response = await client.post(
@@ -215,4 +215,4 @@ async def test_reset_and_confirm(
             },
         )
         assert response.url.path == login_url.path
-        await assert_status(response, web.HTTPOk, MSG_LOGGED_IN)
+        await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)

@@ -2,10 +2,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
+from servicelib.aiohttp import status
 from simcore_service_webserver.login.storage import AsyncpgStorage
 
 
@@ -20,16 +20,16 @@ async def test_logout(client: TestClient, db: AsyncpgStorage):
         # try to access protected page
         response = await client.post(f"{protected_url}", json={"email": user["email"]})
         assert response.url.path == protected_url.path
-        await assert_status(response, web.HTTPOk)
+        await assert_status(response, status.HTTP_200_OK)
 
         # logout
         response = await client.post(f"{logout_url}")
         assert response.url.path == logout_url.path
-        await assert_status(response, web.HTTPOk)
+        await assert_status(response, status.HTTP_200_OK)
 
         # and try again
         response = await client.post(f"{protected_url}")
         assert response.url.path == protected_url.path
-        await assert_status(response, web.HTTPUnauthorized)
+        await assert_status(response, status.HTTP_401_UNAUTHORIZED)
 
     await db.delete_user(user)

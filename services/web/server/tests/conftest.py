@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pytest
 import simcore_service_webserver
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -235,8 +234,8 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
 
     async def _creator(
         client: TestClient,
-        expected_accepted_response: type[web.HTTPException],
-        expected_creation_response: type[web.HTTPException],
+        expected_accepted_response: HTTPStatus,
+        expected_creation_response: HTTPStatus,
         logged_user: dict[str, str],
         primary_group: dict[str, str],
         *,
@@ -278,7 +277,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                     f"--> waiting for creation {attempt.retry_state.attempt_number}..."
                 )
                 result = await client.get(f"{status_url}")
-                data, error = await assert_status(result, web.HTTPOk)
+                data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
                 task_status = TaskStatus.parse_obj(data)
