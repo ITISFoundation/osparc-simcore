@@ -17,6 +17,8 @@
     NOTE: https://github.com/encode/httpx/blob/master/httpx/_status_codes.py
 """
 
+import types
+from collections.abc import Callable
 from http import HTTPStatus
 
 
@@ -25,7 +27,7 @@ def get_display_phrase(status_code: int | HTTPStatus) -> str:
         status_code = HTTPStatus(status_code)
         return f"{status_code}:{status_code.phrase}"
     except ValueError:
-        return ""
+        return f"{status_code}"
 
 
 def is_informational(status_code: int) -> bool:
@@ -68,3 +70,15 @@ def is_error(status_code: int) -> bool:
     Returns `True` for 4xx or 5xx status codes, `False` otherwise.
     """
     return 400 <= status_code <= 599
+
+
+def get_http_status_codes(
+    status: types.ModuleType, predicate: Callable[[int], bool] | None = None
+) -> list[int]:
+    # In the spirit of https://docs.python.org/3/library/inspect.html#inspect.getmembers
+    iter_all = (
+        getattr(status, code) for code in status.__all__ if code.startswith("HTTP_")
+    )
+    if predicate is None:
+        return list(iter_all)
+    return [code for code in iter_all if predicate(code)]
