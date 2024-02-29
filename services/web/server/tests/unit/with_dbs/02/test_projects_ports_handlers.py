@@ -10,7 +10,6 @@ from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
-from aiohttp.web_exceptions import HTTPOk
 from models_library.api_schemas_webserver.projects import ProjectGet
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.faker_webserver import (
@@ -40,10 +39,8 @@ def fake_project(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
+        pytest.param(UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        *(pytest.param(r, status.HTTP_200_OK) for r in UserRole if r >= UserRole.GUEST),
     ],
 )
 async def test_io_workflow(
@@ -258,7 +255,9 @@ async def test_clone_project_and_set_inputs(
     assert f"/v0/projects/{cloned_project.uuid}/inputs" == url.path
 
     response = await client.get(url.path)
-    project_inputs, _ = await assert_status(response, expected_status_code=HTTPOk)
+    project_inputs, _ = await assert_status(
+        response, expected_status_code=status.HTTP_200_OK
+    )
 
     # Emulates transformation between JobInputs.values and body format which relies on keys
     update_inputs = []
@@ -275,7 +274,9 @@ async def test_clone_project_and_set_inputs(
         == url
     )
     response = await client.patch(url.path, json=update_inputs)
-    project_inputs, _ = await assert_status(response, expected_status_code=HTTPOk)
+    project_inputs, _ = await assert_status(
+        response, expected_status_code=status.HTTP_200_OK
+    )
     assert (
         next(p for p in project_inputs.values() if p["label"] == "X")["value"]
         == job_inputs_values["X"]
