@@ -2,7 +2,8 @@ from http import HTTPStatus
 
 from servicelib.aiohttp import status
 from servicelib.status_utils import (
-    get_display_phrase,
+    _INVALID_STATUS_CODE_MSG,
+    get_display_name,
     get_http_status_codes,
     is_client_error,
     is_error,
@@ -14,10 +15,9 @@ from servicelib.status_utils import (
 
 
 def test_display():
-    assert get_display_phrase(status.HTTP_200_OK) == "200:OK"
-
-    assert get_display_phrase(11) == "11"
-    assert get_display_phrase(status.HTTP_306_RESERVED) == "306"
+    assert get_display_name(status.HTTP_200_OK) == "HTTP_200_OK"
+    assert get_display_name(status.HTTP_306_RESERVED) == "HTTP_306_RESERVED"
+    assert get_display_name(11) == _INVALID_STATUS_CODE_MSG
 
 
 def test_status_codes_checks():

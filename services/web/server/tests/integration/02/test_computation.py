@@ -19,6 +19,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.json_serialization import json_dumps
+from servicelib.status_utils import get_display_name
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects
@@ -87,17 +88,17 @@ class _ExpectedResponseTuple(NamedTuple):
 
     # pylint: disable=no-member
     def __str__(self) -> str:
-        items = ", ".join(f"{k}={v.__name__}" for k, v in self._asdict().items())
+        items = ", ".join(
+            f"{k}={get_display_name(c)}" for k, c in self._asdict().items()
+        )
         return f"{self.__class__.__name__}({items})"
 
 
-def standard_role_response() -> tuple[
-    str, list[tuple[UserRole, _ExpectedResponseTuple]]
-]:
+def standard_role_response():
     return (
         "user_role,expected",
         [
-            (
+            pytest.param(
                 UserRole.ANONYMOUS,
                 _ExpectedResponseTuple(
                     ok=status.HTTP_401_UNAUTHORIZED,
@@ -106,7 +107,7 @@ def standard_role_response() -> tuple[
                     forbidden=status.HTTP_401_UNAUTHORIZED,
                 ),
             ),
-            (
+            pytest.param(
                 UserRole.GUEST,
                 _ExpectedResponseTuple(
                     ok=status.HTTP_200_OK,
@@ -115,7 +116,7 @@ def standard_role_response() -> tuple[
                     forbidden=status.HTTP_403_FORBIDDEN,
                 ),
             ),
-            (
+            pytest.param(
                 UserRole.USER,
                 _ExpectedResponseTuple(
                     ok=status.HTTP_200_OK,
@@ -124,7 +125,7 @@ def standard_role_response() -> tuple[
                     forbidden=status.HTTP_403_FORBIDDEN,
                 ),
             ),
-            (
+            pytest.param(
                 UserRole.TESTER,
                 _ExpectedResponseTuple(
                     ok=status.HTTP_200_OK,
