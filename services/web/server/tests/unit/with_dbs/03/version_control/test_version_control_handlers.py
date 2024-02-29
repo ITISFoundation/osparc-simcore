@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 from collections.abc import Awaitable, Callable
+from http import HTTPStatus
 from uuid import UUID
 
 import aiohttp

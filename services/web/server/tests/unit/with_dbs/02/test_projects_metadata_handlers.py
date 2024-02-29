@@ -16,6 +16,7 @@ from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.projects import _crud_api_delete
 from simcore_service_webserver.projects.models import ProjectDict

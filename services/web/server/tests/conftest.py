@@ -8,6 +8,7 @@ import logging
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
+from http import HTTPStatus
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,7 @@ from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
+from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
@@ -36,8 +38,6 @@ from yarl import URL
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-
-log = logging.getLogger(__name__)
 
 # mute noisy loggers
 logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)

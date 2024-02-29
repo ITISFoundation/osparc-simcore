@@ -5,6 +5,7 @@
 
 
 from datetime import datetime, timezone
+from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
