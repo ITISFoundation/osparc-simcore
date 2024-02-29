@@ -5,6 +5,7 @@ from typing import Any, TypedDict
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.users import UserID
+from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole, UserStatus
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.login._constants import MSG_LOGGED_IN
@@ -137,7 +138,7 @@ async def log_client_in(
     )
 
     if enable_check:
-        await assert_status(reponse, web.HTTPOk, MSG_LOGGED_IN)
+        await assert_status(reponse, status.HTTP_200_OK, MSG_LOGGED_IN)
 
     return user
 
