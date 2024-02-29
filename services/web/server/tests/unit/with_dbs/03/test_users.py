@@ -232,7 +232,7 @@ async def test_search_and_pre_registration(
 ):
     assert client.app
 
-    # ONLY in `users` and NOT `invited_users`
+    # ONLY in `users` and NOT `users_pre_details`
 
     resp = await client.get("/v0/users:search", params={"email": logged_user["email"]})
     assert resp.status == status.HTTP_200_OK
@@ -254,7 +254,7 @@ async def test_search_and_pre_registration(
         "status": "ACTIVE",
     }
 
-    # NOT in `users` and ONLY `invited_users`
+    # NOT in `users` and ONLY `users_pre_details`
 
     # create pre-registration
     requester_info = {
@@ -286,7 +286,7 @@ async def test_search_and_pre_registration(
         "status": None,
     }
 
-    # BOTH in `users` and `invited_users`
+    # BOTH in `users` and `users_pre_details`
 
     # Emulating registration of pre-register user
     new_user = await simcore_service_webserver.login._auth_api.create_user(

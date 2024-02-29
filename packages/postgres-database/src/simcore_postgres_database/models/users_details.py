@@ -8,8 +8,9 @@ from ._common import (
 from .base import metadata
 from .users import users
 
-invited_users = sa.Table(
-    "invited_users",
+user_pre_details = sa.Table(
+    "users_pre_details",
+    # User's pre-registration details:
     # Extension of the `users` table that holds information necessary for invoicing, etc
     # This information is optional for non-billable products and for that reason it is
     # added as a separate table
@@ -70,4 +71,4 @@ invited_users = sa.Table(
     column_modified_datetime(timezone=False),
 )
 
-register_modified_datetime_auto_update_trigger(invited_users)
+register_modified_datetime_auto_update_trigger(user_pre_details)
