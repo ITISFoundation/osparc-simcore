@@ -1,8 +1,7 @@
 openapi: 3.0.2
 info:
   title: simcore-service-webserver
-  description: ' Main service with an interface (http-API & websockets) to the web
-    front-end'
+  description: Main service with an interface (http-API & websockets) to the web front-end
   version: 0.38.0
 servers:
 - url: ''
@@ -2926,7 +2925,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -3877,6 +3876,7 @@ paths:
       - required: true
         schema:
           title: Email
+          minLength: 3
           type: string
         name: email
         in: query
@@ -3886,7 +3886,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users._handlers.UserProfile__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users._schemas.UserProfile__'
   /v0/users:pre-register:
     post:
       tags:
@@ -6282,17 +6282,6 @@ components:
             $ref: '#/components/schemas/TagGet'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.users._handlers.UserProfile__:
-      title: Envelope[list[simcore_service_webserver.users._handlers.UserProfile]]
-      type: object
-      properties:
-        data:
-          title: Data
-          type: array
-          items:
-            $ref: '#/components/schemas/UserProfile'
-        error:
-          title: Error
     Envelope_list_simcore_service_webserver.users._notifications.UserNotification__:
       title: Envelope[list[simcore_service_webserver.users._notifications.UserNotification]]
       type: object
@@ -6302,6 +6291,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserNotification'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.users._schemas.UserProfile__:
+      title: Envelope[list[simcore_service_webserver.users._schemas.UserProfile]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/UserProfile'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.users.schemas.PermissionGet__:
@@ -7968,8 +7968,8 @@ components:
           title: Email
           type: string
           format: email
-        company:
-          title: Company
+        companyName:
+          title: Companyname
           type: string
         phone:
           title: Phone
@@ -10158,13 +10158,7 @@ components:
     UserProfile:
       title: UserProfile
       required:
-      - firstName
-      - lastName
       - email
-      - address
-      - city
-      - postalCode
-      - country
       - registered
       type: object
       properties:
@@ -10178,8 +10172,8 @@ components:
           title: Email
           type: string
           format: email
-        company:
-          title: Company
+        companyName:
+          title: Companyname
           type: string
         phone:
           title: Phone
@@ -10193,7 +10187,7 @@ components:
         state:
           title: State
           type: string
-          description: State, province, canton, region etc
+          description: State, province, canton, ...
         postalCode:
           title: Postalcode
           type: string
