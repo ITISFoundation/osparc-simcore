@@ -32,7 +32,12 @@ async def po_user(
     users.delete().where(users.c.id == user_id)
 
 
-async def test_invited_user(connection: SAConnection, faker: Faker, po_user: RowProxy):
+@pytest.mark.acceptance_test(
+    "pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
+)
+async def test_user_creation_workflow(
+    connection: SAConnection, faker: Faker, po_user: RowProxy
+):
 
     # a PO creates an invitation
     fake_invitation = {
@@ -64,7 +69,7 @@ async def test_invited_user(connection: SAConnection, faker: Faker, po_user: Row
         status=UserStatus.ACTIVE,
         expires_at=None,
     )
-    await UsersRepo.update_details(connection, new_user)
+    await UsersRepo.sync_pre_details(connection, new_user)
 
     invoice_data = await UsersRepo.get_billing_details(connection, user_id=new_user.id)
     assert invoice_data is not None

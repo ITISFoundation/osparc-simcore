@@ -78,7 +78,7 @@ class UsersRepo:
         return row
 
     @staticmethod
-    async def update_details(conn: SAConnection, new_user: RowProxy):
+    async def sync_pre_details(conn: SAConnection, new_user: RowProxy):
         """After a user is created, it can be associated with information provided during invitation"""
 
         # link first

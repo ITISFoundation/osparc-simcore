@@ -37,7 +37,7 @@ async def create_user(
             status=status_upon_creation,
             expires_at=expires_at,
         )
-        await UsersRepo.update_details(conn, user)
+        await UsersRepo.sync_pre_details(conn, user)
     return dict(user.items())
 
 
