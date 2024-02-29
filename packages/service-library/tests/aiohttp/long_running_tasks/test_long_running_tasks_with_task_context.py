@@ -11,15 +11,16 @@ How these tests works:
 
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from functools import wraps
-from typing import Awaitable, Callable, Optional
+from typing import Optional
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pydantic import create_model, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
-from servicelib.aiohttp import long_running_tasks
+from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks._server import (
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
 )
