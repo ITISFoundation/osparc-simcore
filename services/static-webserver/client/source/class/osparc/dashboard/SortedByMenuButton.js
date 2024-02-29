@@ -54,6 +54,10 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
   },
 
   statics: {
+    DefaultSorting: {
+      field: "last_change_date",
+      direction: "desc"
+    },
     getSortByOptions: function() {
       return [{
         id: "name-asc",
@@ -62,6 +66,14 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       }, {
         id: "name-desc",
         label: qx.locale.Manager.tr("Name Desc"),
+        icon: "@FontAwesome5Solid/sort-alpha-up/14"
+      }, {
+        id: "owner-asc",
+        label: qx.locale.Manager.tr("Owner Asc"),
+        icon: "@FontAwesome5Solid/sort-alpha-down/14"
+      }, {
+        id: "owner-desc",
+        label: qx.locale.Manager.tr("Owner Desc"),
         icon: "@FontAwesome5Solid/sort-alpha-up/14"
       }, {
         id: "created-asc",
@@ -114,6 +126,18 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
         case "name-desc":
           sort = {
             field: "name",
+            direction: "desc"
+          };
+          break;
+        case "owner-asc":
+          sort = {
+            field: "prj_owner",
+            direction: "asc"
+          };
+          break;
+        case "owner-desc":
+          sort = {
+            field: "prj_owner",
             direction: "desc"
           };
           break;

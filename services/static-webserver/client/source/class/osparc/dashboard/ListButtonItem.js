@@ -208,9 +208,17 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       }
     },
 
+    createOwner: function(label) {
+      if (label === osparc.auth.Data.getInstance().getEmail()) {
+        return qx.locale.Manager.tr("My project");
+      }
+      return osparc.utils.Utils.getNameFromEmail(label);
+    },
+
     _applyOwner: function(value, old) {
       const label = this.getChildControl("owner");
-      label.setValue(value);
+      const user = this.createOwner(value);
+      label.setValue(user);
       label.setVisibility(value ? "visible" : "excluded");
       return;
     },

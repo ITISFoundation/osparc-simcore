@@ -54,10 +54,11 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       STATUS: 7,
       PERMISSION: 8,
       TSR: 9,
-      SHARED: 10,
-      LAST_CHANGE: 11,
-      HITS: 12,
-      OPTIONS: 13
+      OWNER: 10,
+      SHARED: 11,
+      LAST_CHANGE: 12,
+      HITS: 13,
+      OPTIONS: 14
     }
   },
 
@@ -127,9 +128,9 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             alignY: "middle",
             allowGrowX: true
           });
-          titleRow = this.getChildControl("title-row");
-          titleRow.addAt(control, 1, {
-            flex: 1
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.OWNER
           });
           break;
         case "project-status":
