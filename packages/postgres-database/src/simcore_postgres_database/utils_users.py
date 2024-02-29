@@ -14,7 +14,7 @@ from aiopg.sa.result import RowProxy
 
 from .errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
-from .models.users_details import user_pre_details
+from .models.users_details import user_details
 
 
 class BaseUserRepoError(Exception):
@@ -83,17 +83,17 @@ class UsersRepo:
 
         # link first
         result = await conn.execute(
-            user_pre_details.update()
-            .where(user_pre_details.c.email == new_user.email)
-            .values(accepted_by=new_user.id)
+            user_details.update()
+            .where(user_details.c.email == new_user.email)
+            .values(user_id=new_user.id)
         )
 
         if result.rowcount:
             result = await conn.execute(
                 sa.select(
-                    user_pre_details.c.first_name,
-                    user_pre_details.c.last_name,
-                ).where(user_pre_details.c.email == new_user.email)
+                    user_details.c.first_name,
+                    user_details.c.last_name,
+                ).where(user_details.c.email == new_user.email)
             )
             details = await result.fetchone()
 
@@ -113,19 +113,15 @@ class UsersRepo:
             sa.select(
                 users.c.first_name,
                 users.c.last_name,
-                user_pre_details.c.company_name,
-                user_pre_details.c.address,
-                user_pre_details.c.city,
-                user_pre_details.c.state,
-                user_pre_details.c.country,
-                user_pre_details.c.postal_code,
+                user_details.c.company_name,
+                user_details.c.address,
+                user_details.c.city,
+                user_details.c.state,
+                user_details.c.country,
+                user_details.c.postal_code,
                 users.c.phone,
             )
-            .select_from(
-                users.join(
-                    user_pre_details, users.c.id == user_pre_details.c.accepted_by
-                )
-            )
+            .select_from(users.join(user_details, users.c.id == user_details.c.user_id))
             .where(users.c.id == user_id)
         )
         return await result.fetchone()

@@ -10,7 +10,7 @@ from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_user
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
-from simcore_postgres_database.models.users_details import user_pre_details
+from simcore_postgres_database.models.users_details import user_details
 from simcore_postgres_database.utils_users import UsersRepo
 
 
@@ -54,9 +54,9 @@ async def test_user_creation_workflow(
     }
 
     email = await connection.scalar(
-        sa.insert(user_pre_details)
+        sa.insert(user_details)
         .values(**fake_invitation)
-        .returning(user_pre_details.c.email)
+        .returning(user_details.c.email)
     )
     assert email is not None
     assert email == fake_invitation["email"]

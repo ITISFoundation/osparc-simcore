@@ -8,15 +8,11 @@ from ._common import (
 from .base import metadata
 from .users import users
 
-user_pre_details = sa.Table(
-    "users_pre_details",
-    # User's pre-registration details:
-    # Extension of the `users` table that holds information necessary for invoicing, etc
-    # This information is optional for non-billable products and for that reason it is
-    # added as a separate table
+user_details = sa.Table(
+    "users_details",
     metadata,
     sa.Column(
-        "accepted_by",
+        "user_id",
         sa.Integer,
         sa.ForeignKey(
             users.c.id,
@@ -28,25 +24,26 @@ user_pre_details = sa.Table(
     ),
     # Pre-registration data, i.e. copied to `users` upon registration
     sa.Column(
-        "email",
+        "pre_email",
         sa.String(),
         nullable=False,
         unique=True,
-        doc="Invitation issued to this email."
-        "If multiple invitations to the same email (e.g. different products), then we use the same row",
+        doc="Email of the user on pre-registration (copied to users.email upon registration)",
     ),
     sa.Column(
-        "first_name",
+        "pre_first_name",
         sa.String(),
-        doc="First name upon invitation (copied to users.first_name)",
+        doc="First name on pre-registration (copied to users.first_name upon registration)",
     ),
     sa.Column(
-        "last_name",
+        "pre_last_name",
         sa.String(),
-        doc="Last name upon invitation (copied to users.last_name)",
+        doc="Last name on pre-registration (copied to users.last_name upon registration)",
     ),
     sa.Column(
-        "phone", sa.String(), doc="Phone upon invitation (copied to users.phone)"
+        "pre_phone",
+        sa.String(),
+        doc="Phone provided on pre-registration (copied to users.phone upon registration)",
     ),
     # Billable address
     sa.Column("company_name", sa.String()),
@@ -65,10 +62,10 @@ user_pre_details = sa.Table(
             ondelete="SET NULL",
         ),
         nullable=True,
-        doc="PO user that issued this invitation",
+        doc="PO user that issued this pre-registration",
     ),
     column_created_datetime(timezone=False),
     column_modified_datetime(timezone=False),
 )
 
-register_modified_datetime_auto_update_trigger(user_pre_details)
+register_modified_datetime_auto_update_trigger(user_details)
