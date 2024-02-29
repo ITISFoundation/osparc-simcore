@@ -10,6 +10,7 @@ from .users import users
 
 user_details = sa.Table(
     "users_details",
+    # NOTE: A row can be added here during pre-registration even before the `users` row exists
     metadata,
     sa.Column(
         "user_id",
@@ -20,9 +21,9 @@ user_details = sa.Table(
             ondelete="CASCADE",
         ),
         nullable=True,
-        doc="Links these details to a final registered user or null if registration is pending",
+        doc="None if this row was added during pre-registration or join column with `users` after registration",
     ),
-    # Pre-registration data, i.e. copied to `users` upon registration
+    # Pre-registration columns: i.e. fields copied to `users` upon registration
     sa.Column(
         "pre_email",
         sa.String(),
@@ -45,14 +46,14 @@ user_details = sa.Table(
         sa.String(),
         doc="Phone provided on pre-registration (copied to users.phone upon registration)",
     ),
-    # Billable address
+    # Billable address columns:
     sa.Column("company_name", sa.String()),
     sa.Column("address", sa.String()),
     sa.Column("city", sa.String()),
     sa.Column("state", sa.String()),
     sa.Column("country", sa.String()),
     sa.Column("postal_code", sa.String()),
-    # Details on the pre-registration issuer
+    # Other related users
     sa.Column(
         "created_by",
         sa.Integer,
