@@ -10,17 +10,20 @@ from typing import Any
 from unittest.mock import MagicMock, Mock
 
 import pytest
+import simcore_service_webserver.login._auth_api
+from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from faker import Faker
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
+from pytest_simcore.helpers.rawdata_fakers import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_service_webserver.users._preferences_api import (
     get_frontend_user_preferences_aggregation,
 )
@@ -227,18 +230,16 @@ async def test_users_api_only_accessed_by_po(
 async def test_search_and_pre_registration(
     client: TestClient, logged_user: UserInfoDict, faker: Faker
 ):
+    assert client.app
 
-    # TODO: test_search_registed_user_wo_pre_registration
-    # i.e. all users prior to pre-registration feature
+    # ONLY in `users` and NOT `invited_users`
 
     resp = await client.get("/v0/users:search", params={"email": logged_user["email"]})
     assert resp.status == status.HTTP_200_OK
 
-    body = await resp.json()
-
-    data = body["data"]
-    assert len(data) == 1
-    assert data[0] == {
+    found, _ = await assert_status(resp, web.HTTPOk)
+    assert len(found) == 1
+    assert found[0] == {
         "firstName": logged_user.get("first_name"),
         "lastName": logged_user.get("last_name"),
         "email": logged_user["email"],
@@ -252,6 +253,8 @@ async def test_search_and_pre_registration(
         "registered": True,
         "status": "ACTIVE",
     }
+
+    # NOT in `users` and ONLY `invited_users`
 
     # create pre-registration
     requester_info = {
@@ -274,11 +277,34 @@ async def test_search_and_pre_registration(
     resp = await client.get(
         "/v0/users:search", params={"email": requester_info["email"]}
     )
-    data, _ = await assert_status(resp, web.HTTPOk)
-    assert len(data) == 1
+    found, _ = await assert_status(resp, web.HTTPOk)
+    assert len(found) == 1
 
-    assert data[0] == {
+    assert found[0] == {
         **requester_info,
         "registered": False,
         "status": None,
+    }
+
+    # BOTH in `users` and `invited_users`
+
+    # Emulating registration of pre-register user
+    new_user = await simcore_service_webserver.login._auth_api.create_user(
+        client.app,
+        email=requester_info["email"],
+        password=DEFAULT_TEST_PASSWORD,
+        status_upon_creation=UserStatus.ACTIVE,
+        expires_at=None,
+    )
+
+    resp = await client.get(
+        "/v0/users:search", params={"email": requester_info["email"]}
+    )
+    found, _ = await assert_status(resp, web.HTTPOk)
+    assert len(found) == 1
+
+    assert found[0] == {
+        **requester_info,
+        "registered": True,
+        "status": str(new_user["status"]),
     }
