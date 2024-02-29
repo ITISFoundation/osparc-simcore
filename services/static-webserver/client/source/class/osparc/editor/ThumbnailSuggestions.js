@@ -51,19 +51,55 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
 
   statics: {
     defaultTemplates: [
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/Thumbnail.png",
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/bright_coulomb.png",
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/dynamic_hertz.png",
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/electric_heaviside.png",
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/energetic_ampere.png",
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/glowing_tesla.png",
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/illuminated_volta.png",
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/luminous_ohm.png",
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/magnetic_lorentz.png",
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/radiant_maxwell.png",
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/vibrant_faraday.png"
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-01.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-02.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-03.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-04.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-05.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-06.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-07.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-08.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-09.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-10.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-11.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-12.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-13.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-14.png"
+    ],
+    osparcTemplates: [
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-01.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-02.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-03.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-04.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-05.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-06.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-07.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-08.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-09.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-10.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-11.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-12.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-13.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-14.png"
+    ],
+    tipTemplates: [
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-01.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-02.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-03.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-04.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-05.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-06.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-07.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-08.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-09.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-10.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-11.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-12.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-13.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-14.png"
     ],
     extractThumbnailSuggestions: function(study) {
+      const defaultThumbnails = this.self().setThumbnailTemplates();
       const suggestions = new Set([]);
       const wb = study.getWorkbench();
       const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
@@ -73,8 +109,18 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
           suggestions.add(srvMetadata["thumbnail"]);
         }
       });
-      const amendedArray = [...suggestions, ...this.defaultTemplates]
+      const amendedArray = [...suggestions, ...defaultThumbnails]
       return Array.from(amendedArray);
+    },
+    setThumbnailTemplates: function() {
+      switch (osparc.product.Utils.getProductName()) {
+        case "osparc":
+          return this.self().osparcTemplates;
+        case "tis":
+          return this.self().tipTemplates;
+        default:
+          return this.self().defaultTemplates;
+      }
     }
   },
 
@@ -154,8 +200,8 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
     setSuggestions: function(suggestions) {
       this.removeAll();
       suggestions.forEach(suggestion => {
-        const maxHeight = this.getMaxHeight();
-        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion.thumbnailUrl || suggestion, maxHeight, parseInt(maxHeight*2/3));
+        const maxHeight = this.getMaxHeight() - 21;
+        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion.thumbnailUrl || suggestion, maxHeight, null);
         thumbnail.set({
           minWidth: 97,
           margin: 0,

@@ -50,7 +50,6 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       walletModel.bind("walletId", walletListItem, "key");
       walletModel.bind("walletId", walletListItem, "model");
       walletModel.bind("accessRights", walletListItem, "accessRights");
-      walletModel.bind("thumbnail", walletListItem, "thumbnail");
       walletModel.bind("name", walletListItem, "title");
       walletModel.bind("description", walletListItem, "subtitle");
       walletModel.bind("creditsAvailable", walletListItem, "creditsAvailable");
@@ -84,7 +83,7 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
         this.__titleLayout.remove(this.__walletListItem);
       }
       const walletListItem = this.__walletListItem = new osparc.desktop.wallets.WalletListItem();
-      walletListItem.getChildControl("options").hide();
+      walletListItem.getChildControl("options").exclude();
       walletListItem.addListener("openEditWallet", () => this.__openEditWallet());
       this.__titleLayout.add(walletListItem, {
         flex: 1
@@ -99,9 +98,6 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       wallet.bind("walletId", walletEditor, "walletId");
       wallet.bind("name", walletEditor, "name");
       wallet.bind("description", walletEditor, "description");
-      wallet.bind("thumbnail", walletEditor, "thumbnail", {
-        converter: val => val ? val : ""
-      });
       const title = this.tr("Credit Account Details Editor");
       const win = osparc.ui.window.Window.popUpInWindow(walletEditor, title, 400, 250);
       walletEditor.addListener("updateWallet", () => this.__updateWallet(win, walletEditor.getChildControl("save"), walletEditor));
@@ -112,7 +108,6 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       const walletId = walletEditor.getWalletId();
       const name = walletEditor.getName();
       const description = walletEditor.getDescription();
-      const thumbnail = walletEditor.getThumbnail();
       const params = {
         url: {
           "walletId": walletId
@@ -120,7 +115,6 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
         data: {
           "name": name,
           "description": description,
-          "thumbnail": thumbnail || null,
           "status": this.__walletModel.getStatus()
         }
       };
@@ -171,6 +165,10 @@ qx.Class.define("osparc.desktop.wallets.WalletDetails", {
       tabView.add(membersListPage);
 
       return tabView;
+    },
+
+    excludeShareButton: function() {
+      this.__walletListItem.excludeShareButton()
     }
   }
 });

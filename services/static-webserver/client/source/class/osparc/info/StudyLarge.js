@@ -113,6 +113,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         leftVBox.add(new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize()));
         leftVBox.add(new qx.ui.core.Spacer(15, 15));
       }
+
       const descInfo = {
         label: this.tr("DESCRIPTION"),
         view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy()),
