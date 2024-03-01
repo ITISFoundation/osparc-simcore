@@ -3,6 +3,7 @@
 - Payment w/ payment-method
 
 """
+
 # pylint: disable=too-many-arguments
 
 import logging
@@ -15,16 +16,20 @@ from models_library.api_schemas_payments.errors import (
     PaymentAlreadyExistsError,
     PaymentNotFoundError,
 )
+from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentMethodID,
     PaymentTransaction,
     WalletPaymentInitiated,
 )
+from models_library.products import ProductStripeInfoGet
+from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, PositiveInt
+from pydantic import EmailStr, PositiveInt, parse_obj_as
 from servicelib.logging_utils import log_context
+from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -55,6 +60,7 @@ _logger = logging.getLogger()
 async def init_one_time_payment(
     gateway: PaymentsGatewayApi,
     repo: PaymentsTransactionsRepo,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     amount_dollars: Decimal,
     target_credits: Decimal,
@@ -68,18 +74,33 @@ async def init_one_time_payment(
 ) -> WalletPaymentInitiated:
     initiated_at = arrow.utcnow().datetime
 
-    # MD: This needs to be modified
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        parse_obj_as(
+            RPCMethodName, "get_product_stripe_info"
+        ),  # TODO: MD probably is better to send as parameter so there is no cycle dependency
+        product_name=product_name,
+    )
+    product_stripe_info = parse_obj_as(ProductStripeInfoGet, result)
+
+    # TODO: PC: please modify with your PR
+    user_address = UserAddress(country="CH")
+
     init = await gateway.init_payment(
         payment=InitPayment(
             amount_dollars=amount_dollars,
             credits=target_credits,
             user_name=user_name,
             user_email=user_email,
-            user_address=UserAddress(country="CH"),  # TODO: PC: modify correctly
+            user_address=user_address,
             wallet_name=wallet_name,
-            stripe_price_id="stripe_price_id",
-            stripe_tax_rate_id="stripe_tax_rate_id",
-            stripe_tax_exempt_value=StripeTaxExempt.none,
+            stripe_price_id=product_stripe_info.stripe_price_id,
+            stripe_tax_rate_id=product_stripe_info.stripe_tax_rate_id,
+            stripe_tax_exempt_value=(
+                StripeTaxExempt.none
+                if user_address.country in ["CH", "LI"]
+                else StripeTaxExempt.reverse
+            ),
         )
     )
 

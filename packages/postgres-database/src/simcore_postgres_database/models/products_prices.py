@@ -45,6 +45,18 @@ products_prices = sa.Table(
         server_default=sa.sql.func.now(),
         doc="Timestamp auto-generated upon creation",
     ),
+    sa.Column(
+        "stripe_price_id",
+        sa.String,
+        nullable=False,
+        doc="Stripe price ID associated to this product (must be in sync with usd_per_credit field). Currently created manually in Stripe",
+    ),
+    sa.Column(
+        "stripe_tax_rate_id",
+        sa.String,
+        nullable=False,
+        doc="Stripe tax rate ID associated to this product. Currently created manually in Stripe",
+    ),
     sa.CheckConstraint(
         "usd_per_credit >= 0", name="non_negative_usd_per_credit_constraint"
     ),

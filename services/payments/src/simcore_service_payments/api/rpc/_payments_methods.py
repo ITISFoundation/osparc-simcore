@@ -164,6 +164,8 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
     user_email: EmailStr,
     comment: str | None = None,
 ):
+    # TODO: MD I will provide additional 2 fields with product stripe info
+
     with log_context(
         _logger,
         logging.INFO,

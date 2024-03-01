@@ -16,6 +16,7 @@ from models_library.wallets import WalletID
 from pydantic import EmailStr
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
+from simcore_service_payments.services.rabbitmq import get_rabbitmq_rpc_client
 
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services import payments
@@ -52,6 +53,7 @@ async def init_payment(
         return await payments.init_one_time_payment(
             gateway=PaymentsGatewayApi.get_from_app_state(app),
             repo=PaymentsTransactionsRepo(db_engine=app.state.engine),
+            rabbitmq_rpc_client=get_rabbitmq_rpc_client(app),
             amount_dollars=amount_dollars,
             target_credits=target_credits,
             product_name=product_name,
