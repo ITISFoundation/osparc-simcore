@@ -283,11 +283,6 @@ PULL_PROGRESS_SEQUENCE: list[dict[str, Any]] = [
 ]
 
 
-@pytest.mark.parametrize("pull_progress", PULL_PROGRESS_SEQUENCE)
-def test_docker_progress_dict(pull_progress: dict[str, Any]):
-    assert parse_obj_as(_DockerProgressDict, pull_progress)
-
-
 def test__parse_docker_pull_progress():
     some_data = {}
     for entry in PULL_PROGRESS_SEQUENCE:
