@@ -1,6 +1,14 @@
+import logging
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 
+import aiodocker
 import arrow
+from models_library.docker import DockerGenericTag
+from servicelib.logging_utils import LogLevelInt
+from servicelib.progress_bar import ProgressBarData
+from settings_library.docker_registry import RegistrySettings
+from yarl import URL
 
 
 def to_datetime(docker_timestamp: str) -> datetime:
@@ -12,3 +20,27 @@ def to_datetime(docker_timestamp: str) -> datetime:
     # 2019-10-12 07:20:50.52Z
     dt: datetime = arrow.get(docker_timestamp).datetime
     return dt
+
+
+LogCB = Callable[[str, LogLevelInt], Awaitable[None]]
+
+
+async def pull_image(
+    image: DockerGenericTag,
+    registry_settings: RegistrySettings,
+    progress_bar: ProgressBarData,
+    log_cb: LogCB,
+) -> None:
+    image_url = URL(f"fake-scheme://{image}")
+    assert image_url.host  # nosec
+    registry_auth = None
+    if bool(image_url.port or "." in image_url.host):
+        registry_auth = {
+            "username": registry_settings.REGISTRY_USER,
+            "password": registry_settings.REGISTRY_PW.get_secret_value(),
+        }
+    async with aiodocker.Docker() as client:
+        async for pull_progress in client.images.pull(
+            image, stream=True, auth=registry_auth
+        ):
+            await log_cb(f"pulling {image_url.name}: {pull_progress}...", logging.DEBUG)
