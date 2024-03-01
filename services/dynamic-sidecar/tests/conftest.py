@@ -167,9 +167,6 @@ def mock_rabbit_check(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def base_mock_envs(
-    mock_storage_check: None,
-    mock_postgres_check: None,
-    mock_rabbit_check: None,
     dy_volumes: Path,
     shared_store_dir: Path,
     compose_namespace: str,
@@ -205,6 +202,9 @@ def base_mock_envs(
 
 @pytest.fixture
 def mock_environment(
+    mock_storage_check: None,
+    mock_postgres_check: None,
+    mock_rabbit_check: None,
     monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
     user_id: UserID,
