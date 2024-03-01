@@ -80,7 +80,7 @@ _LOGFILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
         "description": "Returns a log file",
     },
     status.HTTP_404_NOT_FOUND: {"description": "Log not found"},
-} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+} | DEFAULT_BACKEND_SERVICE_STATUS_CODES  # type: ignore
 
 _PRICING_UNITS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
