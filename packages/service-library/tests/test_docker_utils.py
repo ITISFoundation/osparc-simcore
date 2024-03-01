@@ -4,7 +4,13 @@ from typing import Any
 import pytest
 from models_library.docker import DockerGenericTag
 from pydantic import parse_obj_as
-from servicelib.docker_utils import retrieve_image_layer_information, to_datetime
+from pytest_mock import MockerFixture
+from servicelib import progress_bar
+from servicelib.docker_utils import (
+    pull_image,
+    retrieve_image_layer_information,
+    to_datetime,
+)
 from settings_library.docker_registry import RegistrySettings
 
 NOW = datetime.now(tz=timezone.utc)
@@ -86,3 +92,19 @@ async def test_retrieve_image_layer_information_from_external_registry(
 ):
     layer_information = await retrieve_image_layer_information(image, registry_settings)
     assert layer_information
+
+
+@pytest.mark.parametrize(
+    "image",
+    [
+        "itisfoundation/sleeper:1.0.0",
+    ],
+)
+async def test_pull_image(
+    image: DockerGenericTag, registry_settings: RegistrySettings, mocker: MockerFixture
+):
+    async with progress_bar.ProgressBarData(num_steps=1) as main_progress_bar:
+        fake_log_cb = mocker.AsyncMock()
+        await pull_image(image, registry_settings, main_progress_bar, fake_log_cb)
+        fake_log_cb.assert_called()
+        assert main_progress_bar._current_steps == 1
