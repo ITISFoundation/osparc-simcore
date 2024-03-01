@@ -26,8 +26,10 @@ def _before_sleep_log(
     def log_it(retry_state: RetryCallState) -> None:
         assert retry_state  # nosec
         assert retry_state.next_action  # nosec
+
         logger.warning(
-            "Retrying to contact '%s' at '%s' in %s seconds.",
+            "Retrying (attempt %s) to contact '%s' at '%s' in %s seconds.",
+            retry_state.attempt_number,
             service_name,
             endpoint,
             retry_state.next_action.sleep,
