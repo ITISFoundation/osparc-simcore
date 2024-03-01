@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Final, Literal
 
@@ -7,6 +8,7 @@ import aiodocker
 import aiohttp
 import arrow
 from models_library.docker import DockerGenericTag
+from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, ValidationError, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
@@ -15,6 +17,8 @@ from yarl import URL
 from .aiohttp import status
 from .logging_utils import LogLevelInt
 from .progress_bar import ProgressBarData
+
+_logger = logging.getLogger(__name__)
 
 
 def to_datetime(docker_timestamp: str) -> datetime:
@@ -174,11 +178,19 @@ async def retrieve_image_layer_information(
             return parse_obj_as(DockerImageManifestsV2, json_response)
 
 
+class DockerPullImage(BaseModel):
+    status: str
+    id: str | None
+    progress_detail: ProgressDetail | None
+    progress: str | None
+
+
 async def pull_image(
     image: DockerGenericTag,
     registry_settings: RegistrySettings,
     progress_bar: ProgressBarData,
     log_cb: LogCB,
+    image_information: DockerImageManifestsV2,
 ) -> None:
     image_complete_url = _get_image_complete_url(image, registry_settings)
     assert image_complete_url.host  # nosec
@@ -188,11 +200,80 @@ async def pull_image(
             "username": registry_settings.REGISTRY_USER,
             "password": registry_settings.REGISTRY_PW.get_secret_value(),
         }
+
+    # NOTE: docker pulls an image layer by layer
+    # NOTE: each layer is first downloaded, then extracted. Extraction usually takes about 2/3 of the time
+    # NOTE: 1 subprogress per layer, then subprogress of size 2 with weights?
+    # NOTE: or, we compute the total size X2, then upgrade that based on the status? maybe simpler
+
+    @dataclass
+    class PulledStatus:
+        size: int
+        downloaded: int = 0
+        extracted: int = 0
+
+    layer_id_to_size = {
+        layer.digest.removeprefix("sha256:")[:12]: PulledStatus(layer.size)
+        for layer in image_information.layers
+    }
+    image_layers_total_size = sum(layer.size for layer in image_information.layers) * 2
     async with aiodocker.Docker() as client:
-        async for pull_progress in client.images.pull(
-            image, stream=True, auth=registry_auth
-        ):
-            await log_cb(
-                f"pulling {image_complete_url.name}: {pull_progress}...",
-                logging.DEBUG,
-            )
+        async with progress_bar.sub_progress(image_layers_total_size) as sub_progress:
+            async for pull_progress in client.images.pull(
+                image, stream=True, auth=registry_auth
+            ):
+                parsed_progress = parse_obj_as(DockerPullImage, pull_progress)
+                match parsed_progress.status.lower():
+                    case "pulling from " | "pulling fs layer" | "waiting":
+                        # nothing to do here, this denotes the start of pulling
+                        # nothing to do here, this says it pulls some layer with id
+                        # nothing to do here, it waits
+                        break
+                    case "downloading":
+                        assert parsed_progress.id  # nosec
+                        assert parsed_progress.progress_detail  # nosec
+                        assert parsed_progress.progress_detail.current  # nosec
+                        layer_id_to_size[
+                            parsed_progress.id
+                        ].downloaded = parsed_progress.progress_detail.current
+                        break
+                    case "verifying checksum" | "download complete":
+                        assert parsed_progress.id  # nosec
+                        layer_id_to_size[
+                            parsed_progress.id
+                        ].downloaded = layer_id_to_size[parsed_progress.id].size
+                        break
+                    case "extracting":
+                        assert parsed_progress.id  # nosec
+                        assert parsed_progress.progress_detail  # nosec
+                        assert parsed_progress.progress_detail.current  # nosec
+                        layer_id_to_size[
+                            parsed_progress.id
+                        ].extracted = parsed_progress.progress_detail.current
+                        break
+                    case "pull complete":
+                        assert parsed_progress.id  # nosec
+                        layer_id_to_size[
+                            parsed_progress.id
+                        ].extracted = layer_id_to_size[parsed_progress.id].size
+                        break
+                    case "digest: " | "status: downloaded newer image for ":
+                        break
+                    case _:
+                        _logger.warning(
+                            "unknown pull state: %s. Please check", parsed_progress
+                        )
+                        break
+
+                # compute total progress
+                total_downloaded_size = sum(
+                    layer.downloaded for layer in layer_id_to_size.values()
+                )
+                total_extracted_size = sum(
+                    layer.extracted for layer in layer_id_to_size.values()
+                )
+                sub_progress.set_(total_downloaded_size + total_extracted_size)
+                await log_cb(
+                    f"pulling {image_complete_url.name}: {pull_progress}...",
+                    logging.DEBUG,
+                )
