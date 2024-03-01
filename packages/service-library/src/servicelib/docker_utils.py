@@ -1,11 +1,15 @@
 import logging
 from collections.abc import Awaitable, Callable
 from datetime import datetime
+from typing import Any, Final, Literal
 
 import aiodocker
 import aiohttp
 import arrow
 from models_library.docker import DockerGenericTag
+from models_library.utils.change_case import snake_to_camel
+from pydantic import BaseModel, ByteSize, ValidationError, parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.logging_utils import LogLevelInt
 from servicelib.progress_bar import ProgressBarData
 from settings_library.docker_registry import RegistrySettings
@@ -26,34 +30,132 @@ def to_datetime(docker_timestamp: str) -> datetime:
 LogCB = Callable[[str, LogLevelInt], Awaitable[None]]
 
 
+class DockerLayerSizeV2(BaseModel):
+    media_type: str
+    size: ByteSize
+    digest: str
+
+    class Config:
+        frozen = True
+        alias_generator = snake_to_camel
+
+
+class DockerImageManifestsV2(BaseModel):
+    schema_version: Literal[2]
+    media_type: str
+    config: DockerLayerSizeV2
+    layers: list[DockerLayerSizeV2]
+
+    class Config:
+        frozen = True
+        alias_generator = snake_to_camel
+
+
+class DockerImageMultiArchManifestsV2(BaseModel):
+    schema_version: Literal[2]
+    media_type: Literal["application/vnd.oci.image.index.v1+json"]
+    manifests: list[dict[str, Any]]
+
+    class Config:
+        frozen = True
+        alias_generator = snake_to_camel
+
+
+_DOCKER_HUB_HOST: Final[str] = "registry-1.docker.io"
+
+
+def _get_image_complete_url(
+    image: DockerGenericTag, registry_settings: RegistrySettings
+) -> URL:
+    if registry_settings.REGISTRY_URL in image:
+        # this is an image available in the private registry
+        return URL(f"http{'s' if registry_settings.REGISTRY_AUTH else ''}://{image}")
+
+    # this is an external image -> https
+    try:
+        url = URL(f"https://{image}")
+        assert url.host  # nosec
+        if not url.port or "." not in url.host:
+            raise ValueError("not a valid registry")
+    except ValueError:
+        # this is Dockerhub with missing host
+        url = URL(f"https://{_DOCKER_HUB_HOST}/{image}")
+    return url
+
+
+_MANIFEST_RETURN_TYPE = DockerImageManifestsV2 | DockerImageMultiArchManifestsV2
+
+
 async def retrieve_image_layer_information(
     image: DockerGenericTag, registry_settings: RegistrySettings
-):
+) -> DockerImageManifestsV2:
     async with aiohttp.ClientSession() as session:
-        # Setup the headers and auth for the request
-        headers = {"Accept": "application/vnd.docker.distribution.manifest.v2+json"}
-        auth = aiohttp.BasicAuth(
-            login=registry_settings.REGISTRY_USER,
-            password=registry_settings.REGISTRY_PW.get_secret_value(),
+        image_complete_url = _get_image_complete_url(image, registry_settings)
+        auth = None
+        if registry_settings.REGISTRY_URL in f"{image_complete_url}":
+            auth = aiohttp.BasicAuth(
+                login=registry_settings.REGISTRY_USER,
+                password=registry_settings.REGISTRY_PW.get_secret_value(),
+            )
+
+        docker_image_name = image_complete_url.path.split(":")[0].strip("/")
+        docker_image_tag = image_complete_url.name.split(":")[-1]
+        manifest_url = image_complete_url.with_path(
+            f"v2/{docker_image_name}/manifests/{docker_image_tag}"
         )
 
-        # Make the GET request
-        image_url = URL(f"https://{image}")
-        full_image_name = image_url.path.split(":")[0].strip("/")
-        image_tag = image_url.name.split(":")[-1]
-        manifest_url = image_url.with_path(
-            f"v2/{full_image_name}/manifests/{image_tag}"
-        )
+        headers = {
+            "Accept": "application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json"
+        }
+        if _DOCKER_HUB_HOST in f"{image_complete_url}":
+            # we need the docker hub bearer code (https://stackoverflow.com/questions/57316115/get-manifest-of-a-public-docker-image-hosted-on-docker-hub-using-the-docker-regi)
+            bearer_url = URL("https://auth.docker.io/token").with_query(
+                {
+                    "service": "registry.docker.io",
+                    "scope": f"repository:{docker_image_name}:pull",
+                }
+            )
+            async with session.get(bearer_url) as response:
+                response.raise_for_status()
+                assert response.status == status.HTTP_200_OK  # nosec
+                bearer_code = (await response.json())["token"]
+                headers |= {
+                    "Authorization": f"Bearer {bearer_code}",
+                }
+
         async with session.get(manifest_url, headers=headers, auth=auth) as response:
             # Check if the request was successful
-            if response.status == 200:
-                # Parse JSON response body if needed
-                data = await response.json()
-                return data
-            else:
-                # Handle error (you can also raise an HTTP error here)
-                print(f"HTTP Error: {response.status}")
-                return None
+            response.raise_for_status()
+            assert response.status == status.HTTP_200_OK  # nosec
+
+            # if the image has multiple architectures
+            json_response = await response.json()
+        try:
+            multi_arch_manifests = parse_obj_as(
+                DockerImageMultiArchManifestsV2, json_response
+            )
+            # find the correct platform
+            digest = ""
+            for manifest in multi_arch_manifests.manifests:
+                if (
+                    manifest.get("platform", {}).get("architecture") == "amd64"
+                    and manifest.get("platform", {}).get("os") == "linux"
+                ):
+                    digest = manifest["digest"]
+                    break
+            manifest_url = image_complete_url.with_path(
+                f"v2/{docker_image_name}/manifests/{digest}"
+            )
+            async with session.get(
+                manifest_url, headers=headers, auth=auth
+            ) as response:
+                response.raise_for_status()
+                assert response.status == status.HTTP_200_OK  # nosec
+                json_response = await response.json()
+                return parse_obj_as(DockerImageManifestsV2, json_response)
+
+        except ValidationError:
+            return parse_obj_as(DockerImageManifestsV2, json_response)
 
 
 async def pull_image(

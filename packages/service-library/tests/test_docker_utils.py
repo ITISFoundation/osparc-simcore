@@ -1,7 +1,11 @@
 from datetime import datetime, timezone
+from typing import Any
 
 import pytest
-from servicelib.docker_utils import to_datetime
+from models_library.docker import DockerGenericTag
+from pydantic import parse_obj_as
+from servicelib.docker_utils import retrieve_image_layer_information, to_datetime
+from settings_library.docker_registry import RegistrySettings
 
 NOW = datetime.now(tz=timezone.utc)
 
@@ -40,3 +44,44 @@ NOW = datetime.now(tz=timezone.utc)
 def test_to_datetime(docker_time: str, expected_datetime: datetime):
     received_datetime = to_datetime(docker_time)
     assert received_datetime == expected_datetime
+
+
+@pytest.mark.parametrize(
+    "service_repo, service_tag",
+    [
+        ("itisfoundation/sleeper", "1.0.0"),
+        ("itisfoundation/sleeper", "2.2.0"),
+        (
+            "itisfoundation/sleeper",
+            "sha256:a6d9886311721d8d341068361ecf9998a3c7ecb0efb23ebac553602c2eca1f8f",
+        ),
+    ],
+)
+async def test_retrieve_image_layer_information(
+    registry_settings: RegistrySettings, osparc_service: dict[str, Any]
+):
+    docker_image = parse_obj_as(
+        DockerGenericTag,
+        f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['name']}:{osparc_service['image']['tag']}",
+    )
+    layer_information = await retrieve_image_layer_information(
+        docker_image, registry_settings
+    )
+
+    assert layer_information
+
+
+@pytest.mark.parametrize(
+    "image",
+    [
+        "itisfoundation/dask-sidecar:master-github-latest",
+        "library/nginx:latest",
+        # "nginx:latest",
+        # "ubuntu@sha256:81bba8d1dde7fc1883b6e95cd46d6c9f4874374f2b360c8db82620b33f6b5ca1",
+    ],
+)
+async def test_retrieve_image_layer_information_from_external_registry(
+    image: DockerGenericTag, registry_settings: RegistrySettings
+):
+    layer_information = await retrieve_image_layer_information(image, registry_settings)
+    assert layer_information
