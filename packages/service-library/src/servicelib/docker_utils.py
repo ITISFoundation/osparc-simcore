@@ -29,8 +29,31 @@ LogCB = Callable[[str, LogLevelInt], Awaitable[None]]
 async def retrieve_image_layer_information(
     image: DockerGenericTag, registry_settings: RegistrySettings
 ):
-    async with aiohttp.ClientSession():
-        ...
+    async with aiohttp.ClientSession() as session:
+        # Setup the headers and auth for the request
+        headers = {"Accept": "application/vnd.docker.distribution.manifest.v2+json"}
+        auth = aiohttp.BasicAuth(
+            login=registry_settings.REGISTRY_USER,
+            password=registry_settings.REGISTRY_PW.get_secret_value(),
+        )
+
+        # Make the GET request
+        image_url = URL(f"https://{image}")
+        full_image_name = image_url.path.split(":")[0].strip("/")
+        image_tag = image_url.name.split(":")[-1]
+        manifest_url = image_url.with_path(
+            f"v2/{full_image_name}/manifests/{image_tag}"
+        )
+        async with session.get(manifest_url, headers=headers, auth=auth) as response:
+            # Check if the request was successful
+            if response.status == 200:
+                # Parse JSON response body if needed
+                data = await response.json()
+                return data
+            else:
+                # Handle error (you can also raise an HTTP error here)
+                print(f"HTTP Error: {response.status}")
+                return None
 
 
 async def pull_image(
@@ -39,7 +62,7 @@ async def pull_image(
     progress_bar: ProgressBarData,
     log_cb: LogCB,
 ) -> None:
-    image_url = URL(f"fake-scheme://{image}")
+    image_url = URL(f"https://{image}")
     assert image_url.host  # nosec
     registry_auth = None
     if bool(image_url.port or "." in image_url.host):
