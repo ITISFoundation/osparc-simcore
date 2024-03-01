@@ -9,11 +9,12 @@ import arrow
 from models_library.docker import DockerGenericTag
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, ValidationError, parse_obj_as
-from servicelib.aiohttp import status
-from servicelib.logging_utils import LogLevelInt
-from servicelib.progress_bar import ProgressBarData
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
+
+from .aiohttp import status
+from .logging_utils import LogLevelInt
+from .progress_bar import ProgressBarData
 
 
 def to_datetime(docker_timestamp: str) -> datetime:
