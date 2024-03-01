@@ -37,7 +37,12 @@ from .._constants import RUT
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
 from ..models.db_to_api import to_payments_api_model
-from ..models.payments_gateway import InitPayment, PaymentInitiated
+from ..models.payments_gateway import (
+    InitPayment,
+    PaymentInitiated,
+    StripeTaxExempt,
+    UserAddress,
+)
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
 from .notifier import NotifierService
@@ -63,13 +68,18 @@ async def init_one_time_payment(
 ) -> WalletPaymentInitiated:
     initiated_at = arrow.utcnow().datetime
 
+    # MD: This needs to be modified
     init = await gateway.init_payment(
         payment=InitPayment(
             amount_dollars=amount_dollars,
             credits=target_credits,
             user_name=user_name,
             user_email=user_email,
+            user_address=UserAddress(country="CH"),  # TODO: PC: modify correctly
             wallet_name=wallet_name,
+            stripe_price_id="stripe_price_id",
+            stripe_tax_rate_id="stripe_tax_rate_id",
+            stripe_tax_exempt_value=StripeTaxExempt.none,
         )
     )
 
@@ -214,6 +224,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
 
+    # MD: Here I need to add all important fields
     ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
         acked.payment_method_id,
         payment=InitPayment(
@@ -221,7 +232,11 @@ async def pay_with_payment_method(  # noqa: PLR0913
             credits=target_credits,
             user_name=user_name,
             user_email=user_email,
+            user_address=UserAddress(country="CH"),  # TODO: PC: modify correctly
             wallet_name=wallet_name,
+            stripe_price_id="stripe_price_id",
+            stripe_tax_rate_id="stripe_tax_rate_id",
+            stripe_tax_exempt_value=StripeTaxExempt.none,
         ),
     )
 

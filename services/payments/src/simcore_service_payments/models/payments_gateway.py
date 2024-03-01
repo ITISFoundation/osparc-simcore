@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Literal
 
@@ -15,13 +16,33 @@ class ErrorModel(BaseModel):
     trace: list | None = None
 
 
+class UserAddress(BaseModel):
+    line1: str | None = None
+    state: str | None = None
+    postal_code: str | None = None
+    city: str | None = None
+    country: str
+
+
+class StripeTaxExempt(str, Enum):
+    exempt = "exempt"
+    none = "none"  # <-- if customer is from CH or LI
+    reverse = "reverse"  # <-- if customer is outside of CH or LI
+
+
 class InitPayment(BaseModel):
     amount_dollars: AmountDecimal
     # metadata to store for billing or reference
-    credits_: AmountDecimal = Field(..., alias="credits")
+    credits_: AmountDecimal = Field(
+        ..., alias="credits"
+    )  # NOTE: this is equal to quantity field in Stripe
     user_name: IDStr
     user_email: EmailStr
+    user_address: UserAddress
     wallet_name: IDStr
+    stripe_price_id: IDStr
+    stripe_tax_rate_id: IDStr
+    stripe_tax_exempt_value: StripeTaxExempt
 
     class Config:
         extra = Extra.forbid
