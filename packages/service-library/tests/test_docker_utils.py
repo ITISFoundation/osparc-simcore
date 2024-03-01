@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 from datetime import datetime, timezone
 from typing import Any
 
@@ -107,4 +108,4 @@ async def test_pull_image(
         fake_log_cb = mocker.AsyncMock()
         await pull_image(image, registry_settings, main_progress_bar, fake_log_cb)
         fake_log_cb.assert_called()
-        assert main_progress_bar._current_steps == 1
+        assert main_progress_bar._current_steps == 1  # noqa: SLF001
