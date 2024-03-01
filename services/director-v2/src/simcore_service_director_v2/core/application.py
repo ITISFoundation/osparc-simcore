@@ -30,6 +30,7 @@ from ..modules import (
     notifier,
     osparc_variables_substitutions,
     rabbitmq,
+    redis,
     resource_usage_tracker_client,
     socketio,
     storage,
@@ -165,6 +166,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         rabbitmq.setup(app)
 
     if dynamic_scheduler_enabled:
+        redis.setup(app)
         dynamic_sidecar.setup(app)
         api_keys_manager.setup(app)
         socketio.setup(app)

@@ -12,10 +12,9 @@ from models_library.services import RunID
 from models_library.users import UserID
 from pydantic import BaseModel, StrBytes, parse_obj_as
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.redis import RedisClientSDK
+from servicelib.redis import RedisClientSDK, RedisClientsManager
 from settings_library.redis import RedisDatabase
 
-from ..core.settings import AppSettings
 from ..utils.base_distributed_identifier import BaseDistributedIdentifierManager
 from .rabbitmq import get_rabbitmq_rpc_client
 
@@ -146,13 +145,11 @@ def _get_api_keys_manager(app: FastAPI) -> APIKeysManager:
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
-        settings: AppSettings = app.state.settings
+        redis_clients_manager: RedisClientsManager = app.state.redis_clients_manager
 
-        redis_dsn = settings.REDIS.build_redis_dsn(
-            RedisDatabase.DISTRIBUTED_IDENTIFIERS
+        app.state.api_keys_manager = manager = APIKeysManager(
+            app, redis_clients_manager.client(RedisDatabase.DISTRIBUTED_IDENTIFIERS)
         )
-        redis_client_sdk = RedisClientSDK(redis_dsn)
-        app.state.api_keys_manager = manager = APIKeysManager(app, redis_client_sdk)
 
         await manager.setup()
 
