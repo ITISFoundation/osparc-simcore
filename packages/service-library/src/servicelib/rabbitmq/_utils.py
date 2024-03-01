@@ -36,7 +36,7 @@ class RabbitMQRetryPolicyUponInitialization:
 
 
 async def is_rabbitmq_responsive(url: str) -> bool:
-    """Check if something responds to ``url`` or raises an error"""
+    """True if responsive or raises an error"""
     with log_context(
         _logger, logging.INFO, msg=f"checking RabbitMQ connection at {url=}"
     ):
@@ -47,7 +47,7 @@ async def is_rabbitmq_responsive(url: str) -> bool:
 
 @retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
 async def wait_till_rabbitmq_responsive(url: str) -> bool:
-    """waits for rabbitmq to becomre responsive"""
+    """waits for rabbitmq to become responsive"""
     return await is_rabbitmq_responsive(url)
 
 
