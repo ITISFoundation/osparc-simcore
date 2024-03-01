@@ -180,10 +180,10 @@ async def pull_image(
     progress_bar: ProgressBarData,
     log_cb: LogCB,
 ) -> None:
-    image_url = URL(f"https://{image}")
-    assert image_url.host  # nosec
+    image_complete_url = _get_image_complete_url(image, registry_settings)
+    assert image_complete_url.host  # nosec
     registry_auth = None
-    if bool(image_url.port or "." in image_url.host):
+    if registry_settings.REGISTRY_URL in f"{image_complete_url}":
         registry_auth = {
             "username": registry_settings.REGISTRY_USER,
             "password": registry_settings.REGISTRY_PW.get_secret_value(),
@@ -192,4 +192,7 @@ async def pull_image(
         async for pull_progress in client.images.pull(
             image, stream=True, auth=registry_auth
         ):
-            await log_cb(f"pulling {image_url.name}: {pull_progress}...", logging.DEBUG)
+            await log_cb(
+                f"pulling {image_complete_url.name}: {pull_progress}...",
+                logging.DEBUG,
+            )
