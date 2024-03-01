@@ -3,6 +3,7 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime
 
 import aiodocker
+import aiohttp
 import arrow
 from models_library.docker import DockerGenericTag
 from servicelib.logging_utils import LogLevelInt
@@ -23,6 +24,13 @@ def to_datetime(docker_timestamp: str) -> datetime:
 
 
 LogCB = Callable[[str, LogLevelInt], Awaitable[None]]
+
+
+async def retrieve_image_layer_information(
+    image: DockerGenericTag, registry_settings: RegistrySettings
+):
+    async with aiohttp.ClientSession():
+        ...
 
 
 async def pull_image(
