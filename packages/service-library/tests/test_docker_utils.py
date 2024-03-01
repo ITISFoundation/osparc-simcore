@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 from models_library.docker import DockerGenericTag
-from pydantic import parse_obj_as
+from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from servicelib import progress_bar
 from servicelib.docker_utils import (
@@ -104,6 +104,11 @@ async def test_retrieve_image_layer_information_from_external_registry(
 async def test_pull_image(
     image: DockerGenericTag, registry_settings: RegistrySettings, mocker: MockerFixture
 ):
+    layer_information = await retrieve_image_layer_information(image, registry_settings)
+    image_total_size: ByteSize = ByteSize(0)
+    for layer in layer_information.layers:
+        image_total_size = ByteSize(image_total_size + layer.size)
+
     async with progress_bar.ProgressBarData(num_steps=1) as main_progress_bar:
         fake_log_cb = mocker.AsyncMock()
         await pull_image(image, registry_settings, main_progress_bar, fake_log_cb)
