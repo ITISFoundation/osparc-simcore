@@ -14,6 +14,7 @@ import docker
 import jsonschema
 import pytest
 import tenacity
+from settings_library.docker_registry import RegistrySettings
 
 from .helpers.utils_host import get_localhost_ip
 
@@ -92,6 +93,11 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
 
         while docker_client.containers.list(filters={"name": container.name}):
             time.sleep(1)
+
+
+@pytest.fixture
+def registry_settings(docker_registry: str) -> RegistrySettings:
+    return RegistrySettings.create_from_envs()
 
 
 @tenacity.retry(
@@ -203,7 +209,7 @@ def docker_registry_image_injector(
     return inject_image
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def osparc_service(
     docker_registry: str, node_meta_schema: dict, service_repo: str, service_tag: str
 ) -> dict[str, Any]:
