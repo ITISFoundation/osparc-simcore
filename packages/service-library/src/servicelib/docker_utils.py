@@ -64,6 +64,13 @@ class DockerImageMultiArchManifestsV2(BaseModel):
 _DOCKER_HUB_HOST: Final[str] = "registry-1.docker.io"
 
 
+def _create_docker_hub_complete_url(image: DockerGenericTag) -> URL:
+    if len(image.split("/")) == 1:
+        # official image, add library
+        return URL(f"https://{_DOCKER_HUB_HOST}/library/{image}")
+    return URL(f"https://{_DOCKER_HUB_HOST}/{image}")
+
+
 def _get_image_complete_url(
     image: DockerGenericTag, registry_settings: RegistrySettings
 ) -> URL:
@@ -71,19 +78,26 @@ def _get_image_complete_url(
         # this is an image available in the private registry
         return URL(f"http{'s' if registry_settings.REGISTRY_AUTH else ''}://{image}")
 
-    # this is an external image -> https
+    # this is an external image, like nginx:latest or library/nginx:latest or quay.io/stuff, ... -> https
     try:
+        # NOTE: entries like nginx:latest or ngingx:1.3 will raise an exception here
         url = URL(f"https://{image}")
         assert url.host  # nosec
         if not url.port or "." not in url.host:
-            raise ValueError("not a valid registry")
+            # this is Dockerhub + official images are in /library
+            url = _create_docker_hub_complete_url(image)
     except ValueError:
         # this is Dockerhub with missing host
-        url = URL(f"https://{_DOCKER_HUB_HOST}/{image}")
+        url = _create_docker_hub_complete_url(image)
     return url
 
 
-_MANIFEST_RETURN_TYPE = DockerImageManifestsV2 | DockerImageMultiArchManifestsV2
+def _get_image_name_and_tag(image_complete_url: URL) -> tuple[str, str]:
+    if "sha256" in f"{image_complete_url}":
+        parts = image_complete_url.path.split("@")
+    else:
+        parts = image_complete_url.path.split(":")
+    return parts[0].strip("/"), parts[1]
 
 
 async def retrieve_image_layer_information(
@@ -97,9 +111,10 @@ async def retrieve_image_layer_information(
                 login=registry_settings.REGISTRY_USER,
                 password=registry_settings.REGISTRY_PW.get_secret_value(),
             )
-
-        docker_image_name = image_complete_url.path.split(":")[0].strip("/")
-        docker_image_tag = image_complete_url.name.split(":")[-1]
+        # NOTE: either of type ubuntu:latest or ubuntu@sha256:lksfdjlskfjsldkfj
+        docker_image_name, docker_image_tag = _get_image_name_and_tag(
+            image_complete_url
+        )
         manifest_url = image_complete_url.with_path(
             f"v2/{docker_image_name}/manifests/{docker_image_tag}"
         )

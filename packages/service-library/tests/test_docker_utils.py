@@ -76,8 +76,9 @@ async def test_retrieve_image_layer_information(
     [
         "itisfoundation/dask-sidecar:master-github-latest",
         "library/nginx:latest",
-        # "nginx:latest",
-        # "ubuntu@sha256:81bba8d1dde7fc1883b6e95cd46d6c9f4874374f2b360c8db82620b33f6b5ca1",
+        "nginx:1.25.4",
+        "nginx:latest",
+        "ubuntu@sha256:81bba8d1dde7fc1883b6e95cd46d6c9f4874374f2b360c8db82620b33f6b5ca1",
     ],
 )
 async def test_retrieve_image_layer_information_from_external_registry(
