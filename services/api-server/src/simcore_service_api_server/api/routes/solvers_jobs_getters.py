@@ -56,7 +56,6 @@ from .wallets import WALLET_STATUS_CODES
 
 _logger = logging.getLogger(__name__)
 
-
 _OUTPUTS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_402_PAYMENT_REQUIRED: {
         "description": "Payment required",
