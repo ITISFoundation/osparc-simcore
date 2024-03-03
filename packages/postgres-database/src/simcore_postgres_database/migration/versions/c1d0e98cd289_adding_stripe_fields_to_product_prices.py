@@ -40,12 +40,12 @@ def upgrade():
     op.alter_column(
         "products_prices",
         "stripe_price_id",
-        server_default=False,
+        server_default=None,
     )
     op.alter_column(
         "products_prices",
         "stripe_tax_rate_id",
-        server_default=False,
+        server_default=None,
     )
 
 

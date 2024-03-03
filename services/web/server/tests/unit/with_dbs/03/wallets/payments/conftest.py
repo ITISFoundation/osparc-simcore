@@ -24,6 +24,7 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
 )
 from models_library.basic_types import IDStr
+from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -110,6 +111,8 @@ def mock_rpc_payments_service_api(
         user_id: UserID,
         user_name: str,
         user_email: str,
+        stripe_price_id: StripePriceID,
+        stripe_tax_rate_id: StripeTaxRateID,
         comment: str | None = None,
     ):
         return await _fake_init_payment(
@@ -213,6 +216,8 @@ def mock_rpc_payments_service_api(
         user_id: UserID,
         user_name: str,
         user_email: EmailStr,
+        stripe_price_id: StripePriceID,
+        stripe_tax_rate_id: StripeTaxRateID,
         comment: str | None = None,
     ) -> PaymentTransaction:
 
