@@ -5,7 +5,7 @@ from unittest.mock import call
 
 import pytest
 from models_library.docker import DockerGenericTag
-from pydantic import ByteSize, parse_obj_as
+from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from servicelib import progress_bar
 from servicelib.docker_utils import (
@@ -107,9 +107,6 @@ async def test_pull_image(
     caplog: pytest.LogCaptureFixture,
 ):
     layer_information = await retrieve_image_layer_information(image, registry_settings)
-    image_total_size: ByteSize = ByteSize(0)
-    for layer in layer_information.layers:
-        image_total_size = ByteSize(image_total_size + layer.size)
 
     async def _log_cb(*args, **kwargs) -> None:
         print(f"received log: {args}, {kwargs}")
