@@ -102,7 +102,10 @@ async def test_retrieve_image_layer_information_from_external_registry(
     ],
 )
 async def test_pull_image(
-    image: DockerGenericTag, registry_settings: RegistrySettings, mocker: MockerFixture
+    image: DockerGenericTag,
+    registry_settings: RegistrySettings,
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
 ):
     layer_information = await retrieve_image_layer_information(image, registry_settings)
     image_total_size: ByteSize = ByteSize(0)
@@ -119,3 +122,7 @@ async def test_pull_image(
         )
         fake_log_cb.assert_called()
         assert main_progress_bar._current_steps == 1  # noqa: SLF001
+
+    # check there were no warnings
+    for record in caplog.records:
+        assert record.levelname != "WARNING", record.message

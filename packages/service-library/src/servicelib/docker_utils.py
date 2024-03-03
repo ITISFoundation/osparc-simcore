@@ -180,7 +180,7 @@ async def retrieve_image_layer_information(
 
 class DockerPullImage(BaseModel):
     status: str
-    id: str | None
+    id: str | None  # noqa: A003
     progress_detail: ProgressDetail | None
     progress: str | None
 
@@ -229,12 +229,18 @@ async def pull_image(
         ):
             parsed_progress = parse_obj_as(DockerPullImage, pull_progress)
             match parsed_progress.status.lower():
-                case (
-                    progress_status
-                ) if "pulling from" in progress_status or "pulling fs layer" in progress_status or "waiting" in progress_status:
-                    # nothing to do here, this denotes the start of pulling
-                    # nothing to do here, this says it pulls some layer with id
-                    # nothing to do here, it waits
+                case progress_status if any(
+                    msg in progress_status
+                    for msg in [
+                        "pulling from",
+                        "pulling fs layer",
+                        "waiting",
+                        "digest: ",
+                        "status: downloaded newer image for ",
+                        "status: image is up to date for ",
+                    ]
+                ):
+                    # nothing to do here
                     pass
                 case "downloading":
                     assert parsed_progress.id  # nosec
@@ -260,10 +266,6 @@ async def pull_image(
                     layer_id_to_size[parsed_progress.id].extracted = layer_id_to_size[
                         parsed_progress.id
                     ].size
-                case (
-                    progress_status
-                ) if "digest: " in progress_status or "status: downloaded newer image for " in progress_status:
-                    pass
                 case _:
                     _logger.warning(
                         "unknown pull state: %s. Please check", parsed_progress
