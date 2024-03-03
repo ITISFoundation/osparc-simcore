@@ -164,7 +164,6 @@ async def test_price_history_of_a_product(
     assert await is_payment_enabled(connection, product_name=fake_product.name) is True
 
 
-# MD: Add test for product latest stripe info
 async def test_get_product_latest_stripe_info(
     connection: SAConnection, fake_product: RowProxy
 ):

@@ -3,7 +3,6 @@
 - Payment w/ payment-method
 
 """
-
 # pylint: disable=too-many-arguments
 
 import logging
@@ -73,7 +72,7 @@ async def init_one_time_payment(
 ) -> WalletPaymentInitiated:
     initiated_at = arrow.utcnow().datetime
 
-    # TODO: PC: please modify with your PR
+    # TODO: PC: please modify with your "collecting of user address" PR
     user_address = UserAddress(country="CH")
 
     init = await gateway.init_payment(
@@ -236,7 +235,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
     acked = await repo_methods.get_payment_method(
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
-    # TODO: PC: please modify with your PR
+    # TODO: PC: please modify with your "collecting of user address" PR
     user_address = UserAddress(country="CH")
 
     ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
