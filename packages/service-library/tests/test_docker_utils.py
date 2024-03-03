@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 from datetime import datetime, timezone
 from typing import Any
+from unittest.mock import call
 
 import pytest
 from models_library.docker import DockerGenericTag
@@ -97,9 +98,7 @@ async def test_retrieve_image_layer_information_from_external_registry(
 
 @pytest.mark.parametrize(
     "image",
-    [
-        "itisfoundation/sleeper:1.0.0",
-    ],
+    ["itisfoundation/sleeper:1.0.0", "nginx:latest"],
 )
 async def test_pull_image(
     image: DockerGenericTag,
@@ -115,13 +114,18 @@ async def test_pull_image(
     async def _log_cb(*args, **kwargs) -> None:
         print(f"received log: {args}, {kwargs}")
 
-    async with progress_bar.ProgressBarData(num_steps=1) as main_progress_bar:
+    fake_progress_report_cb = mocker.AsyncMock()
+    async with progress_bar.ProgressBarData(
+        num_steps=1, progress_report_cb=fake_progress_report_cb
+    ) as main_progress_bar:
         fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
         await pull_image(
             image, registry_settings, main_progress_bar, fake_log_cb, layer_information
         )
         fake_log_cb.assert_called()
         assert main_progress_bar._current_steps == 1  # noqa: SLF001
+    assert fake_progress_report_cb.call_args_list[0] == call(0.0)
+    fake_progress_report_cb.assert_called_with(1.0)
 
     # check there were no warnings
     for record in caplog.records:
