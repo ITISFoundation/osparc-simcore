@@ -11,6 +11,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentInitiated,
 )
+from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -40,6 +41,8 @@ async def init_payment(
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    stripe_price_id: StripePriceID,
+    stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
 
@@ -62,6 +65,8 @@ async def init_payment(
             user_id=user_id,
             user_name=user_name,
             user_email=user_email,
+            stripe_price_id=stripe_price_id,
+            stripe_tax_rate_id=stripe_tax_rate_id,
             comment=comment,
         )
 

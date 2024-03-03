@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentInitiated,
 )
 from models_library.basic_types import IDStr
+from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -39,6 +40,8 @@ async def init_payment(
     user_id: UserID,
     user_name: str,
     user_email: str,
+    stripe_price_id: StripePriceID,
+    stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
     rpc_client = get_rabbitmq_rpc_client(app)
@@ -55,6 +58,8 @@ async def init_payment(
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
+        stripe_price_id=stripe_price_id,
+        stripe_tax_rate_id=stripe_tax_rate_id,
         comment=comment,
     )
     assert isinstance(result, WalletPaymentInitiated)  # nosec
@@ -221,6 +226,8 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    stripe_price_id: StripePriceID,
+    stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> PaymentTransaction:
     rpc_client = get_rabbitmq_rpc_client(app)
@@ -237,6 +244,8 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
+        stripe_price_id=stripe_price_id,
+        stripe_tax_rate_id=stripe_tax_rate_id,
         comment=comment,
     )
 

@@ -16,18 +16,16 @@ from models_library.api_schemas_payments.errors import (
     PaymentAlreadyExistsError,
     PaymentNotFoundError,
 )
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentMethodID,
     PaymentTransaction,
     WalletPaymentInitiated,
 )
-from models_library.products import ProductStripeInfoGet
-from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, PositiveInt, parse_obj_as
+from pydantic import EmailStr, PositiveInt
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.models.payments_transactions import (
@@ -43,6 +41,7 @@ from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
 from ..models.db_to_api import to_payments_api_model
 from ..models.payments_gateway import (
+    COUNTRIES_WITH_VAT,
     InitPayment,
     PaymentInitiated,
     StripeTaxExempt,
@@ -70,18 +69,11 @@ async def init_one_time_payment(
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    stripe_price_id: StripePriceID,
+    stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
     initiated_at = arrow.utcnow().datetime
-
-    result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
-        parse_obj_as(
-            RPCMethodName, "get_product_stripe_info"
-        ),  # TODO: MD probably is better to send as parameter so there is no cycle dependency
-        product_name=product_name,
-    )
-    product_stripe_info = parse_obj_as(ProductStripeInfoGet, result)
 
     # TODO: PC: please modify with your PR
     user_address = UserAddress(country="CH")
@@ -94,11 +86,11 @@ async def init_one_time_payment(
             user_email=user_email,
             user_address=user_address,
             wallet_name=wallet_name,
-            stripe_price_id=product_stripe_info.stripe_price_id,
-            stripe_tax_rate_id=product_stripe_info.stripe_tax_rate_id,
+            stripe_price_id=stripe_price_id,
+            stripe_tax_rate_id=stripe_tax_rate_id,
             stripe_tax_exempt_value=(
                 StripeTaxExempt.none
-                if user_address.country in ["CH", "LI"]
+                if user_address.country in COUNTRIES_WITH_VAT
                 else StripeTaxExempt.reverse
             ),
         )
@@ -237,6 +229,8 @@ async def pay_with_payment_method(  # noqa: PLR0913
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    stripe_price_id: StripePriceID,
+    stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> PaymentTransaction:
     initiated_at = arrow.utcnow().datetime
@@ -244,8 +238,9 @@ async def pay_with_payment_method(  # noqa: PLR0913
     acked = await repo_methods.get_payment_method(
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
+    # TODO: PC: please modify with your PR
+    user_address = UserAddress(country="CH")
 
-    # MD: Here I need to add all important fields
     ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
         acked.payment_method_id,
         payment=InitPayment(
@@ -253,11 +248,15 @@ async def pay_with_payment_method(  # noqa: PLR0913
             credits=target_credits,
             user_name=user_name,
             user_email=user_email,
-            user_address=UserAddress(country="CH"),  # TODO: PC: modify correctly
+            user_address=user_address,
             wallet_name=wallet_name,
-            stripe_price_id="stripe_price_id",
-            stripe_tax_rate_id="stripe_tax_rate_id",
-            stripe_tax_exempt_value=StripeTaxExempt.none,
+            stripe_price_id=stripe_price_id,
+            stripe_tax_rate_id=stripe_tax_rate_id,
+            stripe_tax_exempt_value=(
+                StripeTaxExempt.none
+                if user_address.country in COUNTRIES_WITH_VAT
+                else StripeTaxExempt.reverse
+            ),
         ),
     )
 

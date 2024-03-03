@@ -8,6 +8,8 @@ from models_library.basic_types import AmountDecimal, IDStr
 from models_library.products import StripePriceIDStr, StripeTaxRateIDStr
 from pydantic import BaseModel, EmailStr, Extra, Field
 
+COUNTRIES_WITH_VAT = ["CH", "LI"]
+
 
 class ErrorModel(BaseModel):
     message: str
