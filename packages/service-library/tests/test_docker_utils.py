@@ -109,8 +109,13 @@ async def test_pull_image(
     for layer in layer_information.layers:
         image_total_size = ByteSize(image_total_size + layer.size)
 
+    async def _log_cb(*args, **kwargs) -> None:
+        print(f"received log: {args}, {kwargs}")
+
     async with progress_bar.ProgressBarData(num_steps=1) as main_progress_bar:
-        fake_log_cb = mocker.AsyncMock()
-        await pull_image(image, registry_settings, main_progress_bar, fake_log_cb)
+        fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
+        await pull_image(
+            image, registry_settings, main_progress_bar, fake_log_cb, layer_information
+        )
         fake_log_cb.assert_called()
         assert main_progress_bar._current_steps == 1  # noqa: SLF001
