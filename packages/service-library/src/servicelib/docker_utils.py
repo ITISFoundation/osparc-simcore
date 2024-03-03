@@ -184,6 +184,10 @@ class DockerPullImage(BaseModel):
     progress_detail: ProgressDetail | None
     progress: str | None
 
+    class Config:
+        frozen = True
+        alias_generator = snake_to_camel
+
 
 async def pull_image(
     image: DockerGenericTag,
@@ -192,10 +196,8 @@ async def pull_image(
     log_cb: LogCB,
     image_information: DockerImageManifestsV2,
 ) -> None:
-    image_complete_url = _get_image_complete_url(image, registry_settings)
-    assert image_complete_url.host  # nosec
     registry_auth = None
-    if registry_settings.REGISTRY_URL in f"{image_complete_url}":
+    if registry_settings.REGISTRY_URL in image:
         registry_auth = {
             "username": registry_settings.REGISTRY_USER,
             "password": registry_settings.REGISTRY_PW.get_secret_value(),
@@ -217,63 +219,65 @@ async def pull_image(
         for layer in image_information.layers
     }
     image_layers_total_size = sum(layer.size for layer in image_information.layers) * 2
-    async with aiodocker.Docker() as client:
-        async with progress_bar.sub_progress(image_layers_total_size) as sub_progress:
-            async for pull_progress in client.images.pull(
-                image, stream=True, auth=registry_auth
-            ):
-                parsed_progress = parse_obj_as(DockerPullImage, pull_progress)
-                match parsed_progress.status.lower():
-                    case "pulling from " | "pulling fs layer" | "waiting":
-                        # nothing to do here, this denotes the start of pulling
-                        # nothing to do here, this says it pulls some layer with id
-                        # nothing to do here, it waits
-                        break
-                    case "downloading":
-                        assert parsed_progress.id  # nosec
-                        assert parsed_progress.progress_detail  # nosec
-                        assert parsed_progress.progress_detail.current  # nosec
-                        layer_id_to_size[
-                            parsed_progress.id
-                        ].downloaded = parsed_progress.progress_detail.current
-                        break
-                    case "verifying checksum" | "download complete":
-                        assert parsed_progress.id  # nosec
-                        layer_id_to_size[
-                            parsed_progress.id
-                        ].downloaded = layer_id_to_size[parsed_progress.id].size
-                        break
-                    case "extracting":
-                        assert parsed_progress.id  # nosec
-                        assert parsed_progress.progress_detail  # nosec
-                        assert parsed_progress.progress_detail.current  # nosec
-                        layer_id_to_size[
-                            parsed_progress.id
-                        ].extracted = parsed_progress.progress_detail.current
-                        break
-                    case "pull complete":
-                        assert parsed_progress.id  # nosec
-                        layer_id_to_size[
-                            parsed_progress.id
-                        ].extracted = layer_id_to_size[parsed_progress.id].size
-                        break
-                    case "digest: " | "status: downloaded newer image for ":
-                        break
-                    case _:
-                        _logger.warning(
-                            "unknown pull state: %s. Please check", parsed_progress
-                        )
-                        break
+    image_complete_url = _get_image_complete_url(image, registry_settings)
+    async with (
+        aiodocker.Docker() as client,
+        progress_bar.sub_progress(image_layers_total_size) as sub_progress,
+    ):
+        async for pull_progress in client.images.pull(
+            image, stream=True, auth=registry_auth
+        ):
+            parsed_progress = parse_obj_as(DockerPullImage, pull_progress)
+            match parsed_progress.status.lower():
+                case (
+                    progress_status
+                ) if "pulling from" in progress_status or "pulling fs layer" in progress_status or "waiting" in progress_status:
+                    # nothing to do here, this denotes the start of pulling
+                    # nothing to do here, this says it pulls some layer with id
+                    # nothing to do here, it waits
+                    pass
+                case "downloading":
+                    assert parsed_progress.id  # nosec
+                    assert parsed_progress.progress_detail  # nosec
+                    assert parsed_progress.progress_detail.current  # nosec
+                    layer_id_to_size[
+                        parsed_progress.id
+                    ].downloaded = parsed_progress.progress_detail.current
+                case "verifying checksum" | "download complete":
+                    assert parsed_progress.id  # nosec
+                    layer_id_to_size[parsed_progress.id].downloaded = layer_id_to_size[
+                        parsed_progress.id
+                    ].size
+                case "extracting":
+                    assert parsed_progress.id  # nosec
+                    assert parsed_progress.progress_detail  # nosec
+                    assert parsed_progress.progress_detail.current  # nosec
+                    layer_id_to_size[
+                        parsed_progress.id
+                    ].extracted = parsed_progress.progress_detail.current
+                case "pull complete":
+                    assert parsed_progress.id  # nosec
+                    layer_id_to_size[parsed_progress.id].extracted = layer_id_to_size[
+                        parsed_progress.id
+                    ].size
+                case (
+                    progress_status
+                ) if "digest: " in progress_status or "status: downloaded newer image for " in progress_status:
+                    pass
+                case _:
+                    _logger.warning(
+                        "unknown pull state: %s. Please check", parsed_progress
+                    )
 
-                # compute total progress
-                total_downloaded_size = sum(
-                    layer.downloaded for layer in layer_id_to_size.values()
-                )
-                total_extracted_size = sum(
-                    layer.extracted for layer in layer_id_to_size.values()
-                )
-                sub_progress.set_(total_downloaded_size + total_extracted_size)
-                await log_cb(
-                    f"pulling {image_complete_url.name}: {pull_progress}...",
-                    logging.DEBUG,
-                )
+            # compute total progress
+            total_downloaded_size = sum(
+                layer.downloaded for layer in layer_id_to_size.values()
+            )
+            total_extracted_size = sum(
+                layer.extracted for layer in layer_id_to_size.values()
+            )
+            await sub_progress.set_(total_downloaded_size + total_extracted_size)
+            await log_cb(
+                f"pulling {image_complete_url.name}: {pull_progress}...",
+                logging.DEBUG,
+            )
