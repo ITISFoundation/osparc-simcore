@@ -65,6 +65,8 @@ def init_payment_kwargs(faker: Faker) -> dict[str, Any]:
         "user_id": 1,
         "user_name": "user",
         "user_email": "user@email.com",
+        "stripe_price_id": "stripe-price-id",
+        "stripe_tax_rate_id": "stripe-tax-rate-id",
     }
 
 
