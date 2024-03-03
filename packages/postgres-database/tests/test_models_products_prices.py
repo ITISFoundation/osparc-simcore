@@ -14,6 +14,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_prices import products_prices
 from simcore_postgres_database.utils_products_prices import (
     get_product_latest_credit_price_or_none,
+    get_product_latest_stripe_info,
     is_payment_enabled,
 )
 
@@ -40,6 +41,8 @@ async def test_creating_product_prices(
             product_name=fake_product.name,
             usd_per_credit=100,
             comment="PO Mr X",
+            stripe_price_id="stripe-price-id",
+            stripe_tax_rate_id="stripe-tax-rate-id",
         )
         .returning(sa.literal_column("*"))
     )
@@ -57,6 +60,8 @@ async def test_non_negative_price_not_allowed(
                 product_name=fake_product.name,
                 usd_per_credit=-100,  # <----- NEGATIVE
                 comment="PO Mr X",
+                stripe_price_id="stripe-price-id",
+                stripe_tax_rate_id="stripe-tax-rate-id",
             )
         )
 
@@ -68,6 +73,8 @@ async def test_non_negative_price_not_allowed(
             product_name=fake_product.name,
             usd_per_credit=0,  # <----- ZERO
             comment="PO Mr X",
+            stripe_price_id="stripe-price-id",
+            stripe_tax_rate_id="stripe-tax-rate-id",
         )
     )
 
@@ -81,6 +88,8 @@ async def test_delete_price_constraints(
             product_name=fake_product.name,
             usd_per_credit=10,
             comment="PO Mr X",
+            stripe_price_id="stripe-price-id",
+            stripe_tax_rate_id="stripe-tax-rate-id",
         )
     )
 
@@ -128,6 +137,8 @@ async def test_price_history_of_a_product(
             product_name=fake_product.name,
             usd_per_credit=1,
             comment="PO Mr X",
+            stripe_price_id="stripe-price-id",
+            stripe_tax_rate_id="stripe-tax-rate-id",
         )
     )
 
@@ -137,6 +148,8 @@ async def test_price_history_of_a_product(
             product_name=fake_product.name,
             usd_per_credit=2,
             comment="Update by Mr X",
+            stripe_price_id="stripe-price-id",
+            stripe_tax_rate_id="stripe-tax-rate-id",
         )
     )
 
@@ -152,3 +165,27 @@ async def test_price_history_of_a_product(
 
 
 # MD: Add test for product latest stripe info
+async def test_get_product_latest_stripe_info(
+    connection: SAConnection, fake_product: RowProxy
+):
+    # products_prices
+    await connection.execute(
+        products_prices.insert().values(
+            product_name=fake_product.name,
+            usd_per_credit=10,
+            comment="PO Mr X",
+            stripe_price_id="stripe-price-id",
+            stripe_tax_rate_id="stripe-tax-rate-id",
+        )
+    )
+
+    # defined product
+    product_stripe_info = await get_product_latest_stripe_info(
+        connection, product_name=fake_product.name
+    )
+    assert product_stripe_info[0] == "stripe-price-id"
+    assert product_stripe_info[1] == "stripe-tax-rate-id"
+
+    # undefined product
+    with pytest.raises(ValueError) as exc_info:
+        await get_product_latest_stripe_info(connection, product_name="undefined")
