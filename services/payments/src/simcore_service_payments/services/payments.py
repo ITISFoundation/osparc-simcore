@@ -27,7 +27,6 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, PositiveInt
 from servicelib.logging_utils import log_context
-from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -59,7 +58,6 @@ _logger = logging.getLogger()
 async def init_one_time_payment(
     gateway: PaymentsGatewayApi,
     repo: PaymentsTransactionsRepo,
-    rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     amount_dollars: Decimal,
     target_credits: Decimal,
