@@ -27,6 +27,9 @@ class ProductStripeInfoGet(BaseModel):
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
-                {"stripe_price_id": "stripe-id", "stripe_tax_rate_id": "stripe-id"},
+                {
+                    "stripe_price_id": "stripe-price-id",
+                    "stripe_tax_rate_id": "stripe-tax-rate-id",
+                },
             ]
         }

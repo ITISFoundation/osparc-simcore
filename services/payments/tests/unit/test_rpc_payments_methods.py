@@ -13,7 +13,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
 )
 from models_library.basic_types import IDStr
-from models_library.products import ProductName
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -206,6 +206,8 @@ async def test_webserver_pay_with_payment_method_workflow(
     mock_payments_gateway_service_or_none: MockRouter | None,
     faker: Faker,
     product_name: ProductName,
+    product_price_stripe_price_id: StripePriceID,
+    product_price_stripe_tax_rate_id: StripeTaxRateID,
     user_id: UserID,
     user_name: IDStr,
     user_email: EmailStr,
@@ -236,6 +238,8 @@ async def test_webserver_pay_with_payment_method_workflow(
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
+        stripe_price_id=product_price_stripe_price_id,
+        stripe_tax_rate_id=product_price_stripe_tax_rate_id,
         comment="Payment with stored credit-card",
     )
 

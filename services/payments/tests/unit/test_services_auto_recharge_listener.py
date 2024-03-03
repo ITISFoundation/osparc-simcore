@@ -19,7 +19,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodID,
 )
 from models_library.basic_types import NonNegativeDecimal
-from models_library.products import CreditResultGet, ProductName
+from models_library.products import CreditResultGet, ProductName, ProductStripeInfoGet
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import (
@@ -198,6 +198,14 @@ async def mock_rpc_server(
     ) -> CreditResultGet:
         return CreditResultGet.parse_obj(
             CreditResultGet.Config.schema_extra["examples"][0]
+        )
+
+    @router.expose()
+    async def get_product_stripe_info(
+        product_name: ProductName,
+    ) -> ProductStripeInfoGet:
+        return ProductStripeInfoGet.parse_obj(
+            ProductStripeInfoGet.Config.schema_extra["examples"][0]
         )
 
     await rpc_server.register_router(router, namespace=WEBSERVER_RPC_NAMESPACE)
