@@ -97,8 +97,8 @@ async def test_successful_one_time_payment_workflow(
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
-        product_price_stripe_price_id=product_price_stripe_price_id,
-        product_price_stripe_tax_rate_id=product_price_stripe_tax_rate_id,
+        stripe_price_id=product_price_stripe_price_id,
+        stripe_tax_rate_id=product_price_stripe_tax_rate_id,
         timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 
