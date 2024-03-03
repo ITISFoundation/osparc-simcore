@@ -5,7 +5,7 @@ from typing import Literal
 
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.basic_types import AmountDecimal, IDStr
-from models_library.products import StripePriceIDStr, StripeTaxRateIDStr
+from models_library.products import StripePriceID, StripeTaxRateID
 from pydantic import BaseModel, EmailStr, Extra, Field
 
 COUNTRIES_WITH_VAT = ["CH", "LI"]
@@ -44,8 +44,8 @@ class InitPayment(BaseModel):
     user_email: EmailStr
     user_address: UserAddress
     wallet_name: IDStr
-    stripe_price_id: StripePriceIDStr
-    stripe_tax_rate_id: StripeTaxRateIDStr
+    stripe_price_id: StripePriceID
+    stripe_tax_rate_id: StripeTaxRateID
     stripe_tax_exempt_value: StripeTaxExempt
 
     class Config:

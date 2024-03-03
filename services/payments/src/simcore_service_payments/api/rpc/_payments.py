@@ -29,7 +29,7 @@ router = RPCRouter()
 
 
 @router.expose(reraise_if_error_type=(PaymentsError, PaymentServiceUnavailableError))
-async def init_payment(
+async def init_payment(  # pylint: disable=too-many-arguments
     app: FastAPI,
     *,
     amount_dollars: Decimal,

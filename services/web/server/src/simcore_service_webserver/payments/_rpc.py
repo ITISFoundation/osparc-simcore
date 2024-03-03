@@ -29,7 +29,7 @@ _logger = logging.getLogger(__name__)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def init_payment(
+async def init_payment(  # pylint: disable=too-many-arguments
     app: web.Application,
     *,
     amount_dollars: Decimal,

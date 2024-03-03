@@ -128,6 +128,8 @@ async def test_fails_to_pay_with_payment_method_without_funds(
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
+        stripe_price_id="stripe-id",
+        stripe_tax_rate_id="stripe-id",
         comment="test_failure_in_pay_with_payment_method",
     )
 
