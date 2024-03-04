@@ -31,6 +31,7 @@ def setup_check_dependencies(app: FastAPI) -> None:
             reraise=False,
         )
         failed = [f"{x}" for x in liveliness_results if isinstance(x, Exception)]
-        raise CouldNotReachExternalDependenciesError(failed=failed)
+        if failed:
+            raise CouldNotReachExternalDependenciesError(failed=failed)
 
     app.add_event_handler("startup", on_startup)
