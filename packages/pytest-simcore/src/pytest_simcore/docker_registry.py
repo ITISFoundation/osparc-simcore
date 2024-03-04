@@ -1,15 +1,17 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+import asyncio
 import json
 import logging
 import os
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+import aiodocker
 import docker
 import jsonschema
 import pytest
@@ -291,3 +293,17 @@ def dy_static_file_server_dynamic_sidecar_compose_spec_service(
         docker_registry,
         node_meta_schema,
     )
+
+
+@pytest.fixture
+def remove_images_from_host() -> Callable[[list[str]], Awaitable[None]]:
+    async def _cleaner(images: list[str]) -> None:
+        print(f"--> Removing {images}")
+        async with aiodocker.Docker() as client:
+            await asyncio.gather(
+                *(client.images.delete(image) for image in images),
+                return_exceptions=True,
+            )
+        print(f"<-- Removed {images}")
+
+    return _cleaner
