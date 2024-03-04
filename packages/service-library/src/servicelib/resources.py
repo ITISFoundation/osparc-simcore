@@ -3,9 +3,8 @@
 See https://setuptools.readthedocs.io/en/latest/pkg_resources.html
 """
 
-import pathlib
+import importlib.resources
 from dataclasses import dataclass
-from importlib.resources import files
 from pathlib import Path
 
 
@@ -27,13 +26,15 @@ class DataResourcesFacade:
         return path.exists()
 
     def get_path(self, resource_name: str) -> Path:
-        """Returns a path to a resource
+        """Returns a path to a resourced
 
         WARNING: existence of file is not guaranteed
         WARNING: resource files are supposed to be used as read-only!
         """
-        ref = files(self.distribution_name.replace("-", "_")) / resource_name
-        return pathlib.Path(f"{ref}")
+        package_dir = importlib.resources.files(
+            self.distribution_name.replace("-", "_")
+        )
+        return Path(f"{package_dir}") / resource_name.lstrip("/")
 
 
 # resources env keys
