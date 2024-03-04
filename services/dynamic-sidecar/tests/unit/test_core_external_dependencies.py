@@ -66,7 +66,7 @@ async def app(mock_environment: EnvVarsDict) -> FastAPI:
     return create_app()
 
 
-async def test_external_dependencies_are_reachable(app: FastAPI):
+async def test_external_dependencies_are_not_reachable(app: FastAPI):
     with pytest.raises(CouldNotReachExternalDependenciesError) as exe_info:
         async with LifespanManager(app):
             ...
