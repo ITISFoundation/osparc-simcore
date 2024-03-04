@@ -7,7 +7,7 @@ from httpx import AsyncClient
 from servicelib.logging_utils import log_context
 
 from ..modules.service_liveness import wait_for_service_liveness
-from .settings import ApplicationSettings
+from .settings import ApplicationSettings, StorageAuthSettings
 
 _logger = logging.getLogger(__name__)
 
@@ -25,15 +25,20 @@ async def _is_storage_responsive(url: str) -> bool:
             if result.status_code == status.HTTP_200_OK:
                 _logger.debug("storage connection established")
                 return True
+            _logger.error("storage is not responding")
             return False
 
 
 async def wait_for_storage_liveness(app: FastAPI) -> None:
     app_settings: ApplicationSettings = app.state.settings
     storage_settings = app_settings.NODE_PORTS_STORAGE_AUTH
-    assert storage_settings  # nosec
+
+    if storage_settings is None:
+        msg = f"Wrong configuration, check {StorageAuthSettings.__name__} for details"
+        raise ValueError(msg)
 
     url = f"{storage_settings.api_base_url}/"
     await wait_for_service_liveness(
         _is_storage_responsive, service_name="Storage", endpoint=url, url=url
     )
+    # Somehow the message is not good here we get an assert error

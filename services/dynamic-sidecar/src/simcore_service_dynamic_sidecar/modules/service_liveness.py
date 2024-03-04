@@ -63,8 +63,8 @@ async def wait_for_service_liveness(
     *args,
     service_name: str,
     endpoint: str,
-    check_interval: timedelta = _DEFAULT_CHECK_INTERVAL,
-    timeout: timedelta = _DEFAULT_TIMEOUT_INTERVAL,
+    check_interval: timedelta | None = None,
+    timeout: timedelta | None = None,
     **kwargs,
 ) -> None:
     """waits for async_handler to return ``True`` or ``None`` instead of
@@ -83,7 +83,11 @@ async def wait_for_service_liveness(
     Raises:
         CouldNotReachServiceError: if it was not able to contact the service in time
     """
-    #
+
+    if check_interval is None:
+        check_interval = _DEFAULT_CHECK_INTERVAL
+    if timeout is None:
+        timeout = _DEFAULT_TIMEOUT_INTERVAL
 
     try:
         start = time.time()
