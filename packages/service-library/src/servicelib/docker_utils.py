@@ -12,7 +12,6 @@ from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
 
-from .aiohttp import status
 from .logging_utils import LogLevelInt
 from .progress_bar import ProgressBarData
 
