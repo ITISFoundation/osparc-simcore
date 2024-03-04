@@ -288,7 +288,7 @@ def caplog_info_debug(
 @pytest.fixture
 def mock_registry_service(mocker: MockerFixture) -> AsyncMock:
     return mocker.patch(
-        "simcore_service_dynamic_sidecar.core.utils._is_registry_reachable",
+        "simcore_service_dynamic_sidecar.core.registry._is_registry_reachable",
         autospec=True,
     )
 
