@@ -7,9 +7,10 @@ import asyncio
 import json
 import logging
 import subprocess
+from collections.abc import Iterator
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import docker
 import pytest
@@ -29,7 +30,7 @@ from .helpers.utils_host import get_localhost_ip
 log = logging.getLogger(__name__)
 
 
-class _ResourceStillNotRemoved(Exception):
+class _ResourceStillNotRemovedError(Exception):
     pass
 
 
@@ -37,8 +38,8 @@ def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
     try:
         docker_client.swarm.reload()
         inspect_result = docker_client.swarm.attrs
-        assert type(inspect_result) == dict
-    except APIError as error:
+        assert isinstance(inspect_result, dict)
+    except APIError:
         return False
     return True
 
@@ -215,16 +216,17 @@ def _deploy_stack(compose_file: Path, stack_name: str) -> None:
     ):
         with attempt:
             try:
+                cmd = [
+                    "docker",
+                    "stack",
+                    "deploy",
+                    "--with-registry-auth",
+                    "--compose-file",
+                    f"{compose_file.name}",
+                    f"{stack_name}",
+                ]
                 subprocess.run(
-                    [
-                        "docker",
-                        "stack",
-                        "deploy",
-                        "--with-registry-auth",
-                        "--compose-file",
-                        f"{compose_file.name}",
-                        f"{stack_name}",
-                    ],
+                    cmd,  # noqa: S603
                     check=True,
                     cwd=compose_file.parent,
                     capture_output=True,
@@ -325,7 +327,7 @@ def docker_stack(
         "services": [service.name for service in docker_client.services.list()],  # type: ignore
     }
 
-    ## TEAR DOWN ----------------------
+    # TEAR DOWN ----------------------
 
     _fetch_and_print_services(docker_client, "[AFTER TEST]")
 
@@ -390,8 +392,7 @@ def docker_stack(
                             for resource in pending:
                                 resource.remove(force=True)
 
-                        raise _ResourceStillNotRemoved(
-                            f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
-                        )
+                        msg = f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
+                        raise _ResourceStillNotRemovedError(msg)
 
     _fetch_and_print_services(docker_client, "[AFTER REMOVED]")

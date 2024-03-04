@@ -17,6 +17,8 @@ class StorageAuthSettings(StorageSettings):
 
     @property
     def auth_required(self) -> bool:
+        # NOTE: authentication is required to an issue with docker networks
+        # for details see https://github.com/ITISFoundation/osparc-issues/issues/1264
         return self.STORAGE_USERNAME is not None and self.STORAGE_PASSWORD is not None
 
     @classmethod
