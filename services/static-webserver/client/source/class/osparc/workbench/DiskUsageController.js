@@ -32,7 +32,6 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       console.error("Invalid WebSocket object obtained from source");
     }
     this.__socket.on("serviceDiskUsage", data => {
-      console.log("serviceDiskUsage", data["node_id"] === this.__node.getNodeId(), data["node_id"], this.__node.getNodeId());
       if (data["node_id"] && this.__callbacks[data["node_id"]]) {
         //  notify
         console.log("this", this)
@@ -53,10 +52,8 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
     __lowDiskThreshold: null,
     __prevDiskUsageStateList: null,
     __diskUsage: null,
-    __node: null,
 
     subscribe: function(nodeId, callback, node) {
-      this.__node = node;
       if (this.__callbacks[nodeId]) {
         console.log("new subscribe to node", node.getNodeId() === nodeId, node.getLabel(), this.__callbacks[nodeId]);
         this.__callbacks[nodeId].push(callback);
@@ -91,6 +88,10 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
 
     diskUsageToUI: function(data) {
       const id = data["node_id"];
+      if (!this.__callbacks[id]) {
+        return;
+      }
+
       const diskUsage = data.usage["/"]
       function isMatchingNodeId({nodeId}) {
         return nodeId === id;
@@ -110,7 +111,15 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       }
       const freeSpace = osparc.utils.Utils.bytesToSize(diskUsage.free);
 
-      const nodeName = this.__node.getLabel();
+      const store = osparc.store.Store.getInstance();
+      const currentStudy = store.getCurrentStudy();
+      const node = currentStudy.getNode(id);
+
+      const nodeName = node ? node.getLabel() : null;
+      if (nodeName === null) {
+        return;
+      }
+
       let message;
 
       const objIndex = this.__prevDiskUsageStateList.findIndex((obj => obj.nodeId === id));
