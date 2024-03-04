@@ -12,7 +12,7 @@ from servicelib.logging_utils import log_context
 from settings_library.ec2 import EC2Settings
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
-from types_aiobotocore_ec2.type_defs import FilterTypeDef
+from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
 
 from .errors import (
     EC2InstanceNotFoundError,
@@ -124,24 +124,27 @@ class SimcoreEC2API:
             if len(current_instances) + number_of_instances > max_number_of_instances:
                 raise EC2TooManyInstancesError(num_instances=max_number_of_instances)
 
+            resource_tags: list[TagTypeDef] = [
+                {"Key": tag_key, "Value": tag_value}
+                for tag_key, tag_value in instance_config.tags.items()
+            ]
+
             instances = await self.client.run_instances(
                 ImageId=instance_config.ami_id,
                 MinCount=number_of_instances,
                 MaxCount=number_of_instances,
-                IamInstanceProfile={"Arn": instance_config.iam_instance_profile}
-                if instance_config.iam_instance_profile
-                else {},
+                IamInstanceProfile=(
+                    {"Arn": instance_config.iam_instance_profile}
+                    if instance_config.iam_instance_profile
+                    else {}
+                ),
                 InstanceType=instance_config.type.name,
                 InstanceInitiatedShutdownBehavior="terminate",
                 KeyName=instance_config.key_name,
                 TagSpecifications=[
-                    {
-                        "ResourceType": "instance",
-                        "Tags": [
-                            {"Key": tag_key, "Value": tag_value}
-                            for tag_key, tag_value in instance_config.tags.items()
-                        ],
-                    }
+                    {"ResourceType": "instance", "Tags": resource_tags},
+                    {"ResourceType": "volume", "Tags": resource_tags},
+                    {"ResourceType": "network-interface", "Tags": resource_tags},
                 ],
                 UserData=compose_user_data(instance_config.startup_script),
                 NetworkInterfaces=[
@@ -172,9 +175,11 @@ class SimcoreEC2API:
                     launch_time=instance["LaunchTime"],
                     id=instance["InstanceId"],
                     aws_private_dns=instance["PrivateDnsName"],
-                    aws_public_ip=instance["PublicIpAddress"]
-                    if "PublicIpAddress" in instance
-                    else None,
+                    aws_public_ip=(
+                        instance["PublicIpAddress"]
+                        if "PublicIpAddress" in instance
+                        else None
+                    ),
                     type=instance["InstanceType"],
                     state=instance["State"]["Name"],
                     tags=parse_obj_as(
@@ -234,9 +239,11 @@ class SimcoreEC2API:
                         launch_time=instance["LaunchTime"],
                         id=instance["InstanceId"],
                         aws_private_dns=instance["PrivateDnsName"],
-                        aws_public_ip=instance["PublicIpAddress"]
-                        if "PublicIpAddress" in instance
-                        else None,
+                        aws_public_ip=(
+                            instance["PublicIpAddress"]
+                            if "PublicIpAddress" in instance
+                            else None
+                        ),
                         type=instance["InstanceType"],
                         state=instance["State"]["Name"],
                         resources=ec2_instance_types[0].resources,
