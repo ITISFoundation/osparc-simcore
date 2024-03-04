@@ -255,7 +255,7 @@
             "maxLength": 50,
             "minLength": 1,
             "title": "Stripe Customer Id",
-            "description": "Customer invoice ID"
+            "description": "Stripe customer ID"
           },
           "saved": {
             "allOf": [
