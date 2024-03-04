@@ -17,7 +17,7 @@ import asyncio
 import contextlib
 import functools
 import logging
-from asyncio import Lock, Queue, Task, sleep
+from asyncio import Lock, Queue, Task
 from dataclasses import dataclass, field
 from typing import Final
 
@@ -36,7 +36,11 @@ from models_library.service_settings_labels import RestartPolicy, SimcoreService
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import AnyHttpUrl, NonNegativeFloat
-from servicelib.background_task import cancel_task
+from servicelib.background_task import (
+    cancel_task,
+    start_periodic_task,
+    stop_periodic_task,
+)
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.redis import RedisClientsManager
@@ -77,26 +81,31 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
     _service_observation_task: dict[ServiceName, asyncio.Task | object | None] = field(
         default_factory=dict
     )
-    _keep_running: bool = False
     _inverse_search_mapping: dict[NodeID, ServiceName] = field(default_factory=dict)
     _scheduler_task: Task | None = None
     _cleanup_volume_removal_services_task: Task | None = None
     _trigger_observation_queue_task: Task | None = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
-    _observation_counter: int = 0
 
     async def start(self) -> None:
         # run as a background task
         logger.info("Starting dynamic-sidecar scheduler")
-        self._keep_running = True
 
         redis_clients_manager: RedisClientsManager = (
             self.app.state.redis_clients_manager
         )
-        self._scheduler_task = await exclusive(
-            redis_clients_manager.client(RedisDatabase.LOCKS),
-            lock_key="director-v2_dynamic-scheduler_task",
-        )(asyncio.create_task)(self._run_scheduler_task(), name="dynamic-scheduler")
+
+        settings: DynamicServicesSchedulerSettings = (
+            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+        )
+        self._scheduler_task = start_periodic_task(
+            exclusive(
+                redis_clients_manager.client(RedisDatabase.LOCKS),
+                lock_key="director-v2_dynamic-scheduler_task",
+            )(self._run_scheduler_task),
+            interval=settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
+            task_name="dynamic-scheduler",
+        )
 
         self._trigger_observation_queue_task = asyncio.create_task(
             self._run_trigger_observation_queue_task(),
@@ -111,7 +120,6 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
     async def shutdown(self) -> None:
         logger.info("Shutting down dynamic-sidecar scheduler")
-        self._keep_running = False
         self._inverse_search_mapping = {}
         self._to_observe = {}
 
@@ -122,9 +130,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             self._cleanup_volume_removal_services_task = None
 
         if self._scheduler_task is not None:
-            self._scheduler_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._scheduler_task
+            await stop_periodic_task(self._scheduler_task, timeout=5)
             self._scheduler_task = None
 
         if self._trigger_observation_queue_task is not None:
@@ -562,32 +568,18 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         logger.info("Scheduler 'trigger observation queue task' was shut down")
 
     async def _run_scheduler_task(self) -> None:
-        settings: DynamicServicesSchedulerSettings = (
-            self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
-        )
-        logger.debug(
-            "dynamic-sidecars observation interval %s",
-            settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
-        )
+        logger.debug("Observing dynamic-sidecars %s", list(self._to_observe.keys()))
 
-        while self._keep_running:
-            logger.debug("Observing dynamic-sidecars %s", list(self._to_observe.keys()))
-
-            try:
-                # prevent access to self._to_observe
-                async with self._lock:
-                    for service_name in self._to_observe:
-                        self._enqueue_observation_from_service_name(service_name)
-            except asyncio.CancelledError:  # pragma: no cover
-                logger.info("Stopped dynamic scheduler")
-                raise
-            except Exception:  # pylint: disable=broad-except
-                logger.exception(
-                    "Unexpected error while scheduling sidecars observation"
-                )
-
-            await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
-            self._observation_counter += 1
+        try:
+            # prevent access to self._to_observe
+            async with self._lock:
+                for service_name in self._to_observe:
+                    self._enqueue_observation_from_service_name(service_name)
+        except asyncio.CancelledError:  # pragma: no cover
+            logger.info("Stopped dynamic scheduler")
+            raise
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Unexpected error while scheduling sidecars observation")
 
     async def free_reserved_disk_space(self, node_id: NodeID) -> None:
         sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_id)
