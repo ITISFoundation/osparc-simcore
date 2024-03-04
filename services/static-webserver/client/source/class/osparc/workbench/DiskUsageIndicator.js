@@ -27,6 +27,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
   construct: function() {
     this.base(arguments);
     const lowDiskSpacePreferencesSettings = osparc.Preferences.getInstance();
+    lowDiskSpacePreferencesSettings.addListener("changeLowDiskSpaceThreshold", () => this.__updateDiskIndicator());
     this.__lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
     this.__prevDiskUsageStateList = [];
     const layout = this.__layout = new qx.ui.layout.VBox(2);
@@ -55,6 +56,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       alignY: "middle",
       rich: false
     })
+    // eslint-disable-next-line no-underscore-dangle
     testIndicator._add(label);
     this.__buildLayout();
 
@@ -67,9 +69,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
 
     this.addListener("changeSelectedNode", e => this.__applyCurrentNode(e.getData()), this);
     // Subscribe to node selection changes
-    this.addListener("changeCurrentNode", e => {
-      this.__applyCurrentNode(e.getData());
-    }, this);
+    this.addListener("changeCurrentNode", e => this.__applyCurrentNode(e.getData()), this);
   },
 
   properties: {
@@ -94,6 +94,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     __label: null,
     __lowDiskThreshold: null,
     __prevDiskUsageStateList: null,
+    __lastDiskUsage: null,
 
     __buildLayout: function() {
       const testIndicator = this.__indicator;
@@ -127,7 +128,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
         case "disk-indicator-label": {
           const indicator = this.getChildControl("disk-indicator")
           control = new qx.ui.basic.Label().set({
-            value: "5GB",
+            value: "",
             font: "text-13",
             textColor: "contrasted-text-light",
             alignX: "center",
@@ -150,14 +151,14 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
         osparc.workbench.DiskUsageController.getInstance().unsubscribe(prevNode.getNodeId(), e => {
           console.log("unsubscribe", e)
           this.__updateDiskIndicator(e)
-        }, node);
+        });
       }
 
       // Subscribe to disk usage data for the new node
       osparc.workbench.DiskUsageController.getInstance().subscribe(node.getNodeId(), e => {
         console.log("subscribe", e["node_id"], node.getNodeId())
         this.__updateDiskIndicator(e);
-      }, node);
+      });
     },
 
     getIndicatorColor: function(freeSpace) {
@@ -176,12 +177,14 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     },
 
     __updateDiskIndicator: function(diskUsage) {
-      const currentNodeId = this.getCurrentNode() ? this.getCurrentNode().getNodeId() : null;
-      const diskUsageNodeId = diskUsage["node_id"];
-      if (!diskUsage) {
+      if (!diskUsage || !this.__lastDiskUsage) {
         console.log("return")
         return;
       }
+      if (!diskUsage) {
+        diskUsage = this.__lastDiskUsage;
+      }
+      this.__lastDiskUsage = diskUsage;
       const indicator = this.getChildControl("disk-indicator");
       const indicatorLabel = this.getChildControl("disk-indicator-label");
       const usage = diskUsage["usage"]["/"]
