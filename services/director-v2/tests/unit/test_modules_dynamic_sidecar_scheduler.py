@@ -125,6 +125,7 @@ async def _assert_get_dynamic_services_mocked(
 
 @pytest.fixture
 def mock_env(
+    mock_exclusive: None,
     disable_postgres: None,
     disable_rabbitmq: None,
     disable_api_keys_manager: None,
