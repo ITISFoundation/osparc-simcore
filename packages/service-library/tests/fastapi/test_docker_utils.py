@@ -55,6 +55,7 @@ async def test_retrieve_image_layer_information(
         "nginx:1.25.4",
         "nginx:latest",
         "ubuntu@sha256:81bba8d1dde7fc1883b6e95cd46d6c9f4874374f2b360c8db82620b33f6b5ca1",
+        "busybox:latest",
     ],
 )
 async def test_retrieve_image_layer_information_from_external_registry(
@@ -70,7 +71,7 @@ async def test_retrieve_image_layer_information_from_external_registry(
 
 @pytest.mark.parametrize(
     "image",
-    ["itisfoundation/sleeper:1.0.0", "nginx:latest"],
+    ["itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"],
 )
 async def test_pull_image(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
