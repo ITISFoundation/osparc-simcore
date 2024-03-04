@@ -297,14 +297,8 @@ def mocked_service_awaits_manual_interventions(mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_redis(mocker: MockerFixture) -> None:
     def _mock_setup(app: FastAPI) -> None:
-        def _mock_client(*args, **kwargs) -> AsyncMock:
-            return AsyncMock()
-
-        mock = AsyncMock()
-        mock.client = _mock_client
-
         async def on_startup() -> None:
-            app.state.redis_clients_manager = mock
+            app.state.redis_clients_manager = AsyncMock()
 
         app.add_event_handler("startup", on_startup)
 
@@ -321,7 +315,7 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
         def decorator(func):
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
-                return func(args[0](), **kwargs)
+                return func(args[0], **kwargs)
 
             return wrapper
 
