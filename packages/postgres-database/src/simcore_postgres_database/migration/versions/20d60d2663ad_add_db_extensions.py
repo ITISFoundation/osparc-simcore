@@ -21,7 +21,7 @@ def upgrade():
         DO
         $$
         BEGIN
-            IF NOT EXISTS(SELECT * FROM pg_available_extensions WHERE name = 'aws_commons') THEN
+            IF EXISTS(SELECT * FROM pg_available_extensions WHERE name = 'aws_commons') THEN
                 -- Create the extension
                 CREATE EXTENSION if not exists aws_commons;
             END IF;
@@ -34,7 +34,7 @@ def upgrade():
         DO
         $$
         BEGIN
-            IF NOT EXISTS(SELECT * FROM pg_available_extensions WHERE name = 'aws_s3') THEN
+            IF EXISTS(SELECT * FROM pg_available_extensions WHERE name = 'aws_s3') THEN
                 -- Create the extension
                 CREATE EXTENSION if not exists aws_s3;
             END IF;
