@@ -7,30 +7,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from settings_library.docker_registry import RegistrySettings
-from simcore_service_dynamic_sidecar.core.utils import (
-    CommandResult,
-    _is_registry_reachable,
-    async_command,
-)
-
-
-@pytest.fixture
-def registry_with_auth(
-    monkeypatch: pytest.MonkeyPatch, docker_registry: str
-) -> RegistrySettings:
-    monkeypatch.setenv("REGISTRY_URL", docker_registry)
-    monkeypatch.setenv("REGISTRY_AUTH", "false")
-    monkeypatch.setenv("REGISTRY_AUTH", "true")
-    monkeypatch.setenv("REGISTRY_USER", "testuser")
-    monkeypatch.setenv("REGISTRY_PW", "testpassword")
-    monkeypatch.setenv("REGISTRY_SSL", "false")
-    return RegistrySettings.create_from_envs()
-
-
-async def test_is_registry_reachable(registry_with_auth: RegistrySettings) -> None:
-    await _is_registry_reachable(registry_with_auth)
-
+from simcore_service_dynamic_sidecar.core.utils import CommandResult, async_command
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
