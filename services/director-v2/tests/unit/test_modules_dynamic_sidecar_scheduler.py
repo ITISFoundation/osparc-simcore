@@ -8,6 +8,7 @@ import re
 import urllib.parse
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
+from typing import Final
 from unittest.mock import AsyncMock
 
 import pytest
@@ -20,6 +21,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services_enums import ServiceState
 from models_library.wallets import WalletID
+from pydantic import NonNegativeFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
@@ -52,7 +54,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._schedu
 
 # running scheduler at a hight rate to stress out the system
 # and ensure faster tests
-TEST_SCHEDULER_INTERVAL_SECONDS = 0.1
+_TEST_SCHEDULER_INTERVAL_SECONDS: Final[NonNegativeFloat] = 0.1
 
 log = logging.getLogger(__name__)
 
@@ -137,8 +139,7 @@ def mock_env(
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
     monkeypatch.setenv("DIRECTOR_HOST", "mocked_out")
     monkeypatch.setenv(
-        "DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS",
-        str(TEST_SCHEDULER_INTERVAL_SECONDS),
+        "DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL", f"{_TEST_SCHEDULER_INTERVAL_SECONDS}"
     )
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
     monkeypatch.setenv("S3_ENDPOINT", "endpoint")
@@ -347,9 +348,11 @@ async def test_collition_at_global_level_raises(
     mocked_dynamic_scheduler_events: None,
     mock_docker_api: None,
 ):
-    scheduler.scheduler._inverse_search_mapping[  # noqa: SLF001
+    scheduler.scheduler._inverse_search_mapping[
         scheduler_data.node_uuid
-    ] = ServiceName("mock_service_name")
+    ] = ServiceName(  # noqa: SLF001
+        "mock_service_name"
+    )
     with pytest.raises(DynamicSidecarError) as execinfo:
         await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
     assert "collide" in str(execinfo.value)

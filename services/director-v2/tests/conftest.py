@@ -315,7 +315,7 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
         def decorator(func):
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
-                return func(args[0], **kwargs)
+                return await func(*args, **kwargs)
 
             return wrapper
 

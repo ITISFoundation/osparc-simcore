@@ -103,7 +103,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                 redis_clients_manager.client(RedisDatabase.LOCKS),
                 lock_key="director-v2_dynamic-scheduler_task",
             )(self._run_scheduler_task),
-            interval=settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
+            interval=settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL,
             task_name="dynamic-scheduler",
         )
 

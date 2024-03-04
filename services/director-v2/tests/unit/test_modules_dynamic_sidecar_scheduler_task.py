@@ -62,7 +62,7 @@ def mock_env(
 
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
     monkeypatch.setenv(
-        "DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS",
+        "DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL",
         f"{SCHEDULER_INTERVAL_SECONDS}",
     )
 

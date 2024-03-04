@@ -11,7 +11,7 @@ _MINUTE: Final[NonNegativeInt] = 60
 class DynamicServicesSchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED: bool = True
 
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS: timedelta = Field(
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL: timedelta = Field(
         timedelta(seconds=5),
         description="interval at which the scheduler cycle is repeated",
     )
