@@ -66,6 +66,17 @@ class DockerImageMultiArchManifestsV2(BaseModel):
         alias_generator = snake_to_camel
 
 
+class _DockerPullImage(BaseModel):
+    status: str
+    id: str | None  # noqa: A003
+    progress_detail: ProgressDetail | None
+    progress: str | None
+
+    class Config:
+        frozen = True
+        alias_generator = snake_to_camel
+
+
 _DOCKER_HUB_HOST: Final[str] = "registry-1.docker.io"
 
 
@@ -178,17 +189,6 @@ async def retrieve_image_layer_information(
             return parse_obj_as(DockerImageManifestsV2, json_response)
 
 
-class DockerPullImage(BaseModel):
-    status: str
-    id: str | None  # noqa: A003
-    progress_detail: ProgressDetail | None
-    progress: str | None
-
-    class Config:
-        frozen = True
-        alias_generator = snake_to_camel
-
-
 async def pull_image(
     image: DockerGenericTag,
     registry_settings: RegistrySettings,
@@ -227,7 +227,7 @@ async def pull_image(
         async for pull_progress in client.images.pull(
             image, stream=True, auth=registry_auth
         ):
-            parsed_progress = parse_obj_as(DockerPullImage, pull_progress)
+            parsed_progress = parse_obj_as(_DockerPullImage, pull_progress)
             match parsed_progress.status.lower():
                 case progress_status if any(
                     msg in progress_status
