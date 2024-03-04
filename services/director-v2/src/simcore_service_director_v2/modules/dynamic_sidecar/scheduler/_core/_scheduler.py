@@ -96,7 +96,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         self._scheduler_task = await exclusive(
             redis_clients_manager.client(RedisDatabase.LOCKS),
             lock_key="director-v2_dynamic-scheduler_task",
-        )(asyncio.create_task)(self._run_scheduler_task, name="dynamic-scheduler")
+        )(asyncio.create_task)(self._run_scheduler_task(), name="dynamic-scheduler")
 
         self._trigger_observation_queue_task = asyncio.create_task(
             self._run_trigger_observation_queue_task(),
