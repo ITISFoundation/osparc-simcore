@@ -26,7 +26,7 @@ class _BaseAckPayment(_BaseAck):
         default=None, description="Stripe invoice ID"
     )
     stripe_customer_id: IDStr | None = Field(
-        default=None, description="Customer invoice ID"
+        default=None, description="Stripe customer ID"
     )
 
 

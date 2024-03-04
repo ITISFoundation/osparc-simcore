@@ -108,10 +108,10 @@ async def test_one_time_payment_workflow(
             user_email=faker.email(),
             user_address=UserAddress(
                 country="CH"
-            ),  # TODO: PC: please modify with your "collecting of user address" PR
+            ),  # NOTE: PC: please modify with your "collecting of user address" PR https://github.com/ITISFoundation/osparc-simcore/issues/5138
             wallet_name=faker.word(),
-            stripe_price_id="blabla",
-            stripe_tax_rate_id="blabla",
+            stripe_price_id=faker.word(),
+            stripe_tax_rate_id=faker.word(),
             stripe_tax_exempt_value=StripeTaxExempt.none,
         )
     )
@@ -189,10 +189,10 @@ async def test_payment_methods_workflow(
             user_email=faker.email(),
             user_address=UserAddress(
                 country="CH"
-            ),  # TODO: PC: please modify with your "collecting of user address" PR
+            ),  # NOTE: PC: please modify with your "collecting of user address" PR https://github.com/ITISFoundation/osparc-simcore/issues/5138
             wallet_name=faker.word(),
-            stripe_price_id="blabla",
-            stripe_tax_rate_id="blabla",
+            stripe_price_id=faker.word(),
+            stripe_tax_rate_id=faker.word(),
             stripe_tax_exempt_value=StripeTaxExempt.none,
         ),
     )

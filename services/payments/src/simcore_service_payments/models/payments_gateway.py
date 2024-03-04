@@ -38,8 +38,8 @@ class InitPayment(BaseModel):
     amount_dollars: AmountDecimal
     # metadata to store for billing or reference
     credits_: AmountDecimal = Field(
-        ..., alias="credits"
-    )  # NOTE: this is equal to quantity field in Stripe
+        ..., alias="credits", describe="This is equal to `quantity` field in Stripe"
+    )
     user_name: IDStr
     user_email: EmailStr
     user_address: UserAddress
