@@ -41,6 +41,7 @@ class DockerLayerSizeV2(BaseModel):
     class Config:
         frozen = True
         alias_generator = snake_to_camel
+        allow_population_by_field_name = True
 
 
 class DockerImageManifestsV2(BaseModel):
@@ -52,6 +53,7 @@ class DockerImageManifestsV2(BaseModel):
     class Config:
         frozen = True
         alias_generator = snake_to_camel
+        allow_population_by_field_name = True
 
 
 class DockerImageMultiArchManifestsV2(BaseModel):
@@ -62,6 +64,7 @@ class DockerImageMultiArchManifestsV2(BaseModel):
     class Config:
         frozen = True
         alias_generator = snake_to_camel
+        allow_population_by_field_name = True
 
 
 class _DockerPullImage(BaseModel):
@@ -73,6 +76,7 @@ class _DockerPullImage(BaseModel):
     class Config:
         frozen = True
         alias_generator = snake_to_camel
+        allow_population_by_field_name = True
 
 
 DOCKER_HUB_HOST: Final[str] = "registry-1.docker.io"
