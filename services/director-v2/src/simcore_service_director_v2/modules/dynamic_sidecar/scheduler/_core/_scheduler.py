@@ -86,6 +86,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
     _cleanup_volume_removal_services_task: Task | None = None
     _trigger_observation_queue_task: Task | None = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
+    _observation_counter: int = 0
 
     async def start(self) -> None:
         # run as a background task
@@ -580,6 +581,8 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             raise
         except Exception:  # pylint: disable=broad-except
             logger.exception("Unexpected error while scheduling sidecars observation")
+
+        self._observation_counter += 1
 
     async def free_reserved_disk_space(self, node_id: NodeID) -> None:
         sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_id)
