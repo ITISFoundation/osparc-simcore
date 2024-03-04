@@ -1,3 +1,8 @@
+# pylint: disable=inconsistent-return-statements
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+
+
 from collections.abc import AsyncIterator
 from http import HTTPStatus
 from typing import Any
@@ -11,10 +16,6 @@ from models_library.users import UserID
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
-
-# pylint: disable=inconsistent-return-statements
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_service_webserver.users._preferences_models import ALL_FRONTEND_PREFERENCES
