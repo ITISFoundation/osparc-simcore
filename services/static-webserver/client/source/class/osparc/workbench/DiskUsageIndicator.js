@@ -146,12 +146,12 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       // Unsubscribe from previous node's disk usage data
       // const previousNode = this.getCurrentNode();
       // const previousSelectedNode = this.getSelectedNode();
-      // if (prevNode) {
-      //   osparc.workbench.DiskUsageController.getInstance().unsubscribe(prevNode.getNodeId(), e => {
-      //     console.log("unsubscribe", e)
-      //     this.__updateDiskIndicator(e)
-      //   }, node);
-      // }
+      if (prevNode) {
+        osparc.workbench.DiskUsageController.getInstance().unsubscribe(prevNode.getNodeId(), e => {
+          console.log("unsubscribe", e)
+          this.__updateDiskIndicator(e)
+        }, node);
+      }
 
       // Subscribe to disk usage data for the new node
       osparc.workbench.DiskUsageController.getInstance().subscribe(node.getNodeId(), e => {

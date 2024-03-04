@@ -33,7 +33,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
     }
     this.__socket.on("serviceDiskUsage", data => {
       console.log("serviceDiskUsage", data["node_id"] === this.__node.getNodeId(), data["node_id"], this.__node.getNodeId());
-      if (data["node_id"] === this.__node.getNodeId() && data["node_id"] && this.__callbacks[data["node_id"]]) {
+      if (data["node_id"] && this.__callbacks[data["node_id"]]) {
         //  notify
         console.log("this", this)
         this.diskUsageToUI(data);
