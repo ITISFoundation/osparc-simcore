@@ -2,7 +2,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal
+from typing import Any, Final, Literal
 
 import aiodocker
 import arrow
@@ -11,6 +11,7 @@ from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
+from yarl import URL
 
 from .logging_utils import LogLevelInt
 from .progress_bar import ProgressBarData
@@ -53,6 +54,16 @@ class DockerImageManifestsV2(BaseModel):
         alias_generator = snake_to_camel
 
 
+class DockerImageMultiArchManifestsV2(BaseModel):
+    schema_version: Literal[2]
+    media_type: Literal["application/vnd.oci.image.index.v1+json"]
+    manifests: list[dict[str, Any]]
+
+    class Config:
+        frozen = True
+        alias_generator = snake_to_camel
+
+
 class _DockerPullImage(BaseModel):
     status: str
     id: str | None  # noqa: A003
@@ -62,6 +73,45 @@ class _DockerPullImage(BaseModel):
     class Config:
         frozen = True
         alias_generator = snake_to_camel
+
+
+DOCKER_HUB_HOST: Final[str] = "registry-1.docker.io"
+
+
+def _create_docker_hub_complete_url(image: DockerGenericTag) -> URL:
+    if len(image.split("/")) == 1:
+        # official image, add library
+        return URL(f"https://{DOCKER_HUB_HOST}/library/{image}")
+    return URL(f"https://{DOCKER_HUB_HOST}/{image}")
+
+
+def get_image_complete_url(
+    image: DockerGenericTag, registry_settings: RegistrySettings
+) -> URL:
+    if registry_settings.REGISTRY_URL in image:
+        # this is an image available in the private registry
+        return URL(f"http{'s' if registry_settings.REGISTRY_AUTH else ''}://{image}")
+
+    # this is an external image, like nginx:latest or library/nginx:latest or quay.io/stuff, ... -> https
+    try:
+        # NOTE: entries like nginx:latest or ngingx:1.3 will raise an exception here
+        url = URL(f"https://{image}")
+        assert url.host  # nosec
+        if not url.port or "." not in url.host:
+            # this is Dockerhub + official images are in /library
+            url = _create_docker_hub_complete_url(image)
+    except ValueError:
+        # this is Dockerhub with missing host
+        url = _create_docker_hub_complete_url(image)
+    return url
+
+
+def get_image_name_and_tag(image_complete_url: URL) -> tuple[str, str]:
+    if "sha256" in f"{image_complete_url}":
+        parts = image_complete_url.path.split("@")
+    else:
+        parts = image_complete_url.path.split(":")
+    return parts[0].strip("/"), parts[1]
 
 
 async def pull_image(

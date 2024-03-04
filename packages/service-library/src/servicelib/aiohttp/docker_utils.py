@@ -1,69 +1,24 @@
-from typing import Any, Final, Literal
-
 import aiohttp
 from models_library.docker import DockerGenericTag
-from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic import ValidationError, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 
 from ..aiohttp import status
-from ..docker_utils import DockerImageManifestsV2
-
-_DOCKER_HUB_HOST: Final[str] = "registry-1.docker.io"
-
-
-class DockerImageMultiArchManifestsV2(BaseModel):
-    schema_version: Literal[2]
-    media_type: Literal["application/vnd.oci.image.index.v1+json"]
-    manifests: list[dict[str, Any]]
-
-    class Config:
-        frozen = True
-        alias_generator = snake_to_camel
-
-
-def _create_docker_hub_complete_url(image: DockerGenericTag) -> URL:
-    if len(image.split("/")) == 1:
-        # official image, add library
-        return URL(f"https://{_DOCKER_HUB_HOST}/library/{image}")
-    return URL(f"https://{_DOCKER_HUB_HOST}/{image}")
-
-
-def _get_image_complete_url(
-    image: DockerGenericTag, registry_settings: RegistrySettings
-) -> URL:
-    if registry_settings.REGISTRY_URL in image:
-        # this is an image available in the private registry
-        return URL(f"http{'s' if registry_settings.REGISTRY_AUTH else ''}://{image}")
-
-    # this is an external image, like nginx:latest or library/nginx:latest or quay.io/stuff, ... -> https
-    try:
-        # NOTE: entries like nginx:latest or ngingx:1.3 will raise an exception here
-        url = URL(f"https://{image}")
-        assert url.host  # nosec
-        if not url.port or "." not in url.host:
-            # this is Dockerhub + official images are in /library
-            url = _create_docker_hub_complete_url(image)
-    except ValueError:
-        # this is Dockerhub with missing host
-        url = _create_docker_hub_complete_url(image)
-    return url
-
-
-def _get_image_name_and_tag(image_complete_url: URL) -> tuple[str, str]:
-    if "sha256" in f"{image_complete_url}":
-        parts = image_complete_url.path.split("@")
-    else:
-        parts = image_complete_url.path.split(":")
-    return parts[0].strip("/"), parts[1]
+from ..docker_utils import (
+    DOCKER_HUB_HOST,
+    DockerImageManifestsV2,
+    DockerImageMultiArchManifestsV2,
+    get_image_complete_url,
+    get_image_name_and_tag,
+)
 
 
 async def retrieve_image_layer_information(
     image: DockerGenericTag, registry_settings: RegistrySettings
 ) -> DockerImageManifestsV2:
     async with aiohttp.ClientSession() as session:
-        image_complete_url = _get_image_complete_url(image, registry_settings)
+        image_complete_url = get_image_complete_url(image, registry_settings)
         auth = None
         if registry_settings.REGISTRY_URL in f"{image_complete_url}":
             auth = aiohttp.BasicAuth(
@@ -71,9 +26,7 @@ async def retrieve_image_layer_information(
                 password=registry_settings.REGISTRY_PW.get_secret_value(),
             )
         # NOTE: either of type ubuntu:latest or ubuntu@sha256:lksfdjlskfjsldkfj
-        docker_image_name, docker_image_tag = _get_image_name_and_tag(
-            image_complete_url
-        )
+        docker_image_name, docker_image_tag = get_image_name_and_tag(image_complete_url)
         manifest_url = image_complete_url.with_path(
             f"v2/{docker_image_name}/manifests/{docker_image_tag}"
         )
@@ -81,7 +34,7 @@ async def retrieve_image_layer_information(
         headers = {
             "Accept": "application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json"
         }
-        if _DOCKER_HUB_HOST in f"{image_complete_url}":
+        if DOCKER_HUB_HOST in f"{image_complete_url}":
             # we need the docker hub bearer code (https://stackoverflow.com/questions/57316115/get-manifest-of-a-public-docker-image-hosted-on-docker-hub-using-the-docker-regi)
             bearer_url = URL("https://auth.docker.io/token").with_query(
                 {
