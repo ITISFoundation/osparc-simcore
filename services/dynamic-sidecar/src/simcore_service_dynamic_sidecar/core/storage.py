@@ -5,9 +5,10 @@ from typing import Final
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from servicelib.logging_utils import log_context
+from settings_library.node_ports import StorageAuthSettings
 
 from ..modules.service_liveness import wait_for_service_liveness
-from .settings import ApplicationSettings, StorageAuthSettings
+from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
@@ -41,4 +42,3 @@ async def wait_for_storage_liveness(app: FastAPI) -> None:
     await wait_for_service_liveness(
         _is_storage_responsive, service_name="Storage", endpoint=url, url=url
     )
-    # Somehow the message is not good here we get an assert error
