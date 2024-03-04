@@ -131,7 +131,7 @@ class SimcoreEC2API:
 
             instances = await self.client.run_instances(
                 ImageId=instance_config.ami_id,
-                MinCount=number_of_instances,
+                MinCount=1,
                 MaxCount=number_of_instances,
                 IamInstanceProfile=(
                     {"Arn": instance_config.iam_instance_profile}
