@@ -118,6 +118,13 @@ def get_image_name_and_tag(image_complete_url: URL) -> tuple[str, str]:
     return parts[0].strip("/"), parts[1]
 
 
+@dataclass
+class _PulledStatus:
+    size: int
+    downloaded: int = 0
+    extracted: int = 0
+
+
 async def pull_image(
     image: DockerGenericTag,
     registry_settings: RegistrySettings,
@@ -137,14 +144,8 @@ async def pull_image(
     # NOTE: 1 subprogress per layer, then subprogress of size 2 with weights?
     # NOTE: or, we compute the total size X2, then upgrade that based on the status? maybe simpler
 
-    @dataclass
-    class PulledStatus:
-        size: int
-        downloaded: int = 0
-        extracted: int = 0
-
     layer_id_to_size = {
-        layer.digest.removeprefix("sha256:")[:12]: PulledStatus(layer.size)
+        layer.digest.removeprefix("sha256:")[:12]: _PulledStatus(layer.size)
         for layer in image_information.layers
     }
     image_layers_total_size = sum(layer.size for layer in image_information.layers) * 2
