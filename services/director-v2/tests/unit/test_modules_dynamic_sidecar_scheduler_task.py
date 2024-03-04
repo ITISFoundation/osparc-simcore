@@ -229,6 +229,7 @@ def mock_projects_repository(mocker: MockerFixture, node_present_in_db: bool) ->
 
 
 async def test_skip_observation_cycle_after_error(
+    mock_exclusive: None,
     docker_swarm: None,
     minimal_app: FastAPI,
     mock_projects_repository: None,
