@@ -101,6 +101,7 @@ async def test_pull_image(
     fake_progress_report_cb.reset_mock()
 
     # check there were no warnings
+    # NOTE: this would pop up in case docker changes its pulling statuses
     for record in caplog.records:
         assert record.levelname != "WARNING", record.message
 

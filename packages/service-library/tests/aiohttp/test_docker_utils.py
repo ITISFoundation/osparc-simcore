@@ -99,7 +99,8 @@ async def test_pull_image(
     assert fake_progress_report_cb.call_args_list[0] == call(0.0)
     fake_progress_report_cb.assert_called_with(1.0)
 
-    # check there were no warnings
+    # check there were no warnings popping up from the docker pull
+    # NOTE: this would pop up in case docker changes its pulling statuses
     for record in caplog.records:
         assert record.levelname != "WARNING", record.message
 
