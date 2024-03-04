@@ -3,11 +3,15 @@
     This module was necessary because simcore-sdk (an aiohttp-independent package) still needs some
     of the helpers here.
 """
+import logging
 from dataclasses import asdict, dataclass
-from typing import Optional
 
 import sqlalchemy as sa
 from aiopg.sa import create_engine
+
+from .logging_utils import log_catch, log_context
+
+_logger = logging.getLogger(__name__)
 
 DSN = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
@@ -21,9 +25,9 @@ class DataSourceName:
     port: int = 5432
 
     # Attributes about the caller
-    application_name: Optional[str] = None
+    application_name: str | None = None
 
-    def to_uri(self, with_query=False) -> str:
+    def to_uri(self, *, with_query=False) -> str:
         uri = DSN.format(**asdict(self))
         if with_query and self.application_name:
             uri += f"?application_name={self.application_name}"
@@ -42,14 +46,25 @@ def create_pg_engine(
 
     assert engine.closed
     """
-    aiopg_engine_context = create_engine(
+    return create_engine(
         dsn.to_uri(),
         application_name=dsn.application_name,
         minsize=minsize,
         maxsize=maxsize,
         **pool_kwargs,
     )
-    return aiopg_engine_context
+
+
+async def is_postgres_responsive_async(dsn: DataSourceName) -> bool:
+    is_responsive: bool = False
+    with log_catch(_logger, reraise=False), log_context(
+        _logger, logging.DEBUG, msg=f"checking Postgres connection at {dsn=}"
+    ):
+        async with create_engine(dsn):
+            _logger.debug("postgres connection established")
+            is_responsive = True
+
+    return is_responsive
 
 
 def is_postgres_responsive(dsn: DataSourceName) -> bool:

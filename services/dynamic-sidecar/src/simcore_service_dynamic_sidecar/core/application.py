@@ -28,10 +28,12 @@ from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
+from .external_dependencies import setup_check_dependencies
 from .rabbitmq import setup_rabbitmq
+from .registry import setup_registry
 from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
-from .utils import login_registry, volumes_fix_permissions
+from .utils import volumes_fix_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -146,17 +148,17 @@ def create_app():
 
     # MODULES SETUP --------------
 
+    setup_check_dependencies(app)
+
     setup_shared_store(app)
     app.state.application_health = ApplicationHealth()
     application_settings: ApplicationSettings = app.state.settings
 
-    if application_settings.RABBIT_SETTINGS:
-        setup_rabbitmq(app)
-        setup_background_log_fetcher(app)
-        setup_resource_tracking(app)
-        setup_system_monitor(app)
+    setup_rabbitmq(app)
+    setup_background_log_fetcher(app)
+    setup_resource_tracking(app)
+    setup_system_monitor(app)
 
-    # also sets up mounted_volumes
     setup_mounted_fs(app)
     setup_inputs(app)
     setup_outputs(app)
@@ -164,6 +166,8 @@ def create_app():
     setup_attribute_monitor(app)
 
     setup_user_services_preferences(app)
+
+    setup_registry(app)
 
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
@@ -178,7 +182,6 @@ def create_app():
         app.state.container_restart_lock = Lock()
 
         app_state = AppState(app)
-        await login_registry(app_state.settings.REGISTRY_SETTINGS)
         await volumes_fix_permissions(app_state.mounted_volumes)
         # STARTED
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
