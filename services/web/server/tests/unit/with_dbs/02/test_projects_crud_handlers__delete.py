@@ -5,6 +5,7 @@
 
 
 from collections.abc import Callable, Iterator
+from http import HTTPStatus
 from typing import Any
 from unittest import mock
 from unittest.mock import MagicMock, call
@@ -12,7 +13,6 @@ from unittest.mock import MagicMock, call
 import pytest
 import redis.asyncio as aioredis
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import ProjectID
@@ -24,6 +24,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     MockedStorageSubsystem,
     standard_role_response,
 )
+from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
@@ -36,7 +37,7 @@ from socketio.exceptions import ConnectionError as SocketConnectionError
 
 
 async def _request_delete_project(
-    client: TestClient, project: ProjectDict, expected: type[web.HTTPException]
+    client: TestClient, project: ProjectDict, expected: HTTPStatus
 ) -> None:
     assert client.app
 
@@ -75,7 +76,7 @@ async def test_delete_project(
         project_uuid=user_project["uuid"], user_id=logged_user["id"]
     )
 
-    if expected.no_content == web.HTTPNoContent:
+    if expected.no_content == status.HTTP_204_NO_CONTENT:
         # Waits until deletion tasks are done
         assert (
             len(tasks) == 1
@@ -101,7 +102,9 @@ async def test_delete_project(
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_has_calls(expected_calls)
 
-        await assert_get_same_project_caller(client, user_project, web.HTTPNotFound)
+        await assert_get_same_project_caller(
+            client, user_project, status.HTTP_404_NOT_FOUND
+        )
 
     else:
         assert (
@@ -112,10 +115,14 @@ async def test_delete_project(
 @pytest.mark.parametrize(
     "user_role, expected_ok, expected_forbidden",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPOk, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPOk, web.HTTPForbidden),
+        (
+            UserRole.ANONYMOUS,
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_401_UNAUTHORIZED,
+        ),
+        (UserRole.GUEST, status.HTTP_200_OK, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_200_OK, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_200_OK, status.HTTP_403_FORBIDDEN),
     ],
 )
 async def test_delete_multiple_opened_project_forbidden(
@@ -129,8 +136,8 @@ async def test_delete_multiple_opened_project_forbidden(
     socketio_client_factory: Callable,
     client_session_id_factory: Callable,
     user_role: UserRole,
-    expected_ok: type[web.HTTPException],
-    expected_forbidden: type[web.HTTPError],
+    expected_ok: HTTPStatus,
+    expected_forbidden: HTTPStatus,
     redis_client: aioredis.Redis,
 ):
     assert client.app

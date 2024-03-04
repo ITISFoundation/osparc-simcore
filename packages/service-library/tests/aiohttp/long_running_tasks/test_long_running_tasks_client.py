@@ -8,7 +8,7 @@ import pytest
 from aiohttp import ClientResponseError, web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
-from servicelib.aiohttp import long_running_tasks
+from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks import client as lr_client
 from servicelib.aiohttp.long_running_tasks.client import (
     LRTask,
@@ -103,7 +103,7 @@ async def test_long_running_task_request_timeout(
     # check the task was properly aborted by the client
     list_url = client.app.router["list_tasks"].url_for()
     result = await client.get(f"{list_url}")
-    data, error = await assert_status(result, web.HTTPOk)
+    data, error = await assert_status(result, status.HTTP_200_OK)
     assert not error
     assert data == []
 

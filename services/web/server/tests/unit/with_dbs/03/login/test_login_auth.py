@@ -4,14 +4,15 @@
 
 import json
 import time
+from http import HTTPStatus
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from cryptography import fernet
 from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
+from servicelib.aiohttp import status
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.db.models import UserStatus
@@ -43,7 +44,7 @@ async def test_login_with_unknown_email(client: TestClient):
         url.path, json={"email": "unknown@email.com", "password": "wrong."}
     )
 
-    _, error = await assert_status(r, web.HTTPUnauthorized)
+    _, error = await assert_status(r, status.HTTP_401_UNAUTHORIZED)
     assert MSG_UNKNOWN_EMAIL in error["errors"][0]["message"]
     assert len(error["errors"]) == 1
 
@@ -65,7 +66,7 @@ async def test_login_with_wrong_password(client: TestClient):
                 "password": "wrong.",
             },
         )
-    _, error = await assert_status(r, web.HTTPUnauthorized)
+    _, error = await assert_status(r, status.HTTP_401_UNAUTHORIZED)
     assert MSG_WRONG_PASSWORD in error["errors"][0]["message"]
     assert len(error["errors"]) == 1
 
@@ -91,7 +92,7 @@ async def test_login_blocked_user(
             url.path, json={"email": user["email"], "password": user["raw_password"]}
         )
 
-    _, error = await assert_status(r, web.HTTPUnauthorized)
+    _, error = await assert_status(r, status.HTTP_401_UNAUTHORIZED)
     # expected_msg contains {support_email} at the end of the string
     assert expected_msg[: -len("xxx{support_email}")] in error["errors"][0]["message"]
     assert len(error["errors"]) == 1
@@ -110,7 +111,7 @@ async def test_login_inactive_user(client: TestClient):
             url.path, json={"email": user["email"], "password": user["raw_password"]}
         )
 
-    _, error = await assert_status(r, web.HTTPUnauthorized)
+    _, error = await assert_status(r, status.HTTP_401_UNAUTHORIZED)
     assert MSG_ACTIVATION_REQUIRED in error["errors"][0]["message"]
     assert len(error["errors"]) == 1
 
@@ -124,7 +125,7 @@ async def test_login_successfully(client: TestClient):
             url.path, json={"email": user["email"], "password": user["raw_password"]}
         )
 
-    data, _ = await assert_status(r, web.HTTPOk)
+    data, _ = await assert_status(r, status.HTTP_200_OK)
     assert MSG_LOGGED_IN in data["message"]
 
 
@@ -144,15 +145,16 @@ async def test_login_successfully_with_email_containing_uppercase_letters(
                 "password": user["raw_password"],
             },
         )
-    data, _ = await assert_status(r, web.HTTPOk)
+    data, _ = await assert_status(r, status.HTTP_200_OK)
     assert MSG_LOGGED_IN in data["message"]
 
 
 @pytest.mark.parametrize(
-    "cookie_enabled,expected", [(True, web.HTTPOk), (False, web.HTTPUnauthorized)]
+    "cookie_enabled,expected",
+    [(True, status.HTTP_200_OK), (False, status.HTTP_401_UNAUTHORIZED)],
 )
 async def test_proxy_login(
-    client: TestClient, cookie_enabled: bool, expected: type[web.HTTPException]
+    client: TestClient, cookie_enabled: bool, expected: HTTPStatus
 ):
     assert client.app
     restricted_url = client.app.router["get_my_profile"].url_for()

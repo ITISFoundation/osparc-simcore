@@ -4,6 +4,7 @@
 
 import asyncio
 from collections.abc import Callable
+from http import HTTPStatus
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,6 +13,7 @@ from aiohttp.test_utils import TestClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.rest.plugin import setup_rest
@@ -35,7 +37,7 @@ def client(
         import time
 
         time.sleep(MAX_DELAY_SECS_ALLOWED * 1.1)
-        raise web.HTTPOk()
+        raise web.HTTPOk
 
     server_kwargs = {"port": unused_tcp_port_factory(), "host": "localhost"}
 
@@ -68,7 +70,7 @@ async def test_frontend_config(
 
     response = await client.get(f"/{api_version_prefix}/config")
 
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     assert not data["invitation_required"]
 
 
@@ -97,14 +99,14 @@ async def mock_redis_client(
 @pytest.mark.parametrize(
     "redis_maintenance_data,expected",
     [
-        (None, web.HTTPNoContent),
+        (None, status.HTTP_204_NO_CONTENT),
         (
             {
                 "start": "2023-01-17T14:45:00.000Z",
                 "end": "2023-01-17T23:00:00.000Z",
                 "reason": "Release 1.0.4",
             },
-            web.HTTPOk,
+            status.HTTP_200_OK,
         ),
     ],
 )
@@ -112,7 +114,7 @@ async def test_get_scheduled_maintenance(
     client: TestClient,
     api_version_prefix: str,
     redis_maintenance_data: dict[str, str],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     mocked_login_required: None,
     mock_redis_client: MagicMock,
 ):

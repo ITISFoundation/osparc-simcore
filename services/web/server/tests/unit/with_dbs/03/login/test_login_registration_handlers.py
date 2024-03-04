@@ -8,7 +8,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from aiohttp import ClientResponseError, web
+from aiohttp import ClientResponseError
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest_mock import MockerFixture
@@ -63,7 +63,7 @@ async def test_unregister_account(
 
     # is logged in
     response = await client.get("/v0/me")
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
 
     # success to request deletion of account
     response = await client.post(
@@ -73,7 +73,7 @@ async def test_unregister_account(
             "password": logged_user["raw_password"],
         },
     )
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
 
     # sent email?
     mimetext = mocked_send_email.call_args[1]["message"]
@@ -82,14 +82,14 @@ async def test_unregister_account(
 
     # should be logged-out
     response = await client.get("/v0/me")
-    await assert_status(response, web.HTTPUnauthorized)
+    await assert_status(response, status.HTTP_401_UNAUTHORIZED)
 
     # try to login again and get rejected
     response = await client.post(
         "/v0/auth/login",
         json={"email": logged_user["email"], "password": logged_user["raw_password"]},
     )
-    _, error = await assert_status(response, web.HTTPUnauthorized)
+    _, error = await assert_status(response, status.HTTP_401_UNAUTHORIZED)
 
     prefix_msg = MSG_USER_DELETED.format(support_email="").strip()
     assert prefix_msg in error["errors"][0]["message"]
@@ -105,7 +105,7 @@ async def test_cannot_unregister_other_account(
 
     # is logged in
     response = await client.get("/v0/me")
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
 
     # cannot delete another account
     async with NewUser(app=client.app) as other_user:
@@ -116,7 +116,7 @@ async def test_cannot_unregister_other_account(
                 "password": other_user["raw_password"],
             },
         )
-        await assert_status(response, web.HTTPConflict)
+        await assert_status(response, status.HTTP_409_CONFLICT)
 
 
 @pytest.mark.parametrize("invalidate", ["email", "raw_password"])
@@ -133,7 +133,7 @@ async def test_cannot_unregister_invalid_credentials(
 
     # check is logged in
     response = await client.get("/v0/me")
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
 
     # check cannot invalid credentials
     credentials = {k: logged_user[k] for k in ("email", "raw_password")}
@@ -146,7 +146,7 @@ async def test_cannot_unregister_invalid_credentials(
             "password": credentials["raw_password"],
         },
     )
-    await assert_status(response, web.HTTPConflict)
+    await assert_status(response, status.HTTP_409_CONFLICT)
 
 
 async def test_request_an_account(
@@ -165,7 +165,7 @@ async def test_request_an_account(
         },
     )
 
-    await assert_status(response, web.HTTPNoContent)
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
 
     product = get_product(client.app, product_name="osparc")
 

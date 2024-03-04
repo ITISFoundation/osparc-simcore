@@ -4,11 +4,12 @@
 # pylint: disable=unused-variable
 
 import asyncio
+from collections.abc import Awaitable, Callable
+from http import HTTPStatus
 from math import ceil
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -16,6 +17,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
 )
+from servicelib.aiohttp import status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -40,7 +42,7 @@ def assert_replaced(current_project, update_data):
 
 async def _list_projects(
     client,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     query_parameters: dict | None = None,
     expected_error_msg: str | None = None,
     expected_error_code: str | None = None,
@@ -140,7 +142,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
 ):
     await _list_projects(
         client,
-        web.HTTPUnprocessableEntity,
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
         query_parameters={"limit": limit, "offset": offset},
         expected_error_msg=expected_error_msg,
         expected_error_code="value_error.number.not_ge",
@@ -171,7 +173,7 @@ async def test_list_projects_with_pagination(
             for i in range(NUM_PROJECTS)
         ]
     )
-    if expected.created == web.HTTPCreated:
+    if expected.created == status.HTTP_201_CREATED:
         catalog_subsystem_mock(created_projects)
 
         assert len(created_projects) == NUM_PROJECTS

@@ -8,11 +8,11 @@ import logging
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
+from http import HTTPStatus
 from pathlib import Path
 
 import pytest
 import simcore_service_webserver
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -20,6 +20,7 @@ from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
+from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
@@ -37,8 +38,6 @@ from yarl import URL
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-
-log = logging.getLogger(__name__)
 
 # mute noisy loggers
 logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
@@ -235,8 +234,8 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
 
     async def _creator(
         client: TestClient,
-        expected_accepted_response: type[web.HTTPException],
-        expected_creation_response: type[web.HTTPException],
+        expected_accepted_response: HTTPStatus,
+        expected_creation_response: HTTPStatus,
         logged_user: dict[str, str],
         primary_group: dict[str, str],
         *,
@@ -278,7 +277,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                     f"--> waiting for creation {attempt.retry_state.attempt_number}..."
                 )
                 result = await client.get(f"{status_url}")
-                data, error = await assert_status(result, web.HTTPOk)
+                data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
                 task_status = TaskStatus.parse_obj(data)

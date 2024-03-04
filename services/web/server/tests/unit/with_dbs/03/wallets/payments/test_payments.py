@@ -9,7 +9,6 @@ from typing import Any, TypeAlias
 from unittest.mock import MagicMock
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
@@ -22,6 +21,7 @@ from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -53,7 +53,7 @@ async def test_payment_on_invalid_wallet(
             "priceDollars": 25,
         },
     )
-    data, error = await assert_status(response, web.HTTPForbidden)
+    data, error = await assert_status(response, status.HTTP_403_FORBIDDEN)
     assert data is None
     assert error
 
@@ -92,7 +92,7 @@ async def test_one_time_payment_worfklow(
             "priceDollars": 25,
         },
     )
-    data, error = await assert_status(response, web.HTTPCreated)
+    data, error = await assert_status(response, status.HTTP_201_CREATED)
     assert error is None
     payment = WalletPaymentInitiated.parse_obj(data)
 
@@ -121,7 +121,7 @@ async def test_one_time_payment_worfklow(
 
     # list all payment transactions in all my wallets
     response = await client.get("/v0/wallets/-/payments")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
 
     page = parse_obj_as(Page[PaymentTransaction], data)
 
@@ -176,7 +176,7 @@ async def test_multiple_payments(
                 "comment": f"payment {n=}",
             },
         )
-        data, error = await assert_status(response, web.HTTPCreated)
+        data, error = await assert_status(response, status.HTTP_201_CREATED)
         assert data
         assert not error
         payment = WalletPaymentInitiated.parse_obj(data)
@@ -198,7 +198,7 @@ async def test_multiple_payments(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments/{pending_id}:cancel",
     )
-    await assert_status(response, web.HTTPNoContent)
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
     assert mock_rpc_payments_service_api["cancel_payment"].called
 
     payments_cancelled.append(pending_id)
@@ -210,7 +210,7 @@ async def test_multiple_payments(
 
     # list
     response = await client.get("/v0/wallets/-/payments")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
 
     page = parse_obj_as(Page[PaymentTransaction], data)
 
@@ -263,7 +263,7 @@ async def test_complete_payment_errors(
 
     assert mock_rpc_payments_service_api["init_payment"].called
 
-    data, _ = await assert_status(response, web.HTTPCreated)
+    data, _ = await assert_status(response, status.HTTP_201_CREATED)
     payment = WalletPaymentInitiated.parse_obj(data)
 
     # Cannot complete as PENDING
@@ -309,7 +309,7 @@ async def test_payment_not_found(
     )
     assert mock_rpc_payments_service_api["cancel_payment"].called
 
-    data, error = await assert_status(response, web.HTTPNotFound)
+    data, error = await assert_status(response, status.HTTP_404_NOT_FOUND)
     assert data is None
     error_msg = error["errors"][0]["message"]
     assert payment_id in error_msg
@@ -340,7 +340,7 @@ async def test_payment_on_wallet_without_access(
                 "priceDollars": 25,
             },
         )
-        data, error = await assert_status(response, web.HTTPForbidden)
+        data, error = await assert_status(response, status.HTTP_403_FORBIDDEN)
         assert data is None
         assert error
 
@@ -373,13 +373,13 @@ async def test_cannot_get_payment_info_in_shared_wallet(
                 .path,
                 json={"read": True, "write": False, "delete": False},
             ),
-            web.HTTPCreated,
+            status.HTTP_201_CREATED,
         )
 
         # let's logout one user
         await assert_status(
             await client.post(client.app.router["auth_logout"].url_for().path),
-            web.HTTPOk,
+            status.HTTP_200_OK,
         )
 
         # logs in
@@ -391,7 +391,7 @@ async def test_cannot_get_payment_info_in_shared_wallet(
                     "password": new_user["raw_password"],
                 },
             ),
-            web.HTTPOk,
+            status.HTTP_200_OK,
         )
 
         # TEST auto-recharge must not be allowed!
@@ -399,5 +399,5 @@ async def test_cannot_get_payment_info_in_shared_wallet(
             await client.get(
                 f"/v0/wallets/{logged_user_wallet.wallet_id}/auto-recharge"
             ),
-            web.HTTPForbidden,
+            status.HTTP_403_FORBIDDEN,
         )
