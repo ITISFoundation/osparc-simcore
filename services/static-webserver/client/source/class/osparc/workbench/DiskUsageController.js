@@ -24,6 +24,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
   type: "singleton",
 
   construct: function() {
+    this.__prevDiskUsageStateList = [];
     this.base(arguments);
 
     this.__socket = osparc.wrapper.WebSocket.getInstance().getSocket();
@@ -31,9 +32,11 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       console.error("Invalid WebSocket object obtained from source");
     }
     this.__socket.on("serviceDiskUsage", data => {
-      if (data["node_id"] && this.__callbacks[data["node_id"]]) {
+      console.log("serviceDiskUsage", data["node_id"] === this.__node.getNodeId(), data["node_id"], this.__node.getNodeId());
+      if (data["node_id"] === this.__node.getNodeId() && data["node_id"] && this.__callbacks[data["node_id"]]) {
         //  notify
-        this.diskUsageToUI(data["node_id"], data.usage["/"]);
+        console.log("this", this)
+        this.diskUsageToUI(data);
         this.__callbacks[data["node_id"]].forEach(cb => {
           cb(data);
         })
@@ -50,31 +53,35 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
     __lowDiskThreshold: null,
     __prevDiskUsageStateList: null,
     __diskUsage: null,
+    __node: null,
 
-    subscribe: function(nodeId, callback) {
-      debugger
+    subscribe: function(nodeId, callback, node) {
+      this.__node = node;
       if (this.__callbacks[nodeId]) {
+        console.log("new subscribe to node", node.getNodeId() === nodeId, node.getLabel(), this.__callbacks[nodeId]);
         this.__callbacks[nodeId].push(callback);
       } else {
+        console.log("Listen to node", node.getNodeId() === nodeId, node.getLabel(), this.__callbacks[nodeId] = [callback]);
         this.__callbacks[nodeId] = [callback];
       }
     },
 
-    unsubscribe: function(nodeId, callback) {
+    unsubscribe: function(nodeId, callback, node) {
+      console.log("unsubscribe to node", nodeId, node.getLabel());
       if (this.__callbacks[nodeId]) {
         this.__callbacks[nodeId] = this.__callbacks[nodeId].filter(cb => cb !== callback)
       }
     },
 
-    getDiskUsage: function() {
+    getDiskUsage: function(freeSpace) {
       const lowDiskSpacePreferencesSettings = osparc.Preferences.getInstance();
       this.__lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
       const warningSize = osparc.utils.Utils.gBToBytes(this.__lowDiskThreshold); // 5 GB Default
       const criticalSize = osparc.utils.Utils.gBToBytes(0.01); // 0 GB
       let warningLevel = "NORMAL"
-      if (this.__diskUsage["free"] <= criticalSize) {
+      if (freeSpace <= criticalSize) {
         warningLevel = "CRITICAL"
-      } else if (this.__diskUsage["free"] <= warningSize) {
+      } else if (freeSpace <= warningSize) {
         warningLevel = "WARNING"
       } else {
         warningLevel = "NORMAL"
@@ -82,12 +89,9 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       return warningLevel
     },
 
-    getDiskAvailableSpacePercent: function() {
-      return this.__diskUsage ? this.__diskUsage["used_percent"] : undefined
-    },
-
-    diskUsageToUI: function(id, diskUsage) {
-      debugger
+    diskUsageToUI: function(data) {
+      const id = data["node_id"];
+      const diskUsage = data.usage["/"]
       function isMatchingNodeId({nodeId}) {
         return nodeId === id;
       }
@@ -97,7 +101,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
 
       let prevDiskUsageState = this.__prevDiskUsageStateList.find(isMatchingNodeId);
 
-      const warningLevel = this.getDiskUsage();
+      const warningLevel = this.getDiskUsage(diskUsage.free);
       if (prevDiskUsageState === undefined) {
         this.__prevDiskUsageStateList.push({
           nodeId: id,
@@ -106,35 +110,29 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       }
       const freeSpace = osparc.utils.Utils.bytesToSize(diskUsage.free);
 
-      const nodeName = this.getCurrentNode().getLabel();
+      const nodeName = this.__node.getLabel();
       let message;
-      let indicatorColor;
 
       const objIndex = this.__prevDiskUsageStateList.findIndex((obj => obj.nodeId === id));
       switch (warningLevel) {
         case "CRITICAL":
-          indicatorColor = qx.theme.manager.Color.getInstance().resolve("error");
           if (shouldDisplayMessage(prevDiskUsageState, warningLevel)) {
-            message = this.tr(`Out of Disk Space on "Service Filesystem" for ${nodeName}<br />The volume Service Filesystem has only ${freeSpace} disk space remaining. You can free up disk space by removing unused files in your service. Alternatively, you can run your service with a pricing plan that supports your storage requirements.`);
+            message = qx.locale.Manager.tr(`Out of Disk Space on "Service Filesystem" for ${nodeName}<br />The volume Service Filesystem has only ${freeSpace} disk space remaining. You can free up disk space by removing unused files in your service. Alternatively, you can run your service with a pricing plan that supports your storage requirements.`);
             osparc.FlashMessenger.getInstance().logAs(message, "ERROR");
             this.__prevDiskUsageStateList[objIndex].state = warningLevel;
           }
           break;
         case "WARNING":
-          indicatorColor = qx.theme.manager.Color.getInstance().resolve("warning")
           if (shouldDisplayMessage(prevDiskUsageState, warningLevel)) {
-            message = this.tr(`Low Disk Space on "Service Filesystem" for ${nodeName}<br />The volume Service Filesystem has only ${freeSpace} disk space remaining. You can free up disk space by removing unused files in your service. Alternatively, you can run your service with a pricing plan that supports your storage requirements.`);
+            message = qx.locale.Manager.tr(`Low Disk Space on "Service Filesystem" for ${nodeName}<br />The volume Service Filesystem has only ${freeSpace} disk space remaining. You can free up disk space by removing unused files in your service. Alternatively, you can run your service with a pricing plan that supports your storage requirements.`);
             osparc.FlashMessenger.getInstance().logAs(message, "WARNING");
             this.__prevDiskUsageStateList[objIndex].state = warningLevel;
           }
           break;
         default:
-          indicatorColor = qx.theme.manager.Color.getInstance().resolve("success");
           this.__prevDiskUsageStateList[objIndex].state = "NORMAL";
           break;
       }
-
-      this.updateDiskIndicator(indicatorColor, freeSpace);
     },
   }
 });
