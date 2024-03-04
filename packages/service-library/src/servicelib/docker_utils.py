@@ -94,7 +94,7 @@ async def pull_image(
         for layer in image_information.layers
     }
     image_layers_total_size = sum(layer.size for layer in image_information.layers) * 2
-    iamge_name = image.split("/")[-1]
+    image_name = image.split("/")[-1]
     async with (
         aiodocker.Docker() as client,
         progress_bar.sub_progress(image_layers_total_size) as sub_progress,
@@ -113,6 +113,7 @@ async def pull_image(
                         "digest: ",
                         "status: downloaded newer image for ",
                         "status: image is up to date for ",
+                        "already exists",
                     ]
                 ):
                     # nothing to do here
@@ -143,7 +144,7 @@ async def pull_image(
                     ].size
                 case _:
                     _logger.warning(
-                        "unknown pull state: %s. Please check", parsed_progress
+                        "unknown pull state: %s. Please check", f"{parsed_progress=}"
                     )
 
             # compute total progress
@@ -155,6 +156,6 @@ async def pull_image(
             )
             await sub_progress.set_(total_downloaded_size + total_extracted_size)
             await log_cb(
-                f"pulling {iamge_name}: {pull_progress}...",
+                f"pulling {image_name}: {pull_progress}...",
                 logging.DEBUG,
             )
