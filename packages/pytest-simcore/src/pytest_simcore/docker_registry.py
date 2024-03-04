@@ -16,6 +16,7 @@ import docker
 import jsonschema
 import pytest
 import tenacity
+from pytest_simcore.logging_utils import log_context
 from settings_library.docker_registry import RegistrySettings
 
 from .helpers.utils_host import get_localhost_ip
@@ -298,12 +299,19 @@ def dy_static_file_server_dynamic_sidecar_compose_spec_service(
 @pytest.fixture
 def remove_images_from_host() -> Callable[[list[str]], Awaitable[None]]:
     async def _cleaner(images: list[str]) -> None:
-        print(f"--> Removing {images}")
-        async with aiodocker.Docker() as client:
-            await asyncio.gather(
-                *(client.images.delete(image) for image in images),
-                return_exceptions=True,
-            )
-        print(f"<-- Removed {images}")
+        with log_context(
+            logging.INFO, msg=(f"removing {images=}", f"removed {images=}")
+        ):
+            async with aiodocker.Docker() as client:
+                await asyncio.gather(
+                    *(client.images.delete(image) for image in images),
+                    return_exceptions=True,
+                )
+                # confirm they are gone
+                results = await asyncio.gather(
+                    *(client.images.inspect(image) for image in images),
+                    return_exceptions=True,
+                )
+                assert all(isinstance(r, aiodocker.DockerError) for r in results)
 
     return _cleaner
