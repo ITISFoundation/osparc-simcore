@@ -34,8 +34,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
     this.__socket.on("serviceDiskUsage", data => {
       if (data["node_id"] && this.__callbacks[data["node_id"]]) {
         //  notify
-        console.log("this", this)
-        this.diskUsageToUI(data);
+        this.setDiskUsageNotificationToUI(data);
         this.__callbacks[data["node_id"]].forEach(cb => {
           cb(data);
         })
@@ -55,16 +54,13 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
 
     subscribe: function(nodeId, callback, node) {
       if (this.__callbacks[nodeId]) {
-        console.log("new subscribe to node", node.getNodeId() === nodeId, node.getLabel(), this.__callbacks[nodeId]);
         this.__callbacks[nodeId].push(callback);
       } else {
-        console.log("Listen to node", node.getNodeId() === nodeId, node.getLabel(), this.__callbacks[nodeId] = [callback]);
         this.__callbacks[nodeId] = [callback];
       }
     },
 
-    unsubscribe: function(nodeId, callback, node) {
-      console.log("unsubscribe to node", nodeId, node.getLabel());
+    unsubscribe: function(nodeId, callback) {
       if (this.__callbacks[nodeId]) {
         this.__callbacks[nodeId] = this.__callbacks[nodeId].filter(cb => cb !== callback)
       }
@@ -75,7 +71,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       this.__lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
       const warningSize = osparc.utils.Utils.gBToBytes(this.__lowDiskThreshold); // 5 GB Default
       const criticalSize = osparc.utils.Utils.gBToBytes(0.01); // 0 GB
-      let warningLevel = "NORMAL"
+      let warningLevel;
       if (freeSpace <= criticalSize) {
         warningLevel = "CRITICAL"
       } else if (freeSpace <= warningSize) {
@@ -86,7 +82,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       return warningLevel
     },
 
-    diskUsageToUI: function(data) {
+    setDiskUsageNotificationToUI: function(data) {
       const id = data["node_id"];
       if (!this.__callbacks[id]) {
         return;
@@ -113,7 +109,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
 
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
-      const node = currentStudy.getNode(id);
+      const node = currentStudy.getWorkbench().getNode(id);
 
       const nodeName = node ? node.getLabel() : null;
       if (nodeName === null) {
