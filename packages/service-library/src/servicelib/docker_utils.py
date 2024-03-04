@@ -92,7 +92,7 @@ def _create_docker_hub_complete_url(image: DockerGenericTag) -> URL:
 def get_image_complete_url(
     image: DockerGenericTag, registry_settings: RegistrySettings
 ) -> URL:
-    if registry_settings.REGISTRY_URL in image:
+    if registry_settings.REGISTRY_URL and registry_settings.REGISTRY_URL in image:
         _logger.warning("complete URL of docker image: %s", f"{image=}")
         # this is an image available in the private registry
         return URL(f"http{'s' if registry_settings.REGISTRY_AUTH else ''}://{image}")
