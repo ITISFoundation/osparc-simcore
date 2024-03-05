@@ -33,7 +33,8 @@ def _get_auth_or_none(storage_auth_settings: StorageAuthSettings) -> _AuthTuple 
 
 
 def _get_url(storage_auth_settings: StorageAuthSettings) -> str:
-    return parse_obj_as(AnyUrl, f"{storage_auth_settings.api_base_url}/")
+    url: str = parse_obj_as(AnyUrl, f"{storage_auth_settings.api_base_url}/")
+    return url
 
 
 async def _is_storage_responsive(storage_auth_settings: StorageAuthSettings) -> bool:
