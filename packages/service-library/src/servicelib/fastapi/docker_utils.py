@@ -24,6 +24,7 @@ async def retrieve_image_layer_information(
     image: DockerGenericTag, registry_settings: RegistrySettings
 ) -> DockerImageManifestsV2:
     async with httpx.AsyncClient() as client:
+        _logger.warning("retrieving %s", f"{image=}, {registry_settings=}")
         image_complete_url = get_image_complete_url(image, registry_settings)
         auth = None
         if registry_settings.REGISTRY_URL in f"{image_complete_url}":
@@ -41,6 +42,7 @@ async def retrieve_image_layer_information(
         headers = {
             "Accept": "application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json"
         }
+        _logger.warning("complete url %s", f"{image_complete_url=}")
         if DOCKER_HUB_HOST in f"{image_complete_url}":
             # we need the docker hub bearer code (https://stackoverflow.com/questions/57316115/get-manifest-of-a-public-docker-image-hosted-on-docker-hub-using-the-docker-regi)
             bearer_url = URL("https://auth.docker.io/token").with_query(
@@ -56,6 +58,7 @@ async def retrieve_image_layer_information(
             headers |= {
                 "Authorization": f"Bearer {bearer_code}",
             }
+            _logger.warning("retrieve auth code %s", f"{bearer_code=}")
 
         response = await client.get(f"{manifest_url}", headers=headers, auth=auth)
         # Check if the request was successful
