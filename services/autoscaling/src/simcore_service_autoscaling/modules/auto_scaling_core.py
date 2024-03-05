@@ -122,7 +122,7 @@ async def _analyze_current_cluster(
             "pending_ec2s": "ec2_instance",
         },
     )
-    _logger.warning(
+    _logger.info(
         "current state: %s",
         f"{json.dumps(cluster_state, indent=2)}",
     )
