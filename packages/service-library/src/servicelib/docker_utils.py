@@ -144,7 +144,7 @@ async def pull_image(
         image_information -- the image layer information. If this is None, then no fine progress will be retrieved.
     """
     registry_auth = None
-    if registry_settings.REGISTRY_URL in image:
+    if registry_settings.REGISTRY_URL and registry_settings.REGISTRY_URL in image:
         registry_auth = {
             "username": registry_settings.REGISTRY_USER,
             "password": registry_settings.REGISTRY_PW.get_secret_value(),
