@@ -200,7 +200,9 @@ async def get_user_name_and_email(
     return UserIdNamesTuple(name=row.name, email=row.email)
 
 
-class UserDisplayAndIdNamesTuple(UserIdNamesTuple):
+class UserDisplayAndIdNamesTuple(NamedTuple):
+    name: str
+    email: str
     first_name: str
     last_name: str
 
