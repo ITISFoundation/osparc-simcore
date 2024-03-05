@@ -33,8 +33,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     this.getChildControl("main-panel-tabs");
     this.__workbenchPanel = new osparc.desktop.WorkbenchPanel();
     this.__workbenchUI = this.__workbenchPanel.getMainView();
-    const preferencesSettings = osparc.Preferences.getInstance();
-    this.__lowDiskThreshold = preferencesSettings.getLowDiskSpaceThreshold();
 
     this.__attachEventHandlers();
   },
@@ -116,7 +114,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __editSlidesButton: null,
     __startAppButtonTB: null,
     __collapseWithUserMenu: null,
-    __lowDiskThreshold: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -222,10 +219,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             barPosition: "top"
           });
           this.add(control, 1); // flex 1
-          break;
-        }
-        case "disk-telemetry": {
-          control = new osparc.workbench.DiskUsageIndicator();
           break;
         }
       }
@@ -456,15 +449,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__addTopBarSpacer(topBar);
 
-      if (this.__lowDiskThreshold && this.getSelectedNodeIDs()) {
-        const diskIndicator = this.getChildControl("disk-telemetry");
-        diskIndicator.set({
-          marginTop: 7,
-          visibility: "excluded"
-        })
-        topBar.add(diskIndicator);
-      }
-
       const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         label: this.tr("App Mode"),
@@ -537,7 +521,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const workbench = this.getStudy().getWorkbench();
         const node = workbench.getNode(nodeId);
         if (node) {
-          this.__populateDiskUsageIndicator(node);
           this.__populateSecondPanel(node);
           this.__openIframeTab(node);
         }
@@ -555,7 +538,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__nodesTree.nodeSelected(nodeId);
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
-            this.__populateDiskUsageIndicator(node);
             this.__populateSecondPanel(node);
             this.__evalIframe(node);
             this.__loggerView.setCurrentNodeId(nodeId);
@@ -573,7 +555,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__nodesTree.nodeSelected(nodeId);
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
-            this.__populateDiskUsageIndicator(node);
             this.__populateSecondPanel(node);
             this.__openIframeTab(node);
             this.__loggerView.setCurrentNodeId(nodeId);
@@ -590,7 +571,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           if (node) {
             this.__populateSecondPanel(node);
             this.__openIframeTab(node);
-            this.__populateDiskUsageIndicator(node);
             node.getLoadingPage().maximizeIFrame(true);
             node.getIFrame().maximizeIFrame(true);
           }
@@ -620,28 +600,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
-
-      // workbench.addListener("diskTelemetry", e => {
-      //   debugger
-      //   // one click
-      //   const data = e.getData();
-      //   const nodeId = data["node_id"];
-      //   console.log("Telemetry data", JSON.stringify(data, null, 2))
-      //   this.__diskUsageToUI(data["node_id"], data.usage["/"]);
-      //   // if (nodeId) {
-      //   //   studyTreeItem.resetSelection();
-      //   //   this.__nodesTree.nodeSelected(nodeId);
-      //   //   const workbench = this.getStudy().getWorkbench();
-      //   //   const node = workbench.getNode(nodeId);
-      //   //   this.__populateSecondPanel(node);
-      //   //   this.__evalIframe(node);
-      //   //   this.__loggerView.setCurrentNodeId(nodeId);
-      //   //   this.fireDataEvent("changeSelectedNode", nodeId);
-      //   // } else {
-      //   //   // empty selection
-      //   //   this.__studyTreeItem.selectStudyItem();
-      //   // }
-      // }, this);
 
       workbench.addListener("showInLogger", e => {
         const data = e.getData();
@@ -738,7 +696,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.listenToNodeProgress();
 
       this.listenToNoMoreCreditsEvents();
-      // this.listenToDiskTelemetry();
 
       // callback for events
       if (!socket.slotExists("event")) {
@@ -809,21 +766,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }, this);
       }
     },
-
-    // listenToDiskTelemetry: function() {
-    //   const socket = osparc.wrapper.WebSocket.getInstance();
-    //
-    //   const slotName = "serviceDiskUsage";
-    //   if (!socket.slotExists(slotName)) {
-    //     socket.on(slotName, diskUsage => {
-    //       const data = diskUsage;
-    //       const diskState = this.__diskUsage = data.usage["/"];
-    //
-    //       this.__diskUsageToUI(data["node_id"], diskState);
-    //       this.fireDataEvent("diskTelemetry", data);
-    //     }, this);
-    //   }
-    // },
 
     getStartStopButtons: function() {
       return this.__workbenchPanel.getToolbar().getChildControl("start-stop-btns");
@@ -962,14 +904,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       } else if (node) {
         this.__populateSecondPanelNode(node);
       }
-    },
-
-    __populateDiskUsageIndicator: function(node) {
-      const diskIndicator = this.getChildControl("disk-telemetry");
-      diskIndicator.set({
-        selectedNode: node,
-        visibility: "visible"
-      });
     },
 
     __populateSecondPanelStudy: function(study) {

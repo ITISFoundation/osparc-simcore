@@ -52,7 +52,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
     __prevDiskUsageStateList: null,
     __diskUsage: null,
 
-    subscribe: function(nodeId, callback, node) {
+    subscribe: function(nodeId, callback) {
       if (this.__callbacks[nodeId]) {
         this.__callbacks[nodeId].push(callback);
       } else {
@@ -109,6 +109,9 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
 
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
+      if (!currentStudy) {
+        return;
+      }
       const node = currentStudy.getWorkbench().getNode(id);
 
       const nodeName = node ? node.getLabel() : null;

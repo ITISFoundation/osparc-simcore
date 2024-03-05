@@ -1102,6 +1102,7 @@ qx.Class.define("osparc.data.model.Node", {
         iframe.setShowToolbar(false);
       }
       iframe.addListener("restart", () => this.__restartIFrame(), this);
+      iframe.getDiskUsageIndicator().setCurrentNode(this)
       this.setIFrame(iframe);
     },
 
