@@ -234,9 +234,11 @@ qx.Class.define("osparc.notification.NotificationUI", {
             const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyDataCopy);
             const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
             moreOpts.addListener("openStudy", () => {
-              win.close();
-              const openCB = () => win.close();
-              osparc.dashboard.ResourceBrowserBase.startStudyById(studyId, openCB);
+              if (notification.getCategory() === "STUDY_SHARED") {
+                win.close();
+                const openCB = () => win.close();
+                osparc.dashboard.ResourceBrowserBase.startStudyById(studyId, openCB);
+              }
             });
           }
         })
