@@ -617,6 +617,7 @@ async def _start_instances(
                     subnet_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
                     iam_instance_profile="",
                 ),
+                min_number_of_instances=1,  # NOTE: we want at least 1 if possible
                 number_of_instances=instance_num,
                 max_total_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
             )
