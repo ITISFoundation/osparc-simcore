@@ -7,6 +7,7 @@
 
 import random
 from collections.abc import AsyncIterator
+from http import HTTPStatus
 from itertools import repeat
 
 import pytest
@@ -21,6 +22,7 @@ from pytest_simcore.helpers.utils_tokens import (
     delete_all_tokens_from_db,
     get_token_from_db,
 )
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.db.plugin import get_database_engine
 
@@ -81,17 +83,17 @@ async def fake_tokens(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated),
-        (UserRole.TESTER, web.HTTPCreated),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_201_CREATED),
+        (UserRole.TESTER, status.HTTP_201_CREATED),
     ],
 )
 async def test_create_token(
     client: TestClient,
     logged_user: UserInfoDict,
     tokens_db_cleanup: None,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     faker: Faker,
 ):
     assert client.app
@@ -120,7 +122,7 @@ async def test_create_token(
     "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
         (UserRole.USER, web.HTTPOk),
         (UserRole.TESTER, web.HTTPOk),
     ],
@@ -130,7 +132,7 @@ async def test_read_token(
     logged_user: UserInfoDict,
     tokens_db_cleanup: None,
     fake_tokens,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     assert client.app
     # list all
@@ -158,7 +160,7 @@ async def test_read_token(
     "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
         (UserRole.USER, web.HTTPNoContent),
         (UserRole.TESTER, web.HTTPNoContent),
     ],

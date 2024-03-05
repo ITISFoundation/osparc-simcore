@@ -205,3 +205,5 @@ async def test_pre_registration_and_invitation_workflow(
     user_found = data[0]
     assert user_found["registered"] is True
     assert user_found["email"] == guest_email
+
+    # TODO: checks what happens if you register a user that has NO pre-registration

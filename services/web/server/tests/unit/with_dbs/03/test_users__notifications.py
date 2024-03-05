@@ -11,6 +11,7 @@ from collections.abc import AsyncIterable, AsyncIterator
 from contextlib import asynccontextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
+from http import HttpStatus
 from typing import Any
 
 import pytest
@@ -98,10 +99,10 @@ async def _create_notifications(
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 @pytest.mark.parametrize(
@@ -118,7 +119,7 @@ async def test_list_user_notifications(
     notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_count: int,
-    expected_response: type[web.HTTPException],
+    expected_response: HttpStatus,
 ):
     assert client.app
     url = client.app.router["list_user_notifications"].url_for()
@@ -185,7 +186,7 @@ async def test_create_user_notification(
     notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_dict: dict[str, Any],
-    expected_response: type[web.HTTPException],
+    expected_response: HttpStatus,
 ):
     assert client.app
     url = client.app.router["create_user_notification"].url_for()
@@ -273,7 +274,7 @@ async def test_update_user_notification(
     logged_user: UserInfoDict,
     notification_redis_client: aioredis.Redis,
     client: TestClient,
-    expected_response: type[web.HTTPException],
+    expected_response: HttpStatus,
 ):
     async with _create_notifications(
         notification_redis_client, logged_user, 1
@@ -352,15 +353,15 @@ async def test_update_user_notification_at_correct_index(
     "user_role,expected_response",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_list_permissions(
     logged_user: UserInfoDict,
     client: TestClient,
-    expected_response: type[web.HTTPException],
+    expected_response: HttpStatus,
 ):
     assert client.app
     url = client.app.router["list_user_permissions"].url_for()
@@ -384,13 +385,13 @@ async def test_list_permissions(
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
-        (UserRole.USER, web.HTTPOk),
+        (UserRole.USER, status.HTTP_200_OK),
     ],
 )
 async def test_list_permissions_with_overriden_extra_properties(
     logged_user: UserInfoDict,
     client: TestClient,
-    expected_response: type[web.HTTPException],
+    expected_response: HttpStatus,
     with_permitted_override_services_specifications: None,
 ):
     assert client.app
