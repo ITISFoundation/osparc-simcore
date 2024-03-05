@@ -12,7 +12,6 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 import simcore_service_webserver.login._auth_api
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from faker import Faker
@@ -79,7 +78,6 @@ async def test_get_profile(
     if not error:
         profile = ProfileGet.parse_obj(data)
 
-        # TODO: fixture?
         product_group = {
             "accessRights": {"delete": False, "read": False, "write": False},
             "description": "osparc product group",
@@ -235,7 +233,7 @@ async def test_search_and_pre_registration(
     resp = await client.get("/v0/users:search", params={"email": logged_user["email"]})
     assert resp.status == status.HTTP_200_OK
 
-    found, _ = await assert_status(resp, web.HTTPOk)
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
     assert found[0] == {
         "firstName": logged_user.get("first_name"),
@@ -275,7 +273,7 @@ async def test_search_and_pre_registration(
     resp = await client.get(
         "/v0/users:search", params={"email": requester_info["email"]}
     )
-    found, _ = await assert_status(resp, web.HTTPOk)
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
 
     assert found[0] == {
@@ -284,25 +282,25 @@ async def test_search_and_pre_registration(
         "status": None,
     }
 
-    # BOTH in `users` and `users_details`
-
     # Emulating registration of pre-register user
-    new_user = await simcore_service_webserver.login._auth_api.create_user(
-        client.app,
-        email=requester_info["email"],
-        password=DEFAULT_TEST_PASSWORD,
-        status_upon_creation=UserStatus.ACTIVE,
-        expires_at=None,
+    new_user = (
+        await simcore_service_webserver.login._auth_api.create_user(  # noqa: SLF001
+            client.app,
+            email=requester_info["email"],
+            password=DEFAULT_TEST_PASSWORD,
+            status_upon_creation=UserStatus.ACTIVE,
+            expires_at=None,
+        )
     )
 
     resp = await client.get(
         "/v0/users:search", params={"email": requester_info["email"]}
     )
-    found, _ = await assert_status(resp, web.HTTPOk)
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
 
     assert found[0] == {
         **requester_info,
         "registered": True,
-        "status": str(new_user["status"]),
+        "status": new_user["status"].name,
     }
