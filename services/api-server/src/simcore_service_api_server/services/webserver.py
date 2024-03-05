@@ -49,7 +49,7 @@ from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
 from ..models.schemas.profiles import Profile, ProfileUpdate
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
-from ._service_exception_handling import (
+from .service_exception_handling import (
     backend_service_exception_handler,
     service_exception_mapper,
 )
