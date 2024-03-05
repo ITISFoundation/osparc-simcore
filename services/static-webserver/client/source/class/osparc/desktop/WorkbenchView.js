@@ -456,14 +456,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__addTopBarSpacer(topBar);
 
-      // if (this.__lowDiskThreshold && this.getSelectedNodeIDs()) {
+      if (this.__lowDiskThreshold && this.getSelectedNodeIDs()) {
         const diskIndicator = this.getChildControl("disk-telemetry");
         diskIndicator.set({
           marginTop: 7,
           visibility: "excluded"
         })
         topBar.add(diskIndicator);
-      // }
+      }
 
       const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",

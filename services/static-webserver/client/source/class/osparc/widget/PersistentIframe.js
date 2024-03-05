@@ -132,12 +132,6 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         alignX: "right",
         alignY: "middle"
       }));
-      // if (this.__lowDiskThreshold) {
-      //   const node = this._getIframeElement().getNode();
-      //   console.log(node)
-      //   const testIndicator = this.__diskUsageIndicator = new osparc.ui.basic.DiskUsageIndicator();
-      //   buttonContainer.add(testIndicator);
-      // }
 
       const reloadButton = this.__reloadButton = this.self().createToolbarButton().set({
         label: this.tr("Reload"),
@@ -234,18 +228,13 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           height: divSize.height - this.getToolbarHeight()
         });
 
-        const rightOffest = this.hasState("maximized") ? 90 : 100;
-        this.__reloadButton.setLayoutProperties({
+        const rightOffest = this.hasState("maximized") ? 0 : 0;
+        this.__buttonContainer.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + rightOffest
         });
-        this.__zoomButton.setLayoutProperties({
-          top: (divPos.top - iframeParentPos.top),
-          right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
-        });
 
-        this.__reloadButton.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
-        this.__zoomButton.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
+        this.__buttonContainer.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
       }, 0);
     },
 

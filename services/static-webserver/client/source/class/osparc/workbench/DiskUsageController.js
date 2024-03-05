@@ -34,8 +34,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
     this.__socket.on("serviceDiskUsage", data => {
       if (data["node_id"] && this.__callbacks[data["node_id"]]) {
         //  notify
-        console.log("this", this)
-        this.diskUsageToUI(data);
+        this.setDiskUsageNotificationToUI(data);
         this.__callbacks[data["node_id"]].forEach(cb => {
           cb(data);
         })
@@ -72,7 +71,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       this.__lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
       const warningSize = osparc.utils.Utils.gBToBytes(this.__lowDiskThreshold); // 5 GB Default
       const criticalSize = osparc.utils.Utils.gBToBytes(0.01); // 0 GB
-      let warningLevel = "NORMAL"
+      let warningLevel;
       if (freeSpace <= criticalSize) {
         warningLevel = "CRITICAL"
       } else if (freeSpace <= warningSize) {
@@ -83,7 +82,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       return warningLevel
     },
 
-    diskUsageToUI: function(data) {
+    setDiskUsageNotificationToUI: function(data) {
       const id = data["node_id"];
       if (!this.__callbacks[id]) {
         return;
