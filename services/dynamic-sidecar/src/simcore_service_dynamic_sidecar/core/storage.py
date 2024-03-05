@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta
-from typing import Final
+from typing import Final, NamedTuple
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -16,11 +16,16 @@ _logger = logging.getLogger(__name__)
 _LIVENESS_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
 
 
-def _get_auth(storage_auth_settings: StorageAuthSettings) -> tuple[str, str] | None:
+class _AuthTuple(NamedTuple):
+    username: str
+    password: str
+
+
+def _get_auth(storage_auth_settings: StorageAuthSettings) -> _AuthTuple | None:
     if storage_auth_settings.auth_required:
         assert storage_auth_settings.STORAGE_USERNAME  # nosec
         assert storage_auth_settings.STORAGE_PASSWORD  # nosec
-        return (
+        return _AuthTuple(
             storage_auth_settings.STORAGE_USERNAME,
             storage_auth_settings.STORAGE_PASSWORD.get_secret_value(),
         )
