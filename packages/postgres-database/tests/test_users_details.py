@@ -3,6 +3,8 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+from dataclasses import dataclass
+
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
@@ -41,9 +43,10 @@ async def test_user_creation_workflow(
 
     # a PO creates an invitation
     fake_invitation = {
-        "first_name": faker.first_name(),
-        "last_name": faker.last_name(),
-        "email": faker.email(),  # mandatory
+        "pre_first_name": faker.first_name(),
+        "pre_last_name": faker.last_name(),
+        "pre_email": faker.email(),  # mandatory
+        "pre_phone": faker.phone_number(),
         "company_name": faker.company(),
         "address": faker.address().replace("\n", ", "),
         "city": faker.city(),
@@ -53,18 +56,18 @@ async def test_user_creation_workflow(
         "created_by": po_user.id,
     }
 
-    email = await connection.scalar(
+    pre_email = await connection.scalar(
         sa.insert(user_details)
         .values(**fake_invitation)
-        .returning(user_details.c.email)
+        .returning(user_details.c.pre_email)
     )
-    assert email is not None
-    assert email == fake_invitation["email"]
+    assert pre_email is not None
+    assert pre_email == fake_invitation["pre_email"]
 
     # user gets created
     new_user = await UsersRepo.new_user(
         connection,
-        email=email,
+        email=pre_email,
         password_hash="123456",  # noqa: S106
         status=UserStatus.ACTIVE,
         expires_at=None,
@@ -74,4 +77,45 @@ async def test_user_creation_workflow(
     invoice_data = await UsersRepo.get_billing_details(connection, user_id=new_user.id)
     assert invoice_data is not None
 
-    assert dict(invoice_data) == {key: fake_invitation.get(key) for key in invoice_data}
+    # drafts a fillin data in https://github.com/ITISFoundation/osparc-simcore/pull/5402
+    @dataclass
+    class UserAddress:
+        line1: str | None
+        state: str | None
+        postal_code: str | None
+        city: str | None
+        country: str
+
+        @classmethod
+        def create_from_db(cls, row: RowProxy):
+            line1 = ""
+            if row.company_name:
+                line1 += row.company_name
+            if row.address:
+                if line1:
+                    line1 += ". "
+                line1 += row.address
+
+            return cls(
+                line1=line1,
+                state=row.state,
+                postal_code=row.postal_code,
+                city=row.city,
+                country=row.country,
+            )
+
+    user_address = UserAddress.create_from_db(invoice_data)
+
+    # Expects something like
+    # {
+    # "line1": "Jones, Jefferson and Rivera. 5938 Ramos Pike Suite 080, Lake Marytown, RI 65195",
+    # "state": "Virginia",
+    # "postal_code": "08756",
+    # "city": "Johnmouth",
+    # "country": "Trinidad and Tobago"
+    # }
+
+    assert user_address.line1
+    assert user_address.state == fake_invitation["state"]
+    assert user_address.postal_code == fake_invitation["postal_code"]
+    assert user_address.country == fake_invitation["country"]

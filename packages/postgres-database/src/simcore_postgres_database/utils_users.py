@@ -84,16 +84,17 @@ class UsersRepo:
         # link first
         result = await conn.execute(
             user_details.update()
-            .where(user_details.c.email == new_user.email)
+            .where(user_details.c.pre_email == new_user.email)
             .values(user_id=new_user.id)
         )
 
         if result.rowcount:
             result = await conn.execute(
                 sa.select(
-                    user_details.c.first_name,
-                    user_details.c.last_name,
-                ).where(user_details.c.email == new_user.email)
+                    user_details.c.pre_first_name,
+                    user_details.c.pre_last_name,
+                    user_details.c.pre_phone,
+                ).where(user_details.c.pre_email == new_user.email)
             )
             details = await result.fetchone()
 
@@ -102,8 +103,9 @@ class UsersRepo:
                     users.update()
                     .where(users.c.id == new_user.id)
                     .values(
-                        first_name=details.first_name,
-                        last_name=details.last_name,
+                        first_name=details.pre_first_name,
+                        last_name=details.pre_last_name,
+                        phone=details.pre_phone,
                     )
                 )
 
