@@ -166,8 +166,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       });
 
       const indicatorLabel = this.getChildControl("disk-indicator-label");
-      // indicatorLabel.setValue(`${labelDiskSize} Free`);
-      indicatorLabel.setValue(`${currentNode.getLabel()} ${labelDiskSize} Free`);
+      indicatorLabel.setValue(`${labelDiskSize} Free`);
     },
 
     // Cleanup method
