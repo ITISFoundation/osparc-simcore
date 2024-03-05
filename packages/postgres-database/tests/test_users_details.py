@@ -72,7 +72,9 @@ async def test_user_creation_workflow(
         status=UserStatus.ACTIVE,
         expires_at=None,
     )
-    await UsersRepo.sync_pre_details(connection, new_user)
+    await UsersRepo.join_and_update_from_pre_registration_details(
+        connection, new_user.id, new_user.email
+    )
 
     invoice_data = await UsersRepo.get_billing_details(connection, user_id=new_user.id)
     assert invoice_data is not None
@@ -112,3 +114,30 @@ async def test_user_creation_workflow(
     assert user_address.state == fake_invitation["state"]
     assert user_address.postal_code == fake_invitation["postal_code"]
     assert user_address.country == fake_invitation["country"]
+
+    # now let's update the user
+    result = await connection.execute(
+        users.update()
+        .values(first_name="My New Name")
+        .where(users.c.id == new_user.id)
+        .returning("*")
+    )
+    updated_user = await result.fetchone()
+
+    assert updated_user
+    assert updated_user.first_name == "My New Name"
+    assert updated_user.id == new_user.id
+
+    for _ in range(2):
+        await UsersRepo.join_and_update_from_pre_registration_details(
+            connection, new_user.id, new_user.email
+        )
+
+        result = await connection.execute(
+            users.select().where(users.c.id == new_user.id)
+        )
+        current_user = await result.fetchone()
+        assert current_user
+
+        # overriden!
+        assert current_user.first_name != updated_user.first_name

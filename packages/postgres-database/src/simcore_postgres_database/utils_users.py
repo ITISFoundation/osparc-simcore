@@ -78,30 +78,46 @@ class UsersRepo:
         return row
 
     @staticmethod
-    async def sync_pre_details(conn: SAConnection, new_user: RowProxy):
-        """After a user is created, it can be associated with information provided during invitation"""
+    async def join_and_update_from_pre_registration_details(
+        conn: SAConnection, new_user_id: int, new_user_email: str
+    ) -> None:
+        """After a user is created, it can be associated with information provided during invitation
 
-        # link first
+        WARNING: Use ONLY upon new user creation. It might override user_details.user_id, users.first_name, users.last_name etc if already applied
+        or changes happen in users table
+        """
+        assert new_user_email  # nosec
+        assert new_user_id > 0  # nosec
+
+        # link both tables first
         result = await conn.execute(
             user_details.update()
-            .where(user_details.c.pre_email == new_user.email)
-            .values(user_id=new_user.id)
+            .where(user_details.c.pre_email == new_user_email)
+            .values(user_id=new_user_id)
         )
 
         if result.rowcount:
-            result = await conn.execute(
-                sa.select(
-                    user_details.c.pre_first_name,
-                    user_details.c.pre_last_name,
-                    user_details.c.pre_phone,
-                ).where(user_details.c.pre_email == new_user.email)
+            pre_columns = (
+                user_details.c.pre_first_name,
+                user_details.c.pre_last_name,
+                user_details.c.pre_phone,
             )
-            details = await result.fetchone()
 
-            if details:
+            assert {c.name for c in pre_columns} == {  # nosec
+                c.name
+                for c in user_details.columns
+                if c != user_details.c.pre_email and c.name.startswith("pre_")
+            }, "Different pre-cols detected. This code might need an update update"
+
+            result = await conn.execute(
+                sa.select(*pre_columns).where(
+                    user_details.c.pre_email == new_user_email
+                )
+            )
+            if details := await result.fetchone():
                 await conn.execute(
                     users.update()
-                    .where(users.c.id == new_user.id)
+                    .where(users.c.id == new_user_id)
                     .values(
                         first_name=details.pre_first_name,
                         last_name=details.pre_last_name,
