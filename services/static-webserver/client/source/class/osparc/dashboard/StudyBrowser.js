@@ -652,10 +652,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addSortByButton: function() {
-      const sortByButton = new osparc.dashboard.SortedByMenuButton("study");
-      sortByButton.set({
-        appearance: "form-button-outlined"
-      });
+      const sortByButton = new osparc.dashboard.SortByButtonGroup("study");
+      // sortByButton.set({
+      //   appearance: "form-button-outlined"
+      // });
       osparc.utils.Utils.setIdToWidget(sortByButton, "sortByButton");
       sortByButton.addListener("sortByChanged", e => {
         this.setOrderBy(e.getData())
