@@ -11,7 +11,7 @@ from collections.abc import AsyncIterable, AsyncIterator
 from contextlib import asynccontextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
-from http import HttpStatus
+from http import HTTPStatus
 from typing import Any
 
 import pytest
@@ -119,7 +119,7 @@ async def test_list_user_notifications(
     notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_count: int,
-    expected_response: HttpStatus,
+    expected_response: HTTPStatus,
 ):
     assert client.app
     url = client.app.router["list_user_notifications"].url_for()
@@ -186,7 +186,7 @@ async def test_create_user_notification(
     notification_redis_client: aioredis.Redis,
     client: TestClient,
     notification_dict: dict[str, Any],
-    expected_response: HttpStatus,
+    expected_response: HTTPStatus,
 ):
     assert client.app
     url = client.app.router["create_user_notification"].url_for()
@@ -274,7 +274,7 @@ async def test_update_user_notification(
     logged_user: UserInfoDict,
     notification_redis_client: aioredis.Redis,
     client: TestClient,
-    expected_response: HttpStatus,
+    expected_response: HTTPStatus,
 ):
     async with _create_notifications(
         notification_redis_client, logged_user, 1
@@ -361,7 +361,7 @@ async def test_update_user_notification_at_correct_index(
 async def test_list_permissions(
     logged_user: UserInfoDict,
     client: TestClient,
-    expected_response: HttpStatus,
+    expected_response: HTTPStatus,
 ):
     assert client.app
     url = client.app.router["list_user_permissions"].url_for()
@@ -391,7 +391,7 @@ async def test_list_permissions(
 async def test_list_permissions_with_overriden_extra_properties(
     logged_user: UserInfoDict,
     client: TestClient,
-    expected_response: HttpStatus,
+    expected_response: HTTPStatus,
     with_permitted_override_services_specifications: None,
 ):
     assert client.app
