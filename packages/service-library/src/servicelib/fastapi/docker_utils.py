@@ -3,7 +3,6 @@ import logging
 import httpx
 from models_library.docker import DockerGenericTag
 from pydantic import ValidationError, parse_obj_as
-from servicelib.logging_utils import log_decorator
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 
@@ -15,6 +14,7 @@ from ..docker_utils import (
     get_image_complete_url,
     get_image_name_and_tag,
 )
+from ..logging_utils import log_decorator
 
 _logger = logging.getLogger(__name__)
 
