@@ -21,7 +21,7 @@ class _AuthTuple(NamedTuple):
     password: str
 
 
-def _get_auth(storage_auth_settings: StorageAuthSettings) -> _AuthTuple | None:
+def _get_auth_or_none(storage_auth_settings: StorageAuthSettings) -> _AuthTuple | None:
     if storage_auth_settings.auth_required:
         assert storage_auth_settings.STORAGE_USERNAME  # nosec
         assert storage_auth_settings.STORAGE_PASSWORD  # nosec
@@ -38,7 +38,7 @@ def _get_url(storage_auth_settings: StorageAuthSettings) -> str:
 
 async def _is_storage_responsive(storage_auth_settings: StorageAuthSettings) -> bool:
     url = _get_url(storage_auth_settings)
-    auth = _get_auth(storage_auth_settings)
+    auth = _get_auth_or_none(storage_auth_settings)
 
     with log_context(
         _logger,
