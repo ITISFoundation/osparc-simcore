@@ -102,10 +102,10 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         self._scheduler_task = start_periodic_task(
             exclusive(
                 redis_clients_manager.client(RedisDatabase.LOCKS),
-                lock_key="director-v2_dynamic-scheduler_task",
+                lock_key=f"{__name__}.{self.__class__.__name__}",
             )(self._run_scheduler_task),
             interval=settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL,
-            task_name="dynamic-scheduler",
+            task_name=f"{__name__}.{self.__class__.__name__}",
         )
 
         self._trigger_observation_queue_task = asyncio.create_task(
@@ -576,9 +576,6 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             async with self._lock:
                 for service_name in self._to_observe:
                     self._enqueue_observation_from_service_name(service_name)
-        except asyncio.CancelledError:  # pragma: no cover
-            logger.info("Stopped dynamic scheduler")
-            raise
         except Exception:  # pylint: disable=broad-except
             logger.exception("Unexpected error while scheduling sidecars observation")
 
