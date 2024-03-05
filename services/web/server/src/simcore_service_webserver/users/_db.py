@@ -141,7 +141,7 @@ async def search_users_and_get_profile(
         return await result.fetchall() or []
 
 
-async def new_invited_user(
+async def new_user_details(
     engine: Engine, email: str, created_by: UserID, **other_values
 ) -> None:
     async with engine.acquire() as conn:

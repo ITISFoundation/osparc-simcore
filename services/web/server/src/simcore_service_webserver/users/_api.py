@@ -93,7 +93,7 @@ async def pre_register_user(
     if found:
         raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
 
-    other_data = profile.dict(
+    details = profile.dict(
         include={
             "first_name",
             "last_name",
@@ -108,15 +108,15 @@ async def pre_register_user(
         exclude_none=True,
     )
 
-    for pre_key in ("first_name", "last_name", "phone"):
-        if pre_key in other_data:
-            other_data["pre_{key}"] = other_data.pop(pre_key)
+    for key in ("first_name", "last_name", "phone"):
+        if key in details:
+            details[f"pre_{key}"] = details.pop(key)
 
-    await _db.new_invited_user(
+    await _db.new_user_details(
         get_database_engine(app),
         email=profile.email,
         created_by=creator_user_id,
-        **other_data
+        **details,
     )
 
     # FIXME: revert transaction above if len(found)!=1 (e.g. a user has changed the email to another invitation_email)

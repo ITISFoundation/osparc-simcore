@@ -18,6 +18,7 @@ from pydantic import PositiveInt
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 
 
@@ -111,14 +112,14 @@ async def test_product_owner_generates_invitation(
 @pytest.mark.parametrize(
     "user_role,expected_status",
     [
-        (UserRole.PRODUCT_OWNER, web.HTTPOk),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
     ],
 )
 async def test_pre_registration_and_invitation_workflow(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
     logged_user: UserInfoDict,
-    expected_status: type[web.HTTPException],
+    expected_status: HTTPStatus,
     guest_email: str,
     faker: Faker,
 ):
@@ -167,5 +168,5 @@ async def test_pre_registration_and_invitation_workflow(
     # now i can make as many invitations
     for _ in range(2):
         response = await client.post("/v0/invitation:generate", json=invitation)
-        data, _ = await assert_status(response, web.HTTPOk)
+        data, _ = await assert_status(response, status.HTTP_200_OK)
         assert data["guest"] == guest_email
