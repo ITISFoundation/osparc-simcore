@@ -348,11 +348,9 @@ async def test_collition_at_global_level_raises(
     mocked_dynamic_scheduler_events: None,
     mock_docker_api: None,
 ):
-    scheduler.scheduler._inverse_search_mapping[
+    scheduler.scheduler._inverse_search_mapping[  # noqa: SLF001
         scheduler_data.node_uuid
-    ] = ServiceName(  # noqa: SLF001
-        "mock_service_name"
-    )
+    ] = ServiceName("mock_service_name")
     with pytest.raises(DynamicSidecarError) as execinfo:
         await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
     assert "collide" in str(execinfo.value)
