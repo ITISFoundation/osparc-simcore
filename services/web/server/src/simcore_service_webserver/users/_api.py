@@ -78,7 +78,7 @@ async def search_users(app: web.Application, email: str) -> list[_schemas.UserPr
             postal_code=r.postal_code,
             country=r.country,
             # NOTE: old users will not have extra details
-            registered=r.user_id is not None if r.pren_email else r.status is not None,
+            registered=r.user_id is not None if r.pre_email else r.status is not None,
             status=r.status,
         )
         for r in rows

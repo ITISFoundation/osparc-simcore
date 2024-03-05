@@ -6,6 +6,7 @@
 
 from datetime import datetime, timezone
 from http import HTTPStatus
+from typing import Final
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -106,6 +107,9 @@ async def test_product_owner_generates_invitation(
     assert got.created < datetime.now(tz=timezone.utc)
 
 
+MANY_TIMES: Final = 2
+
+
 @pytest.mark.acceptance_test(
     "pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
 )
@@ -159,14 +163,24 @@ async def test_pre_registration_and_invitation_workflow(
     data, _ = await assert_status(response, expected_status)
 
     # Search user again
-    response = await client.get("/v0/users:search", params={"email": guest_email})
-    data, _ = await assert_status(response, expected_status)
-    assert len(data) == 1
-    assert not data[0]["registered"]
-    assert data[0]["email"] == guest_email
+    for _ in range(MANY_TIMES):
+        response = await client.get("/v0/users:search", params={"email": guest_email})
+        data, _ = await assert_status(response, expected_status)
+        assert len(data) == 1
+        assert not data[0]["registered"]
+        assert data[0]["email"] == guest_email
 
-    # now i can make as many invitations
-    for _ in range(2):
+    # Can make as many invitations as I wish
+    for _ in range(MANY_TIMES):
         response = await client.post("/v0/invitation:generate", json=invitation)
         data, _ = await assert_status(response, status.HTTP_200_OK)
         assert data["guest"] == guest_email
+
+    # Can only  pre-register once
+    for _ in range(MANY_TIMES):
+        response = await client.post("/v0/users:pre-register", json=requester_info)
+        await assert_status(response, status.HTTP_409_CONFLICT)
+
+    # TODO: register user
+    # TODO: search
+    # TODO: modify user

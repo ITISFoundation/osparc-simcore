@@ -127,7 +127,7 @@ async def search_users_and_get_profile(
             .select_from(
                 user_details.outerjoin(users, users.c.id == user_details.c.user_id)
             )
-            .where(user_details.c.email.like(email_like))
+            .where(user_details.c.pre_email.like(email_like))
         )
         right_outer_join = (
             sa.select(*columns)
@@ -147,6 +147,6 @@ async def new_user_details(
     async with engine.acquire() as conn:
         await conn.execute(
             sa.insert(user_details).values(
-                created_by=created_by, email=email, **other_values
+                created_by=created_by, pre_email=email, **other_values
             )
         )
