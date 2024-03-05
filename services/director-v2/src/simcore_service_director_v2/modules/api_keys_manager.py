@@ -11,6 +11,7 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.services import RunID
 from models_library.users import UserID
 from pydantic import BaseModel, StrBytes, parse_obj_as
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK, RedisClientsManager
 from settings_library.redis import RedisDatabase
@@ -30,7 +31,12 @@ class CleanupContext(BaseModel):
     user_id: UserID
 
 
-class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupContext]):
+class APIKeysManager(
+    SingletonInAppStateMixin,
+    BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupContext],
+):
+    app_state_name: str = "api_keys_manager"
+
     def __init__(self, app: FastAPI, redis_client_sdk: RedisClientSDK) -> None:
         super().__init__(redis_client_sdk, cleanup_interval=_CLEANUP_INTERVAL)
         self.app = app
@@ -147,14 +153,14 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         redis_clients_manager: RedisClientsManager = app.state.redis_clients_manager
 
-        app.state.api_keys_manager = manager = APIKeysManager(
+        manager = APIKeysManager(
             app, redis_clients_manager.client(RedisDatabase.DISTRIBUTED_IDENTIFIERS)
         )
-
+        manager.set_to_app_state(app)
         await manager.setup()
 
     async def on_shutdown() -> None:
-        manager: APIKeysManager = app.state.api_keys_manager
+        manager: APIKeysManager = APIKeysManager.get_from_app_state(app)
         await manager.shutdown()
 
     app.add_event_handler("startup", on_startup)
