@@ -257,12 +257,16 @@ def _ssh_and_list_running_dyn_services(
                         tzinfo=datetime.timezone.utc,
                     ).datetime,
                     container,
-                    json.loads(match["service_name"])["name"]
-                    if match["service_name"]
-                    else "",
-                    json.loads(match["service_version"])["version"]
-                    if match["service_version"]
-                    else "",
+                    (
+                        json.loads(match["service_name"])["name"]
+                        if match["service_name"]
+                        else ""
+                    ),
+                    (
+                        json.loads(match["service_version"])["version"]
+                        if match["service_version"]
+                        else ""
+                    ),
                 )
                 running_service[match["node_id"]].append(named_container)
 
@@ -525,7 +529,7 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
 
 def _dask_client(ip_address: str) -> distributed.Client:
     security = distributed.Security()
-    dask_certificates = state["deploy_config"] / "dask-certificates"
+    dask_certificates = state["deploy_config"] / "assets" / "dask-certificates"
     if dask_certificates.exists():
         security = distributed.Security(
             tls_ca_file=f"{dask_certificates / 'dask-cert.pem'}",
