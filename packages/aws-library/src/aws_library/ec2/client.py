@@ -110,7 +110,7 @@ class SimcoreEC2API:
         self,
         instance_config: EC2InstanceConfig,
         number_of_instances: int,
-        max_number_of_instances: int = 10,
+        max_total_number_of_instances: int = 10,
     ) -> list[EC2InstanceData]:
         with log_context(
             _logger,
@@ -121,8 +121,13 @@ class SimcoreEC2API:
             current_instances = await self.get_instances(
                 key_names=[instance_config.key_name], tags=instance_config.tags
             )
-            if len(current_instances) + number_of_instances > max_number_of_instances:
-                raise EC2TooManyInstancesError(num_instances=max_number_of_instances)
+            if (
+                len(current_instances) + number_of_instances
+                > max_total_number_of_instances
+            ):
+                raise EC2TooManyInstancesError(
+                    num_instances=max_total_number_of_instances
+                )
 
             resource_tags: list[TagTypeDef] = [
                 {"Key": tag_key, "Value": tag_value}

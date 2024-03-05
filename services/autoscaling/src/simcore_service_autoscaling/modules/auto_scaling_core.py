@@ -618,7 +618,7 @@ async def _start_instances(
                     iam_instance_profile="",
                 ),
                 number_of_instances=instance_num,
-                max_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
+                max_total_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
             )
             for instance_type, instance_num in capped_needed_machines.items()
         ],

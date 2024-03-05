@@ -233,7 +233,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
         await simcore_ec2_api.start_aws_instance(
             ec2_instance_config,
             number_of_instances=max_num_instances + 1,
-            max_number_of_instances=max_num_instances,
+            max_total_number_of_instances=max_num_instances,
         )
     await _assert_no_instances_in_ec2(ec2_client)
 
@@ -242,7 +242,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
         await simcore_ec2_api.start_aws_instance(
             ec2_instance_config,
             number_of_instances=1,
-            max_number_of_instances=max_num_instances,
+            max_total_number_of_instances=max_num_instances,
         )
     await _assert_instances_in_ec2(
         ec2_client,
@@ -258,7 +258,7 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
         await simcore_ec2_api.start_aws_instance(
             ec2_instance_config,
             number_of_instances=1,
-            max_number_of_instances=max_num_instances,
+            max_total_number_of_instances=max_num_instances,
         )
     await _assert_instances_in_ec2(
         ec2_client,
