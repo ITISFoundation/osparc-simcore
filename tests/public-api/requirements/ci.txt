@@ -10,4 +10,5 @@
 --requirement _base.txt
 --requirement _test.txt
 
+simcore-settings-library @ ../../packages/settings-library/
 pytest-simcore @ ../../packages/pytest-simcore/
