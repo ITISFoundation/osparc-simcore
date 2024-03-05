@@ -88,8 +88,9 @@ async def create_cluster(
     )
     new_ec2_instance_data: list[EC2InstanceData] = await ec2_client.start_aws_instance(
         instance_config,
+        min_number_of_instances=1,
         number_of_instances=1,
-        max_number_of_instances=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_MAX_INSTANCES,
+        max_total_number_of_instances=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_MAX_INSTANCES,
     )
     return new_ec2_instance_data
 

@@ -8,12 +8,12 @@ import re
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack
 from copy import deepcopy
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Final
 from unittest import mock
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
@@ -244,7 +244,7 @@ def assert_get_same_project_caller() -> Callable:
     async def _assert_it(
         client,
         project: dict,
-        expected: type[web.HTTPException],
+        expected: HTTPStatus,
     ) -> dict:
         # GET /v0/projects/{project_id} with a project owned by user
         url = client.app.router["get_project"].url_for(project_id=project["uuid"])

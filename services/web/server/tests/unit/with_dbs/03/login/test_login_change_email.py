@@ -3,10 +3,10 @@
 # pylint: disable=unused-variable
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, parse_link
+from servicelib.aiohttp import status
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.login._constants import (
     MSG_CHANGE_EMAIL_REQUESTED,
@@ -32,7 +32,7 @@ async def test_unauthorized_to_change_email(client: TestClient, new_email: str):
         },
     )
     assert response.status == 401
-    await assert_status(response, web.HTTPUnauthorized)
+    await assert_status(response, status.HTTP_401_UNAUTHORIZED)
 
 
 async def test_change_to_existing_email(client: TestClient):
@@ -48,7 +48,9 @@ async def test_change_to_existing_email(client: TestClient):
                 },
             )
             await assert_status(
-                response, web.HTTPUnprocessableEntity, "This email cannot be used"
+                response,
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                "This email cannot be used",
             )
 
 
@@ -77,7 +79,7 @@ async def test_change_and_confirm(
             },
         )
         assert response.url.path == url.path
-        await assert_status(response, web.HTTPOk, MSG_CHANGE_EMAIL_REQUESTED)
+        await assert_status(response, status.HTTP_200_OK, MSG_CHANGE_EMAIL_REQUESTED)
 
         # email sent
         out, err = capsys.readouterr()
@@ -86,7 +88,7 @@ async def test_change_and_confirm(
         # try new email but logout first
         response = await client.post(f"{logout_url}")
         assert response.url.path == logout_url.path
-        await assert_status(response, web.HTTPOk, MSG_LOGGED_OUT)
+        await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_OUT)
 
         # click email's link
         response = await client.get(link)
@@ -107,4 +109,4 @@ async def test_change_and_confirm(
         )
         payload = await response.json()
         assert response.url.path == login_url.path
-        await assert_status(response, web.HTTPOk, MSG_LOGGED_IN)
+        await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)

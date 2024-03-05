@@ -82,7 +82,7 @@ def main():
     openapi = create_openapi_specs(app, remove_main_sections=False)
 
     # .yaml
-    oas_path = webserver_resources.get_path("/api/v0/openapi.yaml")
+    oas_path = webserver_resources.get_path("api/v0/openapi.yaml").resolve()
     print(f"Writing {oas_path}...", end=None)
     with oas_path.open("wt") as fh:
         yaml.safe_dump(openapi, stream=fh, sort_keys=False)

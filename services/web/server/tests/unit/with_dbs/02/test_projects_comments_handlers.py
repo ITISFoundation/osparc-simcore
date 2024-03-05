@@ -6,12 +6,14 @@
 # pylint: disable=too-many-statements
 
 
+from http import HTTPStatus
+
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
@@ -23,10 +25,10 @@ API_PREFIX = "/" + api_version_prefix
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_project_comments_user_role_access(
@@ -34,8 +36,9 @@ async def test_project_comments_user_role_access(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
+    assert client.app
     base_url = client.app.router["list_project_comments"].url_for(
         project_uuid=user_project["uuid"]
     )
@@ -49,14 +52,14 @@ async def test_project_comments_user_role_access(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.USER, web.HTTPOk),
+        (UserRole.USER, status.HTTP_200_OK),
     ],
 )
 async def test_project_comments_full_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     postgres_db: sa.engine.Engine,
 ):
     base_url = client.app.router["list_project_comments"].url_for(
@@ -78,7 +81,7 @@ async def test_project_comments_full_workflow(
     resp = await client.post(base_url, json=body)
     data, _ = await assert_status(
         resp,
-        web.HTTPCreated,
+        status.HTTP_201_CREATED,
     )
     first_comment_id = data["comment_id"]
 
@@ -86,7 +89,7 @@ async def test_project_comments_full_workflow(
     resp = await client.post(base_url, json={"contents": "My second comment"})
     data, _ = await assert_status(
         resp,
-        web.HTTPCreated,
+        status.HTTP_201_CREATED,
     )
     second_comment_id = data["comment_id"]
 
@@ -125,7 +128,7 @@ async def test_project_comments_full_workflow(
     resp = await client.delete(base_url / f"{second_comment_id}")
     data, _ = await assert_status(
         resp,
-        web.HTTPNoContent,
+        status.HTTP_204_NO_CONTENT,
     )
 
     # Now we will list all comments for the project
@@ -146,14 +149,14 @@ async def test_project_comments_full_workflow(
         resp = await client.get(base_url)
         _, errors = await assert_status(
             resp,
-            web.HTTPNotFound,
+            status.HTTP_404_NOT_FOUND,
         )
         assert errors
 
         resp = await client.get(base_url / f"{first_comment_id}")
         _, errors = await assert_status(
             resp,
-            web.HTTPNotFound,
+            status.HTTP_404_NOT_FOUND,
         )
         assert errors
 
@@ -188,7 +191,7 @@ async def test_project_comments_full_workflow(
         )
         data, _ = await assert_status(
             resp,
-            web.HTTPCreated,
+            status.HTTP_201_CREATED,
         )
         new_user_comment_id = data["comment_id"]
 
@@ -232,5 +235,5 @@ async def test_project_comments_full_workflow(
         resp = await client.delete(base_url / f"{first_comment_id}")
         data, _ = await assert_status(
             resp,
-            web.HTTPNoContent,
+            status.HTTP_204_NO_CONTENT,
         )

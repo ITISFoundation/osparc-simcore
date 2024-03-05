@@ -35,15 +35,20 @@ class RabbitMQRetryPolicyUponInitialization:
         }
 
 
-@retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
-async def wait_till_rabbitmq_responsive(url: str) -> bool:
-    """Check if something responds to ``url``"""
+async def is_rabbitmq_responsive(url: str) -> bool:
+    """True if responsive or raises an error"""
     with log_context(
         _logger, logging.INFO, msg=f"checking RabbitMQ connection at {url=}"
     ):
         async with await aio_pika.connect(url):
             _logger.info("rabbitmq connection established")
         return True
+
+
+@retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
+async def wait_till_rabbitmq_responsive(url: str) -> bool:
+    """waits for rabbitmq to become responsive"""
+    return await is_rabbitmq_responsive(url)
 
 
 def get_rabbitmq_client_unique_name(base_name: str) -> str:

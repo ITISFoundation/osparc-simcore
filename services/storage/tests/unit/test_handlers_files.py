@@ -12,13 +12,14 @@ import urllib.parse
 from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
+from http import HTTPStatus
 from pathlib import Path
 from time import perf_counter
 from typing import Literal
 from uuid import uuid4
 
 import pytest
-from aiohttp import ClientSession, web
+from aiohttp import ClientSession
 from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
 from faker import Faker
@@ -42,6 +43,7 @@ from pydantic import AnyHttpUrl, ByteSize, HttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
+from servicelib.aiohttp import status
 from simcore_service_storage.constants import (
     MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
     S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
@@ -257,7 +259,7 @@ async def test_create_upload_file_with_no_file_size_query_returns_v1_structure(
 class MultiPartParam:
     link_type: LinkType
     file_size: ByteSize
-    expected_response: type[web.HTTPException]
+    expected_response: HTTPStatus
     expected_num_links: int
     expected_chunk_size: ByteSize
 
@@ -269,7 +271,7 @@ class MultiPartParam:
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
                 file_size=parse_obj_as(ByteSize, "10MiB"),
-                expected_response=web.HTTPOk,
+                expected_response=status.HTTP_200_OK,
                 expected_num_links=1,
                 expected_chunk_size=parse_obj_as(ByteSize, "10MiB"),
             ),
@@ -279,7 +281,7 @@ class MultiPartParam:
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
                 file_size=parse_obj_as(ByteSize, "100MiB"),
-                expected_response=web.HTTPOk,
+                expected_response=status.HTTP_200_OK,
                 expected_num_links=10,
                 expected_chunk_size=parse_obj_as(ByteSize, "10MiB"),
             ),
@@ -289,7 +291,7 @@ class MultiPartParam:
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
                 file_size=parse_obj_as(ByteSize, "5TiB"),
-                expected_response=web.HTTPOk,
+                expected_response=status.HTTP_200_OK,
                 expected_num_links=8739,
                 expected_chunk_size=parse_obj_as(ByteSize, "600MiB"),
             ),
@@ -299,7 +301,7 @@ class MultiPartParam:
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
                 file_size=parse_obj_as(ByteSize, "9431773844"),
-                expected_response=web.HTTPOk,
+                expected_response=status.HTTP_200_OK,
                 expected_num_links=900,
                 expected_chunk_size=parse_obj_as(ByteSize, "10MiB"),
             ),
@@ -309,7 +311,7 @@ class MultiPartParam:
             MultiPartParam(
                 link_type=LinkType.S3,
                 file_size=parse_obj_as(ByteSize, "255GiB"),
-                expected_response=web.HTTPOk,
+                expected_response=status.HTTP_200_OK,
                 expected_num_links=1,
                 expected_chunk_size=parse_obj_as(ByteSize, "255GiB"),
             ),
@@ -407,7 +409,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
     # delete/abort file upload
     abort_url = URL(upload_link.links.abort_upload).relative()
     response = await client.post(f"{abort_url}")
-    await assert_status(response, web.HTTPNoContent)
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
 
     # the DB shall be cleaned up
     await assert_file_meta_data_in_db(
@@ -579,7 +581,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
         json=jsonable_encoder(FileUploadCompletionBody(parts=part_to_etag)),
     )
     response.raise_for_status()
-    data, error = await assert_status(response, web.HTTPAccepted)
+    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
     assert not error
     assert data
     file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
@@ -600,7 +602,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
                 f"--> checking for upload {state_url=}, {attempt.retry_state.attempt_number}..."
             )
             response = await client.post(f"{state_url}")
-            data, error = await assert_status(response, web.HTTPOk)
+            data, error = await assert_status(response, status.HTTP_200_OK)
             assert not error
             assert data
             future = FileUploadCompleteFutureResponse.parse_obj(data)
@@ -714,7 +716,7 @@ async def test_upload_real_file_with_s3_client(
     print(f"--> completing upload of {file=}")
     response = await client.post(f"{complete_url}", json={"parts": []})
     response.raise_for_status()
-    data, error = await assert_status(response, web.HTTPAccepted)
+    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
     assert not error
     assert data
     file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
@@ -732,7 +734,7 @@ async def test_upload_real_file_with_s3_client(
             )
             response = await client.post(f"{state_url}")
             response.raise_for_status()
-            data, error = await assert_status(response, web.HTTPOk)
+            data, error = await assert_status(response, status.HTTP_200_OK)
             assert not error
             assert data
             future = FileUploadCompleteFutureResponse.parse_obj(data)
@@ -824,7 +826,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
     # 4. abort file upload
     abort_url = URL(upload_link.links.abort_upload).relative()
     response = await client.post(f"{abort_url}")
-    await assert_status(response, web.HTTPNoContent)
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
 
     # we should have the original file still in now...
     await assert_file_meta_data_in_db(
@@ -888,7 +890,7 @@ async def test_download_file_no_file_was_uploaded(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, web.HTTPNotFound)
+    data, error = await assert_status(response, status.HTTP_404_NOT_FOUND)
     assert data is None
     assert missing_file in error["message"]
 
@@ -926,7 +928,7 @@ async def test_download_file_1_to_1_with_file_meta_data(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     assert data
     assert "link" in data
@@ -980,7 +982,7 @@ async def test_download_file_from_inside_a_directory(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     assert data
     assert "link" in data
@@ -1017,7 +1019,7 @@ async def test_download_file_the_file_is_missing_from_the_directory(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, web.HTTPNotFound)
+    data, error = await assert_status(response, status.HTTP_404_NOT_FOUND)
     assert data is None
     assert missing_s3_file_id in error["message"]
 
@@ -1050,7 +1052,7 @@ async def test_download_file_access_rights(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{download_url}")
-    data, error = await assert_status(response, web.HTTPForbidden)
+    data, error = await assert_status(response, status.HTTP_403_FORBIDDEN)
     assert data is None
     assert "Insufficient access rights" in error["message"]
 
@@ -1085,7 +1087,7 @@ async def test_delete_file(
         .with_query(user_id=user_id)
     )
     response = await client.delete(f"{delete_url}")
-    await assert_status(response, web.HTTPNoContent)
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
 
     # check the entry in db is removed
     await assert_file_meta_data_in_db(
@@ -1126,7 +1128,7 @@ async def test_copy_as_soft_link(
     response = await client.post(
         f"{url}", json=jsonable_encoder(SoftCopyBody(link_id=invalid_link_id))
     )
-    await assert_status(response, web.HTTPNotFound)
+    await assert_status(response, status.HTTP_404_NOT_FOUND)
 
     # now let's try with whatever link id
     file, original_file_uuid = await upload_file(
@@ -1143,7 +1145,7 @@ async def test_copy_as_soft_link(
     response = await client.post(
         f"{url}", json=jsonable_encoder(SoftCopyBody(link_id=link_id))
     )
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     fmd = parse_obj_as(FileMetaDataGet, data)
     assert fmd.file_id == link_id
@@ -1167,7 +1169,7 @@ async def __list_files(
         .with_query(user_id=user_id, expand_dirs=f"{expand_dirs}".lower())
     )
     response = await client.get(f"{get_url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     return parse_obj_as(list[FileMetaDataGet], data)
 
