@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Awaitable, Callable
+from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Final, Literal
@@ -130,30 +131,50 @@ async def pull_image(
     registry_settings: RegistrySettings,
     progress_bar: ProgressBarData,
     log_cb: LogCB,
-    image_information: DockerImageManifestsV2,
+    image_information: DockerImageManifestsV2 | None,
 ) -> None:
+    """pull a docker image to the host machine.
+
+
+    Arguments:
+        image -- the docker image to pull
+        registry_settings -- registry settings
+        progress_bar -- the current progress bar, subprogress bar will be created accordingly if image_information is passed.
+        log_cb -- a callback function to send logs to
+        image_information -- the image layer information. If this is None, then no fine progress will be retrieved.
+    """
     registry_auth = None
     if registry_settings.REGISTRY_URL in image:
         registry_auth = {
             "username": registry_settings.REGISTRY_USER,
             "password": registry_settings.REGISTRY_PW.get_secret_value(),
         }
+    image_short_name = image.split("/")[-1]
+    layer_id_to_size = {}
+    sub_progress = None
+    async with AsyncExitStack() as exit_stack:
+        # NOTE: docker pulls an image layer by layer
+        # NOTE: each layer is first downloaded, then extracted. Extraction usually takes about 2/3 of the time
+        # NOTE: so we compute the layer size x3 (1x for downloading, 2x for extracting)
+        if image_information:
+            layer_id_to_size = {
+                layer.digest.removeprefix("sha256:")[:12]: _PulledStatus(layer.size)
+                for layer in image_information.layers
+            }
+            image_layers_total_size = (
+                sum(layer.size for layer in image_information.layers) * 3
+            )
+            sub_progress = exit_stack.enter_async_context(
+                progress_bar.sub_progress(image_layers_total_size)
+            )
+        else:
+            _logger.warning(
+                "pulling image without layer information for %s. Progress will be approximative. TIP: check why this happens",
+                f"{image=}",
+            )
 
-    # NOTE: docker pulls an image layer by layer
-    # NOTE: each layer is first downloaded, then extracted. Extraction usually takes about 2/3 of the time
-    # NOTE: 1 subprogress per layer, then subprogress of size 2 with weights?
-    # NOTE: or, we compute the total size X2, then upgrade that based on the status? maybe simpler
+        client = await exit_stack.enter_async_context(aiodocker.Docker())
 
-    layer_id_to_size = {
-        layer.digest.removeprefix("sha256:")[:12]: _PulledStatus(layer.size)
-        for layer in image_information.layers
-    }
-    image_layers_total_size = sum(layer.size for layer in image_information.layers) * 2
-    image_name = image.split("/")[-1]
-    async with (
-        aiodocker.Docker() as client,
-        progress_bar.sub_progress(image_layers_total_size) as sub_progress,
-    ):
         async for pull_progress in client.images.pull(
             image, stream=True, auth=registry_auth
         ):
@@ -209,8 +230,12 @@ async def pull_image(
             total_extracted_size = sum(
                 layer.extracted for layer in layer_id_to_size.values()
             )
-            await sub_progress.set_(total_downloaded_size + total_extracted_size)
+            if sub_progress is not None:
+                assert isinstance(sub_progress, ProgressBarData)
+                await sub_progress.set_(
+                    total_downloaded_size + 2 * total_extracted_size
+                )
             await log_cb(
-                f"pulling {image_name}: {pull_progress}...",
+                f"pulling {image_short_name}: {pull_progress}...",
                 logging.DEBUG,
             )
