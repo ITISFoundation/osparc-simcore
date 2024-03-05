@@ -1,15 +1,11 @@
-from pydantic.errors import PydanticErrorMixin
+from typing import Any
+
+from models_library.errors_classes import OsparcErrorMixin
 
 
-class _BaseAppError(PydanticErrorMixin, ValueError):
-    @classmethod
-    def get_full_class_name(cls) -> str:
-        # Can be used as unique code identifier
-        return f"{cls.__module__}.{cls.__name__}"
-
-
-class NotifierError(_BaseAppError):
-    ...
+class NotifierError(OsparcErrorMixin, Exception):
+    def __init__(self, **ctx: Any) -> None:
+        super().__init__(**ctx)
 
 
 class TemplatesNotFoundError(NotifierError):
