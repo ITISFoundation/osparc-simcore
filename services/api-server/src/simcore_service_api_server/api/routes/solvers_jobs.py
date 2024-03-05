@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Callable
-from typing import Annotated, Final
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, status
@@ -11,9 +11,12 @@ from models_library.api_schemas_webserver.projects import ProjectCreateNew, Proj
 from models_library.clusters import ClusterID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.models.schemas.errors import ErrorGet
+from simcore_service_api_server.services.service_exception_handling import (
+    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+)
 
 from ...models.basic_types import VersionStr
-from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
     Job,
     JobID,
@@ -31,7 +34,6 @@ from ...services.solver_job_models_converters import (
     create_jobstatus_from_task,
     create_new_project_for_job,
 )
-from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
@@ -69,19 +71,30 @@ def _raise_if_job_not_associated_with_solver(
 #
 # - Similar to docker container's API design (container = job and image = solver)
 #
+METADATA_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_404_NOT_FOUND: {
+        "description": "Metadata not found",
+        "model": ErrorGet,
+    }
+} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
-_COMMON_ERROR_RESPONSES: Final[dict] = {
+JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_402_PAYMENT_REQUIRED: {
+        "description": "Payment required",
+        "model": ErrorGet,
+    },
     status.HTTP_404_NOT_FOUND: {
         "description": "Job not found",
         "model": ErrorGet,
     },
-}
+} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
 
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs",
     response_model=Job,
     status_code=status.HTTP_201_CREATED,
+    responses=JOBS_STATUS_CODES,
 )
 async def create_job(
     solver_key: SolverKeyId,
@@ -132,7 +145,7 @@ async def create_job(
 @router.delete(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
-    responses={status.HTTP_404_NOT_FOUND: {"model": ErrorGet}},
+    responses=JOBS_STATUS_CODES,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_job(
@@ -148,19 +161,13 @@ async def delete_job(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Deleting Job '%s'", job_name)
 
-    try:
-        await webserver_api.delete_project(project_id=job_id)
-
-    except ProjectNotFoundError:
-        return create_error_json_response(
-            f"Cannot find job={job_name} to delete",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+    await webserver_api.delete_project(project_id=job_id)
 
 
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:start",
     response_model=JobStatus,
+    responses=JOBS_STATUS_CODES,
 )
 async def start_job(
     request: Request,
@@ -207,6 +214,7 @@ async def start_job(
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:stop",
     response_model=JobStatus,
+    responses=JOBS_STATUS_CODES,
 )
 async def stop_job(
     solver_key: SolverKeyId,
@@ -228,6 +236,7 @@ async def stop_job(
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:inspect",
     response_model=JobStatus,
+    responses=JOBS_STATUS_CODES,
 )
 async def inspect_job(
     solver_key: SolverKeyId,
@@ -247,7 +256,7 @@ async def inspect_job(
 @router.patch(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
-    responses={**_COMMON_ERROR_RESPONSES},
+    responses=METADATA_STATUS_CODES,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def replace_job_custom_metadata(

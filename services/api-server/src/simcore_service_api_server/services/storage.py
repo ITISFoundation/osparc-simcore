@@ -18,7 +18,7 @@ from starlette.datastructures import URL
 from ..core.settings import StorageSettings
 from ..models.schemas.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
-from ._service_exception_handling import service_exception_mapper
+from .service_exception_handling import service_exception_mapper
 
 _logger = logging.getLogger(__name__)
 
