@@ -4,6 +4,7 @@
 import multiprocessing
 from collections.abc import AsyncIterable
 from datetime import timedelta
+from typing import Annotated
 from unittest.mock import Mock
 
 import pytest
@@ -18,17 +19,7 @@ from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 
 @pytest.fixture
-def username() -> str:
-    return "user"
-
-
-@pytest.fixture
-def password() -> str:
-    return "password"
-
-
-@pytest.fixture
-def mock_storage_app(username: str, password: str) -> FastAPI:
+def mock_storage_app(username: str | None, password: str | None) -> FastAPI:
     app = FastAPI()
     security = HTTPBasic()
 
@@ -36,7 +27,9 @@ def mock_storage_app(username: str, password: str) -> FastAPI:
     def health():
         return "ok"
 
-    def authenticate_user(credentials: HTTPBasicCredentials = Depends(security)):
+    def _authenticate_user(
+        credentials: Annotated[HTTPBasicCredentials, Depends(security)],
+    ):
         if credentials.username != username or credentials.password != password:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -45,15 +38,26 @@ def mock_storage_app(username: str, password: str) -> FastAPI:
             )
         return {"username": username}
 
-    @app.get("/v0/")
-    async def protected_route(user: dict = Depends(authenticate_user)):
-        return {"message": f"Welcome, {user['username']}!"}
+    if username and password:
 
+        @app.get("/v0/")
+        async def protected_route(user: Annotated[dict, Depends(_authenticate_user)]):
+            return {"message": f"Welcome, {user['username']}!"}
+
+    else:
+
+        @app.get("/v0/")
+        async def unprotected_route():
+            return {"message": "Welcome, no auth!"}
+
+    print("GENERATING STORAGE APP")
     return app
 
 
 @pytest.fixture
-def storage_auth_settings(username: str, password: str) -> StorageAuthSettings:
+def storage_auth_settings(
+    username: str | None, password: str | None
+) -> StorageAuthSettings:
     return StorageAuthSettings.parse_obj(
         {
             "STORAGE_HOST": "localhost",
@@ -95,7 +99,7 @@ async def mock_storage_server(
 
     yield None
 
-    process.terminate()
+    process.kill()
 
 
 @pytest.fixture
@@ -115,6 +119,13 @@ def mock_dynamic_sidecar_app(
     return mock
 
 
+@pytest.mark.parametrize(
+    "username, password",
+    [
+        pytest.param("user", "password", id="authenticated"),
+        pytest.param(None, None, id="no-auth"),
+    ],
+)
 async def test_storage_liveness_with_protected_route_ok(
     mock_storage_server: None, mock_dynamic_sidecar_app: Mock
 ):

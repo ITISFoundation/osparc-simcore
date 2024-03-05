@@ -32,18 +32,21 @@ def _get_url(storage_auth_settings: StorageAuthSettings) -> str:
 
 async def _is_storage_responsive(storage_auth_settings: StorageAuthSettings) -> bool:
     url = _get_url(storage_auth_settings)
+    auth = _get_auth(storage_auth_settings)
+
     with log_context(
-        _logger, logging.DEBUG, msg=f"checking storage connection at {url=}"
+        _logger,
+        logging.DEBUG,
+        msg=f"checking storage connection at {url=} {auth=} {storage_auth_settings=}",
     ):
         async with AsyncClient(
-            auth=_get_auth(storage_auth_settings),
-            timeout=_LIVENESS_TIMEOUT.total_seconds(),
+            auth=auth, timeout=_LIVENESS_TIMEOUT.total_seconds()
         ) as session:
             result = await session.get(url)
             if result.status_code == status.HTTP_200_OK:
                 _logger.debug("storage connection established")
                 return True
-            _logger.error("storage is not responding")
+            _logger.error("storage is not responding %s", result.text)
             return False
 
 
