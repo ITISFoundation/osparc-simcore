@@ -27,7 +27,7 @@ from simcore_sdk.node_ports_common.filemanager import (
     get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
-from simcore_service_api_server.models.basic_types import HTTPExceptionModel
+from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.services.service_exception_handling import (
     DEFAULT_BACKEND_SERVICE_STATUS_CODES,
 )
@@ -66,7 +66,7 @@ router = APIRouter()
 _FILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "File not found",
-        "model": HTTPExceptionModel,
+        "model": ErrorGet,
     }
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 

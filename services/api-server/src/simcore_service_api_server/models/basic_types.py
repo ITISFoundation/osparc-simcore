@@ -2,7 +2,7 @@ import re
 
 from fastapi.responses import StreamingResponse
 from models_library.basic_regex import VERSION_RE
-from pydantic import BaseModel, ConstrainedStr
+from pydantic import ConstrainedStr
 
 
 class VersionStr(ConstrainedStr):
@@ -16,7 +16,3 @@ class FileNameStr(ConstrainedStr):
 
 class LogStreamingResponse(StreamingResponse):
     media_type = "application/x-ndjson"
-
-
-class HTTPExceptionModel(BaseModel):
-    detail: str

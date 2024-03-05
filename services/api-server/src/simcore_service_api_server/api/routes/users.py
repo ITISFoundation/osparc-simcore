@@ -2,7 +2,7 @@ import logging
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Security, status
-from simcore_service_api_server.models.basic_types import HTTPExceptionModel
+from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.services.service_exception_handling import (
     DEFAULT_BACKEND_SERVICE_STATUS_CODES,
 )
@@ -19,7 +19,7 @@ router = APIRouter()
 _USER_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "User not found",
-        "model": HTTPExceptionModel,
+        "model": ErrorGet,
     }
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 

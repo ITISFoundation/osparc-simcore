@@ -11,11 +11,12 @@ from models_library.api_schemas_webserver.projects import ProjectCreateNew, Proj
 from models_library.clusters import ClusterID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.services.service_exception_handling import (
     DEFAULT_BACKEND_SERVICE_STATUS_CODES,
 )
 
-from ...models.basic_types import HTTPExceptionModel, VersionStr
+from ...models.basic_types import VersionStr
 from ...models.schemas.jobs import (
     Job,
     JobID,
@@ -73,18 +74,18 @@ def _raise_if_job_not_associated_with_solver(
 METADATA_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "Metadata not found",
-        "model": HTTPExceptionModel,
+        "model": ErrorGet,
     }
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
 JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_402_PAYMENT_REQUIRED: {
         "description": "Payment required",
-        "model": HTTPExceptionModel,
+        "model": ErrorGet,
     },
     status.HTTP_404_NOT_FOUND: {
         "description": "Job not found",
-        "model": HTTPExceptionModel,
+        "model": ErrorGet,
     },
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 

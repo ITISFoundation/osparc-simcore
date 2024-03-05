@@ -20,12 +20,13 @@ from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.services.service_exception_handling import (
     DEFAULT_BACKEND_SERVICE_STATUS_CODES,
 )
 from starlette.background import BackgroundTask
 
-from ...models.basic_types import HTTPExceptionModel, LogStreamingResponse, VersionStr
+from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentTypes, Job, JobID, JobMetadata, JobOutputs
@@ -59,11 +60,11 @@ _logger = logging.getLogger(__name__)
 _OUTPUTS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_402_PAYMENT_REQUIRED: {
         "description": "Payment required",
-        "model": HTTPExceptionModel,
+        "model": ErrorGet,
     },
     status.HTTP_404_NOT_FOUND: {
         "description": "Job not found",
-        "model": HTTPExceptionModel,
+        "model": ErrorGet,
     },
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
@@ -84,14 +85,14 @@ _LOGFILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 _PRICING_UNITS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {
         "description": "Pricing unit not found",
-        "model": HTTPExceptionModel,
+        "model": ErrorGet,
     }
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
 _LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_409_CONFLICT: {
         "description": "Conflict: Logs are already being streamed",
-        "model": HTTPExceptionModel,
+        "model": ErrorGet,
     }
 } | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
