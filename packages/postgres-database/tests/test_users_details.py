@@ -77,7 +77,7 @@ async def test_user_creation_workflow(
     invoice_data = await UsersRepo.get_billing_details(connection, user_id=new_user.id)
     assert invoice_data is not None
 
-    # drafts a fillin data in https://github.com/ITISFoundation/osparc-simcore/pull/5402
+    # drafts converting data models from https://github.com/ITISFoundation/osparc-simcore/pull/5402
     @dataclass
     class UserAddress:
         line1: str | None
@@ -88,16 +88,9 @@ async def test_user_creation_workflow(
 
         @classmethod
         def create_from_db(cls, row: RowProxy):
-            line1 = ""
-            if row.company_name:
-                line1 += row.company_name
-            if row.address:
-                if line1:
-                    line1 += ". "
-                line1 += row.address
-
+            parts = (row[c] for c in ("company_name", "address") if row[c])
             return cls(
-                line1=line1,
+                line1=". ".join(parts),
                 state=row.state,
                 postal_code=row.postal_code,
                 city=row.city,
@@ -108,11 +101,11 @@ async def test_user_creation_workflow(
 
     # Expects something like
     # {
-    # "line1": "Jones, Jefferson and Rivera. 5938 Ramos Pike Suite 080, Lake Marytown, RI 65195",
-    # "state": "Virginia",
-    # "postal_code": "08756",
-    # "city": "Johnmouth",
-    # "country": "Trinidad and Tobago"
+    #   "line1": "Jones, Jefferson and Rivera. 5938 Ramos Pike Suite 080, Lake Marytown, RI 65195",
+    #   "state": "Virginia",
+    #   "postal_code": "08756",
+    #   "city": "Johnmouth",
+    #   "country": "Trinidad and Tobago"
     # }
 
     assert user_address.line1
