@@ -52,6 +52,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"' \
+    --worker-tmp-dir=/dev/shm \
     --reload
 
 else
@@ -63,5 +64,6 @@ else
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
     --access-logfile='-' \
-    --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
+    --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"' \
+    --worker-tmp-dir=/dev/shm
 fi
