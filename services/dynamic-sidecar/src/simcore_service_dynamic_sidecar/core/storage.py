@@ -6,6 +6,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 from servicelib.logging_utils import log_context
 from settings_library.node_ports import StorageAuthSettings
+from yarl import URL
 
 from ..modules.service_liveness import wait_for_service_liveness
 from .settings import ApplicationSettings
@@ -27,7 +28,8 @@ def _get_auth(storage_auth_settings: StorageAuthSettings) -> tuple[str, str] | N
 
 
 def _get_url(storage_auth_settings: StorageAuthSettings) -> str:
-    return f"{storage_auth_settings.api_base_url}/"
+    url = URL(storage_auth_settings.api_base_url).with_path("/")
+    return f"{url}"
 
 
 async def _is_storage_responsive(storage_auth_settings: StorageAuthSettings) -> bool:
