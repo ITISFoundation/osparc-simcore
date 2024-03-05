@@ -14,7 +14,10 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pytest_mock import MockerFixture
 from settings_library.node_ports import StorageAuthSettings
-from simcore_service_dynamic_sidecar.core.storage import wait_for_storage_liveness
+from simcore_service_dynamic_sidecar.core.storage import (
+    _get_url,
+    wait_for_storage_liveness,
+)
 from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 
@@ -129,3 +132,14 @@ async def test_wait_for_storage_liveness(
     mock_storage_server: None, mock_dynamic_sidecar_app: Mock
 ):
     await wait_for_storage_liveness(mock_dynamic_sidecar_app)
+
+
+@pytest.mark.parametrize(
+    "username, password",
+    [
+        pytest.param("user", "password", id="authenticated"),
+        pytest.param(None, None, id="no-auth"),
+    ],
+)
+def test__get_url(storage_auth_settings: StorageAuthSettings):
+    assert _get_url(storage_auth_settings) == "http://localhost:44332/v0/"
