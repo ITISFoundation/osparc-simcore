@@ -235,7 +235,6 @@ qx.Class.define("osparc.notification.NotificationUI", {
             const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
             moreOpts.addListener("openStudy", () => {
               if (notification.getCategory() === "STUDY_SHARED") {
-                win.close();
                 const openCB = () => win.close();
                 osparc.dashboard.ResourceBrowserBase.startStudyById(studyId, openCB);
               }
