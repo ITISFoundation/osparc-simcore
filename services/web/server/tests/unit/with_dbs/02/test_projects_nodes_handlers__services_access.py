@@ -5,16 +5,17 @@
 # type: ignore
 
 from copy import deepcopy
+from http import HTTPStatus
 from typing import Any
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
@@ -85,16 +86,16 @@ def mock_catalog_api_get_service_access_rights_response(mocker: MockerFixture):
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_user_role_access(
     client: TestClient,
     user_project: ProjectDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     mock_catalog_api_get_service_access_rights_response,
 ):
     assert client.app
@@ -110,7 +111,7 @@ async def test_user_role_access(
     resp = await client.get(
         f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
     )
-    project_access, error = await assert_status(resp, expected_cls=expected)
+    project_access, error = await assert_status(resp, expected_status_code=expected)
 
     if not error:
         assert project_access == {"gid": for_gid, "accessible": True}
@@ -161,7 +162,7 @@ async def test_accessible_thanks_to_everyone_group_id(
     resp = await client.get(
         f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
     )
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data == {"gid": for_gid, "accessible": True}
 
@@ -210,7 +211,7 @@ async def test_accessible_thanks_to_concrete_group_id(
     resp = await client.get(
         f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
     )
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data == {"gid": for_gid, "accessible": True}
 
@@ -260,7 +261,7 @@ async def test_not_accessible_for_one_service(
     resp = await client.get(
         f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
     )
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data == {
         "gid": for_gid,
@@ -319,7 +320,7 @@ async def test_not_accessible_for_more_services(
     resp = await client.get(
         f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
     )
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data == {
         "gid": for_gid,
@@ -371,7 +372,7 @@ async def test_not_accessible_for_service_because_of_execute_access_false(
     resp = await client.get(
         f"/v0/projects/{project_id}/nodes/-/services:access?for_gid={for_gid}"
     )
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert data == {
         "gid": for_gid,

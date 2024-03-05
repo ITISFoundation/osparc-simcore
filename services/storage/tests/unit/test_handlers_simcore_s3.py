@@ -15,7 +15,7 @@ from typing import Any, Awaitable, Callable, Literal
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import ClientResponseError, web
+from aiohttp import ClientResponseError
 from aiohttp.test_utils import TestClient
 from aiopg.sa.engine import Engine
 from faker import Faker
@@ -75,7 +75,7 @@ async def test_simcore_s3_access_returns_default(client: TestClient):
         .with_query(user_id=1)
     )
     response = await client.post(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     assert data
     received_settings = S3Settings.parse_obj(data)
@@ -480,7 +480,7 @@ async def _create_and_delete_folders_from_project(
             .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
         )
         resp = await client.get(f"{url}")
-        data, error = await assert_status(resp, web.HTTPOk)
+        data, error = await assert_status(resp, status.HTTP_200_OK)
         assert not error
     # DELETING
     url = (
@@ -490,7 +490,7 @@ async def _create_and_delete_folders_from_project(
     )
     resp = await client.delete(f"{url}")
 
-    await assert_status(resp, expected_cls=web.HTTPNoContent)
+    await assert_status(resp, expected_status_code=status.HTTP_204_NO_CONTENT)
 
     # list data is gone
     if check_list_files:
@@ -500,7 +500,7 @@ async def _create_and_delete_folders_from_project(
             .with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
         )
         resp = await client.get(f"{url}")
-        data, error = await assert_status(resp, web.HTTPOk)
+        data, error = await assert_status(resp, status.HTTP_200_OK)
         assert not error
         assert not data
 
@@ -587,7 +587,7 @@ async def test_search_files(
     url = client.app.router["search_files"].url_for().with_query(**_query_params)
 
     response = await client.post(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert not list_fmds
@@ -600,7 +600,7 @@ async def test_search_files(
     )
     # search again should return something
     response = await client.post(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert len(list_fmds) == 1
@@ -614,7 +614,7 @@ async def test_search_files(
     if search_sha256_checksum:
         url.update_query(sha256_checksum=_sha256_checksum)
     response = await client.post(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert len(list_fmds) == 1
@@ -632,7 +632,7 @@ async def test_search_files(
         url = url.update_query(sha256_checksum=dummy_sha256)
     if search_startswith or search_sha256_checksum:
         response = await client.post(f"{url}")
-        data, error = await assert_status(response, web.HTTPOk)
+        data, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
         list_fmds = parse_obj_as(list[FileMetaDataGet], data)
         assert not list_fmds

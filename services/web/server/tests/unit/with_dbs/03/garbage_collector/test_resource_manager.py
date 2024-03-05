@@ -5,7 +5,6 @@
 
 
 import asyncio
-import logging
 from asyncio import Future
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
@@ -18,7 +17,6 @@ import pytest
 import socketio
 import socketio.exceptions
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -28,6 +26,7 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis.asyncio import Redis
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -67,16 +66,13 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-logger = logging.getLogger(__name__)
-
-
 SERVICE_DELETION_DELAY = 1
 
 
 async def close_project(client, project_uuid: str, client_session_id: str) -> None:
     url = client.app.router["close_project"].url_for(project_id=project_uuid)
     resp = await client.post(url, json=client_session_id)
-    await assert_status(resp, web.HTTPNoContent)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
 
 @pytest.fixture
@@ -86,7 +82,7 @@ async def open_project() -> AsyncIterator[Callable[..., Awaitable[None]]]:
     async def _open_project(client, project_uuid: str, client_session_id: str) -> None:
         url = client.app.router["open_project"].url_for(project_id=project_uuid)
         resp = await client.post(url, json=client_session_id)
-        await assert_status(resp, web.HTTPOk)
+        await assert_status(resp, status.HTTP_200_OK)
         opened_projects.append((client, project_uuid, client_session_id))
 
     yield _open_project
@@ -404,10 +400,10 @@ async def test_asyncio_task_pending_on_close(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        # (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        # (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_websocket_disconnected_after_logout(
@@ -509,7 +505,7 @@ async def test_interactive_services_removed_after_logout(
         f"{logout_url}", json={"client_session_id": client_session_id1}
     )
     assert r.url.path == logout_url.path
-    await assert_status(r, web.HTTPOk)
+    await assert_status(r, status.HTTP_200_OK)
 
     # check result perfomed by background task
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
@@ -876,7 +872,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     logout_url = client.app.router["auth_logout"].url_for()
     r = await client.post(logout_url, json={"client_session_id": client_session_id1})
     assert r.url.path == logout_url.path
-    await assert_status(r, web.HTTPOk)
+    await assert_status(r, status.HTTP_200_OK)
 
     # ensure sufficient time is wasted here
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
