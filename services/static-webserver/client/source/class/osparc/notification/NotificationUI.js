@@ -233,7 +233,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
             studyDataCopy["resourceType"] = notification.getCategory() === "TEMPLATE_SHARED" ? "template" : "study";
             const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyDataCopy);
             const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
-            moreOpts.addListener("openingStudy", () => win.close());
+            moreOpts.addListener("openStudy", () => win.close());
           }
         })
         .catch(err => {
