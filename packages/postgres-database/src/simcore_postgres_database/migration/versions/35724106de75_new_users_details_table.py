@@ -1,8 +1,8 @@
 """new users_details table
 
-Revision ID: 739818436a80
-Revises: f3a5484fe05d
-Create Date: 2024-02-27 13:23:27.589629+00:00
+Revision ID: 35724106de75
+Revises: 20d60d2663ad
+Create Date: 2024-03-05 13:13:37.921956+00:00
 
 """
 from typing import Final
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "739818436a80"
-down_revision = "f3a5484fe05d"
+revision = "35724106de75"
+down_revision = "20d60d2663ad"
 branch_labels = None
 depends_on = None
 
@@ -71,10 +71,10 @@ def upgrade():
             "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),
         sa.ForeignKeyConstraint(
-            ["user_id"], ["users.id"], onupdate="CASCADE", ondelete="CASCADE"
+            ["created_by"], ["users.id"], onupdate="CASCADE", ondelete="SET NULL"
         ),
         sa.ForeignKeyConstraint(
-            ["created_by"], ["users.id"], onupdate="CASCADE", ondelete="SET NULL"
+            ["user_id"], ["users.id"], onupdate="CASCADE", ondelete="CASCADE"
         ),
         sa.UniqueConstraint("pre_email"),
     )
@@ -86,6 +86,7 @@ def upgrade():
 
 
 def downgrade():
+
     # custom
     op.execute(f"DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {_TABLE_NAME};")
     op.execute(f"DROP FUNCTION {_PROCEDURE_NAME};")
