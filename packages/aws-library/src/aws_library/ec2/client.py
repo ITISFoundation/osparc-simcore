@@ -133,7 +133,7 @@ class SimcoreEC2API:
                 ImageId=instance_config.ami_id,
                 MinCount=min(
                     1, number_of_instances
-                ),  # NOTE: this ensures as many instances as possible are created
+                ),  # NOTE: This means that ideally we want MaxCount instances, but that the minimum allowed to continue is MinCount
                 MaxCount=number_of_instances,
                 IamInstanceProfile=(
                     {"Arn": instance_config.iam_instance_profile}
