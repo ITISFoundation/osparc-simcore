@@ -4,7 +4,7 @@
 import multiprocessing
 from collections.abc import AsyncIterable
 from datetime import timedelta
-from typing import Annotated
+from typing import Annotated, Final
 from unittest.mock import Mock
 
 import pytest
@@ -121,25 +121,19 @@ def mock_dynamic_sidecar_app(
     return mock
 
 
-@pytest.mark.parametrize(
-    "username, password",
-    [
-        pytest.param("user", "password", id="authenticated"),
-        pytest.param(None, None, id="no-auth"),
-    ],
-)
+_USERNAME_PASSWORD_TEST_CASES: Final[list] = [
+    pytest.param("user", "password", id="authenticated"),
+    pytest.param(None, None, id="no-auth"),
+]
+
+
+@pytest.mark.parametrize("username, password", _USERNAME_PASSWORD_TEST_CASES)
 async def test_wait_for_storage_liveness(
     mock_storage_server: None, mock_dynamic_sidecar_app: Mock
 ):
     await wait_for_storage_liveness(mock_dynamic_sidecar_app)
 
 
-@pytest.mark.parametrize(
-    "username, password",
-    [
-        pytest.param("user", "password", id="authenticated"),
-        pytest.param(None, None, id="no-auth"),
-    ],
-)
+@pytest.mark.parametrize("username, password", _USERNAME_PASSWORD_TEST_CASES)
 def test__get_url(storage_auth_settings: StorageAuthSettings):
     assert _get_url(storage_auth_settings) == "http://localhost:44332/v0/"
