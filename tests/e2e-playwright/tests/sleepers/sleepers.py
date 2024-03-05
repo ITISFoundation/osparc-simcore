@@ -17,14 +17,12 @@ from typing import Final
 from packaging.version import Version
 from packaging.version import parse as parse_version
 from playwright.sync_api import Page, WebSocket
+from pytest_simcore.logging_utils import ContextMessages, log_context, test_logger
 from pytest_simcore.playwright_utils import (
     MINUTE,
-    ContextMessages,
     RunningState,
     SocketIOEvent,
-    log_context,
     retrieve_project_state_from_decoded_message,
-    test_logger,
     wait_for_pipeline_state,
 )
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
