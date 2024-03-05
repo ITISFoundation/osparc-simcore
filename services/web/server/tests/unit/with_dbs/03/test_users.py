@@ -6,6 +6,7 @@
 
 
 import functools
+from http import HTTPStatus
 from typing import Any
 from unittest.mock import MagicMock, Mock
 
@@ -154,9 +155,6 @@ def mock_failing_database_connection(mocker: Mock) -> MagicMock:
         "MOCK: server closed the connection unexpectedly"
     )
     return conn_execute
-
-
-from http import HTTPStatus
 
 
 @pytest.mark.parametrize(
