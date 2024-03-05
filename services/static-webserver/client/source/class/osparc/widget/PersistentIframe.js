@@ -105,6 +105,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     __iframe: null,
     __syncScheduled: null,
     __buttonContainer: null,
+    __diskUsageIndicator: null,
     __reloadButton: null,
     __zoomButton: null,
 
@@ -128,10 +129,17 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       });
       const iframeEl = this._getIframeElement();
       iframeEl.setAttribute("allow", "clipboard-write");
+
       const buttonContainer = this.__buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "right",
         alignY: "middle"
       }));
+
+      const diskUsageIndicator = this.__diskUsageIndicator = new osparc.workbench.DiskUsageIndicator().set({
+        margin: 0,
+        padding: 0
+      });
+      buttonContainer.add(diskUsageIndicator);
 
       const reloadButton = this.__reloadButton = this.self().createToolbarButton().set({
         label: this.tr("Reload"),
@@ -144,6 +152,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       }, this);
       osparc.utils.Utils.setIdToWidget(reloadButton, "iFrameRestartBtn");
       buttonContainer.add(reloadButton);
+
       const zoomButton = this.__zoomButton = this.self().createToolbarButton().set({
         label: this.self().getZoomLabel(false),
         icon: this.self().getZoomIcon(false)
@@ -153,6 +162,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         this.maximizeIFrame(!this.hasState("maximized"));
       }, this);
       buttonContainer.add(zoomButton);
+
       appRoot.add(buttonContainer, {
         top: this.self().HIDDEN_TOP
       });
@@ -186,6 +196,10 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         }
       });
       return standin;
+    },
+
+    getDiskUsageIndicator: function() {
+      return this.__diskUsageIndicator;
     },
 
     maximizeIFrame: function(maximize) {
@@ -228,10 +242,10 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           height: divSize.height - this.getToolbarHeight()
         });
 
-        const rightOffest = this.hasState("maximized") ? 0 : 0;
+        const rightOffset = this.hasState("maximized") ? 0 : 0;
         this.__buttonContainer.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),
-          right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + rightOffest
+          right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + rightOffset
         });
 
         this.__buttonContainer.setVisibility(this.isShowToolbar() ? "visible" : "excluded");

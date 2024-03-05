@@ -109,6 +109,9 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
 
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
+      if (!currentStudy) {
+        return;
+      }
       const node = currentStudy.getWorkbench().getNode(id);
 
       const nodeName = node ? node.getLabel() : null;
