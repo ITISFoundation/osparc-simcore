@@ -125,6 +125,7 @@ async def test_pre_registration_and_invitation_workflow(
     logged_user: UserInfoDict,
     expected_status: HTTPStatus,
     guest_email: str,
+    user_password: str,
     faker: Faker,
 ):
     requester_info = {
@@ -162,25 +163,45 @@ async def test_pre_registration_and_invitation_workflow(
     response = await client.post("/v0/users:pre-register", json=requester_info)
     data, _ = await assert_status(response, expected_status)
 
+    # Can only  pre-register once
+    for _ in range(MANY_TIMES):
+        response = await client.post("/v0/users:pre-register", json=requester_info)
+        await assert_status(response, status.HTTP_409_CONFLICT)
+
     # Search user again
     for _ in range(MANY_TIMES):
         response = await client.get("/v0/users:search", params={"email": guest_email})
         data, _ = await assert_status(response, expected_status)
         assert len(data) == 1
-        assert not data[0]["registered"]
-        assert data[0]["email"] == guest_email
+        user_found = data[0]
+        assert not user_found["registered"]
+        assert user_found["email"] == guest_email
 
     # Can make as many invitations as I wish
     for _ in range(MANY_TIMES):
         response = await client.post("/v0/invitation:generate", json=invitation)
         data, _ = await assert_status(response, status.HTTP_200_OK)
         assert data["guest"] == guest_email
+        got_invitation = InvitationGenerated.parse_obj(data)
 
-    # Can only  pre-register once
-    for _ in range(MANY_TIMES):
-        response = await client.post("/v0/users:pre-register", json=requester_info)
-        await assert_status(response, status.HTTP_409_CONFLICT)
+    # register user
+    assert got_invitation.invitation_link.fragment
+    invitation_code = got_invitation.invitation_link.fragment.split("=")[-1]
+    response = await client.post(
+        "/v0/auth/register",
+        json={
+            "email": guest_email,
+            "password": user_password,
+            "confirm": user_password,
+            "invitation": invitation_code,
+        },
+    )
+    await assert_status(response, status.HTTP_200_OK)
 
-    # TODO: register user
-    # TODO: search
-    # TODO: modify user
+    # find registered user
+    response = await client.get("/v0/users:search", params={"email": guest_email})
+    data, _ = await assert_status(response, expected_status)
+    assert len(data) == 1
+    user_found = data[0]
+    assert user_found["registered"] is True
+    assert user_found["email"] == guest_email

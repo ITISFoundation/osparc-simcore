@@ -7,7 +7,7 @@ from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.models.users import UserStatus, users
-from simcore_postgres_database.models.users_details import user_details
+from simcore_postgres_database.models.users_details import users_details
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
     GroupExtraPropertiesRepo,
@@ -108,31 +108,31 @@ async def search_users_and_get_profile(
             users.c.last_name,
             users.c.email,
             users.c.phone,
-            user_details.c.pre_email,
-            user_details.c.pre_first_name,
-            user_details.c.pre_last_name,
-            user_details.c.company_name,
-            user_details.c.pre_phone,
-            user_details.c.address,
-            user_details.c.city,
-            user_details.c.state,
-            user_details.c.postal_code,
-            user_details.c.country,
-            user_details.c.user_id,
+            users_details.c.pre_email,
+            users_details.c.pre_first_name,
+            users_details.c.pre_last_name,
+            users_details.c.company_name,
+            users_details.c.pre_phone,
+            users_details.c.address,
+            users_details.c.city,
+            users_details.c.state,
+            users_details.c.postal_code,
+            users_details.c.country,
+            users_details.c.user_id,
             users.c.status,
         )
 
         left_outer_join = (
             sa.select(*columns)
             .select_from(
-                user_details.outerjoin(users, users.c.id == user_details.c.user_id)
+                users_details.outerjoin(users, users.c.id == users_details.c.user_id)
             )
-            .where(user_details.c.pre_email.like(email_like))
+            .where(users_details.c.pre_email.like(email_like))
         )
         right_outer_join = (
             sa.select(*columns)
             .select_from(
-                users.outerjoin(user_details, users.c.id == user_details.c.user_id)
+                users.outerjoin(users_details, users.c.id == users_details.c.user_id)
             )
             .where(users.c.email.like(email_like))
         )
@@ -146,7 +146,7 @@ async def new_user_details(
 ) -> None:
     async with engine.acquire() as conn:
         await conn.execute(
-            sa.insert(user_details).values(
+            sa.insert(users_details).values(
                 created_by=created_by, pre_email=email, **other_values
             )
         )

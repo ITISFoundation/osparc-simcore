@@ -119,7 +119,6 @@ async def pre_register_user(
         **details,
     )
 
-    # FIXME: revert transaction above if len(found)!=1 (e.g. a user has changed the email to another invitation_email)
     found = await search_users(app, email=profile.email)
 
     assert len(found) == 1  # nosec

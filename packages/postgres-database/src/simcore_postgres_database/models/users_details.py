@@ -8,7 +8,7 @@ from ._common import (
 from .base import metadata
 from .users import users
 
-user_details = sa.Table(
+users_details = sa.Table(
     "users_details",
     #
     # Provides extra attributes for a user that either not required or that are provided before the user is created.
@@ -73,4 +73,4 @@ user_details = sa.Table(
     column_modified_datetime(timezone=False),
 )
 
-register_modified_datetime_auto_update_trigger(user_details)
+register_modified_datetime_auto_update_trigger(users_details)
