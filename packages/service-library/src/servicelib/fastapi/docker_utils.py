@@ -54,7 +54,9 @@ async def retrieve_image_layer_information(
             response = await client.get(f"{bearer_url}")
             response.raise_for_status()
             assert response.status_code == status.HTTP_200_OK  # nosec
-            bearer_code = response.json()["token"]
+            json_response = response.json()
+            _logger.warning("authorization response: %s", f"{json_response}")
+            bearer_code = json_response["token"]
             headers |= {
                 "Authorization": f"Bearer {bearer_code}",
             }
