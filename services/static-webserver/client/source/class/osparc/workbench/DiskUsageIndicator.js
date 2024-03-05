@@ -27,20 +27,24 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
   construct: function() {
     this.base(arguments);
     const lowDiskSpacePreferencesSettings = osparc.Preferences.getInstance();
-    lowDiskSpacePreferencesSettings.addListener("changeLowDiskSpaceThreshold", () => this.__updateDiskIndicator());
     this.__lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
-    this.__prevDiskUsageStateList = [];
+    this.__lastDiskUsage = {};
     const layout = this.__layout = new qx.ui.layout.VBox(2);
 
     this._setLayout(layout);
+
     // Subscribe to disk space threshold - Default 5GB
     lowDiskSpacePreferencesSettings.addListener("changeLowDiskSpaceThreshold", e => {
       this.__lowDiskThreshold = e.getData();
-    }, this)
+      this.__updateDiskIndicator();
+    }, this);
+
+    /*
     // Subscribe to node selected node
     this.addListener("changeSelectedNode", e => this.__applySelectedNode(e.getData()), this);
     // Subscribe to nodes in the workbench
     this.addListener("changeCurrentNode", e => this.__applyCurrentNode(e.getData()), this);
+    */
   },
 
   properties: {
@@ -51,6 +55,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       event: "changeCurrentNode",
       apply: "__applyCurrentNode",
     },
+
     selectedNode: {
       check: "osparc.data.model.Node",
       init: null,
@@ -64,7 +69,6 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     __indicator: null,
     __label: null,
     __lowDiskThreshold: null,
-    __prevDiskUsageStateList: null,
     __lastDiskUsage: null,
 
     _createChildControlImpl: function(id) {
@@ -140,7 +144,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       osparc.workbench.DiskUsageController.getInstance().unsubscribe(nodeId, this.__updateDiskIndicator);
     },
 
-    getIndicatorColor: function(freeSpace) {
+    __getIndicatorColor: function(freeSpace) {
       const warningSize = osparc.utils.Utils.gBToBytes(this.__lowDiskThreshold); // 5 GB Default
       const criticalSize = osparc.utils.Utils.gBToBytes(0.01); // 0 GB
       let color = qx.theme.manager.Color.getInstance().resolve("success");
@@ -156,31 +160,44 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     },
 
     __updateDiskIndicator: function(diskUsage) {
+      if (diskUsage && diskUsage["node_id"]) {
+        this.__lastDiskUsage[diskUsage["node_id"]] = diskUsage;
+      }
+
+      const indicator = this.getChildControl("disk-indicator");
+
+      const selectedNode = this.getSelectedNode() || this.getCurrentNode();
+      if (selectedNode) {
+        indicator.setVisibility("visible");
+      } else {
+        indicator.setVisibility("exclude");
+        return;
+      }
+
+      const selectedNodeId = selectedNode.getNodeId();
+
+      if (!diskUsage && (selectedNodeId in this.__lastDiskUsage)) {
+        diskUsage = this.__lastDiskUsage[selectedNodeId];
+      }
       if (!diskUsage) {
         return;
       }
-      if (!diskUsage) {
-        diskUsage = this.__lastDiskUsage;
-      }
-      this.__lastDiskUsage = diskUsage;
-      const indicator = this.getChildControl("disk-indicator");
-      const indicatorLabel = this.getChildControl("disk-indicator-label");
+
       const usage = diskUsage["usage"]["/"]
-      const warningColor = this.getIndicatorColor(usage.free);
+      const warningColor = this.__getIndicatorColor(usage.free);
       const progress = `${usage["used_percent"]}%`;
       const labelDiskSize = osparc.utils.Utils.bytesToSize(usage.free);
       const color1 = warningColor;
       const bgColor = qx.theme.manager.Color.getInstance().resolve("tab_navigation_bar_background_color");
       const color2 = qx.theme.manager.Color.getInstance().resolve("info");
-
       indicator.getContentElement().setStyles({
         "background-color": bgColor,
         "background": `linear-gradient(90deg, ${color1} ${progress}, ${color2} ${progress})`,
       });
 
-      indicatorLabel.setValue(`${labelDiskSize} Free`);
-      const indicatorIsVisible = (this.getSelectedNode() && this.getSelectedNode().getNodeId() === diskUsage["node_id"]) || (this.getCurrentNode() && this.getCurrentNode().getNodeId() === diskUsage["node_id"]);
-      indicator.setVisibility(indicatorIsVisible ? "visible" : "excluded");
+      const indicatorLabel = this.getChildControl("disk-indicator-label");
+      // indicatorLabel.setValue(`${labelDiskSize} Free`);
+      indicatorLabel.setValue(`${selectedNode.getLabel()} ${labelDiskSize} Free`);
     },
 
     // Cleanup method
