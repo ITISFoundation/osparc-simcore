@@ -182,6 +182,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         switch (this.__resourceData["resourceType"]) {
           case "study":
             this.fireDataEvent("openStudy", this.__resourceData);
+            osparc.dashboard.ResourceBrowserBase.startStudyById(this.__resourceData["uuid"]);
             break;
           case "template":
             this.fireDataEvent("openTemplate", this.__resourceData);
@@ -211,6 +212,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
             switch (this.__resourceData["resourceType"]) {
               case "study":
                 this.fireDataEvent("openStudy", this.__resourceData);
+                osparc.dashboard.ResourceBrowserBase.startStudyById(this.__resourceData["uuid"]);
                 break;
               case "template":
                 this.fireDataEvent("openTemplate", this.__resourceData);
