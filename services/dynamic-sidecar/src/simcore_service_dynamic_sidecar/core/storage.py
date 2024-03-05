@@ -15,14 +15,31 @@ _logger = logging.getLogger(__name__)
 _LIVENESS_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
 
 
-async def _is_storage_responsive(url: str) -> bool:
+def _get_auth(storage_auth_settings: StorageAuthSettings) -> tuple[str, str] | None:
+    if storage_auth_settings.auth_required:
+        assert storage_auth_settings.STORAGE_USERNAME  # nosec
+        assert storage_auth_settings.STORAGE_PASSWORD  # nosec
+        return (
+            storage_auth_settings.STORAGE_USERNAME,
+            storage_auth_settings.STORAGE_PASSWORD.get_secret_value(),
+        )
+    return None
+
+
+def _get_url(storage_auth_settings: StorageAuthSettings) -> str:
+    return f"{storage_auth_settings.api_base_url}/"
+
+
+async def _is_storage_responsive(storage_auth_settings: StorageAuthSettings) -> bool:
+    url = _get_url(storage_auth_settings)
     with log_context(
         _logger, logging.DEBUG, msg=f"checking storage connection at {url=}"
     ):
         async with AsyncClient(
-            base_url=url, timeout=_LIVENESS_TIMEOUT.total_seconds()
+            auth=_get_auth(storage_auth_settings),
+            timeout=_LIVENESS_TIMEOUT.total_seconds(),
         ) as session:
-            result = await session.get("/")
+            result = await session.get(url)
             if result.status_code == status.HTTP_200_OK:
                 _logger.debug("storage connection established")
                 return True
@@ -31,14 +48,16 @@ async def _is_storage_responsive(url: str) -> bool:
 
 
 async def wait_for_storage_liveness(app: FastAPI) -> None:
-    app_settings: ApplicationSettings = app.state.settings
-    storage_settings = app_settings.NODE_PORTS_STORAGE_AUTH
+    settings: ApplicationSettings = app.state.settings
+    storage_auth_settings = settings.NODE_PORTS_STORAGE_AUTH
 
-    if storage_settings is None:
+    if storage_auth_settings is None:
         msg = f"Wrong configuration, check {StorageAuthSettings.__name__} for details"
         raise ValueError(msg)
 
-    url = f"{storage_settings.api_base_url}/"
     await wait_for_service_liveness(
-        _is_storage_responsive, service_name="Storage", endpoint=url, url=url
+        _is_storage_responsive,
+        service_name="Storage",
+        endpoint=_get_url(storage_auth_settings),
+        storage_auth_settings=storage_auth_settings,
     )
