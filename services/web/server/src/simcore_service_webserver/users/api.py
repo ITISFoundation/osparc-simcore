@@ -127,7 +127,7 @@ async def get_user_profile(
             "all": all_group,
         },
         preferences=preferences,
-        **optional
+        **optional,
     )
 
 
@@ -136,7 +136,7 @@ async def update_user_profile(
     user_id: UserID,
     update: ProfileUpdate,
     *,
-    as_patch: bool = True
+    as_patch: bool = True,
 ) -> None:
     """
     Keyword Arguments:
@@ -177,14 +177,14 @@ async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
         return UserRole(user_role)
 
 
-class UserNameAndEmailTuple(NamedTuple):
+class UserIdNamesTuple(NamedTuple):
     name: str
     email: str
 
 
 async def get_user_name_and_email(
     app: web.Application, *, user_id: UserID
-) -> UserNameAndEmailTuple:
+) -> UserIdNamesTuple:
     """
     Raises:
         UserNotFoundError
@@ -197,7 +197,36 @@ async def get_user_name_and_email(
         user_id=_parse_as_user(user_id),
         return_column_names=["name", "email"],
     )
-    return UserNameAndEmailTuple(name=row.name, email=row.email)
+    return UserIdNamesTuple(name=row.name, email=row.email)
+
+
+class UserDisplayAndIdNamesTuple(UserIdNamesTuple):
+    first_name: str
+    last_name: str
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+
+async def get_user_display_and_id_names(
+    app: web.Application, *, user_id: UserID
+) -> UserDisplayAndIdNamesTuple:
+    """
+    Raises:
+        UserNotFoundError
+    """
+    row = await _db.get_user_or_raise(
+        get_database_engine(app),
+        user_id=_parse_as_user(user_id),
+        return_column_names=["name", "email", "first_name", "last_name"],
+    )
+    return UserDisplayAndIdNamesTuple(
+        name=row.name,
+        email=row.email,
+        first_name=row.first_name or row.name.capitalize(),
+        last_name=row.last_name or "",
+    )
 
 
 async def get_guest_user_ids_and_names(app: web.Application) -> list[tuple[int, str]]:
