@@ -135,9 +135,9 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         alignY: "middle"
       }));
 
-      const diskUsageIndicator = this.__diskUsageIndicator = new osparc.workbench.DiskUsageIndicator().set({
-        margin: 0,
-        padding: 0
+      const diskUsageIndicator = this.__diskUsageIndicator = new osparc.workbench.DiskUsageIndicator();
+      diskUsageIndicator.getChildControl("disk-indicator").set({
+        margin: 0
       });
       buttonContainer.add(diskUsageIndicator);
 
