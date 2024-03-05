@@ -6,10 +6,10 @@
 # pylint: disable=too-many-statements
 
 from collections.abc import Iterator
+from http import HTTPStatus
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.wallets import WalletGet
 from pydantic import parse_obj_as
@@ -27,10 +27,10 @@ API_PREFIX = "/" + api_version_prefix
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_project_wallets_user_role_access(
@@ -38,7 +38,7 @@ async def test_project_wallets_user_role_access(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
@@ -51,12 +51,12 @@ async def test_project_wallets_user_role_access(
     )
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_project_wallets_user_project_access(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     # postgres_db: sa.engine.Engine,
 ):
     base_url = client.app.router["get_project_wallet"].url_for(
@@ -72,7 +72,7 @@ async def test_project_wallets_user_project_access(
             project_id=user_project["uuid"]
         )
         resp = await client.get(base_url)
-        _, errors = await assert_status(resp, web.HTTPNotFound)
+        _, errors = await assert_status(resp, status.HTTP_404_NOT_FOUND)
         assert errors
 
 
@@ -98,14 +98,16 @@ def setup_wallets_db(
         con.execute(wallets.delete())
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_project_wallets_full_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     setup_wallets_db: list[WalletGet],
 ):
+    assert client.app
+
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )

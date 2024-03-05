@@ -7,11 +7,11 @@
 
 import json
 from collections.abc import Iterator
+from http import HTTPStatus
 from typing import cast
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunGet,
@@ -93,12 +93,12 @@ def setup_wallets_db(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
-        (UserRole.PRODUCT_OWNER, web.HTTPOk),
-        (UserRole.ADMIN, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
+        (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
 async def test_list_service_usage_user_role_access(
@@ -107,7 +107,7 @@ async def test_list_service_usage_user_role_access(
     setup_wallets_db,
     mock_list_usage_services,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     url = client.app.router["list_resource_usage_services"].url_for()
     resp = await client.get(f"{url}")
@@ -124,7 +124,7 @@ async def test_list_service_usage(
     # list service usage without wallets
     url = client.app.router["list_resource_usage_services"].url_for()
     resp = await client.get(f"{url}")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.call_count == 1
 
     # list service usage with wallets as "accountant"
@@ -134,7 +134,7 @@ async def test_list_service_usage(
         .with_query(wallet_id=f"{setup_wallets_db}")
     )
     resp = await client.get(f"{url}")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.call_count == 2
     assert mock_list_usage_services.call_args[1]["access_all_wallet_usage"] is True
 
@@ -146,7 +146,7 @@ async def test_list_service_usage(
     resp = await client.put(
         f"{url}", json={"read": True, "write": False, "delete": False}
     )
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
 
     # list service usage with wallets as "basic" user
     url = (
@@ -155,7 +155,7 @@ async def test_list_service_usage(
         .with_query(wallet_id=f"{setup_wallets_db}")
     )
     resp = await client.get(f"{url}")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.call_count == 3
     assert mock_list_usage_services.call_args[1]["access_all_wallet_usage"] is False
 
@@ -170,7 +170,7 @@ async def test_list_service_usage_with_order_by_query_param(
     # without any additional query parameter
     url = client.app.router["list_resource_usage_services"].url_for()
     resp = await client.get(f"{url}")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.called
 
     # with order by query parameter
@@ -181,7 +181,7 @@ async def test_list_service_usage_with_order_by_query_param(
         .with_query(order_by=json.dumps(_filter))
     )
     resp = await client.get(f"{url}")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.called
 
     # with order by query parameter
@@ -192,7 +192,7 @@ async def test_list_service_usage_with_order_by_query_param(
         .with_query(order_by=json.dumps(_filter))
     )
     resp = await client.get(f"{url}")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.called
 
     # with non-supported field in order by query parameter
@@ -203,7 +203,7 @@ async def test_list_service_usage_with_order_by_query_param(
         .with_query(order_by=json.dumps(_filter))
     )
     resp = await client.get(f"{url}")
-    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith(
@@ -217,7 +217,7 @@ async def test_list_service_usage_with_order_by_query_param(
         .with_query(order_by=",invalid json")
     )
     resp = await client.get(f"{url}")
-    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith("Invalid JSON")
@@ -230,7 +230,7 @@ async def test_list_service_usage_with_order_by_query_param(
         .with_query(order_by=json.dumps(_filter))
     )
     resp = await client.get(f"{url}")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.called
 
     # with wrong direction
@@ -241,7 +241,7 @@ async def test_list_service_usage_with_order_by_query_param(
         .with_query(order_by=json.dumps(_filter))
     )
     resp = await client.get(f"{url}")
-    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith(
@@ -256,7 +256,7 @@ async def test_list_service_usage_with_order_by_query_param(
         .with_query(order_by=json.dumps(_filter))
     )
     resp = await client.get(f"{url}")
-    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith("field required")
@@ -276,7 +276,7 @@ async def test_list_service_usage_with_filters_query_param(
         .with_query(filters='{"test"}')
     )
     resp = await client.get(f"{url}")
-    _, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith("Invalid JSON")
 
@@ -288,7 +288,7 @@ async def test_list_service_usage_with_filters_query_param(
         .with_query(filters=json.dumps(_filter))
     )
     resp = await client.get(f"{url}")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.called
 
     # with only one started_at filter query parameter
@@ -299,4 +299,4 @@ async def test_list_service_usage_with_filters_query_param(
         .with_query(filters=json.dumps(_filter))
     )
     resp = await client.get(f"{url}")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)

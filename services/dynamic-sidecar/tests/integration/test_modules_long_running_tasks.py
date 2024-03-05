@@ -81,6 +81,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[ProjectI
 
 @pytest.fixture
 def mock_environment(
+    mock_storage_check: None,
     mock_rabbit_check: None,
     postgres_host_config: PostgresTestConfig,
     storage_endpoint: URL,

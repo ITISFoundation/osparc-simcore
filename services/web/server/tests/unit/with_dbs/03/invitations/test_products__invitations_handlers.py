@@ -5,9 +5,9 @@
 
 
 from datetime import datetime, timezone
+from http import HTTPStatus
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
@@ -17,25 +17,26 @@ from pydantic import PositiveInt
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 
 
 @pytest.mark.parametrize(
     "user_role,expected_status",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPForbidden),
-        (UserRole.PRODUCT_OWNER, web.HTTPOk),
-        (UserRole.ADMIN, web.HTTPForbidden),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
+        (UserRole.ADMIN, status.HTTP_403_FORBIDDEN),
     ],
 )
 async def test_role_access_to_generate_invitation(
     client: TestClient,
     mock_invitations_service_http_api: AioResponsesMock,
     logged_user: UserInfoDict,
-    expected_status: type[web.HTTPException],
+    expected_status: HTTPStatus,
     guest_email: str,
 ):
     assert client.app
@@ -61,7 +62,7 @@ async def test_role_access_to_generate_invitation(
 @pytest.mark.parametrize(
     "user_role,expected_status",
     [
-        (UserRole.PRODUCT_OWNER, web.HTTPOk),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
     ],
 )
 @pytest.mark.parametrize(
@@ -73,7 +74,7 @@ async def test_product_owner_generates_invitation(
     mock_invitations_service_http_api: AioResponsesMock,
     logged_user: UserInfoDict,
     guest_email: str,
-    expected_status: type[web.HTTPException],
+    expected_status: HTTPStatus,
     trial_account_days: PositiveInt | None,
     extra_credits_in_usd: PositiveInt | None,
 ):

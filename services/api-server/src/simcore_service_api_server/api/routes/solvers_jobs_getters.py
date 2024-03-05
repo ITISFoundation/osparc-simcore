@@ -4,7 +4,7 @@
 import logging
 from collections import deque
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, status
@@ -20,6 +20,10 @@ from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.models.schemas.errors import ErrorGet
+from simcore_service_api_server.services.service_exception_handling import (
+    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+)
 from starlette.background import BackgroundTask
 
 from ...models.basic_types import LogStreamingResponse, VersionStr
@@ -42,14 +46,55 @@ from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.custom_errors import InsufficientCredits, MissingWallet
 from ..errors.http_error import create_error_json_response
-from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
+from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from .solvers_jobs import (
-    _COMMON_ERROR_RESPONSES,
+    JOBS_STATUS_CODES,
+    METADATA_STATUS_CODES,
     _compose_job_resource_name,
     _raise_if_job_not_associated_with_solver,
 )
+from .wallets import WALLET_STATUS_CODES
 
 _logger = logging.getLogger(__name__)
+
+_OUTPUTS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_402_PAYMENT_REQUIRED: {
+        "description": "Payment required",
+        "model": ErrorGet,
+    },
+    status.HTTP_404_NOT_FOUND: {
+        "description": "Job not found",
+        "model": ErrorGet,
+    },
+} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+
+_LOGFILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_200_OK: {
+        "content": {
+            "application/octet-stream": {
+                "schema": {"type": "string", "format": "binary"}
+            },
+            "application/zip": {"schema": {"type": "string", "format": "binary"}},
+            "text/plain": {"schema": {"type": "string"}},
+        },
+        "description": "Returns a log file",
+    },
+    status.HTTP_404_NOT_FOUND: {"description": "Log not found"},
+} | DEFAULT_BACKEND_SERVICE_STATUS_CODES  # type: ignore
+
+_PRICING_UNITS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_404_NOT_FOUND: {
+        "description": "Pricing unit not found",
+        "model": ErrorGet,
+    }
+} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+
+_LOGSTREAM_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_409_CONFLICT: {
+        "description": "Conflict: Logs are already being streamed",
+        "model": ErrorGet,
+    }
+} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
 
 router = APIRouter()
 
@@ -57,6 +102,7 @@ router = APIRouter()
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs",
     response_model=list[Job],
+    responses=JOBS_STATUS_CODES,
 )
 async def list_jobs(
     solver_key: SolverKeyId,
@@ -99,6 +145,7 @@ async def list_jobs(
     "/{solver_key:path}/releases/{version}/jobs/page",
     response_model=Page[Job],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    responses=JOBS_STATUS_CODES,
 )
 async def get_jobs_page(
     solver_key: SolverKeyId,
@@ -140,7 +187,9 @@ async def get_jobs_page(
 
 
 @router.get(
-    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}", response_model=Job
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
+    response_model=Job,
+    responses=JOBS_STATUS_CODES,
 )
 async def get_job(
     solver_key: SolverKeyId,
@@ -164,6 +213,7 @@ async def get_job(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs",
     response_model=JobOutputs,
+    responses=_OUTPUTS_STATUS_CODES,
 )
 async def get_job_outputs(
     solver_key: SolverKeyId,
@@ -229,7 +279,7 @@ async def get_job_outputs(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs/logfile",
     response_class=RedirectResponse,
-    responses=job_output_logfile_responses,
+    responses=_LOGFILE_STATUS_CODES,
 )
 async def get_job_output_logfile(
     solver_key: SolverKeyId,
@@ -286,7 +336,7 @@ async def get_job_output_logfile(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
-    responses={**_COMMON_ERROR_RESPONSES},
+    responses=METADATA_STATUS_CODES,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_job_custom_metadata(
@@ -327,7 +377,7 @@ async def get_job_custom_metadata(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
     response_model=WalletGetWithAvailableCredits | None,
-    responses={**_COMMON_ERROR_RESPONSES},
+    responses=WALLET_STATUS_CODES,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_job_wallet(
@@ -355,7 +405,7 @@ async def get_job_wallet(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/pricing_unit",
     response_model=PricingUnitGet | None,
-    responses={**_COMMON_ERROR_RESPONSES},
+    responses=_PRICING_UNITS_STATUS_CODES,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_job_pricing_unit(
@@ -381,6 +431,7 @@ async def get_job_pricing_unit(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/logstream",
     response_class=LogStreamingResponse,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    responses=_LOGSTREAM_STATUS_CODES,
 )
 @cancel_on_disconnect
 async def get_log_stream(

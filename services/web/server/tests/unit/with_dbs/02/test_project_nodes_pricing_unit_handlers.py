@@ -7,10 +7,10 @@
 
 
 import re
+from http import HTTPStatus
 from unittest import mock
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
@@ -36,10 +36,10 @@ API_PREFIX = "/" + api_version_prefix
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_project_node_pricing_unit_user_role_access(
@@ -47,7 +47,7 @@ async def test_project_node_pricing_unit_user_role_access(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     node_id = next(iter(user_project["workbench"]))
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
@@ -61,12 +61,12 @@ async def test_project_node_pricing_unit_user_role_access(
     )
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_project_node_pricing_unit_user_project_access(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     node_id = next(iter(user_project["workbench"]))
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
@@ -82,7 +82,7 @@ async def test_project_node_pricing_unit_user_project_access(
             project_id=user_project["uuid"], node_id=node_id
         )
         resp = await client.get(base_url)
-        _, errors = await assert_status(resp, web.HTTPNotFound)
+        _, errors = await assert_status(resp, status.HTTP_404_NOT_FOUND)
         assert errors
 
 
@@ -142,12 +142,12 @@ def mocked_clusters_keeper_service_get_instance_type_details(
     )
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_project_wallets_full_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     mock_rut_api_responses: AioResponsesMock,
     mocked_clusters_keeper_service_get_instance_type_details: mock.Mock,
 ):
@@ -168,7 +168,7 @@ async def test_project_wallets_full_workflow(
         pricing_unit_id=f"{_PRICING_UNIT_ID_1}",
     )
     resp = await client.put(f"{base_url}")
-    await assert_status(resp, web.HTTPNoContent)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
     mocked_clusters_keeper_service_get_instance_type_details.assert_called_once()
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
@@ -185,7 +185,7 @@ async def test_project_wallets_full_workflow(
         pricing_unit_id=f"{_PRICING_UNIT_ID_2}",
     )
     resp = await client.put(f"{base_url}")
-    await assert_status(resp, web.HTTPNoContent)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id

@@ -9,7 +9,6 @@ from unittest.mock import Mock
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from pytest_mock import MockerFixture
@@ -131,7 +130,7 @@ async def test_workflow_register_and_login_with_2fa(
             "confirm": fake_user_password,
         },
     )
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
 
     # check email was sent
     def _get_confirmation_link_from_email():
@@ -160,7 +159,7 @@ async def test_workflow_register_and_login_with_2fa(
             "password": fake_user_password,
         },
     )
-    data, _ = await assert_status(response, web.HTTPAccepted)
+    data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
 
     # register phone --------------------------------------------------
     # 1. submit
@@ -172,7 +171,7 @@ async def test_workflow_register_and_login_with_2fa(
             "phone": fake_user_phone_number,
         },
     )
-    await assert_status(response, web.HTTPAccepted)
+    await assert_status(response, status.HTTP_202_ACCEPTED)
 
     # check code generated and SMS sent
     assert mocked_twilio_service["send_sms_code_for_registration"].called
@@ -195,7 +194,7 @@ async def test_workflow_register_and_login_with_2fa(
             "code": received_code,
         },
     )
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
     # check user has phone confirmed
     user = await db.get_user({"email": fake_user_email})
     assert user["status"] == UserStatus.ACTIVE.name
@@ -212,7 +211,7 @@ async def test_workflow_register_and_login_with_2fa(
             "password": fake_user_password,
         },
     )
-    data, _ = await assert_status(response, web.HTTPAccepted)
+    data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
 
     assert data["code"] == "SMS_CODE_REQUIRED"
 
@@ -232,7 +231,7 @@ async def test_workflow_register_and_login_with_2fa(
     )
     # WARNING: while debugging, breakpoints can add too much delay
     # and make 2fa TTL expire resulting in this validation fail
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
 
     # assert users is successfully registered
     user = await db.get_user({"email": fake_user_email})
@@ -280,7 +279,7 @@ async def test_register_phone_fails_with_used_number(
                 "password": fake_user_password,
             },
         )
-        await assert_status(response, web.HTTPAccepted)
+        await assert_status(response, status.HTTP_202_ACCEPTED)
 
         # 2. register existing phone
         url = client.app.router["auth_register_phone"].url_for()
@@ -291,7 +290,7 @@ async def test_register_phone_fails_with_used_number(
                 "phone": fake_user_phone_number,
             },
         )
-        _, error = await assert_status(response, web.HTTPUnauthorized)
+        _, error = await assert_status(response, status.HTTP_401_UNAUTHORIZED)
         assert "phone" in error["message"]
 
 
@@ -371,7 +370,9 @@ async def test_2fa_sms_failure_during_login(
 
             # Expects failure:
             #    HTTPServiceUnavailable: Currently we cannot use 2FA, please try again later (OEC:140558738809344)
-            data, error = await assert_status(response, web.HTTPServiceUnavailable)
+            data, error = await assert_status(
+                response, status.HTTP_503_SERVICE_UNAVAILABLE
+            )
             assert not data
             assert error["errors"][0]["message"].startswith(
                 MSG_2FA_UNAVAILABLE_OEC[:10]

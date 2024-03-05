@@ -6,14 +6,15 @@
 
 import operator
 from decimal import Decimal
+from http import HTTPStatus
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.product import GetProduct
 from models_library.products import ProductName
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_service_webserver.db.models import UserRole
@@ -23,15 +24,15 @@ from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        *((role, web.HTTPOk) for role in UserRole if role >= UserRole.USER),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        *((role, status.HTTP_200_OK) for role in UserRole if role >= UserRole.USER),
     ],
 )
 async def test_get_product_price_when_undefined(
     client: TestClient,
     logged_user: UserInfoDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     latest_osparc_price: Decimal,
 ):
     response = await client.get("/v0/credits-price")
@@ -44,18 +45,18 @@ async def test_get_product_price_when_undefined(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPForbidden),
-        (UserRole.PRODUCT_OWNER, web.HTTPOk),
-        (UserRole.ADMIN, web.HTTPForbidden),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
+        (UserRole.ADMIN, status.HTTP_403_FORBIDDEN),
     ],
 )
 async def test_get_product_access_rights(
     client: TestClient,
     logged_user: UserInfoDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     latest_osparc_price: Decimal,
 ):
     response = await client.get("/v0/products/current")
@@ -96,7 +97,7 @@ async def test_get_product(
 
     current_project_headers = {X_PRODUCT_NAME_HEADER: product_name}
     response = await client.get("/v0/products/current", headers=current_project_headers)
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
 
     got_product = GetProduct(**data)
     assert got_product.name == product_name
@@ -104,11 +105,11 @@ async def test_get_product(
     assert not error
 
     response = await client.get(f"/v0/products/{product_name}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert got_product == GetProduct(**data)
     assert not error
 
     response = await client.get("/v0/product/invalid")
-    data, error = await assert_status(response, web.HTTPNotFound)
+    data, error = await assert_status(response, status.HTTP_404_NOT_FOUND)
     assert not data
     assert error

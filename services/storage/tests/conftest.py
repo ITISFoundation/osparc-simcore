@@ -19,7 +19,6 @@ import aioresponses
 import dotenv
 import pytest
 import simcore_service_storage
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
 from faker import Faker
@@ -41,6 +40,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.application import create
 from simcore_service_storage.dsm import get_dsm_provider
@@ -260,7 +260,7 @@ async def get_file_meta_data(
             .with_query(user_id=user_id)
         )
         response = await client.get(f"{url}")
-        data, error = await assert_status(response, web.HTTPOk)
+        data, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
         assert data
         received_fmd = parse_obj_as(FileMetaDataGet, data)
@@ -291,7 +291,7 @@ async def create_upload_file_link_v1(
             "file_size" not in url.query
         ), "v1 call to upload_file MUST NOT contain file_size field, this is reserved for v2 call"
         response = await client.put(f"{url}")
-        data, error = await assert_status(response, web.HTTPOk)
+        data, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
         assert data
         received_file_upload_link = parse_obj_as(PresignedLink, data)
@@ -340,7 +340,7 @@ async def create_upload_file_link_v2(
             "file_size" in url.query
         ), "V2 call to upload file must contain file_size field!"
         response = await client.put(f"{url}")
-        data, error = await assert_status(response, web.HTTPOk)
+        data, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
         assert data
         received_file_upload = parse_obj_as(FileUploadSchema, data)
@@ -414,7 +414,7 @@ def upload_file(
             json=jsonable_encoder(FileUploadCompletionBody(parts=part_to_etag)),
         )
         response.raise_for_status()
-        data, error = await assert_status(response, web.HTTPAccepted)
+        data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
         assert not error
         assert data
         file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
@@ -437,7 +437,7 @@ def upload_file(
                 )
                 response = await client.post(f"{state_url}")
                 response.raise_for_status()
-                data, error = await assert_status(response, web.HTTPOk)
+                data, error = await assert_status(response, status.HTTP_200_OK)
                 assert not error
                 assert data
                 future = FileUploadCompleteFutureResponse.parse_obj(data)

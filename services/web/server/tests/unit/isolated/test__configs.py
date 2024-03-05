@@ -4,9 +4,10 @@
 
 import importlib
 import inspect
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable
+from typing import Any
 
 import pytest
 from pytest_simcore.helpers.utils_environs import eval_service_environ

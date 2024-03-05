@@ -19,6 +19,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
+from servicelib.aiohttp import status
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver._resources import webserver_resources
@@ -86,11 +87,11 @@ def mocked_send_email(mocker: MockerFixture, app_environment: EnvVarsDict) -> Ma
 @pytest.mark.parametrize(
     "user_role,expected_response_cls",
     [
-        (UserRole.ADMIN, web.HTTPOk),
-        (UserRole.USER, web.HTTPForbidden),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPForbidden),
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.ADMIN, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
     ],
 )
 async def test_email_handlers(
@@ -108,7 +109,9 @@ async def test_email_handlers(
         f"/{API_VTAG}/email:test", json={"to": destination_email}
     )
 
-    data, error = await assert_status(response, expected_cls=expected_response_cls)
+    data, error = await assert_status(
+        response, expected_status_code=expected_response_cls
+    )
 
     if error:
         assert not mocked_send_email.called
