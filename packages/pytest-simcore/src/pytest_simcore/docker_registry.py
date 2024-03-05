@@ -303,15 +303,18 @@ def remove_images_from_host() -> Callable[[list[str]], Awaitable[None]]:
             logging.INFO, msg=(f"removing {images=}", f"removed {images=}")
         ):
             async with aiodocker.Docker() as client:
-                await asyncio.gather(
-                    *(client.images.delete(image) for image in images),
+                delete_results = await asyncio.gather(
+                    *(client.images.delete(image, force=True) for image in images),
                     return_exceptions=True,
                 )
+                assert delete_results
                 # confirm they are gone
-                results = await asyncio.gather(
+                inspect_results = await asyncio.gather(
                     *(client.images.inspect(image) for image in images),
                     return_exceptions=True,
                 )
-                assert all(isinstance(r, aiodocker.DockerError) for r in results)
+                assert all(
+                    isinstance(r, aiodocker.DockerError) for r in inspect_results
+                )
 
     return _cleaner

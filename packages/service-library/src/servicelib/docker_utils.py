@@ -164,7 +164,7 @@ async def pull_image(
             image_layers_total_size = (
                 sum(layer.size for layer in image_information.layers) * 3
             )
-            sub_progress = exit_stack.enter_async_context(
+            sub_progress = await exit_stack.enter_async_context(
                 progress_bar.sub_progress(image_layers_total_size)
             )
         else:
