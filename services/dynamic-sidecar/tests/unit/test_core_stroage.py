@@ -125,7 +125,7 @@ def mock_dynamic_sidecar_app(
         pytest.param(None, None, id="no-auth"),
     ],
 )
-async def test_storage_liveness_with_protected_route_ok(
+async def test_wait_for_storage_liveness(
     mock_storage_server: None, mock_dynamic_sidecar_app: Mock
 ):
     await wait_for_storage_liveness(mock_dynamic_sidecar_app)
