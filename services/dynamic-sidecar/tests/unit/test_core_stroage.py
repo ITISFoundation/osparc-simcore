@@ -50,7 +50,6 @@ def mock_storage_app(username: str | None, password: str | None) -> FastAPI:
         async def unprotected_route():
             return {"message": "Welcome, no auth!"}
 
-    print("GENERATING STORAGE APP")
     return app
 
 
