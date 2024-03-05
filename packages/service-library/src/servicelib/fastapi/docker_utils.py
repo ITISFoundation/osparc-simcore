@@ -31,7 +31,6 @@ async def retrieve_image_layer_information(
                     username=registry_settings.REGISTRY_USER,
                     password=registry_settings.REGISTRY_PW.get_secret_value(),
                 )
-
             # NOTE: either of type ubuntu:latest or ubuntu@sha256:lksfdjlskfjsldkfj
             docker_image_name, docker_image_tag = get_image_name_and_tag(
                 image_complete_url
