@@ -5,7 +5,6 @@
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -105,7 +104,7 @@ async def test_resend_2fa_workflow(
             "password": registered_user["raw_password"],
         },
     )
-    data, _ = await assert_status(response, web.HTTPAccepted)
+    data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
     next_page = LoginNextPage.parse_obj(data)
     assert next_page.name == CODE_2FA_CODE_REQUIRED
     assert next_page.parameters.retry_2fa_after > 0
@@ -120,7 +119,7 @@ async def test_resend_2fa_workflow(
         },
     )
 
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert data["reason"]
     assert not error
 
@@ -136,7 +135,7 @@ async def test_resend_2fa_workflow(
         },
     )
 
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert data["reason"]
     assert not error
 

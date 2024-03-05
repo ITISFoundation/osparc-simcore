@@ -9,12 +9,12 @@ import re
 import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
+from http import HTTPStatus
 from math import ceil
 from typing import Any
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
@@ -68,7 +68,7 @@ def assert_replaced(current_project, update_data):
 
 async def _list_and_assert_projects(
     client: TestClient,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     query_parameters: dict | None = None,
     headers: dict | None = None,
     expected_error_msg: str | None = None,
@@ -152,7 +152,7 @@ async def _list_and_assert_projects(
 async def _assert_get_same_project(
     client: TestClient,
     project: dict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ) -> None:
     # GET /v0/projects/{project_id}
 
@@ -178,7 +178,7 @@ async def _assert_get_same_project(
 
 
 async def _replace_project(
-    client: TestClient, project_update: dict, expected: type[web.HTTPException]
+    client: TestClient, project_update: dict, expected: HTTPStatus
 ) -> dict:
     assert client.app
 
@@ -197,10 +197,10 @@ async def _replace_project(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_list_projects(
@@ -208,7 +208,7 @@ async def test_list_projects(
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
     template_project: dict[str, Any],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: aioresponses,
 ):
@@ -329,7 +329,7 @@ async def logged_user_registed_in_two_products(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.USER, web.HTTPOk),
+        (UserRole.USER, status.HTTP_200_OK),
     ],
 )
 async def test_list_projects_with_innaccessible_services(
@@ -338,7 +338,7 @@ async def test_list_projects_with_innaccessible_services(
     logged_user_registed_in_two_products: UserInfoDict,
     user_project: dict[str, Any],
     template_project: dict[str, Any],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     director_v2_service_mock: aioresponses,
     postgres_db: sa.engine.Engine,
@@ -381,10 +381,10 @@ async def test_list_projects_with_innaccessible_services(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_get_project(
@@ -560,7 +560,7 @@ async def test_new_template_from_project(
         catalog_subsystem_mock([template_project])
 
         templates, *_ = await _list_and_assert_projects(
-            client, web.HTTPOk, {"type": "template"}
+            client, status.HTTP_200_OK, {"type": "template"}
         )
 
         assert len(templates) == 1
@@ -650,10 +650,14 @@ async def test_new_template_from_project(
 @pytest.mark.parametrize(
     "user_role,expected,expected_change_access",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPOk, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk, web.HTTPOk),
+        (
+            UserRole.ANONYMOUS,
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_401_UNAUTHORIZED,
+        ),
+        (UserRole.GUEST, status.HTTP_200_OK, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_200_OK, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK, status.HTTP_200_OK),
     ],
 )
 async def test_replace_project(
@@ -679,10 +683,10 @@ async def test_replace_project(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_replace_project_updated_inputs(
@@ -711,10 +715,10 @@ async def test_replace_project_updated_inputs(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_replace_project_updated_readonly_inputs(
@@ -749,10 +753,10 @@ def random_minimal_node(faker: Faker) -> Callable[[], Node]:
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPConflict),
-        (UserRole.USER, web.HTTPConflict),
-        (UserRole.TESTER, web.HTTPConflict),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_409_CONFLICT),
+        (UserRole.USER, status.HTTP_409_CONFLICT),
+        (UserRole.TESTER, status.HTTP_409_CONFLICT),
     ],
 )
 async def test_replace_project_adding_or_removing_nodes_raises_conflict(
@@ -796,8 +800,8 @@ def mock_director_v2_inactivity(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        *((role, web.HTTPOk) for role in UserRole if role > UserRole.ANONYMOUS),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        *((role, status.HTTP_200_OK) for role in UserRole if role > UserRole.ANONYMOUS),
     ],
 )
 @pytest.mark.parametrize("is_inactive", [True, False])
@@ -807,7 +811,7 @@ async def test_get_project_inactivity(
     client: TestClient,
     faker: Faker,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     is_inactive: bool,
 ):
     mock_project_id = faker.uuid4()

@@ -169,7 +169,7 @@ def test_diagnostics_setup(client: TestClient):
 async def test_healthy_app(client: TestClient, api_version_prefix: str):
     resp = await client.get(f"/{api_version_prefix}/health")
 
-    data, error = await assert_status(resp, web.HTTPOk)
+    data, error = await assert_status(resp, status.HTTP_200_OK)
 
     assert data
     assert not error
@@ -182,13 +182,13 @@ async def test_unhealthy_app_with_slow_callbacks(
     client: TestClient, api_version_prefix: str
 ):
     resp = await client.get(f"/{api_version_prefix}/health")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
 
     resp = await client.get("/slow")  # emulates a very slow handle!
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
 
     resp = await client.get(f"/{api_version_prefix}/health")
-    await assert_status(resp, web.HTTPServiceUnavailable)
+    await assert_status(resp, status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 async def test_diagnose_on_unexpected_error(client: TestClient):
@@ -216,7 +216,7 @@ async def test_diagnose_on_response_delays(client: TestClient):
     resps = await asyncio.gather(*coros)
 
     for resp in resps:
-        await assert_status(resp, web.HTTPOk)
+        await assert_status(resp, status.HTTP_200_OK)
 
     # monitoring
     latency_observed = client.app[HEALTH_LATENCY_PROBE].value()

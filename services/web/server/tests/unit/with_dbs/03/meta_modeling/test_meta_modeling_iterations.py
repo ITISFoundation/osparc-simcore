@@ -5,7 +5,7 @@
 from collections.abc import Awaitable, Callable
 
 import pytest
-from aiohttp import ClientResponse, web
+from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import Project
@@ -115,8 +115,8 @@ async def test_iterators_workflow(
     # ----
     project_data = await request_create_project(
         client,
-        web.HTTPAccepted,
-        web.HTTPCreated,
+        status.HTTP_202_ACCEPTED,
+        status.HTTP_201_CREATED,
         logged_user,
         primary_group,
         project=NEW_PROJECT.request_payload,
@@ -168,7 +168,7 @@ async def test_iterators_workflow(
         f"/v0/computations/{project_uuid}:start",
         json=RUN_PROJECT.request_payload,
     )
-    data, _ = await assert_status(response, web.HTTPCreated)
+    data, _ = await assert_status(response, status.HTTP_201_CREATED)
     assert project_uuid == data["pipeline_id"]
     ref_ids = data["ref_ids"]
     assert len(ref_ids) == 3
@@ -272,7 +272,7 @@ async def test_iterators_workflow(
         f"/v0/computations/{project_uuid}:start",
         json=RUN_PROJECT.request_payload,
     )
-    data, _ = await assert_status(response, web.HTTPCreated)
+    data, _ = await assert_status(response, status.HTTP_201_CREATED)
     assert project_uuid == data["pipeline_id"]
     ref_ids = data["ref_ids"]
     assert len(ref_ids) == 4

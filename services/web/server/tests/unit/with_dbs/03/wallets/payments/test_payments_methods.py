@@ -9,7 +9,6 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
@@ -26,6 +25,7 @@ from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_service_webserver.payments._methods_api import (
     _ack_creation_of_wallet_payment_method,
@@ -62,7 +62,7 @@ async def test_payment_method_worfklow(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods:init",
     )
-    data, error = await assert_status(response, web.HTTPAccepted)
+    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
     assert error is None
     inited = PaymentMethodInitiated.parse_obj(data)
 
@@ -75,7 +75,7 @@ async def test_payment_method_worfklow(
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
     )
-    await assert_status(response, web.HTTPNotFound)
+    await assert_status(response, status.HTTP_404_NOT_FOUND)
     assert mock_rpc_payments_service_api["get_payment_method"].called
 
     # Ack
@@ -93,13 +93,13 @@ async def test_payment_method_worfklow(
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
     )
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     payment_method = PaymentMethodGet(**data)
     assert payment_method.idr == inited.payment_method_id
 
     # List
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     assert mock_rpc_payments_service_api["list_payment_methods"].called
 
     wallet_payments_methods = parse_obj_as(list[PaymentMethodGet], data)
@@ -109,19 +109,19 @@ async def test_payment_method_worfklow(
     response = await client.delete(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
     )
-    await assert_status(response, web.HTTPNoContent)
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
     assert mock_rpc_payments_service_api["delete_payment_method"].called
 
     # Get -> NOT FOUND
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
     )
-    data, _ = await assert_status(response, web.HTTPNotFound)
+    data, _ = await assert_status(response, status.HTTP_404_NOT_FOUND)
     assert mock_rpc_payments_service_api["get_payment_method"].call_count == 3
 
     # List -> empty
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     assert not data
     assert mock_rpc_payments_service_api["list_payment_methods"].call_count == 2
 
@@ -137,7 +137,7 @@ async def test_init_and_cancel_payment_method(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods:init",
     )
-    data, error = await assert_status(response, web.HTTPAccepted)
+    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
     assert error is None
     inited = PaymentMethodInitiated.parse_obj(data)
 
@@ -145,14 +145,14 @@ async def test_init_and_cancel_payment_method(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}:cancel",
     )
-    await assert_status(response, web.HTTPNoContent)
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
     assert mock_rpc_payments_service_api["cancel_creation_of_payment_method"].called
 
     # Get -> not found
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
     )
-    await assert_status(response, web.HTTPNotFound)
+    await assert_status(response, status.HTTP_404_NOT_FOUND)
 
 
 async def _add_payment_method(
@@ -162,7 +162,7 @@ async def _add_payment_method(
     response = await client.post(
         f"/v0/wallets/{wallet_id}/payments-methods:init",
     )
-    data, error = await assert_status(response, web.HTTPAccepted)
+    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
     assert error is None
     inited = PaymentMethodInitiated.parse_obj(data)
     await _ack_creation_of_wallet_payment_method(
@@ -190,7 +190,7 @@ async def test_wallet_autorecharge(
     # get default
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/auto-recharge")
 
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     default_auto_recharge = GetWalletAutoRecharge(**data)
     assert default_auto_recharge.enabled is False
     assert default_auto_recharge.payment_method_id is None
@@ -215,7 +215,7 @@ async def test_wallet_autorecharge(
 
     # get default again
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/auto-recharge")
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     default_auto_recharge = GetWalletAutoRecharge(**data)
     assert default_auto_recharge.enabled is False
     assert (
@@ -234,7 +234,7 @@ async def test_wallet_autorecharge(
             "enabled": True,
         },
     )
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     updated_auto_recharge = GetWalletAutoRecharge.parse_obj(data)
     assert updated_auto_recharge == GetWalletAutoRecharge(
         payment_method_id=payment_method_id,
@@ -248,12 +248,12 @@ async def test_wallet_autorecharge(
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
     )
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     assert updated_auto_recharge == GetWalletAutoRecharge.parse_obj(data)
 
     # payment-methods.auto_recharge
     response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     wallet_payment_methods = parse_obj_as(list[PaymentMethodGet], data)
 
     for payment_method in wallet_payment_methods:
@@ -286,7 +286,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
             "enabled": True,
         },
     )
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     auto_recharge = GetWalletAutoRecharge.parse_obj(data)
     assert auto_recharge.enabled is True
     assert auto_recharge.payment_method_id == payment_method_id
@@ -296,13 +296,13 @@ async def test_delete_primary_payment_method_in_autorecharge(
     response = await client.delete(
         f"/v0/wallets/{wallet.wallet_id}/payments-methods/{payment_method_id}"
     )
-    await assert_status(response, web.HTTPNoContent)
+    await assert_status(response, status.HTTP_204_NO_CONTENT)
 
     # get -> has no payment-method
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
     )
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     auto_recharge_after_delete = GetWalletAutoRecharge.parse_obj(data)
 
     assert auto_recharge_after_delete.payment_method_id is None
@@ -315,7 +315,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
     )
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     auto_recharge = GetWalletAutoRecharge.parse_obj(data)
     assert auto_recharge.payment_method_id == new_payment_method_id
     assert auto_recharge.enabled is False
@@ -367,7 +367,7 @@ async def test_one_time_payment_with_payment_method(
             "priceDollars": 26,
         },
     )
-    data, error = await assert_status(response, web.HTTPAccepted)
+    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
     assert error is None
     payment = WalletPaymentInitiated.parse_obj(data)
     assert mock_rpc_payments_service_api["pay_with_payment_method"].called
@@ -386,7 +386,7 @@ async def test_one_time_payment_with_payment_method(
 
     # list all payment transactions in all my wallets
     response = await client.get("/v0/wallets/-/payments")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
 
     page = parse_obj_as(Page[PaymentTransaction], data)
 

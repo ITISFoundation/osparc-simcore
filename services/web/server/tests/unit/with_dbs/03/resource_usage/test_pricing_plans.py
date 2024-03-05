@@ -6,9 +6,9 @@
 
 
 import re
+from http import HTTPStatus
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingUnitGet,
@@ -19,6 +19,7 @@ from pydantic import parse_obj_as
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.resource_usage.settings import get_plugin_settings
@@ -55,12 +56,12 @@ def mock_rut_api_responses(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
-        (UserRole.PRODUCT_OWNER, web.HTTPOk),
-        (UserRole.ADMIN, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
+        (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
 async def test_get_pricing_plan_user_role_access(
@@ -68,7 +69,7 @@ async def test_get_pricing_plan_user_role_access(
     logged_user: UserInfoDict,
     mock_rut_api_responses: AioResponsesMock,
     user_role: UserRole,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     url = client.app.router["get_pricing_plan_unit"].url_for(
         pricing_plan_id="1", pricing_unit_id="1"
@@ -88,7 +89,7 @@ async def test_get_pricing_plan(
         pricing_plan_id="1", pricing_unit_id="1"
     )
     resp = await client.get(f"{url}")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert mock_rut_api_responses
     assert len(data.keys()) == 5
     assert data["unitName"] == "SMALL"
@@ -99,6 +100,6 @@ async def test_get_pricing_plan(
         service_version="1.0.16",
     )
     resp = await client.get(f"{url}")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["pricingPlanKey"] == "pricing-plan-sleeper"
     assert len(data["pricingUnits"]) == 1

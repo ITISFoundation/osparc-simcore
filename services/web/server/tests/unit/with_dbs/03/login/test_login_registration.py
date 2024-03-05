@@ -4,9 +4,9 @@
 # pylint: disable=unused-variable
 
 from datetime import timedelta
+from http import HTTPStatus
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.products import ProductName
@@ -68,7 +68,7 @@ async def test_register_entrypoint(
         },
     )
 
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     assert fake_user_email in data["message"]
 
 
@@ -114,7 +114,7 @@ async def test_registration_is_not_get(client: TestClient):
     assert client.app
     url = client.app.router["auth_register"].url_for()
     response = await client.get(url.path)
-    await assert_error(response, web.HTTPMethodNotAllowed)
+    await assert_error(response, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 async def test_registration_with_registered_user(
@@ -136,7 +136,7 @@ async def test_registration_with_registered_user(
                 "confirm": user["raw_password"],
             },
         )
-    await assert_error(response, web.HTTPConflict, MSG_EMAIL_ALREADY_REGISTERED)
+    await assert_error(response, status.HTTP_409_CONFLICT, MSG_EMAIL_ALREADY_REGISTERED)
 
 
 async def test_registration_invitation_stays_valid_if_once_tried_with_weak_password(
@@ -185,7 +185,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
         )
         await assert_error(
             response,
-            web.HTTPUnauthorized,
+            status.HTTP_401_UNAUTHORIZED,
             MSG_WEAK_PASSWORD.format(
                 LOGIN_PASSWORD_MIN_LENGTH=session_plugin_settings.LOGIN_PASSWORD_MIN_LENGTH
             ),
@@ -223,7 +223,7 @@ async def test_registration_with_weak_password_fails(
     )
     await assert_error(
         response,
-        web.HTTPUnauthorized,
+        status.HTTP_401_UNAUTHORIZED,
         MSG_WEAK_PASSWORD.format(
             LOGIN_PASSWORD_MIN_LENGTH=login_settings.LOGIN_PASSWORD_MIN_LENGTH
         ),
@@ -289,7 +289,7 @@ async def test_registration_without_confirmation(
         },
     )
 
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     assert MSG_LOGGED_IN in data["message"]
 
     user = await db.get_user({"email": fake_user_email})
@@ -356,10 +356,10 @@ async def test_registration_with_confirmation(
 @pytest.mark.parametrize(
     "is_invitation_required,has_valid_invitation,expected_response",
     [
-        (True, True, web.HTTPOk),
-        (True, False, web.HTTPForbidden),
-        (False, True, web.HTTPOk),
-        (False, False, web.HTTPOk),
+        (True, True, status.HTTP_200_OK),
+        (True, False, status.HTTP_403_FORBIDDEN),
+        (False, True, status.HTTP_200_OK),
+        (False, False, status.HTTP_200_OK),
     ],
 )
 async def test_registration_with_invitation(
@@ -368,7 +368,7 @@ async def test_registration_with_invitation(
     db: AsyncpgStorage,
     is_invitation_required: bool,
     has_valid_invitation: bool,
-    expected_response: type[web.HTTPError],
+    expected_response: HTTPStatus,
     mocker: MockerFixture,
     fake_user_email: str,
     fake_user_password: str,
@@ -477,7 +477,7 @@ async def test_registraton_with_invitation_for_trial_account(
                 "invitation": invitation.confirmation["code"],
             },
         )
-        await assert_status(response, web.HTTPOk)
+        await assert_status(response, status.HTTP_200_OK)
 
         # (4) login
         url = client.app.router["auth_login"].url_for()
@@ -488,12 +488,12 @@ async def test_registraton_with_invitation_for_trial_account(
                 "password": fake_user_password,
             },
         )
-        await assert_status(response, web.HTTPOk)
+        await assert_status(response, status.HTTP_200_OK)
 
         # (5) get profile
         url = client.app.router["get_my_profile"].url_for()
         response = await client.get(url.path)
-        data, _ = await assert_status(response, web.HTTPOk)
+        data, _ = await assert_status(response, status.HTTP_200_OK)
         profile = ProfileGet.parse_obj(data)
 
         expected = invitation.user["created_at"] + timedelta(days=TRIAL_DAYS)

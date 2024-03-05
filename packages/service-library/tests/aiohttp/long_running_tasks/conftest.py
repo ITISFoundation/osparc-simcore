@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 import pytest
 from aiohttp import web
@@ -89,7 +89,7 @@ def start_long_running_task(
             .update_query(num_strings=10, sleep_time=f"{0.2}", **query_kwargs)
         )
         resp = await client.post(f"{url}")
-        data, error = await assert_status(resp, web.HTTPAccepted)
+        data, error = await assert_status(resp, status.HTTP_202_ACCEPTED)
         assert data
         assert not error
         task_get = parse_obj_as(long_running_tasks.server.TaskGet, data)
@@ -119,7 +119,7 @@ def wait_for_task() -> Callable[[TestClient, TaskId, TaskContext], Awaitable[Non
         ):
             with attempt:
                 result = await client.get(f"{status_url}")
-                data, error = await assert_status(result, web.HTTPOk)
+                data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
                 task_status = long_running_tasks.server.TaskStatus.parse_obj(data)

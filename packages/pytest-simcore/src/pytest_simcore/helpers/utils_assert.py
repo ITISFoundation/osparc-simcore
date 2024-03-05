@@ -1,16 +1,18 @@
 """ Extends assertions for testing
 
 """
+from http import HTTPStatus
 from pprint import pformat
 
 from aiohttp import ClientResponse
-from aiohttp.web import HTTPError, HTTPException, HTTPNoContent
+from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import unwrap_envelope
+from servicelib.status_utils import get_display_name, is_error
 
 
 async def assert_status(
     response: ClientResponse,
-    expected_cls: type[HTTPException],
+    expected_status_code: int,
     expected_msg: str | None = None,
     expected_error_code: str | None = None,
     include_meta: bool | None = False,
@@ -19,17 +21,24 @@ async def assert_status(
     """
     Asserts for enveloped responses
     """
+    # raises ValueError if cannot be converted
+    expected_status_code = HTTPStatus(expected_status_code)
+
+    # reponse
     json_response = await response.json()
     data, error = unwrap_envelope(json_response)
-    assert response.status == expected_cls.status_code, (
+
+    assert response.status == expected_status_code, (
         f"received {response.status}: ({data},{error})"
-        f", expected {expected_cls.status_code} : {expected_msg or ''}"
+        f", expected {get_display_name(expected_status_code)} : {expected_msg or ''}"
     )
 
-    if issubclass(expected_cls, HTTPError):
-        do_assert_error(data, error, expected_cls, expected_msg, expected_error_code)
+    if is_error(expected_status_code):
+        _do_assert_error(
+            data, error, expected_status_code, expected_msg, expected_error_code
+        )
 
-    elif issubclass(expected_cls, HTTPNoContent):
+    elif expected_status_code == status.HTTP_204_NO_CONTENT:
         assert not data, pformat(data)
         assert not error, pformat(error)
     else:
@@ -53,23 +62,24 @@ async def assert_status(
 
 async def assert_error(
     response: ClientResponse,
-    expected_cls: type[HTTPException],
+    expected_status_code: int,
     expected_msg: str | None = None,
 ):
     data, error = unwrap_envelope(await response.json())
-    return do_assert_error(data, error, expected_cls, expected_msg)
+    return _do_assert_error(data, error, expected_status_code, expected_msg)
 
 
-def do_assert_error(
+def _do_assert_error(
     data,
     error,
-    expected_cls: type[HTTPException],
+    expected_status_code: int,
     expected_msg: str | None = None,
     expected_error_code: str | None = None,
 ):
     assert not data, pformat(data)
     assert error, pformat(error)
-    assert expected_cls
+
+    assert is_error(expected_status_code)
 
     assert len(error["errors"]) == 1
 

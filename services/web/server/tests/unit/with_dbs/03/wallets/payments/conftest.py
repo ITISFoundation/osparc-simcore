@@ -31,6 +31,7 @@ from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.payments._methods_api import (
@@ -72,7 +73,7 @@ def create_new_wallet(client: TestClient, faker: Faker) -> Callable:
                 "description": "Fake wallet from create_new_wallet",
             },
         )
-        data, _ = await assert_status(resp, web.HTTPCreated)
+        data, _ = await assert_status(resp, status.HTTP_201_CREATED)
         return WalletGet.parse_obj(data)
 
     return _create

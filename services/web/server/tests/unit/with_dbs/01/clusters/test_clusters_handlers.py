@@ -8,11 +8,11 @@
 
 import json
 import random
+from http import HTTPStatus
 from typing import Any
 
 import hypothesis
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from hypothesis import strategies as st
@@ -288,7 +288,7 @@ async def test_ping_specific_cluster(
 @pytest.mark.parametrize(
     "director_v2_error, expected_http_error",
     [
-        (DirectorServiceError, web.HTTPServiceUnavailable),
+        (DirectorServiceError, status.HTTP_503_SERVICE_UNAVAILABLE),
     ],
 )
 async def test_create_cluster_with_error(
@@ -298,7 +298,7 @@ async def test_create_cluster_with_error(
     logged_user: dict[str, Any],
     faker: Faker,
     cluster_create: ClusterCreate,
-    expected_http_error: type[web.HTTPException],
+    expected_http_error: HTTPStatus,
 ):
     cluster_create.access_rights[logged_user["id"]] = CLUSTER_ADMIN_RIGHTS
     print(f"--> creating {cluster_create=!r}")
@@ -318,7 +318,7 @@ async def test_create_cluster_with_error(
 @pytest.mark.parametrize(
     "director_v2_error, expected_http_error",
     [
-        (DirectorServiceError, web.HTTPServiceUnavailable),
+        (DirectorServiceError, status.HTTP_503_SERVICE_UNAVAILABLE),
     ],
 )
 async def test_list_clusters_with_error(
@@ -326,7 +326,7 @@ async def test_list_clusters_with_error(
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
-    expected_http_error: type[web.HTTPException],
+    expected_http_error: HTTPStatus,
 ):
     # check empty clusters
     assert client.app
@@ -341,9 +341,9 @@ async def test_list_clusters_with_error(
 @pytest.mark.parametrize(
     "director_v2_error, expected_http_error",
     [
-        (DirectorServiceError, web.HTTPServiceUnavailable),
-        (ClusterNotFoundError, web.HTTPNotFound),
-        (ClusterAccessForbidden, web.HTTPForbidden),
+        (DirectorServiceError, status.HTTP_503_SERVICE_UNAVAILABLE),
+        (ClusterNotFoundError, status.HTTP_404_NOT_FOUND),
+        (ClusterAccessForbidden, status.HTTP_403_FORBIDDEN),
     ],
 )
 async def test_get_cluster_with_error(
@@ -351,7 +351,7 @@ async def test_get_cluster_with_error(
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
-    expected_http_error: type[web.HTTPException],
+    expected_http_error: HTTPStatus,
 ):
     # check empty clusters
     assert client.app
@@ -366,9 +366,9 @@ async def test_get_cluster_with_error(
 @pytest.mark.parametrize(
     "director_v2_error, expected_http_error",
     [
-        (DirectorServiceError, web.HTTPServiceUnavailable),
-        (ClusterNotFoundError, web.HTTPNotFound),
-        (ClusterAccessForbidden, web.HTTPForbidden),
+        (DirectorServiceError, status.HTTP_503_SERVICE_UNAVAILABLE),
+        (ClusterNotFoundError, status.HTTP_404_NOT_FOUND),
+        (ClusterAccessForbidden, status.HTTP_403_FORBIDDEN),
     ],
 )
 async def test_get_cluster_details_with_error(
@@ -376,7 +376,7 @@ async def test_get_cluster_details_with_error(
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
-    expected_http_error: type[web.HTTPException],
+    expected_http_error: HTTPStatus,
 ):
     # check not found
     assert client.app
@@ -391,9 +391,9 @@ async def test_get_cluster_details_with_error(
 @pytest.mark.parametrize(
     "director_v2_error, expected_http_error",
     [
-        (DirectorServiceError, web.HTTPServiceUnavailable),
-        (ClusterNotFoundError, web.HTTPNotFound),
-        (ClusterAccessForbidden, web.HTTPForbidden),
+        (DirectorServiceError, status.HTTP_503_SERVICE_UNAVAILABLE),
+        (ClusterNotFoundError, status.HTTP_404_NOT_FOUND),
+        (ClusterAccessForbidden, status.HTTP_403_FORBIDDEN),
     ],
 )
 async def test_update_cluster_with_error(
@@ -401,7 +401,7 @@ async def test_update_cluster_with_error(
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
-    expected_http_error: type[web.HTTPException],
+    expected_http_error: HTTPStatus,
 ):
     _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
     assert client.app
@@ -419,9 +419,9 @@ async def test_update_cluster_with_error(
 @pytest.mark.parametrize(
     "director_v2_error, expected_http_error",
     [
-        (DirectorServiceError, web.HTTPServiceUnavailable),
-        (ClusterNotFoundError, web.HTTPNotFound),
-        (ClusterAccessForbidden, web.HTTPForbidden),
+        (DirectorServiceError, status.HTTP_503_SERVICE_UNAVAILABLE),
+        (ClusterNotFoundError, status.HTTP_404_NOT_FOUND),
+        (ClusterAccessForbidden, status.HTTP_403_FORBIDDEN),
     ],
 )
 async def test_delete_cluster_with_error(
@@ -429,7 +429,7 @@ async def test_delete_cluster_with_error(
     mocked_director_v2_with_error,
     client: TestClient,
     logged_user: dict[str, Any],
-    expected_http_error: type[web.HTTPException],
+    expected_http_error: HTTPStatus,
 ):
     assert client.app
     url = client.app.router["delete_cluster"].url_for(cluster_id=f"{25}")
@@ -443,8 +443,8 @@ async def test_delete_cluster_with_error(
 @pytest.mark.parametrize(
     "director_v2_error, expected_http_error",
     [
-        (DirectorServiceError, web.HTTPServiceUnavailable),
-        (ClusterPingError, web.HTTPUnprocessableEntity),
+        (DirectorServiceError, status.HTTP_503_SERVICE_UNAVAILABLE),
+        (ClusterPingError, status.HTTP_422_UNPROCESSABLE_ENTITY),
     ],
 )
 async def test_ping_cluster_with_error(
@@ -473,8 +473,8 @@ async def test_ping_cluster_with_error(
 @pytest.mark.parametrize(
     "director_v2_error, expected_http_error",
     [
-        (DirectorServiceError, web.HTTPServiceUnavailable),
-        (ClusterPingError, web.HTTPUnprocessableEntity),
+        (DirectorServiceError, status.HTTP_503_SERVICE_UNAVAILABLE),
+        (ClusterPingError, status.HTTP_422_UNPROCESSABLE_ENTITY),
     ],
 )
 async def test_ping_specific_cluster_with_error(

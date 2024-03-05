@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Awaitable, Callable
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_storage import DatasetMetaDataGet, FileMetaDataGet
@@ -20,6 +19,7 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
+from servicelib.aiohttp import status
 from tests.helpers.file_utils import parametrized_file_size
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -39,7 +39,7 @@ async def test_get_files_metadata_dataset_with_no_files_returns_empty_array(
         .with_query(user_id=user_id)
     )
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert data == []
     assert not error
 
@@ -68,7 +68,7 @@ async def test_get_files_metadata_dataset(
             .with_query(user_id=user_id)
         )
         response = await client.get(f"{url}")
-        data, error = await assert_status(response, web.HTTPOk)
+        data, error = await assert_status(response, status.HTTP_200_OK)
         assert data
         assert not error
         list_fmds = parse_obj_as(list[FileMetaDataGet], data)
@@ -95,7 +95,7 @@ async def test_get_datasets_metadata(
     )
 
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
     list_datasets = parse_obj_as(list[DatasetMetaDataGet], data)

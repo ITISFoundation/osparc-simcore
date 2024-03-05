@@ -233,6 +233,7 @@ async def test_cluster_scaling_from_labelled_services_with_no_services_does_noth
 
 
 async def test_cluster_scaling_from_labelled_services_with_no_services_and_machine_buffer_starts_expected_machines(
+    patch_ec2_client_start_aws_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     mock_machines_buffer: int,
     app_settings: ApplicationSettings,
@@ -804,6 +805,7 @@ class _ScaleUpParams:
     ],
 )
 async def test_cluster_scaling_up_starts_multiple_instances(
+    patch_ec2_client_start_aws_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     service_monitored_labels: dict[DockerLabelKey, str],
     osparc_docker_label_keys: StandardSimcoreDockerLabels,
