@@ -22,9 +22,13 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/cogs/24";
     const title = this.tr("General Settings");
+    const preferences = osparc.Preferences.getInstance();
     this.base(arguments, title, iconSrc);
 
     this.add(this.__createCreditsIndicatorSettings());
+    if (preferences.getLowDiskSpaceThreshold()) {
+      this.add(this.__createLowDiskSpaceSetting());
+    }
     this.add(this.__createInactivitySetting());
     this.add(this.__createJobConcurrencySetting());
     this.add(this.__createUserPrivacySettings());
@@ -133,6 +137,26 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       preferences.bind("jobConcurrencyLimit", jobConcurrencySpinner, "value");
       jobConcurrencySpinner.addListener("changeValue", e => this.self().patchPreference("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
       form.add(jobConcurrencySpinner, this.tr("Maximum number of concurrent jobs"));
+      box.add(new qx.ui.form.renderer.Single(form));
+      return box;
+    },
+    __createLowDiskSpaceSetting: function() {
+      const box = this._createSectionBox(this.tr("Low Disk Space Threshold"));
+      const label = this._createHelpLabel(this.tr("Set the warning Threshold for low Disk Space availability."), "text-13-italic");
+      box.add(label);
+      const form = new qx.ui.form.Form();
+      const diskUsageSpinner = new qx.ui.form.Spinner().set({
+        minimum: 1,
+        maximum: 10000,
+        singleStep: 1,
+        allowGrowX: false,
+        enabled: true
+      });
+      const preferences = osparc.Preferences.getInstance();
+      preferences.bind("lowDiskSpaceThreshold", diskUsageSpinner, "value");
+
+      diskUsageSpinner.addListener("changeValue", e => this.self().patchPreference("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
+      form.add(diskUsageSpinner, this.tr("Threshold (in GB)"));
       box.add(new qx.ui.form.renderer.Single(form));
       return box;
     },

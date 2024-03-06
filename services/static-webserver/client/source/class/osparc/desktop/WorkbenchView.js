@@ -447,7 +447,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       osparc.utils.Utils.setIdToWidget(logsPage.getChildControl("button"), "loggerTabButton");
       tabViewMain.add(logsPage);
 
-
       this.__addTopBarSpacer(topBar);
 
       const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({

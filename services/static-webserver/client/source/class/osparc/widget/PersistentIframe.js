@@ -66,9 +66,10 @@ qx.Class.define("osparc.widget.PersistentIframe", {
 
     createToolbarButton: function() {
       return new qx.ui.form.Button().set({
+        appearance: "fab-button",
         zIndex: 20,
-        backgroundColor: "transparent",
-        decorator: null
+        padding: [0, 5],
+        marginRight: 10
       });
     },
 
@@ -103,6 +104,8 @@ qx.Class.define("osparc.widget.PersistentIframe", {
   members: {
     __iframe: null,
     __syncScheduled: null,
+    __buttonContainer: null,
+    __diskUsageIndicator: null,
     __reloadButton: null,
     __zoomButton: null,
 
@@ -126,34 +129,43 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       });
       const iframeEl = this._getIframeElement();
       iframeEl.setAttribute("allow", "clipboard-write");
+
+      const buttonContainer = this.__buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignX: "right",
+        alignY: "middle"
+      }));
+
+      const diskUsageIndicator = this.__diskUsageIndicator = new osparc.workbench.DiskUsageIndicator();
+      diskUsageIndicator.getChildControl("disk-indicator").set({
+        margin: 0
+      });
+      buttonContainer.add(diskUsageIndicator);
+
       const reloadButton = this.__reloadButton = this.self().createToolbarButton().set({
         label: this.tr("Reload"),
         icon: "@FontAwesome5Solid/redo-alt/14",
-        paddingLeft: 8,
-        paddingRight: 4,
-        paddingTop: 3,
-        paddingBottom: 6,
+        padding: [1, 5],
         gap: 10
       });
       reloadButton.addListener("execute", e => {
         this.fireEvent("restart");
       }, this);
       osparc.utils.Utils.setIdToWidget(reloadButton, "iFrameRestartBtn");
-      appRoot.add(reloadButton, {
-        top: this.self().HIDDEN_TOP
-      });
+      buttonContainer.add(reloadButton);
+
       const zoomButton = this.__zoomButton = this.self().createToolbarButton().set({
         label: this.self().getZoomLabel(false),
         icon: this.self().getZoomIcon(false)
       });
       osparc.utils.Utils.setIdToWidget(zoomButton, this.self().getMaximizeWidgetId(false));
-      appRoot.add(zoomButton, {
-        top: this.self().HIDDEN_TOP
-      });
       zoomButton.addListener("execute", e => {
         this.maximizeIFrame(!this.hasState("maximized"));
       }, this);
-      appRoot.add(zoomButton);
+      buttonContainer.add(zoomButton);
+
+      appRoot.add(buttonContainer, {
+        top: this.self().HIDDEN_TOP
+      });
       standin.addListener("appear", e => {
         this.__syncIframePos();
       });
@@ -161,10 +173,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         iframe.setLayoutProperties({
           top: this.self().HIDDEN_TOP
         });
-        reloadButton.setLayoutProperties({
-          top: this.self().HIDDEN_TOP
-        });
-        zoomButton.setLayoutProperties({
+        buttonContainer.setLayoutProperties({
           top: this.self().HIDDEN_TOP
         });
       });
@@ -187,6 +196,10 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         }
       });
       return standin;
+    },
+
+    getDiskUsageIndicator: function() {
+      return this.__diskUsageIndicator;
     },
 
     maximizeIFrame: function(maximize) {
@@ -229,18 +242,12 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           height: divSize.height - this.getToolbarHeight()
         });
 
-        const rightOffest = this.hasState("maximized") ? 90 : 100;
-        this.__reloadButton.setLayoutProperties({
-          top: (divPos.top - iframeParentPos.top),
-          right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + rightOffest
-        });
-        this.__zoomButton.setLayoutProperties({
+        this.__buttonContainer.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
         });
 
-        this.__reloadButton.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
-        this.__zoomButton.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
+        this.__buttonContainer.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
       }, 0);
     },
 

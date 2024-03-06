@@ -32,6 +32,13 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "indicator-border": {
+      include: "material-button",
+      style: {
+        radius: 2
+      }
+    },
+
     "form-input": {
       style: {
         radius: [4, 4, 0, 0],
