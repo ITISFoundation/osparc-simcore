@@ -19,6 +19,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 def test_ec2_instances_settings(app_environment: EnvVarsDict):
     settings = EC2InstancesSettings.create_from_envs()
     assert isinstance(settings.EC2_INSTANCES_ALLOWED_TYPES, dict)
+    assert isinstance(settings.EC2_INSTANCES_BUFFER_MACHINE_TYPES, dict)
 
 
 @pytest.fixture

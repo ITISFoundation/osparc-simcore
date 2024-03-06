@@ -13,15 +13,7 @@ from models_library.basic_types import (
 )
 from models_library.clusters import InternalClusterAuthentication
 from models_library.docker import DockerLabelKey
-from pydantic import (
-    AnyUrl,
-    Field,
-    NonNegativeInt,
-    PositiveInt,
-    parse_obj_as,
-    root_validator,
-    validator,
-)
+from pydantic import AnyUrl, Field, PositiveInt, parse_obj_as, root_validator, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
@@ -56,23 +48,16 @@ class EC2InstancesSettings(BaseCustomSettings):
         ...,
         description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
     )
-
-    EC2_INSTANCES_BUFFER_MACHINE_TYPE: dict[InstanceTypeType, PositiveInt] = Field(
-        ...,
-        description="Defines what are the buffer machines to be created and their respective number",
+    EC2_INSTANCES_BUFFER_MACHINE_TYPES: dict[str, PositiveInt] = Field(
+        default_factory=dict,
+        description="Defines what are the buffer machines (constant reserve of machines) to be created and their respective number",
     )
-
     EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
         min_length=1,
         description="SSH key filename (without ext) to access the instance through SSH"
         " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html),"
         "this is required to start a new EC2 instance",
-    )
-    EC2_INSTANCES_MACHINES_BUFFER: NonNegativeInt = Field(
-        default=0,
-        description="Constant reserve of drained ready machines for fast(er) usage,"
-        "disabled when set to 0. Uses 1st machine defined in EC2_INSTANCES_ALLOWED_TYPES",
     )
     EC2_INSTANCES_MAX_INSTANCES: int = Field(
         default=10,
@@ -123,11 +108,11 @@ class EC2InstancesSettings(BaseCustomSettings):
             value = datetime.timedelta(minutes=59)
         return value
 
-    @validator("EC2_INSTANCES_ALLOWED_TYPES")
+    @validator("EC2_INSTANCES_ALLOWED_TYPES", "EC2_INSTANCES_BUFFER_MACHINE_TYPES")
     @classmethod
     def check_valid_instance_names(
-        cls, value: dict[str, EC2InstanceBootSpecific]
-    ) -> dict[str, EC2InstanceBootSpecific]:
+        cls, value: dict[str, EC2InstanceBootSpecific | PositiveInt]
+    ) -> dict[str, EC2InstanceBootSpecific | PositiveInt]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
         if all(parse_obj_as(InstanceTypeType, key) for key in value):
