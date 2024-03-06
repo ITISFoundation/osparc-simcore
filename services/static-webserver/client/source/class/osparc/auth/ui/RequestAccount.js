@@ -160,7 +160,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const color = qx.theme.manager.Color.getInstance().resolve("text");
-      const ppText = `I acknowledge  that data will be processed in accordance with <a href='https://sim4life.swiss/privacy' style='color: ${color}' target='_blank''>our privacy policy</a>`;
+      const ppText = `I acknowledge that data will be processed in accordance with <a href='https://sim4life.swiss/privacy' style='color: ${color}' target='_blank''>our privacy policy</a>`;
       const privacyPolicy = new qx.ui.form.CheckBox().set({
         required: true,
         value: false
