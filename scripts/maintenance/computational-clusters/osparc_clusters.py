@@ -30,7 +30,7 @@ app = typer.Typer()
 _SSH_USER_NAME: Final[str] = "ubuntu"
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(slots=True, kw_only=True)
 class AutoscaledInstance:
     name: str
     ec2_instance: Instance
@@ -42,7 +42,7 @@ class InstanceRole(str, Enum):
     worker = "worker"
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(slots=True, kw_only=True)
 class ComputationalInstance(AutoscaledInstance):
     role: InstanceRole
     user_id: int
@@ -62,7 +62,7 @@ class DynamicService:
     containers: list[str]
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(slots=True, kw_only=True)
 class DynamicInstance(AutoscaledInstance):
     running_services: list[DynamicService]
 
@@ -556,16 +556,34 @@ def _dask_client(ip_address: str) -> distributed.Client:
 
 def _analyze_computational_instances(
     computational_instances: list[ComputationalInstance],
-    ssh_key_path: Path,
+    ssh_key_path: Path | None,
 ) -> list[ComputationalCluster]:
-    computational_clusters = []
-    for instance in track(
-        computational_instances, description="Collecting computational clusters data..."
-    ):
-        docker_disk_space = _ssh_and_get_available_disk_space(
-            instance.ec2_instance, _SSH_USER_NAME, ssh_key_path
+
+    all_disk_spaces = [UNDEFINED_BYTESIZE] * len(computational_instances)
+    if ssh_key_path is not None:
+        all_disk_spaces = asyncio.get_event_loop().run_until_complete(
+            asyncio.gather(
+                *(
+                    asyncio.get_event_loop().run_in_executor(
+                        None,
+                        _ssh_and_get_available_disk_space,
+                        instance.ec2_instance,
+                        _SSH_USER_NAME,
+                        ssh_key_path,
+                    )
+                    for instance in computational_instances
+                ),
+                return_exceptions=True,
+            )
         )
-        upgraded_instance = replace(instance, disk_space=docker_disk_space)
+
+    computational_clusters = []
+    for instance, disk_space in track(
+        zip(computational_instances, all_disk_spaces, strict=True),
+        description="Collecting computational clusters data...",
+    ):
+        if isinstance(disk_space, ByteSize):
+            instance.disk_space = disk_space
         if instance.role is InstanceRole.manager:
             scheduler_info = {}
             datasets_on_cluster = ()
@@ -581,9 +599,10 @@ def _analyze_computational_instances(
 
             assert isinstance(datasets_on_cluster, tuple)
             assert isinstance(processing_jobs, dict)
+
             computational_clusters.append(
                 ComputationalCluster(
-                    primary=upgraded_instance,
+                    primary=instance,
                     workers=[],
                     scheduler_info=scheduler_info,
                     datasets=datasets_on_cluster,
@@ -600,7 +619,7 @@ def _analyze_computational_instances(
                     cluster.primary.user_id == instance.user_id
                     and cluster.primary.wallet_id == instance.wallet_id
                 ):
-                    cluster.workers.append(upgraded_instance)
+                    cluster.workers.append(instance)
 
     return computational_clusters
 
