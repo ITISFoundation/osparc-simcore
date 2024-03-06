@@ -11,10 +11,10 @@ from ._db import TemplatesRepo
 _logger = logging.getLogger(__name__)
 
 
-_template_resources = importlib.resources.files(
-    notifications_library.__name__
-).joinpath("templates")
-_templates_dir = Path(_template_resources.as_posix())
+_resources = importlib.resources.files(notifications_library.__name__).joinpath(
+    "templates"
+)
+_templates_dir = Path(_resources.as_posix())
 
 #
 # templates naming is formatted as "{event_name}.{provider}.{part}.{format}"
