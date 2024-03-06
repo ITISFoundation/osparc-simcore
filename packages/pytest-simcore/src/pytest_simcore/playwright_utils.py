@@ -72,18 +72,18 @@ class SocketIOProjectStateUpdatedWaiter:
     expected_states: tuple[RunningState, ...]
 
     def __call__(self, message: str) -> bool:
-        # print(f"<---- received websocket {message=}")
-        # socket.io encodes messages like so
-        # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-        if message.startswith("42"):
-            decoded_message = decode_socketio_42_message(message)
-            if decoded_message.name == "projectStateUpdated":
-                return (
-                    retrieve_project_state_from_decoded_message(decoded_message)
-                    in self.expected_states
-                )
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+            # socket.io encodes messages like so
+            # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
+            if message.startswith("42"):
+                decoded_message = decode_socketio_42_message(message)
+                if decoded_message.name == "projectStateUpdated":
+                    return (
+                        retrieve_project_state_from_decoded_message(decoded_message)
+                        in self.expected_states
+                    )
 
-        return False
+            return False
 
 
 def wait_for_pipeline_state(
@@ -95,15 +95,20 @@ def wait_for_pipeline_state(
     timeout_ms: int,
 ) -> RunningState:
     if current_state in if_in_states:
-        waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
-        print(f"--> pipeline is in {current_state=}, waiting for {expected_states=}")
-        with websocket.expect_event(
-            "framereceived", waiter, timeout=timeout_ms
-        ) as event:
-            current_state = retrieve_project_state_from_decoded_message(
-                decode_socketio_42_message(event.value)
-            )
-        print(f"<-- pipeline is in {current_state=}")
+        with log_context(
+            logging.INFO,
+            msg=(
+                f"pipeline is in {current_state=}, waiting for one of {expected_states=}",
+                f"pipeline is now in {current_state=}",
+            ),
+        ):
+            waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
+            with websocket.expect_event(
+                "framereceived", waiter, timeout=timeout_ms
+            ) as event:
+                current_state = retrieve_project_state_from_decoded_message(
+                    decode_socketio_42_message(event.value)
+                )
     return current_state
 
 
