@@ -71,8 +71,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
 
       const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
-        font: "text-14",
-        maxWidth: 380
+        font: "text-14"
       });
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
       let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
@@ -98,37 +97,20 @@ qx.Class.define("osparc.info.StudyLarge", {
       if (autoStartButton) {
         titleAndCopyLayout.add(autoStartButton);
       }
-      vBox.add(titleAndCopyLayout);
+      // vBox.add(titleAndCopyLayout);
 
-      const mainHBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
+      const mainHBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
+
       const leftVBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       mainHBox.add(leftVBox, {
         flex: 1
       });
-      const rightVBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
-      mainHBox.add(rightVBox);
+
       vBox.add(mainHBox);
-
-      if (osparc.product.Utils.showStudyPreview(this.getStudy().serialize()) && !this.getStudy().isPipelineEmpty()) {
-        leftVBox.add(new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize()));
-        leftVBox.add(new qx.ui.core.Spacer(15, 15));
-      }
-
-      const descInfo = {
-        label: this.tr("DESCRIPTION"),
-        view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy()),
-        action: {
-          button: osparc.utils.Utils.getEditButton(),
-          callback: this.__canIWrite() ? this.__openDescriptionEditor : null,
-          ctx: this
-        }
-      };
-      leftVBox.add(osparc.info.StudyUtils.titleWithEditLayout(descInfo));
-      leftVBox.add(descInfo.view);
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
-      rightVBox.add(extraInfoLayout);
+      leftVBox.add(extraInfoLayout);
 
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(vBox);
@@ -156,54 +138,61 @@ qx.Class.define("osparc.info.StudyLarge", {
     __extraInfo: function() {
       const extraInfo = {
         "AUTHOR": {
-          label: this.tr("AUTHOR"),
+          label: this.tr("Author:"),
           view: osparc.info.StudyUtils.createOwner(this.getStudy()),
           action: null
         },
         "ACCESS_RIGHTS": {
-          label: this.tr("ACCESS RIGHTS"),
+          label: this.tr("Access:"),
           view: osparc.info.StudyUtils.createAccessRights(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getEditButton(),
+            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
             callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
             ctx: this
           }
         },
         "CREATED": {
-          label: this.tr("CREATED"),
+          label: this.tr("Created:"),
           view: osparc.info.StudyUtils.createCreationDate(this.getStudy()),
           action: null
         },
         "MODIFIED": {
-          label: this.tr("MODIFIED"),
+          label: this.tr("Modified:"),
           view: osparc.info.StudyUtils.createLastChangeDate(this.getStudy()),
           action: null
         },
         "TAGS": {
-          label: this.tr("TAGS"),
+          label: this.tr("Tags:"),
           view: osparc.info.StudyUtils.createTags(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getEditButton(),
+            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
             callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
             ctx: this
           }
         },
-        /*
+        "TITLE": {
+          label: this.tr("Title:"),
+          view: osparc.info.StudyUtils.createTitle(this.getStudy()),
+          action: {
+            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
+            callback: this.__canIWrite() ? this.__openTitleEditor : null,
+            ctx: this
+          }
+        },
         "DESCRIPTION": {
-          label: this.tr("DESCRIPTION"),
+          label: this.tr("Description:"),
           view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getEditButton(),
+            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
             callback: this.__canIWrite() ? this.__openDescriptionEditor : null,
             ctx: this
           }
         },
-        */
         "THUMBNAIL": {
-          label: this.tr("THUMBNAIL"),
+          label: this.tr("Thumbnail:"),
           view: this.__createThumbnail(),
           action: {
-            button: osparc.utils.Utils.getEditButton(),
+            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
             callback: this.__canIWrite() ? this.__openThumbnailEditor : null,
             ctx: this
           }
@@ -216,7 +205,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         osparc.metadata.Quality.isEnabled(this.getStudy().getQuality())
       ) {
         extraInfo["QUALITY"] = {
-          label: this.tr("QUALITY"),
+          label: this.tr("Quality:"),
           view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getEditButton(),
@@ -228,7 +217,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       if (osparc.product.Utils.showClassifiers()) {
         extraInfo["CLASSIFIERS"] = {
-          label: this.tr("CLASSIFIERS"),
+          label: this.tr("Classifiers:"),
           view: osparc.info.StudyUtils.createClassifiers(this.getStudy()),
           action: (this.getStudy().getClassifiers().length || this.__canIWrite()) ? {
             button: osparc.utils.Utils.getEditButton(),
@@ -249,8 +238,19 @@ qx.Class.define("osparc.info.StudyLarge", {
       return osparc.info.StudyUtils.createUuid(this.getStudy());
     },
 
-    __createThumbnail: function(maxWidth = 160, maxHeight = 100) {
-      return osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
+    __createThumbnail: function(maxWidth = 190, maxHeight = 220) {
+      const thumb = osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
+      thumb.set({
+        maxWidth: 190,
+        maxHeight: 220
+      });
+      thumb.getChildControl("image").set({
+        width: 190,
+        height: 220,
+        scale: true,
+      });
+
+      return thumb;
     },
 
     __createDisableServiceAutoStart: function() {
