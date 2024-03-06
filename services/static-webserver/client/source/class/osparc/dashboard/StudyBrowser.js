@@ -541,13 +541,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.utils.Utils.setIdToWidget(list, "studiesList");
       }
 
-      /*
-      // Import is disabled until an Export function is implemented
       const importStudyButton = this.__createImportButton();
       const isDisabled = osparc.utils.DisabledPlugins.isImportDisabled();
       importStudyButton.setVisibility(isDisabled ? "excluded" : "visible");
       this._toolbar.add(importStudyButton);
-      */
 
       const selectStudiesButton = this.__createSelectButton();
       this._toolbar.add(selectStudiesButton);
@@ -576,7 +573,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             card.setEnabled(!multiEnabled);
           }
         });
-        // importStudyButton.setEnabled(!multiEnabled);
+        importStudyButton.setEnabled(!multiEnabled);
       });
 
       this._resourcesContainer.addListener("changeSelection", e => {

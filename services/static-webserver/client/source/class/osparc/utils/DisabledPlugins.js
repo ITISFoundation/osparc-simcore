@@ -35,7 +35,9 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     },
 
     isImportDisabled: function() {
-      return this.__isPluginDisabled(this.EXPORT);
+      // Import is disabled until an Export (full not cMIS only) function is implemented
+      return true;
+      // return this.__isPluginDisabled(this.EXPORT);
     },
 
     isVersionControlDisabled: function() {
