@@ -38,7 +38,6 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
     __idleInterval: null,
     __idleFlashMessage: null,
     __frontendTimedout: false,
-    __inactivityInterval: null,
 
     __updateFlashMessage: function(timeoutSec) {
       if (this.__idleFlashMessage === null) {
@@ -110,7 +109,6 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
     __resetIdlingTime: function() {
       this.__idlingTime = 0;
       this.__frontendTimedout = false;
-      clearTimeout(this.__inactivityInterval);
     },
 
     start: function() {
@@ -129,7 +127,6 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
       window.removeEventListener("mousedown", cb);
       window.removeEventListener("keydown", cb);
 
-      clearTimeout(this.__inactivityInterval);
       this.__removeIdleFlashMessage();
       this.__stopTimer();
     },
