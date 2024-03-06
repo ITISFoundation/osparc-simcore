@@ -17,6 +17,7 @@ from models_library.api_schemas_webserver.product import (
 )
 from pydantic import PositiveInt
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
+from pytest_simcore.helpers.rawdata_fakers import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.aiohttp import status
@@ -125,7 +126,6 @@ async def test_pre_registration_and_invitation_workflow(
     logged_user: UserInfoDict,
     expected_status: HTTPStatus,
     guest_email: str,
-    user_password: str,
     faker: Faker,
 ):
     requester_info = {
@@ -191,8 +191,8 @@ async def test_pre_registration_and_invitation_workflow(
         "/v0/auth/register",
         json={
             "email": guest_email,
-            "password": user_password,
-            "confirm": user_password,
+            "password": DEFAULT_TEST_PASSWORD,
+            "confirm": DEFAULT_TEST_PASSWORD,
             "invitation": invitation_code,
         },
     )
@@ -205,5 +205,3 @@ async def test_pre_registration_and_invitation_workflow(
     user_found = data[0]
     assert user_found["registered"] is True
     assert user_found["email"] == guest_email
-
-    # TODO: checks what happens if you register a user that has NO pre-registration
