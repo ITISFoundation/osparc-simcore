@@ -41,7 +41,6 @@ async def generate_invitation(request: web.Request):
     _, user_email = await get_user_name_and_email(request.app, user_id=req_ctx.user_id)
 
     # NOTE: check if invitations are activated in this product or raise
-
     generated = await api.generate_invitation(
         request.app,
         ApiInvitationInputs(
