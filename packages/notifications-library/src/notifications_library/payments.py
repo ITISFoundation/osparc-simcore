@@ -16,7 +16,7 @@ from ._templates import get_email_templates
 _logger = logging.getLogger(__name__)
 
 
-_ON_PAYED_EVENT_EMAIL_TEMPLATES = {
+ON_PAYED_EVENT_EMAIL_TEMPLATES = {
     "base.html",
 } | set(get_email_templates(event_name="on_payed"))
 
