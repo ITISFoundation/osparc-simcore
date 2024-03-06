@@ -395,10 +395,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const billingSettings = new osparc.study.BillingSettings(resourceData);
       const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
-      page.add(billingSettings, {
+      const billingScroll = new qx.ui.container.Scroll(billingSettings);
+      page.add(billingScroll, {
         flex: 1
       });
-
       return page;
     },
 
@@ -442,10 +442,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
-      page.add(commentsLayout, {
+      const commentsScroll = new qx.ui.container.Scroll(commentsLayout);
+      page.add(commentsScroll, {
         flex: 1
-      });
-
+      })
       return page;
     },
 

@@ -318,6 +318,7 @@ qx.Class.define("osparc.info.StudyLarge", {
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
       const textEditor = new osparc.editor.MarkdownEditor(this.getStudy().getDescription());
+      textEditor.setMaxHeight(570);
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
         win.close();
