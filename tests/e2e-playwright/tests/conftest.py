@@ -15,12 +15,12 @@ import pytest
 from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from pydantic import AnyUrl, TypeAdapter
+from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import (
     AutoRegisteredUser,
     SocketIOEvent,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
-    log_context,
 )
 
 

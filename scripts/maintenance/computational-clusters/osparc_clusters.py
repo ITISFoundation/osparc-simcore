@@ -27,11 +27,14 @@ from rich.table import Column, Style, Table
 
 app = typer.Typer()
 
+_SSH_USER_NAME: Final[str] = "ubuntu"
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AutoscaledInstance:
     name: str
     ec2_instance: Instance
+    disk_space: ByteSize
 
 
 class InstanceRole(str, Enum):
@@ -62,7 +65,6 @@ class DynamicService:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class DynamicInstance(AutoscaledInstance):
     running_services: list[DynamicService]
-    disk_space: ByteSize
 
 
 TaskId: TypeAlias = str
@@ -127,6 +129,7 @@ def _parse_computational(instance: Instance) -> ComputationalInstance | None:
             name=name,
             last_heartbeat=last_heartbeat,
             ec2_instance=instance,
+            disk_space=UNDEFINED_BYTESIZE,
         )
 
     return None
@@ -195,7 +198,7 @@ def _ssh_and_get_available_disk_space(
             timeout=5,
         )
         # Command to get disk space for /docker partition
-        disk_space_command = "df --block-size=1 /docker | awk 'NR==2{print $4}'"
+        disk_space_command = "df --block-size=1 /mnt/docker | awk 'NR==2{print $4}'"
 
         # Run the command on the remote machine
         _stdin, stdout, stderr = client.exec_command(disk_space_command)
@@ -257,12 +260,16 @@ def _ssh_and_list_running_dyn_services(
                         tzinfo=datetime.timezone.utc,
                     ).datetime,
                     container,
-                    json.loads(match["service_name"])["name"]
-                    if match["service_name"]
-                    else "",
-                    json.loads(match["service_version"])["version"]
-                    if match["service_version"]
-                    else "",
+                    (
+                        json.loads(match["service_name"])["name"]
+                        if match["service_name"]
+                        else ""
+                    ),
+                    (
+                        json.loads(match["service_version"])["version"]
+                        if match["service_version"]
+                        else ""
+                    ),
                 )
                 running_service[match["node_id"]].append(named_container)
 
@@ -349,12 +356,13 @@ def _print_dynamic_instances(
             "\n".join(
                 [
                     f"{_color_encode_with_state(instance.name, instance.ec2_instance)}",
-                    instance.ec2_instance.id,
-                    instance.ec2_instance.instance_type,
+                    f"ID: {instance.ec2_instance.instance_id}",
+                    f"AMI: {instance.ec2_instance.image_id}({instance.ec2_instance.image.name})",
+                    f"Type: {instance.ec2_instance.instance_type}",
                     f"Up: {_timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {instance.ec2_instance.public_ip_address}",
                     f"IntIP: {instance.ec2_instance.private_ip_address}",
-                    f"/docker(free): {_color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                    f"/mnt/docker(free): {_color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
                 ]
             ),
             f"Graylog: {_create_graylog_permalinks(environment, instance.ec2_instance)}",
@@ -412,14 +420,16 @@ def _print_computational_clusters(
             "\n".join(
                 [
                     f"Name: {cluster.primary.name}",
-                    cluster.primary.ec2_instance.id,
-                    cluster.primary.ec2_instance.instance_type,
+                    f"ID: {cluster.primary.ec2_instance.id}",
+                    f"AMI: {cluster.primary.ec2_instance.image_id}({cluster.primary.ec2_instance.image.name})",
+                    f"Type: {cluster.primary.ec2_instance.instance_type}",
                     f"Up: {_timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
                     f"IntIP: {cluster.primary.ec2_instance.private_ip_address}",
                     f"UserID: {cluster.primary.user_id}",
                     f"WalletID: {cluster.primary.wallet_id}",
                     f"Heartbeat: {_timedelta_formatting(time_now - cluster.primary.last_heartbeat) if cluster.primary.last_heartbeat else 'n/a'}",
+                    f"/mnt/docker(free): {_color_encode_with_threshold(cluster.primary.disk_space.human_readable(), cluster.primary.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
                 ]
             ),
             "\n".join(
@@ -443,12 +453,14 @@ def _print_computational_clusters(
                 f"[italic]{_color_encode_with_state('Worker', worker.ec2_instance)}[/italic]",
                 "\n".join(
                     [
-                        worker.ec2_instance.id,
-                        worker.ec2_instance.instance_type,
+                        f"ID: {worker.ec2_instance.id}",
+                        f"AMI: {worker.ec2_instance.image_id}({worker.ec2_instance.image.name})",
+                        f"Type: {worker.ec2_instance.instance_type}",
                         f"Up: {_timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)}",
                         f"ExtIP: {worker.ec2_instance.public_ip_address}",
                         f"IntIP: {worker.ec2_instance.private_ip_address}",
                         f"Name: {worker.name}",
+                        f"/mnt/docker(free): {_color_encode_with_threshold(worker.disk_space.human_readable(), worker.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
                     ]
                 ),
                 "\n".join(
@@ -474,11 +486,12 @@ def _analyze_dynamic_instances_running_services(
                     None,
                     _ssh_and_list_running_dyn_services,
                     instance.ec2_instance,
-                    "ubuntu",
+                    _SSH_USER_NAME,
                     ssh_key_path,
                 )
                 for instance in dynamic_instances
-            )
+            ),
+            return_exceptions=True,
         )
     )
 
@@ -489,11 +502,12 @@ def _analyze_dynamic_instances_running_services(
                     None,
                     _ssh_and_get_available_disk_space,
                     instance.ec2_instance,
-                    "ubuntu",
+                    _SSH_USER_NAME,
                     ssh_key_path,
                 )
                 for instance in dynamic_instances
-            )
+            ),
+            return_exceptions=True,
         )
     )
 
@@ -502,7 +516,9 @@ def _analyze_dynamic_instances_running_services(
         for instance, running_services, disk_space in zip(
             dynamic_instances, all_running_services, all_disk_spaces, strict=True
         )
-        if (user_id is None or any(s.user_id == user_id for s in running_services))
+        if isinstance(running_services, list)
+        and isinstance(disk_space, ByteSize)
+        and (user_id is None or any(s.user_id == user_id for s in running_services))
     ]
 
 
@@ -525,7 +541,7 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
 
 def _dask_client(ip_address: str) -> distributed.Client:
     security = distributed.Security()
-    dask_certificates = state["deploy_config"] / "dask-certificates"
+    dask_certificates = state["deploy_config"] / "assets" / "dask-certificates"
     if dask_certificates.exists():
         security = distributed.Security(
             tls_ca_file=f"{dask_certificates / 'dask-cert.pem'}",
@@ -540,11 +556,16 @@ def _dask_client(ip_address: str) -> distributed.Client:
 
 def _analyze_computational_instances(
     computational_instances: list[ComputationalInstance],
+    ssh_key_path: Path,
 ) -> list[ComputationalCluster]:
     computational_clusters = []
     for instance in track(
         computational_instances, description="Collecting computational clusters data..."
     ):
+        docker_disk_space = _ssh_and_get_available_disk_space(
+            instance.ec2_instance, _SSH_USER_NAME, ssh_key_path
+        )
+        upgraded_instance = replace(instance, disk_space=docker_disk_space)
         if instance.role is InstanceRole.manager:
             scheduler_info = {}
             datasets_on_cluster = ()
@@ -562,7 +583,7 @@ def _analyze_computational_instances(
             assert isinstance(processing_jobs, dict)
             computational_clusters.append(
                 ComputationalCluster(
-                    primary=instance,
+                    primary=upgraded_instance,
                     workers=[],
                     scheduler_info=scheduler_info,
                     datasets=datasets_on_cluster,
@@ -579,7 +600,7 @@ def _analyze_computational_instances(
                     cluster.primary.user_id == instance.user_id
                     and cluster.primary.wallet_id == instance.wallet_id
                 ):
-                    cluster.workers.append(instance)
+                    cluster.workers.append(upgraded_instance)
 
     return computational_clusters
 
@@ -606,7 +627,9 @@ def _detect_instances(
             dynamic_instances, ssh_key_path, user_id
         )
 
-    computational_clusters = _analyze_computational_instances(computational_instances)
+    computational_clusters = _analyze_computational_instances(
+        computational_instances, ssh_key_path
+    )
 
     return dynamic_instances, computational_clusters
 

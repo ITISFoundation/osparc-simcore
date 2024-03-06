@@ -24,6 +24,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   command -v python | sed 's/^/    /'
 
   # NOTE: uv does not like this requirement file...
+  cd /devel/services/dynamic-sidecar
   pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
