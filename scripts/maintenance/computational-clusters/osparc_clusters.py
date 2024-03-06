@@ -482,7 +482,8 @@ def _analyze_dynamic_instances_running_services(
                     ssh_key_path,
                 )
                 for instance in dynamic_instances
-            )
+            ),
+            return_exceptions=True,
         )
     )
 
@@ -497,7 +498,8 @@ def _analyze_dynamic_instances_running_services(
                     ssh_key_path,
                 )
                 for instance in dynamic_instances
-            )
+            ),
+            return_exceptions=True,
         )
     )
 
@@ -506,7 +508,9 @@ def _analyze_dynamic_instances_running_services(
         for instance, running_services, disk_space in zip(
             dynamic_instances, all_running_services, all_disk_spaces, strict=True
         )
-        if (user_id is None or any(s.user_id == user_id for s in running_services))
+        if isinstance(running_services, list)
+        and isinstance(disk_space, ByteSize)
+        and (user_id is None or any(s.user_id == user_id for s in running_services))
     ]
 
 
