@@ -5,6 +5,7 @@
 
 import json
 import logging
+import random
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
@@ -128,7 +129,8 @@ async def logged_user(
             "role": user_role.name,
             "first_name": faker.first_name(),
             "last_name": faker.last_name(),
-            "phone": faker.phone_number(),
+            "phone": faker.phone_number()
+            + f"{random.randint(1000,9999)}",  # noqa: S311
         },
         check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:

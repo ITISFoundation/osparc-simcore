@@ -23,6 +23,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
+from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
 from redis.asyncio import Redis
@@ -77,20 +78,20 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 
 @pytest.fixture
 async def open_project() -> AsyncIterator[Callable[..., Awaitable[None]]]:
-    opened_projects = []
+    _opened_projects = []
 
     async def _open_project(client, project_uuid: str, client_session_id: str) -> None:
         url = client.app.router["open_project"].url_for(project_id=project_uuid)
         resp = await client.post(url, json=client_session_id)
         await assert_status(resp, status.HTTP_200_OK)
-        opened_projects.append((client, project_uuid, client_session_id))
+        _opened_projects.append((client, project_uuid, client_session_id))
 
     yield _open_project
     # cleanup, if we cannot close that is because the user_role might not allow it
     await asyncio.gather(
         *(
             close_project(client, project_uuid, client_session_id)
-            for client, project_uuid, client_session_id in opened_projects
+            for client, project_uuid, client_session_id in _opened_projects
         ),
         return_exceptions=True,
     )
@@ -537,11 +538,11 @@ async def test_interactive_services_removed_after_logout(
     ],
 )
 async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: UserInfoDict,
     empty_user_project,
     mocked_director_v2_api,
-    create_dynamic_service_mock,
+    create_dynamic_service_mock: Callable,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
     storage_subsystem_mock,  # when guest user logs out garbage is collected
@@ -551,6 +552,8 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
+    assert client.app
+
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
     # create dynamic service - create_dynamic_service_mock fixture
