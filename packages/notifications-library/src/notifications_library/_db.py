@@ -2,6 +2,7 @@ import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
+from simcore_postgres_database.models.products_to_templates import products_to_templates
 from simcore_postgres_database.models.users import users
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -41,3 +42,16 @@ class TemplatesRepo(BaseDataRepo):
                 ).where(jinja2_templates.c.name.in_(names))
             )
             return result.fetchall()
+
+    async def iter_product_templates(self, product_name: ProductName):
+        async with self.db_engine.begin() as conn:
+            async for row in conn.execute(
+                sa.select(
+                    products_to_templates.c.product_name,
+                    jinja2_templates.c.name,
+                    jinja2_templates.c.content,
+                )
+                .select_from(products_to_templates.join(jinja2_templates))
+                .where(products_to_templates.c.product_name == product_name)
+            ):
+                yield row

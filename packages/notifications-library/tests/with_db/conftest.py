@@ -12,22 +12,12 @@ from typing import Any
 import notifications_library
 import pytest
 import sqlalchemy as sa
-from models_library.products import ProductName
 from models_library.users import GroupID, UserID
-from notifications_library._db import TemplatesRepo
-from notifications_library._payments_db import PaymentsDataRepo
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
-
-pytest_simcore_core_services_selection = [
-    "postgres",
-]
-pytest_simcore_ops_services_selection = [
-    "adminer",
-]
 
 
 async def _insert_and_get_row(
@@ -113,38 +103,6 @@ async def successful_transaction(
         await _delete_row(conn, payments_transactions, *pk_args)
 
 
-async def test_templates_repo(
-    sqlalchemy_async_engine: AsyncEngine,
-    user_id: UserID,
-    user_primary_group_id: GroupID,
-):
-    repo = TemplatesRepo(sqlalchemy_async_engine)
-    assert await repo.get_primary_group_id(user_id) == user_primary_group_id
-
-
-async def test_get_on_payed_data(
-    sqlalchemy_async_engine: AsyncEngine,
-    user: dict[str, Any],
-    product: dict[str, Any],
-    successful_transaction: dict[str, Any],
-):
-    repo = PaymentsDataRepo(sqlalchemy_async_engine)
-
-    # check once
-    data = await repo.get_on_payed_data(
-        user_id=user["id"], payment_id=successful_transaction["payment_id"]
-    )
-
-    assert data.payment_id == successful_transaction["payment_id"]
-    assert data.first_name == user["first_name"]
-    assert data.last_name == user["last_name"]
-    assert data.email == user["email"]
-    assert data.product_name == product["name"]
-    assert data.display_name == product["display_name"]
-    assert data.vendor == product["vendor"]
-    assert data.support_email == product["support_email"]
-
-
 @pytest.fixture
 async def email_templates(
     sqlalchemy_async_engine: AsyncEngine,
@@ -174,19 +132,3 @@ async def email_templates(
     async with sqlalchemy_async_engine.begin() as conn:
         for pk_value in pk_to_row:
             await _delete_row(conn, jinja2_templates, jinja2_templates.c.name, pk_value)
-
-
-async def test_get_email_templates(
-    sqlalchemy_async_engine: AsyncEngine,
-    email_templates: dict[str, Any],
-    product_name: ProductName,
-):
-    repo = TemplatesRepo(sqlalchemy_async_engine)
-
-    templates = await repo.get_email_templates(
-        names=set(email_templates.keys()), product=product_name
-    )
-
-    assert {t.name: t.content for t in templates} == {
-        key: value["content"] for key, value in email_templates.items()
-    }
