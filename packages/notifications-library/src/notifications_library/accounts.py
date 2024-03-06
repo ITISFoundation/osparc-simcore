@@ -1,4 +1,5 @@
-#  - request for account
+# Groups notifications on accont events. Specifically
+#  - account request
 #  - registration code
 #  - close account
 #  - login code
