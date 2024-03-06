@@ -11,14 +11,14 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.users import UserID
 
-from ._templates import get_email_templates
+from ._templates import get_default_named_templates
 
 _logger = logging.getLogger(__name__)
 
 
 ON_PAYED_EVENT_EMAIL_TEMPLATES = {
     "base.html",
-} | set(get_email_templates(event_name="on_payed"))
+} | set(get_default_named_templates(event="on_payed", media="email"))
 
 
 @dataclass

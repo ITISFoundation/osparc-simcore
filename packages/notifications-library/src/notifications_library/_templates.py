@@ -2,6 +2,7 @@ import importlib.resources
 import logging
 import shutil
 from pathlib import Path
+from typing import NamedTuple
 
 import notifications_library
 from models_library.products import ProductName
@@ -16,13 +17,30 @@ _resources = importlib.resources.files(notifications_library.__name__).joinpath(
 )
 _templates_dir = Path(_resources.as_posix())
 
-#
-# templates naming is formatted as "{event_name}.{provider}.{part}.{format}"
-#
+
+class NamedTemplateTuple(NamedTuple):
+    # Named templates are named as "{event_name}.{provider}.{part}.{format}"
+    #
+    # e.g. base.html is a generic template vs on_payed.email.content.html that is a named template
+    #
+    event: str
+    media: str
+    part: str
+    ext: str
 
 
-def get_email_templates(event_name: str) -> dict[str, Path]:
-    return {p.name: p for p in _templates_dir.glob(f"{event_name}.email.*")}
+_TEMPLATE_NAME_SEPARATOR = "."
+
+
+def split_template_name(template_name: str) -> NamedTemplateTuple:
+    return NamedTemplateTuple(*template_name.split(_TEMPLATE_NAME_SEPARATOR))
+
+
+def get_default_named_templates(
+    event: str = "*", media: str = "*", part: str = "*", ext: str = "*"
+) -> dict[str, Path]:
+    pattern = _TEMPLATE_NAME_SEPARATOR.join([event, media, part, ext])
+    return {p.name: p for p in _templates_dir.glob(pattern)}
 
 
 def get_folder_stats_msg(top_dir: Path) -> str:

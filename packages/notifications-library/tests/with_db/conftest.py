@@ -5,16 +5,15 @@
 # pylint: disable=unused-variable
 
 
-import importlib.resources
 from collections.abc import AsyncIterator
 from typing import Any
 
-import notifications_library
 import pytest
 import sqlalchemy as sa
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
+from notifications_library._templates import get_default_named_templates
 from pydantic import validate_arguments
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
@@ -133,13 +132,13 @@ def email_template_mark() -> str:
 async def email_templates(
     sqlalchemy_async_engine: AsyncEngine, email_template_mark: str
 ) -> AsyncIterator[dict[str, Any]]:
-    all_templates = {"other.html": "Fake template " + email_template_mark}
+    all_templates = {"other.html": f"Fake template {email_template_mark}"}
 
-    templates_path = importlib.resources.files(notifications_library).joinpath(
-        "templates"
-    )
-    for path in templates_path.iterdir():
-        all_templates[path.name] = f"#{email_template_mark}\n" + path.read_text()
+    # only subjects are overriden in db
+    subject_templates = get_default_named_templates(media="email", part="subject")
+    for name, path in subject_templates.items():
+        assert "subject" in name
+        all_templates[name] = f"{email_template_mark} {path.read_text()}"
 
     async with sqlalchemy_async_engine.begin() as conn:
         pk_to_row = {
