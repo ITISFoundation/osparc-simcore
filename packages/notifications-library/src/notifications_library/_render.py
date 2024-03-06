@@ -56,11 +56,11 @@ def render_email_parts(
     subject = env.get_template(f"{event_name}.email.subject.txt").render(data)
 
     # Body
-    text_template = env.get_template(f"{event_name}.email.txt")
+    text_template = env.get_template(f"{event_name}.email.content.txt")
     text_content = text_template.render(data)
 
     try:
-        html_template = env.get_template(f"{event_name}.email.html")
+        html_template = env.get_template(f"{event_name}.email.content.html")
         html_content = html_template.render(data)
     except TemplateNotFound as err:
         _logger.debug("Event %s has no html template: %s", event_name, err)

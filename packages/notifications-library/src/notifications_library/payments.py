@@ -7,15 +7,14 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.users import UserID
 
+from ._templates import get_email_templates
+
 _logger = logging.getLogger(__name__)
 
 
-_ON_PAYED_EVENT_TEMPLATES = {
+_ON_PAYED_EVENT_EMAIL_TEMPLATES = {
     "base.html",
-    "on_payed.email.html",
-    "on_payed.email.txt",
-    "on_payed.email.subject.txt",
-}
+} | set(get_email_templates(event_name="on_payed"))
 
 
 @dataclass
