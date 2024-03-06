@@ -108,7 +108,7 @@ inf%: ## displays basic info
 	@echo ' node   : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
 	@echo ' python : $(shell python3 --version)'
 	# installed in .venv
-	@pip list
+	@uv pip list
 	# package setup
 	-@echo ' name         : ' $(shell python ${CURDIR}/setup.py --name)
 	-@echo ' version      : ' $(shell python ${CURDIR}/setup.py --version)

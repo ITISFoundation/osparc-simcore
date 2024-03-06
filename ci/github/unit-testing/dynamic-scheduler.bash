@@ -12,7 +12,7 @@ install() {
   pushd services/dynamic-scheduler
   make install-ci
   popd
-  pip list --verbose
+  uv pip list
 }
 
 test() {

@@ -113,7 +113,7 @@ RUN \
   --mount=type=cache,mode=0755,target=/root/.cache/uv \
   uv pip install \
   --requirement requirements/prod.txt \
-  && pip list -v
+  && uv pip list
 
 
 # --------------------------Production stage -------------------
