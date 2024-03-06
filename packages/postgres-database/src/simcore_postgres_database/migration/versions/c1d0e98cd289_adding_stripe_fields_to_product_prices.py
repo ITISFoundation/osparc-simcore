@@ -1,7 +1,7 @@
 """adding stripe fields to product prices
 
 Revision ID: c1d0e98cd289
-Revises: 20d60d2663ad
+Revises: 35724106de75
 Create Date: 2024-03-01 14:00:03.634947+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "c1d0e98cd289"
-down_revision = "20d60d2663ad"
+down_revision = "35724106de75"
 branch_labels = None
 depends_on = None
 
