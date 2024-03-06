@@ -402,7 +402,6 @@ def _print_computational_clusters(
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
-        Column(""),
         Column("Instance", justify="left", overflow="fold"),
         Column("Links", justify="left", overflow="fold"),
         Column("Computational details"),
@@ -416,9 +415,9 @@ def _print_computational_clusters(
     ):
         # first print primary machine info
         table.add_row(
-            f"[bold]{_color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
             "\n".join(
                 [
+                    f"[bold]{_color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
                     f"Name: {cluster.primary.name}",
                     f"ID: {cluster.primary.ec2_instance.id}",
                     f"AMI: {cluster.primary.ec2_instance.image_id}({cluster.primary.ec2_instance.image.name})",
@@ -448,19 +447,20 @@ def _print_computational_clusters(
         )
 
         # now add the workers
-        for worker in cluster.workers:
+        for index, worker in enumerate(cluster.workers):
             table.add_row(
-                f"[italic]{_color_encode_with_state('Worker', worker.ec2_instance)}[/italic]",
                 "\n".join(
                     [
+                        f"[italic]{_color_encode_with_state(f'Worker {index+1}', worker.ec2_instance)}[/italic]",
+                        f"Name: {worker.name}",
                         f"ID: {worker.ec2_instance.id}",
                         f"AMI: {worker.ec2_instance.image_id}({worker.ec2_instance.image.name})",
                         f"Type: {worker.ec2_instance.instance_type}",
                         f"Up: {_timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)}",
                         f"ExtIP: {worker.ec2_instance.public_ip_address}",
                         f"IntIP: {worker.ec2_instance.private_ip_address}",
-                        f"Name: {worker.name}",
                         f"/mnt/docker(free): {_color_encode_with_threshold(worker.disk_space.human_readable(), worker.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                        "",
                     ]
                 ),
                 "\n".join(
@@ -526,8 +526,6 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
     def _list_tasks(
         dask_scheduler: distributed.Scheduler,
     ) -> dict[TaskId, TaskState]:
-        from collections import defaultdict
-
         task_state_to_tasks = defaultdict(list)
         for task in dask_scheduler.tasks.values():
             task_state_to_tasks[task.state].append(task.key)
