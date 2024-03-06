@@ -38,7 +38,7 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture
-def disable_modules_setup(mocker: MockerFixture) -> None:
+def disable_modules_setup(mock_exclusive: None, mocker: MockerFixture) -> None:
     module_base = "simcore_service_director_v2.core.application"
     mocker.patch(f"{module_base}.db.setup", autospec=True, return_value=False)
     mocker.patch(

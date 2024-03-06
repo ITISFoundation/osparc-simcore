@@ -209,10 +209,10 @@ async def ensure_services_stopped(
                 assert delete_result is True
 
         scheduler_interval = (
-            director_v2_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
+            director_v2_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL
         )
         # sleep enough to ensure the observation cycle properly stopped the service
-        await asyncio.sleep(2 * scheduler_interval)
+        await asyncio.sleep(2 * scheduler_interval.total_seconds())
 
         await ensure_network_cleanup(docker_client, project_id)
 

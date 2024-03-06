@@ -12,7 +12,7 @@ install() {
   pushd services/dynamic-sidecar
   make install-ci
   popd
-  pip list --verbose
+  uv pip list
   make info-images
 }
 

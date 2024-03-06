@@ -1,6 +1,7 @@
 --constraint ../../../requirements/constraints.txt
 
 
+aiodocker
 aiohttp
 docker
 faker

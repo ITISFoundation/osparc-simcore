@@ -99,5 +99,5 @@ async def socketio_client_factory(
             await sio.disconnect()
             await sio.wait()
             print(f"... disconnection from {sio} done.")
-
+            assert not sio.connected
         assert not sio.sid

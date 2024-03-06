@@ -5,6 +5,7 @@ docker_compose_* coroutines are implemented such that they can only
 run sequentially by this service
 
 """
+
 import logging
 from typing import Final
 
@@ -100,11 +101,9 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     registry_settings = app_settings.REGISTRY_SETTINGS
     list_of_images = get_docker_service_images(compose_spec_yaml)
 
-    async def _progress_cb(current: int, total: int) -> None:
+    async def _progress_cb(progress_value: float) -> None:
         await post_progress_message(
-            app,
-            ProgressType.SERVICE_IMAGES_PULLING,
-            float(current / (total or 1)),
+            app, ProgressType.SERVICE_IMAGES_PULLING, progress_value
         )
 
     async def _log_cb(msg: LogMessageStr, log_level: LogLevelInt) -> None:

@@ -12,7 +12,7 @@ install() {
   pushd services/director-v2
   make install-ci
   popd
-  pip list --verbose
+  uv pip list
 }
 
 test() {

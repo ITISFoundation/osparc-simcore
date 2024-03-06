@@ -8,6 +8,7 @@ from .logging_utils import log_catch
 
 logger = logging.getLogger(__name__)
 _MIN_PROGRESS_UPDATE_PERCENT: Final[float] = 0.01
+_FINAL_VALUE: Final[float] = 1.0
 
 
 @runtime_checkable
@@ -108,8 +109,10 @@ class ProgressBarData:
 
         with log_catch(logger, reraise=False):
             # NOTE: only report if at least a percent was increased
-            if (force and value != self._last_report_value) or (
-                (value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT
+            if (
+                (force and value != self._last_report_value)
+                or ((value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT)
+                or value == _FINAL_VALUE
             ):
                 call = self.progress_report_cb(value)
                 if isawaitable(call):

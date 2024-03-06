@@ -255,13 +255,13 @@ async def test_register_phone_fails_with_used_number(
     async with AsyncExitStack() as users_stack:
         # some user ALREADY registered with the same phone
         await users_stack.enter_async_context(
-            NewUser(params={"phone": fake_user_phone_number}, app=client.app)
+            NewUser(user_data={"phone": fake_user_phone_number}, app=client.app)
         )
 
         # some registered user w/o phone
         await users_stack.enter_async_context(
             NewUser(
-                params={
+                user_data={
                     "email": fake_user_email,
                     "password": fake_user_password,
                     "phone": None,
@@ -350,7 +350,7 @@ async def test_2fa_sms_failure_during_login(
 
     # A registered user ...
     async with NewUser(
-        params={
+        user_data={
             "email": fake_user_email,
             "password": fake_user_password,
             "phone": fake_user_phone_number,

@@ -1,19 +1,23 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+import asyncio
 import json
 import logging
 import os
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+import aiodocker
 import docker
 import jsonschema
 import pytest
 import tenacity
+from pytest_simcore.logging_utils import log_context
+from settings_library.docker_registry import RegistrySettings
 
 from .helpers.utils_host import get_localhost_ip
 
@@ -92,6 +96,11 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
 
         while docker_client.containers.list(filters={"name": container.name}):
             time.sleep(1)
+
+
+@pytest.fixture
+def registry_settings(docker_registry: str) -> RegistrySettings:
+    return RegistrySettings.create_from_envs()
 
 
 @tenacity.retry(
@@ -203,7 +212,7 @@ def docker_registry_image_injector(
     return inject_image
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def osparc_service(
     docker_registry: str, node_meta_schema: dict, service_repo: str, service_tag: str
 ) -> dict[str, Any]:
@@ -285,3 +294,27 @@ def dy_static_file_server_dynamic_sidecar_compose_spec_service(
         docker_registry,
         node_meta_schema,
     )
+
+
+@pytest.fixture
+def remove_images_from_host() -> Callable[[list[str]], Awaitable[None]]:
+    async def _cleaner(images: list[str]) -> None:
+        with log_context(
+            logging.INFO, msg=(f"removing {images=}", f"removed {images=}")
+        ):
+            async with aiodocker.Docker() as client:
+                delete_results = await asyncio.gather(
+                    *(client.images.delete(image, force=True) for image in images),
+                    return_exceptions=True,
+                )
+                assert delete_results
+                # confirm they are gone
+                inspect_results = await asyncio.gather(
+                    *(client.images.inspect(image) for image in images),
+                    return_exceptions=True,
+                )
+                assert all(
+                    isinstance(r, aiodocker.DockerError) for r in inspect_results
+                )
+
+    return _cleaner

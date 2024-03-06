@@ -62,7 +62,7 @@ def mock_env(
 
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
     monkeypatch.setenv(
-        "DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS",
+        "DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL",
         f"{SCHEDULER_INTERVAL_SECONDS}",
     )
 
@@ -229,6 +229,7 @@ def mock_projects_repository(mocker: MockerFixture, node_present_in_db: bool) ->
 
 
 async def test_skip_observation_cycle_after_error(
+    mock_exclusive: None,
     docker_swarm: None,
     minimal_app: FastAPI,
     mock_projects_repository: None,

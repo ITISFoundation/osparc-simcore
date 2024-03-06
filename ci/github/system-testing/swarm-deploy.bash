@@ -18,7 +18,7 @@ install() {
   pushd tests/swarm-deploy
   make install-ci
   popd
-  pip list -v
+  uv pip list
   make info-images
 }
 
