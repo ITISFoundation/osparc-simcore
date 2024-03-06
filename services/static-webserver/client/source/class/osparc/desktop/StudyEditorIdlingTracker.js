@@ -29,7 +29,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
   },
 
   statics: {
-    INACTIVITY_REQUEST_PERIOD_S: 10
+    INACTIVITY_REQUEST_PERIOD_S: 5
   },
 
   members: {
@@ -95,8 +95,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
         if (this.__idlingTime >= inactivityThresholdT && !this.__idleFlashMessageIsShowing) {
           const timeSinceInactivityThreshold = this.__idlingTime - inactivityThresholdT;
           if (timeSinceInactivityThreshold % this.self().INACTIVITY_REQUEST_PERIOD_S == 0) {
-            // ask backend if services are inactive
-            console.log("polling inactivity");
+            // check if backend reports project as inactive
             osparc.data.Resources.fetch("studies", "getInactivity", {
               url: {
                 studyId: this.__studyUuid
