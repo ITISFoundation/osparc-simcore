@@ -5,13 +5,13 @@
    https://osparc.io
 
    Copyright:
-     2020 IT'IS Foundation, https://itis.swiss
+     2024 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Odei Maiz (odeimaiz)
+     * Julian Querido (jsaq007)
 
 ************************************************************************ */
 
@@ -105,7 +105,6 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
 
     _subscribe: function(node) {
       osparc.workbench.DiskUsageController.getInstance().subscribe(node.getNodeId(), e => {
-        console.log("subscribe", e["node_id"], node.getNodeId())
         this.__updateDiskIndicator(e);
       });
     },
