@@ -72,6 +72,19 @@ qx.Class.define("osparc.CookiePolicy", {
           });
           break;
         }
+        case "cookie-text-s4l": {
+          const color = qx.theme.manager.Color.getInstance().resolve("text");
+          const textLink = `<a href=https://sim4life.swiss/privacy/ style='color: ${color}' target='_blank'>Privacy Policy.</a>`;
+          const text = this.tr("This website applies cookies to personalize your experience and to make our site easier to navigate. By visiting the site, you agree to the ") + textLink;
+          control = new qx.ui.basic.Label(text).set({
+            rich : true
+          });
+          this._add(control, {
+            column: 0,
+            row: 0
+          });
+          break;
+        }
         case "accept-cookie":
           control = new qx.ui.form.CheckBox().set({
             value: true
@@ -81,12 +94,27 @@ qx.Class.define("osparc.CookiePolicy", {
             row: 0
           });
           break;
-        case "license-text": {
+        case "license-text-s4llite": {
           control = new qx.ui.basic.Label().set({
             rich : true
           });
           const text = this.tr("By visiting the site, you agree to the ");
           const licenseLink = "https://zurichmedtech.github.io/s4l-lite-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt";
+          const color = qx.theme.manager.Color.getInstance().resolve("text");
+          const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
+          control.setValue(text + textLink);
+          this._add(control, {
+            column: 0,
+            row: 1
+          });
+          break;
+        }
+        case "license-text-s4l": {
+          control = new qx.ui.basic.Label().set({
+            rich : true
+          });
+          const text = this.tr("By visiting the site, you agree to the ");
+          const licenseLink = "https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt";
           const color = qx.theme.manager.Color.getInstance().resolve("text");
           const textLink = `<a href=${licenseLink} style='color: ${color}' target='_blank'>Licensing.</a>`;
           control.setValue(text + textLink);
@@ -164,14 +192,24 @@ qx.Class.define("osparc.CookiePolicy", {
 
     __buildLayout: function() {
       const checkButtons = [];
-      this.getChildControl("cookie-text");
+      if (osparc.product.Utils.isS4LProduct()) {
+        this.getChildControl("cookie-text-s4l");
+      } else {
+        this.getChildControl("cookie-text");
+      }
       const acceptCookie = this.getChildControl("accept-cookie");
       checkButtons.push(acceptCookie);
 
       if (osparc.product.Utils.showLicenseExtra()) {
-        this.getChildControl("license-text");
-        const acceptLicense = this.getChildControl("accept-license");
-        checkButtons.push(acceptLicense);
+        if (osparc.product.Utils.isProduct("s4llite")) {
+          this.getChildControl("license-text-s4llite");
+          const acceptLicense = this.getChildControl("accept-license");
+          checkButtons.push(acceptLicense);
+        } else {
+          this.getChildControl("license-text-s4l");
+          const acceptLicense2 = this.getChildControl("accept-license");
+          checkButtons.push(acceptLicense2);
+        }
         this.getChildControl("license-text-2");
         const acceptLicense2 = this.getChildControl("accept-license-2");
         checkButtons.push(acceptLicense2);
