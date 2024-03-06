@@ -30,6 +30,7 @@ from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from simcore_service_dynamic_sidecar._meta import API_VTAG
+from simcore_service_dynamic_sidecar.api.containers import _INACTIVE_FOR_LONG_TIME
 from simcore_service_dynamic_sidecar.core.application import AppState
 from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_create,
@@ -745,7 +746,9 @@ async def test_containers_inactivity_command_failed(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/inactivity")
     assert response.status_code == 200, response.text
-    assert response.json() == InactivityResponse(seconds_inactive=None)
+    assert response.json() == InactivityResponse(
+        seconds_inactive=_INACTIVE_FOR_LONG_TIME
+    )
 
 
 async def test_containers_inactivity_no_inactivity_defined(
@@ -753,7 +756,7 @@ async def test_containers_inactivity_no_inactivity_defined(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/inactivity")
     assert response.status_code == 200, response.text
-    assert response.json() == InactivityResponse(seconds_inactive=None)
+    assert response.json() is None
 
 
 @pytest.fixture
@@ -800,4 +803,6 @@ async def test_containers_inactivity_unexpected_response(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/inactivity")
     assert response.status_code == 200, response.text
-    assert response.json() == InactivityResponse(seconds_inactive=None)
+    assert response.json() == InactivityResponse(
+        seconds_inactive=_INACTIVE_FOR_LONG_TIME
+    )

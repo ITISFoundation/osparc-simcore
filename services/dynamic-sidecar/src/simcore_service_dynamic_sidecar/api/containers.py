@@ -3,12 +3,15 @@
 import json
 import logging
 from asyncio import Lock
-from typing import Annotated, Any
+from typing import Annotated, Any, Final
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
-from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
+from models_library.api_schemas_dynamic_sidecar.containers import (
+    InactivityResponse,
+    ServiceInactivityResponse,
+)
 from pydantic import parse_raw_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
@@ -23,6 +26,8 @@ from ..core.validation import parse_compose_spec
 from ..models.shared_store import SharedStore
 from ..modules.container_utils import run_command_in_container
 from ._dependencies import get_container_restart_lock, get_settings, get_shared_store
+
+_INACTIVE_FOR_LONG_TIME: Final[int] = 2**63 - 1
 
 _logger = logging.getLogger(__name__)
 
@@ -93,11 +98,11 @@ async def get_containers_inactivity(
     request: Request,
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
     shared_store: Annotated[SharedStore, Depends(get_shared_store)],
-) -> InactivityResponse:
+) -> ServiceInactivityResponse:
     _ = request
     inactivity_command = settings.DY_SIDECAR_CALLBACKS_MAPPING.inactivity
     if inactivity_command is None:
-        return InactivityResponse(seconds_inactive=None)
+        return None
 
     container_name = inactivity_command.service
 
@@ -119,7 +124,7 @@ async def get_containers_inactivity(
             container_name,
             exc_info=True,
         )
-        return InactivityResponse(seconds_inactive=None)
+        return InactivityResponse(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
 
     try:
         return parse_raw_as(InactivityResponse, inactivity_response)
@@ -131,7 +136,7 @@ async def get_containers_inactivity(
             exc_info=True,
         )
 
-    return InactivityResponse(seconds_inactive=None)
+    return InactivityResponse(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
 
 
 # Some of the operations and sub-resources on containers are implemented as long-running tasks.
