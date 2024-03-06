@@ -14,7 +14,7 @@ install() {
   pushd tests/environment-setup
   make install-ci
   popd
-  uv pip list --verbose
+  uv pip list
 }
 
 test() {

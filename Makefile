@@ -472,7 +472,7 @@ push-version: tag-version
 		wheel \
 		setuptools \
 		uv
-	@uv pip list --verbose
+	@uv pip list
 
 devenv: .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
 	@uv pip --quiet install -r requirements/devenv.txt

@@ -12,7 +12,7 @@ install() {
   pushd services/catalog
   make install-ci
   popd
-  uv pip list --verbose
+  uv pip list
 }
 
 test() {
