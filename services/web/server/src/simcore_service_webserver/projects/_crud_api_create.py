@@ -283,6 +283,9 @@ async def create_project(
             hidden=copy_data,
             project_nodes=project_nodes,
         )
+        task_progress.update(
+            message=f"inserted project {new_project['uuid']=} into the db"
+        )
 
         # 4. deep copy source project's files
         if copy_file_coro:

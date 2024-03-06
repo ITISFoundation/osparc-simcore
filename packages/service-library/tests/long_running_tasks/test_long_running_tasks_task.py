@@ -181,8 +181,8 @@ async def test_start_multiple_not_unique_tasks(tasks_manager: TasksManager):
 
 
 def test_get_task_id():
-    obj1 = TasksManager._create_task_id("")  # noqa: SLF001
-    obj2 = TasksManager._create_task_id("")  # noqa: SLF001
+    obj1 = TasksManager.generate_task_id("")  # noqa: SLF001
+    obj2 = TasksManager.generate_task_id("")  # noqa: SLF001
     assert obj1 != obj2
 
 
