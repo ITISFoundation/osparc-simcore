@@ -26,7 +26,7 @@ class ProductData:
 
 def render_email_parts(
     env: Environment,
-    template_prefix: str,
+    event_name: str,
     *,
     user: UserData,
     product: ProductData,
@@ -44,13 +44,13 @@ def render_email_parts(
     data = (extra or {}) | {"user": user, "product": product}
 
     # NOTE: assumes template convention!
-    subject = env.get_template(f"{template_prefix}.email.subject.txt").render(data)
+    subject = env.get_template(f"{event_name}.email.subject.txt").render(data)
 
     # Body
-    text_template = env.get_template(f"{template_prefix}.email.txt")
+    text_template = env.get_template(f"{event_name}.email.txt")
     text_content = text_template.render(data)
 
-    html_template = env.get_template(f"{template_prefix}.email.html")
+    html_template = env.get_template(f"{event_name}.email.html")
     html_content = html_template.render(data)
 
     return (from_, to, subject, text_content, html_content)

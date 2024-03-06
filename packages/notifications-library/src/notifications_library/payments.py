@@ -10,11 +10,11 @@ from models_library.users import UserID
 _logger = logging.getLogger(__name__)
 
 
-_PRODUCT_NOTIFICATIONS_TEMPLATES = {
+_ON_PAYED_TEMPLATES = {
     "base.html",
-    "notify_payments.email.html",
-    "notify_payments.email.txt",
-    "notify_payments.email.subject.txt",
+    "on_payed.email.html",
+    "on_payed.email.txt",
+    "on_payed.email.subject.txt",
 }
 
 

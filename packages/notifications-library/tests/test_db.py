@@ -15,6 +15,7 @@ import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from notifications_library._db import TemplatesRepo
+from notifications_library._payments_db import PaymentsDataRepo
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
@@ -121,16 +122,16 @@ async def test_templates_repo(
     assert await repo.get_primary_group_id(user_id) == user_primary_group_id
 
 
-async def test_get_notification_data(
+async def test_get_on_payed_data(
     sqlalchemy_async_engine: AsyncEngine,
     user: dict[str, Any],
     product: dict[str, Any],
     successful_transaction: dict[str, Any],
 ):
-    repo = TemplatesRepo(sqlalchemy_async_engine)
+    repo = PaymentsDataRepo(sqlalchemy_async_engine)
 
     # check once
-    data = await repo.get_notify_payments_data(
+    data = await repo.get_on_payed_data(
         user_id=user["id"], payment_id=successful_transaction["payment_id"]
     )
 
@@ -175,7 +176,7 @@ async def email_templates(
             await _delete_row(conn, jinja2_templates, jinja2_templates.c.name, pk_value)
 
 
-async def test_get_payments_templates(
+async def test_get_email_templates(
     sqlalchemy_async_engine: AsyncEngine,
     email_templates: dict[str, Any],
     product_name: ProductName,
