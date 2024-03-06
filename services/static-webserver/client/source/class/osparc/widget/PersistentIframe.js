@@ -242,10 +242,9 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           height: divSize.height - this.getToolbarHeight()
         });
 
-        const rightOffset = this.hasState("maximized") ? 0 : 0;
         this.__buttonContainer.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),
-          right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + rightOffset
+          right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
         });
 
         this.__buttonContainer.setVisibility(this.isShowToolbar() ? "visible" : "excluded");
