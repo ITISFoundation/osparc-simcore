@@ -41,7 +41,6 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       }
     });
     this.__callbacks = {};
-    console.log("Executed!!!!")
   },
 
 
