@@ -11,7 +11,7 @@ install() {
   pushd packages/simcore-sdk
   make install-ci
   popd
-  pip list --verbose
+  uv pip list
   make info-images
 }
 

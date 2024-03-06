@@ -8,7 +8,7 @@ IFS=$'\n\t'
 install() {
   bash ci/helpers/ensure_python_pip.bash
   pip3 install --requirement api/tests/requirements.txt
-  pip list --verbose
+  uv pip list
 }
 
 test() {

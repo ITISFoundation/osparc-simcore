@@ -23,7 +23,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   uv pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
-  pip list | sed 's/^/    /'
+  uv pip list | sed 's/^/    /'
 
   APP_CONFIG=server-docker-dev.yaml
 elif [ "${SC_BUILD_TARGET}" = "production" ]; then
