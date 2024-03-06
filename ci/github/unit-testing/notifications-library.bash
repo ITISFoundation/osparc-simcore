@@ -13,7 +13,7 @@ install() {
   pushd packages/notifications-library
   make install-ci
   popd
-  .venv/bin/pip list --verbose
+  uv pip list
 }
 
 test() {
