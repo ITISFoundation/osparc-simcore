@@ -195,7 +195,7 @@ def _ssh_and_get_available_disk_space(
             timeout=5,
         )
         # Command to get disk space for /docker partition
-        disk_space_command = "df --block-size=1 /docker | awk 'NR==2{print $4}'"
+        disk_space_command = "df --block-size=1 /mnt/docker | awk 'NR==2{print $4}'"
 
         # Run the command on the remote machine
         _stdin, stdout, stderr = client.exec_command(disk_space_command)
@@ -358,7 +358,7 @@ def _print_dynamic_instances(
                     f"Up: {_timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {instance.ec2_instance.public_ip_address}",
                     f"IntIP: {instance.ec2_instance.private_ip_address}",
-                    f"/docker(free): {_color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                    f"/mnt/docker(free): {_color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
                 ]
             ),
             f"Graylog: {_create_graylog_permalinks(environment, instance.ec2_instance)}",
