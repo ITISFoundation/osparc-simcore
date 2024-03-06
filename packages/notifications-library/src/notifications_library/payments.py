@@ -10,7 +10,7 @@ from models_library.users import UserID
 _logger = logging.getLogger(__name__)
 
 
-_ON_PAYED_TEMPLATES = {
+_ON_PAYED_EVENT_TEMPLATES = {
     "base.html",
     "on_payed.email.html",
     "on_payed.email.txt",

@@ -12,7 +12,7 @@ from ._db import BaseDataRepo
 
 class PaymentsDataRepo(BaseDataRepo):
     async def get_on_payed_data(self, user_id: UserID, payment_id: PaymentID):
-        """Retrives data that will be injected in a notification for the user on this payment"""
+        """Retrieves payment data for the templates on the `on_payed` event"""
         if row := await self._get(
             sa.select(
                 payments_transactions.c.payment_id,
