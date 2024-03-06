@@ -1,9 +1,10 @@
 import logging
 from email.headerregistry import Address
+from pathlib import Path
 from typing import NamedTuple
 
 import notifications_library
-from jinja2 import Environment, PackageLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, PackageLoader, select_autoescape
 from jinja2.exceptions import TemplateNotFound
 
 from ._models import ProductData, UserData
@@ -11,10 +12,18 @@ from ._models import ProductData, UserData
 _logger = logging.getLogger(__name__)
 
 
-def create_default_env():
+def create_render_env_from_package():
     return Environment(
         loader=PackageLoader(notifications_library.__name__, "templates"),
         autoescape=select_autoescape(["html", "xml"]),
+    )
+
+
+def create_render_env_from_folder(top_dir: Path):
+    assert top_dir.exists()  # nosec
+    assert top_dir.is_dir()  # nosec
+    return Environment(
+        loader=FileSystemLoader(top_dir), autoescape=select_autoescape(["html", "xml"])
     )
 
 

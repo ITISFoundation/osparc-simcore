@@ -15,7 +15,10 @@ from notifications_library._email import (
     create_email_session,
 )
 from notifications_library._models import ProductData, UserData
-from notifications_library._render import create_default_env, render_email_parts
+from notifications_library._render import (
+    create_render_env_from_package,
+    render_email_parts,
+)
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
@@ -67,7 +70,7 @@ async def test_send_email_workflow(
     """
 
     settings = SMTPSettings.create_from_envs()
-    env = create_default_env()
+    env = create_render_env_from_package()
 
     assert user_data.email == user_email
     assert product_data.product_name == product_name

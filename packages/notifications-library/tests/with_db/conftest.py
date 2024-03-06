@@ -96,6 +96,7 @@ async def product(
 async def products_names(
     sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
 ) -> list[ProductName]:
+    # overrides
     async with sqlalchemy_async_engine.begin() as conn:
         result = await conn.execute(sa.select(products.c.name))
         all_product_names = [row.name for row in result.fetchall()]

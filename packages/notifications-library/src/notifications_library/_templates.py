@@ -43,25 +43,20 @@ def get_default_named_templates(
     return {p.name: p for p in _templates_dir.glob(pattern)}
 
 
-def get_folder_stats_msg(top_dir: Path) -> str:
-    assert top_dir.is_dir()  # nosec
-    file_count = sum(1 for _ in top_dir.glob("**/*") if _.is_file())
-    total_size = sum(_.stat().st_size for _ in top_dir.glob("**/*") if _.is_file())
-    return f"Files: {file_count}, Total Size: {total_size} bytes"
-
-
-def print_tree(top: Path, prefix="", **print_kwargs):
+def print_tree(top: Path, indent=0, prefix="", **print_kwargs):
+    prefix = indent * "    " + prefix
     if top.is_file():
-        stats = f"{top.stat().st_size}B"
-        print(prefix + top.name, stats, **print_kwargs)  # noqa: T201
+        file_size = f"{top.stat().st_size}B"
+        entry = f"{top.name:<50}{file_size}"
+        print(prefix + entry, **print_kwargs)  # noqa: T201
     elif top.is_dir():
-        print(prefix + top.name, **print_kwargs)  # noqa: T201
-        prefix += "    "
-        children = list(top.iterdir())
+        children = sorted(top.iterdir())
+        entry = f"{top.name}  {len(children)}"
+        print(prefix + entry, **print_kwargs)  # noqa: T201
         for child in children[:-1]:
-            print_tree(child, prefix + "├── ", **print_kwargs)
+            print_tree(child, indent + 1, "├── ", **print_kwargs)
         if children:
-            print_tree(children[-1], prefix + "└── ", **print_kwargs)
+            print_tree(children[-1], indent + 1, "└── ", **print_kwargs)
 
 
 async def consolidate_templates(
@@ -101,7 +96,3 @@ async def consolidate_templates(
 
             template_path = product_folder / custom_template.name
             template_path.write_text(custom_template.content)
-
-        _logger.debug(
-            "%s %s", f"{product_folder=}", get_folder_stats_msg(product_folder)
-        )
