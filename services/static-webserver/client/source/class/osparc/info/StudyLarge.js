@@ -70,30 +70,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
 
-      const title = osparc.info.StudyUtils.createTitle(this.getStudy()).set({
-        font: "text-14"
-      });
-      const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
-      let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
-      if (this.__isTemplate) {
-        text = osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) + " Id";
-      }
-      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
-        label: text,
-        toolTipText: "Copy " + text
-      });
-      button.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid()));
-
-
-      const titleAndCopyLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      titleAndCopyLayout.add(titleLayout);
-      titleAndCopyLayout.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-      titleAndCopyLayout.add(button);
-      // vBox.add(titleAndCopyLayout);
-
-      const mainHBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(20));
+      const mainHBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
       const leftVBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       mainHBox.add(leftVBox, {
@@ -106,8 +83,22 @@ qx.Class.define("osparc.info.StudyLarge", {
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
       leftVBox.add(extraInfoLayout);
 
+      let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
+      if (this.__isTemplate) {
+        text = osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) + " Id";
+      }
+      const copyIdButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+        label: text,
+        toolTipText: "Copy " + text,
+        marginTop: 15,
+        allowGrowX: false
+      });
+      copyIdButton.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid()));
+      leftVBox.add(copyIdButton);
+
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(vBox);
+
       this._add(scrollContainer, {
         flex: 1
       });
