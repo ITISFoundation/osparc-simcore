@@ -45,11 +45,16 @@ async def request_product_account(request: web.Request):
     body = await parse_request_body_as(AccountRequestInfo, request)
     assert body.form  # nosec
 
-    # gets ipinfo
-    peername = (
-        request.transport.get_extra_info("peername") if request.transport else None
+    # NOTE:  Traefik is also configured to transmit the original IP
+    source_ip = request.headers.get("X-Real-IP", None) or request.headers.get(
+        "X-Forwarded-For", None
     )
-    ipinfo = f"https://ipinfo.io/{peername}/json" if peername else "Unknown IP address"
+    if not source_ip and request.transport:
+        source_ip = request.transport.get_extra_info("peername", default=None)
+
+    ipinfo = (
+        f"https://ipinfo.io/{source_ip}/json" if source_ip else "Unknown IP address"
+    )
 
     # send email to fogbugz or user itself
     fire_and_forget_task(
