@@ -14,12 +14,8 @@ from notifications_library._email import (
     compose_email,
     create_email_session,
 )
-from notifications_library._render import (
-    ProductData,
-    UserData,
-    create_default_env,
-    render_email_parts,
-)
+from notifications_library._models import ProductData, UserData
+from notifications_library._render import create_default_env, render_email_parts
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pytest_mock import MockerFixture

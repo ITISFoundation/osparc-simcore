@@ -1,10 +1,6 @@
 from jinja2 import Environment
-from notifications_library._render import (
-    ProductData,
-    UserData,
-    create_default_env,
-    render_email_parts,
-)
+from notifications_library._models import ProductData, UserData
+from notifications_library._render import create_default_env, render_email_parts
 from notifications_library.payments import ON_PAYED_EVENT_EMAIL_TEMPLATES, PaymentData
 
 

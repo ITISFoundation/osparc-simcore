@@ -10,7 +10,7 @@ from typing import Any
 import notifications_library
 import pytest
 from models_library.products import ProductName
-from notifications_library._render import ProductData, UserData
+from notifications_library._models import ProductData, UserData
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict

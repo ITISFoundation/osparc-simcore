@@ -1,12 +1,12 @@
 import logging
-from dataclasses import dataclass
 from email.headerregistry import Address
 from typing import NamedTuple
 
 import notifications_library
 from jinja2 import Environment, PackageLoader, select_autoescape
 from jinja2.exceptions import TemplateNotFound
-from models_library.products import ProductName
+
+from ._models import ProductData, UserData
 
 _logger = logging.getLogger(__name__)
 
@@ -16,21 +16,6 @@ def create_default_env():
         loader=PackageLoader(notifications_library.__name__, "templates"),
         autoescape=select_autoescape(["html", "xml"]),
     )
-
-
-@dataclass
-class UserData:
-    first_name: str
-    last_name: str
-    email: str
-
-
-@dataclass
-class ProductData:
-    product_name: ProductName
-    display_name: str
-    vendor_display_inline: str
-    support_email: str
 
 
 class EmailPartsTuple(NamedTuple):
