@@ -11,7 +11,6 @@ from http import HTTPStatus
 from itertools import repeat
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -56,7 +55,10 @@ async def tokens_db_cleanup(
 
 @pytest.fixture
 async def fake_tokens(
-    client: TestClient, logged_user: UserInfoDict, tokens_db_cleanup: None, faker: Faker
+    client: TestClient,
+    logged_user: UserInfoDict,
+    tokens_db_cleanup: None,
+    faker: Faker,
 ) -> list:
     all_tokens = []
     assert client.app
@@ -121,10 +123,10 @@ async def test_create_token(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
         (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_read_token(
@@ -159,18 +161,18 @@ async def test_read_token(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
         (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
+        (UserRole.USER, status.HTTP_204_NO_CONTENT),
+        (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
     ],
 )
 async def test_delete_token(
     client: TestClient,
     logged_user: UserInfoDict,
     tokens_db_cleanup: None,
-    fake_tokens,
-    expected,
+    fake_tokens: list,
+    expected: HTTPStatus,
 ):
     assert client.app
 
