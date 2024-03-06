@@ -5,7 +5,8 @@
 # pylint: disable=unused-variable
 
 
-from typing import Any
+from collections.abc import Callable
+from typing import Any, Coroutine
 
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
@@ -56,14 +57,16 @@ async def test_payments_data_repo(
 async def test_templates_repo(
     sqlalchemy_async_engine: AsyncEngine,
     email_templates: dict[str, Any],
+    email_template_mark: dict,
     product_name: ProductName,
+    set_template_to_product: Callable[[str, ProductName], Coroutine],
 ):
     repo = TemplatesRepo(sqlalchemy_async_engine)
 
-    templates = await repo.get_email_templates(
-        names=set(email_templates.keys()), product=product_name
-    )
+    one_template_name = next(_ for _ in email_templates if "email" in _)
+    await set_template_to_product(one_template_name, product_name)
 
-    assert {t.name: t.content for t in templates} == {
-        key: value["content"] for key, value in email_templates.items()
-    }
+    async for template in repo.iter_email_templates(product_name):
+        assert template.name in email_templates
+        assert email_template_mark in template.content
+        assert template.name == one_template_name

@@ -32,20 +32,24 @@ class UserDataRepo(BaseDataRepo):
 
 
 class TemplatesRepo(BaseDataRepo):
-    async def get_email_templates(self, names: set[str], product: ProductName):
-        # TODO: create products_to_template table and add a join here
+    async def iter_email_templates(self, product_name: ProductName):
         async with self.db_engine.begin() as conn:
-            result = await conn.execute(
+            async for row in await conn.stream(
                 sa.select(
                     jinja2_templates.c.name,
                     jinja2_templates.c.content,
-                ).where(jinja2_templates.c.name.in_(names))
-            )
-            return result.fetchall()
+                )
+                .select_from(products_to_templates.join(jinja2_templates))
+                .where(
+                    (products_to_templates.c.product_name == product_name)
+                    & (jinja2_templates.c.name.ilike("%.email.%"))
+                )
+            ):
+                yield row
 
     async def iter_product_templates(self, product_name: ProductName):
         async with self.db_engine.begin() as conn:
-            async for row in conn.execute(
+            async for row in await conn.stream(
                 sa.select(
                     products_to_templates.c.product_name,
                     jinja2_templates.c.name,

@@ -12,17 +12,22 @@ from typing import Any
 import notifications_library
 import pytest
 import sqlalchemy as sa
+from models_library.basic_types import IDStr
+from models_library.products import ProductName
 from models_library.users import GroupID, UserID
+from pydantic import validate_arguments
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.products_to_templates import products_to_templates
 from simcore_postgres_database.models.users import users
+from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
 
 async def _insert_and_get_row(
     conn, table: sa.Table, values: dict[str, Any], pk_col: sa.Column, pk_value: Any
-):
+) -> Row:
     result = await conn.execute(table.insert().values(**values).returning(pk_col))
     row = result.first()
     assert getattr(row, pk_col.name) == pk_value
@@ -31,7 +36,7 @@ async def _insert_and_get_row(
     return result.first()
 
 
-async def _delete_row(conn, table, pk_col: sa.Column, pk_value: Any):
+async def _delete_row(conn, table, pk_col: sa.Column, pk_value: Any) -> None:
     await conn.execute(table.delete().where(pk_col == pk_value))
 
 
@@ -49,9 +54,9 @@ async def user(
 
     # NOTE: creation of primary group and setting `groupid`` is automatically triggered after creation of user by postgres
     async with sqlalchemy_async_engine.begin() as conn:
-        row = await _insert_and_get_row(conn, users, user, *pk_args)
+        row: Row = await _insert_and_get_row(conn, users, user, *pk_args)
 
-    yield dict(row)
+    yield row._asdict()
 
     async with sqlalchemy_async_engine.begin() as conn:
         await _delete_row(conn, users, *pk_args)
@@ -69,15 +74,20 @@ async def product(
 ) -> AsyncIterator[dict[str, Any]]:
     """Overrides pytest_simcore.faker_products_data.product
     and injects product in db
+
     """
     # NOTE: this fixture ignores products' group-id but it is fine for this test context
     assert product["group_id"] is None
+
+    # NOTE: osparc product is already in db. This is another product
+    assert product["name"] != "osparc"
+
     pk_args = products.c.name, product["name"]
 
     async with sqlalchemy_async_engine.begin() as conn:
-        row = await _insert_and_get_row(conn, products, product, *pk_args)
+        row: Row = await _insert_and_get_row(conn, products, product, *pk_args)
 
-    yield dict(row)
+    yield row._asdict()
 
     async with sqlalchemy_async_engine.begin() as conn:
         await _delete_row(conn, products, *pk_args)
@@ -93,11 +103,11 @@ async def successful_transaction(
     pk_args = payments_transactions.c.payment_id, successful_transaction["payment_id"]
 
     async with sqlalchemy_async_engine.begin() as conn:
-        row = await _insert_and_get_row(
+        row: Row = await _insert_and_get_row(
             conn, payments_transactions, successful_transaction, *pk_args
         )
 
-    yield dict(row)
+    yield row._asdict()
 
     async with sqlalchemy_async_engine.begin() as conn:
         await _delete_row(conn, payments_transactions, *pk_args)
@@ -137,3 +147,35 @@ async def email_templates(
     async with sqlalchemy_async_engine.begin() as conn:
         for pk_value in pk_to_row:
             await _delete_row(conn, jinja2_templates, jinja2_templates.c.name, pk_value)
+
+
+@pytest.fixture
+def set_template_to_product(
+    sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
+):
+    # NOTE: needs all fixture products in db
+    @validate_arguments
+    async def _(template_name: IDStr, product_name: ProductName) -> None:
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(
+                products_to_templates.insert().values(
+                    product_name=product_name, template_name=template_name
+                )
+            )
+
+    return _
+
+
+@pytest.fixture
+def unset_template_to_product(sqlalchemy_async_engine: AsyncEngine):
+    @validate_arguments
+    async def _(template_name: IDStr, product_name: ProductName) -> None:
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(
+                products_to_templates.delete().where(
+                    (products_to_templates.c.product_name == product_name)
+                    & (products_to_templates.c.template_name == template_name)
+                )
+            )
+
+    return _
