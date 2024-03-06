@@ -228,7 +228,7 @@ async def test_search_and_pre_registration(
 ):
     assert client.app
 
-    # ONLY in `users` and NOT `users_details`
+    # ONLY in `users` and NOT `users_pre_registration_details`
 
     resp = await client.get("/v0/users:search", params={"email": logged_user["email"]})
     assert resp.status == status.HTTP_200_OK
@@ -250,7 +250,7 @@ async def test_search_and_pre_registration(
         "status": "ACTIVE",
     }
 
-    # NOT in `users` and ONLY `users_details`
+    # NOT in `users` and ONLY `users_pre_registration_details`
 
     # create pre-registration
     requester_info = {

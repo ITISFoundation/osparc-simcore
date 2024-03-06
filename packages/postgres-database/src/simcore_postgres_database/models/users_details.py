@@ -8,8 +8,8 @@ from ._common import (
 from .base import metadata
 from .users import users
 
-users_details = sa.Table(
-    "users_details",
+users_pre_registration_details = sa.Table(
+    "users_pre_registration_details",
     #
     # Provides extra attributes for a user that either not required or that are provided before the user is created.
     # The latter state is denoted as "pre-registration" and specific attributes in this state are prefixed with `pre_`. Therefore,
@@ -73,4 +73,4 @@ users_details = sa.Table(
     column_modified_datetime(timezone=False),
 )
 
-register_modified_datetime_auto_update_trigger(users_details)
+register_modified_datetime_auto_update_trigger(users_pre_registration_details)

@@ -14,7 +14,7 @@ from aiopg.sa.result import RowProxy
 
 from .errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
-from .models.users_details import users_details
+from .models.users_details import users_pre_registration_details
 
 
 class BaseUserRepoError(Exception):
@@ -91,27 +91,28 @@ class UsersRepo:
 
         # link both tables first
         result = await conn.execute(
-            users_details.update()
-            .where(users_details.c.pre_email == new_user_email)
+            users_pre_registration_details.update()
+            .where(users_pre_registration_details.c.pre_email == new_user_email)
             .values(user_id=new_user_id)
         )
 
         if result.rowcount:
             pre_columns = (
-                users_details.c.pre_first_name,
-                users_details.c.pre_last_name,
-                users_details.c.pre_phone,
+                users_pre_registration_details.c.pre_first_name,
+                users_pre_registration_details.c.pre_last_name,
+                users_pre_registration_details.c.pre_phone,
             )
 
             assert {c.name for c in pre_columns} == {  # nosec
                 c.name
-                for c in users_details.columns
-                if c != users_details.c.pre_email and c.name.startswith("pre_")
+                for c in users_pre_registration_details.columns
+                if c != users_pre_registration_details.c.pre_email
+                and c.name.startswith("pre_")
             }, "Different pre-cols detected. This code might need an update update"
 
             result = await conn.execute(
                 sa.select(*pre_columns).where(
-                    users_details.c.pre_email == new_user_email
+                    users_pre_registration_details.c.pre_email == new_user_email
                 )
             )
             if details := await result.fetchone():
@@ -131,16 +132,19 @@ class UsersRepo:
             sa.select(
                 users.c.first_name,
                 users.c.last_name,
-                users_details.c.company_name,
-                users_details.c.address,
-                users_details.c.city,
-                users_details.c.state,
-                users_details.c.country,
-                users_details.c.postal_code,
+                users_pre_registration_details.c.company_name,
+                users_pre_registration_details.c.address,
+                users_pre_registration_details.c.city,
+                users_pre_registration_details.c.state,
+                users_pre_registration_details.c.country,
+                users_pre_registration_details.c.postal_code,
                 users.c.phone,
             )
             .select_from(
-                users.join(users_details, users.c.id == users_details.c.user_id)
+                users.join(
+                    users_pre_registration_details,
+                    users.c.id == users_pre_registration_details.c.user_id,
+                )
             )
             .where(users.c.id == user_id)
         )
@@ -192,7 +196,9 @@ class UsersRepo:
             return True
 
         pre_registered = await conn.scalar(
-            sa.select(users_details.c.user_id).where(users_details.c.pre_email == email)
+            sa.select(users_pre_registration_details.c.user_id).where(
+                users_pre_registration_details.c.pre_email == email
+            )
         )
         if pre_registered:
             return True
