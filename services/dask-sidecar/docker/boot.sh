@@ -28,7 +28,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   pip install --no-cache-dir -r requirements/dev.txt
   cd - || exit 1
   print_info "PIP :"
-  pip list | sed 's/^/    /'
+  uv pip list | sed 's/^/    /'
 fi
 
 # RUNNING application ----------------------------------------
