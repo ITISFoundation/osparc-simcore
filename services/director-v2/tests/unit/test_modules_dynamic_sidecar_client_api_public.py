@@ -14,6 +14,7 @@ from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.http_client_thin import ClientHttpError, UnexpectedStatusError
+from servicelib.json_serialization import json_dumps
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     SidecarsClient,
@@ -350,7 +351,7 @@ async def test_update_volume_state(
 
 @pytest.mark.parametrize(
     "mock_json",
-    [{"seconds_inactive": 1}, {"seconds_inactive": None}],
+    [{"seconds_inactive": 1}, {"seconds_inactive": None}, None],
 )
 async def test_get_service_inactivity(
     get_patched_client: Callable,
@@ -359,7 +360,9 @@ async def test_get_service_inactivity(
 ) -> None:
     with get_patched_client(
         "get_containers_inactivity",
-        return_value=Response(status_code=status.HTTP_200_OK, json=mock_json),
+        return_value=Response(
+            status_code=status.HTTP_200_OK, text=json_dumps(mock_json)
+        ),
     ) as client:
         assert (
             await client.get_service_inactivity(dynamic_sidecar_endpoint) == mock_json

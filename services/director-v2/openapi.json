@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "simcore-service-director-v2",
-    "description": " Orchestrates the pipeline of services defined by the user",
+    "description": "Orchestrates the pipeline of services defined by the user",
     "version": "2.2.0"
   },
   "servers": [
@@ -1806,6 +1806,9 @@
               },
               {
                 "$ref": "#/components/schemas/NoAuthentication"
+              },
+              {
+                "$ref": "#/components/schemas/TLSAuthentication"
               }
             ],
             "title": "Authentication",
@@ -1918,6 +1921,9 @@
               },
               {
                 "$ref": "#/components/schemas/NoAuthentication"
+              },
+              {
+                "$ref": "#/components/schemas/TLSAuthentication"
               }
             ],
             "title": "Authentication",
@@ -3595,6 +3601,41 @@
         ],
         "title": "Status2",
         "description": "    String representation of the container state. Can be one of \"created\",\n\"running\", \"paused\", \"restarting\", \"removing\", \"exited\", or \"dead\"."
+      },
+      "TLSAuthentication": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "tls"
+            ],
+            "title": "Type",
+            "default": "tls"
+          },
+          "tls_ca_file": {
+            "type": "string",
+            "format": "path",
+            "title": "Tls Ca File"
+          },
+          "tls_client_cert": {
+            "type": "string",
+            "format": "path",
+            "title": "Tls Client Cert"
+          },
+          "tls_client_key": {
+            "type": "string",
+            "format": "path",
+            "title": "Tls Client Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tls_ca_file",
+          "tls_client_cert",
+          "tls_client_key"
+        ],
+        "title": "TLSAuthentication"
       },
       "TaskCounts": {
         "properties": {
