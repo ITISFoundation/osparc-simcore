@@ -208,7 +208,7 @@ def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]
 def mock_payments_routes(faker: Faker) -> Callable:
     def _mock(mock_router: MockRouter):
         def _init_200(request: httpx.Request):
-            assert InitPayment.parse_raw(request.content) is not None  # MD
+            assert InitPayment.parse_raw(request.content) is not None
             assert "*" not in request.headers["X-Init-Api-Secret"]
 
             return httpx.Response(
