@@ -35,6 +35,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 
 from .._constants import RUT
+from ..core.settings import ApplicationSettings
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
 from ..models.db_to_api import to_payments_api_model
@@ -57,6 +58,7 @@ _logger = logging.getLogger()
 async def init_one_time_payment(
     gateway: PaymentsGatewayApi,
     repo: PaymentsTransactionsRepo,
+    settings: ApplicationSettings,
     *,
     amount_dollars: Decimal,
     target_credits: Decimal,
@@ -75,7 +77,7 @@ async def init_one_time_payment(
     # NOTE: PC: please modify with your "collecting of user address" PR https://github.com/ITISFoundation/osparc-simcore/issues/5138
     user_address = UserAddress(country="CH")
 
-    init = await gateway.init_payment(
+    init: PaymentInitiated = await gateway.init_payment(
         payment=InitPayment(
             amount_dollars=amount_dollars,
             credits=target_credits,
@@ -90,7 +92,8 @@ async def init_one_time_payment(
                 if user_address.country in COUNTRIES_WITH_VAT
                 else StripeTaxExempt.reverse
             ),
-        )
+        ),
+        payment_gateway_tax_feature_enabled=settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED,
     )
 
     submission_link = gateway.get_form_payment_url(init.payment_id)
@@ -216,6 +219,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
     notifier: NotifierService,
+    settings: ApplicationSettings,
     *,
     payment_method_id: PaymentMethodID,
     amount_dollars: Decimal,
@@ -255,6 +259,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
                 else StripeTaxExempt.reverse
             ),
         ),
+        payment_gateway_tax_feature_enabled=settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED,
     )
 
     payment_id = ack.payment_id

@@ -18,6 +18,7 @@ from pydantic import EmailStr
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 
+from ...core.settings import ApplicationSettings
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services import payments
 from ...services.payments_gateway import PaymentsGatewayApi
@@ -45,6 +46,8 @@ async def init_payment(  # pylint: disable=too-many-arguments
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
 
+    settings: ApplicationSettings = app.state.settings
+
     with log_context(
         _logger,
         logging.INFO,
@@ -55,6 +58,7 @@ async def init_payment(  # pylint: disable=too-many-arguments
         return await payments.init_one_time_payment(
             gateway=PaymentsGatewayApi.get_from_app_state(app),
             repo=PaymentsTransactionsRepo(db_engine=app.state.engine),
+            settings=settings,
             amount_dollars=amount_dollars,
             target_credits=target_credits,
             product_name=product_name,
