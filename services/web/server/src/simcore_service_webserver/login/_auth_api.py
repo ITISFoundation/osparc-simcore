@@ -25,7 +25,7 @@ async def create_user(
     *,
     email: str,
     password: str,
-    status: UserStatus,
+    status_upon_creation: UserStatus,
     expires_at: datetime | None,
 ) -> dict:
 
@@ -34,8 +34,11 @@ async def create_user(
             conn,
             email=email,
             password_hash=encrypt_password(password),
-            status=status,
+            status=status_upon_creation,
             expires_at=expires_at,
+        )
+        await UsersRepo.join_and_update_from_pre_registration_details(
+            conn, user.id, user.email
         )
     return dict(user.items())
 

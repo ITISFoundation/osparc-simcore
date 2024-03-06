@@ -39,3 +39,9 @@ class FrontendUserPreferenceIsNotDefinedError(UsersBaseError):
     def __init__(self, frontend_preference_name: str, **ctx: Any):
         super().__init__(**ctx)
         self.frontend_preference_name = frontend_preference_name
+
+
+class AlreadyPreRegisteredError(UsersBaseError):
+    msg_template = (
+        "Found {num_found} matches for '{email}'. Cannot pre-register existing user"
+    )
