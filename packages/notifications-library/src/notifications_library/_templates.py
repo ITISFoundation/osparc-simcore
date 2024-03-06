@@ -3,6 +3,7 @@ import logging
 import shutil
 from pathlib import Path
 
+import notifications_library
 from models_library.products import ProductName
 
 from ._db import TemplatesRepo
@@ -10,8 +11,10 @@ from ._db import TemplatesRepo
 _logger = logging.getLogger(__name__)
 
 
-_td = importlib.resources.files("notifications_library.templates")
-_templates_dir = Path(f"{_td}")
+_template_resources = importlib.resources.files(
+    notifications_library.__name__
+).joinpath("templates")
+_templates_dir = Path(_template_resources.as_posix())
 
 #
 # templates naming is formatted as "{event_name}.{provider}.{part}.{format}"
@@ -27,6 +30,20 @@ def get_folder_stats_msg(top_dir: Path) -> str:
     file_count = sum(1 for _ in top_dir.glob("**/*") if _.is_file())
     total_size = sum(_.stat().st_size for _ in top_dir.glob("**/*") if _.is_file())
     return f"Files: {file_count}, Total Size: {total_size} bytes"
+
+
+def print_tree(top: Path, prefix="", **print_kwargs):
+    if top.is_file():
+        stats = f"{top.stat().st_size}B"
+        print(prefix + top.name, stats, **print_kwargs)  # noqa: T201
+    elif top.is_dir():
+        print(prefix + top.name, **print_kwargs)  # noqa: T201
+        prefix += "    "
+        children = list(top.iterdir())
+        for child in children[:-1]:
+            print_tree(child, prefix + "├── ", **print_kwargs)
+        if children:
+            print_tree(children[-1], prefix + "└── ", **print_kwargs)
 
 
 async def consolidate_templates(

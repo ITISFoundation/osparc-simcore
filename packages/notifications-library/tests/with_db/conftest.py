@@ -94,6 +94,17 @@ async def product(
 
 
 @pytest.fixture
+async def products_names(
+    sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
+) -> list[ProductName]:
+    async with sqlalchemy_async_engine.begin() as conn:
+        result = await conn.execute(sa.select(products.c.name))
+        all_product_names = [row.name for row in result.fetchall()]
+        assert product["name"] in all_product_names
+        return all_product_names
+
+
+@pytest.fixture
 async def successful_transaction(
     sqlalchemy_async_engine: AsyncEngine, successful_transaction: dict[str, Any]
 ) -> AsyncIterator[dict[str, Any]]:
