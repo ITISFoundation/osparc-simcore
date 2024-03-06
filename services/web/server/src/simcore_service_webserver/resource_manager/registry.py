@@ -113,7 +113,9 @@ class RedisResourceRegistry:
         partial_hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         async for scanned_key in self.client.scan_iter(match=partial_hash_key):
             if await self.client.hexists(scanned_key, resource_name):
-                resources.append(await self.client.hget(scanned_key, resource_name))
+                key_value = await self.client.hget(scanned_key, resource_name)
+                if key_value is not None:
+                    resources.append(key_value)
         return resources
 
     async def find_keys(self, resource: tuple[str, str]) -> list[UserSessionDict]:
