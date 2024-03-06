@@ -57,6 +57,11 @@ class EC2InstancesSettings(BaseCustomSettings):
         description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
     )
 
+    EC2_INSTANCES_BUFFER_MACHINE_TYPE: dict[InstanceTypeType, PositiveInt] = Field(
+        ...,
+        description="Defines what are the buffer machines to be created and their respective number",
+    )
+
     EC2_INSTANCES_KEY_NAME: str = Field(
         ...,
         min_length=1,
