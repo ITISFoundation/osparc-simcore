@@ -108,6 +108,14 @@ qx.Class.define("osparc.Preferences", {
       apply: "__patchPreference"
     },
 
+    lowDiskSpaceThreshold: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeLowDiskSpaceThreshold",
+      apply: "__patchPreference"
+    },
+
     jobConcurrencyLimit: {
       check: "Number",
       nullable: false,

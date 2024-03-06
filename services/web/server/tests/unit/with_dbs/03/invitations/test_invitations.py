@@ -100,7 +100,7 @@ async def test_invalid_invitation_if_guest_is_already_registered_in_product(
         autospec=True,
     )
     async with NewUser(
-        params={
+        user_data={
             "name": "test-user",
             "email": fake_osparc_invitation.guest,
         },

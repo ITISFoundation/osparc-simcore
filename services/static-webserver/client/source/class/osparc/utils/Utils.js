@@ -537,13 +537,16 @@ qx.Class.define("osparc.utils.Utils", {
       return L > 0.35 ? "#FFF" : "#000";
     },
 
-    bytesToSize: function(bytes) {
-      const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-      if (bytes == 0) {
+    bytesToSize: function(bytes, decimals = 2) {
+      if (!+bytes) {
         return "0 Bytes";
       }
-      const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1000)));
-      return Math.round((bytes / Math.pow(1000, i)) * 100) / 100 + " " + sizes[i];
+      const k = 1000;
+      const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+      const dm = decimals < 0 ? 0 : decimals;
+
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
     },
 
     bytesToGB: function(bytes) {
