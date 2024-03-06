@@ -3,6 +3,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=not-an-iterable
 
 
 from collections.abc import Callable, Iterator
