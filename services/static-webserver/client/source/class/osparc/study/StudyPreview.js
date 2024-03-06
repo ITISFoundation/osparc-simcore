@@ -19,7 +19,7 @@ qx.Class.define("osparc.study.StudyPreview", {
   extend: qx.ui.core.Widget,
 
   /**
-   * @param studyData {osparc.data.model.Study|Object} Study or Serialized Study Object
+   * @param studyData {Object} Serialized Study Object
    */
   construct: function(studyData) {
     this.base(arguments);
@@ -39,8 +39,13 @@ qx.Class.define("osparc.study.StudyPreview", {
     },
 
     __buildPreview: function() {
-      if (osparc.product.Utils.showStudyPreview(this.__studyData) && !this.__studyData.isPipelineEmpty()) {
-        this.add(new osparc.dashboard.StudyThumbnailExplorer(this.__studyData));
+      const study = new osparc.data.model.Study(this.__studyData);
+      if (osparc.product.Utils.showStudyPreview(this.__studyData) && !study.isPipelineEmpty()) {
+        const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
+        workbenchUIPreview.setStudy(study);
+        workbenchUIPreview.loadModel(study.getWorkbench());
+        workbenchUIPreview.setMaxHeight(600);
+        this._add(workbenchUIPreview);
       }
     }
   }

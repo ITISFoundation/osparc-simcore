@@ -887,7 +887,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getRenameStudyMenuButton: function(studyData) {
-      const renameButton = new qx.ui.menu.Button(this.tr("Rename"));
+      const renameButton = new qx.ui.menu.Button(this.tr("Rename..."));
       renameButton.addListener("execute", () => {
         const renamer = new osparc.widget.Renamer(studyData["name"]);
         renamer.addListener("labelChanged", e => {
@@ -904,7 +904,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getThumbnailStudyMenuButton: function(studyData) {
-      const thumbButton = new qx.ui.menu.Button(this.tr("Edit Thumbnail"));
+      const thumbButton = new qx.ui.menu.Button(this.tr("Edit Thumbnail..."));
       thumbButton.addListener("execute", () => {
         const title = this.tr("Edit Thumbnail");
         const oldThumbnail = studyData.thumbnail;
@@ -914,9 +914,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         thumbnailEditor.addListener("updateThumbnail", e => {
           win.close();
           const validUrl = e.getData();
-          this.__updateStudy({
-            "thumbnail": validUrl
-          });
+          const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
+          studyDataCopy["thumbnail"] = validUrl;
+          this.__updateStudy(studyDataCopy);
         }, this);
         thumbnailEditor.addListener("cancel", () => win.close());
       }, this);
