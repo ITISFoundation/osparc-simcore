@@ -21,10 +21,10 @@ def test_on_payed_event(
     env: Environment = create_default_env()
     parts = render_email_parts(
         env,
-        event_name="on_payed",
+        "on_payed",
         user=user_data,
         product=product_data,
-        extra={"payment": payment_data},
+        payment=payment_data,
     )
 
     print(parts)

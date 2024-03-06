@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from email.headerregistry import Address
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 import notifications_library
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -47,7 +47,7 @@ def render_email_parts(
     *,
     user: UserData,
     product: ProductData,
-    extra: dict[str, Any] | None = None,
+    **other_data,
 ) -> EmailPartsTuple:
     from_ = Address(
         display_name=f"{product.display_name} support",
@@ -58,7 +58,7 @@ def render_email_parts(
         addr_spec=user.email,
     )
 
-    data = (extra or {}) | {"user": user, "product": product}
+    data = other_data | {"user": user, "product": product}
 
     # NOTE: assumes template convention!
     subject = env.get_template(f"{event_name}.email.subject.txt").render(data)

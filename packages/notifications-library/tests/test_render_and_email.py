@@ -74,18 +74,19 @@ async def test_send_email_workflow(
     env = create_default_env()
 
     assert user_data.email == user_email
-    assert product_data == product_name
+    assert product_data.product_name == product_name
 
     parts = render_email_parts(
         env,
         event_name="on_payed",
         user=user_data,
         product=product_data,
-        extra={"payment": payment_data},
+        # extras
+        payment=payment_data,
     )
 
-    assert parts.from_.addr_spec == user_email
-    assert parts.to.addr_spec == product_data.support_email
+    assert parts.from_.addr_spec == product_data.support_email
+    assert parts.to.addr_spec == user_email
 
     msg = compose_email(*parts)
 
