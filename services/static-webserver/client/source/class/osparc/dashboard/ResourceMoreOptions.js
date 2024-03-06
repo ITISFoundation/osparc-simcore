@@ -80,7 +80,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __permissionsPage: null,
     __tagsPage: null,
     __billingSettings: null,
-    __previewPage: null,
     __classifiersPage: null,
     __qualityPage: null,
     __servicesUpdatePage: null,
@@ -241,10 +240,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     openBillingSettings: function() {
       this.__openPage(this.__billingSettings);
-    },
-
-    openPreviewPage: function() {
-      this.__openPage(this.__previewPage);
     },
 
     openUpdateServices: function() {
@@ -417,7 +412,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Pipeline Preview");
       const iconSrc = "@FontAwesome5Solid/eye/22";
       const preview = new osparc.study.StudyPreview(resourceData);
-      const page = this.__previewPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
       page.add(preview, {
         flex: 1
