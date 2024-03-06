@@ -61,5 +61,4 @@ class PreUserProfile(InputSchema):
         return v
 
 
-# helps sync models
 assert set(PreUserProfile.__fields__).issubset(UserProfile.__fields__)  # nosec
