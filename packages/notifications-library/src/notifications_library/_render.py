@@ -3,11 +3,19 @@ from dataclasses import dataclass
 from email.headerregistry import Address
 from typing import Any, NamedTuple
 
-from jinja2 import Environment
+import notifications_library
+from jinja2 import Environment, PackageLoader, select_autoescape
 from jinja2.exceptions import TemplateNotFound
 from models_library.products import ProductName
 
 _logger = logging.getLogger(__name__)
+
+
+def create_default_env():
+    return Environment(
+        loader=PackageLoader(notifications_library.__name__, "templates"),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
 
 
 @dataclass

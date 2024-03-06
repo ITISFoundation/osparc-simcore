@@ -6,17 +6,20 @@
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-import notifications_library
 import pytest
 from faker import Faker
-from jinja2 import Environment, PackageLoader, select_autoescape
 from models_library.products import ProductName
 from notifications_library._email import (
     add_attachments,
     compose_email,
     create_email_session,
 )
-from notifications_library._render import ProductData, UserData, render_email_parts
+from notifications_library._render import (
+    ProductData,
+    UserData,
+    create_default_env,
+    render_email_parts,
+)
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
@@ -68,10 +71,7 @@ async def test_send_email_workflow(
     """
 
     settings = SMTPSettings.create_from_envs()
-    env = Environment(
-        loader=PackageLoader(notifications_library.__name__, "templates"),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = create_default_env()
 
     assert user_data.email == user_email
     assert product_data == product_name
