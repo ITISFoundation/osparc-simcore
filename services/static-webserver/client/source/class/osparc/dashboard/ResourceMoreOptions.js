@@ -46,8 +46,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     HEIGHT: 700,
 
     popUpInWindow: function(moreOpts) {
+      const prjAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       // eslint-disable-next-line no-underscore-dangle
-      const title = qx.locale.Manager.tr(`Project Details - ${moreOpts.__resourceData.name}`);
+      const title = qx.locale.Manager.tr(prjAlias + ` Details - ${moreOpts.__resourceData.name}`);
       return osparc.ui.window.Window.popUpInWindow(moreOpts, title, this.WIDTH, this.HEIGHT).set({
         maxHeight: 1000,
         layout: new qx.ui.layout.Grow(),
@@ -321,7 +322,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         this.__getSaveAsTemplatePage,
         this.__getTagsPage,
         this.__getQualityPage,
-        this.__getClassifiersPage
+        this.__getClassifiersPage,
+        this.__getPreviewPage
       ].forEach(pageCallee => {
         if (pageCallee) {
           const page = pageCallee.call(this);
@@ -407,22 +409,24 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       return page;
     },
 
-    //  Fix me - Julian or remove
-    // __getPreviewPage: function() {
-    //   const resourceData = this.__resourceData;
-    //   const id = "Pipeline Preview";
-    //   const title = this.tr("Pipeline Preview");
-    //   const iconSrc = "@FontAwesome5Solid/eye/22";
-    //   // const preview = new osparc.dashboard.StudyThumbnailExplorer(this.getStudy().serialize());
-    //   const preview = new osparc.study.StudyPreview(resourceData);
-    //   const page = this.__previewPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-    //   page.showLabelOnTab();
-    //   page.add(preview, {
-    //     flex: 1
-    //   });
-    //
-    //   return page;
-    // },
+    __getPreviewPage: function() {
+      const resourceData = this.__resourceData;
+      if (osparc.utils.Resources.isService(resourceData)) {
+        return null;
+      }
+
+      const id = "Pipeline Preview";
+      const title = this.tr("Pipeline Preview");
+      const iconSrc = "@FontAwesome5Solid/eye/22";
+      const preview = new osparc.study.StudyPreview(resourceData);
+      const page = this.__previewPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      page.showLabelOnTab();
+      page.add(preview, {
+        flex: 1
+      });
+
+      return page;
+    },
 
     __getCommentsPage: function() {
       const resourceData = this.__resourceData;
@@ -453,10 +457,14 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getDataPage: function() {
+      const resourceData = this.__resourceData;
+      if (osparc.utils.Resources.isService(resourceData)) {
+        return null;
+      }
+
       const id = "Data";
       const title = this.tr("Project Files");
       const iconSrc = "@FontAwesome5Solid/file/22";
-      const resourceData = this.__resourceData;
       const studyDataManager = new osparc.widget.NodeDataManager(resourceData["uuid"]);
 
       const page = this.__dataPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
@@ -662,6 +670,18 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       page.add(servicesBootOpts, {
         flex: 1
       });
+
+      if (osparc.utils.Resources.isStudy(resourceData)) {
+        if (osparc.product.Utils.showDisableServiceAutoStart()) {
+          const study = new osparc.data.model.Study(resourceData);
+          const autoStartButton = osparc.info.StudyUtils.createDisableServiceAutoStart(study);
+          // eslint-disable-next-line no-underscore-dangle
+          servicesBootOpts._add(new qx.ui.core.Spacer(null, 15));
+          // eslint-disable-next-line no-underscore-dangle
+          servicesBootOpts._add(autoStartButton);
+        }
+      }
+
       return page;
     },
 

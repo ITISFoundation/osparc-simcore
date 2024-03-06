@@ -43,9 +43,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     grid.setColumnMaxWidth(this.self().GRID_POS.NAME, 160);
     grid.setColumnFlex(this.self().GRID_POS.NAME, 1);
     this._servicesGrid = new qx.ui.container.Composite(grid);
-    this._add(this._servicesGrid, {
-      flex: 1
-    });
+    this._add(this._servicesGrid);
 
     this._studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 

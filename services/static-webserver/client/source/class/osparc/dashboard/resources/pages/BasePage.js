@@ -26,6 +26,9 @@ qx.Class.define("osparc.dashboard.resources.pages.BasePage", {
       alignX: "center"
     }));
 
+    const scroll = new qx.ui.container.Scroll(this);
+    this.add(scroll);
+
     this.getChildControl("title").set({
       value: title,
       visibility: "excluded"
