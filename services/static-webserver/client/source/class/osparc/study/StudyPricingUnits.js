@@ -43,10 +43,6 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
       const unitsAdded = () => this.fireEvent("unitsReady");
       unitsLoading();
       this._removeAll();
-      const advancedCB = new qx.ui.form.CheckBox().set({
-        label: this.tr("More information"),
-        value: false
-      });
       if ("workbench" in this.__studyData) {
         const workbench = this.__studyData["workbench"];
         Object.keys(workbench).forEach(nodeId => {
@@ -71,9 +67,8 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
                 };
                 osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
                   .then(preselectedPricingUnit => {
-                    const serviceGroup = this.__createPricingUnitsGroup(node["label"], pricingPlans, preselectedPricingUnit, advancedCB);
+                    const serviceGroup = this.__createPricingUnitsGroup(node["label"], pricingPlans, preselectedPricingUnit);
                     if (serviceGroup) {
-                      this._addAt(advancedCB, 0);
                       this._add(serviceGroup.layout);
 
                       const unitButtons = serviceGroup.unitButtons;
@@ -93,12 +88,14 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
       }
     },
 
-    __createPricingUnitsGroup: function(nodeLabel, pricingPlans, preselectedPricingUnit, advancedCB) {
+    __createPricingUnitsGroup: function(nodeLabel, pricingPlans, preselectedPricingUnit) {
       if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
         const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
 
         const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"], preselectedPricingUnit);
-        advancedCB.bind("value", unitButtons, "advanced");
+        unitButtons.set({
+          advanced: true
+        });
         pricingUnitsLayout.add(unitButtons);
 
         return {
