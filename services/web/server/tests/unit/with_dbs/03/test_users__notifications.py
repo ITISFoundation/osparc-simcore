@@ -16,7 +16,6 @@ from typing import Any
 
 import pytest
 import redis.asyncio as aioredis
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -146,10 +145,10 @@ async def test_list_user_notifications(
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_204_NO_CONTENT),
+        (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
     ],
 )
 @pytest.mark.parametrize(
@@ -264,10 +263,10 @@ async def test_create_user_notification_capped_list_length(
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_204_NO_CONTENT),
+        (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
     ],
 )
 async def test_update_user_notification(
@@ -352,7 +351,7 @@ async def test_update_user_notification_at_correct_index(
 @pytest.mark.parametrize(
     "user_role,expected_response",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
         (UserRole.GUEST, status.HTTP_200_OK),
         (UserRole.USER, status.HTTP_200_OK),
         (UserRole.TESTER, status.HTTP_200_OK),
