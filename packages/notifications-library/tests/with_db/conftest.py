@@ -25,7 +25,7 @@ async def _insert_and_get_row(
 ):
     result = await conn.execute(table.insert().values(**values).returning(pk_col))
     row = result.first()
-    assert row[pk_col] == pk_value
+    assert getattr(row, pk_col.name) == pk_value
 
     result = await conn.execute(sa.select(table).where(pk_col == pk_value))
     return result.first()
@@ -104,16 +104,21 @@ async def successful_transaction(
 
 
 @pytest.fixture
+def email_template_mark() -> str:
+    return f"Added by {__name__}:email_templates fixture"
+
+
+@pytest.fixture
 async def email_templates(
-    sqlalchemy_async_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine, email_template_mark: str
 ) -> AsyncIterator[dict[str, Any]]:
-    all_templates = {"other.html": "Fake template"}
+    all_templates = {"other.html": "Fake template " + email_template_mark}
 
     templates_path = importlib.resources.files(notifications_library).joinpath(
         "templates"
     )
     for path in templates_path.iterdir():
-        all_templates[path.name] = path.read_text()
+        all_templates[path.name] = f"#{email_template_mark}\n" + path.read_text()
 
     async with sqlalchemy_async_engine.begin() as conn:
         pk_to_row = {

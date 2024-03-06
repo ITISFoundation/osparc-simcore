@@ -9,7 +9,7 @@ from typing import Any
 
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
-from notifications_library._db import TemplatesRepo
+from notifications_library._db import TemplatesRepo, UserDataRepo
 from notifications_library._payments_db import PaymentsDataRepo
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
@@ -21,16 +21,16 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-async def test_templates_repo(
+async def test_user_data_repo(
     sqlalchemy_async_engine: AsyncEngine,
     user_id: UserID,
     user_primary_group_id: GroupID,
 ):
-    repo = TemplatesRepo(sqlalchemy_async_engine)
+    repo = UserDataRepo(sqlalchemy_async_engine)
     assert await repo.get_primary_group_id(user_id) == user_primary_group_id
 
 
-async def test_get_on_payed_data(
+async def test_payments_data_repo(
     sqlalchemy_async_engine: AsyncEngine,
     user: dict[str, Any],
     product: dict[str, Any],
@@ -53,7 +53,7 @@ async def test_get_on_payed_data(
     assert data.support_email == product["support_email"]
 
 
-async def test_get_email_templates(
+async def test_templates_repo(
     sqlalchemy_async_engine: AsyncEngine,
     email_templates: dict[str, Any],
     product_name: ProductName,
