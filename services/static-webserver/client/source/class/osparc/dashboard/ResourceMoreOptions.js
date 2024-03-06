@@ -377,9 +377,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
       const toolBar = this.__addToolbar();
-      page.add(toolBar, {
-        flex: 1
-      });
+      page.add(toolBar);
       page.add(infoCard, {
         flex: 1
       });
