@@ -13,7 +13,7 @@ install_all() {
   pushd packages/service-library
   make "install-ci[all]"
   popd
-  pip list --verbose
+  uv pip list
 }
 
 test_all() {

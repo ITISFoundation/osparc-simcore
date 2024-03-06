@@ -472,7 +472,7 @@ push-version: tag-version
 		wheel \
 		setuptools \
 		uv
-	@$@/bin/pip list --verbose
+	@uv pip list
 
 devenv: .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
 	@uv pip --quiet install -r requirements/devenv.txt
@@ -744,7 +744,7 @@ _running_containers = $(shell docker ps -aq)
 clean-venv: devenv ## Purges .venv into original configuration
 	# Cleaning your venv
 	@uv pip sync  --quiet $(CURDIR)/requirements/devenv.txt
-	@pip list
+	@uv pip list
 
 clean-hooks: ## Uninstalls git pre-commit hooks
 	@-pre-commit uninstall 2> /dev/null || rm .git/hooks/pre-commit
