@@ -1,8 +1,7 @@
 openapi: 3.0.2
 info:
   title: simcore-service-webserver
-  description: ' Main service with an interface (http-API & websockets) to the web
-    front-end'
+  description: Main service with an interface (http-API & websockets) to the web front-end
   version: 0.37.1
 servers:
 - url: ''
@@ -2926,7 +2925,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -4640,6 +4639,19 @@ components:
         form:
           title: Form
           type: object
+      example:
+        form:
+          firstName: James
+          lastName: Maxwel
+          email: maxwel@email.com
+          phone: +1 123456789
+          company: EM Com
+          address: Infinite Loop. California
+          country: USA
+          application: Antenna_Design
+          description: Description of something
+          hear: Search_Engine
+          message: I would love to use your tool
     Activity:
       title: Activity
       required:
