@@ -5,6 +5,7 @@ from typing import Literal
 
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.basic_types import AmountDecimal, IDStr
+from models_library.payments import UserInvoiceAddress
 from models_library.products import StripePriceID, StripeTaxRateID
 from pydantic import BaseModel, EmailStr, Extra, Field
 
@@ -17,15 +18,6 @@ class ErrorModel(BaseModel):
     file: Path | str | None = None
     line: int | None = None
     trace: list | None = None
-
-
-# TODO: PC will be probably removed once your PR is in (I needed this object for now, so I generated OpenAPI specs for the Payment Gateway)
-class UserAddress(BaseModel):
-    line1: str | None = None
-    state: str | None = None
-    postal_code: str | None = None
-    city: str | None = None
-    country: str
 
 
 class StripeTaxExempt(str, Enum):
@@ -42,7 +34,7 @@ class InitPayment(BaseModel):
     )
     user_name: IDStr
     user_email: EmailStr
-    user_address: UserAddress
+    user_address: UserInvoiceAddress
     wallet_name: IDStr
     stripe_price_id: StripePriceID
     stripe_tax_rate_id: StripeTaxRateID

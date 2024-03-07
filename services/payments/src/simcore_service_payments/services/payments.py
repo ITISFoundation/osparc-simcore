@@ -21,6 +21,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentInitiated,
 )
+from models_library.payments import UserInvoiceAddress
 from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -44,7 +45,6 @@ from ..models.payments_gateway import (
     InitPayment,
     PaymentInitiated,
     StripeTaxExempt,
-    UserAddress,
 )
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
@@ -68,14 +68,12 @@ async def init_one_time_payment(
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    user_address: UserInvoiceAddress,
     stripe_price_id: StripePriceID,
     stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
     initiated_at = arrow.utcnow().datetime
-
-    # NOTE: PC: please modify with your "collecting of user address" PR https://github.com/ITISFoundation/osparc-simcore/issues/5138
-    user_address = UserAddress(country="CH")
 
     init: PaymentInitiated = await gateway.init_payment(
         payment=InitPayment(
@@ -230,6 +228,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    user_address: UserInvoiceAddress,
     stripe_price_id: StripePriceID,
     stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
@@ -239,8 +238,6 @@ async def pay_with_payment_method(  # noqa: PLR0913
     acked = await repo_methods.get_payment_method(
         payment_method_id, user_id=user_id, wallet_id=wallet_id
     )
-    # NOTE: PC: please modify with your "collecting of user address" PR https://github.com/ITISFoundation/osparc-simcore/issues/5138
-    user_address = UserAddress(country="CH")
 
     ack: AckPaymentWithPaymentMethod = await gateway.pay_with_payment_method(
         acked.payment_method_id,

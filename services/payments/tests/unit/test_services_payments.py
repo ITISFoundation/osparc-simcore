@@ -13,6 +13,7 @@ import pytest
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.basic_types import IDStr
+from models_library.payments import UserInvoiceAddress
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -131,6 +132,7 @@ async def test_fails_to_pay_with_payment_method_without_funds(
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
+        user_address=UserInvoiceAddress(country="CH"),
         stripe_price_id="stripe-id",
         stripe_tax_rate_id="stripe-id",
         comment="test_failure_in_pay_with_payment_method",

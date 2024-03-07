@@ -11,6 +11,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentInitiated,
 )
+from models_library.payments import UserInvoiceAddress
 from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -41,6 +42,7 @@ async def init_payment(  # pylint: disable=too-many-arguments
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    user_address: UserInvoiceAddress,
     stripe_price_id: StripePriceID,
     stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
@@ -67,6 +69,7 @@ async def init_payment(  # pylint: disable=too-many-arguments
             user_id=user_id,
             user_name=user_name,
             user_email=user_email,
+            user_address=user_address,
             stripe_price_id=stripe_price_id,
             stripe_tax_rate_id=stripe_tax_rate_id,
             comment=comment,

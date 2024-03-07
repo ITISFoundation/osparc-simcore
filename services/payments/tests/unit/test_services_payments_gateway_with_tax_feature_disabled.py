@@ -16,6 +16,7 @@ from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
+from models_library.payments import UserInvoiceAddress
 from pydantic import ValidationError, parse_obj_as
 from pytest_simcore.helpers.rawdata_fakers import random_payment_method_view
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -31,7 +32,6 @@ from simcore_service_payments.models.payments_gateway import (
     PaymentMethodInitiated,
     PaymentMethodsBatch,
     StripeTaxExempt,
-    UserAddress,
 )
 from simcore_service_payments.models.schemas.acknowledgements import (
     AckPaymentWithPaymentMethod,
@@ -329,9 +329,7 @@ async def test_payment_methods_workflow_with_tax_feature_disabled(
             credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
             user_name=faker.user_name(),
             user_email=faker.email(),
-            user_address=UserAddress(
-                country="CH"
-            ),  # NOTE: PC: please modify with your "collecting of user address" PR https://github.com/ITISFoundation/osparc-simcore/issues/5138
+            user_address=UserInvoiceAddress(country="CH"),
             wallet_name=faker.word(),
             stripe_price_id=faker.word(),
             stripe_tax_rate_id=faker.word(),
@@ -361,9 +359,7 @@ async def test_one_time_payment_workflow_with_tax_feature_disabled(
             credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
             user_name=faker.user_name(),
             user_email=faker.email(),
-            user_address=UserAddress(
-                country="CH"
-            ),  # NOTE: PC: please modify with your "collecting of user address" PR https://github.com/ITISFoundation/osparc-simcore/issues/5138
+            user_address=UserInvoiceAddress(country="CH"),
             wallet_name=faker.word(),
             stripe_price_id=faker.word(),
             stripe_tax_rate_id=faker.word(),

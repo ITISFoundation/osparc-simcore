@@ -75,9 +75,9 @@ async def get_user_profile(
                     "last_name": row.users_last_name,
                     "login": row.users_email,
                     "role": row.users_role,
-                    "expiration_date": row.users_expires_at.date()
-                    if row.users_expires_at
-                    else None,
+                    "expiration_date": (
+                        row.users_expires_at.date() if row.users_expires_at else None
+                    ),
                 }
                 assert user_profile["id"] == user_id  # nosec
 
@@ -324,4 +324,5 @@ assert get_user_credentials  # nosec
 __all__: tuple[str, ...] = (
     "get_user_credentials",
     "set_user_as_deleted",
+    "get_user_billing_details",
 )

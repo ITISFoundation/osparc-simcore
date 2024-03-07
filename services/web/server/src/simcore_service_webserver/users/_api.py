@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
-from models_library.users import UserID
+from models_library.users import UserBillingDetails, UserID
 from pydantic import parse_obj_as
 from simcore_postgres_database.models.users import UserStatus
 
@@ -123,3 +123,9 @@ async def pre_register_user(
 
     assert len(found) == 1  # nosec
     return found[0]
+
+
+async def get_user_billing_details(
+    app: web.Application, user_id: UserID
+) -> UserBillingDetails:
+    return await _db.get_user_billing_details(get_database_engine(app), user_id=user_id)

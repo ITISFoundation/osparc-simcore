@@ -10,6 +10,7 @@ from simcore_service_webserver.rabbitmq import setup_rabbitmq
 
 from .._constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db
+from . import _rpc_invoice
 from ._tasks import create_background_task_to_fake_payment_completion
 
 _logger = logging.getLogger(__name__)
@@ -26,6 +27,11 @@ def setup_payments(app: web.Application):
 
     setup_db(app)
     setup_rabbitmq(app)
+
+    # rpc api
+    setup_rabbitmq(app)
+    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+        app.on_startup.append(_rpc_invoice.register_rpc_routes_on_startup)
 
     if settings.PAYMENTS_FAKE_COMPLETION:
         _logger.warning(

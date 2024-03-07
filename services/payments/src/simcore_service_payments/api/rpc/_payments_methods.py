@@ -13,6 +13,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodInitiated,
 )
 from models_library.basic_types import IDStr
+from models_library.payments import UserInvoiceAddress
 from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -164,6 +165,7 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    user_address: UserInvoiceAddress,
     stripe_price_id: StripePriceID,
     stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
@@ -193,6 +195,7 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
             wallet_name=wallet_name,
             user_id=user_id,
             user_name=user_name,
+            user_address=user_address,
             user_email=user_email,
             stripe_price_id=stripe_price_id,
             stripe_tax_rate_id=stripe_tax_rate_id,
