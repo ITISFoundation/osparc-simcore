@@ -8,7 +8,12 @@ from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.observer import setup_observer_registry
 
-from . import _handlers, _preferences_handlers
+from . import (
+    _handlers,
+    _notifications_handlers,
+    _preferences_handlers,
+    _tokens_handlers,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -25,4 +30,6 @@ def setup_users(app: web.Application):
     setup_observer_registry(app)
 
     app.router.add_routes(_handlers.routes)
+    app.router.add_routes(_tokens_handlers.routes)
+    app.router.add_routes(_notifications_handlers.routes)
     app.router.add_routes(_preferences_handlers.routes)

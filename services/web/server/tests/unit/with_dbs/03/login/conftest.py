@@ -128,7 +128,7 @@ async def registered_user(
     client: TestClient,
 ) -> AsyncIterable[UserInfoDict]:
     async with NewUser(
-        params={
+        user_data={
             "name": fake_user_name,
             "email": fake_user_email,
             "password": fake_user_password,
