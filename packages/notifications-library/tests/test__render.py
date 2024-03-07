@@ -6,7 +6,7 @@ from notifications_library._render import (
     create_render_env_from_folder,
     create_render_env_from_package,
 )
-from notifications_library._templates import _templates_dir, print_tree
+from notifications_library._templates import _print_tree, _templates_dir
 
 
 def test_render_env_from_folder(tmp_path: Path, product_name: ProductName):
@@ -21,7 +21,7 @@ def test_render_env_from_folder(tmp_path: Path, product_name: ProductName):
     shutil.copytree(_templates_dir, top_dir / "osparc")
 
     print()
-    print_tree(top_dir)
+    _print_tree(top_dir)
 
     consolidated_env = create_render_env_from_folder(top_dir)
 

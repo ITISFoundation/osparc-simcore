@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 import notifications_library
+from aiofiles.os import wrap as sync_to_async
 from models_library.products import ProductName
 
 from ._db import TemplatesRepo
@@ -43,7 +44,7 @@ def get_default_named_templates(
     return {p.name: p for p in _templates_dir.glob(pattern)}
 
 
-def print_tree(top: Path, indent=0, prefix="", **print_kwargs):
+def _print_tree(top: Path, indent=0, prefix="", **print_kwargs):
     prefix = indent * "    " + prefix
     if top.is_file():
         file_size = f"{top.stat().st_size}B"
@@ -54,9 +55,18 @@ def print_tree(top: Path, indent=0, prefix="", **print_kwargs):
         entry = f"{top.name}  {len(children)}"
         print(prefix + entry, **print_kwargs)  # noqa: T201
         for child in children[:-1]:
-            print_tree(child, indent + 1, "├── ", **print_kwargs)
+            _print_tree(child, indent + 1, "├── ", **print_kwargs)
         if children:
-            print_tree(children[-1], indent + 1, "└── ", **print_kwargs)
+            _print_tree(children[-1], indent + 1, "└── ", **print_kwargs)
+
+
+_aioshutil_copy = sync_to_async(shutil.copy)
+
+
+async def _copy_files(src: Path, dst: Path):
+    for p in src.iterdir():
+        if p.is_file():
+            await _aioshutil_copy(p, dst / p.name, follow_symlinks=False)
 
 
 async def consolidate_templates(
@@ -80,15 +90,11 @@ async def consolidate_templates(
         product_folder.mkdir(parents=True, exist_ok=True)
 
         # takes common as defaults
-        for p in _templates_dir.iterdir():
-            if p.is_file():
-                shutil.copy(p, product_folder / p.name, follow_symlinks=False)
+        await _copy_files(_templates_dir, product_folder)
 
         # overrides with customs in-place
         if (_templates_dir / product_name).exists():
-            for p in (_templates_dir / product_name).iterdir():
-                if p.is_file():
-                    shutil.copy(p, product_folder / p.name, follow_symlinks=False)
+            await _copy_files(_templates_dir / product_name, product_folder)
 
         # overrides with customs in database
         async for custom_template in repo.iter_product_templates(product_name):

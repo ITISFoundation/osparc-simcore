@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from notifications_library._db import TemplatesRepo
-from notifications_library._templates import consolidate_templates, print_tree
+from notifications_library._templates import _print_tree, consolidate_templates
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
 pytest_simcore_core_services_selection = [
@@ -22,5 +22,5 @@ async def test_templates_consolidation(
     await consolidate_templates(new_templates_dir, products_names, repo)
 
     print()
-    print_tree(new_templates_dir)
+    _print_tree(new_templates_dir)
     print()
