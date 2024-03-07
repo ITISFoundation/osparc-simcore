@@ -99,6 +99,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       nullable: false,
       event: "changeMultiSelection",
       apply: "__applyMultiSelection"
+    },
+    // Ordering by Posibilities:
+    // field: type | uuid | name | description | prj_owner | creation_date | last_change_date
+    // direction: asc | desc
+    orderBy: {
+      check: "Object",
+      init: {
+        field: "last_change_date",
+        direction: "desc"
+      }
     }
   },
 
@@ -254,9 +264,32 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
+    __reloadSortedByStudies: function() {
+      if (this._loadingResourcesBtn.isFetching()) {
+        return;
+      }
+      this.__resetStudiesList();
+      this._loadingResourcesBtn.setFetching(true);
+      this._loadingResourcesBtn.setVisibility("visible");
+      const request = this.__getSortedByNextRequest();
+      request
+        .then(resp => {
+          const sortedStudies = resp["data"];
+          this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
+          this.__addResourcesToList(sortedStudies);
+        })
+        .catch(err => console.error(err))
+        .finally(() => {
+          this._loadingResourcesBtn.setFetching(false);
+          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
+          this._moreResourcesRequired();
+        });
+    },
+
     __resetStudiesList: function() {
       this._resourcesList = [];
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(this._resourcesList);
+      const sortByValue = this.getOrderBy().field;
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(this._resourcesList, sortByValue);
       this._reloadCards();
     },
 
@@ -268,7 +301,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._resourcesList.push(study);
         }
       });
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(this._resourcesList);
+      const sortByValue = this.getOrderBy().field;
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(this._resourcesList, sortByValue);
       this._reloadNewCards();
     },
 
@@ -395,7 +429,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const params = {
         url: {
           offset: 0,
-          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
+          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
+          orderBy: JSON.stringify(this.getOrderBy()),
         }
       };
       const nextRequestParams = this.__getNextRequestParams();
@@ -406,6 +441,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const options = {
         resolveWResponse: true
       };
+
+      if (params.url.orderBy) {
+        return osparc.data.Resources.fetch("studies", "getPageSortBySearch", params, undefined, options);
+      } else if (params.url.search) {
+        return osparc.data.Resources.fetch("studies", "getPageFilterSearch", params, undefined, options);
+      }
       return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
     },
 
@@ -426,6 +467,25 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
       return osparc.data.Resources.fetch("studies", "getPageFilterSearch", params, undefined, options);
+    },
+
+    __getSortedByNextRequest: function() {
+      const params = {
+        url: {
+          offset: 0,
+          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
+          orderBy: JSON.stringify(this.getOrderBy())
+        }
+      };
+      const nextRequestParams = this.__getNextRequestParams();
+      if (nextRequestParams) {
+        params.url.offset = nextRequestParams.offset;
+        params.url.limit = nextRequestParams.limit;
+      }
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("studies", "getPageSortBySearch", params, undefined, options);
     },
 
     invalidateStudies: function() {
@@ -556,6 +616,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         flex: 1
       });
 
+      this.__addSortByButton();
       this.__addShowSharedWithButton();
       this._addViewModeButton();
 
@@ -588,6 +649,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       return this._resourcesContainer;
+    },
+
+    __addSortByButton: function() {
+      const sortByButton = new osparc.dashboard.SortedByMenuButton();
+      sortByButton.set({
+        appearance: "form-button-outlined"
+      });
+      osparc.utils.Utils.setIdToWidget(sortByButton, "sortByButton");
+      sortByButton.addListener("sortByChanged", e => {
+        this.setOrderBy(e.getData())
+        this.__reloadSortedByStudies();
+      }, this);
+      this._toolbar.add(sortByButton);
     },
 
     __addShowSharedWithButton: function() {
@@ -849,8 +923,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(renameStudyButton);
       }
 
-      const studyDataButton = this.__getStudyDataMenuButton(card);
-      menu.add(studyDataButton);
+      if (writeAccess) {
+        const editThumbnailButton = this.__getThumbnailStudyMenuButton(studyData);
+        menu.add(editThumbnailButton);
+      }
+
+      const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
+      menu.add(duplicateStudyButton);
+
+      menu.addSeparator();
 
       if (writeAccess) {
         const shareButton = this._getShareMenuButton(card);
@@ -864,11 +945,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }
 
-      const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
-      menu.add(duplicateStudyButton);
+      const studyDataButton = this.__getStudyDataMenuButton(card);
+      menu.add(studyDataButton);
 
-      const exportButton = this.__getExportMenuButton(studyData);
-      menu.add(exportButton);
+      const billingsSettingsButton = this.__getBillingMenuButton(card);
+      menu.add(billingsSettingsButton);
 
       if (deleteAccess) {
         const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
@@ -880,7 +961,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getRenameStudyMenuButton: function(studyData) {
-      const renameButton = new qx.ui.menu.Button(this.tr("Rename"));
+      const renameButton = new qx.ui.menu.Button(this.tr("Rename..."));
       renameButton.addListener("execute", () => {
         const renamer = new osparc.widget.Renamer(studyData["name"]);
         renamer.addListener("labelChanged", e => {
@@ -894,6 +975,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         renamer.open();
       }, this);
       return renameButton;
+    },
+
+    __getThumbnailStudyMenuButton: function(studyData) {
+      const thumbButton = new qx.ui.menu.Button(this.tr("Thumbnail..."));
+      thumbButton.addListener("execute", () => {
+        const title = this.tr("Edit Thumbnail");
+        const oldThumbnail = studyData.thumbnail;
+        const suggestions = osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(studyData);
+        const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
+        const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, 280);
+        thumbnailEditor.addListener("updateThumbnail", e => {
+          win.close();
+          const validUrl = e.getData();
+          const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
+          studyDataCopy["thumbnail"] = validUrl;
+          this.__updateStudy(studyDataCopy);
+        }, this);
+        thumbnailEditor.addListener("cancel", () => win.close());
+      }, this);
+      return thumbButton;
     },
 
     __updateStudy: function(studyData) {
@@ -913,10 +1014,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStudyDataMenuButton: function(card) {
-      const text = osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + this.tr(" data...");
+      const text = osparc.utils.Utils.capitalize(osparc.product.Utils.getStudyAlias()) + this.tr(" files...");
       const studyDataButton = new qx.ui.menu.Button(text);
       studyDataButton.addListener("tap", () => card.openData(), this);
       return studyDataButton;
+    },
+
+    __getBillingMenuButton: function(card) {
+      const text = osparc.utils.Utils.capitalize(this.tr("Billing Settings..."));
+      const studyBillingSettingsButton = new qx.ui.menu.Button(text);
+      studyBillingSettingsButton.addListener("tap", () => card.openBilling(), this);
+      return studyBillingSettingsButton;
     },
 
     __getDuplicateMenuButton: function(studyData) {

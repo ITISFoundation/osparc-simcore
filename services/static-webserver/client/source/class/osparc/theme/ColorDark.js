@@ -92,7 +92,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
     // tabview
     "tabview-unselected": "c14",
-    "tabview-button-border": "c14",
+    "tabview-button-border": "product-color",
     "tabview-label-active-disabled": "c10",
     "tabview-pane-background": "transparent",
     "tabview-button-background": "transparent",

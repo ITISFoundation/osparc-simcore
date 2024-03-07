@@ -100,7 +100,7 @@ def test_sleepers(
         ),
     ):
         for _ in range(1, num_sleepers):
-            page.get_by_text("New Node").click()
+            page.get_by_test_id("newNodeBtn").click()
             page.get_by_placeholder("Filter").click()
             page.get_by_placeholder("Filter").fill("sleeper")
             page.get_by_placeholder("Filter").press("Enter")
@@ -117,11 +117,7 @@ def test_sleepers(
         ) as ctx:
             sleeper.click()
             page.keyboard.press("i")
-            version_title_selector = page.get_by_text("VERSION")
-            version_selector = version_title_selector.locator(
-                "xpath=following-sibling::div"
-            ).nth(0)
-            version_string = version_selector.text_content()
+            version_string = page.get_by_test_id("serviceVersion").text_content()
             ctx.logger.info("found sleeper version: %s", version_string)
             assert version_string
             sleeper_version = parse_version(version_string)

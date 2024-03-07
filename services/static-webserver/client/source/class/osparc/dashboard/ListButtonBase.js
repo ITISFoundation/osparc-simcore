@@ -54,10 +54,11 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       STATUS: 7,
       PERMISSION: 8,
       TSR: 9,
-      SHARED: 10,
-      LAST_CHANGE: 11,
-      HITS: 12,
-      OPTIONS: 13
+      OWNER: 10,
+      SHARED: 11,
+      LAST_CHANGE: 12,
+      HITS: 13,
+      OPTIONS: 14
     }
   },
 
@@ -72,7 +73,8 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             minWidth: 40
           });
           control.getChildControl("image").set({
-            anonymous: true
+            anonymous: true,
+            decorator: "rounded"
           });
           this._add(control, {
             row: 0,
@@ -82,7 +84,8 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
         }
         case "title-row":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
-            anonymous: true
+            anonymous: true,
+            allowGrowX: true
           });
           this._add(control, {
             row: 0,
@@ -94,9 +97,9 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             textColor: "contrasted-text-light",
             font: "text-14",
             alignY: "middle",
-            maxWidth: 400,
-            maxHeight: 19,
-            rich: true
+            maxWidth: 300,
+            allowGrowX: true,
+            rich: true,
           });
           titleRow = this.getChildControl("title-row");
           titleRow.addAt(control, 0, {
@@ -118,23 +121,26 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             column: osparc.dashboard.ListButtonBase.POS.DESCRIPTION
           });
           break;
-        case "description-md":
-          control = new osparc.ui.markdown.Markdown().set({
-            maxHeight: 16,
+        case "owner":
+          control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-dark",
+            font: "text-12",
             alignY: "middle",
             allowGrowX: true
           });
           this._add(control, {
             row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.DESCRIPTION
+            column: osparc.dashboard.ListButtonBase.POS.OWNER
           });
           break;
         case "project-status":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
             anonymous: true
           });
-          titleRow = this.getChildControl("title-row");
-          titleRow.add(control);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.STATUS
+          });
           break;
         case "project-status-icon":
           control = new qx.ui.basic.Image().set({
@@ -180,8 +186,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
     },
 
     _applyDescription: function(value, old) {
-      const label = this.getChildControl("description-md");
-      label.setValue(value);
+      return
     }
   },
 
