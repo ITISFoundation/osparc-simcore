@@ -12,7 +12,7 @@ install() {
   pushd services/web/server
   make install-ci
   popd
-  pip list --verbose
+  uv pip list
 }
 
 # isolated = these tests are (IMO) real unit tests, they do not need any dependencies and were already in the root test/unit folder before

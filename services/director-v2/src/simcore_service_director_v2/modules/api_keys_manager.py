@@ -11,11 +11,11 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.services import RunID
 from models_library.users import UserID
 from pydantic import BaseModel, StrBytes, parse_obj_as
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.redis import RedisClientSDK
+from servicelib.redis import RedisClientSDK, RedisClientsManager
 from settings_library.redis import RedisDatabase
 
-from ..core.settings import AppSettings
 from ..utils.base_distributed_identifier import BaseDistributedIdentifierManager
 from .rabbitmq import get_rabbitmq_rpc_client
 
@@ -31,7 +31,12 @@ class CleanupContext(BaseModel):
     user_id: UserID
 
 
-class APIKeysManager(BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupContext]):
+class APIKeysManager(
+    SingletonInAppStateMixin,
+    BaseDistributedIdentifierManager[str, ApiKeyGet, CleanupContext],
+):
+    app_state_name: str = "api_keys_manager"
+
     def __init__(self, app: FastAPI, redis_client_sdk: RedisClientSDK) -> None:
         super().__init__(redis_client_sdk, cleanup_interval=_CLEANUP_INTERVAL)
         self.app = app
@@ -146,18 +151,16 @@ def _get_api_keys_manager(app: FastAPI) -> APIKeysManager:
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
-        settings: AppSettings = app.state.settings
+        redis_clients_manager: RedisClientsManager = app.state.redis_clients_manager
 
-        redis_dsn = settings.REDIS.build_redis_dsn(
-            RedisDatabase.DISTRIBUTED_IDENTIFIERS
+        manager = APIKeysManager(
+            app, redis_clients_manager.client(RedisDatabase.DISTRIBUTED_IDENTIFIERS)
         )
-        redis_client_sdk = RedisClientSDK(redis_dsn)
-        app.state.api_keys_manager = manager = APIKeysManager(app, redis_client_sdk)
-
+        manager.set_to_app_state(app)
         await manager.setup()
 
     async def on_shutdown() -> None:
-        manager: APIKeysManager = app.state.api_keys_manager
+        manager: APIKeysManager = APIKeysManager.get_from_app_state(app)
         await manager.shutdown()
 
     app.add_event_handler("startup", on_startup)

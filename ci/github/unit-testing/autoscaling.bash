@@ -12,7 +12,7 @@ install() {
   pushd services/autoscaling
   make install-ci
   popd
-  pip list --verbose
+  uv pip list
 }
 
 test() {

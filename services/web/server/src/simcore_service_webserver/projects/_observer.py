@@ -12,6 +12,7 @@ from servicelib.aiohttp.observer import (
     register_observer,
     setup_observer_registry,
 )
+from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 
 from ..notifications import project_logs
@@ -35,9 +36,14 @@ async def _on_user_disconnected(
 
     assert len(projects) <= 1, "At the moment, at most one project per session"  # nosec
 
-    await logged_gather(
-        *[project_logs.unsubscribe(app, ProjectID(prj)) for prj in projects]
-    )
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        msg=f"user disconnects and unsubscribes from following {projects=}",
+    ):
+        await logged_gather(
+            *[project_logs.unsubscribe(app, ProjectID(prj)) for prj in projects]
+        )
 
     await logged_gather(
         *[

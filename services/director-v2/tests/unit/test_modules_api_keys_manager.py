@@ -132,7 +132,8 @@ def api_keys_manager(
     redis_client_sdk: RedisClientSDK,
     app: FastAPI,
 ) -> APIKeysManager:
-    app.state.api_keys_manager = manager = APIKeysManager(app, redis_client_sdk)
+    manager = APIKeysManager(app, redis_client_sdk)
+    manager.set_to_app_state(app)
     return manager
 
 

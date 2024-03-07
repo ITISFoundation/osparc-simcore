@@ -90,6 +90,7 @@ def dynamic_sidecar_headers() -> dict[str, str]:
 
 @pytest.fixture()
 def mock_env(
+    mock_exclusive: None,
     disable_postgres: None,
     disable_rabbitmq: None,
     monkeypatch: pytest.MonkeyPatch,

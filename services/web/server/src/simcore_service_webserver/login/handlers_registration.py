@@ -218,7 +218,7 @@ async def register(request: web.Request):
             request.app,
             email=registration.email,
             password=registration.password.get_secret_value(),
-            status=(
+            status_upon_creation=(
                 UserStatus.CONFIRMATION_PENDING
                 if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
                 else UserStatus.ACTIVE

@@ -26,6 +26,7 @@ def app_resources(package_dir: Path) -> list[str]:
 def test_webserver_resources(app_resources: list[str]):
     for resource_name in app_resources:
         assert webserver_resources.get_path(resource_name).exists()
+        assert webserver_resources.get_path("/" + resource_name).exists()
 
 
 def test_paths_might_not_exist():

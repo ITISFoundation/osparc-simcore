@@ -9,7 +9,7 @@ from servicelib.aiohttp.observer import register_observer, setup_observer_regist
 from ..products.api import get_product
 from ..resource_usage.api import add_credits_to_wallet
 from ..users import preferences_api
-from ..users.api import get_user_name_and_email
+from ..users.api import get_user_display_and_id_names
 from ._api import any_wallet_owned_by_user, create_wallet
 
 _WALLET_NAME_TEMPLATE = "{} Credits"
@@ -25,15 +25,14 @@ async def _auto_add_default_wallet(
     if not await any_wallet_owned_by_user(
         app, user_id=user_id, product_name=product_name
     ):
-        user = await get_user_name_and_email(app, user_id=user_id)
+        user = await get_user_display_and_id_names(app, user_id=user_id)
         product = get_product(app, product_name)
 
-        user_name = user.name.capitalize()
         wallet = await create_wallet(
             app,
             user_id=user_id,
-            wallet_name=_WALLET_NAME_TEMPLATE.format(user_name),
-            description=_WALLET_DESCRIPTION_TEMPLATE.format(user_name),
+            wallet_name=_WALLET_NAME_TEMPLATE.format(user.full_name),
+            description=_WALLET_DESCRIPTION_TEMPLATE.format(user.full_name),
             thumbnail=None,
             product_name=product_name,
         )

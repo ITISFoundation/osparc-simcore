@@ -9,7 +9,7 @@ import random
 from collections.abc import AsyncIterable
 from inspect import signature
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, AsyncIterator, Final
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
@@ -173,7 +173,7 @@ def test_client(
     ensure_shared_store_dir: Path,
     ensure_run_in_sequence_context_is_empty: None,
     ensure_external_volumes: tuple[DockerVolume],
-    cleanup_containers,
+    cleanup_containers: AsyncIterator[None],
     test_client: TestClient,
 ) -> TestClient:
     """creates external volumes and provides a client to dy-sidecar service"""

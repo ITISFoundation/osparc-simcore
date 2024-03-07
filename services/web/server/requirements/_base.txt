@@ -119,6 +119,8 @@ psycopg2-binary==2.9.6
     # via
     #   aiopg
     #   sqlalchemy
+pycountry==23.12.11
+    # via -r requirements/_base.in
 pycparser==2.21
     # via cffi
 pydantic==1.9.0

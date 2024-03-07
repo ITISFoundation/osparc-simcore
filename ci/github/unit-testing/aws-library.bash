@@ -12,7 +12,7 @@ install() {
   pushd packages/aws-library
   make install-ci
   popd
-  pip list --verbose
+  uv pip list
 }
 
 test() {

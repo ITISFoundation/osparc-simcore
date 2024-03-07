@@ -30,6 +30,7 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login.utils import notify_user_confirmation
 from simcore_service_webserver.products.api import get_product
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.users.api import UserDisplayAndIdNamesTuple
 from simcore_service_webserver.wallets._events import (
     _WALLET_DESCRIPTION_TEMPLATE,
     _WALLET_NAME_TEMPLATE,
@@ -209,9 +210,12 @@ async def test_wallets_events_auto_add_default_wallet_on_user_confirmation(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     wallet = WalletGet(**data[0])
-    user_name = logged_user["name"].capitalize()
-    assert wallet.name == _WALLET_NAME_TEMPLATE.format(user_name)
-    assert wallet.description == _WALLET_DESCRIPTION_TEMPLATE.format(user_name)
+
+    user = UserDisplayAndIdNamesTuple(
+        **{k: logged_user[k] for k in UserDisplayAndIdNamesTuple._fields}
+    )
+    assert wallet.name == _WALLET_NAME_TEMPLATE.format(user.full_name)
+    assert wallet.description == _WALLET_DESCRIPTION_TEMPLATE.format(user.full_name)
     assert mock_rut_sum_total_available_credits_in_the_wallet.called
     assert mock_add_credits_to_wallet.called == product.is_payment_enabled
 
