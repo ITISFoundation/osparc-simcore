@@ -601,12 +601,12 @@ def mock_internals_inactivity(
         return_value=MockProjectRepo(),
     )
 
-    async def get_service_inactivity(node_uuid: NodeID) -> ActivityInfoOrNone:
+    async def get_service_activity(node_uuid: NodeID) -> ActivityInfoOrNone:
         return service_inactivity_map[f"{node_uuid}"]
 
     mocker.patch(
-        f"{module_base}.DynamicSidecarsScheduler.get_service_inactivity",
-        side_effect=get_service_inactivity,
+        f"{module_base}.DynamicSidecarsScheduler.get_service_activity",
+        side_effect=get_service_activity,
     )
     mocker.patch(
         f"{module_base}.DynamicSidecarsScheduler.is_service_tracked", return_value=True
@@ -625,7 +625,7 @@ def mock_internals_inactivity(
                 False,
                 id=f"{x}_makes_project_active_with_threshold_5",
             )
-            for x in [None, *range(5)]
+            for x in [*range(5)]
         ],
         pytest.param(
             [
@@ -645,7 +645,7 @@ def mock_internals_inactivity(
         ),
         pytest.param(
             [
-                ActivityInfo(seconds_inactive=None),
+                ActivityInfo(seconds_inactive=0),
             ],
             5,
             False,
@@ -655,7 +655,7 @@ def mock_internals_inactivity(
             [
                 ActivityInfo(seconds_inactive=6),
                 ActivityInfo(seconds_inactive=1),
-                ActivityInfo(seconds_inactive=None),
+                ActivityInfo(seconds_inactive=0),
             ],
             5,
             False,

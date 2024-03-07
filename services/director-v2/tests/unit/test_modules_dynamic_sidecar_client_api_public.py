@@ -351,22 +351,20 @@ async def test_update_volume_state(
 
 @pytest.mark.parametrize(
     "mock_json",
-    [{"seconds_inactive": 1}, {"seconds_inactive": None}, None],
+    [{"seconds_inactive": 1}, {"seconds_inactive": 0}, None],
 )
-async def test_get_service_inactivity(
+async def test_get_service_activity(
     get_patched_client: Callable,
     dynamic_sidecar_endpoint: AnyHttpUrl,
     mock_json: dict[str, Any],
 ) -> None:
     with get_patched_client(
-        "get_containers_inactivity",
+        "get_containers_activity",
         return_value=Response(
             status_code=status.HTTP_200_OK, text=json_dumps(mock_json)
         ),
     ) as client:
-        assert (
-            await client.get_service_inactivity(dynamic_sidecar_endpoint) == mock_json
-        )
+        assert await client.get_service_activity(dynamic_sidecar_endpoint) == mock_json
 
 
 async def test_free_reserved_disk_space(

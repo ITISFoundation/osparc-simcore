@@ -344,15 +344,10 @@ async def update_projects_networks(
     )
 
 
-def _is_considered_inactive(
-    activity_info: ActivityInfoOrNone, threshold: float
-) -> bool:
+def _is_service_inactive(activity_info: ActivityInfoOrNone, threshold: float) -> bool:
     if activity_info is None:
         # services which do not support inactivity are treated as being inactive
         return True
-
-    if activity_info.seconds_inactive is None:
-        return False
 
     is_inactive: bool = activity_info.seconds_inactive >= threshold
     return is_inactive
@@ -389,6 +384,6 @@ async def get_project_inactivity(
     )
 
     all_services_inactive = all(
-        _is_considered_inactive(r, max_inactivity_seconds) for r in inactivity_responses
+        _is_service_inactive(r, max_inactivity_seconds) for r in inactivity_responses
     )
     return GetProjectInactivityResponse(is_inactive=all_services_inactive)
