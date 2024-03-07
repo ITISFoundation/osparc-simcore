@@ -128,6 +128,7 @@ class TasksManager:
 
     @staticmethod
     def create_task_id(task_name: TaskName) -> str:
+        assert len(task_name) > 0
         return f"{task_name}.{uuid4()}"
 
     def is_task_running(self, task_name: TaskName) -> bool:
