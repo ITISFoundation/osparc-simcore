@@ -13,9 +13,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
-from models_library.api_schemas_dynamic_sidecar.containers import (
-    ServiceInactivityResponse,
-)
+from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOrNone
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
@@ -347,16 +345,16 @@ async def update_projects_networks(
 
 
 def _is_considered_inactive(
-    inactivity_response: ServiceInactivityResponse, threshold: float
+    activity_info: ActivityInfoOrNone, threshold: float
 ) -> bool:
-    if inactivity_response is None:
+    if activity_info is None:
         # services which do not support inactivity are treated as being inactive
         return True
 
-    if inactivity_response.seconds_inactive is None:
+    if activity_info.seconds_inactive is None:
         return False
 
-    is_inactive: bool = inactivity_response.seconds_inactive >= threshold
+    is_inactive: bool = activity_info.seconds_inactive >= threshold
     return is_inactive
 
 
@@ -379,9 +377,9 @@ async def get_project_inactivity(
 
     project: ProjectAtDB = await projects_repository.get_project(project_id)
 
-    inactivity_responses: list[ServiceInactivityResponse] = await logged_gather(
+    inactivity_responses: list[ActivityInfoOrNone] = await logged_gather(
         *[
-            scheduler.get_service_inactivity(NodeID(node_id))
+            scheduler.get_service_activity(NodeID(node_id))
             for node_id in project.workbench
             # NOTE: only new style services expose service inactivity information
             # director-v2 only tracks internally new style services

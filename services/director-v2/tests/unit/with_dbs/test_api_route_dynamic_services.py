@@ -26,8 +26,8 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
 from models_library.api_schemas_dynamic_sidecar.containers import (
-    InactivityResponse,
-    ServiceInactivityResponse,
+    ActivityInfo,
+    ActivityInfoOrNone,
 )
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -576,7 +576,7 @@ def test_retrieve(
 def mock_internals_inactivity(
     mocker: MockerFixture,
     faker: Faker,
-    services_inactivity: list[ServiceInactivityResponse],
+    services_activity: list[ActivityInfoOrNone],
 ):
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
     mocker.patch(
@@ -584,8 +584,8 @@ def mock_internals_inactivity(
         return_value=[],
     )
 
-    service_inactivity_map: dict[str, ServiceInactivityResponse] = {
-        faker.uuid4(): s for s in services_inactivity
+    service_inactivity_map: dict[str, ActivityInfoOrNone] = {
+        faker.uuid4(): s for s in services_activity
     }
 
     mock_project = Mock()
@@ -601,7 +601,7 @@ def mock_internals_inactivity(
         return_value=MockProjectRepo(),
     )
 
-    async def get_service_inactivity(node_uuid: NodeID) -> ServiceInactivityResponse:
+    async def get_service_inactivity(node_uuid: NodeID) -> ActivityInfoOrNone:
         return service_inactivity_map[f"{node_uuid}"]
 
     mocker.patch(
@@ -614,12 +614,12 @@ def mock_internals_inactivity(
 
 
 @pytest.mark.parametrize(
-    "services_inactivity, max_inactivity_seconds, is_project_inactive",
+    "services_activity, max_inactivity_seconds, is_project_inactive",
     [
         *[
             pytest.param(
                 [
-                    InactivityResponse(seconds_inactive=x),
+                    ActivityInfo(seconds_inactive=x),
                 ],
                 5,
                 False,
@@ -629,7 +629,7 @@ def mock_internals_inactivity(
         ],
         pytest.param(
             [
-                InactivityResponse(seconds_inactive=6),
+                ActivityInfo(seconds_inactive=6),
             ],
             5,
             True,
@@ -637,7 +637,7 @@ def mock_internals_inactivity(
         ),
         pytest.param(
             [
-                InactivityResponse(seconds_inactive=4),
+                ActivityInfo(seconds_inactive=4),
             ],
             5,
             False,
@@ -645,7 +645,7 @@ def mock_internals_inactivity(
         ),
         pytest.param(
             [
-                InactivityResponse(seconds_inactive=None),
+                ActivityInfo(seconds_inactive=None),
             ],
             5,
             False,
@@ -653,9 +653,9 @@ def mock_internals_inactivity(
         ),
         pytest.param(
             [
-                InactivityResponse(seconds_inactive=6),
-                InactivityResponse(seconds_inactive=1),
-                InactivityResponse(seconds_inactive=None),
+                ActivityInfo(seconds_inactive=6),
+                ActivityInfo(seconds_inactive=1),
+                ActivityInfo(seconds_inactive=None),
             ],
             5,
             False,
@@ -663,8 +663,8 @@ def mock_internals_inactivity(
         ),
         pytest.param(
             [
-                InactivityResponse(seconds_inactive=6),
-                InactivityResponse(seconds_inactive=6),
+                ActivityInfo(seconds_inactive=6),
+                ActivityInfo(seconds_inactive=6),
             ],
             5,
             True,
@@ -687,9 +687,9 @@ def mock_internals_inactivity(
         pytest.param(
             [
                 None,
-                InactivityResponse(seconds_inactive=6),
+                ActivityInfo(seconds_inactive=6),
                 None,
-                InactivityResponse(seconds_inactive=6),
+                ActivityInfo(seconds_inactive=6),
             ],
             5,
             True,
