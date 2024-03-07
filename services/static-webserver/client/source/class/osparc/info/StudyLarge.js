@@ -68,9 +68,9 @@ qx.Class.define("osparc.info.StudyLarge", {
     _rebuildLayout: function() {
       this._removeAll();
 
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      const mainHBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const mainHBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const leftVBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       mainHBox.add(leftVBox, {
