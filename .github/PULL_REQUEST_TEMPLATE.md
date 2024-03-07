@@ -15,7 +15,7 @@
         [ Please add a link to the associated ops-issue or PR, such as in https://github.com/ITISFoundation/osparc-ops-environments or https://git.speag.com/oSparc/osparc-infra ]
   🗃️    Database table changed (relevant for devops).
   👽️    Public API changes (meaning: dev features are moved to being exposed in production)
-
+  🚨    Do manual testing when deployed
 
 or from https://gitmoji.dev/
 -->
@@ -41,17 +41,12 @@ or from https://gitmoji.dev/
 
 <!-- Give REVIEWERS some hits or code snippets on how could this be tested -->
 
-## Dev Checklist
+## Dev-ops checklist
 
 - [ ] No ENV changes or I properly updated ENV ([read the instruction](https://git.speag.com/oSparc/osparc-ops-deployment-configuration/-/blob/configs/README.md?ref_type=heads#how-to-update-env-variables))
 
-## DevOps Checklist
-<!--
-
-Some checks that might help your code run stable on production, and help devops assess criticality.
-
+<!-- Some checks that might help your code run stable on production, and help devops assess criticality.
 Modified from https://oschvr.com/posts/what-id-like-as-sre/
-
 
 - How can DevOps check the health of the service ?
 - How can DevOps safely and gracefully restart the service ?
