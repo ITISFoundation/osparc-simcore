@@ -327,7 +327,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         }
       };
 
-      const grid = new qx.ui.layout.Grid(20, 5);
+      const grid = new qx.ui.layout.Grid(15, 5);
       grid.setColumnAlign(0, "left", "top");
       grid.setColumnAlign(1, "left", "top");
       grid.setColumnAlign(2, "left", "bottom");
