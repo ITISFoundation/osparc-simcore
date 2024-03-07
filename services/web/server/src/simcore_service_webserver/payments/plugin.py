@@ -10,6 +10,8 @@ from simcore_service_webserver.rabbitmq import setup_rabbitmq
 
 from .._constants import APP_SETTINGS_KEY
 from ..db.plugin import setup_db
+from ..products.plugin import setup_products
+from ..users.plugin import setup_users
 from . import _rpc_invoice
 from ._tasks import create_background_task_to_fake_payment_completion
 
@@ -26,7 +28,9 @@ def setup_payments(app: web.Application):
     settings = app[APP_SETTINGS_KEY].WEBSERVER_PAYMENTS
 
     setup_db(app)
-    setup_rabbitmq(app)
+
+    setup_products(app)
+    setup_users(app)
 
     # rpc api
     setup_rabbitmq(app)

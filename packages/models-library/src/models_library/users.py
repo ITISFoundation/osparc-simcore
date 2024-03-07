@@ -25,3 +25,6 @@ class UserBillingDetails(BaseModel):
     country: str
     postal_code: str | None
     phone: str | None
+
+    class Config:
+        orm_mode = True

@@ -194,22 +194,6 @@ async def mock_rpc_server(
 
     # mocks the interface defined in the webserver
 
-    # @router.expose()
-    # async def get_credit_amount(
-    #     dollar_amount: ProductName, product_name: ProductName
-    # ) -> CreditResultGet:
-    #     return CreditResultGet.parse_obj(
-    #         CreditResultGet.Config.schema_extra["examples"][0]
-    #     )
-
-    # @router.expose()
-    # async def get_product_stripe_info(
-    #     product_name: ProductName,
-    # ) -> ProductStripeInfoGet:
-    #     return ProductStripeInfoGet.parse_obj(
-    #         ProductStripeInfoGet.Config.schema_extra["examples"][0]
-    #     )
-
     @router.expose()
     async def get_invoice_data(
         user_id: UserID,
