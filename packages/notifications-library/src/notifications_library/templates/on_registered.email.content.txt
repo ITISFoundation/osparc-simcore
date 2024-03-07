@@ -1,5 +1,11 @@
-Welcome on {{ host }}
+Dear {{ user.first_name }}:
 
-You are successfully registered on {{ host }}. To activate your account follow the link: {{ link }}
+Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.
+Please activate your account via the link below:
 
-Our support team is here to help with anything you need. Please feel free to contact us to {{ product.support_email }} in case of questions or any required assistance.
+{{ link }}
+
+Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
+
+Best regards
+The <i>{{ product.display_name }}</i> Team

@@ -1,1 +1,1 @@
-Registration on {{ host }}
+Welcome to {{ product.display_name }}

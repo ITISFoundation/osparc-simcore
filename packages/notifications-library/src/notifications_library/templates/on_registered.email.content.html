@@ -1,11 +1,23 @@
-<h1>Welcome on {{ host }}</h1>
+{% extends 'base.html' %}
 
-<p>
-  You are successfully registered on <a href="{{ link }}">{{ host }}</a>.
-  To activate your account follow the link: <a href="{{ link }}">{{ link }}</a>
-</p>
+{% block title %}Registration{% endblock %}
 
-<p>
-  Our support team is here to help with anything you need. Please feel free to contact us to {{ product.support_email }} in case
-  of questions or any required assistance.
-</p>
+{% block content %}
+<div class="container">
+  <p>
+    Dear {{ user.first_name }} <br><br>
+    Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.<br>
+    Please activate your account via the link below:
+  </p>
+
+  <p>
+    <a href="{{ link }}">{{ link }}</a>
+  </p>
+
+  <p>
+    Please don't hesitate to contact us at {{ product.support_email }} if you need further help.<br><br>
+    Best regards <br>
+    The <i>{{ product.display_name }}</i> Team
+  </p>
+</div>
+{% endblock %}
