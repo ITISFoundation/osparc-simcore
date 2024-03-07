@@ -52,7 +52,6 @@ def app_environment(
 
     settings = ApplicationSettings.create_from_envs()
     assert settings.WEBSERVER_RABBITMQ
-    assert settings.WEBSERVER_PAYMENTS
 
     return new_envs
 

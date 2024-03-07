@@ -306,36 +306,6 @@ async def test_search_and_pre_registration(
         "status": new_user["status"].name,
     }
 
-    # Test
+    # Test biling details
     user_billing_details = await get_user_billing_details(client.app, user_id=2)
-    print(user_billing_details)
-
-
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        UserRole.PRODUCT_OWNER,
-    ],
-)
-async def test_search_and_pre_registration(
-    client: TestClient, logged_user: UserInfoDict, faker: Faker
-):
-    # create pre-registration
-    requester_info = {
-        "firstName": faker.first_name(),
-        "lastName": faker.last_name(),
-        "email": faker.email(),
-        "companyName": faker.company(),
-        "phone": faker.phone_number(),
-        # billing info
-        "address": faker.address().replace("\n", ", "),
-        "city": faker.city(),
-        "state": faker.state(),
-        "postalCode": faker.postcode(),
-        "country": faker.country(),
-    }
-    resp = await client.post("/v0/users:pre-register", json=requester_info)
-    assert resp.status == status.HTTP_200_OK
-
-    user_billing_details = await get_user_billing_details(client.app, user_id=2)
-    print(user_billing_details)
+    assert user_billing_details
