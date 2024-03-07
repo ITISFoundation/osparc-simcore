@@ -21,6 +21,4 @@ async def test_templates_consolidation(
     repo = TemplatesRepo(sqlalchemy_async_engine)
     await consolidate_templates(new_templates_dir, products_names, repo)
 
-    print()
     _print_tree(new_templates_dir)
-    print()

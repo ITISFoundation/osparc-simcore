@@ -6,8 +6,6 @@ from simcore_postgres_database.models.products_to_templates import products_to_t
 from simcore_postgres_database.models.users import users
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from .errors import UserNotFoundError
-
 
 class _BaseRepo:
     def __init__(self, db_engine: AsyncEngine):
@@ -26,16 +24,13 @@ class UsersRepo(_BaseRepo):
         Raises:
             UserNotFoundError
         """
-        if row := await self._get(
+        return await self._get(
             sa.select(
                 users.c.first_name,
                 users.c.last_name,
                 users.c.email,
             ).where(users.c.id == user_id)
-        ):
-            return row
-
-        raise UserNotFoundError(user_id=user_id)
+        )
 
 
 class TemplatesRepo(_BaseRepo):
