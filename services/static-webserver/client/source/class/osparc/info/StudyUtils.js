@@ -339,6 +339,11 @@ qx.Class.define("osparc.info.StudyUtils", {
           row++;
 
           if (gridInfo.inline) {
+            if (extraInfo.action && extraInfo.action.button) {
+              extraInfo.action.button.set({
+                marginRight: 15
+              });
+            }
             titleLayout.add(extraInfo.view);
           } else {
             moreInfo.add(extraInfo.view, {
