@@ -36,7 +36,7 @@ qx.Class.define("osparc.utils.Units", {
         short: "s",
         long: "second"
       },
-      ampere : {
+      ampere: {
         quantity: "current",
         alias: ["ampere", "A", "amp"],
         short: "A",
@@ -71,7 +71,13 @@ qx.Class.define("osparc.utils.Units", {
         alias: ["radian", "rad"],
         short: "rad",
         long: "radian"
-      }
+      },
+      byte: {
+        quantity: "data size",
+        alias: ["byte", "B"],
+        short: "B",
+        long: "byte"
+      },
     },
 
     PREFIXES: {
@@ -99,17 +105,22 @@ qx.Class.define("osparc.utils.Units", {
         short: "M",
         long: "mega",
         multiplier: 1e6
+      },
+      giga: {
+        short: "G",
+        long: "giga",
+        multiplier: 1e9
       }
     },
 
-    __isUnitRegistered: function(unitKey) {
+    __isUnitRegistered: function (unitKey) {
       return Boolean(unitKey in this.BASE_UNITS);
     },
 
-    __getBaseUnit: function(unitKey) {
+    __getBaseUnit: function (unitKey) {
       return unitKey in this.BASE_UNITS ? this.BASE_UNITS[unitKey] : null;
     },
-    __getShortLabel: function(unit, prefix) {
+    __getShortLabel: function (unit, prefix) {
       const baseUnit = this.__getBaseUnit(unit);
       let shortLabel = baseUnit ? baseUnit.short : unit;
       if (prefix && prefix in this.PREFIXES) {
@@ -118,7 +129,7 @@ qx.Class.define("osparc.utils.Units", {
       return shortLabel;
     },
 
-    __getLongLabel: function(xUnit, prefix) {
+    __getLongLabel: function (xUnit, prefix) {
       const baseUnit = this.__getBaseUnit(xUnit);
       let longLabel = baseUnit ? baseUnit.long : xUnit;
       if (prefix && prefix in this.PREFIXES) {
@@ -127,7 +138,7 @@ qx.Class.define("osparc.utils.Units", {
       return longLabel;
     },
 
-    __getPrefixMultiplier: function(prefix) {
+    __getPrefixMultiplier: function (prefix) {
       if ([null, undefined, ""].includes(prefix)) {
         prefix = "no-prefix";
       }
@@ -137,7 +148,7 @@ qx.Class.define("osparc.utils.Units", {
       return 1;
     },
 
-    getLabels: function(unit, prefix) {
+    getLabels: function (unit, prefix) {
       if (this.__isUnitRegistered(unit)) {
         return {
           unitShort: this.__getShortLabel(unit, prefix),
@@ -148,7 +159,7 @@ qx.Class.define("osparc.utils.Units", {
     },
 
     // One up and one down, or all the way to the SI
-    getNextPrefix: function(prefix, originalPrefix) {
+    getNextPrefix: function (prefix, originalPrefix) {
       if ([null, undefined, ""].includes(prefix)) {
         prefix = "no-prefix";
       }
@@ -160,35 +171,35 @@ qx.Class.define("osparc.utils.Units", {
       if (orignalIdx === -1) {
         return null;
       }
-      const midPrefix = Math.min(keys.length-2, Math.max(orignalIdx, 1));
-      const pKeys = Object.keys(this.PREFIXES).filter((_, idx) => Math.abs(midPrefix-idx) <=1);
+      const midPrefix = Math.min(keys.length - 2, Math.max(orignalIdx, 1));
+      const pKeys = Object.keys(this.PREFIXES).filter((_, idx) => Math.abs(midPrefix - idx) <= 1);
       const idx = pKeys.indexOf(prefix);
-      if (idx === pKeys.length-1) {
+      if (idx === pKeys.length - 1) {
         return this.PREFIXES[pKeys[0]];
       }
-      return this.PREFIXES[pKeys[idx+1]];
+      return this.PREFIXES[pKeys[idx + 1]];
     },
 
-    getMultiplier: function(oldPrefix, newPrefix) {
+    getMultiplier: function (oldPrefix, newPrefix) {
       const oldMulitplier = this.__getPrefixMultiplier(oldPrefix);
       const newMulitplier = this.__getPrefixMultiplier(newPrefix);
-      const multiplier = oldMulitplier/newMulitplier;
+      const multiplier = oldMulitplier / newMulitplier;
       return multiplier;
     },
 
-    convertValue: function(val, oldPrefix, newPrefix) {
+    convertValue: function (val, oldPrefix, newPrefix) {
       const multiplier = this.getMultiplier(oldPrefix, newPrefix);
       if (Array.isArray(JSON.parse(val))) {
         val = JSON.parse(val);
         val.forEach((v, index) => {
-          val[index] = parseFloat((v*multiplier).toFixed(15));
+          val[index] = parseFloat((v * multiplier).toFixed(15));
         });
         return val;
       }
-      return parseFloat((val*multiplier).toFixed(15));
+      return parseFloat((val * multiplier).toFixed(15));
     },
 
-    composeXUnit: function(unit, unitPrefix) {
+    composeXUnit: function (unit, unitPrefix) {
       if (unit === undefined) {
         return null;
       }
@@ -200,7 +211,7 @@ qx.Class.define("osparc.utils.Units", {
       return xUnit;
     },
 
-    decomposeXUnit: function(xUnit) {
+    decomposeXUnit: function (xUnit) {
       const unitSplit = xUnit.split("-");
       let unitPrefix = null;
       let unit = null;
