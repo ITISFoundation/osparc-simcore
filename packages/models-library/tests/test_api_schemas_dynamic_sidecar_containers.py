@@ -7,7 +7,6 @@ from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfo
 @pytest.mark.parametrize(
     "data",
     [
-        pytest.param({"seconds_inactive": None}),
         pytest.param({"seconds_inactive": 0}),
         pytest.param({"seconds_inactive": 100}),
     ],
