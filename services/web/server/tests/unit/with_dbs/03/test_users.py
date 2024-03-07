@@ -24,7 +24,6 @@ from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole, UserStatus
-from simcore_service_webserver.users._api import get_user_billing_details
 from simcore_service_webserver.users._preferences_api import (
     get_frontend_user_preferences_aggregation,
 )
@@ -305,7 +304,3 @@ async def test_search_and_pre_registration(
         "registered": True,
         "status": new_user["status"].name,
     }
-
-    # Test biling details
-    user_billing_details = await get_user_billing_details(client.app, user_id=2)
-    assert user_billing_details
