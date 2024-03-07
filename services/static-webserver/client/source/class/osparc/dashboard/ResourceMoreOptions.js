@@ -42,8 +42,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   },
 
   statics: {
-    WIDTH: 1035,
-    HEIGHT: 700,
+    WIDTH: 900,
+    HEIGHT: 720,
 
     popUpInWindow: function(moreOpts) {
       const prjAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
@@ -408,8 +408,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         return null;
       }
 
-      const id = "Pipeline Preview";
-      const title = this.tr("Pipeline Preview");
+      const id = "Pipeline";
+      const title = this.tr("Pipeline View");
       const iconSrc = "@FontAwesome5Solid/eye/22";
       const preview = new osparc.study.StudyPreview(resourceData);
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
@@ -456,7 +456,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
 
       const id = "Data";
-      const title = this.tr("Project Files");
+      const title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + this.tr(" Files");
       const iconSrc = "@FontAwesome5Solid/file/22";
       const studyDataManager = new osparc.widget.NodeDataManager(resourceData["uuid"]);
 
@@ -615,7 +615,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         return null;
       }
 
-      const title = this.tr("Update Services");
+      const title = this.tr("Services Updates");
       const iconSrc = "@MaterialIcons/update/22";
       const servicesUpdate = new osparc.metadata.ServicesInStudyUpdate(resourceData);
       servicesUpdate.addListener("updateService", e => {
@@ -640,9 +640,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const id = "ServicesBootOptions";
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isService(resourceData)) {
-        return null;
-      }
-      if (!osparc.metadata.ServicesInStudyBootOpts.anyBootOptions(resourceData)) {
         return null;
       }
 
@@ -687,7 +684,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (canIWrite && canCreateTemplate) {
-        const title = this.tr("Save as ") + osparc.utils.Utils.capitalize(osparc.product.Utils.getTemplateAlias());
+        const title = this.tr("Publish ") + osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
         const iconSrc = "@FontAwesome5Solid/copy/22";
         const saveAsTemplate = new osparc.study.SaveAsTemplate(this.__resourceData);
         saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));

@@ -68,9 +68,9 @@ qx.Class.define("osparc.info.StudyLarge", {
     _rebuildLayout: function() {
       this._removeAll();
 
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      const mainHBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const mainHBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const leftVBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       mainHBox.add(leftVBox, {
@@ -122,6 +122,33 @@ qx.Class.define("osparc.info.StudyLarge", {
 
     __extraInfo: function() {
       const extraInfo = {
+        "THUMBNAIL": {
+          label: this.tr("Thumbnail:"),
+          view: this.__createThumbnail(),
+          action: {
+            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
+            callback: this.__canIWrite() ? this.__openThumbnailEditor : null,
+            ctx: this
+          }
+        },
+        "TITLE": {
+          label: this.tr("Title:"),
+          view: osparc.info.StudyUtils.createTitle(this.getStudy()),
+          action: {
+            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
+            callback: this.__canIWrite() ? this.__openTitleEditor : null,
+            ctx: this
+          }
+        },
+        "DESCRIPTION": {
+          label: this.tr("Description:"),
+          view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy()),
+          action: {
+            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
+            callback: this.__canIWrite() ? this.__openDescriptionEditor : null,
+            ctx: this
+          }
+        },
         "AUTHOR": {
           label: this.tr("Author:"),
           view: osparc.info.StudyUtils.createOwner(this.getStudy()),
@@ -152,33 +179,6 @@ qx.Class.define("osparc.info.StudyLarge", {
           action: {
             button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
             callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
-            ctx: this
-          }
-        },
-        "TITLE": {
-          label: this.tr("Title:"),
-          view: osparc.info.StudyUtils.createTitle(this.getStudy()),
-          action: {
-            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
-            callback: this.__canIWrite() ? this.__openTitleEditor : null,
-            ctx: this
-          }
-        },
-        "DESCRIPTION": {
-          label: this.tr("Description:"),
-          view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy()),
-          action: {
-            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
-            callback: this.__canIWrite() ? this.__openDescriptionEditor : null,
-            ctx: this
-          }
-        },
-        "THUMBNAIL": {
-          label: this.tr("Thumbnail:"),
-          view: this.__createThumbnail(),
-          action: {
-            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
-            callback: this.__canIWrite() ? this.__openThumbnailEditor : null,
             ctx: this
           }
         }
