@@ -5,20 +5,20 @@
    https://osparc.io
 
    Copyright:
-     2023 IT'IS Foundation, https://itis.swiss
+     2024 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Odei Maiz (odeimaiz)
+     * Julian Querido (jsaq007)
 
 ************************************************************************ */
 
 qx.Class.define("osparc.dashboard.SortedByMenuButton", {
   extend: qx.ui.form.MenuButton,
 
-  construct: function(resource = "study") {
+  construct: function() {
     this.base(arguments, this.tr("Sort"), "@FontAwesome5Solid/chevron-down/10");
 
     osparc.utils.Utils.setIdToWidget(this, "sortedByButton");
@@ -33,25 +33,42 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
     });
     this.setMenu(sortedByMenu);
 
-    this.__resourceType = resource;
-    const options = this.self().getSortByOptions(resource);
+    const options = this.self().getSortByOptions();
 
     options.forEach((option, idx) => {
       const btn = new qx.ui.menu.Button();
       btn.btnId = option.id;
       btn.set({
         label: option.label,
-        icon: option.icon
+        icon: null
       });
+      // Sort by last modified date
+      if (idx === options.length -1) {
+        this.__menuButton = btn;
+        btn.setIcon("@FontAwesome5Solid/arrow-down/14");
+      }
       sortedByMenu.add(btn);
 
-      btn.addListener("execute", () => this.__buttonExecuted(btn));
-
-      // Sort by last modified date
-      if (idx === options.length) {
-        btn.execute();
-      }
+      btn.addListener("execute", () => {
+        this.__buttonExecuted(btn)
+      });
     });
+
+    this.addListener("changeSortField", e => {
+      const sort = {
+        field: e.getData(),
+        direction: true
+      }
+      this.__handelSortEvent(sort)
+    }, this);
+
+    this.addListener("changeSortDirection", e => {
+      const sort = {
+        field: this.getSortField(),
+        direction: e.getData()
+      }
+      this.__handelSortEvent(sort)
+    }, this);
   },
 
   statics: {
@@ -61,37 +78,17 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
     },
     getSortByOptions: function() {
       return [{
-        id: "name-asc",
-        label: qx.locale.Manager.tr("Name Asc"),
-        icon: "@FontAwesome5Solid/sort-alpha-down/14"
+        id: "name",
+        label: qx.locale.Manager.tr("Name")
       }, {
-        id: "name-desc",
-        label: qx.locale.Manager.tr("Name Desc"),
-        icon: "@FontAwesome5Solid/sort-alpha-up/14"
+        id: "prj_owner",
+        label: qx.locale.Manager.tr("Owner")
       }, {
-        id: "owner-asc",
-        label: qx.locale.Manager.tr("Owner Asc"),
-        icon: "@FontAwesome5Solid/sort-alpha-down/14"
+        id: "creation_date",
+        label: qx.locale.Manager.tr("Created"),
       }, {
-        id: "owner-desc",
-        label: qx.locale.Manager.tr("Owner Desc"),
-        icon: "@FontAwesome5Solid/sort-alpha-up/14"
-      }, {
-        id: "created-asc",
-        label: qx.locale.Manager.tr("Created Asc"),
-        icon: "@FontAwesome5Solid/sort-alpha-down/14"
-      }, {
-        id: "created-desc",
-        label: qx.locale.Manager.tr("Created Desc"),
-        icon: "@FontAwesome5Solid/sort-alpha-up/14"
-      }, {
-        id: "modified-asc",
-        label: qx.locale.Manager.tr("Modified Asc"),
-        icon: "@FontAwesome5Solid/sort-alpha-down/14"
-      }, {
-        id: "modified-desc",
-        label: qx.locale.Manager.tr("Modified Desc"),
-        icon: "@FontAwesome5Solid/sort-alpha-up/14"
+        id: "last_change_date",
+        label: qx.locale.Manager.tr("Modified"),
       }];
     }
   },
@@ -100,73 +97,65 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
     "sortByChanged": "qx.event.type.Data"
   },
 
-  members: {
-    __resourceType: null,
+  properties: {
+    sortField: {
+      check: "String",
+      init: "last_change_date",
+      nullable: true,
+      event: "changeSortField",
+      apply: "__applySortField"
+    },
+    sortDirection: {
+      check: "Boolean",
+      init: true,
+      nullable: true,
+      event: "changeSortDirection",
+      apply: "__applySortDirection"
+    }
+  },
 
+  members: {
+    __menuButton: null,
     __buttonExecuted: function(btn) {
+      if (this.__menuButton) {
+        this.__menuButton.setIcon(null);
+      }
+      this.__menuButton = btn;
       this.set({
         label: btn.getLabel(),
-        icon: btn.getIcon()
+        icon: "@FontAwesome5Solid/chevron-down/10"
       });
 
       const data = {
         "id": btn.btnId,
       };
-      this.setSortedBy(data.id)
+      this.__handelSort(data.id);
     },
 
-    setSortedBy: function(optionId) {
-      let sort;
-      switch (optionId) {
-        case "name-asc":
-          sort = {
-            field: "name",
-            direction: "asc"
-          };
-          break;
-        case "name-desc":
-          sort = {
-            field: "name",
-            direction: "desc"
-          };
-          break;
-        case "owner-asc":
-          sort = {
-            field: "prj_owner",
-            direction: "asc"
-          };
-          break;
-        case "owner-desc":
-          sort = {
-            field: "prj_owner",
-            direction: "desc"
-          };
-          break;
-        case "created-asc":
-          sort = {
-            field: "creation_date",
-            direction: "asc"
-          };
-          break;
-        case "created-desc":
-          sort = {
-            field: "creation_date",
-            direction: "desc"
-          };
-          break;
-        case "modified-asc":
-          sort = {
-            field: "last_change_date",
-            direction: "asc"
-          };
-          break;
-        default:
-          sort = {
-            field: "last_change_date",
-            direction: "desc"
-          }
+    __handelSort: function(field) {
+      if (field === this.getSortField()) {
+        const direction = !this.getSortDirection();
+        this.setSortDirection(direction)
+        return;
       }
+      this.setSortField(field)
+    },
+
+    __handelSortEvent: function({field, direction}) {
+      this.__menuButton.setIcon(direction ? "@FontAwesome5Solid/arrow-down/14" : "@FontAwesome5Solid/arrow-up/14")
+      const sort = {
+        field: field,
+        direction: direction ? "desc" : "asc"
+      };
       this.fireDataEvent("sortByChanged", sort);
     },
+
+    __applySortField: function(value, old) {
+
+    },
+
+    __applySortDirection: function(value, old) {
+
+    }
   }
 });
