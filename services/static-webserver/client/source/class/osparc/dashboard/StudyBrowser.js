@@ -904,7 +904,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getThumbnailStudyMenuButton: function(studyData) {
-      const thumbButton = new qx.ui.menu.Button(this.tr("Edit Thumbnail..."));
+      const thumbButton = new qx.ui.menu.Button(this.tr("Thumbnail..."));
       thumbButton.addListener("execute", () => {
         const title = this.tr("Edit Thumbnail");
         const oldThumbnail = studyData.thumbnail;
