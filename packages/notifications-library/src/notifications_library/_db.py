@@ -4,7 +4,6 @@ from models_library.users import UserID
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products_to_templates import products_to_templates
 from simcore_postgres_database.models.users import users
-from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .errors import UserNotFoundError
@@ -22,7 +21,7 @@ class _BaseRepo:
 
 
 class UsersRepo(_BaseRepo):
-    async def get_user_data(self, user_id: UserID) -> Row:
+    async def get_user_data(self, user_id: UserID):
         """
         Raises:
             UserNotFoundError

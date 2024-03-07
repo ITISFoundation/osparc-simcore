@@ -6,14 +6,14 @@ from models_library.products import ProductName
 #
 # *Data are models used for rendering
 #
-@dataclass
+@dataclass(frozen=True)
 class UserData:
     first_name: str
     last_name: str
     email: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class ProductData:
     product_name: ProductName
     display_name: str
