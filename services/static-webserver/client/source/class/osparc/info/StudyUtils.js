@@ -268,58 +268,59 @@ qx.Class.define("osparc.info.StudyUtils", {
     },
 
     createExtraInfoGrid: function(extraInfos) {
+      // hacky grid: rows are indexed in multiples of three: title, content and spacing
       const positions = {
         THUMBNAIL: {
           column: 0,
-          row: 0,
+          row: 0*3,
           rowSpan: 4,
           colSpan: 1
         },
         TITLE: {
           column: 1,
-          row: 0,
+          row: 0*3,
           rowSpan: 1,
-          colSpan: 1,
+          colSpan: 1
         },
         DESCRIPTION: {
           column: 1,
           row: 2,
           rowSpan: 1,
-          colSpan: 1,
+          colSpan: 1
         },
         CREATED: {
           column: 0,
-          row: 3*3,
+          row: 2*3,
           colSpan: 2
         },
         MODIFIED: {
           column: 0,
-          row: 4*3,
+          row: 3*3,
           colSpan: 2
         },
         ACCESS_RIGHTS: {
           column: 0,
-          row: 5*3,
+          row: 4*3,
           colSpan: 2
         },
         AUTHOR: {
           column: 0,
-          row: 6*3,
+          row: 5*3,
           colSpan: 2
         },
         TAGS: {
           column: 0,
-          row: 7*3,
+          row: 6*3,
           colSpan: 2
         },
         QUALITY: {
           column: 0,
-          row: 8*3,
+          row: 7*3,
           colSpan: 2
         },
         CLASSIFIERS: {
           column: 0,
-          row: 9*3,
+          row: 8*3,
           colSpan: 2
         }
       };
