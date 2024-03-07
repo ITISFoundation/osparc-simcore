@@ -43,7 +43,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
   statics: {
     WIDTH: 1035,
-    HEIGHT: 700,
+    HEIGHT: 720,
 
     popUpInWindow: function(moreOpts) {
       const prjAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
