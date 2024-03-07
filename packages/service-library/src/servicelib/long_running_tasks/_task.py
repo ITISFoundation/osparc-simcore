@@ -127,7 +127,7 @@ class TasksManager:
                 )
 
     @staticmethod
-    def generate_task_id(task_name: TaskName) -> str:
+    def create_task_id(task_name: TaskName) -> str:
         return f"{task_name}.{uuid4()}"
 
     def is_task_running(self, task_name: TaskName) -> bool:
@@ -409,7 +409,7 @@ def start_task(
         ]
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
-    task_id = tasks_manager.generate_task_id(task_name=task_name)
+    task_id = tasks_manager.create_task_id(task_name=task_name)
     task_progress = TaskProgress.create(task_id=task_id)
 
     # bind the task with progress 0 and 1
