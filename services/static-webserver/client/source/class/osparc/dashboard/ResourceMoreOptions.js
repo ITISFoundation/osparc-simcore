@@ -42,7 +42,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   },
 
   statics: {
-    WIDTH: 1035,
+    WIDTH: 900,
     HEIGHT: 720,
 
     popUpInWindow: function(moreOpts) {
