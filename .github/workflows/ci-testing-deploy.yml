@@ -2499,7 +2499,6 @@ jobs:
     needs:
       [
         system-test-e2e,
-        system-test-e2e-playwright,
         system-test-environment-setup,
         system-test-public-api,
         system-test-swarm-deploy,

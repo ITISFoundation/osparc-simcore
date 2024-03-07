@@ -526,11 +526,15 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
     def _list_tasks(
         dask_scheduler: distributed.Scheduler,
     ) -> dict[TaskId, TaskState]:
-        from collections import defaultdict
+        # NOTE: this is ok and needed: this runs on the dask scheduler, so don't remove this import
 
-        task_state_to_tasks = defaultdict(list)
+        task_state_to_tasks = {}
         for task in dask_scheduler.tasks.values():
-            task_state_to_tasks[task.state].append(task.key)
+            if task.state in task_state_to_tasks:
+                task_state_to_tasks[task.state].append(task.key)
+            else:
+                task_state_to_tasks[task.state] = task.key
+
         return dict(task_state_to_tasks)
 
     list_of_tasks: dict[TaskState, list[TaskId]] = dask_client.run_on_scheduler(
