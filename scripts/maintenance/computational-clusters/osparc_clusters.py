@@ -526,6 +526,11 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
     def _list_tasks(
         dask_scheduler: distributed.Scheduler,
     ) -> dict[TaskId, TaskState]:
+        # NOTE: this is ok and needed: this runs on the dask scheduler, so don't remove this import
+        from collections import (  # pylint: disable=redefined-outer-name, reimported
+            defaultdict,
+        )
+
         task_state_to_tasks = defaultdict(list)
         for task in dask_scheduler.tasks.values():
             task_state_to_tasks[task.state].append(task.key)
