@@ -251,7 +251,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       return moreInfo;
     },
 
-    titleWithEditLayout: function(data) {
+    __titleWithEditLayout: function(data) {
       const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const title = new qx.ui.basic.Label(data.label);
       titleLayout.add(title);
@@ -270,89 +270,85 @@ qx.Class.define("osparc.info.StudyUtils", {
     },
 
     createExtraInfoGrid: function(extraInfos) {
-      // hacky grid: rows are indexed in multiples of three: title, content and spacing
       const positions = {
         TITLE: {
           column: 0,
-          row: 0*3,
+          row: 0,
         },
         THUMBNAIL: {
           column: 0,
-          row: 1*3,
+          row: 1,
         },
         DESCRIPTION: {
           column: 0,
-          row: 2*3,
+          row: 2,
         },
         AUTHOR: {
+          inline: true,
           column: 0,
-          row: 3*3,
+          row: 3,
         },
         CREATED: {
+          inline: true,
           column: 0,
-          row: 4*3,
+          row: 4,
         },
         MODIFIED: {
+          inline: true,
           column: 0,
-          row: 5*3,
+          row: 5,
         },
         ACCESS_RIGHTS: {
+          inline: true,
           column: 0,
-          row: 6*3,
+          row: 6,
         },
-
         TAGS: {
+          inline: true,
           column: 0,
-          row: 7*3,
+          row: 7,
         },
         QUALITY: {
+          inline: true,
           column: 0,
-          row: 8*3,
+          row: 8,
         },
         CLASSIFIERS: {
+          inline: true,
           column: 0,
-          row: 9*3,
+          row: 9,
         }
       };
 
       const grid = new qx.ui.layout.Grid(15, 5);
       grid.setColumnAlign(0, "left", "top");
-      grid.setColumnAlign(1, "left", "top");
-      grid.setColumnAlign(2, "left", "top");
-      grid.setColumnAlign(3, "left", "top");
-      grid.setColumnAlign(4, "left", "top");
-      grid.setRowHeight(0*3-1, 5); // spacer
-      grid.setRowHeight(1*3-1, 5); // spacer
-      grid.setRowHeight(2*3-1, 5); // spacer
-      grid.setRowHeight(3*3-1, 5); // spacer
-      grid.setRowHeight(4*3-1, 5); // spacer
-      grid.setRowHeight(5*3-1, 5); // spacer
-      grid.setRowHeight(6*3-1, 5); // spacer
-      grid.setRowHeight(7*3-1, 5); // spacer
-      grid.setRowHeight(8*3-1, 5); // spacer
-      grid.setRowHeight(9*3-1, 5); // spacer
-      grid.setColumnFlex(0, 1);
-      // grid.setColumnFlex(1, 1);
       const moreInfo = new qx.ui.container.Composite(grid);
+      grid.setColumnFlex(0, 1);
 
+      let row = 0;
       Object.keys(positions).forEach(key => {
         if (key in extraInfos) {
           const extraInfo = extraInfos[key];
           const gridInfo = positions[key];
 
-          const titleLayout = this.titleWithEditLayout(extraInfo);
+          const titleLayout = this.__titleWithEditLayout(extraInfo);
           moreInfo.add(titleLayout, {
-            row: gridInfo.row,
-            column: gridInfo.column,
-            colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1
+            row,
+            column: gridInfo.column
           });
+          row++;
 
-          moreInfo.add(extraInfo.view, {
-            row: gridInfo.row+1,
-            column: gridInfo.column,
-            colSpan: gridInfo.colSpan ? gridInfo.colSpan : 1,
-            rowSpan: gridInfo.rowSpan ? gridInfo.rowSpan : 1
-          });
+          if (gridInfo.inline) {
+            titleLayout.add(extraInfo.view);
+          } else {
+            moreInfo.add(extraInfo.view, {
+              row,
+              column: gridInfo.column
+            });
+            row++;
+          }
+          grid.setRowHeight(row, 5); // spacer
+          row++;
         }
       });
 
