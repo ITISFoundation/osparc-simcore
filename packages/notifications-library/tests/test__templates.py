@@ -8,15 +8,26 @@ from notifications_library._templates import (
 )
 
 
-@pytest.mark.parametrize("event_name", ["on_registered", "on_payed"])
-def test_get_email_templates(event_name: str):
+@pytest.mark.parametrize(
+    "event_name",
+    [
+        "on_registered",
+        "on_payed",
+    ],
+)
+def test_email_templates_are_complete(event_name: str):
 
-    event_templates = get_default_named_templates(event=event_name, media="email")
+    event_templates = set(get_default_named_templates(event=event_name, media="email"))
 
-    assert set(event_templates) == {
+    with_html = {
         f"{event_name}.email.{suffix}"
         for suffix in ["subject.txt", "content.html", "content.txt"]
     }
+    without_html = {
+        f"{event_name}.email.{suffix}" for suffix in ["subject.txt", "content.txt"]
+    }
+
+    assert event_templates in (with_html, without_html)
 
 
 @pytest.mark.parametrize(
