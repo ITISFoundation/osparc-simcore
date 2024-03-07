@@ -6,6 +6,6 @@
 --requirement ../../../packages/postgres-database/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
 
-
-aiosmtplib # notifier
-Jinja2 # notifier
+aiofiles
+aiosmtplib
+Jinja2
