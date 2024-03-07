@@ -2,6 +2,14 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
+"""
+These tests can be run against external configuration
+
+cd packages/notifications-library
+pytest --external-envfile=.my-env --external-support-email=support@email.com  --external-user-email=my@email.com tests/email
+
+"""
+
 
 from email.message import EmailMessage
 from pathlib import Path
@@ -48,11 +56,6 @@ async def test_on_payed_event(
     product_data: ProductData,
     payment_data: PaymentData,
 ):
-    """
-    Example of usage with external email and envfile
-
-        > pytest --external-user-email=me@email.me --external-envfile=.myenv -k test_send_email_workflow  --pdb tests/unit
-    """
 
     assert user_data.email == user_email
     assert product_data.product_name == product_name
@@ -95,8 +98,8 @@ async def test_on_registered_event(
         user=user_data,
         product=product_data,
         # extras
-        host=faker.url(),
-        link=faker.url(),
+        host=f"https://{product_name}.io",
+        link=faker.image_url(width=640, height=480),
     )
 
     await _send_and_assert(compose_email(*parts), smtp_mock_or_none)

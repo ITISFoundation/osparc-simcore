@@ -18,5 +18,8 @@ def create_render_env_from_folder(top_dir: Path):
     assert top_dir.exists()  # nosec
     assert top_dir.is_dir()  # nosec
     return Environment(
-        loader=FileSystemLoader(top_dir), autoescape=select_autoescape(["html", "xml"])
+        loader=FileSystemLoader(top_dir),
+        autoescape=select_autoescape(
+            ["html", "xml"],
+        ),
     )
