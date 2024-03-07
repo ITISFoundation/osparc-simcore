@@ -175,7 +175,9 @@ qx.Class.define("osparc.info.StudyUtils", {
       study.bind("description", description, "value", {
         converter: desc => desc ? desc : "Add description"
       });
-      return description;
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(description);
+      return scrollContainer;
     },
 
     /**
