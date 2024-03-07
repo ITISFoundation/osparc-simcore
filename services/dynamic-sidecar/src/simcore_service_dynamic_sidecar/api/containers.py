@@ -9,8 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
 from models_library.api_schemas_dynamic_sidecar.containers import (
-    InactivityResponse,
-    ServiceInactivityResponse,
+    ActivityInfo,
+    ActivityInfoOrNone,
 )
 from pydantic import parse_raw_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -91,14 +91,14 @@ async def containers_docker_inspect(
 
 
 @router.get(
-    "/containers/inactivity",
+    "/containers/activity",
 )
 @cancel_on_disconnect
-async def get_containers_inactivity(
+async def get_containers_activity(
     request: Request,
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
     shared_store: Annotated[SharedStore, Depends(get_shared_store)],
-) -> ServiceInactivityResponse:
+) -> ActivityInfoOrNone:
     _ = request
     inactivity_command = settings.DY_SIDECAR_CALLBACKS_MAPPING.inactivity
     if inactivity_command is None:
@@ -124,19 +124,19 @@ async def get_containers_inactivity(
             container_name,
             exc_info=True,
         )
-        return InactivityResponse(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
+        return ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
 
     try:
-        return parse_raw_as(InactivityResponse, inactivity_response)
+        return parse_raw_as(ActivityInfo, inactivity_response)
     except json.JSONDecodeError:
         _logger.warning(
             "Could not parse command result '%s' as '%s'",
             inactivity_response,
-            InactivityResponse.__name__,
+            ActivityInfo.__name__,
             exc_info=True,
         )
 
-    return InactivityResponse(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
+    return ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
 
 
 # Some of the operations and sub-resources on containers are implemented as long-running tasks.
