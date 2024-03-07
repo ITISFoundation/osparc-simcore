@@ -94,7 +94,7 @@ class ComputationalCluster:
 def _get_instance_name(instance) -> str:
     for tag in instance.tags:
         if tag["Key"] == "Name":
-            return tag["Value"]
+            return tag.get("Value", "unknown")
     return "unknown"
 
 
@@ -537,9 +537,12 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
 
         return dict(task_state_to_tasks)
 
-    list_of_tasks: dict[TaskState, list[TaskId]] = dask_client.run_on_scheduler(
-        _list_tasks
-    )  # type: ignore
+    try:
+        list_of_tasks: dict[TaskState, list[TaskId]] = dask_client.run_on_scheduler(
+            _list_tasks
+        )  # type: ignore
+    except TypeError:
+        print(f"ERROR while recoverring unrunnable tasks using {dask_client=}")
     return list_of_tasks
 
 
