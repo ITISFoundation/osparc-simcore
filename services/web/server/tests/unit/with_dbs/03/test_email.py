@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 
+import functools
 import json
 from collections import Counter
 from html.parser import HTMLParser
@@ -20,6 +21,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from servicelib.aiohttp import status
+from servicelib.json_serialization import json_dumps
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver._resources import webserver_resources
@@ -157,11 +159,24 @@ class IndexParser(HTMLParser):
     list(webserver_resources.get_path("templates").rglob("*.jinja2")),
     ids=lambda p: p.name,
 )
-def test_render_templates(template_path: Path):
+def test_render_templates(template_path: Path, faker: Faker):
     app = web.Application()
     setup_email(app)
 
     request = make_mocked_request("GET", "/fake", app=app)
+
+    fake_json_object = {
+        "name": faker.name(),
+        "user": {
+            "name": faker.name(),
+            "address": faker.address(),
+            "email": faker.email(),
+        },
+        "job": {
+            "title": faker.job(),
+            "company": {"name": faker.company(), "address": faker.address()},
+        },
+    }
 
     subject, html_body = _render_template(
         request,
@@ -174,6 +189,9 @@ def test_render_templates(template_path: Path):
             "reason": "no reason",
             "link": "https://link.com",
             "product": {"name": "foo"},
+            "dumps": functools.partial(json_dumps, indent=1),
+            "request_form": fake_json_object,
+            "ipinfo": fake_json_object,
         },
     )
 
