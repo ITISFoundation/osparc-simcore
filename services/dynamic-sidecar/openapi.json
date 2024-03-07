@@ -794,6 +794,9 @@
           }
         },
         "type": "object",
+        "required": [
+          "seconds_inactive"
+        ],
         "title": "ActivityInfo"
       },
       "ApplicationHealth": {

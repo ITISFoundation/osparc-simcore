@@ -10,7 +10,7 @@ openapi.json: .env ## Creates OAS document openapi.json
 	@set -o allexport; \
 	source .env; \
 	set +o allexport; \
-	simcore-service-dynamic-sidecar openapi > $@
+	simcore-service openapi > $@
 
 
 
