@@ -44,7 +44,7 @@ qx.Class.define("osparc.study.StudyPreview", {
         const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
         workbenchUIPreview.setStudy(study);
         workbenchUIPreview.loadModel(study.getWorkbench());
-        workbenchUIPreview.setMaxHeight(600);
+        workbenchUIPreview.setMaxHeight(550);
         this._add(workbenchUIPreview);
       }
     }
