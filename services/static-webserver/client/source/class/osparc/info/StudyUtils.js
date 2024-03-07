@@ -169,13 +169,13 @@ qx.Class.define("osparc.info.StudyUtils", {
       const description = new osparc.ui.markdown.Markdown().set({
         noMargin: true
       });
-      if (maxHeight) {
-        description.setMaxHeight(maxHeight);
-      }
       study.bind("description", description, "value", {
         converter: desc => desc ? desc : "Add description"
       });
       const scrollContainer = new qx.ui.container.Scroll();
+      if (maxHeight) {
+        scrollContainer.setMaxHeight(maxHeight);
+      }
       scrollContainer.add(description);
       return scrollContainer;
     },
