@@ -5,12 +5,13 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import Callable
-from typing import Any, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from models_library.products import ProductName
-from models_library.users import GroupID, UserID
-from notifications_library._db import TemplatesRepo, UserDataRepo
+from models_library.users import UserID
+from notifications_library._db import TemplatesRepo, UsersRepo
+from notifications_library._models import UserData
 from notifications_library._payments_db import PaymentsDataRepo
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
@@ -24,11 +25,15 @@ pytest_simcore_ops_services_selection = [
 
 async def test_user_data_repo(
     sqlalchemy_async_engine: AsyncEngine,
+    user: dict,
     user_id: UserID,
-    user_primary_group_id: GroupID,
+    user_data: UserData,
 ):
-    repo = UserDataRepo(sqlalchemy_async_engine)
-    assert await repo.get_primary_group_id(user_id) == user_primary_group_id
+    assert user["id"] == user_id
+
+    repo = UsersRepo(sqlalchemy_async_engine)
+    got = await repo.get_user_data(user_id)
+    assert UserData(**got) == user_data
 
 
 async def test_payments_data_repo(

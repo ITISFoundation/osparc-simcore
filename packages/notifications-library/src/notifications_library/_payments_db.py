@@ -5,10 +5,10 @@ from simcore_postgres_database.models.payments_transactions import payments_tran
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 
-from ._db import BaseDataRepo
+from ._db import _BaseRepo
 
 
-class PaymentsDataRepo(BaseDataRepo):
+class PaymentsDataRepo(_BaseRepo):
     async def get_on_payed_data(self, user_id: UserID, payment_id: PaymentID):
         """Retrieves payment data for the templates on the `on_payed` event"""
         if row := await self._get(

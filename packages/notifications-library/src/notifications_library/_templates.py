@@ -19,12 +19,17 @@ _templates = importlib.resources.files(notifications_library.__name__).joinpath(
 )
 _templates_dir = Path(os.fspath(_templates))  # type:ignore
 
+# Templates are organised as:
+#
+#  - named-templates: have a hierarchical names used to identify the event, provider (e.g. email, sms),
+#     part of the message (e.g. subject, content) and format (e.g. html or txt). (see test__templates.py)
+#  - generic: are used in other templates (can be seen as "templates of templates")
+#
+#    e.g. base.html is a generic template vs on_payed.email.content.html that is a named template
+
 
 class NamedTemplateTuple(NamedTuple):
     # Named templates are named as "{event_name}.{provider}.{part}.{format}"
-    #
-    # e.g. base.html is a generic template vs on_payed.email.content.html that is a named template
-    #
     event: str
     media: str
     part: str
@@ -73,15 +78,20 @@ async def _copy_files(src: Path, dst: Path):
 async def consolidate_templates(
     new_dir: Path, product_names: list[ProductName], repo: TemplatesRepo
 ):
-    """Builds a folder structure with all templates for each product
+    """
+    Builds a folder structure and dump all templates (T) for each product (P) following the following precedence rules
+        1. T found in database associated to P in products_to_templates.join(jinja2_templates)
+        2. found in notifications_library/templates/P/T file
+        3. found in notifications_library/T file
 
-    new_dir:
-        product_1:
-            template1
-            ...
-        product_2:
-            template1
-            ...
+    Final folder tree looks like
+        new_dir:
+            product_1:
+                template1
+                ...
+            product_2:
+                template1
+                ...
 
     """
     assert new_dir.is_dir()  # nosec

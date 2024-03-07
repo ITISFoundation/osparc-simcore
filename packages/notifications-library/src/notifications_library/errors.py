@@ -10,3 +10,7 @@ class NotifierError(OsparcErrorMixin, Exception):
 
 class TemplatesNotFoundError(NotifierError):
     msg_template = "Could not find {templates}"
+
+
+class UserNotFoundError(NotifierError):
+    msg_template = "Cound not find user with id={user_id}"

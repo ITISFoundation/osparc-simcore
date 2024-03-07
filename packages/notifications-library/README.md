@@ -1,6 +1,6 @@
-# simcore notifications library
+# simcore Notifications Library
 
-Tools for users notifications
+Utilities and message templates for users notifications
 
-- templates
-- emails
+## Rationale
+  - Initial design https://github.com/ITISFoundation/osparc-simcore/pull/5333

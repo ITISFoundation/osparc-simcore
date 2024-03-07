@@ -1,13 +1,16 @@
 import sqlalchemy as sa
 from models_library.products import ProductName
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.products_to_templates import products_to_templates
 from simcore_postgres_database.models.users import users
+from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from .errors import UserNotFoundError
 
-class BaseDataRepo:
+
+class _BaseRepo:
     def __init__(self, db_engine: AsyncEngine):
         assert db_engine is not None  # nosec
         self.db_engine = db_engine
@@ -18,20 +21,25 @@ class BaseDataRepo:
             return result.first()
 
 
-class UserDataRepo(BaseDataRepo):
-    async def get_primary_group_id(self, user_id: UserID) -> GroupID:
+class UsersRepo(_BaseRepo):
+    async def get_user_data(self, user_id: UserID) -> Row:
+        """
+        Raises:
+            UserNotFoundError
+        """
         if row := await self._get(
             sa.select(
-                users.c.primary_gid,
+                users.c.first_name,
+                users.c.last_name,
+                users.c.email,
             ).where(users.c.id == user_id)
         ):
-            return GroupID(row.primary_gid)
+            return row
 
-        msg = f"{user_id=} not found"
-        raise ValueError(msg)
+        raise UserNotFoundError(user_id=user_id)
 
 
-class TemplatesRepo(BaseDataRepo):
+class TemplatesRepo(_BaseRepo):
     async def iter_email_templates(self, product_name: ProductName):
         async with self.db_engine.begin() as conn:
             async for row in await conn.stream(

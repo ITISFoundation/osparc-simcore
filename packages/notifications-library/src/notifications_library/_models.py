@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from models_library.products import ProductName
 
 
+#
+# *Data are models used for rendering
+#
 @dataclass
 class UserData:
     first_name: str
