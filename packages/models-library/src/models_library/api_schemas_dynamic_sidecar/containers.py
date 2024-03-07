@@ -3,8 +3,8 @@ from typing import TypeAlias
 from pydantic import BaseModel, NonNegativeFloat
 
 
-class InactivityResponse(BaseModel):
-    seconds_inactive: NonNegativeFloat | None = None
+class ActivityInfo(BaseModel):
+    seconds_inactive: NonNegativeFloat
 
 
-ServiceInactivityResponse: TypeAlias = InactivityResponse | None
+ActivityInfoOrNone: TypeAlias = ActivityInfo | None
