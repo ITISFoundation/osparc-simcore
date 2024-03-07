@@ -103,3 +103,27 @@ async def test_on_registered_event(
     )
 
     await _send_and_assert(compose_email(*parts), smtp_mock_or_none)
+
+
+async def test_on_new_code_event(
+    app_environment: EnvVarsDict,
+    tmp_path: Path,
+    faker: Faker,
+    user_email: EmailStr,
+    product_name: ProductName,
+    smtp_mock_or_none: MagicMock | None,
+    user_data: UserData,
+    product_data: ProductData,
+):
+
+    parts = render_email_parts(
+        env=create_render_env_from_package(),
+        event_name="on_new_code",
+        user=user_data,
+        product=product_data,
+        # extras
+        host=f"https://{product_name}.io",
+        code=faker.pystr_format(string_format="####", letters=""),
+    )
+
+    await _send_and_assert(compose_email(*parts), smtp_mock_or_none)
