@@ -45,7 +45,7 @@ class TaskProgress(BaseModel):
 
     @classmethod
     def create(cls, task_id: TaskId | None = None) -> "TaskProgress":
-        return cls.parse_obj({"task_id": task_id, "message": "", "percent": 0.0})
+        return cls(task_id=task_id)
 
     @validator("percent")
     @classmethod
