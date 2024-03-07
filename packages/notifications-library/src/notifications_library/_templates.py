@@ -1,5 +1,6 @@
 import importlib.resources
 import logging
+import os
 import shutil
 from pathlib import Path
 from typing import NamedTuple
@@ -13,10 +14,10 @@ from ._db import TemplatesRepo
 _logger = logging.getLogger(__name__)
 
 
-_resources = importlib.resources.files(notifications_library.__name__).joinpath(
+_templates = importlib.resources.files(notifications_library.__name__).joinpath(
     "templates"
 )
-_templates_dir = Path(_resources.as_posix())
+_templates_dir = Path(os.fspath(_templates))  # type:ignore
 
 
 class NamedTemplateTuple(NamedTuple):
