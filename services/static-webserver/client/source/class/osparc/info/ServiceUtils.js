@@ -60,6 +60,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       version.set({
         value: serviceVersion
       });
+      osparc.utils.Utils.setIdToWidget(version, "serviceVersion");
       return version;
     },
 
