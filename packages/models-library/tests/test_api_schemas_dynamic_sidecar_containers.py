@@ -5,12 +5,12 @@ from models_library.api_schemas_dynamic_sidecar.containers import InactivityResp
 
 
 @pytest.mark.parametrize(
-    "data, is_active",
+    "data",
     [
-        pytest.param({"seconds_inactive": None}, True),
-        pytest.param({"seconds_inactive": 0}, False),
-        pytest.param({"seconds_inactive": 100}, False),
+        pytest.param({"seconds_inactive": None}),
+        pytest.param({"seconds_inactive": 0}),
+        pytest.param({"seconds_inactive": 100}),
     ],
 )
-def test_expected(data: dict[str, Any], is_active: bool):
-    assert InactivityResponse.parse_obj(data).is_active == is_active
+def test_expected(data: dict[str, Any]):
+    assert InactivityResponse.parse_obj(data)

@@ -353,10 +353,9 @@ def _is_considered_inactive(
         # services which do not support inactivity are treated as being inactive
         return True
 
-    if inactivity_response.is_active:
+    if inactivity_response.seconds_inactive is None:
         return False
 
-    assert inactivity_response.seconds_inactive  # nosec
     is_inactive: bool = inactivity_response.seconds_inactive >= threshold
     return is_inactive
 
@@ -373,6 +372,11 @@ async def get_project_inactivity(
         ProjectsRepository, Depends(get_repository(ProjectsRepository))
     ],
 ) -> GetProjectInactivityResponse:
+    # A project is considered inactive when all it's services are inactive for
+    # more than `max_inactivity_seconds`.
+    # A `service` which does not support the inactivity callback is considered
+    # inactive.
+
     project: ProjectAtDB = await projects_repository.get_project(project_id)
 
     inactivity_responses: list[ServiceInactivityResponse] = await logged_gather(
@@ -386,10 +390,6 @@ async def get_project_inactivity(
         max_concurrency=_MAX_PARALLELISM,
     )
 
-    # A project is considered inactive when all it's services are inactive for
-    # more than `max_inactivity_seconds`.
-    # A `service` which does not support the inactivity callback is considered
-    # inactive.
     all_services_inactive = all(
         _is_considered_inactive(r, max_inactivity_seconds) for r in inactivity_responses
     )

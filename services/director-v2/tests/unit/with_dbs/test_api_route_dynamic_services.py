@@ -616,6 +616,17 @@ def mock_internals_inactivity(
 @pytest.mark.parametrize(
     "services_inactivity, max_inactivity_seconds, is_project_inactive",
     [
+        *[
+            pytest.param(
+                [
+                    InactivityResponse(seconds_inactive=x),
+                ],
+                5,
+                False,
+                id=f"{x}_makes_project_active_with_threshold_5",
+            )
+            for x in [None, *range(5)]
+        ],
         pytest.param(
             [
                 InactivityResponse(seconds_inactive=6),
@@ -648,7 +659,7 @@ def mock_internals_inactivity(
             ],
             5,
             False,
-            id="one_inactive_two_active",
+            id="active_services_make_project_active",
         ),
         pytest.param(
             [
