@@ -302,6 +302,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -347,6 +349,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -386,6 +390,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -425,6 +431,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/storage/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -467,6 +475,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/agent/requirements/ci.txt"
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
@@ -511,6 +521,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "api/tests/requirements.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -547,6 +559,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/api-server/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -592,6 +606,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/autoscaling/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -634,6 +650,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/catalog/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -682,6 +700,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/clusters-keeper/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -734,6 +754,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/datcore-adapter/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -785,6 +807,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/director/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -824,6 +848,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -872,6 +898,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/aws-library/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -914,6 +942,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/dask-task-models-library/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -956,6 +986,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/dask-sidecar/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -998,6 +1030,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/osparc-gateway-server/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1050,6 +1084,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/payments/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1092,6 +1128,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/dynamic-scheduler/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1134,6 +1172,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/resource-usage-tracker/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1186,6 +1226,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/dynamic-sidecar/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1264,6 +1306,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/service-library/requirements/_test.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1300,6 +1344,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/postgres-database/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1342,6 +1388,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/invitations/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1384,6 +1432,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/service-integration/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1426,6 +1476,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/service-library/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1468,6 +1520,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/settings-library/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1510,6 +1564,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/models-library/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1553,6 +1609,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -1642,6 +1700,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
       - name: download docker images with retry
         uses: Wandalen/wretry.action@master
@@ -1702,6 +1762,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/web/server/requirements/ci.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
@@ -1764,6 +1826,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
@@ -1828,6 +1892,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/director-v2/requirements/ci.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
@@ -1892,6 +1958,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/dynamic-sidecar/requirements/ci.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
@@ -1957,6 +2025,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "services/osparc-gateway-server/requirements/ci.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
@@ -2035,6 +2105,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "packages/simcore-sdk/requirements/ci.txt"
       # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
       - name: download docker images with retry
         uses: Wandalen/wretry.action@master
@@ -2119,6 +2191,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "tests/public-api/requirements/ci.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
@@ -2180,6 +2254,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "tests/swarm-deploy/requirements/ci.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
@@ -2247,6 +2323,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "tests/e2e/requirements/requirements.txt"
       - uses: actions/setup-node@v4.0.2
         with:
           node-version: ${{ matrix.node }}
@@ -2330,6 +2408,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "tests/e2e-playwright/requirements/dev.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4
@@ -2394,6 +2474,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+          cache: "pip"
+          cache-dependency-path: "tests/environment-setup/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v3
       - uses: actions/cache@v4

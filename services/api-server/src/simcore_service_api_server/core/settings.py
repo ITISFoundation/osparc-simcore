@@ -1,7 +1,6 @@
-from collections.abc import Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, NonNegativeInt, SecretStr, parse_obj_as
@@ -162,12 +161,11 @@ class ApplicationSettings(BasicSettings):
             if (
                 values
                 and (boot_mode := values.get("SC_BOOT_MODE"))
-                and not boot_mode.is_devel_mode()
+                and boot_mode.is_devel_mode()
             ):
-                error_message = (
+                raise ValueError(
                     "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
                 )
-                raise ValueError(error_message)
 
         return v
 

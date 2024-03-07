@@ -43,7 +43,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
   statics: {
     WIDTH: 820,
-    HEIGHT: 720,
+    HEIGHT: 700,
 
     popUpInWindow: function(moreOpts) {
       const prjAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
@@ -396,8 +396,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
       const billingScroll = new qx.ui.container.Scroll(billingSettings);
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
       page.add(billingScroll, {
         flex: 1
       });
@@ -416,8 +414,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const preview = new osparc.study.StudyPreview(resourceData);
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
       page.add(preview, {
         flex: 1
       });
@@ -447,8 +443,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
       const commentsScroll = new qx.ui.container.Scroll(commentsLayout);
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
       page.add(commentsScroll, {
         flex: 1
       })
@@ -468,8 +462,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       const page = this.__dataPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
       page.add(studyDataManager, {
         flex: 1
       });
@@ -510,8 +502,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
       const page = this.__permissionsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
       page.add(permissionsView, {
         flex: 1
       });
@@ -552,8 +542,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       const page = this.__permissionsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
       page.add(classifiers, {
         flex: 1
       });
@@ -585,8 +573,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
         const page = this.__qualityPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
         page.showLabelOnTab();
-        const toolBar = this.__addToolbar();
-        page.add(toolBar);
         page.add(qualityEditor, {
           flex: 1
         });
@@ -616,8 +602,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }, this);
       const page = this.__tagsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
       page.add(tagManager, {
         flex: 1
       });
@@ -646,8 +630,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       const page = this.__servicesUpdatePage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
       page.add(servicesUpdate, {
         flex: 1
       });
@@ -675,8 +657,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
       page.add(servicesBootOpts, {
         flex: 1
       });
