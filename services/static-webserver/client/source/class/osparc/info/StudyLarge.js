@@ -226,12 +226,12 @@ qx.Class.define("osparc.info.StudyLarge", {
     __createThumbnail: function(maxWidth = 190, maxHeight = 220) {
       const thumb = osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
       thumb.set({
-        maxWidth: 190,
-        maxHeight: 220
+        maxWidth: 120,
+        maxHeight: 139
       });
       thumb.getChildControl("image").set({
-        width: 190,
-        height: 220,
+        width: 120,
+        height: 139,
         scale: true,
       });
 

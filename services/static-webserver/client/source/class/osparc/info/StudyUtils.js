@@ -152,8 +152,8 @@ qx.Class.define("osparc.info.StudyUtils", {
         onUpdate: (source, target) => {
           if (source.getThumbnail() === "") {
             target.getChildControl("image").set({
-              minWidth: 190,
-              minHeight: 220
+              minWidth: 120,
+              minHeight: 139
             });
           }
         }
@@ -272,79 +272,67 @@ qx.Class.define("osparc.info.StudyUtils", {
     createExtraInfoGrid: function(extraInfos) {
       // hacky grid: rows are indexed in multiples of three: title, content and spacing
       const positions = {
+        TITLE: {
+          column: 0,
+          row: 0*3,
+        },
         THUMBNAIL: {
           column: 0,
-          row: 0*3,
-          rowSpan: 4,
-          colSpan: 1
-        },
-        TITLE: {
-          column: 1,
-          row: 0*3,
-          rowSpan: 1,
-          colSpan: 1
+          row: 1*3,
         },
         DESCRIPTION: {
-          column: 1,
-          row: 2,
-          rowSpan: 1,
-          colSpan: 1
-        },
-        CREATED: {
           column: 0,
           row: 2*3,
-          colSpan: 2
-        },
-        MODIFIED: {
-          column: 0,
-          row: 3*3,
-          colSpan: 2
-        },
-        ACCESS_RIGHTS: {
-          column: 0,
-          row: 4*3,
-          colSpan: 2
         },
         AUTHOR: {
           column: 0,
-          row: 5*3,
-          colSpan: 2
+          row: 3*3,
         },
-        TAGS: {
+        CREATED: {
+          column: 0,
+          row: 4*3,
+        },
+        MODIFIED: {
+          column: 0,
+          row: 5*3,
+        },
+        ACCESS_RIGHTS: {
           column: 0,
           row: 6*3,
-          colSpan: 2
+        },
+
+        TAGS: {
+          column: 0,
+          row: 7*3,
         },
         QUALITY: {
           column: 0,
-          row: 7*3,
-          colSpan: 2
+          row: 8*3,
         },
         CLASSIFIERS: {
           column: 0,
-          row: 8*3,
-          colSpan: 2
+          row: 9*3,
         }
       };
 
       const grid = new qx.ui.layout.Grid(15, 5);
       grid.setColumnAlign(0, "left", "top");
       grid.setColumnAlign(1, "left", "top");
-      grid.setColumnAlign(2, "left", "bottom");
-      grid.setColumnAlign(3, "left", "bottom");
-      grid.setColumnAlign(4, "left", "bottom");
-      grid.setRowHeight(0, 20); // spacer
-      grid.setRowHeight(1, 30); // spacer
-      grid.setRowHeight(2, 20); // spacer
-      grid.setRowHeight(3, 170); // spacer
+      grid.setColumnAlign(2, "left", "top");
+      grid.setColumnAlign(3, "left", "top");
+      grid.setColumnAlign(4, "left", "top");
+      grid.setRowHeight(0*3-1, 5); // spacer
+      grid.setRowHeight(1*3-1, 5); // spacer
+      grid.setRowHeight(2*3-1, 5); // spacer
+      grid.setRowHeight(3*3-1, 5); // spacer
       grid.setRowHeight(4*3-1, 5); // spacer
       grid.setRowHeight(5*3-1, 5); // spacer
       grid.setRowHeight(6*3-1, 5); // spacer
       grid.setRowHeight(7*3-1, 5); // spacer
       grid.setRowHeight(8*3-1, 5); // spacer
       grid.setRowHeight(9*3-1, 5); // spacer
-      grid.setColumnFlex(0, 0);
-      grid.setColumnFlex(1, 1);
+      grid.setColumnFlex(0, 1);
+      // grid.setColumnFlex(1, 1);
       const moreInfo = new qx.ui.container.Composite(grid);
 
       Object.keys(positions).forEach(key => {
