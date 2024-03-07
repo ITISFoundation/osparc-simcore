@@ -7,10 +7,11 @@ from jinja2 import Environment, FileSystemLoader, PackageLoader, select_autoesca
 _logger = logging.getLogger(__name__)
 
 
-def create_render_env_from_package():
+def create_render_env_from_package(**kwargs):
     return Environment(
         loader=PackageLoader(notifications_library.__name__, "templates"),
         autoescape=select_autoescape(["html", "xml"]),
+        **kwargs
     )
 
 

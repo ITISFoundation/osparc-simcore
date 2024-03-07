@@ -16,6 +16,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 from faker import Faker
+from jinja2 import StrictUndefined
 from models_library.products import ProductName
 from notifications_library._email import (
     add_attachments,
@@ -61,7 +62,7 @@ async def test_on_payed_event(
     assert product_data.product_name == product_name
 
     parts = render_email_parts(
-        env=create_render_env_from_package(),
+        env=create_render_env_from_package(undefined=StrictUndefined),
         event_name="on_payed",
         user=user_data,
         product=product_data,
@@ -83,9 +84,7 @@ async def test_on_payed_event(
 
 async def test_on_registered_event(
     app_environment: EnvVarsDict,
-    tmp_path: Path,
     faker: Faker,
-    user_email: EmailStr,
     product_name: ProductName,
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
@@ -93,8 +92,30 @@ async def test_on_registered_event(
 ):
 
     parts = render_email_parts(
-        env=create_render_env_from_package(),
+        env=create_render_env_from_package(undefined=StrictUndefined),
         event_name="on_registered",
+        user=user_data,
+        product=product_data,
+        # extras
+        host=f"https://{product_name}.io",
+        link=faker.image_url(width=640, height=480),
+    )
+
+    await _send_and_assert(compose_email(*parts), smtp_mock_or_none)
+
+
+async def test_on_reset_password_event(
+    app_environment: EnvVarsDict,
+    faker: Faker,
+    product_name: ProductName,
+    smtp_mock_or_none: MagicMock | None,
+    user_data: UserData,
+    product_data: ProductData,
+):
+
+    parts = render_email_parts(
+        env=create_render_env_from_package(undefined=StrictUndefined),
+        event_name="on_reset_password",
         user=user_data,
         product=product_data,
         # extras
@@ -107,9 +128,7 @@ async def test_on_registered_event(
 
 async def test_on_new_code_event(
     app_environment: EnvVarsDict,
-    tmp_path: Path,
     faker: Faker,
-    user_email: EmailStr,
     product_name: ProductName,
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
@@ -117,7 +136,7 @@ async def test_on_new_code_event(
 ):
 
     parts = render_email_parts(
-        env=create_render_env_from_package(),
+        env=create_render_env_from_package(undefined=StrictUndefined),
         event_name="on_new_code",
         user=user_data,
         product=product_data,

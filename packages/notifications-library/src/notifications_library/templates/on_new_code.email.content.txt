@@ -1,4 +1,4 @@
-  Dear {{ product.first_name }},
+  Dear {{ user.first_name }},
 
   Please find below the Two-factor Authentication sign-in code for your {{ host }} account.
 
