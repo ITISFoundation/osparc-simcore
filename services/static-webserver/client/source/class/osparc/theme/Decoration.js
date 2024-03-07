@@ -39,6 +39,12 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "rounded": {
+      style: {
+        radius: 4
+      }
+    },
+
     "form-input": {
       style: {
         radius: [4, 4, 0, 0],

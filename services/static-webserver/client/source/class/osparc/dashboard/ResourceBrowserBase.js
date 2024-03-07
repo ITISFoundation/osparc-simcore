@@ -106,24 +106,26 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
-    sortStudyList: function(studyList) {
+    sortStudyList: function(studyList, sortValue) {
       const sortByProperty = function(prop) {
         return function(a, b) {
+          const x = a.toString().toLowerCase();
+          const y = b.toString().toLowerCase();
           if (prop === "lastChangeDate") {
-            return new Date(b[prop]) - new Date(a[prop]);
+            return new Date(y[prop]) - new Date(x[prop]);
           }
-          if (typeof a[prop] == "number") {
-            return a[prop] - b[prop];
+          if (typeof x[prop] == "number") {
+            return x[prop] - y[prop];
           }
-          if (a[prop] < b[prop]) {
+          if (x[prop] < y[prop]) {
             return -1;
-          } else if (a[prop] > b[prop]) {
+          } else if (x[prop] > y[prop]) {
             return 1;
           }
           return 0;
         };
       };
-      studyList.sort(sortByProperty("lastChangeDate"));
+      studyList.sort(sortByProperty(sortValue || "name"));
     },
 
     isCardNewItem: function(card) {

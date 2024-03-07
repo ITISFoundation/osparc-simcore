@@ -113,6 +113,11 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&search={text}"
           },
+          getPageSortBySearch: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&order_by={orderBy}"
+          },
           getOne: {
             useCache: false,
             method: "GET",
