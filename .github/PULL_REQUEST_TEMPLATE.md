@@ -41,7 +41,7 @@ or from https://gitmoji.dev/
 
 <!-- Give REVIEWERS some hits or code snippets on how could this be tested -->
 
-## DevOps Checklist
+## Dev-ops checklist
 
 - [ ] No ENV changes or I properly updated ENV ([read the instruction](https://git.speag.com/oSparc/osparc-ops-deployment-configuration/-/blob/configs/README.md?ref_type=heads#how-to-update-env-variables))
 
