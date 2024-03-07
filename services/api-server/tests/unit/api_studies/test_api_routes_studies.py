@@ -9,6 +9,7 @@ from typing import Any, TypedDict
 
 import httpx
 import pytest
+import respx
 from faker import Faker
 from fastapi import status
 from pydantic import parse_file_as, parse_obj_as
@@ -16,6 +17,7 @@ from respx import MockRouter
 from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.models.schemas.studies import Study, StudyID, StudyPort
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
+from unit.conftest import SideEffectCallback
 
 
 class MockedBackendApiDict(TypedDict):
@@ -111,14 +113,40 @@ async def test_studies_read_workflow(
     assert f"{inexistent_study_id}" in error.errors[0]
 
 
+@pytest.mark.parametrize("capture", ["get_list_study_ports_found.json"])
 async def test_list_study_ports(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
     mocked_webserver_service_api_base: MockRouter,
+    respx_mock_from_capture: Callable[
+        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        list[respx.MockRouter],
+    ],
     fake_study_ports: list[dict[str, Any]],
     study_id: StudyID,
+    project_tests_dir: Path,
+    capture: str,
 ):
     # Mocks /projects/{*}/metadata/ports
+
+    def _get_list_metadata_ports_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        response = capture.response_body
+        assert isinstance(response, dict)
+        if data := response.get("data"):
+            print(data)
+            assert isinstance(data, list)
+            assert len(data) == 5
+        return response
+
+    respx_mock = respx_mock_from_capture(
+        [mocked_webserver_service_api_base],
+        project_tests_dir / "mocks" / capture,
+        [_get_list_metadata_ports_side_effect],
+    )
 
     mocked_webserver_service_api_base.get(
         path__regex=r"/projects/(?P<project_id>[\w-]+)/metadata/ports$",
@@ -132,6 +160,8 @@ async def test_list_study_ports(
     resp = await client.get(f"/v0/studies/{study_id}/ports", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == {"items": fake_study_ports, "total": len(fake_study_ports)}
+
+    del respx_mock  # keep alive until server responded
 
 
 @pytest.mark.acceptance_test(
