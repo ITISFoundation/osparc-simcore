@@ -1563,6 +1563,13 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: "pip"
           cache-dependency-path: "packages/notifications-library/requirements/ci.txt"
+      - name: install uv
+        uses: yezz123/setup-uv@v3
+      - uses: actions/cache@v4
+        id: cache-uv
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1570,6 +1577,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/notifications-library.bash typecheck
       - name: test
+        if: always()
         run: ./ci/github/unit-testing/notifications-library.bash test
       - uses: codecov/codecov-action@v3.1.4
         with:
