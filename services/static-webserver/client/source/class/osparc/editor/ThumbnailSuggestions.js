@@ -98,17 +98,30 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-13.png",
       "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/TIP/Thumbnail-14.png"
     ],
+    /**
+     * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+     */
     extractThumbnailSuggestions: function(study) {
       const defaultThumbnails = this.self().setThumbnailTemplates();
       const suggestions = new Set([]);
-      const wb = study.getWorkbench();
-      const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
-      Object.values(nodes).forEach(node => {
-        const srvMetadata = osparc.service.Utils.getMetaData(node.getKey(), node.getVersion());
-        if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
-          suggestions.add(srvMetadata["thumbnail"]);
-        }
-      });
+      if (study instanceof osparc.data.model.Study) {
+        const wb = study.getWorkbench();
+        const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
+        Object.values(nodes).forEach(node => {
+          const srvMetadata = osparc.service.Utils.getMetaData(node.getKey(), node.getVersion());
+          if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
+            suggestions.add(srvMetadata["thumbnail"]);
+          }
+        });
+      } else {
+        const nodes = study["workbench"];
+        Object.values(nodes).forEach(node => {
+          const srvMetadata = osparc.service.Utils.getMetaData(node["key"], node["version"]);
+          if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
+            suggestions.add(srvMetadata["thumbnail"]);
+          }
+        });
+      }
       const amendedArray = [...suggestions, ...defaultThumbnails]
       return Array.from(amendedArray);
     },
