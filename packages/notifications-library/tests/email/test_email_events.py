@@ -11,10 +11,11 @@ pytest --external-envfile=.my-env --external-support-email=support@email.com  --
 """
 
 
-from email.message import EmailMessage
 from pathlib import Path
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from faker import Faker
 from jinja2 import StrictUndefined
 from models_library.products import ProductName
@@ -32,10 +33,88 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.email import SMTPSettings
 
 
-async def _send_and_assert(msg: EmailMessage, smtp_mock_or_none: MagicMock | None):
-    settings = SMTPSettings.create_from_envs()
+@pytest.fixture
+def event_extra_data(
+    event_name: str, faker: Faker, product_name: ProductName, payment_data: PaymentData
+) -> dict[str, Any]:
 
-    async with create_email_session(settings) as smtp:
+    match event_name:
+        case "on_registered":
+            return {
+                "host": f"https://{product_name}.io",
+                "link": faker.image_url(width=640, height=480),
+            }
+        case "on_new_code":
+            return {
+                "host": f"https://{product_name}.io",
+                "code": faker.pystr_format(string_format="####", letters=""),
+            }
+        case "on_reset_password":
+            return {
+                "host": f"https://{product_name}.io",
+                "link": faker.image_url(width=640, height=480),
+            }
+        case "on_payed":
+            return {
+                "payment": payment_data,
+            }
+
+        case _:
+            return {}
+
+
+@pytest.fixture
+def event_attachments(event_name: str, faker: Faker, tmp_path: Path) -> list[Path]:
+    paths = []
+    match event_name:
+        case "on_payed":
+            paths.append(tmp_path / "test-payed-invoice.pdf")
+
+    # fill with fake data
+    for p in paths:
+        p.write_text(faker.text())
+    return paths
+
+
+@pytest.mark.parametrize(
+    "event_name",
+    [
+        "on_new_code",
+        "on_registered",
+        "on_reset_password",
+        "on_payed",
+    ],
+)
+async def test_email_event(
+    app_environment: EnvVarsDict,
+    smtp_mock_or_none: MagicMock | None,
+    user_data: UserData,
+    user_email: EmailStr,
+    product_data: ProductData,
+    product_name: ProductName,
+    event_name: str,
+    event_extra_data: dict[str, Any],
+    event_attachments: list[Path],
+):
+    assert user_data.email == user_email
+    assert product_data.product_name == product_name
+
+    parts = render_email_parts(
+        env=create_render_env_from_package(undefined=StrictUndefined),
+        event_name=event_name,
+        user=user_data,
+        product=product_data,
+        # extras
+        **event_extra_data,
+    )
+    assert parts.from_.addr_spec == product_data.support_email
+    assert parts.to.addr_spec == user_email
+
+    msg = compose_email(*parts)
+    if event_attachments:
+        add_attachments(msg, event_attachments)
+
+    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent
@@ -44,105 +123,3 @@ async def _send_and_assert(msg: EmailMessage, smtp_mock_or_none: MagicMock | Non
         assert isinstance(smtp, AsyncMock)
         assert smtp.login.called
         assert smtp.send_message.called
-
-
-async def test_on_payed_event(
-    app_environment: EnvVarsDict,
-    tmp_path: Path,
-    faker: Faker,
-    user_email: EmailStr,
-    product_name: ProductName,
-    smtp_mock_or_none: MagicMock | None,
-    user_data: UserData,
-    product_data: ProductData,
-    payment_data: PaymentData,
-):
-
-    assert user_data.email == user_email
-    assert product_data.product_name == product_name
-
-    parts = render_email_parts(
-        env=create_render_env_from_package(undefined=StrictUndefined),
-        event_name="on_payed",
-        user=user_data,
-        product=product_data,
-        # extras
-        payment=payment_data,
-    )
-
-    assert parts.from_.addr_spec == product_data.support_email
-    assert parts.to.addr_spec == user_email
-
-    msg = compose_email(*parts)
-
-    attachment = tmp_path / "test-attachment.txt"
-    attachment.write_text(faker.text())
-    add_attachments(msg, [attachment])
-
-    await _send_and_assert(msg, smtp_mock_or_none)
-
-
-async def test_on_registered_event(
-    app_environment: EnvVarsDict,
-    faker: Faker,
-    product_name: ProductName,
-    smtp_mock_or_none: MagicMock | None,
-    user_data: UserData,
-    product_data: ProductData,
-):
-
-    parts = render_email_parts(
-        env=create_render_env_from_package(undefined=StrictUndefined),
-        event_name="on_registered",
-        user=user_data,
-        product=product_data,
-        # extras
-        host=f"https://{product_name}.io",
-        link=faker.image_url(width=640, height=480),
-    )
-
-    await _send_and_assert(compose_email(*parts), smtp_mock_or_none)
-
-
-async def test_on_reset_password_event(
-    app_environment: EnvVarsDict,
-    faker: Faker,
-    product_name: ProductName,
-    smtp_mock_or_none: MagicMock | None,
-    user_data: UserData,
-    product_data: ProductData,
-):
-
-    parts = render_email_parts(
-        env=create_render_env_from_package(undefined=StrictUndefined),
-        event_name="on_reset_password",
-        user=user_data,
-        product=product_data,
-        # extras
-        host=f"https://{product_name}.io",
-        link=faker.image_url(width=640, height=480),
-    )
-
-    await _send_and_assert(compose_email(*parts), smtp_mock_or_none)
-
-
-async def test_on_new_code_event(
-    app_environment: EnvVarsDict,
-    faker: Faker,
-    product_name: ProductName,
-    smtp_mock_or_none: MagicMock | None,
-    user_data: UserData,
-    product_data: ProductData,
-):
-
-    parts = render_email_parts(
-        env=create_render_env_from_package(undefined=StrictUndefined),
-        event_name="on_new_code",
-        user=user_data,
-        product=product_data,
-        # extras
-        host=f"https://{product_name}.io",
-        code=faker.pystr_format(string_format="####", letters=""),
-    )
-
-    await _send_and_assert(compose_email(*parts), smtp_mock_or_none)
