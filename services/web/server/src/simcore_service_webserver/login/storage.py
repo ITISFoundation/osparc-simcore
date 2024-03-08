@@ -81,13 +81,15 @@ class AsyncpgStorage:
             # generate different code
             while True:
                 # NOTE: use only numbers (i.e. avoid generate_password) since front-end does not handle well url encoding
-                code: str = generate_passcode(20)
-                if not await _sql.find_one(conn, self.confirm_tbl, {"code": code}):
+                numeric_code: str = generate_passcode(20)
+                if not await _sql.find_one(
+                    conn, self.confirm_tbl, {"code": numeric_code}
+                ):
                     break
             # insert confirmation
             # NOTE: returns timestamp generated at the server-side
             confirmation = ConfirmationTokenDict(
-                code=code,
+                code=numeric_code,
                 action=action,
                 user_id=user_id,
                 data=data,
@@ -96,7 +98,7 @@ class AsyncpgStorage:
             c = await _sql.insert(
                 conn, self.confirm_tbl, confirmation, returning="code"
             )
-            assert code == c  # nosec
+            assert numeric_code == c  # nosec
             return confirmation
 
     async def get_confirmation(self, filter_dict) -> ConfirmationTokenDict | None:
