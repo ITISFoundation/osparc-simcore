@@ -109,17 +109,22 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       }
     },
     FPOS: {
-      TITLE: {
+      STATUS: {
         row: 0,
+        column: 0,
+        rowSpan: 1,
+        colSpan: 4
+      },
+      MODIFIED: {
+        row: 1,
         column: 0,
         rowSpan: 1,
         colSpan: 3
       },
-      STATUS: {
+      UPDATES: {
         row: 1,
-        column: 0,
-        rowSpan: 1,
-        colSpan: 4
+        column: 4,
+        colSpan: 1
       },
       TSR: {
         row: 3,
@@ -129,11 +134,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       HITS: {
         row: 3,
         column: 2,
-        colSpan: 1
-      },
-      UPDATES: {
-        row: 0,
-        column: 4,
         colSpan: 1
       }
     }
@@ -180,7 +180,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           this._mainLayout.add(control, this.self().POS.THUMBNAIL);
           break;
         case "title-row":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
             anonymous: true
           });
           layout = this.getChildControl("header");
@@ -191,7 +191,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         case "title":
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-light",
-            font: "text-16",
+            font: "text-14",
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().TITLE_MAX_HEIGHT,
             rich: true,
@@ -206,7 +206,10 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
             anonymous: true
           });
-          this._footerLayout.add(control, this.self().FPOS.TITLE);
+          layout = this.getChildControl("title-row");
+          layout.addAt(control, 1, {
+            flex: 1
+          });
           break;
         case "subtitle-icon": {
           control = new qx.ui.basic.Image().set({
@@ -246,6 +249,18 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             "border-width": "0px"
           });
           layout.add(control, {flex: 1});
+          break;
+        }
+        case "modified-text": {
+          control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-dark",
+            alignY: "middle",
+            rich: true,
+            anonymous: true,
+            font: "text-12",
+            allowGrowY: false
+          });
+          this._footerLayout.add(control, this.self().FPOS.MODIFIED);
           break;
         }
         case "project-status":

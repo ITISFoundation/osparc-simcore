@@ -72,9 +72,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     sortList: function(list) {
       list.getChildren().sort((a, b) => {
         let sortingValue = a.getPriority() - b.getPriority();
-        if (sortingValue === 0 && a.isPropertyInitialized("lastChangeDate") && b.isPropertyInitialized("lastChangeDate")) {
-          return b.get("lastChangeDate") - a.get("lastChangeDate");
-        }
         return sortingValue;
       });
     },

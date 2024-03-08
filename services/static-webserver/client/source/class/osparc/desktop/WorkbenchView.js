@@ -350,6 +350,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         alignX: "center",
         marginLeft: 10
       });
+      osparc.utils.Utils.setIdToWidget(addNewNodeBtn, "newNodeBtn");
       addNewNodeBtn.addListener("execute", () => {
         this.__workbenchUI.openServiceCatalog({
           x: 50,
