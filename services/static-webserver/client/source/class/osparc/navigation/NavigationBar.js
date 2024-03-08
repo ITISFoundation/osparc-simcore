@@ -332,6 +332,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         backgroundColor: "transparent"
       });
 
+      osparc.utils.Utils.setIdToWidget(menu, "helpNavigationMenu");
+
       // menus
       osparc.store.Support.addQuickStartToMenu(menu);
       osparc.store.Support.addGuidedToursToMenu(menu);
