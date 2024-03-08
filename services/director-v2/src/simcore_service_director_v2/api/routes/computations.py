@@ -36,6 +36,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.rabbitmq import RabbitMQRPCClient
+from simcore_postgres_database.utils_projects_nodes import ProjectNodesNodeNotFound
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -164,16 +165,19 @@ async def _get_project_metadata(
 
     parent_node_id = NodeID(current_project_metadata["node_id"])
     parent_node_idstr = NodeIDStr(f"{parent_node_id}")
-    parent_project_id = await project_repo.get_project_id_from_node(parent_node_id)
-    parent_project = await project_repo.get_project(parent_project_id)
-    assert parent_node_idstr in parent_project.workbench
-
-    return ProjectMetadataDict(
-        parent_node_id=parent_node_id,
-        parent_node_name=parent_project.workbench[parent_node_idstr].label,
-        parent_project_id=parent_project_id,
-        parent_project_name=parent_project.name,
-    )
+    try:
+        parent_project_id = await project_repo.get_project_id_from_node(parent_node_id)
+        parent_project = await project_repo.get_project(parent_project_id)
+        assert parent_node_idstr in parent_project.workbench
+        return ProjectMetadataDict(
+            parent_node_id=parent_node_id,
+            parent_node_name=parent_project.workbench[parent_node_idstr].label,
+            parent_project_id=parent_project_id,
+            parent_project_name=parent_project.name,
+        )
+    except (ProjectNotFoundError, ProjectNodesNodeNotFound) as exc:
+        _logger.exception("Could not find project/node: %s", exc)
+        return {}
 
 
 async def _try_start_pipeline(
