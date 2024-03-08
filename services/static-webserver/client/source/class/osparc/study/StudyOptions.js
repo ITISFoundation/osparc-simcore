@@ -75,6 +75,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         maxHeight,
         clickAwayClose: false
       });
+      win.addListener("cancel", () => this.fireEvent("cancel"));
       win.center();
       win.open();
       return win;
