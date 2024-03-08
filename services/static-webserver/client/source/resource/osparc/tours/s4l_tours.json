@@ -48,33 +48,17 @@
     "name": "Navigation Bar",
     "description": "Introduction to the Navigation Bar",
     "steps": [{
-      "anchorEl": "osparc-test-id=walletsMiniViewer",
-      "title": "Credits",
-      "text": "It will open the User Center",
-      "placement": "bottom"
-    }, {
-      "anchorEl": "osparc-test-id=notificationsButton",
-      "title": "Notifications",
-      "placement": "bottom"
-    }, {
       "beforeClick": {
-        "selector": "osparc-test-id=manualsButton",
+        "selector": "osparc-test-id=helpNavigationBtn",
         "action": "open"
       },
       "anchorEl": "osparc-test-id=manualsMenu",
       "text": "The Manuals menu groups the oSPARC Manual and oSPARC Z43 Manual. It also provides quick access to other interactive Guides.",
       "placement": "left"
     }, {
-      "beforeClick": {
-        "selector": "osparc-test-id=feedbackButton",
-        "action": "open"
-      },
-      "anchorEl": "osparc-test-id=feedbackMenu",
-      "text": "The Support menu gives you a way of providing feedback or questions, via the ZMT Forum or the official Sim4Life Support.",
-      "placement": "left"
-    }, {
-      "anchorEl": "osparc-test-id=themeSwitcher",
-      "text": "Switch between dark and light modes",
+      "anchorEl": "osparc-test-id=creditsNavigationBtn",
+      "title": "Credits",
+      "text": "It will open the User Center",
       "placement": "bottom"
     }, {
       "beforeClick": {
