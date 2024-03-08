@@ -21,15 +21,16 @@ qx.Class.define("osparc.dashboard.resources.pages.BasePage", {
   construct: function(title, iconSrc = null, id) {
     this.base(arguments, null, iconSrc, id);
 
-    this.setLayout(new qx.ui.layout.VBox(20).set({
-      spacing: 5,
-      alignX: "center"
-    }));
+    const grid = new qx.ui.layout.Grid(10, 10);
+    grid.setColumnFlex(0, 1);
+    grid.setRowFlex(0, 0); // header
+    grid.setRowFlex(1, 1); // content
+    grid.setRowFlex(2, 0); // footer
+    grid.setRowAlign(0, "right", "top"); // header
+    grid.setRowAlign(0, "left", "top"); // content
+    grid.setRowAlign(0, "right", "top"); // footer
 
-    this.getChildControl("title").set({
-      value: title,
-      visibility: "excluded"
-    });
+    this.__showLabelOnTab(title);
 
     this.set({
       backgroundColor: "window-popup-background",
@@ -54,11 +55,14 @@ qx.Class.define("osparc.dashboard.resources.pages.BasePage", {
       return control || this.base(arguments, id);
     },
 
-    showLabelOnTab: function() {
-      const title = this.getChildControl("title").getValue();
+    __showLabelOnTab: function(tabTitle) {
+      this.getChildControl("title").set({
+        visibility: "excluded"
+      });
+
       const tabButton = this.getChildControl("button");
       tabButton.set({
-        label: title,
+        label: tabTitle,
         font: "text-14"
       });
       // eslint-disable-next-line no-underscore-dangle
@@ -68,33 +72,26 @@ qx.Class.define("osparc.dashboard.resources.pages.BasePage", {
       buttonLayout.setSpacingX(5);
     },
 
-    /**
-     * Common layout of section's box
-     * @param {page section's name} sectionName
-     */
-    _createSectionBox: function(sectionName) {
-      const box = new qx.ui.groupbox.GroupBox(sectionName);
-      box.getChildControl("legend").set({
-        font: "text-14",
+    addToHeader: function(widget) {
+      this.add(widget, {
+        column: 0,
+        row: 0
       });
-      box.getChildControl("frame").set({
-        backgroundColor: "transparent"
-      });
-      box.setLayout(new qx.ui.layout.VBox(10));
-      return box;
     },
 
-    /**
-     * Common layout for tooltip label
-     */
-    _createHelpLabel: function(message=null, font="text-13") {
-      const label = new qx.ui.basic.Label().set({
-        value: message,
-        alignX: "left",
-        rich: true,
-        font: font
+    addToContent: function(widget) {
+      const scrollContainer = new qx.ui.container.Scroll(widget);
+      this.add(scrollContainer, {
+        column: 0,
+        row: 1
       });
-      return label;
+    },
+
+    addToFooter: function(widget) {
+      this.add(widget, {
+        column: 0,
+        row: 2
+      });
     }
   }
 });
