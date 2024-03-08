@@ -41,6 +41,20 @@ qx.Class.define("osparc.dashboard.resources.pages.BasePage", {
     });
   },
 
+  statics: {
+    decorateHeaderButton: function(btn) {
+      btn.set({
+        appearance: "form-button",
+        font: "text-14",
+        alignX: "right",
+        minWidth: 150,
+        maxWidth: 150,
+        height: 35,
+        center: true
+      });
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;

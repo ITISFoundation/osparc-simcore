@@ -30,7 +30,7 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
   construct: function(studyData) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
     this.__studyDataClone = osparc.data.model.Study.deepCloneStudyObject(studyData);
 

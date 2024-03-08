@@ -108,15 +108,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
 
       const openButton = this.__openButton = new qx.ui.form.Button(this.tr("Open")).set({
-        appearance: "form-button",
-        font: "text-14",
-        alignX: "right",
-        minWidth: 150,
-        maxWidth: 150,
-        height: 35,
-        center: true,
         enabled: true
       });
+      osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(openButton);
       osparc.utils.Utils.setIdToWidget(openButton, "openResource");
       const store = osparc.store.Store.getInstance();
       store.bind("currentStudy", openButton, "visibility", {
@@ -662,6 +656,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
         const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
         const publishTemplateButton = saveAsTemplate.getPublishTemplateButton();
+        osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(publishTemplateButton);
         const toolbar = this.__createToolbar();
         toolbar.add(publishTemplateButton);
         page.addToHeader(toolbar);
