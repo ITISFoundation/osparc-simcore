@@ -23,7 +23,7 @@ from ..groups.models import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _db
-from ._api import get_user_billing_details, get_user_credentials, set_user_as_deleted
+from ._api import get_user_credentials, get_user_invoice_address, set_user_as_deleted
 from ._preferences_api import get_frontend_user_preferences_aggregation
 from .exceptions import UserNotFoundError
 from .schemas import ProfileGet, ProfileUpdate
@@ -320,10 +320,10 @@ async def update_expired_users(engine: Engine) -> list[UserID]:
 
 assert set_user_as_deleted  # nosec
 assert get_user_credentials  # nosec
-assert get_user_billing_details  # nosec
+assert get_user_invoice_address  # nosec
 
 __all__: tuple[str, ...] = (
     "get_user_credentials",
     "set_user_as_deleted",
-    "get_user_billing_details",
+    "get_user_invoice_address",
 )

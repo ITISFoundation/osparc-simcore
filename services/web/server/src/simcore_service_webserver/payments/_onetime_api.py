@@ -25,7 +25,7 @@ from yarl import URL
 from ..db.plugin import get_database_engine
 from ..products.api import get_product_stripe_info
 from ..resource_usage.api import add_credits_to_wallet
-from ..users.api import get_user_name_and_email
+from ..users.api import get_user_invoice_address, get_user_name_and_email
 from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _onetime_db, _rpc
@@ -275,7 +275,7 @@ async def init_creation_of_wallet_payment(
 
     # user info
     user = await get_user_name_and_email(app, user_id=user_id)
-
+    user_invoice_address = await get_user_invoice_address(app, user_id=user_id)
     # stripe info
     product_stripe_info = await get_product_stripe_info(app, product_name=product_name)
 
@@ -305,6 +305,7 @@ async def init_creation_of_wallet_payment(
             user_id=user_id,
             user_name=user.name,
             user_email=user.email,
+            user_address=user_invoice_address,
             stripe_price_id=product_stripe_info.stripe_price_id,
             stripe_tax_rate_id=product_stripe_info.stripe_tax_rate_id,
             comment=comment,
@@ -362,6 +363,7 @@ async def pay_with_payment_method(
 
     # user info
     user = await get_user_name_and_email(app, user_id=user_id)
+    user_invoice_address = await get_user_invoice_address(app, user_id=user_id)
 
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
@@ -392,6 +394,7 @@ async def pay_with_payment_method(
         user_id=user_id,
         user_name=user.name,
         user_email=user.email,
+        user_address=user_invoice_address,
         stripe_price_id=product_stripe_info.stripe_price_id,
         stripe_tax_rate_id=product_stripe_info.stripe_tax_rate_id,
         comment=comment,
