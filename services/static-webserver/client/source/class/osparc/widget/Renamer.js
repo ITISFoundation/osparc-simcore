@@ -89,6 +89,10 @@ qx.Class.define("osparc.widget.Renamer", {
 
       // Create the "Save" button to close the cell editor
       const save = this.__save = new qx.ui.form.Button(this.tr("Save"));
+      save.set({
+        appearance: "form-button",
+        padding: [1, 5]
+      });
       save.addListener("execute", e => {
         const newLabel = labelEditor.getValue();
         const data = {

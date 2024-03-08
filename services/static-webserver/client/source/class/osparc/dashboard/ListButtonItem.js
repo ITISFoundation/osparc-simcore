@@ -64,7 +64,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             alignY: "middle"
           })).set({
             anonymous: true,
-            maxWidth: 100
           });
           this._add(control, {
             row: 0,
@@ -209,8 +208,18 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       }
     },
 
-    // overridden
+    createOwner: function(label) {
+      if (label === osparc.auth.Data.getInstance().getEmail()) {
+        return qx.locale.Manager.tr("My project");
+      }
+      return osparc.utils.Utils.getNameFromEmail(label);
+    },
+
     _applyOwner: function(value, old) {
+      const label = this.getChildControl("owner");
+      const user = this.createOwner(value);
+      label.setValue(user);
+      label.setVisibility(value ? "visible" : "excluded");
       return;
     },
 

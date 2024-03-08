@@ -269,13 +269,14 @@ qx.Class.define("osparc.utils.Utils", {
       return (["dev", "master"].includes(platformName));
     },
 
-    getEditButton: function() {
-      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+    getEditButton: function(isVisible = true) {
+      return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+        appearance: "form-button-outlined",
         allowGrowY: false,
         padding: 3,
-        maxWidth: 20
+        maxWidth: 20,
+        visibility: isVisible ? "visible" : "excluded"
       });
-      return button;
     },
 
     getViewButton: function() {

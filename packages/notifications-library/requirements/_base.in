@@ -1,0 +1,11 @@
+#
+# Specifies third-party dependencies for 'notifications-library'
+#
+--constraint ../../../requirements/constraints.txt
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/postgres-database/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
+
+aiofiles
+aiosmtplib
+Jinja2
