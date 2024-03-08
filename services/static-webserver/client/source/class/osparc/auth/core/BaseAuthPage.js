@@ -38,7 +38,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
     this.set({
       layout: new qx.ui.layout.VBox(20),
       width: this.self().FORM_WIDTH,
-      height: 400
+      height: 450
     });
 
     this._form = new qx.ui.form.Form();
