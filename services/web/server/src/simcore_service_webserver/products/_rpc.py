@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
-from models_library.products import CreditResultGet, ProductName, ProductStripeInfoGet
+from models_library.products import CreditResultGet, ProductName
 from servicelib.rabbitmq import RPCRouter
 
 from ..rabbitmq import get_rabbitmq_rpc_server
@@ -22,18 +22,6 @@ async def get_credit_amount(
         app, dollar_amount=dollar_amount, product_name=product_name
     )
     return credit_result_get
-
-
-@router.expose()
-async def get_product_stripe_info(
-    app: web.Application,
-    *,
-    product_name: ProductName,
-) -> ProductStripeInfoGet:
-    product_stripe_info_get: ProductStripeInfoGet = await _api.get_product_stripe_info(
-        app, product_name=product_name
-    )
-    return product_stripe_info_get
 
 
 async def register_rpc_routes_on_startup(app: web.Application):
