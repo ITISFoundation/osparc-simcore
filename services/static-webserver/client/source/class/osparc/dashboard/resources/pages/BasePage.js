@@ -30,6 +30,8 @@ qx.Class.define("osparc.dashboard.resources.pages.BasePage", {
     grid.setRowAlign(0, "left", "top"); // content
     grid.setRowAlign(0, "right", "top"); // footer
 
+    this.setLayout(grid);
+
     this.__showLabelOnTab(title);
 
     this.set({
