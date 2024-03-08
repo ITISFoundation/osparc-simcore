@@ -9,6 +9,7 @@ from typing import cast
 
 import pytest
 import sqlalchemy as sa
+from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.payments import InvoiceDataGet
@@ -113,7 +114,7 @@ async def rpc_server(
 
 
 async def test_get_invoice_data(
-    # client: TestClient,
+    client: TestClient,
     rpc_server: RabbitMQRPCClient,
     rpc_client: RabbitMQRPCClient,
     osparc_product_name: ProductName,
