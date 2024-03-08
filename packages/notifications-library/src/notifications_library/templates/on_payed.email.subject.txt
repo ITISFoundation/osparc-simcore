@@ -1,0 +1,1 @@
+Your Payment {{ payment.price_dollars }} USD for {{ payment.osparc_credits }} Credits Was Successful
