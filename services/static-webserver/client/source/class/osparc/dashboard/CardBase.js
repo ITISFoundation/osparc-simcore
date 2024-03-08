@@ -417,7 +417,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         const uiModeIcon = this.getChildControl("workbench-mode");
         uiModeIcon.set({
           source,
-          toolTipText
+          toolTipText,
+          alignY: "bottom",
+          marginBottom: 10
         });
       }
     },
@@ -713,6 +715,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
     openData: function() {
       const moreOpts = this.__openMoreOptions();
       moreOpts.openData();
+    },
+
+    openBilling: function() {
+      const moreOpts = this.__openMoreOptions();
+      moreOpts.openBillingSettings();
     },
 
     openAccessRights: function() {

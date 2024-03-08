@@ -96,7 +96,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
         this.getChildControl("icon").setSource(this.self().SERVICE_ICON);
       }
       serviceModel.bind("name", this.getChildControl("title"), "value");
-      serviceModel.bind("description", this.getChildControl("description-md"), "value");
+      serviceModel.bind("description", this.getChildControl("description"), "value");
 
       // ITEM
       this.__applyLatestVersion(serviceModel);
