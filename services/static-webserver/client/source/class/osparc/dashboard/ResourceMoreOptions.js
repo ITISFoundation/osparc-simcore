@@ -661,7 +661,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
 
         const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+        const publishTemplateButton = saveAsTemplate.getPublishTemplateButton();
+        const toolbar = this.__createToolbar();
+        toolbar.add(publishTemplateButton);
+        page.addToHeader(toolbar);
         page.addToContent(saveAsTemplate);
+
         return page;
       }
       return null;
