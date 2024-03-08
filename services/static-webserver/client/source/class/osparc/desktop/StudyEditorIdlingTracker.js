@@ -54,7 +54,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
     __removeIdleFlashMessage: function() {
       // removes a flash message if displaying
       if (this.__idleFlashMessageTimeoutId) {
-        clearInterval(this.__idleFlashMessageTimeoutId);
+        osparc.utils.WebWorkerScheduler.getInstance().clearInterval(this.__idleFlashMessageTimeoutId);
         this.__idleFlashMessageTimeoutId = null;
         this.__idleFlashMessageIsShowing = false;
       }
@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
         this.__updateFlashMessage(displayDurationS);
         displayDurationS--;
       };
-      this.__idleFlashMessageTimeoutId = setInterval(updateFlashMessage, 1000);
+      this.__idleFlashMessageTimeoutId = osparc.utils.WebWorkerScheduler.getInstance().setInterval(updateFlashMessage, 1000);
     },
 
     __userIdled: function() {
@@ -110,12 +110,12 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
           }
         }
       };
-      this.__idleInterval = setInterval(checkFn, 1000);
+      this.__idleInterval = osparc.utils.WebWorkerScheduler.getInstance().setInterval(checkFn, 1000);
     },
 
     __stopTimer: function() {
       if (this.__idleInterval) {
-        clearInterval(this.__idleInterval);
+        osparc.utils.WebWorkerScheduler.getInstance().clearInterval(this.__idleInterval);
         this.__idleInterval = null;
       }
     },
