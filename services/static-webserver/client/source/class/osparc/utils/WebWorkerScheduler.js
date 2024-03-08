@@ -30,13 +30,13 @@ qx.Class.define("osparc.utils.WebWorkerScheduler", {
   extend: qx.core.Object,
   type: "singleton",
 
-  construct: function () {
+  construct: function() {
     this.__registeredCallbacks = {};
     this.__schedulerWorker = new Worker("resource/osparc/schedulerWorker.js");
-    this.__schedulerWorker.onmessage = (event) => {
+    this.__schedulerWorker.onmessage = event => {
       const { id, event: workerEvent } = event.data;
 
-      if (workerEvent === 'tick') {
+      if (workerEvent === "tick") {
         if (id in this.__registeredCallbacks) {
           const { callback } = this.__registeredCallbacks[id];
           callback();
@@ -51,16 +51,26 @@ qx.Class.define("osparc.utils.WebWorkerScheduler", {
     __schedulerWorker: null,
     __registeredCallbacks: null,
 
-    setInterval: function (callback, interval) {
+    setInterval: function(callback, interval) {
       const id = osparc.utils.Utils.uuidv4();
-      this.__registeredCallbacks[id] = { callback, interval };
-      this.__schedulerWorker.postMessage({ command: 'scheduleInterval', id: id, interval: interval });
+      this.__registeredCallbacks[id] = {
+        callback,
+        interval,
+      };
+      this.__schedulerWorker.postMessage({
+        command: "scheduleInterval",
+        id: id,
+        interval: interval
+      });
       return id;
     },
 
-    clearInterval: function (id) {
+    clearInterval: function(id) {
       if (id in this.__registeredCallbacks) {
-        this.__schedulerWorker.postMessage({ command: 'clearInterval', id: id });
+        this.__schedulerWorker.postMessage({
+          command: "clearInterval",
+          id: id
+        });
         delete this.__registeredCallbacks[id];
       }
     },
