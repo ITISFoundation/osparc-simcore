@@ -142,7 +142,7 @@ async def test_list_study_ports(
             assert len(data) == 5
         return response
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / capture,
         [_get_list_metadata_ports_side_effect],
@@ -152,8 +152,6 @@ async def test_list_study_ports(
     resp = await client.get(f"/v0/studies/{study_id}/ports", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == {"items": fake_study_ports, "total": len(fake_study_ports)}
-
-    del respx_mock  # keep alive until server responded
 
 
 @pytest.mark.acceptance_test(
