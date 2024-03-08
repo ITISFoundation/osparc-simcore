@@ -79,13 +79,15 @@ async def _copy_files(src: Path, dst: Path):
 async def consolidate_templates(
     new_dir: Path, product_names: list[ProductName], repo: TemplatesRepo
 ):
-    """
-    Builds a folder structure and dump all templates (T) for each product (P) following the following precedence rules
-        1. T found in database associated to P in products_to_templates.join(jinja2_templates)
-        2. found in notifications_library/templates/P/T file
-        3. found in notifications_library/T file
+    """Consolidates all templates in new_dir folder for each product
 
-    Final folder tree looks like
+    Builds a structure under new_dir and dump all templates (T) for each product (P) with the following
+    precedence rules:
+        1. T found in *database* associated to P in products_to_templates.join(jinja2_templates), otherwise
+        2. found in notifications_library/templates/P/T *file*, otherwise
+        3. found in notifications_library/T *file*
+
+    After consolidation, the tree dir would have the follow structure
         new_dir:
             product_1:
                 template1
