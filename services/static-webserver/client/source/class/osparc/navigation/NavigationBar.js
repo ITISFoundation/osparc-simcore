@@ -230,15 +230,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             currentUsage,
             maxHeight: this.self().HEIGHT
           });
+          osparc.utils.Utils.setIdToWidget(control, "creditsNavigationBtn");
           this.getChildControl("right-items").add(control);
           break;
         }
-        case "wallets-viewer":
-          control = new osparc.desktop.credits.WalletsMiniViewer().set({
-            maxHeight: this.self().HEIGHT
-          });
-          this.getChildControl("right-items").add(control);
-          break;
         case "tasks-button":
           control = new osparc.task.TasksButton();
           this.getChildControl("right-items").add(control);
@@ -276,6 +271,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "help":
           control = this.__createHelpMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
+          osparc.utils.Utils.setIdToWidget(control, "helpNavigationBtn");
           this.getChildControl("right-items").add(control);
           break;
         case "log-in-button": {
