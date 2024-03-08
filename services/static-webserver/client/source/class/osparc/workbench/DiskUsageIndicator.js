@@ -158,7 +158,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       const labelDiskSize = osparc.utils.Utils.bytesToSize(usage.free);
       const color1 = warningColor;
       const bgColor = qx.theme.manager.Color.getInstance().resolve("tab_navigation_bar_background_color");
-      const color2 = qx.theme.manager.Color.getInstance().resolve("info");
+      const color2 = qx.theme.manager.Color.getInstance().resolve("progressive-progressbar-background");
       indicator.getContentElement().setStyles({
         "background-color": bgColor,
         "background": `linear-gradient(90deg, ${color1} ${progress}, ${color2} ${progress})`,
