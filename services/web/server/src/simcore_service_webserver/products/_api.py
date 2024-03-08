@@ -79,7 +79,15 @@ async def get_product_stripe_info(
     app: web.Application, *, product_name: ProductName
 ) -> ProductStripeInfoGet:
     repo = ProductRepository.create_from_app(app)
-    return await repo.get_product_stripe_info(product_name)
+    product_stripe_info = await repo.get_product_stripe_info(product_name)
+    if (
+        not product_stripe_info
+        or "missing!!" in product_stripe_info.stripe_price_id
+        or "missing!!" in product_stripe_info.stripe_tax_rate_id
+    ):
+        msg = f"Missing product stripe for product {product_name}"
+        raise ValueError(msg)
+    return product_stripe_info
 
 
 #

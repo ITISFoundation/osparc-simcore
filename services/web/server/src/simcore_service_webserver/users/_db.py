@@ -165,4 +165,7 @@ async def get_user_billing_details(
 ) -> UserBillingDetails:
     async with engine.acquire() as conn:
         user_billing_details = await UsersRepo.get_billing_details(conn, user_id)
+        if not user_billing_details:
+            msg = f"Missing biling details for user {user_id}"
+            raise ValueError(msg)
         return UserBillingDetails.from_orm(user_billing_details)
