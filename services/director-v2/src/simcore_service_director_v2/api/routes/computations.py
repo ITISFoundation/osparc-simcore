@@ -168,17 +168,16 @@ async def _get_project_metadata(
     try:
         parent_project_id = await project_repo.get_project_id_from_node(parent_node_id)
         parent_project = await project_repo.get_project(parent_project_id)
+        assert parent_node_idstr in parent_project.workbench
+        return ProjectMetadataDict(
+            parent_node_id=parent_node_id,
+            parent_node_name=parent_project.workbench[parent_node_idstr].label,
+            parent_project_id=parent_project_id,
+            parent_project_name=parent_project.name,
+        )
     except (ProjectNotFoundError, ProjectNodesNodeNotFound) as exc:
-        _logger.exception("Could not find project/node: %s", f"{exc}")
+        _logger.exception("Could not find project/node: %s", exc)
         return {}
-
-    assert parent_node_idstr in parent_project.workbench
-    return ProjectMetadataDict(
-        parent_node_id=parent_node_id,
-        parent_node_name=parent_project.workbench[parent_node_idstr].label,
-        parent_project_id=parent_project_id,
-        parent_project_name=parent_project.name,
-    )
 
 
 async def _try_start_pipeline(
