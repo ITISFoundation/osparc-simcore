@@ -20,7 +20,6 @@ def test_render_env_from_folder(tmp_path: Path, product_name: ProductName):
     shutil.copytree(_templates_dir, product_name_dir)
     shutil.copytree(_templates_dir, top_dir / "osparc")
 
-    print()
     _print_tree(top_dir)
 
     consolidated_env = create_render_env_from_folder(top_dir)
