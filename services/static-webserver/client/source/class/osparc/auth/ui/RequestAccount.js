@@ -153,7 +153,11 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
       // const formRenderer = new qx.ui.form.renderer.Single(this._form);
       const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
-      this.add(formRenderer);
+      const scrollView = new qx.ui.container.Scroll();
+      scrollView.add(formRenderer);
+      this.add(scrollView, {
+        flex: 1
+      });
 
       // buttons and eula links
       const grp = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
