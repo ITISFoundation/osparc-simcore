@@ -4,7 +4,7 @@ from typing import Literal, TypedDict
 
 import asyncpg
 from aiohttp import web
-from servicelib.utils_secrets import generate_password
+from servicelib.utils_secrets import generate_passcode
 
 from . import _sql
 
@@ -80,7 +80,8 @@ class AsyncpgStorage:
         async with self.pool.acquire() as conn:
             # generate different code
             while True:
-                code: str = generate_password(30)
+                # NOTE: use only numbers (i.e. avoid generate_password) since front-end does not handle well url encoding
+                code: str = generate_passcode(20)
                 if not await _sql.find_one(conn, self.confirm_tbl, {"code": code}):
                     break
             # insert confirmation
