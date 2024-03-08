@@ -148,14 +148,6 @@ async def test_list_study_ports(
         [_get_list_metadata_ports_side_effect],
     )
 
-    mocked_webserver_service_api_base.get(
-        path__regex=r"/projects/(?P<project_id>[\w-]+)/metadata/ports$",
-        name="list_project_metadata_ports",
-    ).respond(
-        200,
-        json={"data": fake_study_ports},
-    )
-
     # list_study_ports
     resp = await client.get(f"/v0/studies/{study_id}/ports", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
