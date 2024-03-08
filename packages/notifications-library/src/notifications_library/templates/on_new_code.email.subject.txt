@@ -1,0 +1,1 @@
+{{ code }} is Your 2FA Sign-In Code for {{ host }}

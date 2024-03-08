@@ -175,7 +175,7 @@ def random_product(
 
     data = {
         "name": f"prd_{suffix}",
-        "display_name": suffix.capitalize(),
+        "display_name": suffix.capitalize().replace("_", " "),
         "short_name": suffix[:4],
         "host_regex": r"[a-zA-Z0-9]+\.com",
         "support_email": f"support@{suffix}.io",
