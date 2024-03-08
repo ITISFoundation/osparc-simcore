@@ -20,10 +20,6 @@ class _BaseRepo:
 
 class UsersRepo(_BaseRepo):
     async def get_user_data(self, user_id: UserID):
-        """
-        Raises:
-            UserNotFoundError
-        """
         return await self._get(
             sa.select(
                 users.c.first_name,
