@@ -188,7 +188,7 @@ def test_render_templates(template_path: Path, faker: Faker):
             "code": "123",
             "reason": "no reason",
             "link": "https://link.com",
-            "product": {"name": "foo"},
+            "product": {"name": "foobar", "display_name": "Foo Bar"},
             "dumps": functools.partial(json_dumps, indent=1),
             "request_form": fake_json_object,
             "ipinfo": fake_json_object,

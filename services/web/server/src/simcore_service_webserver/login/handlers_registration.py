@@ -261,6 +261,7 @@ async def register(request: web.Request):
                     "link": email_confirmation_url,  # SEE email_confirmation handler (action=REGISTRATION)
                     "name": user["name"],
                     "support_email": product.support_email,
+                    "product": product.display_name,
                 },
             )
         except Exception as err:  # pylint: disable=broad-except
