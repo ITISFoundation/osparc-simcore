@@ -30,7 +30,7 @@ from simcore_service_webserver.login._2fa import (
 )
 from simcore_service_webserver.login._constants import MSG_2FA_UNAVAILABLE_OEC
 from simcore_service_webserver.login.storage import AsyncpgStorage
-from simcore_service_webserver.products.api import get_current_product
+from simcore_service_webserver.products.api import Product, get_current_product
 from twilio.base.exceptions import TwilioRestException
 
 
@@ -317,6 +317,19 @@ async def test_send_email_code(
         support_email=support_email,
         code=code,
         first_name=first_name,
+        product=Product(
+            name="osparc",
+            display_name="The Foo Product",
+            host_regex=r".+",
+            vendor={},
+            short_name="foo",
+            support_email=support_email,
+            support=None,
+            login_settings=ProductLoginSettingsDict(
+                LOGIN_2FA_REQUIRED=True,
+            ),
+            registration_email_template=None,
+        ),
     )
 
     out, _ = capsys.readouterr()

@@ -122,6 +122,7 @@ async def test_render_and_send_mail_for_password(
         context={
             "host": http_request.host,
             "reason": faker.text(),
+            "product": SimpleNamespace(display_name=product_name, name=product_name),
         },
     )
 
@@ -133,6 +134,7 @@ async def test_render_and_send_mail_for_password(
         context={
             "host": http_request.host,
             "link": link,
+            "product": SimpleNamespace(display_name=product_name, name=product_name),
         },
     )
 
@@ -155,6 +157,7 @@ async def test_render_and_send_mail_to_change_email(
         context={
             "host": http_request.host,
             "link": link,
+            "product": SimpleNamespace(display_name=product_name, name=product_name),
         },
     )
 
@@ -180,6 +183,9 @@ async def test_render_and_send_mail_for_submission(
                 json=json.dumps(data), table_attributes='class="pure-table"'
             ),
             "subject": "TEST",
+            "product": SimpleNamespace(
+                display_name=product_name.capitalize(), name=product_name
+            ),
         },
         attachments=[
             AttachmentTuple(
@@ -204,6 +210,7 @@ def test_render_string_from_tmp_file(
         "host": http_request.host,
         "link": faker.url(),
         "name": faker.first_name(),
+        "product": SimpleNamespace(name="foobar", display_name="Foo Bar"),
     }
 
     expected_page = render_string(

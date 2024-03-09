@@ -100,6 +100,7 @@ async def submit_request_to_reset_password(request: web.Request):
                 context={
                     "host": request.host,
                     "reason": err.reason,
+                    "product": product,
                 },
             )
         except Exception as err_mail:  # pylint: disable=broad-except
@@ -169,7 +170,11 @@ async def submit_request_to_change_email(request: web.Request):
             from_=product.support_email,
             to=request_body.email,
             template=await get_template_path(request, "change_email_email.jinja2"),
-            context={"host": request.host, "link": link, "product": product},
+            context={
+                "host": request.host,
+                "link": link,
+                "product": product,
+            },
         )
     except Exception as err:  # pylint: disable=broad-except
         _logger.exception("Can not send change_email_email")
