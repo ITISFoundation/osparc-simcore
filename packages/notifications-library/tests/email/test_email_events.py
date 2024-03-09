@@ -2,6 +2,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
+
+
 """
 These tests can be run against external configuration
 
@@ -11,6 +13,8 @@ pytest --external-envfile=.my-env --external-support-email=support@email.com  --
 """
 
 
+import functools
+import json
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -18,7 +22,9 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from faker import Faker
 from jinja2 import StrictUndefined
+from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.products import ProductName
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from notifications_library._email import (
     add_attachments,
     compose_email,
@@ -29,34 +35,87 @@ from notifications_library._models import ProductData, UserData
 from notifications_library._render import create_render_env_from_package
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr
+from pydantic.json import pydantic_encoder
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.email import SMTPSettings
 
 
+def _safe_json_dumps(obj: Any, **kwargs):
+    return json.dumps(jsonable_encoder(obj), default=pydantic_encoder, **kwargs)
+
+
 @pytest.fixture
-def event_extra_data(
-    event_name: str, faker: Faker, product_name: ProductName, payment_data: PaymentData
+def ipinfo(faker: Faker) -> dict[str, Any]:
+    return {
+        "x-real-ip": faker.ipv4(),
+        "x-forwarded-for": faker.ipv4(),
+        "peername": faker.ipv4(),
+    }
+
+
+@pytest.fixture
+def request_form(faker: Faker) -> dict[str, Any]:
+    return AccountRequestInfo(
+        **AccountRequestInfo.Config.schema_extra["example"]
+    ).dict()
+
+
+@pytest.fixture
+def event_extra_data(  # noqa: PLR0911
+    event_name: str,
+    faker: Faker,
+    product_name: ProductName,
+    payment_data: PaymentData,
+    product: dict[str, Any],
+    request_form: dict[str, Any],
 ) -> dict[str, Any]:
 
+    code = faker.pystr_format(string_format="######", letters="")
+
     match event_name:
-        case "on_registered":
+        case "on_change_email":
             return {
-                "host": f"https://{product_name}.io",
-                "link": faker.image_url(width=640, height=480),
+                "link": f"{faker.url()}?confirmation={code}",
             }
         case "on_new_code":
             return {
                 "host": f"https://{product_name}.io",
-                "code": faker.pystr_format(string_format="####", letters=""),
-            }
-        case "on_reset_password":
-            return {
-                "host": f"https://{product_name}.io",
-                "link": faker.image_url(width=640, height=480),
+                "code": code,
             }
         case "on_payed":
             return {
                 "payment": payment_data,
+            }
+        case "on_registered":
+            return {
+                "host": f"https://{product_name}.io",
+                "link": f"{faker.url()}?confirmation={code}",
+            }
+        case "on_request_account":
+            return {
+                "host": f"https://{product_name}.io",
+                "name": "support-team",
+                "product": {
+                    k: product.get(k)
+                    for k in (
+                        "name",
+                        "display_name",
+                        "support_email",
+                        "vendor",
+                        "is_payment_enabled",
+                    )
+                },
+                "request_form": request_form,
+                "ipinfo": ipinfo,
+                "dumps": functools.partial(_safe_json_dumps, indent=1),
+            }
+
+        case "on_reset_password":
+            return {
+                "host": f"https://{product_name}.io",
+                "success": faker.pybool(),
+                "reason": faker.sentence(),
+                "link": f"{faker.url()}?confirmation={code}",
             }
 
         case _:
@@ -79,10 +138,13 @@ def event_attachments(event_name: str, faker: Faker, tmp_path: Path) -> list[Pat
 @pytest.mark.parametrize(
     "event_name",
     [
+        "on_change_email",
         "on_new_code",
-        "on_registered",
-        "on_reset_password",
         "on_payed",
+        "on_registered",
+        "on_regist_account",
+        "on_rest_password",
+        "on_unregistered",
     ],
 )
 async def test_email_event(

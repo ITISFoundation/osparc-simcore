@@ -1,5 +1,5 @@
 <p>
-  Dear {{ name }} <br><br>
+  Dear {{ user.first_name }} <br><br>
   You have requested to change the email address linked to your {{ product.display_name }} account. Please follow the on-screen
   information in the link below:
 </p>
@@ -9,7 +9,7 @@
 </p>
 
 <p>
-  Please don't hesitate to contact us at {{ support_email }} if you need further help.<br><br>
+  Please don't hesitate to contact us at {{ product.support_email }} if you need further help.<br><br>
   Best regards <br>
   The <i>{{ product.display_name }}</i> Team
 </p>

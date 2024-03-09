@@ -11,8 +11,13 @@ from notifications_library._templates import (
 @pytest.mark.parametrize(
     "event_name",
     [
-        "on_registered",
+        "on_change_email",
+        "on_new_code",
         "on_payed",
+        "on_registered",
+        "on_regist_account",
+        "on_rest_password",
+        "on_unregistered",
     ],
 )
 def test_email_templates_are_complete(event_name: str):
