@@ -68,14 +68,16 @@ def event_extra_data(  # noqa: PLR0911
     payment_data: PaymentData,
     product: dict[str, Any],
     request_form: dict[str, Any],
+    ipinfo: dict[str, Any],
 ) -> dict[str, Any]:
 
     code = faker.pystr_format(string_format="######", letters="")
+    host_url = f"https://{product_name}.io"
 
     match event_name:
         case "on_account_form":
             return {
-                "host": f"https://{product_name}.io",
+                "host": host_url,
                 "name": "support-team",
                 "product_info": {
                     k: product.get(k)
@@ -86,19 +88,20 @@ def event_extra_data(  # noqa: PLR0911
                         "vendor",
                         "is_payment_enabled",
                     )
-                },
+                }
+                | {"is_payment_enabled": faker.pybool()},
                 "request_form": request_form,
                 "ipinfo": ipinfo,
                 "dumps": functools.partial(_safe_json_dumps, indent=1),
             }
         case "on_change_email":
             return {
-                "host": f"https://{product_name}.io",
-                "link": f"{faker.url()}?confirmation={code}",
+                "host": host_url,
+                "link": f"{host_url}?change-email={code}",
             }
         case "on_new_code":
             return {
-                "host": f"https://{product_name}.io",
+                "host": host_url,
                 "code": code,
             }
         case "on_payed":
@@ -107,20 +110,20 @@ def event_extra_data(  # noqa: PLR0911
             }
         case "on_registered":
             return {
-                "host": f"https://{product_name}.io",
-                "link": f"{faker.url()}?confirmation={code}",
+                "host": host_url,
+                "link": f"{host_url}?registration={code}",
             }
 
         case "on_reset_password":
             return {
-                "host": f"https://{product_name}.io",
+                "host": host_url,
                 "success": faker.pybool(),
                 "reason": faker.sentence(),
-                "link": f"{faker.url()}?confirmation={code}",
+                "link": f"{host_url}?reset-password={code}",
             }
         case "on_unregister":
             return {
-                "host": f"https://{product_name}.io",
+                "host": host_url,
                 "retention_days": 30,
             }
 
