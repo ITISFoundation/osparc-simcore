@@ -1,9 +1,3 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
-
-
 """
 These tests can be run against external configuration
 
@@ -11,6 +5,12 @@ cd packages/notifications-library
 pytest --external-envfile=.my-env --external-support-email=support@email.com  --external-user-email=my@email.com tests/email
 
 """
+
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-return-statements
 
 
 import functools
