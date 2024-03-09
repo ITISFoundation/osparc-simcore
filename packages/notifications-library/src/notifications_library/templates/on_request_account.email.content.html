@@ -1,0 +1,37 @@
+<p>
+Dear {{ name }},
+</p>
+
+<p>
+We have received the following request form for an account in {{ product.display_name }}
+</p>
+
+<p>
+<pre>
+{{ dumps(request_form) }}
+</pre>
+</p>
+
+<p>
+Some details about the requested product follow:
+</p>
+
+<p>
+<pre>
+{{ dumps(product) }}
+</pre>
+</p>
+
+<p>
+To validate the request form, here you can get further info on this request:
+</p>
+
+
+<pre>
+{{ dumps(ipinfo) }}
+</pre>
+
+<p>TIP: Use https://ipinfo.io/$IP/json to find out more information on the ip</p>
+
+
+Thanks<br>
