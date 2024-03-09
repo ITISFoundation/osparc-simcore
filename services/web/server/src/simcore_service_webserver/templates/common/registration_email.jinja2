@@ -1,17 +1,22 @@
-Registration on {{ host }}
+Welcome to S4L lite
 <!--
-TEST link:{{ link }}
 TEST host:{{ host }}
+TEST link:{{ link }}
+TEST name:{{ name }}
 TEST support_email:{{ support_email }}
 -->
-<h1>Welcome on {{ host }}</h1>
-
 <p>
-  You are successfully registered on <a href="{{ link }}">{{ host }}</a>.
-  To activate your account follow the link: <a href="{{ link }}">{{ link }}</a>
+  Dear {{ name }} <br><br>
+  Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.<br>
+  Please activate your account via the link below:
 </p>
 
 <p>
-  Our support team is here to help with anything you need. Please feel free to contact us to {{ support_email }} in case
-  of questions or any required assistance.
+  <a href="{{ link }}">{{ link }}</a>
+</p>
+
+<p>
+  Please don't hesitate to contact us at {{ support_email }} if you need further help.<br><br>
+  Best regards <br>
+  The <i>Sim4Life</i> Team
 </p>
