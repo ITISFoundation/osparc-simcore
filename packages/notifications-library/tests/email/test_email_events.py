@@ -75,6 +75,7 @@ def event_extra_data(  # noqa: PLR0911
     match event_name:
         case "on_change_email":
             return {
+                "host": f"https://{product_name}.io",
                 "link": f"{faker.url()}?confirmation={code}",
             }
         case "on_new_code":
@@ -117,6 +118,11 @@ def event_extra_data(  # noqa: PLR0911
                 "reason": faker.sentence(),
                 "link": f"{faker.url()}?confirmation={code}",
             }
+        case "on_unregister":
+            return {
+                "host": f"https://{product_name}.io",
+                "retention_days": 30,
+            }
 
         case _:
             return {}
@@ -142,9 +148,9 @@ def event_attachments(event_name: str, faker: Faker, tmp_path: Path) -> list[Pat
         "on_new_code",
         "on_payed",
         "on_registered",
-        "on_regist_account",
-        "on_rest_password",
-        "on_unregistered",
+        "on_request_account",
+        "on_reset_password",
+        "on_unregister",
     ],
 )
 async def test_email_event(

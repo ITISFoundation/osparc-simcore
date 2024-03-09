@@ -15,8 +15,8 @@ from notifications_library._templates import (
         "on_new_code",
         "on_payed",
         "on_registered",
-        "on_regist_account",
-        "on_rest_password",
+        "on_request_account",
+        "on_reset_password",
         "on_unregistered",
     ],
 )
