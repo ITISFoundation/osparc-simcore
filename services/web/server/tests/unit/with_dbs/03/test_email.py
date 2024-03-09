@@ -166,7 +166,7 @@ def test_render_templates(template_path: Path, faker: Faker, tmp_path: Path):
 
     request = make_mocked_request("GET", "/fake", app=app)
 
-    fake_json_object = {
+    fake_request_form = {
         "name": faker.name(),
         "user": {
             "name": faker.name(),
@@ -184,14 +184,15 @@ def test_render_templates(template_path: Path, faker: Faker, tmp_path: Path):
         template_path,
         context={
             "host": request.host,
-            "support_email": "support@company.com",
+            "support_email": faker.email(),
             "name": "foo",
             "code": "123",
             "reason": "no reason",
-            "link": "https://link.com",
+            "link": faker.url(),
             "product": SimpleNamespace(name="foobar", display_name="Foo Bar"),
+            "retention_days": 30,
             "dumps": functools.partial(safe_json_dumps, indent=1),
-            "request_form": fake_json_object,
+            "request_form": fake_request_form,
             "ipinfo": {
                 "x-real-ip": faker.ipv4(),
                 "x-forwarded-for": faker.ipv4(),
@@ -202,10 +203,6 @@ def test_render_templates(template_path: Path, faker: Faker, tmp_path: Path):
 
     assert subject
     assert html_body
-
-    # html to test
-    html_path = tmp_path / template_path.with_suffix(".html").name
-    html_path.write_text(html_body)
 
     # parses html (will fail if detects some )
     parser = IndexParser()
