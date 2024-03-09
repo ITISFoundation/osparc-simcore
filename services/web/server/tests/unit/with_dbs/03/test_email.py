@@ -22,7 +22,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from servicelib.aiohttp import status
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import safe_json_dumps
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver._resources import webserver_resources
@@ -160,7 +160,7 @@ class IndexParser(HTMLParser):
     list(webserver_resources.get_path("templates").rglob("*.jinja2")),
     ids=lambda p: p.name,
 )
-def test_render_templates(template_path: Path, faker: Faker):
+def test_render_templates(template_path: Path, faker: Faker, tmp_path: Path):
     app = web.Application()
     setup_email(app)
 
@@ -190,14 +190,22 @@ def test_render_templates(template_path: Path, faker: Faker):
             "reason": "no reason",
             "link": "https://link.com",
             "product": SimpleNamespace(name="foobar", display_name="Foo Bar"),
-            "dumps": functools.partial(json_dumps, indent=1),
+            "dumps": functools.partial(safe_json_dumps, indent=1),
             "request_form": fake_json_object,
-            "ipinfo": fake_json_object,
+            "ipinfo": {
+                "x-real-ip": faker.ipv4(),
+                "x-forwarded-for": faker.ipv4(),
+                "peername": faker.ipv4(),
+            },
         },
     )
 
     assert subject
     assert html_body
+
+    # html to test
+    html_path = tmp_path / template_path.with_suffix(".html").name
+    html_path.write_text(html_body)
 
     # parses html (will fail if detects some )
     parser = IndexParser()
