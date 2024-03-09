@@ -77,7 +77,7 @@ def event_extra_data(  # noqa: PLR0911
             return {
                 "host": f"https://{product_name}.io",
                 "name": "support-team",
-                "product": {
+                "product_info": {
                     k: product.get(k)
                     for k in (
                         "name",
