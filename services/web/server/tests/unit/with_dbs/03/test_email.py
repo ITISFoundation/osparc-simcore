@@ -204,6 +204,10 @@ def test_render_templates(template_path: Path, faker: Faker, tmp_path: Path):
     assert subject
     assert html_body
 
+    # html to test
+    html_path = tmp_path / template_path.with_suffix(".html").name
+    html_path.write_text(html_body)
+
     # parses html (will fail if detects some )
     parser = IndexParser()
     parser.feed(html_body)
