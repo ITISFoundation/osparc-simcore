@@ -73,6 +73,24 @@ def event_extra_data(  # noqa: PLR0911
     code = faker.pystr_format(string_format="######", letters="")
 
     match event_name:
+        case "on_account_form":
+            return {
+                "host": f"https://{product_name}.io",
+                "name": "support-team",
+                "product": {
+                    k: product.get(k)
+                    for k in (
+                        "name",
+                        "display_name",
+                        "support_email",
+                        "vendor",
+                        "is_payment_enabled",
+                    )
+                },
+                "request_form": request_form,
+                "ipinfo": ipinfo,
+                "dumps": functools.partial(_safe_json_dumps, indent=1),
+            }
         case "on_change_email":
             return {
                 "host": f"https://{product_name}.io",
@@ -91,24 +109,6 @@ def event_extra_data(  # noqa: PLR0911
             return {
                 "host": f"https://{product_name}.io",
                 "link": f"{faker.url()}?confirmation={code}",
-            }
-        case "on_request_account":
-            return {
-                "host": f"https://{product_name}.io",
-                "name": "support-team",
-                "product": {
-                    k: product.get(k)
-                    for k in (
-                        "name",
-                        "display_name",
-                        "support_email",
-                        "vendor",
-                        "is_payment_enabled",
-                    )
-                },
-                "request_form": request_form,
-                "ipinfo": ipinfo,
-                "dumps": functools.partial(_safe_json_dumps, indent=1),
             }
 
         case "on_reset_password":
@@ -144,11 +144,11 @@ def event_attachments(event_name: str, faker: Faker, tmp_path: Path) -> list[Pat
 @pytest.mark.parametrize(
     "event_name",
     [
+        "on_account_form",
         "on_change_email",
         "on_new_code",
         "on_payed",
         "on_registered",
-        "on_request_account",
         "on_reset_password",
         "on_unregister",
     ],
