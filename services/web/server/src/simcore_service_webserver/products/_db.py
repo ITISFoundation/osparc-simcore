@@ -7,12 +7,13 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.basic_types import NonNegativeDecimal
-from models_library.products import ProductName
+from models_library.products import ProductName, ProductStripeInfoGet
 from pydantic import parse_obj_as
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_postgres_database.models.products import jinja2_templates
 from simcore_postgres_database.utils_products_prices import (
     get_product_latest_credit_price_or_none,
+    get_product_latest_stripe_info,
 )
 
 from ..db.base_repository import BaseRepository
@@ -104,6 +105,13 @@ class ProductRepository(BaseRepository):
                 conn, product_name=product_name
             )
             return parse_obj_as(NonNegativeDecimal | None, usd_per_credit)
+
+    async def get_product_stripe_info(self, product_name: str) -> ProductStripeInfoGet:
+        async with self.engine.acquire() as conn:
+            row = await get_product_latest_stripe_info(conn, product_name=product_name)
+            return ProductStripeInfoGet(
+                stripe_price_id=row[0], stripe_tax_rate_id=row[1]
+            )
 
     async def get_template_content(
         self,

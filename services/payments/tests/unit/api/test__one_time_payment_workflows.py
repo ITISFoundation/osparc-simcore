@@ -10,6 +10,8 @@ from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
 from models_library.basic_types import IDStr
+from models_library.payments import UserInvoiceAddress
+from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -70,6 +72,8 @@ async def test_successful_one_time_payment_workflow(
     user_id: UserID,
     user_name: IDStr,
     user_email: EmailStr,
+    product_price_stripe_price_id: StripePriceID,
+    product_price_stripe_tax_rate_id: StripeTaxRateID,
     auth_headers: dict[str, str],
     payments_clean_db: None,
     mocker: MockerFixture,
@@ -94,6 +98,9 @@ async def test_successful_one_time_payment_workflow(
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
+        user_address=UserInvoiceAddress(country="CH"),
+        stripe_price_id=product_price_stripe_price_id,
+        stripe_tax_rate_id=product_price_stripe_tax_rate_id,
         timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 
