@@ -17,6 +17,7 @@ from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
 from twilio.rest import Client
 
+from ..products.api import Product
 from ..redis import get_redis_validation_code_client
 from .utils_email import get_template_path, send_email_from_template
 
@@ -139,6 +140,7 @@ async def send_email_code(
     support_email: str,
     code: str,
     first_name: str,
+    product: Product,
 ):
     email_template_path = await get_template_path(request, "new_2fa_code.jinja2")
     await send_email_from_template(
@@ -151,6 +153,7 @@ async def send_email_code(
             "code": code,
             "name": first_name,
             "support_email": support_email,
+            "product": product,
         },
     )
 

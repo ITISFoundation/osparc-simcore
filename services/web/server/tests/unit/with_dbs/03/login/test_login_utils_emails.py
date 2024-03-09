@@ -5,6 +5,7 @@
 import json
 import shutil
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -91,6 +92,7 @@ async def test_render_and_send_mail_for_registration(
             "host": http_request.host,
             "link": link,
             "name": destination_email.split("@")[0],
+            "product": SimpleNamespace(display_name=product_name),
         },
     )
 

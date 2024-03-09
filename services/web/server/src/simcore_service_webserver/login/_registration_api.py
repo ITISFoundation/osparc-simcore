@@ -33,6 +33,7 @@ async def send_close_account_email(
                 "name": user_name.capitalize(),
                 "support_email": product.support_email,
                 "retention_days": retention_days,
+                "product": product,
             },
         )
     except Exception:  # pylint: disable=broad-except
