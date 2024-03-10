@@ -151,6 +151,24 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       doubleSpaced.push(message);
       this._form.add(message, this.tr("Message"), null, "message");
 
+      // eula links
+      const color = qx.theme.manager.Color.getInstance().resolve("text");
+      const ppText = `I acknowledge that data will be processed in accordance with <a href='https://sim4life.swiss/privacy' style='color: ${color}' target='_blank''>our privacy policy</a>`;
+      const privacyPolicy = new qx.ui.form.CheckBox().set({
+        required: true,
+        value: false
+      });
+      doubleSpaced.push(privacyPolicy);
+      this._form.add(privacyPolicy, ppText, null, "privacyPolicy")
+
+      const eulaText = `I accept the <a href='https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt' style='color: ${color}' target='_blank''>end users license agreement (EULA)</a> and I will use the product in accordance with it.`;
+      const eula = new qx.ui.form.CheckBox().set({
+        required: true,
+        value: false
+      });
+      doubleSpaced.push(eula);
+      this._form.add(eula, eulaText, null, "eula");
+
       // const formRenderer = new qx.ui.form.renderer.Single(this._form);
       const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
       const scrollView = new qx.ui.container.Scroll();
@@ -159,27 +177,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         flex: 1
       });
 
-      // buttons and eula links
+      // buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-
-      const color = qx.theme.manager.Color.getInstance().resolve("text");
-      const ppText = `I acknowledge that data will be processed in accordance with <a href='https://sim4life.swiss/privacy' style='color: ${color}' target='_blank''>our privacy policy</a>`;
-      const privacyPolicy = new qx.ui.form.CheckBox().set({
-        required: true,
-        value: false
-      })
-      doubleSpaced.push(privacyPolicy);
-      this._form.add(privacyPolicy, ppText, null, "privacyPolicy")
-
-      const eulaText = `I accept the <a href='https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt' style='color: ${color}' target='_blank''>end users license agreement (EULA)</a> and I will use the product in accordance with it.`;
-      const eula = new qx.ui.form.CheckBox().set({
-        required: true,
-        value: false
-      })
-      doubleSpaced.push(eula);
-      this._form.add(eula, eulaText, null, "eula")
-
       const submitBtn = this.__requestButton = new qx.ui.form.Button(this.tr("Request")).set({
         center: true,
         appearance: "strong-button"
