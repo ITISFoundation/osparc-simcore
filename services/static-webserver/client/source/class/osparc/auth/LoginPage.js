@@ -70,10 +70,11 @@ qx.Class.define("osparc.auth.LoginPage", {
         case "pages-stack":
           control = new qx.ui.container.Stack().set({
             allowGrowX: false,
-            allowGrowY: false,
             alignX: "center"
           });
-          this.getChildControl("main-layout").add(control);
+          this.getChildControl("main-layout").add(control, {
+            flex: 1
+          });
           break;
         case "bottom-spacer":
           control = new qx.ui.core.Spacer();
