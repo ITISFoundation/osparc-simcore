@@ -30,7 +30,7 @@ products_prices = sa.Table(
         "usd_per_credit",
         sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
-        doc="Price in USD/credit >=0",
+        doc="Price in USD/credit >=0. Must be in sync with Stripe product price (stripe_price_id column in this table).",
     ),
     sa.Column(
         "comment",
@@ -44,6 +44,18 @@ products_prices = sa.Table(
         nullable=False,
         server_default=sa.sql.func.now(),
         doc="Timestamp auto-generated upon creation",
+    ),
+    sa.Column(
+        "stripe_price_id",
+        sa.String,
+        nullable=False,
+        doc="Stripe product price must be in sync with usd_per_credit rate field in this table. Currently created manually in Stripe",
+    ),
+    sa.Column(
+        "stripe_tax_rate_id",
+        sa.String,
+        nullable=False,
+        doc="Stripe tax rate ID associated to this product. Currently created manually in Stripe",
     ),
     sa.CheckConstraint(
         "usd_per_credit >= 0", name="non_negative_usd_per_credit_constraint"
