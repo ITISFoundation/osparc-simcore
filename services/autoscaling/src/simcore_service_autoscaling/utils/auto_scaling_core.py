@@ -153,18 +153,19 @@ def find_selected_instance_type_for_task(
 def get_machine_buffer_type(
     available_ec2_types: list[EC2InstanceType],
 ) -> EC2InstanceType:
+    assert len(available_ec2_types) > 0  # nosec
     return available_ec2_types[0]
 
 
-DRAINED_NODES = list[AssociatedInstance]
-BUFFER_DRAINED_NODES = list[AssociatedInstance]
+DrainedNodes = list[AssociatedInstance]
+BufferDrainedNodes = list[AssociatedInstance]
 
 
 def sort_drained_nodes(
     app_settings: ApplicationSettings,
     all_drained_nodes: list[AssociatedInstance],
     available_ec2_types: list[EC2InstanceType],
-) -> tuple[DRAINED_NODES, BUFFER_DRAINED_NODES]:
+) -> tuple[DrainedNodes, BufferDrainedNodes]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     # we need to keep in reserve only the drained nodes of the right type
     machine_buffer_type = get_machine_buffer_type(available_ec2_types)

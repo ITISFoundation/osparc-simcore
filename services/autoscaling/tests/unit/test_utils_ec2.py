@@ -3,8 +3,6 @@
 # pylint: disable=unused-variable
 
 
-import random
-
 import pytest
 from aws_library.ec2.models import EC2InstanceType, Resources
 from faker import Faker
@@ -27,19 +25,6 @@ async def test_find_best_fitting_ec2_instance_with_no_instances_raises():
             allowed_ec2_instances=[],
             resources=Resources(cpus=0, ram=ByteSize(0)),
         )
-
-
-@pytest.fixture
-def random_fake_available_instances(faker: Faker) -> list[EC2InstanceType]:
-    list_of_instances = [
-        EC2InstanceType(
-            name=faker.pystr(),
-            resources=Resources(cpus=n, ram=ByteSize(n)),
-        )
-        for n in range(1, 30)
-    ]
-    random.shuffle(list_of_instances)
-    return list_of_instances
 
 
 async def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resource_0_raises(
