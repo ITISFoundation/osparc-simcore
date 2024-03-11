@@ -87,10 +87,8 @@ qx.Class.define("osparc.info.CommentUI", {
           });
           break;
         case "comment-content":
-          control = new qx.ui.basic.Label().set({
-            font: "text-13",
-            rich: true,
-            wrap: true
+          control = new osparc.ui.markdown.Markdown().set({
+            noMargin: true
           });
           this._add(control, {
             row: 0,
