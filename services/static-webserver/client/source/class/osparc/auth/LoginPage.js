@@ -70,7 +70,7 @@ qx.Class.define("osparc.auth.LoginPage", {
           this.getChildControl("main-layout").add(control);
           break;
         case "science-text-image":
-          control = new qx.ui.basic.Image("osparc/science-text.png").set({
+          control = new qx.ui.basic.Image("osparc/Sim4Life_science_Subline.svg").set({
             width: 300,
             height: 24,
             scale: true,
