@@ -56,11 +56,11 @@ qx.Class.define("osparc.tours.List", {
       return control || this.base(arguments, id);
     },
 
-    __isSelectorVisible: function(doc, selector) {
-      const domEl = doc.querySelector(`[${selector}]`);
-      if (domEl) {
-        const domWidget = qx.ui.core.Widget.getWidgetByElement(domEl);
-        if (qx.ui.core.queue.Visibility.isVisible(domWidget)) {
+    __isSelectorVisible: function(selector) {
+      const element = document.querySelector(`[${selector}]`);
+      if (element) {
+        const widget = qx.ui.core.Widget.getWidgetByElement(element);
+        if (qx.ui.core.queue.Visibility.isVisible(widget)) {
           return true;
         }
       }
@@ -69,6 +69,7 @@ qx.Class.define("osparc.tours.List", {
 
     __getTourButton: function(tour) {
       const seqButton = new osparc.tours.ListItem(tour);
+      seqButton.setEnabled(this.__isSelectorVisible(tour.context));
       seqButton.addListener("tap", () => this.fireDataEvent("tourSelected", tour), this);
       return seqButton;
     },
