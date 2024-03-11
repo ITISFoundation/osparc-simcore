@@ -166,6 +166,7 @@ async def test_email_event(
     event_name: str,
     event_extra_data: dict[str, Any],
     event_attachments: list[Path],
+    tmp_path: Path,
 ):
     assert user_data.email == user_email
     assert product_data.product_name == product_name
@@ -185,9 +186,14 @@ async def test_email_event(
     if event_attachments:
         add_attachments(msg, event_attachments)
 
-    Path(
-        f"/home/crespo/repos/osparc-simcore/.ignore.keep/emails/{event_name}.html"
-    ).write_text(parts.html_content)
+    # keep copy for comparison
+    dump_path = tmp_path / event_name
+    if parts.html_content:
+        p = dump_path.with_suffix(".html")
+        p.write_text(parts.html_content)
+    if parts.text_content:
+        p = dump_path.with_suffix(".txt")
+        p.write_text(parts.text_content)
 
     async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
         await smtp.send_message(msg)
