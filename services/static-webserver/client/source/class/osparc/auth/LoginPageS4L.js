@@ -54,14 +54,14 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
       let backgroundImage = "";
 
       // const defaultBG = "url(resource/osparc/Sim4Life_login_page_master_transparent_bg.png)";
-      const defaultBG = "url(resource/osparc/Speag_Sim4Life_Intro_Entw04.png)";
+      const defaultBG = "url(resource/osparc/Sim4Life_Science.png)";
 
       switch (osparc.product.Utils.getProductName()) {
         case "s4llite":
-          backgroundImage = "url(resource/osparc/Speag_Sim4Life_Intro_Entw04.png)";
+          backgroundImage = defaultBG;
           break;
         case "s4lacad":
-          backgroundImage = "url(resource/osparc/Speag_Sim4Life_Intro_Entw04.png)";
+          backgroundImage = defaultBG;
           break;
         case "s4ldesktop":
           backgroundImage = defaultBG;
