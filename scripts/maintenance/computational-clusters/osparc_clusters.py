@@ -533,7 +533,7 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
             if task.state in task_state_to_tasks:
                 task_state_to_tasks[task.state].append(task.key)
             else:
-                task_state_to_tasks[task.state] = task.key
+                task_state_to_tasks[task.state] = [task.key]
 
         return dict(task_state_to_tasks)
 

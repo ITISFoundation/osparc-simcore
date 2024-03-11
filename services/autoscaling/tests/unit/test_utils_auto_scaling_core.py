@@ -8,28 +8,32 @@ import datetime
 import json
 import re
 from collections.abc import Callable
+from random import choice, shuffle
 
 import pytest
+from aws_library.ec2.models import EC2InstanceType
 from faker import Faker
 from models_library.docker import DockerGenericTag
-from models_library.generated_models.docker_rest_api import Node
+from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_autoscaling.core.errors import Ec2InvalidDnsNameError
 from simcore_service_autoscaling.core.settings import ApplicationSettings
-from simcore_service_autoscaling.models import EC2InstanceData
+from simcore_service_autoscaling.models import AssociatedInstance, EC2InstanceData
 from simcore_service_autoscaling.utils.auto_scaling_core import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
+    get_machine_buffer_type,
     node_host_name_from_ec2_private_dns,
+    sort_drained_nodes,
 )
 
 
 @pytest.fixture
-def node(faker: Faker) -> Callable[..., Node]:
-    def _creator(**overrides) -> Node:
-        return Node(
+def node(faker: Faker) -> Callable[..., DockerNode]:
+    def _creator(**overrides) -> DockerNode:
+        return DockerNode(
             **(
                 {
                     "ID": faker.uuid4(),
@@ -75,14 +79,16 @@ def test_node_host_name_from_ec2_private_dns_raises_with_invalid_name(
 @pytest.mark.parametrize("valid_ec2_dns", [True, False])
 async def test_associate_ec2_instances_with_nodes_with_no_correspondence(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    node: Callable[..., Node],
+    node: Callable[..., DockerNode],
     valid_ec2_dns: bool,
 ):
     nodes = [node() for _ in range(10)]
     ec2_instances = [
-        fake_ec2_instance_data(aws_private_dns=f"ip-10-12-32-{n+1}.internal-data")
-        if valid_ec2_dns
-        else fake_ec2_instance_data()
+        (
+            fake_ec2_instance_data(aws_private_dns=f"ip-10-12-32-{n+1}.internal-data")
+            if valid_ec2_dns
+            else fake_ec2_instance_data()
+        )
         for n in range(10)
     ]
 
@@ -98,7 +104,7 @@ async def test_associate_ec2_instances_with_nodes_with_no_correspondence(
 
 async def test_associate_ec2_instances_with_corresponding_nodes(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    node: Callable[..., Node],
+    node: Callable[..., DockerNode],
 ):
     nodes = []
     ec2_instances = []
@@ -288,4 +294,83 @@ async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
     assert len(startup_script.split("&&")) == 1
     assert re.fullmatch(
         r"^docker swarm join --availability=drain --token .*$", startup_script
+    )
+
+
+def test_get_machine_buffer_type(
+    random_fake_available_instances: list[EC2InstanceType],
+):
+    assert (
+        get_machine_buffer_type(random_fake_available_instances)
+        == random_fake_available_instances[0]
+    )
+
+
+def test_sort_empty_drained_nodes(
+    minimal_configuration: None,
+    app_settings: ApplicationSettings,
+    random_fake_available_instances: list[EC2InstanceType],
+):
+    assert sort_drained_nodes(app_settings, [], random_fake_available_instances) == (
+        [],
+        [],
+    )
+
+
+def test_sort_drained_nodes(
+    mock_machines_buffer: int,
+    minimal_configuration: None,
+    app_settings: ApplicationSettings,
+    random_fake_available_instances: list[EC2InstanceType],
+    create_fake_node: Callable[..., DockerNode],
+    create_associated_instance: Callable[..., AssociatedInstance],
+):
+    machine_buffer_type = get_machine_buffer_type(random_fake_available_instances)
+    _NUM_DRAINED_NODES = 20
+    _NUM_NODE_WITH_TYPE_BUFFER = 3 * mock_machines_buffer
+    fake_drained_nodes = []
+    for _ in range(_NUM_DRAINED_NODES):
+        fake_node = create_fake_node()
+        fake_associated_instance = create_associated_instance(
+            fake_node,
+            terminateable_time=False,
+            fake_ec2_instance_data_override={
+                "type": choice(  # noqa: S311
+                    [
+                        i
+                        for i in random_fake_available_instances
+                        if i != machine_buffer_type
+                    ]
+                ).name
+            },
+        )
+        fake_drained_nodes.append(fake_associated_instance)
+
+    for _ in range(_NUM_NODE_WITH_TYPE_BUFFER):
+        fake_node = create_fake_node()
+        fake_associated_instance = create_associated_instance(
+            fake_node,
+            terminateable_time=False,
+            fake_ec2_instance_data_override={"type": machine_buffer_type.name},
+        )
+        fake_drained_nodes.append(fake_associated_instance)
+    shuffle(fake_drained_nodes)
+
+    assert len(fake_drained_nodes) == _NUM_DRAINED_NODES + _NUM_NODE_WITH_TYPE_BUFFER
+    sorted_drained_nodes, sorted_buffer_drained_nodes = sort_drained_nodes(
+        app_settings, fake_drained_nodes, random_fake_available_instances
+    )
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert (
+        mock_machines_buffer
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    )
+    assert (
+        len(sorted_drained_nodes)
+        == len(fake_drained_nodes)
+        - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    )
+    assert (
+        len(sorted_buffer_drained_nodes)
+        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     )
