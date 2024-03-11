@@ -99,15 +99,14 @@ async def _analyze_current_cluster(
         else:
             pending_nodes.append(instance)
 
+    desired_number_buffer_machines = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    )
     cluster = Cluster(
         active_nodes=active_nodes,
         pending_nodes=pending_nodes,
-        drained_nodes=all_drained_nodes[
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER :
-        ],
-        reserve_drained_nodes=all_drained_nodes[
-            : app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-        ],
+        drained_nodes=all_drained_nodes[desired_number_buffer_machines:],
+        reserve_drained_nodes=all_drained_nodes[:desired_number_buffer_machines],
         pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
         terminated_instances=terminated_ec2_instances,
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
@@ -189,14 +188,13 @@ async def _try_attach_pending_ec2s(
     all_drained_nodes = (
         cluster.drained_nodes + cluster.reserve_drained_nodes + new_found_instances
     )
+    desired_number_buffer_machines = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    )
     return dataclasses.replace(
         cluster,
-        drained_nodes=all_drained_nodes[
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER :
-        ],
-        reserve_drained_nodes=all_drained_nodes[
-            : app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-        ],
+        drained_nodes=all_drained_nodes[desired_number_buffer_machines:],
+        reserve_drained_nodes=all_drained_nodes[:desired_number_buffer_machines],
         pending_ec2s=still_pending_ec2s,
     )
 
