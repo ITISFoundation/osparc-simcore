@@ -1,9 +1,7 @@
 {% extends 'base.html' %}
-{% block title %}Close Account{% endblock %}
+{% block title %} {% include 'on_unregister.email.subject.txt' %} {% endblock %}
 {% block content %}
-<p>
-  Dear {{ user.first_name }},
-</p>
+<p>Dear {{ user.first_name }}:</p>
 <p>
   We have received your account closure request, and we want to say thank you for being a part of our platform. While
   we're sad to see you go, we respect your decision.
@@ -16,16 +14,14 @@
 </p>
 
 <p>
-  Until then, we wish you all the best in your future endeavors.
+  Our support team is here to help with anything you need. Please feel free to contact us to {{ product.support_email }}
+  in case of questions or any required assistance.
 </p>
-
-Warm regards, <br>
-
-The <i>{{ product.display_name }}</i> Team
 
 <p>
-  Our support team is here to help with anything you need. Please feel free to contact us to {{ product.support_email }}
-  in case
-  of questions or any required assistance.
+  We wish you all the best in your future endeavors.
 </p>
+
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>
 {% endblock %}
