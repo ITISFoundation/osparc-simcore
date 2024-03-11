@@ -128,6 +128,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       if (this.__resourceData["resourceType"] !== "study") {
         // Nothing to pre-check
         this.__openStudy();
+        return;
       }
       this.__openButton.setFetching(true);
       const params = {
