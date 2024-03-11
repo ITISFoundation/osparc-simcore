@@ -30,7 +30,7 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
   construct: function(studyData) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
     this.__studyDataClone = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
@@ -44,31 +44,30 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
   members: {
     __studyDataClone: null,
     __shareWith: null,
+    __publishTemplateBtn: null,
     __copyWData: null,
 
     __buildLayout: function() {
       const shareWith = this.__shareWith = new osparc.share.PublishTemplate();
-      this._add(shareWith, {
-        flex: 1
-      });
+      this._add(shareWith);
 
-      const publishWithdData = this.__copyWData = new qx.ui.form.CheckBox(this.tr("Publish with data")).set({
+      const publishWithData = this.__copyWData = new qx.ui.form.CheckBox(this.tr("Publish with data")).set({
         value: true
       });
-      this._add(publishWithdData);
+      this._add(publishWithData);
 
-      const saveAsTemplateBtn = new qx.ui.form.Button().set({
+      const publishTemplateBtn = this.__publishTemplateBtn = new qx.ui.form.Button().set({
         appearance: "strong-button",
         label: this.tr("Publish"),
         allowGrowX: false,
         alignX: "right"
       });
-      saveAsTemplateBtn.addListener("execute", () => this.__shareResource(), this);
-      shareWith.bind("ready", saveAsTemplateBtn, "enabled");
-      this._add(saveAsTemplateBtn);
+      publishTemplateBtn.addListener("execute", () => this.__publishTemplate(), this);
+      shareWith.bind("ready", publishTemplateBtn, "enabled");
+      this._add(publishTemplateBtn);
     },
 
-    __shareResource: function() {
+    __publishTemplate: function() {
       const selectedGroupIDs = this.__shareWith.getSelectedGroups();
       selectedGroupIDs.forEach(gid => {
         this.__studyDataClone["accessRights"][gid] = {
@@ -78,14 +77,14 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
         };
       });
 
-      this.__saveAsTemplate();
-    },
-
-    __saveAsTemplate: function() {
       this.fireDataEvent("publishTemplate", {
         "studyData": this.__studyDataClone,
         "copyData": this.__copyWData.getValue()
       });
+    },
+
+    getPublishTemplateButton: function() {
+      return this.__publishTemplateBtn;
     }
   }
 });

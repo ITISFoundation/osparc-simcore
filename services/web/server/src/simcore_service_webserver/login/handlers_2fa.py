@@ -138,6 +138,7 @@ async def resend_2fa_code(request: web.Request):
                 support_email=product.support_email,
                 code=code,
                 first_name=user["first_name"] or user["name"],
+                product=product,
             )
 
             response = envelope_response(
