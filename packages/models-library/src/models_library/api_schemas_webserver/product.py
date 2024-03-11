@@ -64,7 +64,7 @@ class GetProduct(OutputSchema):
 
 class ExtraCreditsUsdRangeInt(ConstrainedInt):
     ge = 0
-    lt = 200
+    lt = 500
 
 
 class GenerateInvitation(InputSchema):
