@@ -8,9 +8,6 @@ Afterwards it will be completely deleted from our system.
 
 Until then, we wish you all the best in your future endeavors.
 
-Warm regards, <br>
+Best regards
 
 The {{ product.display_name }} Team
-
-Our support team is here to help with anything you need. Please feel free to contact us to {{ product.support_email }} in case
-of questions or any required assistance.
