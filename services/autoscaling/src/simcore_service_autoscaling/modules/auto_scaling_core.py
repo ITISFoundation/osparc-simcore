@@ -58,27 +58,34 @@ def _node_not_ready(node: Node) -> bool:
 def _get_machine_buffer_type(
     available_ec2_types: list[EC2InstanceType],
 ) -> EC2InstanceType:
-    assert len(available_ec2_types) > 0  # nosec
     return available_ec2_types[0]
 
 
 def _sort_drained_nodes(
     app_settings: ApplicationSettings,
     all_drained_nodes: list[AssociatedInstance],
+    available_ec2_types: list[EC2InstanceType],
 ) -> tuple[list[AssociatedInstance], list[AssociatedInstance]]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    return (
-        all_drained_nodes[
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER :
-        ],
-        all_drained_nodes[
-            : app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-        ],
-    )
+    # we need to keep in reserve only the drained nodes of the right type
+    machine_buffer_type = _get_machine_buffer_type(available_ec2_types)
+    # NOTE: we keep only in buffer the drained nodes with the right EC2 type
+    buffer_drained_nodes = [
+        node
+        for node in all_drained_nodes
+        if node.ec2_instance.type == machine_buffer_type.name
+    ][: app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER]
+    # all the others are "normal" drained nodes and may be terminated at some point
+    other_drained_nodes = [
+        node for node in all_drained_nodes if node not in buffer_drained_nodes
+    ]
+    return (other_drained_nodes, buffer_drained_nodes)
 
 
 async def _analyze_current_cluster(
-    app: FastAPI, auto_scaling_mode: BaseAutoscaling
+    app: FastAPI,
+    auto_scaling_mode: BaseAutoscaling,
+    allowed_instance_types: list[EC2InstanceType],
 ) -> Cluster:
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -122,7 +129,7 @@ async def _analyze_current_cluster(
             pending_nodes.append(instance)
 
     drained_nodes, reserve_drained_nodes = _sort_drained_nodes(
-        app_settings, all_drained_nodes
+        app_settings, all_drained_nodes, allowed_instance_types
     )
     cluster = Cluster(
         active_nodes=active_nodes,
@@ -170,7 +177,10 @@ async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster
 
 
 async def _try_attach_pending_ec2s(
-    app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
+    app: FastAPI,
+    cluster: Cluster,
+    auto_scaling_mode: BaseAutoscaling,
+    allowed_instance_types: list[EC2InstanceType],
 ) -> Cluster:
     """label the drained instances that connected to the swarm which are missing the monitoring labels"""
     new_found_instances: list[AssociatedInstance] = []
@@ -211,7 +221,7 @@ async def _try_attach_pending_ec2s(
         cluster.drained_nodes + cluster.reserve_drained_nodes + new_found_instances
     )
     drained_nodes, reserve_drained_nodes = _sort_drained_nodes(
-        app_settings, all_drained_nodes
+        app_settings, all_drained_nodes, allowed_instance_types
     )
     return dataclasses.replace(
         cluster,
@@ -687,12 +697,11 @@ async def _scale_up_cluster(
     cluster: Cluster,
     unassigned_tasks: list,
     auto_scaling_mode: BaseAutoscaling,
+    allowed_instance_types: list[EC2InstanceType],
 ) -> Cluster:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-
-    allowed_instance_types = await sorted_allowed_instance_types(app)
 
     # let's start these
     if needed_ec2_instances := await _find_needed_instances(
@@ -885,7 +894,10 @@ async def _notify_machine_creation_progress(
 
 
 async def _autoscale_cluster(
-    app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
+    app: FastAPI,
+    cluster: Cluster,
+    auto_scaling_mode: BaseAutoscaling,
+    allowed_instance_types: list[EC2InstanceType],
 ) -> Cluster:
     # 1. check if we have pending tasks and resolve them by activating some drained nodes
     unrunnable_tasks = await auto_scaling_mode.list_unrunnable_tasks(app)
@@ -913,7 +925,11 @@ async def _autoscale_cluster(
                 len(queued_or_missing_instance_tasks),
             )
             cluster = await _scale_up_cluster(
-                app, cluster, queued_or_missing_instance_tasks, auto_scaling_mode
+                app,
+                cluster,
+                queued_or_missing_instance_tasks,
+                auto_scaling_mode,
+                allowed_instance_types,
             )
 
     elif (
@@ -966,10 +982,17 @@ async def auto_scale_cluster(
     the additional load.
     """
 
-    cluster = await _analyze_current_cluster(app, auto_scaling_mode)
+    allowed_instance_types = await sorted_allowed_instance_types(app)
+    cluster = await _analyze_current_cluster(
+        app, auto_scaling_mode, allowed_instance_types
+    )
     cluster = await _cleanup_disconnected_nodes(app, cluster)
-    cluster = await _try_attach_pending_ec2s(app, cluster, auto_scaling_mode)
+    cluster = await _try_attach_pending_ec2s(
+        app, cluster, auto_scaling_mode, allowed_instance_types
+    )
 
-    cluster = await _autoscale_cluster(app, cluster, auto_scaling_mode)
+    cluster = await _autoscale_cluster(
+        app, cluster, auto_scaling_mode, allowed_instance_types
+    )
     await _notify_machine_creation_progress(app, cluster, auto_scaling_mode)
     await _notify_autoscaling_status(app, cluster, auto_scaling_mode)
