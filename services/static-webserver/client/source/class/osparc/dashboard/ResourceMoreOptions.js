@@ -120,14 +120,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         converter: show => (store.getCurrentStudy() === null && show) ? "visible" : "excluded"
       });
 
-      this.__handleServiceUpdatableCheck(resourceData.workbench);
+      this.__openButton.addListener("execute", () => {
+        this.__handleServiceUpdatableCheck(resourceData.workbench);
+      });
 
       toolbar.add(openButton);
     },
 
     __handleServiceUpdatableCheck: function(workbench) {
       const updatableServices = [];
-      this.__anyUpdatable = false;
+      let anyUpdatable = false;
       for (const nodeId in workbench) {
         const node = workbench[nodeId];
         const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(this._services, node["key"], node["version"]);
@@ -136,62 +138,44 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         }
         const isUpdatable = osparc.service.Utils.isUpdatable(node);
         if (isUpdatable) {
-          this.__anyUpdatable = true;
+          anyUpdatable = true;
           updatableServices.push(nodeId);
         }
       }
-      if (this.__anyUpdatable) {
+      if (anyUpdatable) {
         this.__confirmUpdate();
       } else {
         this.__openStudy();
       }
     },
 
-    __openStudy: function() {
-      this.__openButton.addListenerOnce("execute", () => {
-        switch (this.__resourceData["resourceType"]) {
-          case "study":
-            this.fireDataEvent("openStudy", this.__resourceData);
-            break;
-          case "template":
-            this.fireDataEvent("openTemplate", this.__resourceData);
-            break;
-          case "service":
-            this.fireDataEvent("openService", this.__resourceData);
-            break;
+    __confirmUpdate: function() {
+      const msg = this.tr("Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?");
+      const win = new osparc.dashboard.ResourceUpgradeHelper(msg).set({
+        primaryAction: "create",
+        secondaryAction: "primary"
+      });
+      win.center();
+      win.open();
+      win.addListenerOnce("close", () => {
+        if (win.getConfirmed()) {
+          this.__openPage(this.__servicesUpdatePage);
         }
-      }, true);
+      });
     },
 
-    __confirmUpdate: function() {
-      this.__openButton.addListenerOnce("tap", () => {
-        const msg = this.tr("Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?");
-        const win = new osparc.dashboard.ResourceUpgradeHelper(msg).set({
-          primaryAction: "create",
-          secondaryAction: "primary"
-        });
-        win.center();
-        win.open();
-        win.addListenerOnce("close", () => {
-          if (win.getConfirmed()) {
-            this.__isUpdatable = false;
-            this.__openPage(this.__servicesUpdatePage);
-          } else {
-            this.__isUpdatable = false;
-            switch (this.__resourceData["resourceType"]) {
-              case "study":
-                this.fireDataEvent("openStudy", this.__resourceData);
-                break;
-              case "template":
-                this.fireDataEvent("openTemplate", this.__resourceData);
-                break;
-              case "service":
-                this.fireDataEvent("openService", this.__resourceData);
-                break;
-            }
-          }
-        });
-      }, this);
+    __openStudy: function() {
+      switch (this.__resourceData["resourceType"]) {
+        case "study":
+          this.fireDataEvent("openStudy", this.__resourceData);
+          break;
+        case "template":
+          this.fireDataEvent("openTemplate", this.__resourceData);
+          break;
+        case "service":
+          this.fireDataEvent("openService", this.__resourceData);
+          break;
+      }
     },
 
     __addTabPagesView: function() {
@@ -591,7 +575,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         } else if (osparc.utils.Resources.isTemplate(resourceData)) {
           this.fireDataEvent("updateTemplate", updatedData);
         }
-        this.__handleServiceUpdatableCheck(updatedData.workbench);
       });
 
       const page = this.__servicesUpdatePage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
