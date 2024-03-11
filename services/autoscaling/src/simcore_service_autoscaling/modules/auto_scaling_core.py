@@ -55,10 +55,18 @@ def _node_not_ready(node: Node) -> bool:
     return bool(node.Status.State != NodeState.ready)
 
 
+def _get_machine_buffer_type(
+    available_ec2_types: list[EC2InstanceType],
+) -> EC2InstanceType:
+    assert len(available_ec2_types) > 0  # nosec
+    return available_ec2_types[0]
+
+
 def _sort_drained_nodes(
     app_settings: ApplicationSettings,
     all_drained_nodes: list[AssociatedInstance],
 ) -> tuple[list[AssociatedInstance], list[AssociatedInstance]]:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return (
         all_drained_nodes[
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER :
@@ -508,7 +516,7 @@ async def _find_needed_instances(
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
             - len(cluster.reserve_drained_nodes)
         ):
-            default_instance_type = available_ec2_types[0]
+            default_instance_type = _get_machine_buffer_type(available_ec2_types)
             num_instances_per_type[default_instance_type] += num_missing_nodes
 
     return num_instances_per_type
