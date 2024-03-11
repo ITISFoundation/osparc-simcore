@@ -48,7 +48,8 @@ users_pre_registration_details = sa.Table(
     sa.Column(
         "pre_phone",
         sa.String(),
-        doc="Phone provided on pre-registration (copied to users.phone upon registration)",
+        doc="Phone provided on pre-registration"
+        "NOTE: this is not copied upon registration since it needs to be confirmed",
     ),
     # Billable address columns:
     sa.Column("company_name", sa.String()),

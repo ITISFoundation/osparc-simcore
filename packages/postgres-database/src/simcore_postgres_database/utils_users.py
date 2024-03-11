@@ -100,13 +100,18 @@ class UsersRepo:
             pre_columns = (
                 users_pre_registration_details.c.pre_first_name,
                 users_pre_registration_details.c.pre_last_name,
-                users_pre_registration_details.c.pre_phone,
+                # NOTE: pre_phone is not copied since it has to be validated. Otherwise, if
+                # phone is wrong, currently user won't be able to login!
             )
 
             assert {c.name for c in pre_columns} == {  # nosec
                 c.name
                 for c in users_pre_registration_details.columns
-                if c != users_pre_registration_details.c.pre_email
+                if c
+                not in (
+                    users_pre_registration_details.c.pre_email,
+                    users_pre_registration_details.c.pre_phone,
+                )
                 and c.name.startswith("pre_")
             }, "Different pre-cols detected. This code might need an update update"
 
@@ -122,7 +127,6 @@ class UsersRepo:
                     .values(
                         first_name=details.pre_first_name,
                         last_name=details.pre_last_name,
-                        phone=details.pre_phone,
                     )
                 )
 

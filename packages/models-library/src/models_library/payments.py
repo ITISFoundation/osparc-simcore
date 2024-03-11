@@ -1,6 +1,7 @@
 from decimal import Decimal
 from typing import Any, ClassVar
 
+from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, validator
 
 from .products import StripePriceID, StripeTaxRateID
@@ -42,6 +43,8 @@ class InvoiceDataGet(BaseModel):
     stripe_price_id: StripePriceID
     stripe_tax_rate_id: StripeTaxRateID
     user_invoice_address: UserInvoiceAddress
+    user_name: str
+    user_email: LowerCaseEmailStr
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -53,6 +56,8 @@ class InvoiceDataGet(BaseModel):
                     "user_invoice_address": UserInvoiceAddress.Config.schema_extra[
                         "examples"
                     ][0],
+                    "user_name": "My Name",
+                    "user_email": LowerCaseEmailStr("email@example.itis"),
                 },
             ]
         }

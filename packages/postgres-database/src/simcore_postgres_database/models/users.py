@@ -101,7 +101,8 @@ users = sa.Table(
         "phone",
         sa.String(),
         nullable=True,  # since 2FA can be configured optional
-        doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication",
+        doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication."
+        "NOTE: new policy (NK) is that the same phone can be reused therefore it does not has to be unique",
     ),
     sa.Column(
         "password_hash",
@@ -160,11 +161,6 @@ users = sa.Table(
     sa.PrimaryKeyConstraint("id", name="user_pkey"),
     sa.UniqueConstraint("name", name="user_name_ukey"),
     sa.UniqueConstraint("email", name="user_login_key"),
-    sa.UniqueConstraint(
-        "phone",
-        name="user_phone_unique_constraint",
-        # NOTE: that cannot use same phone for two user accounts
-    ),
 )
 
 
