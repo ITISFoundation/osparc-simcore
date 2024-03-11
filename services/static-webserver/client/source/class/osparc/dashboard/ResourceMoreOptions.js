@@ -125,7 +125,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __openTapped: function() {
-      if (!this.__resourceData.workbench) {
+      if (this.__resourceData["resourceType"] !== "study") {
         // Nothing to pre-check
         this.__openStudy();
       }
