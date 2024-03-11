@@ -14,7 +14,6 @@ import pytest
 from aws_library.ec2.models import EC2InstanceType
 from faker import Faker
 from models_library.docker import DockerGenericTag
-from models_library.generated_models.docker_rest_api import Node
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -32,9 +31,9 @@ from simcore_service_autoscaling.utils.auto_scaling_core import (
 
 
 @pytest.fixture
-def node(faker: Faker) -> Callable[..., Node]:
-    def _creator(**overrides) -> Node:
-        return Node(
+def node(faker: Faker) -> Callable[..., DockerNode]:
+    def _creator(**overrides) -> DockerNode:
+        return DockerNode(
             **(
                 {
                     "ID": faker.uuid4(),
@@ -80,7 +79,7 @@ def test_node_host_name_from_ec2_private_dns_raises_with_invalid_name(
 @pytest.mark.parametrize("valid_ec2_dns", [True, False])
 async def test_associate_ec2_instances_with_nodes_with_no_correspondence(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    node: Callable[..., Node],
+    node: Callable[..., DockerNode],
     valid_ec2_dns: bool,
 ):
     nodes = [node() for _ in range(10)]
@@ -105,7 +104,7 @@ async def test_associate_ec2_instances_with_nodes_with_no_correspondence(
 
 async def test_associate_ec2_instances_with_corresponding_nodes(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    node: Callable[..., Node],
+    node: Callable[..., DockerNode],
 ):
     nodes = []
     ec2_instances = []
