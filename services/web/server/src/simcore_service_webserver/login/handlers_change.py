@@ -100,6 +100,7 @@ async def submit_request_to_reset_password(request: web.Request):
                 context={
                     "host": request.host,
                     "reason": err.reason,
+                    "product": product,
                 },
             )
         except Exception as err_mail:  # pylint: disable=broad-except
@@ -120,6 +121,7 @@ async def submit_request_to_reset_password(request: web.Request):
                 context={
                     "host": request.host,
                     "link": link,
+                    "product": product,
                 },
             )
         except Exception as err:  # pylint: disable=broad-except
@@ -171,6 +173,7 @@ async def submit_request_to_change_email(request: web.Request):
             context={
                 "host": request.host,
                 "link": link,
+                "product": product,
             },
         )
     except Exception as err:  # pylint: disable=broad-except
