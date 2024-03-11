@@ -64,7 +64,23 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-11.png",
       "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-12.png",
       "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-13.png",
-      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-14.png"
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-14.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-15.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-01-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-02-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-03-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-04-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-05-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-06-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-07-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-08-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-09-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-10-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-11-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-12-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-13-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-14-b.png",
+      "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/S4L/Thumbnail-15-b.png"
     ],
     osparcTemplates: [
       "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails/oSparc/Thumbnail-01.png",
@@ -132,7 +148,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
         case "tis":
           return this.self().tipTemplates;
         default:
-          return this.self().defaultTemplates;
+          return this.self().defaultTemplates.sort();
       }
     }
   },
