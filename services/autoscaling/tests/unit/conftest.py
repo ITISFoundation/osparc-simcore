@@ -802,7 +802,7 @@ def create_associated_instance(
     def _creator(
         node: DockerNode,
         terminateable_time: bool,
-        fake_ec2_instance_data_override: dict[str, Any],
+        fake_ec2_instance_data_override: dict[str, Any] | None = None,
     ) -> AssociatedInstance:
         assert app_settings.AUTOSCALING_EC2_INSTANCES
         assert (
@@ -815,6 +815,10 @@ def create_associated_instance(
             if terminateable_time
             else datetime.timedelta(seconds=10)
         )
+
+        if fake_ec2_instance_data_override is None:
+            fake_ec2_instance_data_override = {}
+
         return AssociatedInstance(
             node=node,
             ec2_instance=fake_ec2_instance_data(
