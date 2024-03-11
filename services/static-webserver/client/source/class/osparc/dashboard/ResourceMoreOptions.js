@@ -417,18 +417,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Comments");
       const iconSrc = "@FontAwesome5Solid/comments/22";
 
-      const commentsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       const commentsList = new osparc.info.CommentsList(resourceData["uuid"]);
-      commentsLayout.add(commentsList);
+      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      this.__addOpenButton(page);
+      page.addToContent(commentsList);
       if (osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
         const addComment = new osparc.info.CommentAdd(resourceData["uuid"]);
         addComment.setPaddingLeft(10);
         addComment.addListener("commentAdded", () => commentsList.fetchComments());
-        commentsLayout.add(addComment);
+        page.addToFooter(addComment);
       }
-      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      this.__addOpenButton(page);
-      page.addToContent(commentsLayout);
       return page;
     },
 
