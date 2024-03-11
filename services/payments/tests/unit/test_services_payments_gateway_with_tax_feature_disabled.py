@@ -3,36 +3,26 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=not-an-iterable
 
 
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
-from pathlib import Path
-from typing import Any, NamedTuple
-from unittest.mock import Mock
+from collections.abc import Callable, Iterator
+from typing import NamedTuple
 
 import httpx
-import jsonref
 import pytest
 import respx
-import sqlalchemy as sa
-from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
-from models_library.users import UserID
-from models_library.wallets import WalletID
-from pydantic import parse_obj_as
-from pytest_mock import MockerFixture
+from models_library.payments import UserInvoiceAddress
+from pydantic import ValidationError, parse_obj_as
 from pytest_simcore.helpers.rawdata_fakers import random_payment_method_view
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from respx import MockRouter
-from servicelib.rabbitmq import RabbitMQRPCClient
-from simcore_postgres_database.models.payments_transactions import payments_transactions
-from simcore_service_payments.core.application import create_app
 from simcore_service_payments.core.settings import ApplicationSettings
-from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
-from simcore_service_payments.models.db import PaymentsMethodsDB
 from simcore_service_payments.models.payments_gateway import (
     BatchGetPaymentMethods,
     GetPaymentMethod,
@@ -41,146 +31,26 @@ from simcore_service_payments.models.payments_gateway import (
     PaymentInitiated,
     PaymentMethodInitiated,
     PaymentMethodsBatch,
+    StripeTaxExempt,
 )
 from simcore_service_payments.models.schemas.acknowledgements import (
-    AckPaymentMethod,
     AckPaymentWithPaymentMethod,
 )
-from simcore_service_payments.services import payments_methods
-from toolz.dicttoolz import get_in
-
-#
-# rabbit-MQ
-#
+from simcore_service_payments.services.payments_gateway import PaymentsGatewayApi
 
 
 @pytest.fixture
-def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
-    def _():
-        # The following services are affected if rabbitmq is not in place
-        mocker.patch("simcore_service_payments.core.application.setup_notifier")
-        mocker.patch("simcore_service_payments.core.application.setup_socketio")
-        mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
-        mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
-        mocker.patch(
-            "simcore_service_payments.core.application.setup_auto_recharge_listener"
-        )
-
-    return _
-
-
-@pytest.fixture
-def with_disabled_rabbitmq_and_rpc(disable_rabbitmq_and_rpc_setup: Callable):
-    disable_rabbitmq_and_rpc_setup()
-
-
-@pytest.fixture
-async def rpc_client(
-    faker: Faker, rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]]
-) -> RabbitMQRPCClient:
-    return await rabbitmq_rpc_client(f"web-server-client-{faker.word()}")
-
-
-#
-# postgres
-#
-
-
-@pytest.fixture
-def disable_postgres_setup(mocker: MockerFixture) -> Callable:
-    def _setup(app: FastAPI):
-        app.state.engine = (
-            Mock()
-        )  # NOTE: avoids error in api._dependencies::get_db_engine
-
-    def _():
-        # The following services are affected if postgres is not in place
-        mocker.patch(
-            "simcore_service_payments.core.application.setup_postgres",
-            spec=True,
-            side_effect=_setup,
-        )
-
-    return _
-
-
-@pytest.fixture
-def with_disabled_postgres(disable_postgres_setup: Callable):
-    disable_postgres_setup()
-
-
-@pytest.fixture
-def wait_for_postgres_ready_and_db_migrated(postgres_db: sa.engine.Engine) -> None:
-    """
-    Typical use-case is to include it in
-
-    @pytest.fixture
-    def app_environment(
-        ...
-        postgres_env_vars_dict: EnvVarsDict,
-        wait_for_postgres_ready_and_db_migrated: None,
+def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+    with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_postgres: None,
+):
+    # set environs
+    return setenvs_from_dict(
+        monkeypatch,
+        {**app_environment, "PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED": False},
     )
-    """
-    assert postgres_db
-
-
-@pytest.fixture
-def payments_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
-    with postgres_db.connect() as con:
-        yield
-        con.execute(payments_transactions.delete())
-
-
-@pytest.fixture
-async def create_fake_payment_method_in_db(
-    app: FastAPI,
-) -> AsyncIterable[
-    Callable[[PaymentMethodID, WalletID, UserID], Awaitable[PaymentsMethodsDB]]
-]:
-    _repo = PaymentsMethodsRepo(app.state.engine)
-    _created = []
-
-    async def _(
-        payment_method_id: PaymentMethodID,
-        wallet_id: WalletID,
-        user_id: UserID,
-    ) -> PaymentsMethodsDB:
-        acked = await payments_methods.insert_payment_method(
-            repo=_repo,
-            payment_method_id=payment_method_id,
-            user_id=user_id,
-            wallet_id=wallet_id,
-            ack=AckPaymentMethod(
-                success=True,
-                message=f"Created with {create_fake_payment_method_in_db.__name__}",
-            ),
-        )
-        _created.append(acked)
-        return acked
-
-    yield _
-
-    for acked in _created:
-        await _repo.delete_payment_method(
-            acked.payment_method_id, user_id=acked.user_id, wallet_id=acked.wallet_id
-        )
-
-
-MAX_TIME_FOR_APP_TO_STARTUP = 10
-MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
-
-
-@pytest.fixture
-async def app(
-    app_environment: EnvVarsDict, is_pdb_enabled: bool
-) -> AsyncIterator[FastAPI]:
-    the_test_app = create_app()
-    async with LifespanManager(
-        the_test_app,
-        startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
-        shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
-    ):
-        yield the_test_app
 
 
 #
@@ -208,8 +78,21 @@ def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]
 def mock_payments_routes(faker: Faker) -> Callable:
     def _mock(mock_router: MockRouter):
         def _init_200(request: httpx.Request):
-            assert InitPayment.parse_raw(request.content) is not None
             assert "*" not in request.headers["X-Init-Api-Secret"]
+            _excluded_fields = {
+                "user_address",
+                "stripe_price_id",
+                "stripe_tax_rate_id",
+                "stripe_tax_exempt_value",
+            }
+            try:
+                # This will raise a ValidationError because 'required_field' is not provided
+                assert InitPayment.parse_raw(request.content) is not None
+            except ValidationError as e:
+                assert len(e.raw_errors) == 4
+                for raw_error in e.raw_errors:
+                    _excluded_fields.remove(raw_error._loc)
+                assert bool(_excluded_fields) is False
 
             return httpx.Response(
                 status.HTTP_200_OK,
@@ -307,7 +190,20 @@ def mock_payments_methods_routes(
 
         def _pay(request: httpx.Request, pm_id: PaymentMethodID):
             assert "*" not in request.headers["X-Init-Api-Secret"]
-            assert InitPayment.parse_raw(request.content) is not None
+            _excluded_fields = {
+                "user_address",
+                "stripe_price_id",
+                "stripe_tax_rate_id",
+                "stripe_tax_exempt_value",
+            }
+            try:
+                # This will raise a ValidationError because 'required_field' is not provided
+                assert InitPayment.parse_raw(request.content) is not None
+            except ValidationError as e:
+                assert len(e.raw_errors) == 4
+                for raw_error in e.raw_errors:
+                    _excluded_fields.remove(raw_error._loc)
+                assert bool(_excluded_fields) is False
 
             # checks
             _get(request, pm_id)
@@ -331,15 +227,13 @@ def mock_payments_methods_routes(
             return httpx.Response(
                 status.HTTP_200_OK,
                 json=jsonable_encoder(
+                    # NOTE: without
                     AckPaymentWithPaymentMethod(
                         success=True,
                         message=f"Payment '{payment_id}' with payment-method '{pm_id}'",
                         invoice_url=faker.url(),
                         provider_payment_id="pi_123456ABCDEFG123456ABCDE",
                         payment_id=payment_id,
-                        invoice_pdf="https://invoice.com",
-                        stripe_invoice_id="stripe-invoice-id",
-                        stripe_customer_id="stripe-customer-id",
                     )
                 ),
             )
@@ -377,78 +271,116 @@ def mock_payments_methods_routes(
 
 
 @pytest.fixture
-def mock_payments_gateway_service_or_none(
+def mock_payments_gateway_service(
     mock_payments_gateway_service_api_base: MockRouter,
     mock_payments_routes: Callable,
     mock_payments_methods_routes: Callable,
-    external_environment: EnvVarsDict,
-) -> MockRouter | None:
-    # EITHER tests against external payments-gateway
-    if payments_gateway_url := external_environment.get("PAYMENTS_GATEWAY_URL"):
-        print("🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}")
-        mock_payments_gateway_service_api_base.stop()
-        return None
-
-    # OR tests against mock payments-gateway
+) -> MockRouter:
+    # Rests against mock payments-gateway
     mock_payments_routes(mock_payments_gateway_service_api_base)
     mock_payments_methods_routes(mock_payments_gateway_service_api_base)
     return mock_payments_gateway_service_api_base
 
 
+@pytest.fixture(
+    params=[
+        10,
+        999999.99609375,  # SEE https://github.com/ITISFoundation/appmotion-exchange/issues/2
+    ],
+)
+def amount_dollars(request: pytest.FixtureRequest) -> float:
+    return request.param
+
+
 #
-# mock resource-usage-tracker API
+# These tests are testing backward compatibility with Payment Gateway without new tax feature changes
 #
 
 
-@pytest.fixture
-def rut_service_openapi_specs(
-    osparc_simcore_services_dir: Path,
-) -> dict[str, Any]:
-    openapi_path = (
-        osparc_simcore_services_dir / "resource-usage-tracker" / "openapi.json"
-    )
-    return jsonref.loads(openapi_path.read_text())
-
-
-@pytest.fixture
-def mock_resource_usage_tracker_service_api_base(
-    app: FastAPI, rut_service_openapi_specs: dict[str, Any]
-) -> Iterator[MockRouter]:
-    settings: ApplicationSettings = app.state.settings
-    with respx.mock(
-        base_url=settings.PAYMENTS_RESOURCE_USAGE_TRACKER.base_url,
-        assert_all_called=False,
-        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
-    ) as respx_mock:
-        assert "healthcheck" in get_in(
-            ["paths", "/", "get", "operationId"],
-            rut_service_openapi_specs,
-            no_default=True,
-        )  # type: ignore
-        respx_mock.get(
-            path="/",
-            name="healthcheck",
-        ).respond(status.HTTP_200_OK)
-
-        yield respx_mock
-
-
-@pytest.fixture
-def mock_resoruce_usage_tracker_service_api(
+async def test_payment_methods_workflow_with_tax_feature_disabled(
+    app: FastAPI,
     faker: Faker,
-    mock_resource_usage_tracker_service_api_base: MockRouter,
-    rut_service_openapi_specs: dict[str, Any],
-) -> MockRouter:
-    # check it exists
-    get_in(
-        ["paths", "/v1/credit-transactions", "post", "operationId"],
-        rut_service_openapi_specs,
-        no_default=True,
+    mock_payments_gateway_service: MockRouter,
+    amount_dollars: float,
+):
+    settings: ApplicationSettings = app.state.settings
+    assert settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED is False
+
+    payments_gateway_api: PaymentsGatewayApi = PaymentsGatewayApi.get_from_app_state(
+        app
+    )
+    assert payments_gateway_api
+
+    # init payment-method
+    initiated = await payments_gateway_api.init_payment_method(
+        InitPaymentMethod(
+            user_name=faker.user_name(),
+            user_email=faker.email(),
+            wallet_name=faker.word(),
+        )
+    )
+    # CRUD
+    payment_method_id = initiated.payment_method_id
+
+    payment_with_payment_method = await payments_gateway_api.pay_with_payment_method(
+        id_=payment_method_id,
+        payment=InitPayment(
+            amount_dollars=amount_dollars,
+            credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
+            user_name=faker.user_name(),
+            user_email=faker.email(),
+            user_address=UserInvoiceAddress(country="CH"),
+            wallet_name=faker.word(),
+            stripe_price_id=faker.word(),
+            stripe_tax_rate_id=faker.word(),
+            stripe_tax_exempt_value=StripeTaxExempt.none,
+        ),
+        payment_gateway_tax_feature_enabled=settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED,
+    )
+    assert payment_with_payment_method.success
+
+
+async def test_one_time_payment_workflow_with_tax_feature_disabled(
+    app: FastAPI,
+    faker: Faker,
+    mock_payments_gateway_service_or_none: MockRouter | None,
+    amount_dollars: float,
+):
+    settings: ApplicationSettings = app.state.settings
+    assert settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED is False
+
+    payment_gateway_api = PaymentsGatewayApi.get_from_app_state(app)
+    assert payment_gateway_api
+
+    # init
+    payment_initiated = await payment_gateway_api.init_payment(
+        payment=InitPayment(
+            amount_dollars=amount_dollars,
+            credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
+            user_name=faker.user_name(),
+            user_email=faker.email(),
+            user_address=UserInvoiceAddress(country="CH"),
+            wallet_name=faker.word(),
+            stripe_price_id=faker.word(),
+            stripe_tax_rate_id=faker.word(),
+            stripe_tax_exempt_value=StripeTaxExempt.none,
+        ),
+        payment_gateway_tax_feature_enabled=settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED,
     )
 
-    # fake successful response
-    mock_resource_usage_tracker_service_api_base.post(
-        "/v1/credit-transactions"
-    ).respond(json={"credit_transaction_id": faker.pyint()})
+    # form url
+    submission_link = payment_gateway_api.get_form_payment_url(
+        payment_initiated.payment_id
+    )
 
-    return mock_resource_usage_tracker_service_api_base
+    app_settings: ApplicationSettings = app.state.settings
+    assert submission_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
+
+    # cancel
+    payment_canceled = await payment_gateway_api.cancel_payment(payment_initiated)
+    assert payment_canceled is not None
+
+    # check mock
+    if mock_payments_gateway_service_or_none:
+        assert mock_payments_gateway_service_or_none.routes["init_payment"].called
+        assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called

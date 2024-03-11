@@ -19,6 +19,15 @@ class _BaseAckPayment(_BaseAck):
     invoice_url: HttpUrl | None = Field(
         default=None, description="Link to invoice is required when success=true"
     )
+    # NOTE: Why invoice_pdf, stripe_invoice_id and stripe_customer_id nullable? Currently, we are dependent on a third party that is making
+    # some changes for us. Adding these fields has a slightly lower priority. If they do not manage it, it is still okay for us.
+    invoice_pdf: HttpUrl | None = Field(default=None, description="Link to invoice PDF")
+    stripe_invoice_id: IDStr | None = Field(
+        default=None, description="Stripe invoice ID"
+    )
+    stripe_customer_id: IDStr | None = Field(
+        default=None, description="Stripe customer ID"
+    )
 
 
 #
