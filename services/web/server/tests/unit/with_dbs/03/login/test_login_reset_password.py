@@ -3,10 +3,10 @@
 # pylint: disable=unused-variable
 
 import asyncio
+from collections.abc import Callable
 
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
-from pytest import CaptureFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
 from servicelib.aiohttp import status
@@ -39,13 +39,12 @@ from yarl import URL
 @pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
-    aiohttp_client,
+    aiohttp_client: Callable,
     web_server: TestServer,
     mock_orphaned_services,
     mocked_email_core_remove_comments: None,
 ) -> TestClient:
-    cli = event_loop.run_until_complete(aiohttp_client(web_server))
-    return cli
+    return event_loop.run_until_complete(aiohttp_client(web_server))
 
 
 async def test_unknown_email(
@@ -62,8 +61,6 @@ async def test_unknown_email(
             "email": fake_user_email,
         },
     )
-    payload = await response.text()
-
     assert response.url.path == reset_url.path
     await assert_status(
         response, status.HTTP_200_OK, MSG_EMAIL_SENT.format(email=fake_user_email)
@@ -75,14 +72,14 @@ async def test_unknown_email(
 
 @pytest.mark.parametrize(
     "user_status,expected_msg",
-    (
+    [
         (UserStatus.BANNED, MSG_USER_BANNED),
         (UserStatus.EXPIRED, MSG_USER_EXPIRED),
-    ),
+    ],
 )
 async def test_blocked_user(
     client: TestClient,
-    capsys: CaptureFixture,
+    capsys: pytest.CaptureFixture,
     user_status: UserStatus,
     expected_msg: str,
 ):
@@ -105,7 +102,7 @@ async def test_blocked_user(
     assert expected_msg[:-20] in parse_test_marks(out)["reason"]
 
 
-async def test_inactive_user(client: TestClient, capsys: CaptureFixture):
+async def test_inactive_user(client: TestClient, capsys: pytest.CaptureFixture):
     assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
 
@@ -129,7 +126,7 @@ async def test_inactive_user(client: TestClient, capsys: CaptureFixture):
 async def test_too_often(
     client: TestClient,
     db: AsyncpgStorage,
-    capsys: CaptureFixture,
+    capsys: pytest.CaptureFixture,
 ):
     assert client.app
     reset_url = client.app.router["auth_reset_password"].url_for()
@@ -154,7 +151,7 @@ async def test_too_often(
 
 
 async def test_reset_and_confirm(
-    client: TestClient, login_options: LoginOptions, capsys: CaptureFixture
+    client: TestClient, login_options: LoginOptions, capsys: pytest.CaptureFixture
 ):
     assert client.app
 
