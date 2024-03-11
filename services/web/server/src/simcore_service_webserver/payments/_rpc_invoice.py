@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from aiohttp import web
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
+from models_library.emails import LowerCaseEmailStr
 from models_library.payments import InvoiceDataGet, UserInvoiceAddress
 from models_library.products import CreditResultGet, ProductName, ProductStripeInfoGet
 from models_library.users import UserID
@@ -9,7 +10,11 @@ from servicelib.rabbitmq import RPCRouter
 
 from ..products.api import get_credit_amount, get_product_stripe_info
 from ..rabbitmq import get_rabbitmq_rpc_server
-from ..users.api import get_user_invoice_address
+from ..users.api import (
+    UserDisplayAndIdNamesTuple,
+    get_user_display_and_id_names,
+    get_user_invoice_address,
+)
 
 router = RPCRouter()
 
@@ -31,12 +36,17 @@ async def get_invoice_data(
     user_invoice_address: UserInvoiceAddress = await get_user_invoice_address(
         app, user_id=user_id
     )
+    user_info: UserDisplayAndIdNamesTuple = await get_user_display_and_id_names(
+        app=app, user_id=user_id
+    )
 
     return InvoiceDataGet(
         credit_amount=credit_result_get.credit_amount,
         stripe_price_id=product_stripe_info_get.stripe_price_id,
         stripe_tax_rate_id=product_stripe_info_get.stripe_tax_rate_id,
         user_invoice_address=user_invoice_address,
+        user_name=user_info.full_name,
+        user_email=LowerCaseEmailStr(user_info.email),
     )
 
 
