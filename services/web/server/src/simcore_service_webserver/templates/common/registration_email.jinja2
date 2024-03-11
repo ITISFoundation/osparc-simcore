@@ -5,8 +5,8 @@ TEST link:{{ link }}
 TEST name:{{ name }}
 TEST support_email:{{ support_email }}
 -->
+<p>Dear {{ user.first_name }}:</p>
 <p>
-  Dear {{ name }} <br><br>
   Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.<br>
   Please activate your account via the link below:
 </p>
@@ -16,7 +16,8 @@ TEST support_email:{{ support_email }}
 </p>
 
 <p>
-  Please don't hesitate to contact us at {{ support_email }} if you need further help.<br><br>
-  Best regards <br>
-  The <i>{{ product.display_name }}</i> Team
+  Please don't hesitate to contact us at {{ product.support_email }} if you need further help.<br><br>
+</p>
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>
 </p>
