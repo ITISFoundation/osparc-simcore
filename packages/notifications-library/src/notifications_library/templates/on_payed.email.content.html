@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
+
 {% block title %} {% include 'on_payed.email.subject.txt' %} {% endblock %}
+
 {% block content %}
 <div class="container">
     <p>Dear {{ user.first_name }}:</p>
