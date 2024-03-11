@@ -50,7 +50,6 @@ qx.Class.define("osparc.info.CommentUI", {
       switch (id) {
         case "thumbnail":
           control = new qx.ui.basic.Image().set({
-            alignY: "middle",
             scale: true,
             maxWidth: 32,
             maxHeight: 32
