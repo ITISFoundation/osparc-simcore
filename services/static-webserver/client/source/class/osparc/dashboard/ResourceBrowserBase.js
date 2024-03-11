@@ -83,6 +83,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                 win.close();
                 openStudy();
               });
+              win.addListener("cancel", () => {
+                if (cancelCB) {
+                  cancelCB();
+                }
+              });
               resourceSelector.addListener("cancel", () => {
                 win.close();
                 if (cancelCB) {
@@ -91,7 +96,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               });
               // listen to "tap" instead of "execute": the "execute" is not propagated
               win.getChildControl("close-button").addListener("tap", () => {
-                cancelCB();
+                if (cancelCB) {
+                  cancelCB();
+                }
               });
             } else {
               openStudy();
