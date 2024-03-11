@@ -22,12 +22,13 @@ class AccountRequestInfo(InputSchema):
                     "email": "maxwel@email.com",
                     "phone": "+1 123456789",
                     "company": "EM Com",
-                    "address": "Infinite Loop. California",
+                    "address": "Infinite Loop",
+                    "city": "Washington",
+                    "postalCode": "98001",
                     "country": "USA",
                     "application": "Antenna_Design",
                     "description": "Description of something",
                     "hear": "Search_Engine",
-                    "message": "I would love to use your tool",
                 }
             }
         }
