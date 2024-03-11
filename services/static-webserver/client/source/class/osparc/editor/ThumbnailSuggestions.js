@@ -148,8 +148,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
         case "tis":
           return this.self().tipTemplates;
         default:
-          const sortedList = this.self().defaultTemplates.sort();
-          return sortedList;
+          return this.self().defaultTemplates.sort();
       }
     }
   },
