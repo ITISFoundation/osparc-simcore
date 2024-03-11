@@ -62,6 +62,11 @@ distributed:
       client:
         key: ${DASK_TLS_KEY}
         cert: ${DASK_TLS_CERT}
+  scheduler:
+    worker-saturation: 0.5
+    default-task-durations:
+      simcore: 1h
+    unknown-task-duration: 1h
 EOF
 fi
 
