@@ -75,46 +75,69 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const address = new qx.ui.form.TextField().set({
         required: true
       });
+      doubleSpaced.push(address);
       this._form.add(address, this.tr("Address"), null, "address");
+
+      const city = new qx.ui.form.TextField().set({
+        required: true
+      });
+      this._form.add(city, this.tr("City"), null, "city");
+
+      const postalCode = new qx.ui.form.TextField().set({
+        required: true
+      });
+      this._form.add(postalCode, this.tr("Postal code"), null, "postalCode");
 
       const country = new qx.ui.form.TextField().set({
         required: true
       });
+      doubleSpaced.push(country);
       this._form.add(country, this.tr("Country"), null, "country");
 
       const application = new qx.ui.form.SelectBox();
       [{
-        id: "Antenna_Design",
-        label: "Antenna Design"
+        id: "Antenna_Design_for_Wireless_Communication",
+        label: "Antenna Design for Wireless Communication"
       }, {
-        id: "MRI_System_Design_and_Optimization",
-        label: "MRI System Design and Optimization"
+        id: "Bioelectronics,_Electroceuticals_and_Neuroprosthetics",
+        label: "Bioelectronics, Electroceuticals & Neuroprosthetics"
       }, {
-        id: "MRI_Implant_Safety",
-        label: "MRI Implant Safety"
+        id: "Safety_and_Efficacy_Assessment",
+        label: "Safety & Efficacy Assessment"
       }, {
-        id: "MRI_Safety",
-        label: "MRI Safety"
+        id: "Exposure_and_Compliance",
+        label: "Exposure & Compliance"
       }, {
         id: "Focused_Ultrasound",
         label: "Focused Ultrasound"
       }, {
-        id: "EM-induced_Neuronal_Dynamics",
-        label: "EM-induced Neuronal Dynamics"
+        id: "In_Silico_Trials",
+        label: "In <i>Silico</i> Trials"
+      }, {
+        id: "Implant_Design",
+        label: "Implant Design"
+      }, {
+        id: "Magnetic_Resonance_Imaging",
+        label: "Magnetic Resonance Imaging"
+      }, {
+        id: "Neurostimulation",
+        label: "Neurostimulation"
+      }, {
+        id: "Personalized_Medicine",
+        label: "Personalized Medicine"
       }, {
         id: "Thermal_Therapies",
         label: "Thermal Therapies"
       }, {
-        id: "Wireless_Body_Area_Networks",
-        label: "Wireless Body Area Networks"
+        id: "Wireless_Power_Transfer_Systems",
+        label: "Wireless Power Transfer Systems"
       }, {
-        id: "Wireless_Power_Transfer",
-        label: "Wireless Power Transfer"
-      }, {
-        id: "Other",
-        label: "Other (please specify below)"
+        id: "Vascular_Flow_and_Perfusion",
+        label: "Vascular Flow & Perfusion"
       }].forEach(appData => {
-        const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id);
+        const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id).set({
+          rich: true
+        });
         application.add(lItem);
       });
       doubleSpaced.push(application);
@@ -146,10 +169,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       });
       doubleSpaced.push(hear);
       this._form.add(hear, this.tr("How did you hear about us?"), null, "hear");
-
-      const message = new qx.ui.form.TextField();
-      doubleSpaced.push(message);
-      this._form.add(message, this.tr("Message"), null, "message");
 
       // eula links
       const color = qx.theme.manager.Color.getInstance().resolve("text");

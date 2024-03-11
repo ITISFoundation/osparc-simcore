@@ -53,7 +53,9 @@ qx.Class.define("osparc.auth.LoginPage", {
           break;
         }
         case "top-spacer":
-          control = new qx.ui.core.Spacer();
+          control = new qx.ui.core.Spacer().set({
+            minHeight: 50
+          });
           this.getChildControl("main-layout").add(control, {
             flex: 1
           });
@@ -87,7 +89,9 @@ qx.Class.define("osparc.auth.LoginPage", {
           });
           break;
         case "bottom-spacer":
-          control = new qx.ui.core.Spacer();
+          control = new qx.ui.core.Spacer().set({
+            minHeight: 50
+          });
           this.getChildControl("main-layout").add(control, {
             flex: 1
           });
