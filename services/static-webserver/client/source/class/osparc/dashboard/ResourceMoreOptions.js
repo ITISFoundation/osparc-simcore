@@ -125,6 +125,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __openTapped: function() {
+      if (!this.__resourceData.workbench) {
+        // Nothing to pre-check
+        this.__openStudy();
+      }
       this.__openButton.setFetching(true);
       const params = {
         url: {
