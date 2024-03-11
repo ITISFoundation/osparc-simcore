@@ -148,7 +148,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __openStudy: function() {
-      this.__openButton.setLabel("Open");
       this.__openButton.addListenerOnce("execute", () => {
         switch (this.__resourceData["resourceType"]) {
           case "study":
