@@ -67,6 +67,28 @@ qx.Class.define("osparc.auth.LoginPage", {
           control.setFont("text-18");
           this.getChildControl("main-layout").add(control);
           break;
+        case "science-text": {
+          const nWhiteSpaces = 12;
+          const title = "science";
+          let extraText = "";
+          for (let i=0; i<title.length; i++) {
+            extraText += title[i];
+            if (i === title.length-1) {
+              continue;
+            } else {
+              for (let j=0; j<nWhiteSpaces; j++) {
+                extraText += "&nbsp";
+              }
+            }
+          }
+          control = new qx.ui.basic.Label(extraText).set({
+            rich: true,
+            textColor: "white",
+            font: new qx.bom.Font(24, ["Manrope"])
+          });
+          this._add(control);
+          break;
+        }
         case "pages-stack":
           control = new qx.ui.container.Stack().set({
             allowGrowX: false,
@@ -149,6 +171,9 @@ qx.Class.define("osparc.auth.LoginPage", {
       const mainLayout = this.getChildControl("main-layout");
       this.getChildControl("top-spacer");
       this.getChildControl("logo-w-platform");
+      if (osparc.product.Utils.isProduct("s4lacad")) {
+        this.getChildControl("science-text");
+      }
       this.__getLoginStack();
       this.getChildControl("bottom-spacer");
       this.getChildControl("footer");
