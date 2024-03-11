@@ -69,6 +69,16 @@ qx.Class.define("osparc.auth.LoginPage", {
           control.setFont("text-18");
           this.getChildControl("main-layout").add(control);
           break;
+        case "science-text-image":
+          control = new qx.ui.basic.Image("osparc/Sim4Life_science_Subline.svg").set({
+            width: 300,
+            height: 24,
+            scale: true,
+            alignX: "center",
+            marginTop: -25
+          });
+          this.getChildControl("main-layout").add(control);
+          break;
         case "pages-stack":
           control = new qx.ui.container.Stack().set({
             allowGrowX: false,
@@ -153,6 +163,9 @@ qx.Class.define("osparc.auth.LoginPage", {
       const mainLayout = this.getChildControl("main-layout");
       this.getChildControl("top-spacer");
       this.getChildControl("logo-w-platform");
+      if (osparc.product.Utils.isProduct("s4lacad")) {
+        this.getChildControl("science-text-image");
+      }
       this.__getLoginStack();
       this.getChildControl("bottom-spacer");
       this.getChildControl("footer");
