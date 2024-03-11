@@ -83,7 +83,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __qualityPage: null,
     __servicesUpdatePage: null,
     __openButton: null,
-    __anyUpdatable: null,
     _services: null,
 
     __createToolbar: function() {
@@ -107,7 +106,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         toolbar.add(serviceVersionSelector);
       }
 
-      const openButton = this.__openButton = new qx.ui.form.Button(this.tr("Open")).set({
+      const openButton = this.__openButton = new osparc.ui.form.FetchButton(this.tr("Open")).set({
         enabled: true
       });
       osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(openButton);
@@ -120,33 +119,43 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         converter: show => (store.getCurrentStudy() === null && show) ? "visible" : "excluded"
       });
 
-      this.__openButton.addListener("execute", () => {
-        this.__handleServiceUpdatableCheck(resourceData.workbench);
-      });
+      openButton.addListener("execute", () => this.__openTapped());
 
       toolbar.add(openButton);
     },
 
-    __handleServiceUpdatableCheck: function(workbench) {
-      const updatableServices = [];
-      let anyUpdatable = false;
-      for (const nodeId in workbench) {
-        const node = workbench[nodeId];
-        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(this._services, node["key"], node["version"]);
-        if (latestCompatibleMetadata === null) {
-          osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
+    __openTapped: function() {
+      this.__openButton.setFetching(true);
+      const params = {
+        url: {
+          "studyId": this.__resourceData["uuid"]
         }
-        const isUpdatable = osparc.service.Utils.isUpdatable(node);
-        if (isUpdatable) {
-          anyUpdatable = true;
-          updatableServices.push(nodeId);
-        }
-      }
-      if (anyUpdatable) {
-        this.__confirmUpdate();
-      } else {
-        this.__openStudy();
-      }
+      };
+      osparc.data.Resources.getOne("studies", params)
+        .then(updatedStudyData => {
+          this.__openButton.setFetching(false);
+          const workbench = updatedStudyData.workbench;
+          const updatableServices = [];
+          let anyUpdatable = false;
+          for (const nodeId in workbench) {
+            const node = workbench[nodeId];
+            const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(this._services, node["key"], node["version"]);
+            if (latestCompatibleMetadata === null) {
+              osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
+            }
+            const isUpdatable = osparc.service.Utils.isUpdatable(node);
+            if (isUpdatable) {
+              anyUpdatable = true;
+              updatableServices.push(nodeId);
+            }
+          }
+          if (anyUpdatable) {
+            this.__confirmUpdate();
+          } else {
+            this.__openStudy();
+          }
+        })
+        .catch(() => this.__openButton.setFetching(false));
     },
 
     __confirmUpdate: function() {
@@ -160,6 +169,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       win.addListenerOnce("close", () => {
         if (win.getConfirmed()) {
           this.__openPage(this.__servicesUpdatePage);
+        } else {
+          this.__openStudy();
         }
       });
     },
