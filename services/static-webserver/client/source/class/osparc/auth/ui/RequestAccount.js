@@ -151,20 +151,13 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       doubleSpaced.push(message);
       this._form.add(message, this.tr("Message"), null, "message");
 
-      // const formRenderer = new qx.ui.form.renderer.Single(this._form);
-      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
-      this.add(formRenderer);
-
-      // buttons and eula links
-      const grp = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
-      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-
+      // eula links
       const color = qx.theme.manager.Color.getInstance().resolve("text");
       const ppText = `I acknowledge that data will be processed in accordance with <a href='https://sim4life.swiss/privacy' style='color: ${color}' target='_blank''>our privacy policy</a>`;
       const privacyPolicy = new qx.ui.form.CheckBox().set({
         required: true,
         value: false
-      })
+      });
       doubleSpaced.push(privacyPolicy);
       this._form.add(privacyPolicy, ppText, null, "privacyPolicy")
 
@@ -172,10 +165,21 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const eula = new qx.ui.form.CheckBox().set({
         required: true,
         value: false
-      })
+      });
       doubleSpaced.push(eula);
-      this._form.add(eula, eulaText, null, "eula")
+      this._form.add(eula, eulaText, null, "eula");
 
+      // const formRenderer = new qx.ui.form.renderer.Single(this._form);
+      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
+      const scrollView = new qx.ui.container.Scroll();
+      scrollView.add(formRenderer);
+      this.add(scrollView, {
+        flex: 1
+      });
+
+      // buttons
+      const grp = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const submitBtn = this.__requestButton = new qx.ui.form.Button(this.tr("Request")).set({
         center: true,
         appearance: "strong-button"
