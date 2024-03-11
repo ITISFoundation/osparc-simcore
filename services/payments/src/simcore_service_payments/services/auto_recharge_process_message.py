@@ -14,7 +14,7 @@ from models_library.payments import InvoiceDataGet
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.wallets import WalletID
-from pydantic import EmailStr, parse_obj_as, parse_raw_as
+from pydantic import parse_obj_as, parse_raw_as
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.db.payments_transactions_repo import (
@@ -166,8 +166,8 @@ async def _perform_auto_recharge(
         wallet_id=rabbit_message.wallet_id,
         wallet_name=f"id={rabbit_message.wallet_id}",
         user_id=payment_method_db.user_id,
-        user_name=f"id={payment_method_db.user_id}",
-        user_email=EmailStr(f"placeholder_{payment_method_db.user_id}@example.itis"),
+        user_name=invoice_data_get.user_name,
+        user_email=invoice_data_get.user_email,
         user_address=invoice_data_get.user_invoice_address,
         stripe_price_id=invoice_data_get.stripe_price_id,
         stripe_tax_rate_id=invoice_data_get.stripe_tax_rate_id,
