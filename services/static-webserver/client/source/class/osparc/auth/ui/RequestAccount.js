@@ -75,11 +75,23 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const address = new qx.ui.form.TextField().set({
         required: true
       });
+      doubleSpaced.push(address);
       this._form.add(address, this.tr("Address"), null, "address");
+
+      const city = new qx.ui.form.TextField().set({
+        required: true
+      });
+      this._form.add(city, this.tr("City"), null, "city");
+
+      const postalCode = new qx.ui.form.TextField().set({
+        required: true
+      });
+      this._form.add(postalCode, this.tr("Postal code"), null, "postalCode");
 
       const country = new qx.ui.form.TextField().set({
         required: true
       });
+      doubleSpaced.push(country);
       this._form.add(country, this.tr("Country"), null, "country");
 
       const application = new qx.ui.form.SelectBox();
@@ -146,10 +158,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       });
       doubleSpaced.push(hear);
       this._form.add(hear, this.tr("How did you hear about us?"), null, "hear");
-
-      const message = new qx.ui.form.TextField();
-      doubleSpaced.push(message);
-      this._form.add(message, this.tr("Message"), null, "message");
 
       // eula links
       const color = qx.theme.manager.Color.getInstance().resolve("text");
