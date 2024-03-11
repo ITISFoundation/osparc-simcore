@@ -64,7 +64,8 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
       const email = new qx.ui.form.TextField().set({
         tabIndex: 1,
-        placeholder: this.tr("Email")
+        placeholder: this.tr("Email"),
+        readOnly: true
       });
 
       const form = new qx.ui.form.Form();
