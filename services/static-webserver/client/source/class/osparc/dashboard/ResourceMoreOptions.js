@@ -74,7 +74,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
   members: {
     __resourceData: null,
-    __toolbar: null,
     __tabsView: null,
     __dataPage: null,
     __permissionsPage: null,
@@ -87,38 +86,31 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __anyUpdatable: null,
     _services: null,
 
-    __addToolbar: function() {
-      const toolbar = this.__toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
+    __createToolbar: function() {
+      const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
         alignX: "right",
         alignY: "top"
       })).set({
         maxHeight: 40
       });
+      return toolbar;
+    },
 
+    __addOpenButton: function(page) {
       const resourceData = this.__resourceData;
+
+      const toolbar = this.__createToolbar();
+      page.addToHeader(toolbar);
 
       if (osparc.utils.Resources.isService(resourceData)) {
         const serviceVersionSelector = this.__createServiceVersionSelector();
         toolbar.add(serviceVersionSelector);
       }
 
-      this.__createOpenButton();
-      this.__handleServiceUpdatableCheck(resourceData.workbench);
-
-      return toolbar;
-    },
-
-    __createOpenButton: function() {
       const openButton = this.__openButton = new qx.ui.form.Button(this.tr("Open")).set({
-        appearance: "form-button",
-        font: "text-14",
-        alignX: "right",
-        minWidth: 150,
-        maxWidth: 150,
-        height: 35,
-        center: true,
         enabled: true
       });
+      osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(openButton);
       osparc.utils.Utils.setIdToWidget(openButton, "openResource");
       const store = osparc.store.Store.getInstance();
       store.bind("currentStudy", openButton, "visibility", {
@@ -127,6 +119,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       this.bind("showOpenButton", openButton, "visibility", {
         converter: show => (store.getCurrentStudy() === null && show) ? "visible" : "excluded"
       });
+
+      this.__handleServiceUpdatableCheck(resourceData.workbench);
+
+      toolbar.add(openButton);
     },
 
     __handleServiceUpdatableCheck: function(workbench) {
@@ -149,7 +145,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       } else {
         this.__openStudy();
       }
-      this.__toolbar.add(this.__openButton);
     },
 
     __openStudy: function() {
@@ -370,12 +365,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       });
 
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(infoCard, {
-        flex: 1
-      });
+      this.__addOpenButton(page);
+      page.addToContent(infoCard);
       return page;
     },
 
@@ -394,13 +385,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       const billingSettings = new osparc.study.BillingSettings(resourceData);
       const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
       const billingScroll = new qx.ui.container.Scroll(billingSettings);
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(billingScroll, {
-        flex: 1
-      });
+      this.__addOpenButton(page);
+      page.addToContent(billingScroll);
       return page;
     },
 
@@ -415,13 +402,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const iconSrc = "@FontAwesome5Solid/eye/22";
       const preview = new osparc.study.StudyPreview(resourceData);
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(preview, {
-        flex: 1
-      });
-
+      this.__addOpenButton(page);
+      page.addToContent(preview);
       return page;
     },
 
@@ -435,23 +417,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Comments");
       const iconSrc = "@FontAwesome5Solid/comments/22";
 
-      const commentsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       const commentsList = new osparc.info.CommentsList(resourceData["uuid"]);
-      commentsLayout.add(commentsList);
+      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      this.__addOpenButton(page);
+      page.addToContent(commentsList);
       if (osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
         const addComment = new osparc.info.CommentAdd(resourceData["uuid"]);
         addComment.setPaddingLeft(10);
         addComment.addListener("commentAdded", () => commentsList.fetchComments());
-        commentsLayout.add(addComment);
+        page.addToFooter(addComment);
       }
-      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      const commentsScroll = new qx.ui.container.Scroll(commentsLayout);
-      page.add(commentsScroll, {
-        flex: 1
-      })
       return page;
     },
 
@@ -467,13 +442,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const studyDataManager = new osparc.widget.NodeDataManager(resourceData["uuid"]);
 
       const page = this.__dataPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(studyDataManager, {
-        flex: 1
-      });
-
+      this.__addOpenButton(page);
+      page.addToContent(studyDataManager);
       return page;
     },
 
@@ -509,13 +479,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         }, this);
       }
       const page = this.__permissionsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(permissionsView, {
-        flex: 1
-      });
-
+      this.__addOpenButton(page);
+      page.addToContent(permissionsView);
       return page;
     },
 
@@ -551,13 +516,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
 
       const page = this.__permissionsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(classifiers, {
-        flex: 1
-      });
-
+      this.__addOpenButton(page);
+      page.addToContent(classifiers);
       return page;
     },
 
@@ -584,13 +544,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         });
 
         const page = this.__qualityPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-        page.showLabelOnTab();
-        const toolBar = this.__addToolbar();
-        page.add(toolBar);
-        page.add(qualityEditor, {
-          flex: 1
-        });
-
+        this.__addOpenButton(page);
+        page.addToContent(qualityEditor);
         return page;
       }
       return null;
@@ -615,12 +570,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         this.fireDataEvent("updateStudy", updatedData);
       }, this);
       const page = this.__tagsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(tagManager, {
-        flex: 1
-      });
+      this.__addOpenButton(page);
+      page.addToContent(tagManager);
       return page;
     },
 
@@ -645,12 +596,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       });
 
       const page = this.__servicesUpdatePage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(servicesUpdate, {
-        flex: 1
-      });
+      this.__addOpenButton(page);
+      page.addToContent(servicesUpdate);
       return page;
     },
 
@@ -674,12 +621,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       });
 
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(servicesBootOpts, {
-        flex: 1
-      });
+      this.__addOpenButton(page);
+      page.addToContent(servicesBootOpts);
 
       if (osparc.utils.Resources.isStudy(resourceData)) {
         if (osparc.product.Utils.showDisableServiceAutoStart()) {
@@ -710,10 +653,13 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
 
         const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-        page.showLabelOnTab();
-        page.add(saveAsTemplate, {
-          flex: 1
-        });
+        const publishTemplateButton = saveAsTemplate.getPublishTemplateButton();
+        osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(publishTemplateButton);
+        const toolbar = this.__createToolbar();
+        toolbar.add(publishTemplateButton);
+        page.addToHeader(toolbar);
+        page.addToContent(saveAsTemplate);
+
         return page;
       }
       return null;
