@@ -2,6 +2,7 @@ import asyncio
 import inspect
 import logging
 import traceback
+import traceback as tb
 import urllib.parse
 from collections import deque
 from contextlib import suppress
@@ -316,8 +317,14 @@ class TasksManager:
         reraise_errors: bool = True,
     ) -> None:
         """cancels and removes task"""
+        logger.debug(
+            "Attempting to remove task with task_id=%s. Stack trace:\n%s",
+            task_id,
+            "".join(tb.format_stack()),
+        )
         try:
             tracked_task = self._get_tracked_task(task_id, with_task_context)
+            logger.debug("Succeeded in getting task with task_id=%s", task_id)
         except TaskNotFoundError:
             if reraise_errors:
                 raise
@@ -326,8 +333,10 @@ class TasksManager:
             await self._cancel_tracked_task(
                 tracked_task.task, task_id, reraise_errors=reraise_errors
             )
+            logger.debug("Succeeded in canceling task with task_id=%s", task_id)
         finally:
             del self._tasks_groups[tracked_task.task_name][task_id]
+            logger.debug("Removed task_id=%s from tracked tasks", task_id)
 
     async def close(self) -> None:
         """
