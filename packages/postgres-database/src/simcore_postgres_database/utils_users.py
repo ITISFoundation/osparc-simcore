@@ -100,7 +100,8 @@ class UsersRepo:
             pre_columns = (
                 users_pre_registration_details.c.pre_first_name,
                 users_pre_registration_details.c.pre_last_name,
-                users_pre_registration_details.c.pre_phone,
+                # NOTE: pre_phone is not copied since it has to be validated. Otherwise, if
+                # phone is wrong, currently user won't be able to login!
             )
 
             assert {c.name for c in pre_columns} == {  # nosec
@@ -122,7 +123,6 @@ class UsersRepo:
                     .values(
                         first_name=details.pre_first_name,
                         last_name=details.pre_last_name,
-                        phone=details.pre_phone,
                     )
                 )
 
