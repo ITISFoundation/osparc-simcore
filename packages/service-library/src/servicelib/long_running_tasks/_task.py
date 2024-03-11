@@ -2,7 +2,6 @@ import asyncio
 import inspect
 import logging
 import traceback
-import traceback as tb
 import urllib.parse
 from collections import deque
 from contextlib import suppress
@@ -318,9 +317,7 @@ class TasksManager:
     ) -> None:
         """cancels and removes task"""
         logger.debug(
-            "Attempting to remove task with task_id=%s. Stack trace:\n%s",
-            task_id,
-            "".join(tb.format_stack()),
+            "Attempting to remove task with task_id=%s.", task_id, exc_info=True
         )
         try:
             tracked_task = self._get_tracked_task(task_id, with_task_context)
