@@ -1,3 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}New Auth Code{% endblock %}
+{% block content %}
 <p>
   Dear {{ user.first_name }} <br><br>
   Please find below the Two-factor Authentication sign-in code for your {{ host }} account.
@@ -12,3 +15,4 @@
   Best regards <br>
   The <i>{{ product.display_name }}</i> Team
 </p>
+{% endblock %}

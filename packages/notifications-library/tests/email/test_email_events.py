@@ -185,6 +185,10 @@ async def test_email_event(
     if event_attachments:
         add_attachments(msg, event_attachments)
 
+    Path(
+        f"/home/crespo/repos/osparc-simcore/.ignore.keep/emails/{event_name}.html"
+    ).write_text(parts.html_content)
+
     async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
         await smtp.send_message(msg)
 

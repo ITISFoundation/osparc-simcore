@@ -1,6 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Email Changed Confirmation{% endblock %}
+{% block content %}
 <p>
   Dear {{ user.first_name }} <br><br>
-  You have requested to change the email address linked to your {{ product.display_name }} account. Please follow the on-screen
+  You have requested to change the email address linked to your {{ product.display_name }} account. Please follow the
+  on-screen
   information in the link below:
 </p>
 
@@ -13,3 +17,4 @@
   Best regards <br>
   The <i>{{ product.display_name }}</i> Team
 </p>
+{% endblock %}

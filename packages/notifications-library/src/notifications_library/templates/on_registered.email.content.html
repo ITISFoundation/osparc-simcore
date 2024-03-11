@@ -1,3 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Registration Confirmation{% endblock %}
+{% block content %}
 <p>
   Dear {{ user.first_name }} <br><br>
   Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.<br>
@@ -13,3 +16,4 @@
   Best regards <br>
   The <i>{{ product.display_name }}</i> Team
 </p>
+{% endblock %}
