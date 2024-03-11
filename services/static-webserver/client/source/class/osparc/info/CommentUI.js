@@ -52,10 +52,6 @@ qx.Class.define("osparc.info.CommentUI", {
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
             scale: true,
-            allowGrowX: true,
-            allowGrowY: true,
-            allowShrinkX: true,
-            allowShrinkY: true,
             maxWidth: 32,
             maxHeight: 32
           });
