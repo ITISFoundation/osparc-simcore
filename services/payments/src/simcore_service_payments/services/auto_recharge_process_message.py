@@ -166,7 +166,7 @@ async def _perform_auto_recharge(
         wallet_id=rabbit_message.wallet_id,
         wallet_name=f"id={rabbit_message.wallet_id}",
         user_id=payment_method_db.user_id,
-        user_name=invoice_data_get.user_name,
+        user_name=invoice_data_get.user_display_name,
         user_email=invoice_data_get.user_email,
         user_address=invoice_data_get.user_invoice_address,
         stripe_price_id=invoice_data_get.stripe_price_id,
