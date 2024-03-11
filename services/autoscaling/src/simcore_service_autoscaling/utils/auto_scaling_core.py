@@ -169,7 +169,7 @@ def sort_drained_nodes(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     # we need to keep in reserve only the drained nodes of the right type
     machine_buffer_type = get_machine_buffer_type(available_ec2_types)
-    # NOTE: we keep only in buffer the drained nodes with the right EC2 type
+    # NOTE: we keep only in buffer the drained nodes with the right EC2 type, AND the right amount
     buffer_drained_nodes = [
         node
         for node in all_drained_nodes
