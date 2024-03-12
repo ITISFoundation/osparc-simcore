@@ -177,7 +177,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             height: 35
           });
           control.getChildControl("on-logo").setSize({
-            width: osparc.product.Utils.getProductName() === "s4l" ? 150 : 100,
+            width: ["s4l", "s4lacad"].includes(osparc.product.Utils.getProductName()) ? 150 : 100,
             height: osparc.navigation.NavigationBar.HEIGHT
           });
           this.getChildControl("left-items").add(control);
