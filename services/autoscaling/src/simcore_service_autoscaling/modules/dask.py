@@ -243,7 +243,7 @@ async def get_worker_used_resources(
             ),
         )
 
-        total_resources_used = collections.Counter()
+        total_resources_used: collections.Counter[str] = collections.Counter()
         for _, task_resources in worker_processing_tasks:
             total_resources_used.update(task_resources)
 
