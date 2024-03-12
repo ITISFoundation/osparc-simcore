@@ -115,16 +115,30 @@ class ComputationalAutoscaling(BaseAutoscaling):
         app: FastAPI, instance: AssociatedInstance
     ) -> Resources:
         try:
-            num_results_in_memory = await dask.get_worker_still_has_results_in_memory(
+            resource = await dask.get_worker_used_resources(
                 _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
             )
-            if num_results_in_memory > 0:
-                # NOTE: this is a trick to consider the node still useful
-                return Resources(cpus=0, ram=ByteSize(1024 * 1024 * 1024))
-            return await dask.get_worker_used_resources(
-                _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
+            if resource == Resources.create_as_empty():
+                num_results_in_memory = (
+                    await dask.get_worker_still_has_results_in_memory(
+                        _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
+                    )
+                )
+                if num_results_in_memory > 0:
+                    _logger.debug(
+                        "found %s for %s",
+                        f"{num_results_in_memory=}",
+                        f"{instance.ec2_instance.id}",
+                    )
+                    # NOTE: this is a trick to consider the node still useful
+                    return Resources(cpus=0, ram=ByteSize(1024 * 1024 * 1024))
+
+            _logger.debug(
+                "found %s for %s", f"{resource=}", f"{instance.ec2_instance.id}"
             )
+            return resource
         except (DaskWorkerNotFoundError, DaskNoWorkersError):
+            _logger.debug("no resource found for %s", f"{instance.ec2_instance.id}")
             return Resources.create_as_empty()
 
     @staticmethod
