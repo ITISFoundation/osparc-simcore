@@ -345,7 +345,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         textColor: "text-darker"
       });
       const vendor = osparc.store.VendorInfo.getInstance().getVendor();
-      if (vendor) {
+      if (vendor && "url" in vendor && "copyright" in vendor) {
         organizationLink.set({
           value: vendor.copyright,
           url: vendor.url

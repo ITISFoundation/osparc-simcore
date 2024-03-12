@@ -55,7 +55,7 @@
     }, {
       "anchorEl": "osparc-test-id=creditsNavigationBtn",
       "title": "Credits",
-      "text": "It will open the User Center",
+      "text": "It will open the Billing Center",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -84,11 +84,6 @@
       "anchorEl": "osparc-test-id=startS4LButton",
       "title": "Start Sim4Life",
       "text": "Clicking on this (+) Start Sim4Life button, allows you to create and open a new Sim4Life project",
-      "placement": "right"
-    }, {
-      "anchorEl": "osparc-test-id=startJSmashButton",
-      "title": "Start Sim4Life lab",
-      "text": "Clicking on this (+) Start Sim4Life lab button, allows you to create and open a new Sim4Life powered Jupyter notebook.",
       "placement": "right"
     }, {
       "beforeClick": {
