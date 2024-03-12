@@ -215,9 +215,9 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     },
 
     createOwner: function(label) {
-      const resourceType = this.getResourceType() === "study" ? "project" : this.getResourceType();
       if (label === osparc.auth.Data.getInstance().getEmail()) {
-        return qx.locale.Manager.tr(`My ${resourceType}`);
+        const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(this.getResourceType());
+        return qx.locale.Manager.tr(`My ${resourceAlias}`);
       }
       return osparc.utils.Utils.getNameFromEmail(label);
     },
