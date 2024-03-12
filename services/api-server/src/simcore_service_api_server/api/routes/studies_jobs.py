@@ -75,6 +75,7 @@ async def create_study_job(
 
         file_param_nodes = {}
         for node_id, node in project.workbench.items():
+            assert node.outputs is not None  # no sec
             if (
                 node.key == "simcore/services/frontend/file-picker"
                 and len(node.outputs) == 0

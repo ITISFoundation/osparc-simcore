@@ -1,6 +1,7 @@
 # pylint: disable=R0904
 
 import logging
+import typing
 import urllib.parse
 from dataclasses import dataclass
 from functools import partial
@@ -17,6 +18,7 @@ from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
     ProjectMetadataUpdate,
 )
+from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.api_schemas_webserver.resource_usage import (
     PricingUnitGet,
     ServicePricingPlanGet,
@@ -29,6 +31,7 @@ from models_library.basic_types import NonNegativeDecimal
 from models_library.clusters import ClusterID
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
@@ -394,6 +397,55 @@ class AuthSession:
             json=jsonable_encoder(body, exclude_unset=True, exclude_defaults=True),
         )
         response.raise_for_status()
+
+    @_exception_mapper({})
+    async def update_project_inputs(
+        self,
+        project_id: ProjectID,
+        new_inputs: dict[NodeID, dict[str, typing.Any]],
+    ) -> dict[NodeID, dict[str, typing.Any]]:
+        response = await self.client.patch(
+            f"/projects/{project_id}/inputs",
+            cookies=self.session_cookies,
+            json=jsonable_encoder(new_inputs),
+        )
+        response.raise_for_status()
+        data = (
+            Envelope[dict[NodeID, dict[str, typing.Any]]].parse_raw(response.text).data
+        )
+        assert data  # nosec
+        return data
+
+    @_exception_mapper({})
+    async def get_project_inputs(
+        self, project_id: ProjectID
+    ) -> dict[NodeID, dict[str, typing.Any]]:
+        response = await self.client.get(
+            f"/projects/{project_id}/inputs",
+            cookies=self.session_cookies,
+        )
+
+        response.raise_for_status()
+
+        data = (
+            Envelope[dict[NodeID, dict[str, typing.Any]]].parse_raw(response.text).data
+        )
+        assert data is not None  # nosec
+        return data
+
+    @_exception_mapper({})
+    async def update_node_outputs(
+        self, project_id: UUID, node_id: UUID, new_node_outputs: NodeOutputs
+    ) -> NodeOutputs:
+        response = await self.client.patch(
+            f"/projects/{project_id}/nodes/{node_id}/outputs",
+            cookies=self.session_cookies,
+            json=jsonable_encoder(new_node_outputs),
+        )
+        response.raise_for_status()
+        data = Envelope[NodeOutputs].parse_raw(response.text).data
+        assert data is not None  # nosec
+        return data
 
     # WALLETS -------------------------------------------------
 
