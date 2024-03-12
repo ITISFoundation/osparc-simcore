@@ -61,7 +61,7 @@ logged_once = False
 
 
 def is_sensing_enabled(app: web.Application):
-    """Diagnostics will not activate sensing inmediatly but after some
+    """Diagnostics will not activate sensing immediatly but after some
     time since the app started
     """
     global logged_once  # pylint: disable=global-statement

@@ -33,10 +33,8 @@ async def get_product_latest_stripe_info(
     row = await (
         await conn.execute(
             sa.select(
-                [
-                    products_prices.c.stripe_price_id,
-                    products_prices.c.stripe_tax_rate_id,
-                ]
+                products_prices.c.stripe_price_id,
+                products_prices.c.stripe_tax_rate_id,
             )
             .where(products_prices.c.product_name == product_name)
             .order_by(sa.desc(products_prices.c.valid_from))

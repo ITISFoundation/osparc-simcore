@@ -131,7 +131,7 @@ endif
 
 ## DOCKER BUILD -------------------------------
 #
-# - all builds are inmediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
+# - all builds are immediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))

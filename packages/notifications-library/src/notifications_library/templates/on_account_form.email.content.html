@@ -1,14 +1,7 @@
-Request for an Account in {{ host }}
-<!--
-NOTE: this header is only for testing purposes and removed automatically before sending
-TEST host:{{ host }}
-TEST name:{{ name }}
-TEST product:{{ product }}
-TEST request_form:{{ request_form }}
--->
-<p>
-Dear {{ name }},
-</p>
+{% extends 'base.html' %}
+{% block title %} {% include 'on_account_form.email.subject.txt' %} {% endblock %}
+{% block content %}
+<p>Dear Support team
 
 <p>
   We have received the following request form for an account in {{ product.display_name }} from {{ host }}
@@ -23,7 +16,7 @@ Dear {{ name }},
 </p>
 
 <pre>
-{{ dumps(product) }}
+{{ dumps(product_info) }}
 </pre>
 
 <p>
@@ -35,3 +28,5 @@ Dear {{ name }},
 </pre>
 
 <p>TIP: Use https://ipinfo.io/ to find out more information on the ip</p>
+
+{% endblock %}
