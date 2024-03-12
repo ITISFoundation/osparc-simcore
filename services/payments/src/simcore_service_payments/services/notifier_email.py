@@ -67,7 +67,7 @@ _NOTIFY_PAYMENTS_HTML = """
 
 {% block content %}
 <div class="container">
-    <p>Dear {{ user.first_name }}:</p>
+    <p>Dear {{ user.first_name }},</p>
     <p>We are delighted to confirm the successful processing of your payment of <strong>{{ payment.price_dollars }}</strong> <em>USD</em> for the purchase of <strong>{{ payment.osparc_credits }}</strong> <em>credits</em>. The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.</p>
     <p>For more details you can view or download your <a href="{{ payment.invoice_url }}">receipt</a></p>
     <p>Should you have any questions or require further assistance, please do not hesitate to reach out to our <a href="mailto:{{ product.support_email }}">customer support team</a>.</p>
