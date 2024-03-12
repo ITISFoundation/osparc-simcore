@@ -28,7 +28,10 @@ from simcore_service_webserver.login._2fa import (
     get_redis_validation_code_client,
     send_email_code,
 )
-from simcore_service_webserver.login._constants import MSG_2FA_UNAVAILABLE_OEC
+from simcore_service_webserver.login._constants import (
+    CODE_2FA_CODE_REQUIRED,
+    MSG_2FA_UNAVAILABLE_OEC,
+)
 from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.products.api import Product, get_current_product
 from twilio.base.exceptions import TwilioRestException
@@ -296,6 +299,7 @@ async def test_register_phone_allows_with_used_number(
         data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
         assert data
         assert "Code" in data["message"]
+        assert data["name"] == CODE_2FA_CODE_REQUIRED
         assert not error
 
 
