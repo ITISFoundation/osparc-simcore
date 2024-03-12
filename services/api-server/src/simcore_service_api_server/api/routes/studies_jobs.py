@@ -10,6 +10,7 @@ from simcore_service_api_server.api.dependencies.authentication import (
 from simcore_service_api_server.api.dependencies.services import get_api_client
 from simcore_service_api_server.api.dependencies.webserver import get_webserver_session
 from simcore_service_api_server.api.errors.http_error import create_error_json_response
+from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.services.director_v2 import DirectorV2Api
 from simcore_service_api_server.services.solver_job_models_converters import (
     create_jobstatus_from_task,
@@ -142,13 +143,26 @@ async def get_study_job(
 
 @router.delete(
     "/{study_id:uuid}/jobs/{job_id:uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={status.HTTP_404_NOT_FOUND: {"model": ErrorGet}},
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
-async def delete_study_job(study_id: StudyID, job_id: JobID):
-    msg = f"delete study job study_id={study_id!r} job_id={job_id!r}.  SEE https://github.com/ITISFoundation/osparc-simcore/issues/4111"
-    raise NotImplementedError(msg)
+async def delete_study_job(
+    study_id: StudyID,
+    job_id: JobID,
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+):
+    """Deletes an existing study job"""
+    job_name = _compose_job_resource_name(study_id, job_id)
+    _logger.debug("Deleting Job '%s'", job_name)
+
+    try:
+        await webserver_api.delete_project(project_id=job_id)
+    except ProjectNotFoundError:
+        return create_error_json_response(
+            f"Cannot find job={job_id} to delete",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
 
 
 @router.post(
@@ -178,17 +192,23 @@ async def start_study_job(
 
 @router.post(
     "/{study_id:uuid}/jobs/{job_id:uuid}:stop",
-    response_model=Job,
+    response_model=JobStatus,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def stop_study_job(
     study_id: StudyID,
     job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    msg = f"stop study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    raise NotImplementedError(msg)
+    job_name = _compose_job_resource_name(study_id, job_id)
+    _logger.debug("Stopping Job '%s'", job_name)
+
+    await director2_api.stop_computation(job_id, user_id)
+
+    task = await director2_api.get_computation(job_id, user_id)
+    job_status: JobStatus = create_jobstatus_from_task(task)
+    return job_status
 
 
 @router.post(
