@@ -70,12 +70,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         description: "New Sim4Life project",
         newStudyLabel: "New S4L project",
         idToWidget: "startS4LButton"
-      },
-      "simcore/services/dynamic/jupyter-smash": {
-        title: "Start Sim4Life lab",
-        description: "Jupyter powered by S4L",
-        newStudyLabel: "New Sim4Life lab project",
-        idToWidget: "startJSmashButton"
       }
     },
     EXPECTED_S4L_LITE_SERVICE_KEYS: {

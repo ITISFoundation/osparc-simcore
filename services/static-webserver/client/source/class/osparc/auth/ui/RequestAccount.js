@@ -162,7 +162,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         label: "Social Media"
       }, {
         id: "Other",
-        label: "Other (please specify below)"
+        label: "Other"
       }].forEach(hearData => {
         const lItem = new qx.ui.form.ListItem(hearData.label, null, hearData.id);
         hear.add(lItem);
