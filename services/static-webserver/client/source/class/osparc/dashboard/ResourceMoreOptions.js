@@ -56,7 +56,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           resourceType = osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
           break;
         case "service":
-          resourceType = osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
+          resourceType = qx.locale.Manager.tr("Service");
           break;
       }
       // eslint-disable-next-line no-underscore-dangle
