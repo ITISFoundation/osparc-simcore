@@ -269,7 +269,7 @@ qx.Class.define("osparc.utils.Utils", {
       return (["dev", "master"].includes(platformName));
     },
 
-    resourceTypeToLabel: function(resourceType) {
+    resourceTypeToAlias: function(resourceType) {
       switch (resourceType) {
         case "study":
           resourceType = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
