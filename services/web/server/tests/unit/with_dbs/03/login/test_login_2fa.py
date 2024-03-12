@@ -243,7 +243,7 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["status"] == UserStatus.ACTIVE.value
 
 
-async def test_register_phone_allows_with_used_number(
+async def test_can_register_same_phone_in_different_accounts(
     client: TestClient,
     fake_user_email: str,
     fake_user_password: str,
@@ -252,9 +252,8 @@ async def test_register_phone_allows_with_used_number(
     cleanup_db_tables: None,
 ):
     """
-    Changed policy about reusing phone https://github.com/ITISFoundation/osparc-simcore/pull/5460
-    Tests https://github.com/ITISFoundation/osparc-simcore/issues/3304
-
+    - Changed policy about user phone constraint in  https://github.com/ITISFoundation/osparc-simcore/pull/5460
+    - Tests https://github.com/ITISFoundation/osparc-simcore/issues/3304
     """
     assert client.app
 
