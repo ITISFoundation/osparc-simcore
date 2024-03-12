@@ -220,6 +220,7 @@ class EmailProvider(NotificationProvider):
         self, user_id: UserID, payment: PaymentTransaction
     ) -> EmailMessage:
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
+        data_vendor = data.vendor or {}
 
         # email for successful payment
         msg: EmailMessage = await _create_user_email(
@@ -237,7 +238,7 @@ class EmailProvider(NotificationProvider):
             product=_ProductData(
                 product_name=data.product_name,
                 display_name=data.display_name,
-                vendor_display_inline=f"{data.vendor.get('name', '')}. {data.vendor.get('address', '')}",
+                vendor_display_inline=f"{data_vendor.get('name', '')}. {data_vendor.get('address', '')}",
                 support_email=data.support_email,
             ),
         )
