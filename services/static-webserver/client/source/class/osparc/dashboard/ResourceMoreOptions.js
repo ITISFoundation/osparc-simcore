@@ -46,19 +46,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     HEIGHT: 700,
 
     popUpInWindow: function(moreOpts) {
-      let resourceType = "";
       // eslint-disable-next-line no-underscore-dangle
-      switch (moreOpts.__resourceData["resourceType"]) {
-        case "study":
-          resourceType = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
-          break;
-        case "template":
-          resourceType = osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
-          break;
-        case "service":
-          resourceType = qx.locale.Manager.tr("Service");
-          break;
-      }
+      const resourceType = osparc.utils.Utils.resourceTypeToLabel(moreOpts.__resourceData["resourceType"]);
       // eslint-disable-next-line no-underscore-dangle
       const title = `${resourceType} ${qx.locale.Manager.tr("Details")} - ${moreOpts.__resourceData.name}`
       return osparc.ui.window.Window.popUpInWindow(moreOpts, title, this.WIDTH, this.HEIGHT).set({
