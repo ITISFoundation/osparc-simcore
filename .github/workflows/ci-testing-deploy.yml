@@ -1579,7 +1579,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/notifications-library.bash test
-      - uses: codecov/codecov-action@v3.1.4
+      - uses: codecov/codecov-action@v4.1.0
         with:
           flags: unittests #optional
 
