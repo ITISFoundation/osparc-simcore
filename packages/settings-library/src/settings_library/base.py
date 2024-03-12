@@ -15,7 +15,7 @@ from pydantic.error_wrappers import ErrorList, ErrorWrapper
 from pydantic.fields import ModelField, Undefined
 from pydantic.typing import is_literal_type
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _DEFAULTS_TO_NONE_MSG: Final[
     str
@@ -40,7 +40,7 @@ def create_settings_from_env(field: ModelField):
         except ValidationError as err:
             if field.allow_none:
                 # e.g. Optional[PostgresSettings] would warn if defaults to None
-                logger.warning(
+                _logger.warning(
                     _DEFAULTS_TO_NONE_MSG,
                     field.name,
                 )
