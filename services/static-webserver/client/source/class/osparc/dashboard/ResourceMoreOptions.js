@@ -46,9 +46,21 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     HEIGHT: 700,
 
     popUpInWindow: function(moreOpts) {
-      const prjAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      let resourceType = "";
       // eslint-disable-next-line no-underscore-dangle
-      const title = qx.locale.Manager.tr(prjAlias + ` Details - ${moreOpts.__resourceData.name}`);
+      switch (moreOpts.__resourceData) {
+        case "study":
+          resourceType = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+          break;
+        case "template":
+          resourceType = osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
+          break;
+        case "service":
+          resourceType = osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
+          break;
+      }
+      // eslint-disable-next-line no-underscore-dangle
+      const title = `${resourceType} ${qx.locale.Manager.tr("Details")} - ${moreOpts.__resourceData.name}`
       return osparc.ui.window.Window.popUpInWindow(moreOpts, title, this.WIDTH, this.HEIGHT).set({
         maxHeight: 1000,
         layout: new qx.ui.layout.Grow(),
@@ -127,7 +139,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __openTapped: function() {
       if (this.__resourceData["resourceType"] !== "study") {
         // Nothing to pre-check
-        this.__openStudy();
+        this.__openResource();
         return;
       }
       this.__openButton.setFetching(true);
@@ -157,7 +169,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           if (anyUpdatable) {
             this.__confirmUpdate();
           } else {
-            this.__openStudy();
+            this.__openResource();
           }
         })
         .catch(() => this.__openButton.setFetching(false));
@@ -175,12 +187,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         if (win.getConfirmed()) {
           this.__openPage(this.__servicesUpdatePage);
         } else {
-          this.__openStudy();
+          this.__openResource();
         }
       });
     },
 
-    __openStudy: function() {
+    __openResource: function() {
       switch (this.__resourceData["resourceType"]) {
         case "study":
           this.fireDataEvent("openStudy", this.__resourceData);
