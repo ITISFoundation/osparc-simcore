@@ -6,18 +6,9 @@ TEST name:{{ name }}
 TEST support_email:{{ support_email }}
 -->
 <p>Dear {{ name }},</p>
-<p>
-  Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.<br>
-  Please activate your account via the link below:
-</p>
-
-<p>
-  <a href="{{ link }}">{{ link }}</a>
-</p>
-
-<p>
-  Please don't hesitate to contact us at {{ product.support_email }} if you need further help.<br><br>
-</p>
+<p>Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.</p>
+<p>Please activate your account via the link below:</p>
+<p><a href="{{ link }}">{{ link }}</a></p>
+<p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
 <p>Best Regards,</p>
 <p>The <i>{{ product.display_name }}</i> Team</p>
-</p>
