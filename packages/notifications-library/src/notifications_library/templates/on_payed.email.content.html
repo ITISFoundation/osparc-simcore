@@ -5,7 +5,8 @@
 {% block content %}
 
 <p>Dear {{ user.first_name }},</p>
-<p>We are delighted to confirm the successful processing of your payment of <strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong> for the purchase of <strong>{{ payment.osparc_credits }}</strong> <strong></strong><em>credits</em></strong>. The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.</p>
+<p>We are delighted to confirm the successful processing of your payment of <strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong> for the purchase of <strong>{{ payment.osparc_credits }}</strong> <strong><em>credits</em></strong>.
+  The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.</p>
 <p>For more details you can view or download your <a href="{{ payment.invoice_url }}">receipt</a>.</p>
 <p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
 <p>Best Regards,</p>
