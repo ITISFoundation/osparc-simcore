@@ -11,6 +11,7 @@ services:
       DASK_TLS_KEY: ${DASK_TLS_KEY}
       DASK_SCHEDULER_URL: tls://dask-scheduler:8786
       DASK_START_AS_SCHEDULER: 1
+      DASK_WORKER_SATURATION: ${DASK_WORKER_SATURATION}
       LOG_LEVEL: ${LOG_LEVEL}
     ports:
       - 8786:8786 # dask-scheduler access
@@ -49,6 +50,7 @@ services:
       DASK_TLS_CA_FILE: ${DASK_TLS_CA_FILE}
       DASK_TLS_CERT: ${DASK_TLS_CERT}
       DASK_TLS_KEY: ${DASK_TLS_KEY}
+      DASK_WORKER_SATURATION: ${DASK_WORKER_SATURATION}
       LOG_LEVEL: ${LOG_LEVEL}
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: /home/scu/computational_shared_data
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: computational_shared_data
