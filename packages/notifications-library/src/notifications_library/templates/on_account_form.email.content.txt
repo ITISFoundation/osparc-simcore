@@ -1,6 +1,6 @@
 Dear Support team,
 
-We have received the following request form for an account in {{ product.display_name }}
+We have received the following request form for an account in {{ product.display_name }} from {{ host }}:
 
 {{ dumps(request_form) }}
 
@@ -10,9 +10,6 @@ Some details about the requested product follow:
 
 To validate the request form, here you can get further info on this request:
 
-
 {{ dumps(ipinfo) }}
 
-TIP: Use https://ipinfo.io/$IP/json to find out more information on the ip
-
-Thanks
+TIP: Use https://ipinfo.io/ to find out more information on the IP.
