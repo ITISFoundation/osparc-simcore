@@ -348,7 +348,6 @@ async def register_phone(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
-    db: AsyncpgStorage = get_plugin_storage(request.app)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
@@ -379,10 +378,6 @@ async def register_phone(request: web.Request):
             first_name=get_user_name_from_email(registration.email),
         )
 
-        message = MSG_2FA_CODE_SENT.format(
-            phone_number=mask_phone_number(registration.phone)
-        )
-
         return envelope_response(
             # RegisterPhoneNextPage
             data={
@@ -390,7 +385,9 @@ async def register_phone(request: web.Request):
                 "parameters": {
                     "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
-                "message": message,
+                "message": MSG_2FA_CODE_SENT.format(
+                    phone_number=mask_phone_number(registration.phone)
+                ),
                 "level": "INFO",
                 "logger": "user",
             },
