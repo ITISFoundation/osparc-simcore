@@ -1,1 +1,1 @@
-Request for an account in {{ product.display_name }}
+Request for an Account in {{ product.display_name }}

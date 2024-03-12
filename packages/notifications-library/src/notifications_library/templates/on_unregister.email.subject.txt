@@ -1,1 +1,1 @@
-Closing your account in {{ host }} and best wishes
+Closing Your Account in {{ host }}
