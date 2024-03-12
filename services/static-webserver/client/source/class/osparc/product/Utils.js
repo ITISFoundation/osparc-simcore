@@ -180,10 +180,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showAboutProduct: function() {
-      if (this.isProduct("osparc")) {
-        return false;
-      }
-      return true;
+      return (this.isS4LProduct() || this.isProduct("s4llite"));
     },
 
     showPreferencesTokens: function() {
