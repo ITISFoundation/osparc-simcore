@@ -365,12 +365,6 @@ async def register_phone(request: web.Request):
             msg = f"Messaging SID is not configured in {product}. Update product's twilio_messaging_sid in database."
             raise ValueError(msg)
 
-        if await db.get_user({"phone": registration.phone}):
-            raise web.HTTPUnauthorized(  # noqa: TRY301
-                reason="Cannot register this phone number because it is already assigned to an active user",
-                content_type=MIMETYPE_APPLICATION_JSON,
-            )
-
         code = await create_2fa_code(
             app=request.app,
             user_email=registration.email,
