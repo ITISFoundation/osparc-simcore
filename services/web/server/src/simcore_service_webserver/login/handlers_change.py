@@ -13,7 +13,6 @@ from simcore_service_webserver.db.plugin import get_database_engine
 from .._meta import API_VTAG
 from ..products.api import Product, get_current_product
 from ..security.api import check_password, encrypt_password
-from ..security.decorators import permission_required
 from ..utils import HOUR
 from ..utils_rate_limiting import global_rate_limit_route
 from ._confirmation import is_confirmation_allowed, make_confirmation_link
@@ -137,10 +136,8 @@ class ChangeEmailBody(InputSchema):
     email: LowerCaseEmailStr
 
 
-@routes.post(f"/{API_VTAG}/auth/change-email", name="auth_change_email")
-@login_required
-@permission_required("user.email.update")
 async def submit_request_to_change_email(request: web.Request):
+    # NOTE: This code have been intentially disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
 
