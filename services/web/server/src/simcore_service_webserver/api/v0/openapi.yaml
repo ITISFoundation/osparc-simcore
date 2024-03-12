@@ -344,38 +344,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Error_'
-  /v0/auth/change-email:
-    post:
-      tags:
-      - auth
-      summary: Change Email
-      description: logged in user changes email
-      operationId: auth_change_email
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangeEmailBody'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Log_'
-        '401':
-          description: unauthorized user. Login required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Error_'
-        '503':
-          description: unable to send confirmation email
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Error_'
   /v0/auth/change-password:
     post:
       tags:
@@ -2925,7 +2893,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -4686,12 +4654,13 @@ components:
           email: maxwel@email.com
           phone: +1 123456789
           company: EM Com
-          address: Infinite Loop. California
+          address: Infinite Loop
+          city: Washington
+          postalCode: '98001'
           country: USA
           application: Antenna_Design
-          description: Description of sometin
+          description: Description of something
           hear: Search_Engine
-          message: I would love to use your tool
     Activity:
       title: Activity
       required:
@@ -5004,17 +4973,6 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/BootChoice'
-    ChangeEmailBody:
-      title: ChangeEmailBody
-      required:
-      - email
-      type: object
-      properties:
-        email:
-          title: Email
-          type: string
-          format: email
-      additionalProperties: false
     ChangePasswordBody:
       title: ChangePasswordBody
       required:
@@ -9905,6 +9863,9 @@ components:
       title: TaskProgress
       type: object
       properties:
+        task_id:
+          title: Task Id
+          type: string
         message:
           title: Message
           type: string
