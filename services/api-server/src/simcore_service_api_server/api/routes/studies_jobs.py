@@ -6,7 +6,6 @@ from fastapi.responses import RedirectResponse
 from simcore_service_api_server.api.dependencies.webserver import get_webserver_session
 from simcore_service_api_server.api.errors.http_error import create_error_json_response
 from simcore_service_api_server.services.webserver import AuthSession
-from simcore_service_storage.exceptions import ProjectNotFoundError
 
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.jobs import (
@@ -18,11 +17,12 @@ from ...models.schemas.jobs import (
     JobOutputs,
     JobStatus,
 )
-from ...models.schemas.studies import StudyID
+from ...models.schemas.studies import Study, StudyID
 from ...services.study_job_models_converters import (
     create_job_from_study,
     get_project_and_file_inputs_from_job_inputs,
 )
+from ...services.webserver import ProjectNotFoundError
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)

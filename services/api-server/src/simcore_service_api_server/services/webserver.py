@@ -430,8 +430,7 @@ class AuthSession:
         data = (
             Envelope[dict[NodeID, dict[str, typing.Any]]].parse_raw(response.text).data
         )
-        assert data is not None  # nosec
-        return data
+        return {} if data is None else data
 
     @_exception_mapper({})
     async def update_node_outputs(
@@ -444,8 +443,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[NodeOutputs].parse_raw(response.text).data
-        assert data is not None  # nosec
-        return data
+        return NodeOutputs(outputs={}) if data is None else data
 
     # WALLETS -------------------------------------------------
 
