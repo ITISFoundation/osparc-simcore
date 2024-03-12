@@ -48,7 +48,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     popUpInWindow: function(moreOpts) {
       let resourceType = "";
       // eslint-disable-next-line no-underscore-dangle
-      switch (moreOpts.__resourceData) {
+      switch (moreOpts.__resourceData["resourceType"]) {
         case "study":
           resourceType = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
           break;
