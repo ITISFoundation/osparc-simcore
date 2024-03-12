@@ -122,12 +122,12 @@ def file_with_data() -> Iterator[Path]:
 
 @pytest.fixture(
     params=[
-        pytest.lazy_fixture("symlink_to_file_with_data"),
-        pytest.lazy_fixture("file_with_data"),
+        "symlink_to_file_with_data",
+        "file_with_data",
     ]
 )
-def this_node_file(request) -> Iterator[Path]:
-    return request.param
+def this_node_file(request: pytest.FixtureRequest) -> Path:
+    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture

@@ -9,7 +9,6 @@ from typing import Any
 
 import docker
 import yaml
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
@@ -61,17 +60,19 @@ def get_service_published_port(
 
     services = [s for s in client.services.list() if str(s.name).endswith(service_name)]
     if not services:
-        raise RuntimeError(
+        msg = (
             f"Cannot find published port for service '{service_name}'."
             "Probably services still not started."
         )
+        raise RuntimeError(msg)
 
     service_ports = services[0].attrs["Endpoint"].get("Ports")
     if not service_ports:
-        raise RuntimeError(
+        msg = (
             f"Cannot find published port for service '{service_name}' in endpoint."
             "Probably services still not started."
         )
+        raise RuntimeError(msg)
 
     published_port = None
     msg = ", ".join(
@@ -89,7 +90,7 @@ def get_service_published_port(
 
     else:
         ports_to_look_for: list = (
-            [target_ports] if isinstance(target_ports, (int, str)) else target_ports
+            [target_ports] if isinstance(target_ports, int | str) else target_ports
         )
 
         for target_port in ports_to_look_for:
@@ -100,7 +101,8 @@ def get_service_published_port(
                     break
 
     if published_port is None:
-        raise RuntimeError(f"Cannot find published port for {target_ports}. Got {msg}")
+        msg = f"Cannot find published port for {target_ports}. Got {msg}"
+        raise RuntimeError(msg)
 
     return str(published_port)
 
@@ -111,7 +113,6 @@ def run_docker_compose_config(
     project_dir: Path,
     env_file_path: Path,
     destination_path: Path | None = None,
-    additional_envs: EnvVarsDict | None = None,
 ) -> dict:
     """Runs docker compose config to validate and resolve a compose file configuration
 
@@ -140,13 +141,12 @@ def run_docker_compose_config(
         ], "Expected yaml/yml file as destination path"
 
     # SEE https://docs.docker.com/compose/reference/
-
-    global_options = [
+    bash_options = [
         "-p",
         str(project_dir),  # Specify an alternate working directory
     ]
     # https://docs.docker.com/compose/environment-variables/#using-the---env-file--option
-    global_options += [
+    bash_options += [
         "-e",
         str(env_file_path),  # Custom environment variables
     ]
@@ -155,26 +155,22 @@ def run_docker_compose_config(
     #  - When you use multiple Compose files, all paths in the files are relative to the first configuration file specified with -f.
     #    You can use the --project-directory option to override this base path.
     for docker_compose_path in docker_compose_paths:
-        global_options += [os.path.relpath(docker_compose_path, project_dir)]
+        bash_options += [os.path.relpath(docker_compose_path, project_dir)]
 
     # SEE https://docs.docker.com/compose/reference/config/
     docker_compose_path = scripts_dir / "docker" / "docker-compose-config.bash"
     assert docker_compose_path.exists()
 
-    cmd = [f"{docker_compose_path}"] + global_options
-    print(" ".join(cmd))
-
-    process_environment_variables = dict(os.environ)
-    if additional_envs:
-        process_environment_variables |= additional_envs
+    args = [f"{docker_compose_path}", *bash_options]
+    print(" ".join(args))
 
     process = subprocess.run(
-        cmd,
+        args,
         shell=False,
-        check=True,
         cwd=project_dir,
         capture_output=True,
-        env=process_environment_variables,
+        check=True,
+        env=None,  # NOTE: Do not use since since we pass all necessary env vars via --env-file option of  docker compose
     )
 
     compose_file_str = process.stdout.decode("utf-8")
