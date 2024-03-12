@@ -54,6 +54,9 @@ async def request_product_account(request: web.Request):
             if request.transport
             else None
         ),
+        "test_url": "https://ipinfo.io/{}/json".format(
+            request.headers.get("X-Real-IP", None)
+        ),
     }
 
     # send email to fogbugz or user itself
