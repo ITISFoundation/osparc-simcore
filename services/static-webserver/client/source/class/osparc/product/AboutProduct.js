@@ -69,7 +69,6 @@ qx.Class.define("osparc.product.AboutProduct", {
     __buildS4LLayout: function() {
       osparc.store.Support.getLicenseURL()
         .then(licenseUrl => {
-          licenseUrl="https://sim4life.swiss/"
           const color = qx.theme.manager.Color.getInstance().resolve("text");
           const text = this.tr(`
             sim4life.io is a native implementation of the most advanced simulation platform, Sim4Life, in the cloud. \
