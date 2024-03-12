@@ -258,6 +258,7 @@ class DaskClient:
                 key=job_id,
                 resources=dask_resources,
                 retries=0,
+                pure=False,
             )
             # NOTE: the callback is running in a secondary thread, and takes a future as arg
             task_future.add_done_callback(lambda _: callback())
