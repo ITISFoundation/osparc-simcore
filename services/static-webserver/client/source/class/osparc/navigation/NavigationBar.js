@@ -178,7 +178,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             scale: true
           })
           control.getChildControl("on-logo").setSize({
-            width: ["s4l", "s4lacad"].includes(osparc.product.Utils.getProductName()) ? 150 : 100,
+            width: osparc.product.Utils.isS4LProduct() ? 150 : 100,
             height: osparc.navigation.NavigationBar.HEIGHT
           });
           this.getChildControl("left-items").add(control);
@@ -401,7 +401,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       } else {
         // left-items
         this.getChildControl("logo").getChildControl("on-logo").setSize({
-          width: ["s4l", "s4lacad"].includes(osparc.product.Utils.getProductName()) ? 150 : 100,
+          width: osparc.product.Utils.isS4LProduct() ? 150 : 100,
           height: osparc.navigation.NavigationBar.HEIGHT
         });
         if (!osparc.product.Utils.isProduct("osparc")) {
