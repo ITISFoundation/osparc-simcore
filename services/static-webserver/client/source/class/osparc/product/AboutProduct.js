@@ -138,7 +138,7 @@ qx.Class.define("osparc.product.AboutProduct", {
         font: "link-label-14"
       });
       const vendor = osparc.store.VendorInfo.getInstance().getVendor();
-      if (vendor) {
+      if (vendor && "url" in vendor && "copyright" in vendor) {
         copyrightLink.set({
           value: vendor.copyright,
           url: vendor.url
