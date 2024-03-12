@@ -3,8 +3,17 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import RedirectResponse
+from pydantic import PositiveInt
+from simcore_service_api_server.api.dependencies.authentication import (
+    get_current_user_id,
+)
+from simcore_service_api_server.api.dependencies.services import get_api_client
 from simcore_service_api_server.api.dependencies.webserver import get_webserver_session
 from simcore_service_api_server.api.errors.http_error import create_error_json_response
+from simcore_service_api_server.services.director_v2 import DirectorV2Api
+from simcore_service_api_server.services.solver_job_models_converters import (
+    create_jobstatus_from_task,
+)
 from simcore_service_api_server.services.webserver import AuthSession
 
 from ...models.pagination import Page, PaginationParams
@@ -67,7 +76,7 @@ async def create_study_job(
     study_id: StudyID,
     job_inputs: JobInputs,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-):
+) -> Job:
     try:
         project = await webserver_api.clone_project(project_id=study_id)
 
@@ -75,7 +84,7 @@ async def create_study_job(
 
         file_param_nodes = {}
         for node_id, node in project.workbench.items():
-            assert node.outputs is not None  # no sec
+            assert node.outputs is not None  # nosec
             if (
                 node.key == "simcore/services/frontend/file-picker"
                 and len(node.outputs) == 0
@@ -146,15 +155,25 @@ async def delete_study_job(study_id: StudyID, job_id: JobID):
     "/{study_id:uuid}/jobs/{job_id:uuid}:start",
     response_model=JobStatus,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def start_study_job(
     study_id: StudyID,
     job_id: JobID,
-):
-    msg = f"start study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    raise NotImplementedError(msg)
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+) -> JobStatus:
+    job_name = _compose_job_resource_name(study_id, job_id)
+    _logger.debug("Starting Job '%s'", job_name)
+
+    await webserver_api.start_project(project_id=job_id)
+
+    return await inspect_study_job(
+        study_id=study_id,
+        job_id=job_id,
+        user_id=user_id,
+        director2_api=director2_api,
+    )
 
 
 @router.post(
@@ -176,15 +195,19 @@ async def stop_study_job(
     "/{study_id}/jobs/{job_id}:inspect",
     response_model=JobStatus,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def inspect_study_job(
     study_id: StudyID,
     job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    msg = f"inspect study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    raise NotImplementedError(msg)
+    job_name = _compose_job_resource_name(study_id, job_id)
+    _logger.debug("Inspecting Job '%s'", job_name)
+
+    task = await director2_api.get_computation(job_id, user_id)
+    job_status: JobStatus = create_jobstatus_from_task(task)
+    return job_status
 
 
 @router.post(
