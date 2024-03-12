@@ -104,6 +104,10 @@ def event_extra_data(  # noqa: PLR0911
                 "host": host_url,
                 "code": code,
             }
+        case "on_new_invitation":
+            return {
+                "link": f"{host_url}?invitation={code}",
+            }
         case "on_payed":
             return {
                 "payment": payment_data,
@@ -150,6 +154,7 @@ def event_attachments(event_name: str, faker: Faker, tmp_path: Path) -> list[Pat
         "on_account_form",
         "on_change_email",
         "on_new_code",
+        "on_new_invitation",
         "on_payed",
         "on_registered",
         "on_reset_password",

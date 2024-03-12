@@ -14,6 +14,7 @@ from notifications_library._templates import (
         "on_account_form",
         "on_change_email",
         "on_new_code",
+        "on_new_invitation",
         "on_payed",
         "on_registered",
         "on_reset_password",
