@@ -53,17 +53,14 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
       });
 
       const firstName = new qx.ui.form.TextField().set({
-        tabIndex: 2,
         placeholder: this.tr("First Name")
       });
 
       const lastName = new qx.ui.form.TextField().set({
-        tabIndex: 3,
         placeholder: this.tr("Last Name")
       });
 
       const email = new qx.ui.form.TextField().set({
-        tabIndex: 1,
         placeholder: this.tr("Email"),
         readOnly: true
       });
@@ -238,19 +235,16 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
       });
 
       const currentPassword = new osparc.ui.form.PasswordField().set({
-        tabIndex: 1,
         required: true,
         placeholder: this.tr("Your current password")
       });
 
       const newPassword = new osparc.ui.form.PasswordField().set({
-        tabIndex: 2,
         required: true,
         placeholder: this.tr("Your new password")
       });
 
       const confirm = new osparc.ui.form.PasswordField().set({
-        tabIndex: 3,
         required: true,
         placeholder: this.tr("Retype your new password")
       });
