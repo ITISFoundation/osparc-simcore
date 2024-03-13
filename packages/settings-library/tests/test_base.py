@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
+# pylint: disable=protected-access
 
 import inspect
 import json
@@ -196,7 +197,7 @@ def test_auto_default_to_none_logs_a_warning(
     create_settings_class: Callable[[str], type[BaseCustomSettings]],
     mocker: MockerFixture,
 ):
-    logger_warn = mocker.spy(settings_library.base.logger, "warning")
+    logger_warn = mocker.spy(settings_library.base._logger, "warning")  # noqa: SLF001
 
     S = create_settings_class("S")
 

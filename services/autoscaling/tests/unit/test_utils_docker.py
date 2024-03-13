@@ -37,6 +37,7 @@ from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICE_READY_LABEL_KEY,
+    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
     Node,
     _by_created_dt,
     attach_node,
@@ -133,7 +134,13 @@ async def test_get_monitored_nodes_with_valid_label(
     create_node_labels: Callable[[list[str]], Awaitable[None]],
 ):
     labels = faker.pylist(allowed_types=(str,))
-    await create_node_labels(labels)
+    await create_node_labels(
+        [
+            *labels,
+            _OSPARC_SERVICE_READY_LABEL_KEY,
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
+        ]
+    )
     monitored_nodes = await get_monitored_nodes(autoscaling_docker, node_labels=labels)
     assert len(monitored_nodes) == 1
 
