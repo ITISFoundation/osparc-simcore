@@ -30,7 +30,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       this.add(this.__createLowDiskSpaceSetting());
     }
     this.add(this.__createInactivitySetting());
-    this.add(this.__createJobConcurrencySetting());
+    // this.add(this.__createJobConcurrencySetting());
     this.add(this.__createUserPrivacySettings());
   },
 
