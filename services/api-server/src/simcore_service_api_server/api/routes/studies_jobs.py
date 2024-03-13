@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import RedirectResponse
+from models_library.api_schemas_webserver.projects import ProjectUpdate
 from pydantic import PositiveInt
 from simcore_service_api_server.api.dependencies.authentication import (
     get_current_user_id,
@@ -82,6 +83,12 @@ async def create_study_job(
         project = await webserver_api.clone_project(
             from_project_id=study_id, hidden=True
         )
+        job = create_job_from_study(
+            study_key=study_id, project=project, job_inputs=job_inputs
+        )
+        _ = await webserver_api.update_project(
+            project_id=job.id, update_params=ProjectUpdate(name=job.name)
+        )
 
         project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)
 
@@ -112,10 +119,6 @@ async def create_study_job(
 
         if len(new_project_inputs) > 0:
             await webserver_api.update_project_inputs(project.uuid, new_project_inputs)
-
-        job = create_job_from_study(
-            study_key=study_id, project=project, job_inputs=job_inputs
-        )
 
         assert job.name == _compose_job_resource_name(study_id, job.id)
 
