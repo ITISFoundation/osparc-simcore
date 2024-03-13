@@ -124,7 +124,7 @@ async def unregister_account(request: web.Request):
             send_close_account_email(
                 request,
                 user_email=credentials.email,
-                user_name=credentials.display_name,
+                user_first_name=credentials.display_name,
                 retention_days=settings.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS,
             ),
             task_suffix_name=f"{__name__}.unregister_account.send_close_account_email",
