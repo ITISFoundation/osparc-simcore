@@ -338,6 +338,7 @@ async def test_one_time_payment_with_payment_method(
     wallet_payment_method_id: PaymentMethodID,
     mocker: MockerFixture,
     faker: Faker,
+    setup_user_pre_registration_details_db: None,
 ):
     assert client.app
 

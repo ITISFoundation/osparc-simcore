@@ -533,7 +533,7 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
             if task.state in task_state_to_tasks:
                 task_state_to_tasks[task.state].append(task.key)
             else:
-                task_state_to_tasks[task.state] = task.key
+                task_state_to_tasks[task.state] = [task.key]
 
         return dict(task_state_to_tasks)
 
@@ -684,6 +684,15 @@ def main(
     assert environment
     state["environment"] = environment
     # connect to ec2
+    if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
+        error_msg = (
+            "Terraform is necessary in order to check into that deployment!\n"
+            f"install terraform (check README.md in {state['deploy_config']} for instructions)"
+            "then run make repo.config.frozen, and replace the repo.config, then re-run this code"
+        )
+        print(error_msg)
+        raise typer.Abort(error_msg)
+
     state["ec2_resource"] = boto3.resource(
         "ec2",
         region_name=environment["AUTOSCALING_EC2_REGION_NAME"],

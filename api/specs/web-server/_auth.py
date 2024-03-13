@@ -194,6 +194,8 @@ async def reset_password_allowed(code: str, _body: ResetPasswordConfirmation):
             "description": "unable to send confirmation email",
         },
     },
+    # Disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
+    include_in_schema=False,
 )
 async def change_email(_body: ChangeEmailBody):
     """logged in user changes email"""

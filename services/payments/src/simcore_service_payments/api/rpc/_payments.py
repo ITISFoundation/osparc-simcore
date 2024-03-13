@@ -11,12 +11,15 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentInitiated,
 )
+from models_library.payments import UserInvoiceAddress
+from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 
+from ...core.settings import ApplicationSettings
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services import payments
 from ...services.payments_gateway import PaymentsGatewayApi
@@ -28,7 +31,7 @@ router = RPCRouter()
 
 
 @router.expose(reraise_if_error_type=(PaymentsError, PaymentServiceUnavailableError))
-async def init_payment(
+async def init_payment(  # pylint: disable=too-many-arguments
     app: FastAPI,
     *,
     amount_dollars: Decimal,
@@ -39,8 +42,13 @@ async def init_payment(
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    user_address: UserInvoiceAddress,
+    stripe_price_id: StripePriceID,
+    stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
+
+    settings: ApplicationSettings = app.state.settings
 
     with log_context(
         _logger,
@@ -52,6 +60,7 @@ async def init_payment(
         return await payments.init_one_time_payment(
             gateway=PaymentsGatewayApi.get_from_app_state(app),
             repo=PaymentsTransactionsRepo(db_engine=app.state.engine),
+            settings=settings,
             amount_dollars=amount_dollars,
             target_credits=target_credits,
             product_name=product_name,
@@ -60,6 +69,9 @@ async def init_payment(
             user_id=user_id,
             user_name=user_name,
             user_email=user_email,
+            user_address=user_address,
+            stripe_price_id=stripe_price_id,
+            stripe_tax_rate_id=stripe_tax_rate_id,
             comment=comment,
         )
 

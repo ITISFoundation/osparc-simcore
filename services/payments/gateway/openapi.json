@@ -1,0 +1,844 @@
+{
+ "openapi": "3.0.0",
+ "info": {
+  "title": "osparc-compliant payment-gateway",
+  "version": "0.3.0"
+ },
+ "paths": {
+  "/init": {
+   "post": {
+    "tags": [
+     "payment"
+    ],
+    "summary": "Init Payment",
+    "operationId": "init_payment",
+    "parameters": [
+     {
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "X-Init-Api-Secret"
+      },
+      "name": "x-init-api-secret",
+      "in": "header"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/InitPayment"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PaymentInitiated"
+        }
+       }
+      }
+     },
+     "4XX": {
+      "description": "Client Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/pay": {
+   "get": {
+    "tags": [
+     "payment"
+    ],
+    "summary": "Get Payment Form",
+    "operationId": "get_payment_form",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "type": "string",
+       "maxLength": 50,
+       "minLength": 1,
+       "title": "Id"
+      },
+      "name": "id",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "text/html": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "4XX": {
+      "description": "Client Error",
+      "content": {
+       "text/html": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/cancel": {
+   "post": {
+    "tags": [
+     "payment"
+    ],
+    "summary": "Cancel Payment",
+    "operationId": "cancel_payment",
+    "parameters": [
+     {
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "X-Init-Api-Secret"
+      },
+      "name": "x-init-api-secret",
+      "in": "header"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PaymentInitiated"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PaymentCancelled"
+        }
+       }
+      }
+     },
+     "4XX": {
+      "description": "Client Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/payment-methods:init": {
+   "post": {
+    "tags": [
+     "payment-method"
+    ],
+    "summary": "Init Payment Method",
+    "operationId": "init_payment_method",
+    "parameters": [
+     {
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "X-Init-Api-Secret"
+      },
+      "name": "x-init-api-secret",
+      "in": "header"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/InitPaymentMethod"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PaymentMethodInitiated"
+        }
+       }
+      }
+     },
+     "4XX": {
+      "description": "Client Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/payment-methods/form": {
+   "get": {
+    "tags": [
+     "payment-method"
+    ],
+    "summary": "Get Form Payment Method",
+    "operationId": "get_form_payment_method",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "type": "string",
+       "maxLength": 50,
+       "minLength": 1,
+       "title": "Id"
+      },
+      "name": "id",
+      "in": "query"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "text/html": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "4XX": {
+      "description": "Client Error",
+      "content": {
+       "text/html": {
+        "schema": {
+         "type": "string"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/payment-methods:batchGet": {
+   "post": {
+    "tags": [
+     "payment-method"
+    ],
+    "summary": "Batch Get Payment Methods",
+    "operationId": "batch_get_payment_methods",
+    "parameters": [
+     {
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "X-Init-Api-Secret"
+      },
+      "name": "x-init-api-secret",
+      "in": "header"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/BatchGetPaymentMethods"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PaymentMethodsBatch"
+        }
+       }
+      }
+     },
+     "4XX": {
+      "description": "Client Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/payment-methods/{id}": {
+   "get": {
+    "tags": [
+     "payment-method"
+    ],
+    "summary": "Get Payment Method",
+    "operationId": "get_payment_method",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "type": "string",
+       "maxLength": 50,
+       "minLength": 1,
+       "title": "Id"
+      },
+      "name": "id",
+      "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "X-Init-Api-Secret"
+      },
+      "name": "x-init-api-secret",
+      "in": "header"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/GetPaymentMethod"
+        }
+       }
+      }
+     },
+     "404": {
+      "description": "Payment method not found: It was not added or incomplete (i.e. create flow failed or canceled)",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      }
+     },
+     "4XX": {
+      "description": "Client Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "payment-method"
+    ],
+    "summary": "Delete Payment Method",
+    "operationId": "delete_payment_method",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "type": "string",
+       "maxLength": 50,
+       "minLength": 1,
+       "title": "Id"
+      },
+      "name": "id",
+      "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "X-Init-Api-Secret"
+      },
+      "name": "x-init-api-secret",
+      "in": "header"
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "4XX": {
+      "description": "Client Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/payment-methods/{id}:pay": {
+   "post": {
+    "tags": [
+     "payment-method"
+    ],
+    "summary": "Pay With Payment Method",
+    "operationId": "pay_with_payment_method",
+    "parameters": [
+     {
+      "required": true,
+      "schema": {
+       "type": "string",
+       "maxLength": 50,
+       "minLength": 1,
+       "title": "Id"
+      },
+      "name": "id",
+      "in": "path"
+     },
+     {
+      "required": false,
+      "schema": {
+       "type": "string",
+       "title": "X-Init-Api-Secret"
+      },
+      "name": "x-init-api-secret",
+      "in": "header"
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/InitPayment"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AckPaymentWithPaymentMethod"
+        }
+       }
+      }
+     },
+     "4XX": {
+      "description": "Client Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ErrorModel"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "AckPaymentWithPaymentMethod": {
+    "properties": {
+     "success": {
+      "type": "boolean",
+      "title": "Success"
+     },
+     "message": {
+      "type": "string",
+      "title": "Message"
+     },
+     "provider_payment_id": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Provider Payment Id",
+      "description": "Payment ID from the provider (e.g. stripe payment ID)"
+     },
+     "invoice_url": {
+      "type": "string",
+      "maxLength": 2083,
+      "minLength": 1,
+      "format": "uri",
+      "title": "Invoice Url",
+      "description": "Link to invoice is required when success=true"
+     },
+     "invoice_pdf": {
+      "type": "string",
+      "maxLength": 2083,
+      "minLength": 1,
+      "format": "uri",
+      "title": "Invoice Pdf",
+      "description": "Link to invoice PDF"
+     },
+     "stripe_invoice_id": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Stripe Invoice Id",
+      "description": "Stripe invoice ID"
+     },
+     "stripe_customer_id": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Stripe Customer Id",
+      "description": "Customer invoice ID"
+     },
+     "payment_id": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Payment Id",
+      "description": "Payment ID from the gateway"
+     }
+    },
+    "type": "object",
+    "required": [
+     "success"
+    ],
+    "title": "AckPaymentWithPaymentMethod",
+    "example": {
+     "success": true,
+     "provider_payment_id": "pi_123ABC",
+     "invoice_url": "https://invoices.com/id=12345",
+     "payment_id": "D19EE68B-B007-4B61-A8BC-32B7115FB244"
+    }
+   },
+   "BatchGetPaymentMethods": {
+    "properties": {
+     "payment_methods_ids": {
+      "items": {
+       "type": "string",
+       "maxLength": 50,
+       "minLength": 1
+      },
+      "type": "array",
+      "title": "Payment Methods Ids"
+     }
+    },
+    "type": "object",
+    "required": [
+     "payment_methods_ids"
+    ],
+    "title": "BatchGetPaymentMethods"
+   },
+   "ErrorModel": {
+    "properties": {
+     "message": {
+      "type": "string",
+      "title": "Message"
+     },
+     "exception": {
+      "type": "string",
+      "title": "Exception"
+     },
+     "file": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "path"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "File"
+     },
+     "line": {
+      "type": "integer",
+      "title": "Line"
+     },
+     "trace": {
+      "items": {},
+      "type": "array",
+      "title": "Trace"
+     }
+    },
+    "type": "object",
+    "required": [
+     "message"
+    ],
+    "title": "ErrorModel"
+   },
+   "GetPaymentMethod": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Id"
+     },
+     "card_holder_name": {
+      "type": "string",
+      "title": "Card Holder Name"
+     },
+     "card_number_masked": {
+      "type": "string",
+      "title": "Card Number Masked"
+     },
+     "card_type": {
+      "type": "string",
+      "title": "Card Type"
+     },
+     "expiration_month": {
+      "type": "integer",
+      "title": "Expiration Month"
+     },
+     "expiration_year": {
+      "type": "integer",
+      "title": "Expiration Year"
+     },
+     "created": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "created"
+    ],
+    "title": "GetPaymentMethod"
+   },
+   "InitPayment": {
+    "properties": {
+     "amount_dollars": {
+      "type": "number",
+      "exclusiveMaximum": true,
+      "exclusiveMinimum": true,
+      "title": "Amount Dollars",
+      "maximum": 1000000.0,
+      "minimum": 0.0
+     },
+     "credits": {
+      "type": "number",
+      "exclusiveMaximum": true,
+      "exclusiveMinimum": true,
+      "title": "Credits",
+      "maximum": 1000000.0,
+      "minimum": 0.0
+     },
+     "user_name": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "User Name"
+     },
+     "user_email": {
+      "type": "string",
+      "format": "email",
+      "title": "User Email"
+     },
+     "user_address": {
+      "$ref": "#/components/schemas/UserAddress"
+     },
+     "wallet_name": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Wallet Name"
+     },
+     "stripe_price_id": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Stripe Price Id"
+     },
+     "stripe_tax_rate_id": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Stripe Tax Rate Id"
+     },
+     "stripe_tax_exempt_value": {
+      "$ref": "#/components/schemas/StripeTaxExempt"
+     }
+    },
+    "additionalProperties": false,
+    "type": "object",
+    "required": [
+     "amount_dollars",
+     "credits",
+     "user_name",
+     "user_email",
+     "user_address",
+     "wallet_name",
+     "stripe_price_id",
+     "stripe_tax_rate_id",
+     "stripe_tax_exempt_value"
+    ],
+    "title": "InitPayment"
+   },
+   "InitPaymentMethod": {
+    "properties": {
+     "method": {
+      "type": "string",
+      "enum": [
+       "CC"
+      ],
+      "title": "Method",
+      "default": "CC"
+     },
+     "user_name": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "User Name"
+     },
+     "user_email": {
+      "type": "string",
+      "format": "email",
+      "title": "User Email"
+     },
+     "wallet_name": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Wallet Name"
+     }
+    },
+    "additionalProperties": false,
+    "type": "object",
+    "required": [
+     "user_name",
+     "user_email",
+     "wallet_name"
+    ],
+    "title": "InitPaymentMethod"
+   },
+   "PaymentCancelled": {
+    "properties": {
+     "message": {
+      "type": "string",
+      "title": "Message"
+     }
+    },
+    "type": "object",
+    "title": "PaymentCancelled"
+   },
+   "PaymentInitiated": {
+    "properties": {
+     "payment_id": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Payment Id"
+     }
+    },
+    "type": "object",
+    "required": [
+     "payment_id"
+    ],
+    "title": "PaymentInitiated"
+   },
+   "PaymentMethodInitiated": {
+    "properties": {
+     "payment_method_id": {
+      "type": "string",
+      "maxLength": 50,
+      "minLength": 1,
+      "title": "Payment Method Id"
+     }
+    },
+    "type": "object",
+    "required": [
+     "payment_method_id"
+    ],
+    "title": "PaymentMethodInitiated"
+   },
+   "PaymentMethodsBatch": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/GetPaymentMethod"
+      },
+      "type": "array",
+      "title": "Items"
+     }
+    },
+    "type": "object",
+    "required": [
+     "items"
+    ],
+    "title": "PaymentMethodsBatch"
+   },
+   "StripeTaxExempt": {
+    "type": "string",
+    "enum": [
+     "exempt",
+     "none",
+     "reverse"
+    ],
+    "title": "StripeTaxExempt",
+    "description": "An enumeration."
+   },
+   "UserAddress": {
+    "properties": {
+     "line1": {
+      "type": "string",
+      "title": "Line1"
+     },
+     "state": {
+      "type": "string",
+      "title": "State"
+     },
+     "postal_code": {
+      "type": "string",
+      "title": "Postal Code"
+     },
+     "city": {
+      "type": "string",
+      "title": "City"
+     },
+     "country": {
+      "type": "string",
+      "title": "Country"
+     }
+    },
+    "type": "object",
+    "required": [
+     "country"
+    ],
+    "title": "UserAddress"
+   }
+  }
+ }
+}

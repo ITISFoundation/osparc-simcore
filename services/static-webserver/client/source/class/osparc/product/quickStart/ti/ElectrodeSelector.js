@@ -53,7 +53,7 @@ qx.Class.define("osparc.product.quickStart.ti.ElectrodeSelector", {
       this._add(label4);
 
       const text5 = this.tr("\
-        Now the Arrow that says 'Next' can be pushed and the optimization will inmediatly start.\
+        Now the Arrow that says 'Next' can be pushed and the optimization will immediatly start.\
       ");
       const label5 = osparc.product.quickStart.Utils.createLabel(text5);
       this._add(label5);

@@ -83,6 +83,7 @@ async def test_email(request: web.Request):
         "link": "https://httpbin.org/redirect-to?url=https%3A%2F%2Fhttpbin.org%2F",
         "name": "Mr. Smith",
         "support_email": product.support_email,
+        "product": product,
     } | body.template_context
     settings = get_plugin_settings(request.app)
 

@@ -4,7 +4,7 @@ from pathlib import Path
 import aiofiles
 from aiohttp import web
 from models_library.basic_types import NonNegativeDecimal
-from models_library.products import CreditResultGet, ProductName
+from models_library.products import CreditResultGet, ProductName, ProductStripeInfoGet
 
 from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
 from .._resources import webserver_resources
@@ -73,6 +73,21 @@ async def get_credit_amount(
 
     credit_amount = dollar_amount / usd_per_credit
     return CreditResultGet(product_name=product_name, credit_amount=credit_amount)
+
+
+async def get_product_stripe_info(
+    app: web.Application, *, product_name: ProductName
+) -> ProductStripeInfoGet:
+    repo = ProductRepository.create_from_app(app)
+    product_stripe_info = await repo.get_product_stripe_info(product_name)
+    if (
+        not product_stripe_info
+        or "missing!!" in product_stripe_info.stripe_price_id
+        or "missing!!" in product_stripe_info.stripe_tax_rate_id
+    ):
+        msg = f"Missing product stripe for product {product_name}"
+        raise ValueError(msg)
+    return product_stripe_info
 
 
 #

@@ -7,7 +7,7 @@
 
 from collections.abc import Callable, Iterator
 from decimal import Decimal
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -24,6 +24,8 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
 )
 from models_library.basic_types import IDStr
+from models_library.payments import UserInvoiceAddress
+from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -32,6 +34,9 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.payments_transactions import payments_transactions
+from simcore_postgres_database.models.users_details import (
+    users_pre_registration_details,
+)
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.payments._methods_api import (
     _fake_cancel_creation_of_wallet_payment_method,
@@ -111,6 +116,9 @@ def mock_rpc_payments_service_api(
         user_id: UserID,
         user_name: str,
         user_email: str,
+        user_address: UserInvoiceAddress,
+        stripe_price_id: StripePriceID,
+        stripe_tax_rate_id: StripeTaxRateID,
         comment: str | None = None,
     ):
         return await _fake_init_payment(
@@ -214,6 +222,9 @@ def mock_rpc_payments_service_api(
         user_id: UserID,
         user_name: str,
         user_email: EmailStr,
+        user_address: UserInvoiceAddress,
+        stripe_price_id: StripePriceID,
+        stripe_tax_rate_id: StripeTaxRateID,
         comment: str | None = None,
     ) -> PaymentTransaction:
 
@@ -285,3 +296,31 @@ def mock_rpc_payments_service_api(
             side_effect=_pay,
         ),
     }
+
+
+@pytest.fixture()
+def setup_user_pre_registration_details_db(
+    postgres_db: sa.engine.Engine, logged_user: UserInfoDict, faker: Faker
+) -> Iterator[int]:
+    with postgres_db.connect() as con:
+        result = con.execute(
+            users_pre_registration_details.insert()
+            .values(
+                user_id=logged_user["id"],
+                pre_email=faker.email(),
+                pre_first_name=faker.first_name(),
+                pre_last_name=faker.last_name(),
+                pre_phone=faker.phone_number(),
+                company_name=faker.company(),
+                address=faker.address().replace("\n", ", "),
+                city=faker.city(),
+                state=faker.state(),
+                country=faker.country(),
+                postal_code=faker.postcode(),
+                created_by=None,
+            )
+            .returning(sa.literal_column("*"))
+        )
+        row = result.fetchone()
+        yield cast(int, row[0])
+        con.execute(users_pre_registration_details.delete())
