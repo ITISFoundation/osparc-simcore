@@ -1,12 +1,11 @@
 import re
 import sys
 from pathlib import Path
-from typing import Set
 
 from setuptools import find_packages, setup
 
 
-def read_reqs(reqs_path: Path) -> Set[str]:
+def read_reqs(reqs_path: Path) -> set[str]:
     return {
         r
         for r in re.findall(
@@ -31,17 +30,17 @@ TEST_REQUIREMENTS = tuple(
     }
 )
 
-SETUP = dict(
-    name="simcore-sdk",
-    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
-    python_requires=">=3.6",
-    install_requires=INSTALL_REQUIREMENTS,
-    tests_require=TEST_REQUIREMENTS,
-    extras_require={"test": TEST_REQUIREMENTS},
-    test_suite="tests",
-)
+SETUP = {
+    "name": "simcore-sdk",
+    "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
+    "packages": find_packages(where="src"),
+    "package_dir": {"": "src"},
+    "python_requires": ">=3.6",
+    "install_requires": INSTALL_REQUIREMENTS,
+    "tests_require": TEST_REQUIREMENTS,
+    "extras_require": {"test": TEST_REQUIREMENTS},
+    "test_suite": "tests",
+}
 
 
 if __name__ == "__main__":

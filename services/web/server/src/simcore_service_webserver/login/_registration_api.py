@@ -4,7 +4,7 @@ from typing import Any
 
 from aiohttp import web
 from pydantic import EmailStr, PositiveInt
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import safe_json_dumps
 
 from ..email.utils import send_email_from_template
 from ..products.api import Product, get_current_product, get_product_template_path
@@ -33,6 +33,7 @@ async def send_close_account_email(
                 "name": user_name.capitalize(),
                 "support_email": product.support_email,
                 "retention_days": retention_days,
+                "product": product,
             },
         )
     except Exception:  # pylint: disable=broad-except
@@ -74,7 +75,7 @@ async def send_account_request_email_to_support(
                 ),
                 "request_form": request_form,
                 "ipinfo": ipinfo,
-                "dumps": functools.partial(json_dumps, indent=1),
+                "dumps": functools.partial(safe_json_dumps, indent=1),
             },
         )
     except Exception:  # pylint: disable=broad-except

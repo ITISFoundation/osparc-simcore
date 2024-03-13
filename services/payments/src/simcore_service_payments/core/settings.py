@@ -60,6 +60,10 @@ class ApplicationSettings(_BaseApplicationSettings):
     PAYMENTS_GATEWAY_API_SECRET: SecretStr = Field(
         ..., description="Credentials for payments-gateway api"
     )
+    PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED: bool = Field(
+        default=False,
+        description="This feature should be enabled after we deploy Payment Gateway with computation of taxes feature",
+    )
 
     PAYMENTS_USERNAME: str = Field(
         ...,

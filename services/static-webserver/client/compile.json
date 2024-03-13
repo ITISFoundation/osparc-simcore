@@ -40,7 +40,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.products.s4l.ThemeDark",
       "name": "s4l",
-      "title": "Sim4Life - ZMT",
+      "title": "Sim4Life",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
@@ -56,7 +56,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.products.s4l.ThemeDark",
       "name": "s4llite",
-      "title": "Sim4Life lite",
+      "title": "Sim4Life Lite",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
@@ -72,7 +72,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.products.s4l.ThemeDark",
       "name": "s4lacad",
-      "title": "Sim4Life Academic",
+      "title": "Sim4Life Science",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",

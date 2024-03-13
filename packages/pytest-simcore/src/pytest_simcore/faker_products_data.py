@@ -13,15 +13,15 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from models_library.products import ProductName
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from pydantic import EmailStr
 
 from .helpers.rawdata_fakers import random_product
 
 
 @pytest.fixture
-def product_name(faker: Faker) -> ProductName:
-    return ProductName(f"the_{faker.random_element(['blue', 'foo', 'test'])}_product")
+def product_name() -> ProductName:
+    return ProductName("the_test_product")
 
 
 @pytest.fixture
@@ -34,3 +34,13 @@ def product(
     faker: Faker, product_name: ProductName, support_email: EmailStr
 ) -> dict[str, Any]:
     return random_product(name=product_name, support_email=support_email, fake=faker)
+
+
+@pytest.fixture
+def product_price_stripe_price_id(faker: Faker) -> StripePriceID:
+    return StripePriceID(faker.word())
+
+
+@pytest.fixture
+def product_price_stripe_tax_rate_id(faker: Faker) -> StripeTaxRateID:
+    return StripeTaxRateID(faker.word())
