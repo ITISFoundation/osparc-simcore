@@ -131,7 +131,7 @@ endif
 
 ## DOCKER BUILD -------------------------------
 #
-# - all builds are inmediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
+# - all builds are immediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
@@ -523,14 +523,13 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 
 pylint: ## python linting
 	# pylint version info
-	@/bin/bash -c "pylint --version"
+	@pylint --version
 	# Running linter in packages and services (except director)
 	@folders=$$(find $(CURDIR)/services $(CURDIR)/packages  -type d -not -path "*/director/*" -name 'src' -exec dirname {} \; | sort -u); \
 	exit_status=0; \
 	for folder in $$folders; do \
-		pushd "$$folder"; \
-		make pylint || exit_status=1; \
-		popd; \
+		echo "Linting $$folder"; \
+		$(MAKE_C) "$$folder" pylint || exit_status=1; \
 	done;\
 	exit $$exit_status
 	# Running linter elsewhere

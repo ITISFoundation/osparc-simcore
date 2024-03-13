@@ -1,3 +1,4 @@
+import collections
 import contextlib
 import logging
 import re
@@ -217,30 +218,39 @@ async def get_worker_used_resources(
         DaskNoWorkersError
     """
 
-    def _get_worker_used_resources(
+    def _list_processing_tasks_on_worker(
         dask_scheduler: distributed.Scheduler, *, worker_url: str
-    ) -> dict[str, float] | None:
-        for worker_name, worker_state in dask_scheduler.workers.items():
-            if worker_url != worker_name:
-                continue
-            if worker_state.status is distributed.Status.closing_gracefully:
-                # NOTE: when a worker was retired it is in this state
-                return {}
-            return dict(worker_state.used_resources)
-        return None
+    ) -> list[tuple[DaskTaskId, DaskTaskResources]]:
+        processing_tasks = []
+        for task_key, task_state in dask_scheduler.tasks.items():
+            if task_state.processing_on and (
+                task_state.processing_on.address == worker_url
+            ):
+                processing_tasks.append((task_key, task_state.resource_restrictions))
+        return processing_tasks
 
     async with _scheduler_client(scheduler_url, authentication) as client:
         worker_url, _ = _dask_worker_from_ec2_instance(client, ec2_instance)
 
+        _logger.debug("looking for processing tasksfor %s", f"{worker_url=}")
+
         # now get the used resources
-        worker_used_resources: dict[str, Any] | None = await _wrap_client_async_routine(
-            client.run_on_scheduler(_get_worker_used_resources, worker_url=worker_url),
+        worker_processing_tasks: list[
+            tuple[DaskTaskId, DaskTaskResources]
+        ] = await _wrap_client_async_routine(
+            client.run_on_scheduler(
+                _list_processing_tasks_on_worker, worker_url=worker_url
+            ),
         )
-        if worker_used_resources is None:
-            raise DaskWorkerNotFoundError(worker_host=worker_url, url=scheduler_url)
+
+        total_resources_used: collections.Counter[str] = collections.Counter()
+        for _, task_resources in worker_processing_tasks:
+            total_resources_used.update(task_resources)
+
+        _logger.debug("found %s for %s", f"{total_resources_used=}", f"{worker_url=}")
         return Resources(
-            cpus=worker_used_resources.get("CPU", 0),
-            ram=parse_obj_as(ByteSize, worker_used_resources.get("RAM", 0)),
+            cpus=total_resources_used.get("CPU", 0),
+            ram=parse_obj_as(ByteSize, total_resources_used.get("RAM", 0)),
         )
 
 

@@ -59,23 +59,41 @@ _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS: Final[list[str]] = [
 _PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
 _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
 _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR: Final[str] = "no suitable node"
+_OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
+    DockerLabelKey, "io.simcore.osparc-services-ready"
+)
+_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
+    DockerLabelKey, f"{_OSPARC_SERVICE_READY_LABEL_KEY}-last-changed"
+)
+_OSPARC_SERVICE_READY_LABEL_KEYS: Final[list[DockerLabelKey]] = [
+    _OSPARC_SERVICE_READY_LABEL_KEY,
+    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
+]
 
 
 async def get_monitored_nodes(
     docker_client: AutoscalingDocker, node_labels: list[DockerLabelKey]
 ) -> list[Node]:
+    node_label_filters = [f"{label}=true" for label in node_labels] + [
+        f"{label}" for label in _OSPARC_SERVICE_READY_LABEL_KEYS
+    ]
     return parse_obj_as(
         list[Node],
-        await docker_client.nodes.list(
-            filters={"node.label": [f"{label}=true" for label in node_labels]}
-        ),
+        await docker_client.nodes.list(filters={"node.label": node_label_filters}),
     )
 
 
 async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
     return parse_obj_as(
         list[Node],
-        await docker_client.nodes.list(filters={"role": ["worker"]}),
+        await docker_client.nodes.list(
+            filters={
+                "role": ["worker"],
+                "node.label": [
+                    f"{label}" for label in _OSPARC_SERVICE_READY_LABEL_KEYS
+                ],
+            }
+        ),
     )
 
 
@@ -548,14 +566,6 @@ def is_node_ready_and_available(node: Node, *, availability: Availability) -> bo
     return bool(
         node.Status.State == NodeState.ready and node.Spec.Availability == availability
     )
-
-
-_OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, "io.simcore.osparc-services-ready"
-)
-_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, f"{_OSPARC_SERVICE_READY_LABEL_KEY}-last-changed"
-)
 
 
 def is_node_osparc_ready(node: Node) -> bool:

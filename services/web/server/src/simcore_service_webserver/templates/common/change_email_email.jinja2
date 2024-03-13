@@ -5,18 +5,17 @@ TEST link:{{ link }}
 TEST name:{{ name }}
 TEST support_email:{{ support_email }}
 -->
+<p>Dear {{ name }},</p>
 <p>
-  Dear {{ name }} <br><br>
-  You have requested to change the email address linked to your {{ product.display_name }} account. Please follow the on-screen
-  information in the link below:
+  You have requested to change the email address linked to your {{ product.display_name }} account.
+  Please follow the on-screen information in the link below:
 </p>
 
 <p>
   <a href="{{ link }}">{{ link }}</a>
 </p>
 
-<p>
-  Please don't hesitate to contact us at {{ support_email }} if you need further help.<br><br>
-  Best regards <br>
-  The <i>{{ product.display_name }}</i> Team
+<p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
 </p>
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>

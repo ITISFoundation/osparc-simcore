@@ -7,9 +7,10 @@
 import asyncio
 import json
 import time
+from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, NamedTuple
+from typing import Any, NamedTuple
 
 import pytest
 import sqlalchemy as sa
@@ -53,9 +54,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-API_PREFIX = "/" + API_VTAG
-
-
 # Selection of core and tool services started in this swarm fixture (integration)
 pytest_simcore_core_services_selection = [
     "catalog",
@@ -70,7 +68,10 @@ pytest_simcore_core_services_selection = [
     "storage",
 ]
 
-pytest_simcore_ops_services_selection = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = [
+    "minio",
+    "adminer",
+]
 
 
 class _ExpectedResponseTuple(NamedTuple):
@@ -491,8 +492,9 @@ async def test_run_pipeline_and_check_state(
         RunningState.ABORTED: 5,
     }
 
-    assert all(  # pylint: disable=use-a-generator
-        [k in running_state_order_lookup for k in RunningState.__members__]
+    members = [k in running_state_order_lookup for k in RunningState.__members__]
+    assert all(
+        members
     ), "there are missing members in the order lookup, please complete!"
 
     pipeline_state = RunningState.UNKNOWN
@@ -535,9 +537,8 @@ async def test_run_pipeline_and_check_state(
     comp_tasks_in_db: dict[NodeIdStr, Any] = _get_computational_tasks_from_db(
         project_id, postgres_db
     )
-    assert all(  # pylint: disable=use-a-generator
-        [t.state == StateType.SUCCESS for t in comp_tasks_in_db.values()]
-    ), (
+    is_success = [t.state == StateType.SUCCESS for t in comp_tasks_in_db.values()]
+    assert all(is_success), (
         "the individual computational services are not finished! "
         f"Expected to be completed, got {comp_tasks_in_db=}"
     )
