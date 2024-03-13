@@ -298,9 +298,11 @@ def get_frontend_node_outputs_changes(
 
     # ANE: if node changes it's outputs and is not a supported
     # frontend type, return no frontend changes
-    nodes_keys = {old_node.get("key"), new_node.get("key")}
-    if any(key is None or key not in _SUPPORTED_FRONTEND_KEYS for key in nodes_keys):
-        return changed_keys
+    if all(
+        _ is None or _ not in _SUPPORTED_FRONTEND_KEYS
+        for _ in (old_node.get("key"), new_node.get("key"))
+    ):
+        return set()
 
     _logger.debug("Comparing nodes %s %s", new_node, old_node)
 
