@@ -154,7 +154,9 @@ qx.Class.define("osparc.study.StudyOptions", {
           break;
         case "credits-left-view":
           control = new osparc.desktop.credits.CreditsIndicator().set({
-            marginTop: 22
+            allowGrowY: false,
+            alignY: "bottom",
+            paddingBottom: 1
           });
           this.bind("wallet", control, "wallet");
           this.getChildControl("wallet-layout").add(control, {
