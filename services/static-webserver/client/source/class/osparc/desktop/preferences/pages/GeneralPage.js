@@ -22,16 +22,13 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/cogs/24";
     const title = this.tr("General Settings");
-    const preferences = osparc.Preferences.getInstance();
     this.base(arguments, title, iconSrc);
 
-    this.add(this.__createCreditsIndicatorSettings());
-    if (preferences.getLowDiskSpaceThreshold()) {
-      this.add(this.__createLowDiskSpaceSetting());
-    }
-    this.add(this.__createInactivitySetting());
-    // this.add(this.__createJobConcurrencySetting());
-    this.add(this.__createUserPrivacySettings());
+    this.add(this.__addCreditsIndicatorSettings());
+    this.add(this.__addLowDiskSpaceSetting());
+    this.add(this.__addInactivitySetting());
+    // this.add(this.__addJobConcurrencySetting());
+    this.add(this.__addUserPrivacySettings());
   },
 
   statics: {
@@ -56,7 +53,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
   },
 
   members: {
-    __createCreditsIndicatorSettings: function() {
+    __addCreditsIndicatorSettings: function() {
       // layout
       const box = this._createSectionBox(this.tr("Credits Indicator"));
 
@@ -101,13 +98,15 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
       box.add(new qx.ui.form.renderer.Single(form));
 
-      return box;
+      this.add(box);
     },
 
-    __createInactivitySetting: function() {
+    __addInactivitySetting: function() {
       const box = this._createSectionBox(this.tr("Automatic Shutdown of Idle Instances"));
+
       const label = this._createHelpLabel(this.tr("Enter 0 to disable this function"), "text-13-italic");
       box.add(label);
+
       const form = new qx.ui.form.Form();
       const inactivitySpinner = new qx.ui.form.Spinner().set({
         minimum: 0,
@@ -121,11 +120,13 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       });
       inactivitySpinner.addListener("changeValue", e => this.self().patchPreference("userInactivityThreshold", inactivitySpinner, e.getData() * 60));
       form.add(inactivitySpinner, this.tr("Idle time before closing (in minutes)"));
+
       box.add(new qx.ui.form.renderer.Single(form));
-      return box;
+
+      this.add(box);
     },
 
-    __createJobConcurrencySetting: function() {
+    __addJobConcurrencySetting: function() {
       const box = this._createSectionBox(this.tr("Job Concurrency"));
       const form = new qx.ui.form.Form();
       const jobConcurrencySpinner = new qx.ui.form.Spinner().set({
@@ -140,31 +141,33 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       jobConcurrencySpinner.addListener("changeValue", e => this.self().patchPreference("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
       form.add(jobConcurrencySpinner, this.tr("Maximum number of concurrent jobs"));
       box.add(new qx.ui.form.renderer.Single(form));
-      return box;
+      this.add(box);
     },
 
-    __createLowDiskSpaceSetting: function() {
-      const box = this._createSectionBox(this.tr("Low Disk Space Threshold"));
-      const label = this._createHelpLabel(this.tr("Set the warning Threshold for low Disk Space availability."), "text-13-italic");
-      box.add(label);
-      const form = new qx.ui.form.Form();
-      const diskUsageSpinner = new qx.ui.form.Spinner().set({
-        minimum: 1,
-        maximum: 10000,
-        singleStep: 1,
-        allowGrowX: false,
-        enabled: true
-      });
+    __addLowDiskSpaceSetting: function() {
       const preferences = osparc.Preferences.getInstance();
-      preferences.bind("lowDiskSpaceThreshold", diskUsageSpinner, "value");
+      if (preferences.getLowDiskSpaceThreshold()) {
+        const box = this._createSectionBox(this.tr("Low Disk Space Threshold"));
+        const label = this._createHelpLabel(this.tr("Set the warning Threshold for low Disk Space availability."), "text-13-italic");
+        box.add(label);
+        const form = new qx.ui.form.Form();
+        const diskUsageSpinner = new qx.ui.form.Spinner().set({
+          minimum: 1,
+          maximum: 10000,
+          singleStep: 1,
+          allowGrowX: false,
+          enabled: true
+        });
+        preferences.bind("lowDiskSpaceThreshold", diskUsageSpinner, "value");
 
-      diskUsageSpinner.addListener("changeValue", e => this.self().patchPreference("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
-      form.add(diskUsageSpinner, this.tr("Threshold (in GB)"));
-      box.add(new qx.ui.form.renderer.Single(form));
-      return box;
+        diskUsageSpinner.addListener("changeValue", e => this.self().patchPreference("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
+        form.add(diskUsageSpinner, this.tr("Threshold (in GB)"));
+        box.add(new qx.ui.form.renderer.Single(form));
+        this.add(box);
+      }
     },
 
-    __createUserPrivacySettings: function() {
+    __addUserPrivacySettings: function() {
       const box = this._createSectionBox("Privacy Settings");
 
       const label = this._createHelpLabel(this.tr("Help us improve Sim4Life user experience"), "text-13-italic");
@@ -177,7 +180,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       cbAllowMetricsCollection.addListener("changeValue", e => this.self().patchPreference("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
       box.add(cbAllowMetricsCollection);
 
-      return box;
+      this.add(box);
     }
   }
 });
