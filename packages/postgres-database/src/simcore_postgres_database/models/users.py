@@ -50,19 +50,16 @@ class UserRole(Enum):
         return NotImplemented
 
 
-class UserStatus(Enum):
-    """
-    pending: user registered but not confirmed
-    active: user is confirmed and can use the platform
-    expired: user is not authorized because it expired after a trial period
-    banned: user is not authorized
-    deleted: this account is marked for deletion
-    """
-
-    CONFIRMATION_PENDING = "PENDING"
+class UserStatus(str, Enum):
+    # user registered but not confirmed
+    CONFIRMATION_PENDING = "CONFIRMATION_PENDING"
+    # user is confirmed and can use the platform
     ACTIVE = "ACTIVE"
+    # user is not authorized because it expired after a trial period
     EXPIRED = "EXPIRED"
+    # user is not authorized
     BANNED = "BANNED"
+    # this account is marked for deletion
     DELETED = "DELETED"
 
 
