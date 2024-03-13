@@ -1,8 +1,7 @@
 Dear {{ user.first_name }},
 
-Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.
+You have requested to change the email address linked to your {{ product.display_name }} account. Please follow the on-screen information in the link below:
 
-Please activate your account via the link below:
 {{ link }}
 
 Please don't hesitate to contact us at {{ product.support_email }} if you need further help.

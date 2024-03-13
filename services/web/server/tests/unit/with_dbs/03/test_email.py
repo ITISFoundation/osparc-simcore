@@ -29,6 +29,7 @@ from simcore_service_webserver._resources import webserver_resources
 from simcore_service_webserver.email._core import _remove_comments, _render_template
 from simcore_service_webserver.email._handlers import EmailTestFailed, EmailTestPassed
 from simcore_service_webserver.email.plugin import setup_email
+from simcore_service_webserver.login._registration_handlers import _get_ipinfo
 
 
 @pytest.fixture
@@ -160,11 +161,20 @@ class IndexParser(HTMLParser):
     list(webserver_resources.get_path("templates").rglob("*.jinja2")),
     ids=lambda p: p.name,
 )
-def test_render_templates(template_path: Path, faker: Faker, tmp_path: Path):
+def test_render_templates(template_path: Path, faker: Faker):
     app = web.Application()
     setup_email(app)
 
-    request = make_mocked_request("GET", "/fake", app=app)
+    request = make_mocked_request(
+        "GET",
+        "/fake",
+        headers={
+            "x-real-ip": faker.ipv4(),
+            "x-forwarded-for": faker.ipv4(),
+            "peername": faker.ipv4(),
+        },
+        app=app,
+    )
 
     fake_request_form = {
         "name": faker.name(),
@@ -185,7 +195,7 @@ def test_render_templates(template_path: Path, faker: Faker, tmp_path: Path):
         context={
             "host": request.host,
             "support_email": faker.email(),
-            "name": "foo",
+            "name": "this is user.first_name",
             "code": "123",
             "reason": "no reason",
             "link": faker.url(),
@@ -193,11 +203,7 @@ def test_render_templates(template_path: Path, faker: Faker, tmp_path: Path):
             "retention_days": 30,
             "dumps": functools.partial(safe_json_dumps, indent=1),
             "request_form": fake_request_form,
-            "ipinfo": {
-                "x-real-ip": faker.ipv4(),
-                "x-forwarded-for": faker.ipv4(),
-                "peername": faker.ipv4(),
-            },
+            "ipinfo": _get_ipinfo(request),
         },
     )
 
