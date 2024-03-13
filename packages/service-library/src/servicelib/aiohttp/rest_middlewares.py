@@ -11,6 +11,8 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
+from servicelib.error_codes import create_error_code
+from servicelib.json_serialization import json_dumps
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..utils import is_production_environ
@@ -36,32 +38,35 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return bool(request.path.startswith(base_path))
 
 
+def _handle_as_internal_server_error(request: web.BaseRequest, err: Exception):
+    """
+    This error handler is the last resource to catch unhandled exceptions.
+    Its purpose is:
+        - respond the client with 500 and a reference OEC
+        - log sufficient information to diagnose the issue
+    """
+    error_code = create_error_code(err)
+    resp = create_error_response(
+        err,
+        reason=f"Ups, something went wrong. We took note [{error_code}]",
+        http_error_cls=web.HTTPInternalServerError,
+        skip_internal_error_details=True,
+    )
+    _logger.exception(
+        "Unexpected '%s' for %s [%s]\n%s",
+        type(err),
+        f"'{request.method} {request.path}'",
+        error_code,
+        f"{request.remote=}, {request.headers=}",
+        extra={"error_code": error_code},
+    )
+    raise resp
+
+
 def error_middleware_factory(
     api_version: str,
-    log_exceptions: bool = True,
 ) -> Middleware:
     _is_prod: bool = is_production_environ()
-
-    def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
-        resp = create_error_response(
-            err,
-            "Unexpected Server error",
-            web.HTTPInternalServerError,
-            skip_internal_error_details=_is_prod,
-        )
-
-        if log_exceptions:
-            _logger.error(
-                'Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
-                type(err),
-                request.remote,
-                request.method,
-                request.path,
-                resp.status,
-                exc_info=err,
-                stack_info=True,
-            )
-        raise resp
 
     @web.middleware
     async def _middleware_handler(request: web.Request, handler: Handler):
@@ -104,9 +109,9 @@ def error_middleware_factory(
                     payload = json.loads(err.text)
                     if not is_enveloped_from_map(payload):
                         payload = wrap_as_envelope(data=payload)
-                        err.text = json.dumps(payload)
+                        err.text = json_dumps(payload)
                 except Exception as other_error:  # pylint: disable=broad-except
-                    _process_and_raise_unexpected_error(request, other_error)
+                    _handle_as_internal_server_error(request, other_error)
             raise err
 
         except web.HTTPRedirection as err:
@@ -125,14 +130,13 @@ def error_middleware_factory(
         except asyncio.TimeoutError as err:
             error_response = create_error_response(
                 err,
-                f"{err}",
-                web.HTTPGatewayTimeout,
+                http_error_cls=web.HTTPGatewayTimeout,
                 skip_internal_error_details=_is_prod,
             )
             raise error_response from err
 
         except Exception as err:  # pylint: disable=broad-except
-            _process_and_raise_unexpected_error(request, err)
+            _handle_as_internal_server_error(request, err)
 
     # adds identifier (mostly for debugging)
     _middleware_handler.__middleware_name__ = f"{__name__}.error_{api_version}"
