@@ -7,7 +7,7 @@ from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import PositiveInt
 from servicelib.aiohttp import observer
-from servicelib.aiohttp.rest_models import LogMessageType
+from servicelib.aiohttp.rest_models import LogMessage
 from servicelib.aiohttp.status import HTTP_200_OK
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
@@ -120,7 +120,7 @@ def flash_response(
     message: str, level: str = "INFO", *, status: int = HTTP_200_OK
 ) -> web.Response:
     return envelope_response(
-        data=asdict(LogMessageType(message, level)),
+        data=asdict(LogMessage(message, level)),
         status=status,
     )
 

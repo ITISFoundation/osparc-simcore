@@ -5,6 +5,7 @@ import inspect
 import json
 from collections.abc import Mapping
 from dataclasses import asdict
+from http import HTTPStatus
 from typing import Any
 
 from aiohttp import web, web_exceptions
@@ -13,8 +14,7 @@ from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.status import HTTP_200_OK
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from ..status_utils import get_code_description
-from .rest_models import ErrorItemType, ErrorType
+from .rest_models import ErrorItem, ResponseErrorBody
 
 _ENVELOPE_KEYS = ("data", "error")
 
@@ -100,21 +100,23 @@ def create_http_error(
     default_message = reason or get_code_description(http_error_cls.status_code)
 
     if is_internal_error and skip_internal_error_details:
-        error = ErrorType(
+        error = ResponseErrorBody(
             errors=[],
             status=http_error_cls.status_code,
             message=default_message,
         )
     else:
-        items = [ErrorItemType.from_error(err) for err in errors]
-        error = ErrorType(
-            errors=items,
+        error = ResponseErrorBody(
+            errors=[ErrorItem.from_error(err) for err in errors],
             status=http_error_cls.status_code,
-            message=items[0].message if items else default_message,
+            message=default_message,
         )
 
     assert not http_error_cls.empty_body  # nosec
     payload = wrap_as_envelope(error=asdict(error))
+
+    if reason is None:
+        reason = HTTPStatus(http_error_cls.status_code).description
 
     return http_error_cls(
         reason=reason,
