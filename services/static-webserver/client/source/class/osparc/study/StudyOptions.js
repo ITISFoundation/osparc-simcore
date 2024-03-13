@@ -172,7 +172,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           });
           break;
         case "open-button":
-          control = new qx.ui.form.Button(this.tr("Open")).set({
+          control = new osparc.ui.form.FetchButton(this.tr("Open")).set({
             appearance: "form-button",
             font: "text-14",
             minWidth: 150,
@@ -282,7 +282,7 @@ qx.Class.define("osparc.study.StudyOptions", {
       const store = osparc.store.Store.getInstance();
 
       this._createChildControlImpl("title-label");
-      this._createChildControlImpl("title-field");
+      this.getChildControl("title-field");
 
       // Wallet Selector
       this._createChildControlImpl("wallet-selector-label");
@@ -320,6 +320,10 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __openStudy: async function() {
+      const openButton = this.getChildControl("open-button");
+      openButton.setFetching(true);
+
+      // first, update the name if necessary
       const titleSelection = this.getChildControl("title-field").getValue();
       if (this.__studyData["name"] !== titleSelection) {
         const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(this.__studyData);
@@ -333,6 +337,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         await osparc.data.Resources.fetch("studies", "put", params);
       }
 
+      // second, update the wallet if necessary
       const store = osparc.store.Store.getInstance();
       const walletSelection = this.getChildControl("wallet-selector").getSelection();
       if (walletSelection.length && walletSelection[0]["walletId"]) {
@@ -351,10 +356,12 @@ qx.Class.define("osparc.study.StudyOptions", {
             console.error(err);
             const msg = err.message || this.tr("Error selecting Credit Account");
             osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-          });
+          })
+          .finally(() => openButton.setFetching(false));
       } else {
         store.setActiveWallet(this.getWallet());
         this.fireEvent("startStudy");
+        openButton.setFetching(false);
       }
     }
   }
