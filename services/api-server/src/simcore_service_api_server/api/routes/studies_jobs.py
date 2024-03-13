@@ -86,7 +86,7 @@ async def create_study_job(
         job = create_job_from_study(
             study_key=study_id, project=project, job_inputs=job_inputs
         )
-        _ = await webserver_api.update_project(
+        project = await webserver_api.update_project(
             project_id=job.id, update_params=ProjectUpdate(name=job.name)
         )
 
