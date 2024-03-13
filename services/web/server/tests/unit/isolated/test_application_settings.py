@@ -218,6 +218,11 @@ def test_settings_to_client_statics_plugins(
 
     print("STATICS:\n", json_dumps(statics, indent=1))
 
+    assert (
+        statics["webserverLogin"]["LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"]
+        == settings.WEBSERVER_LOGIN.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS
+    )
+
     assert set(statics["pluginsDisabled"]) == (disable_plugins | {"WEBSERVER_CLUSTERS"})
 
 

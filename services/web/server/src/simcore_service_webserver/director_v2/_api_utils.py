@@ -4,7 +4,7 @@ from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from pydantic import parse_obj_as
 
-from ..application_settings import get_settings
+from ..application_settings import get_application_settings
 from ..products.api import Product
 from ..projects import api as projects_api
 from ..users import preferences_api as user_preferences_api
@@ -21,7 +21,7 @@ async def get_wallet_info(
     project_id: ProjectID,
     product_name: str,
 ) -> WalletInfo | None:
-    app_settings = get_settings(app)
+    app_settings = get_application_settings(app)
     if not (
         product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
     ):
