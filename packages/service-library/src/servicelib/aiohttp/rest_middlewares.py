@@ -39,9 +39,53 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return bool(request.path.startswith(base_path))
 
 
+def _handle_http_error(request: web.BaseRequest, err: web.HTTPError):
+    """Ensures response for a web.HTTPError is complete"""
+    assert request  # nosec
+
+    # TODO: differenciate between server/client error
+    if not err.reason:
+        err.set_status(
+            err.status_code,
+            reason=HTTPStatus(err.status_code).phrase,
+        )
+
+    err.content_type = MIMETYPE_APPLICATION_JSON
+    if not err.text or not is_enveloped_from_text(err.text):
+        error = ResponseErrorBody(
+            errors=[
+                ErrorItem.from_error(err),
+            ],
+            status=err.status,
+            logs=[
+                LogMessage(message=err.reason, level="ERROR"),
+            ],
+            message=err.reason,
+        )
+        err.text = EnvelopeFactory(error=error).as_text()
+
+    raise err
+
+
+def _handle_http_successful(request: web.BaseRequest, err: web.HTTPSuccessful):
+    """Ensures raised web.HTTPSuccessful responses are complete"""
+    err.content_type = MIMETYPE_APPLICATION_JSON
+    if err.text:
+        try:
+            payload = json.loads(err.text)
+            if not is_enveloped_from_map(payload):
+                payload = wrap_as_envelope(data=payload)
+                err.text = json_dumps(payload)
+        except Exception as other_error:  # pylint: disable=broad-except
+            _handle_as_internal_server_error(request, other_error)
+    raise err
+
+
 def _handle_as_internal_server_error(request: web.BaseRequest, err: Exception):
     """
-    This error handler is the last resource to catch unhandled exceptions.
+    This error handler is the last resource to catch unhandled exceptions and
+    are converted into web.HTTPInternalServerError (i.e. 500)
+
     Its purpose is:
         - respond the client with 500 and a reference OEC
         - log sufficient information to diagnose the issue
@@ -82,40 +126,10 @@ def error_middleware_factory(
             return await handler(request)
 
         except web.HTTPError as err:
-            # TODO: differenciate between server/client error
-            if not err.reason:
-                err.set_status(
-                    err.status_code, reason=HTTPStatus(err.status_code).phrase
-                )
-
-            err.content_type = MIMETYPE_APPLICATION_JSON
-
-            if not err.text or not is_enveloped_from_text(err.text):
-                error = ResponseErrorBody(
-                    errors=[
-                        ErrorItem.from_error(err),
-                    ],
-                    status=err.status,
-                    logs=[
-                        LogMessage(message=err.reason, level="ERROR"),
-                    ],
-                    message=err.reason,
-                )
-                err.text = EnvelopeFactory(error=error).as_text()
-
-            raise
+            _handle_http_error(request, err)
 
         except web.HTTPSuccessful as err:
-            err.content_type = MIMETYPE_APPLICATION_JSON
-            if err.text:
-                try:
-                    payload = json.loads(err.text)
-                    if not is_enveloped_from_map(payload):
-                        payload = wrap_as_envelope(data=payload)
-                        err.text = json_dumps(payload)
-                except Exception as other_error:  # pylint: disable=broad-except
-                    _handle_as_internal_server_error(request, other_error)
-            raise err
+            _handle_http_successful(request, err)
 
         except web.HTTPRedirection as err:
             _logger.debug("Redirected to %s", err)
