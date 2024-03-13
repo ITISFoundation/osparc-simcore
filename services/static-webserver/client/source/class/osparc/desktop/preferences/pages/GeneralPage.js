@@ -24,11 +24,11 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     const title = this.tr("General Settings");
     this.base(arguments, title, iconSrc);
 
-    this.add(this.__addCreditsIndicatorSettings());
-    this.add(this.__addLowDiskSpaceSetting());
-    this.add(this.__addInactivitySetting());
-    // this.add(this.__addJobConcurrencySetting());
-    this.add(this.__addUserPrivacySettings());
+    this.__addCreditsIndicatorSettings();
+    this.__addLowDiskSpaceSetting();
+    this.__addInactivitySetting();
+    // this.__addJobConcurrencySetting();
+    this.__addS4LUserPrivacySettings();
   },
 
   statics: {
@@ -54,76 +54,82 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
   members: {
     __addCreditsIndicatorSettings: function() {
-      // layout
-      const box = this._createSectionBox(this.tr("Credits Indicator"));
+      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+      if (walletsEnabled) {
+        // layout
+        const box = this._createSectionBox(this.tr("Credits Indicator"));
 
-      const form = new qx.ui.form.Form();
+        const form = new qx.ui.form.Form();
 
-      const preferencesSettings = osparc.Preferences.getInstance();
+        const preferencesSettings = osparc.Preferences.getInstance();
 
-      const walletIndicatorVisibilitySB = new qx.ui.form.SelectBox().set({
-        allowGrowX: false
-      });
-      [{
-        id: "always",
-        label: "Always"
-      }, {
-        id: "warning",
-        label: "Warning"
-      }].forEach(options => {
-        const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
-        walletIndicatorVisibilitySB.add(lItem);
-      });
-      const value2 = preferencesSettings.getWalletIndicatorVisibility();
-      walletIndicatorVisibilitySB.getSelectables().forEach(selectable => {
-        if (selectable.getModel() === value2) {
-          walletIndicatorVisibilitySB.setSelection([selectable]);
-        }
-      });
-      walletIndicatorVisibilitySB.addListener("changeValue", e => {
-        const selectable = e.getData();
-        this.self().patchPreference("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
-      });
-      form.add(walletIndicatorVisibilitySB, this.tr("Show indicator"));
+        const walletIndicatorVisibilitySB = new qx.ui.form.SelectBox().set({
+          allowGrowX: false
+        });
+        [{
+          id: "always",
+          label: "Always"
+        }, {
+          id: "warning",
+          label: "Warning"
+        }].forEach(options => {
+          const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
+          walletIndicatorVisibilitySB.add(lItem);
+        });
+        const value2 = preferencesSettings.getWalletIndicatorVisibility();
+        walletIndicatorVisibilitySB.getSelectables().forEach(selectable => {
+          if (selectable.getModel() === value2) {
+            walletIndicatorVisibilitySB.setSelection([selectable]);
+          }
+        });
+        walletIndicatorVisibilitySB.addListener("changeValue", e => {
+          const selectable = e.getData();
+          this.self().patchPreference("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
+        });
+        form.add(walletIndicatorVisibilitySB, this.tr("Show indicator"));
 
-      const creditsWarningThresholdField = new qx.ui.form.Spinner().set({
-        minimum: 100,
-        maximum: 10000,
-        singleStep: 10,
-        allowGrowX: false
-      });
-      preferencesSettings.bind("creditsWarningThreshold", creditsWarningThresholdField, "value");
-      creditsWarningThresholdField.addListener("changeValue", e => this.self().patchPreference("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
-      form.add(creditsWarningThresholdField, this.tr("Show warning when credits below"));
+        const creditsWarningThresholdField = new qx.ui.form.Spinner().set({
+          minimum: 100,
+          maximum: 10000,
+          singleStep: 10,
+          allowGrowX: false
+        });
+        preferencesSettings.bind("creditsWarningThreshold", creditsWarningThresholdField, "value");
+        creditsWarningThresholdField.addListener("changeValue", e => this.self().patchPreference("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
+        form.add(creditsWarningThresholdField, this.tr("Show warning when credits below"));
 
-      box.add(new qx.ui.form.renderer.Single(form));
+        box.add(new qx.ui.form.renderer.Single(form));
 
-      this.add(box);
+        this.add(box);
+      }
     },
 
     __addInactivitySetting: function() {
-      const box = this._createSectionBox(this.tr("Automatic Shutdown of Idle Instances"));
+      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+      if (walletsEnabled) {
+        const box = this._createSectionBox(this.tr("Automatic Shutdown of Idle Instances"));
 
-      const label = this._createHelpLabel(this.tr("Enter 0 to disable this function"), "text-13-italic");
-      box.add(label);
+        const label = this._createHelpLabel(this.tr("Enter 0 to disable this function"), "text-13-italic");
+        box.add(label);
 
-      const form = new qx.ui.form.Form();
-      const inactivitySpinner = new qx.ui.form.Spinner().set({
-        minimum: 0,
-        maximum: Number.MAX_SAFE_INTEGER,
-        singleStep: 1,
-        allowGrowX: false
-      });
-      const preferences = osparc.Preferences.getInstance();
-      preferences.bind("userInactivityThreshold", inactivitySpinner, "value", {
-        converter: value => Math.round(value / 60) // Stored in seconds, displayed in minutes
-      });
-      inactivitySpinner.addListener("changeValue", e => this.self().patchPreference("userInactivityThreshold", inactivitySpinner, e.getData() * 60));
-      form.add(inactivitySpinner, this.tr("Idle time before closing (in minutes)"));
+        const form = new qx.ui.form.Form();
+        const inactivitySpinner = new qx.ui.form.Spinner().set({
+          minimum: 0,
+          maximum: Number.MAX_SAFE_INTEGER,
+          singleStep: 1,
+          allowGrowX: false
+        });
+        const preferences = osparc.Preferences.getInstance();
+        preferences.bind("userInactivityThreshold", inactivitySpinner, "value", {
+          converter: value => Math.round(value / 60) // Stored in seconds, displayed in minutes
+        });
+        inactivitySpinner.addListener("changeValue", e => this.self().patchPreference("userInactivityThreshold", inactivitySpinner, e.getData() * 60));
+        form.add(inactivitySpinner, this.tr("Idle time before closing (in minutes)"));
 
-      box.add(new qx.ui.form.renderer.Single(form));
+        box.add(new qx.ui.form.renderer.Single(form));
 
-      this.add(box);
+        this.add(box);
+      }
     },
 
     __addJobConcurrencySetting: function() {
@@ -167,20 +173,22 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       }
     },
 
-    __addUserPrivacySettings: function() {
-      const box = this._createSectionBox("Privacy Settings");
+    __addS4LUserPrivacySettings: function() {
+      if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
+        const box = this._createSectionBox("Privacy Settings");
 
-      const label = this._createHelpLabel(this.tr("Help us improve Sim4Life user experience"), "text-13-italic");
-      box.add(label);
+        const label = this._createHelpLabel(this.tr("Help us improve Sim4Life user experience"), "text-13-italic");
+        box.add(label);
 
-      const preferencesSettings = osparc.Preferences.getInstance();
+        const preferencesSettings = osparc.Preferences.getInstance();
 
-      const cbAllowMetricsCollection = new qx.ui.form.CheckBox(this.tr("Share usage data"));
-      preferencesSettings.bind("allowMetricsCollection", cbAllowMetricsCollection, "value");
-      cbAllowMetricsCollection.addListener("changeValue", e => this.self().patchPreference("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
-      box.add(cbAllowMetricsCollection);
+        const cbAllowMetricsCollection = new qx.ui.form.CheckBox(this.tr("Share usage data"));
+        preferencesSettings.bind("allowMetricsCollection", cbAllowMetricsCollection, "value");
+        cbAllowMetricsCollection.addListener("changeValue", e => this.self().patchPreference("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
+        box.add(cbAllowMetricsCollection);
 
-      this.add(box);
+        this.add(box);
+      }
     }
   }
 });

@@ -44,12 +44,8 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       contentPadding: 0
     });
 
-    const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-    if (walletsEnabled) {
-      // Fix me: for now, it only exposes credits related preferences
-      const generalPage = new osparc.desktop.preferences.pages.GeneralPage();
-      tabView.add(generalPage);
-    }
+    const generalPage = new osparc.desktop.preferences.pages.GeneralPage();
+    tabView.add(generalPage);
 
     const confirmPage = new osparc.desktop.preferences.pages.ConfirmationsPage();
     tabView.add(confirmPage);
