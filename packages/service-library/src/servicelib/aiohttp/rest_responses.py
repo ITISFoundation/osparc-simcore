@@ -5,6 +5,7 @@ import inspect
 import json
 from collections.abc import Mapping
 from dataclasses import asdict
+from http import HTTPStatus
 from typing import Any
 
 from aiohttp import web, web_exceptions
@@ -13,7 +14,7 @@ from servicelib.aiohttp.status import HTTP_200_OK
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from .rest_models import ErrorItemType, ErrorType
+from .rest_models import ErrorItem, ResponseErrorBody
 
 _ENVELOPE_KEYS = ("data", "error")
 
@@ -96,17 +97,20 @@ def create_error_response(
     is_internal_error: bool = http_error_cls == web.HTTPInternalServerError
 
     if is_internal_error and skip_internal_error_details:
-        error = ErrorType(
+        error = ResponseErrorBody(
             errors=[],
             status=http_error_cls.status_code,
         )
     else:
-        error = ErrorType(
-            errors=[ErrorItemType.from_error(err) for err in errors],
+        error = ResponseErrorBody(
+            errors=[ErrorItem.from_error(err) for err in errors],
             status=http_error_cls.status_code,
         )
 
     payload = wrap_as_envelope(error=asdict(error))
+
+    if reason is None:
+        reason = HTTPStatus(http_error_cls.status_code).description
 
     return http_error_cls(
         reason=reason, text=json_dumps(payload), content_type=MIMETYPE_APPLICATION_JSON
