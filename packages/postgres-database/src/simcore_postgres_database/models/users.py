@@ -51,15 +51,15 @@ class UserRole(Enum):
 
 
 class UserStatus(str, Enum):
-    # user registered but not confirmed
+    # This is a transition state. The user is registered but not confirmed. NOTE that state is optional depending on LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
     CONFIRMATION_PENDING = "CONFIRMATION_PENDING"
-    # user is confirmed and can use the platform
+    # This user can now operate the platform
     ACTIVE = "ACTIVE"
-    # user is not authorized because it expired after a trial period
+    # This user is inactive because it expired after a trial period
     EXPIRED = "EXPIRED"
-    # user is not authorized
+    # This user is inactive because he has been a bad boy
     BANNED = "BANNED"
-    # this account is marked for deletion
+    # This user is inactive because it was marked for deletion
     DELETED = "DELETED"
 
 
