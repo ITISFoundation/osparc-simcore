@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 from collections.abc import Awaitable, Callable
+from http import HTTPStatus
 from typing import Any, Union
 
 from aiohttp import web
@@ -16,7 +17,7 @@ from servicelib.json_serialization import json_dumps
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..utils import is_production_environ
-from .rest_models import ErrorItemType, ErrorType, LogMessageType
+from .rest_models import ErrorItem, LogMessage, ResponseErrorBody
 from .rest_responses import (
     create_data_response,
     create_error_response,
@@ -83,18 +84,20 @@ def error_middleware_factory(
         except web.HTTPError as err:
             # TODO: differenciate between server/client error
             if not err.reason:
-                err.set_status(err.status_code, reason="Unexpected error")
+                err.set_status(
+                    err.status_code, reason=HTTPStatus(err.status_code).phrase
+                )
 
             err.content_type = MIMETYPE_APPLICATION_JSON
 
             if not err.text or not is_enveloped_from_text(err.text):
-                error = ErrorType(
+                error = ResponseErrorBody(
                     errors=[
-                        ErrorItemType.from_error(err),
+                        ErrorItem.from_error(err),
                     ],
                     status=err.status,
                     logs=[
-                        LogMessageType(message=err.reason, level="ERROR"),
+                        LogMessage(message=err.reason, level="ERROR"),
                     ],
                     message=err.reason,
                 )
@@ -121,8 +124,7 @@ def error_middleware_factory(
         except NotImplementedError as err:
             error_response = create_error_response(
                 err,
-                f"{err}",
-                web.HTTPNotImplemented,
+                http_error_cls=web.HTTPNotImplemented,
                 skip_internal_error_details=_is_prod,
             )
             raise error_response from err

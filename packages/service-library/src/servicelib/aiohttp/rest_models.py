@@ -2,14 +2,14 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class LogMessageType:
+class LogMessage:
     message: str
     level: str = "INFO"
     logger: str = "user"
 
 
 @dataclass
-class ErrorItemType:
+class ErrorItem:
     code: str
     message: str
     resource: str | None
@@ -23,8 +23,8 @@ class ErrorItemType:
 
 
 @dataclass
-class ErrorType:
-    logs: list[LogMessageType] = field(default_factory=list)
-    errors: list[ErrorItemType] = field(default_factory=list)
+class ResponseErrorBody:
+    logs: list[LogMessage] = field(default_factory=list)
+    errors: list[ErrorItem] = field(default_factory=list)
     status: int = 400
     message: str = "Unexpected client error"
