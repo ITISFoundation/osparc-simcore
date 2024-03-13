@@ -67,6 +67,7 @@ def _prepare_environment_variables(
         f"DASK_TLS_CA_FILE={_HOST_TLS_CA_FILE_PATH}",
         f"DASK_TLS_CERT={_HOST_TLS_CERT_FILE_PATH}",
         f"DASK_TLS_KEY={_HOST_TLS_KEY_FILE_PATH}",
+        f"DASK_WORKER_SATURATION={app_settings.CLUSTERS_KEEPER_DASK_WORKER_SATURATION}",
         f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}",
         f"EC2_INSTANCES_NAME_PREFIX={cluster_machines_name_prefix}",
         f"LOG_LEVEL={app_settings.LOG_LEVEL}",
