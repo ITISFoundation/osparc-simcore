@@ -1175,10 +1175,6 @@ networks:
     internal: false
     labels:
       com.simcore.description: "interactive services network"
-    ipam:
-      driver: default
-      config:
-        - subnet: ${SIMCORE_INTERACTIVE_NETWORK_SUBNET}
   computational_services_subnet:
     name: ${SWARM_STACK_NAME}_computational_services_subnet
     driver: overlay
