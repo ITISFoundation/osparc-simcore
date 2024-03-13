@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/exchange-alt/24";
-    const title = this.tr("API");
+    const title = this.tr("API Keys/Tokens");
     this.base(arguments, title, iconSrc);
 
     this.add(this.__createAPIKeysSection());

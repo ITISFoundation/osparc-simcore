@@ -53,7 +53,6 @@ qx.Class.define("osparc.po.POCenter", {
       const title = this.tr("Invitations");
       const iconSrc = "@FontAwesome5Solid/envelope/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
       const invitations = new osparc.po.Invitations();
       invitations.set({
         margin: 10
@@ -66,7 +65,6 @@ qx.Class.define("osparc.po.POCenter", {
       const title = this.tr("Product Info");
       const iconSrc = "@FontAwesome5Solid/info/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
       const productInfo = new osparc.po.ProductInfo();
       productInfo.set({
         margin: 10
@@ -79,7 +77,6 @@ qx.Class.define("osparc.po.POCenter", {
       const title = this.tr("Message Templates");
       const iconSrc = "@FontAwesome5Solid/envelope-open/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
       const productInfo = new osparc.po.MessageTemplates();
       productInfo.set({
         margin: 10
