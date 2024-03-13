@@ -103,6 +103,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
       return box;
     },
+
     __createInactivitySetting: function() {
       const box = this._createSectionBox(this.tr("Automatic Shutdown of Idle Instances"));
       const label = this._createHelpLabel(this.tr("Enter 0 to disable this function"), "text-13-italic");
@@ -123,6 +124,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       box.add(new qx.ui.form.renderer.Single(form));
       return box;
     },
+
     __createJobConcurrencySetting: function() {
       const box = this._createSectionBox(this.tr("Job Concurrency"));
       const form = new qx.ui.form.Form();
@@ -140,6 +142,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       box.add(new qx.ui.form.renderer.Single(form));
       return box;
     },
+
     __createLowDiskSpaceSetting: function() {
       const box = this._createSectionBox(this.tr("Low Disk Space Threshold"));
       const label = this._createHelpLabel(this.tr("Set the warning Threshold for low Disk Space availability."), "text-13-italic");
@@ -160,6 +163,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       box.add(new qx.ui.form.renderer.Single(form));
       return box;
     },
+
     __createUserPrivacySettings: function() {
       const box = this._createSectionBox("Privacy Settings");
 
