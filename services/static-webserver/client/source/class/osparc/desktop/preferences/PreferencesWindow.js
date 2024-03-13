@@ -29,11 +29,11 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     this.set({
       layout: new qx.ui.layout.Grow(),
       modal: true,
-      width: 550,
+      width: 750,
       height: 660,
       showMaximize: false,
       showMinimize: false,
-      resizable: false,
+      resizable: true,
       appearance: "service-window"
     });
     const closeBtn = this.getChildControl("close-button");
