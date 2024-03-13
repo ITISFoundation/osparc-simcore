@@ -108,9 +108,12 @@ qx.Class.define("osparc.desktop.credits.DeleteAccount", {
           password: form.getItem("password").getValue()
         }
       };
+      const staticInfo = osparc.store.StaticInfo.getInstance();
+      const retentionDays = staticInfo.getAccountDeletionRetentionDays();
+
       osparc.data.Resources.fetch("auth", "unregister", params)
         .then(() => {
-          const msg = this.tr("You account will be deleted in 14 days");
+          const msg = this.tr("You account will be deleted in " + retentionDays + " days");
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
           this.fireEvent("deleted");
         })
