@@ -99,7 +99,9 @@ async def clone_study(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     try:
-        project: ProjectGet = await webserver_api.clone_project(project_id=study_id)
+        project: ProjectGet = await webserver_api.clone_project(
+            from_project_id=study_id, hidden=False
+        )
         return _create_study_from_project(project)
 
     except ProjectNotFoundError:
