@@ -208,7 +208,26 @@ async def test_raised_unhandled_exception(
         MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(parsed_oec) == error["message"]
     )
 
+    # Log should look like this
+    #
+    # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:96 Request 'GET /v1/fail_unexpected' raised 'SomeUnhandledError' [OEC:140555466658464]
+    #   request.remote='127.0.0.1'
+    #   request.headers={b'Host': b'127.0.0.1:33461', b'Accept': b'*/*', b'Accept-Encoding': b'gzip, deflate', b'User-Agent': b'Python/3.10 aiohttp/3.8.6'}
+    # Traceback (most recent call last):
+    # File "osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 120, in _middleware_handler
+    #     return await handler(request)
+    # File "osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 177, in _middleware_handler
+    #     resp_or_data = await handler(request)
+    # File "osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py", line 107, in fail_unexpected
+    #     raise SomeUnhandledError(cls.FAIL_UNEXPECTED_REASON)
+    # tests.aiohttp.test_rest_middlewares.SomeUnhandledError: Unexpected error
+
     # log sufficient information to diagnose the issue
+    assert response.method in caplog.text
+    assert response.url.path in caplog.text
+    assert "request.headers=" in caplog.text
+    assert "request.remote=" in caplog.text
+    assert SomeUnhandledError.__name__ in caplog.text
     assert Handlers.FAIL_UNEXPECTED_REASON in caplog.text
     # log OEC
     assert "OEC:" in caplog.text

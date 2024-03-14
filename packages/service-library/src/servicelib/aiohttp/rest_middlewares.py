@@ -15,7 +15,7 @@ from servicelib.error_codes import create_error_code
 from servicelib.json_serialization import json_dumps
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from .rest_models import ErrorItem, LogMessage, ResponseErrorBody
+from .rest_models import ErrorDetail, LogMessage, ResponseErrorBody
 from .rest_responses import (
     create_data_response,
     create_error_response,
@@ -51,7 +51,7 @@ def _handle_http_error(request: web.BaseRequest, err: web.HTTPError):
     if not err.text or not is_enveloped_from_text(err.text):
         error = ResponseErrorBody(
             errors=[
-                ErrorItem.from_error(err),
+                ErrorDetail.from_exception(err),
             ],
             status=err.status,
             logs=[

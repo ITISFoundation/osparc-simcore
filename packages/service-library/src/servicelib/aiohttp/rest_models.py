@@ -9,14 +9,14 @@ class LogMessage:
 
 
 @dataclass
-class ErrorItem:
+class ErrorDetail:
     code: str
     message: str
     resource: str | None
     field: str | None
 
     @classmethod
-    def from_error(cls, err: BaseException):
+    def from_exception(cls, err: BaseException):
         return cls(
             code=err.__class__.__name__, message=str(err), resource=None, field=None
         )
@@ -24,8 +24,8 @@ class ErrorItem:
 
 @dataclass
 class ResponseErrorBody:
-    # FIXME: why these have defaults?
-    status: int
     message: str
+    status: int
+    # Optional
     logs: list[LogMessage] = field(default_factory=list)
-    errors: list[ErrorItem] = field(default_factory=list)
+    errors: list[ErrorDetail] = field(default_factory=list)
