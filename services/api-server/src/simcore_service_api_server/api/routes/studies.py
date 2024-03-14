@@ -100,7 +100,7 @@ async def clone_study(
 ):
     try:
         project: ProjectGet = await webserver_api.clone_project(
-            from_project_id=study_id, hidden=False
+            project_id=study_id, hidden=False
         )
         return _create_study_from_project(project)
 

@@ -81,9 +81,7 @@ async def create_study_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ) -> Job:
     try:
-        project = await webserver_api.clone_project(
-            from_project_id=study_id, hidden=True
-        )
+        project = await webserver_api.clone_project(project_id=study_id, hidden=True)
         job = create_job_from_study(
             study_key=study_id, project=project, job_inputs=job_inputs
         )
