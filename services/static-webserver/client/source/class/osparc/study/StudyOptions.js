@@ -121,13 +121,9 @@ qx.Class.define("osparc.study.StudyOptions", {
           });
           this.getChildControl("title-layout").add(control);
           break;
-        case "wallet-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(15));
-          this._addAt(control, 1);
-          break;
         case "wallet-selector-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          this.getChildControl("wallet-layout").add(control);
+          this._addAt(control, 1);
           break;
         case "wallet-selector-label":
           control = new qx.ui.basic.Label().set({
@@ -144,37 +140,29 @@ qx.Class.define("osparc.study.StudyOptions", {
           });
           this.getChildControl("wallet-selector-layout").add(control);
           break;
-        case "credits-left-view":
-          control = new osparc.desktop.credits.CreditsIndicator().set({
-            allowGrowY: false,
-            alignY: "bottom",
-            maxWidth: 150,
-            paddingBottom: 1
-          });
-          this.bind("wallet", control, "wallet");
-          this.getChildControl("wallet-layout").add(control, {
+        case "advanced-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          this._addAt(control, 2, {
             flex: 1
           });
           break;
-        case "advanced-options":
+        case "advanced-checkbox":
           control = new qx.ui.form.CheckBox().set({
             label: this.tr("Advanced options"),
             value: false
           });
-          this._addAt(control, 2);
+          this.getChildControl("advanced-layout").add(control);
           break;
         case "options-layout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
-            padding: 10
-          });
-          this.getChildControl("advanced-options").bind("value", control, "visibility", {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          this.getChildControl("advanced-checkbox").bind("value", control, "visibility", {
             converter: checked => checked ? "visible" : "excluded"
           });
           const scroll = new qx.ui.container.Scroll().set({
-            maxHeight: 200
+            maxHeight: 150
           });
           scroll.add(control);
-          this._addAt(scroll, 3, {
+          this.getChildControl("advanced-layout").add(control, {
             flex: 1
           });
           break;
@@ -192,7 +180,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           });
           break;
         case "services-resources-layout":
-          control = this.self().createGroupBox(this.tr("Select Resources"));
+          control = this.self().createGroupBox(this.tr("Tiers"));
           this.getChildControl("options-layout").add(control, {
             flex: 1
           });
@@ -201,7 +189,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: "right"
           }));
-          this._addAt(control, 4);
+          this._addAt(control, 3);
           break;
         case "cancel-button":
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
@@ -258,7 +246,6 @@ qx.Class.define("osparc.study.StudyOptions", {
       // Wallet Selector
       this._createChildControlImpl("wallet-selector-label");
       const walletSelector = this.getChildControl("wallet-selector");
-      this._createChildControlImpl("credits-left-view");
 
       const wallets = store.getWallets();
       const selectWallet = walletId => {
