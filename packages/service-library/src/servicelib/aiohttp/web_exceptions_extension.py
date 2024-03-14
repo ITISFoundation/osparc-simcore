@@ -35,10 +35,11 @@ class HTTPLoopDetectedError(HTTPServerError):
     status_code = status.HTTP_508_LOOP_DETECTED
 
 
-# Inverse map from code to HTTPException classes
-def collect_aiohttp_http_exceptions(
+def get_all_aiohttp_http_exceptions(
     exception_cls: type[HTTPException] = HTTPException,
 ) -> dict[int, type[HTTPException]]:
+    # Inverse map from code to HTTPException classes
+
     def _pred(obj) -> bool:
         return (
             inspect.isclass(obj)
@@ -52,16 +53,18 @@ def collect_aiohttp_http_exceptions(
     status_to_http_exception_map = {cls.status_code: cls for _, cls in found}
     assert len(status_to_http_exception_map) == len(found), "No duplicates"  # nosec
 
-    status_to_http_exception_map[HTTPLockedError.status_code] = HTTPLockedError
-    status_to_http_exception_map[
-        HTTPLoopDetectedError.status_code
-    ] = HTTPLoopDetectedError
+    for cls in (
+        HTTPLockedError,
+        HTTPLoopDetectedError,
+    ):
+        status_to_http_exception_map[cls.status_code] = cls
+
     return status_to_http_exception_map
 
 
 _STATUS_CODE_TO_HTTP_ERRORS: dict[
     int, type[HTTPError]
-] = collect_aiohttp_http_exceptions(HTTPError)
+] = get_all_aiohttp_http_exceptions(HTTPError)
 
 
 def get_http_error_class_or_none(status_code: int) -> type[HTTPError] | None:
