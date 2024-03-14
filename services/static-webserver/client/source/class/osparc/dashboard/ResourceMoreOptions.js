@@ -196,11 +196,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __addTabPagesView: function() {
-      const detailsView = this.__tabsView = new qx.ui.tabview.TabView().set({
+      const tabsView = this.__tabsView = new qx.ui.tabview.TabView().set({
         barPosition: "left",
         contentPadding: 0
       });
-      this._add(detailsView, {
+      this._add(tabsView, {
         flex: 1
       });
 
@@ -288,16 +288,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __addPages: function() {
-      const detailsView = this.__tabsView;
+      const tabsView = this.__tabsView;
 
       // keep selected page
-      const selection = detailsView.getSelection();
+      const selection = tabsView.getSelection();
       const selectedTabId = selection.length ? selection[0]["tabId"] : null;
 
       // removeAll
-      const pages = detailsView.getChildren().length;
+      const pages = tabsView.getChildren().length;
       for (let i=pages-1; i>=0; i--) {
-        detailsView.remove(detailsView.getChildren()[i]);
+        tabsView.remove(tabsView.getChildren()[i]);
       }
 
       // add Open service button
@@ -318,15 +318,15 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         if (pageCallee) {
           const page = pageCallee.call(this);
           if (page) {
-            detailsView.add(page);
+            tabsView.add(page);
           }
         }
       });
 
       if (selectedTabId) {
-        const pageFound = detailsView.getChildren().find(page => page.tabId === selectedTabId);
+        const pageFound = tabsView.getChildren().find(page => page.tabId === selectedTabId);
         if (pageFound) {
-          detailsView.setSelection([pageFound]);
+          tabsView.setSelection([pageFound]);
         }
       }
     },
