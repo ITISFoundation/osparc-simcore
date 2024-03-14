@@ -259,6 +259,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         .then(services => {
           const versions = osparc.service.Utils.getVersions(services, this.__resourceData["key"]);
           let selectedItem = null;
+
+          // first setSelection
           versions.reverse().forEach(version => {
             selectedItem = new qx.ui.form.ListItem(version);
             versionsBox.add(selectedItem);
@@ -266,23 +268,21 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
               versionsBox.setSelection([selectedItem]);
             }
           });
-        });
 
-      versionsBox.addListener("changeSelection", () => {
-        const selection = versionsBox.getSelection();
-        if (selection && selection.length) {
-          const serviceVersion = selection[0].getLabel();
-          if (serviceVersion !== this.__resourceData["version"]) {
-            store.getAllServices()
-              .then(services => {
+          // then listen to changes
+          versionsBox.addListener("changeSelection", () => {
+            const selection = versionsBox.getSelection();
+            if (selection && selection.length) {
+              const serviceVersion = selection[0].getLabel();
+              if (serviceVersion !== this.__resourceData["version"]) {
                 const serviceData = osparc.service.Utils.getFromObject(services, this.__resourceData["key"], serviceVersion);
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
                 this.__addPages();
-              });
-          }
-        }
-      }, this);
+              }
+            }
+          }, this);
+        });
 
       return hBox;
     },
