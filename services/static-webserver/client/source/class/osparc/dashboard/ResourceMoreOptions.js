@@ -242,7 +242,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __createServiceVersionSelector: function() {
-      const hBox = this.__serviceVersionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignY: "middle"
       }));
 
