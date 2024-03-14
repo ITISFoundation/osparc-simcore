@@ -117,7 +117,8 @@ def create_startup_script(
             # NOTE: https://stackoverflow.com/questions/41203492/solving-redis-warnings-on-overcommit-memory-and-transparent-huge-pages-for-ubunt
             "sysctl vm.overcommit_memory=1",
             f"echo '{_docker_compose_yml_base64_encoded()}' | base64 -d > {_HOST_DOCKER_COMPOSE_PATH}",
-            "docker swarm init",
+            # NOTE: --default-addr-pool is necessary in order to prevent conflicts with AWS node IPs
+            "docker swarm init --default-addr-pool 172.20.0.0/14",
             f"{' '.join(environment_variables)} docker stack deploy --with-registry-auth --compose-file={_HOST_DOCKER_COMPOSE_PATH} dask_stack",
         ]
     )

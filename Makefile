@@ -396,8 +396,8 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 
 .PHONY: .init-swarm
 .init-swarm:
-	# Ensures swarm is initialized (careful we use a default pool of 10.20.0.0/16. Ensure you do not use private IPs in that range!)
-	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip) --default-addr-pool 10.20.0.0/16)
+	# Ensures swarm is initialized (careful we use a default pool of 172.20.0.0/14. Ensure you do not use private IPs in that range!)
+	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip) --default-addr-pool 172.20.0.0/14)
 
 
 ## DOCKER TAGS  -------------------------------
