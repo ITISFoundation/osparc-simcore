@@ -10,7 +10,7 @@ from aiohttp import web
 from aiohttp.client_reqrep import ClientResponse
 from aiohttp.test_utils import TestClient
 from servicelib.aiohttp import status
-from servicelib.aiohttp.rest_responses import _collect_http_exceptions
+from servicelib.aiohttp.rest_responses import collect_aiohttp_http_exceptions
 from servicelib.aiohttp.tracing import setup_tracing
 
 DEFAULT_JAEGER_BASE_URL = "http://jaeger:9411"
@@ -33,7 +33,7 @@ def client(
 
     async def raise_response(request: web.Request):
         status_code = int(request.match_info["code"])
-        status_to_http_exception = _collect_http_exceptions()
+        status_to_http_exception = collect_aiohttp_http_exceptions()
         http_exception_cls = status_to_http_exception[status_code]
         raise http_exception_cls(
             reason=f"raised from raised_error with code {status_code}"
