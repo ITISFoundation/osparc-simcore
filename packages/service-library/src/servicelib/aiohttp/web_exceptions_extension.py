@@ -31,7 +31,8 @@ class HTTPLockedError(HTTPClientError):
     status_code = status.HTTP_423_LOCKED
 
 
-class HTTPLoopDetectedError(HTTPServerError):  # pylint: disable=too-many-ancestors
+class HTTPLoopDetectedError(HTTPServerError):
+    # pylint: disable=too-many-ancestors
     status_code = status.HTTP_508_LOOP_DETECTED
 
 
