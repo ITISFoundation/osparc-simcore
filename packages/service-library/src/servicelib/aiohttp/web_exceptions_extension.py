@@ -57,7 +57,8 @@ def get_all_aiohttp_http_exceptions(
         HTTPLockedError,
         HTTPLoopDetectedError,
     ):
-        status_to_http_exception_map[cls.status_code] = cls
+
+        status_to_http_exception_map[cls.status_code] = cls  # type:ignore
 
     return status_to_http_exception_map
 
