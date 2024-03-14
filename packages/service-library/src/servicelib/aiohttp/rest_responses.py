@@ -12,7 +12,7 @@ from aiohttp.web_exceptions import HTTPError
 from servicelib.aiohttp.status import HTTP_200_OK
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from .rest_models import ErrorItem, ResponseErrorBody
+from .rest_models import ErrorDetail, ResponseErrorBody
 
 _ENVELOPE_KEYS = ("data", "error")
 
@@ -72,8 +72,8 @@ def create_data_response(data: Any, *, status=HTTP_200_OK) -> web.Response:
     return response
 
 
-def create_http_error(
-    errors: list[Exception] | Exception,
+def create_error_response(
+    errors: Exception | list[Exception] | None,
     message: str | None = None,
     http_error_cls: type[HTTPError] = web.HTTPInternalServerError,
 ) -> HTTPError:
@@ -82,18 +82,17 @@ def create_http_error(
     - Can skip internal details when 500 status e.g. to avoid transmitting server
     exceptions to the client in production
     """
-    if not isinstance(errors, list):
+    if isinstance(errors, Exception):
         errors = [errors]
 
-    if message is None:
-        message = HTTPStatus(http_error_cls.status_code).description
+    errors = errors or []
 
     text: str | None = None
     if not http_error_cls.empty_body:
         error = ResponseErrorBody(
             status=http_error_cls.status_code,
-            message=message,
-            errors=[ErrorItem.from_error(e) for e in errors],
+            message=message or HTTPStatus(http_error_cls.status_code).description,
+            errors=[ErrorDetail.from_exception(e) for e in errors],
         )
         text = json_dumps(wrap_as_envelope(error=asdict(error)))
 
