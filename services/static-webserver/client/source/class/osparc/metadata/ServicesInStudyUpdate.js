@@ -90,7 +90,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         });
       } else if (isRetired) {
         versionLabel.set({
-          textColor: "text-on-warning", // because the background is always yellow
+          textColor: "text-on-warning", // because the background is always red
           backgroundColor: osparc.service.StatusUI.getColor("retired"),
           toolTipText: qx.locale.Manager.tr("Service retired, please update")
         });
