@@ -80,7 +80,7 @@ async def test_one_time_payment_annotations_workflow(app: FastAPI):
 
     # list
     total_number_of_items, user_payments = await repo.list_user_payment_transactions(
-        user_id=fake.user_id
+        user_id=fake.user_id, product_name=fake.product_name
     )
     assert total_number_of_items == 1
     assert len(user_payments) == total_number_of_items
