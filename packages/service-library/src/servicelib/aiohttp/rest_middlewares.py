@@ -44,9 +44,9 @@ def _handle_http_error(request: web.BaseRequest, err: web.HTTPError):
     """Ensures response for a web.HTTPError is complete"""
     assert request  # nosec
 
-    # TODO: differenciate between server/client error
+    # NOTE: 'reason' is always setup since there is a default in `set_status`` None provided
+    assert err.reason  # nosec
 
-    assert err.reason  # nosec NOTE: set by default in set_status None provided
     err.content_type = MIMETYPE_APPLICATION_JSON
     if not err.text or not is_enveloped_from_text(err.text):
         error = ResponseErrorBody(
@@ -75,6 +75,7 @@ def _handle_http_successful(request: web.BaseRequest, err: web.HTTPSuccessful):
                 err.text = json_dumps(payload)
         except Exception as other_error:  # pylint: disable=broad-except
             _handle_as_internal_server_error(request, other_error)
+
     raise err
 
 

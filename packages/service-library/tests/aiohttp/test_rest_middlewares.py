@@ -12,6 +12,11 @@ from typing import Any
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from aiohttp.web_exceptions import (
+    HTTPMethodNotAllowed,
+    HTTPRequestEntityTooLarge,
+    HTTPUnavailableForLegalReasons,
+)
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import (
     MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE,
@@ -19,7 +24,10 @@ from servicelib.aiohttp.rest_middlewares import (
     error_middleware_factory,
 )
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
-from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exceptions
+from servicelib.aiohttp.web_exceptions_extension import (
+    STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS,
+    get_all_aiohttp_http_exceptions,
+)
 from servicelib.error_codes import parse_error_code
 from servicelib.json_serialization import json_dumps
 from servicelib.status_codes_utils import (
@@ -104,8 +112,24 @@ class Handlers:
     @classmethod
     async def raise_http_response(cls, request: web.Request):
         status_code = int(request.query["code"])
-        http_response_cls = all_aiohttp_http_exceptions[status_code]
-        raise http_response_cls(reason=cls.HTTP_RESPONSE_REASON.format(status_code))
+        reason = cls.HTTP_RESPONSE_REASON.format(status_code)
+
+        match status_code:
+            case status.HTTP_405_METHOD_NOT_ALLOWED:
+                raise HTTPMethodNotAllowed(
+                    method="GET", allowed_methods=["POST"], reason=reason
+                )
+            case status.HTTP_413_REQUEST_ENTITY_TOO_LARGE:
+                raise HTTPRequestEntityTooLarge(
+                    max_size=10, actual_size=12, reason=reason
+                )
+            case status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS:
+                raise HTTPUnavailableForLegalReasons(
+                    link="https://ilegal.it", reason=reason
+                )
+            case _:
+                http_response_cls = all_aiohttp_http_exceptions[status_code]
+                raise http_response_cls(reason=reason)
 
     RAISE_UNEXPECTED_REASON = "Unexpected error"
 
@@ -176,7 +200,7 @@ async def test_envelope_middleware(path: str, expected_data: Any, client: TestCl
     assert data == expected_data
 
 
-async def test_404_not_found(client: TestClient):
+async def test_404_not_found_when_entrypoint_not_exposed(client: TestClient):
     response = await client.get("/some-invalid-address-outside-api")
     payload = await response.text()
     assert response.status == status.HTTP_404_NOT_FOUND, payload
@@ -192,7 +216,13 @@ async def test_404_not_found(client: TestClient):
     assert not data
 
 
-@pytest.mark.parametrize("status_code", get_http_status_codes(status, is_server_error))
+def _is_server_error(code):
+    return code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS and is_server_error(
+        code
+    )
+
+
+@pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_server_error))
 async def test_fails_with_http_server_error(client: TestClient, status_code: int):
     response = await client.get("/v1/raise_http_code", params={"code": status_code})
     assert response.status == status_code
@@ -203,7 +233,13 @@ async def test_fails_with_http_server_error(client: TestClient, status_code: int
     assert error["message"] == Handlers.HTTP_RESPONSE_REASON.format(status_code)
 
 
-@pytest.mark.parametrize("status_code", get_http_status_codes(status, is_client_error))
+def _is_client_error(code):
+    return code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS and is_client_error(
+        code
+    )
+
+
+@pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_client_error))
 async def test_fails_with_http_client_error(client: TestClient, status_code: int):
     response = await client.get("/v1/raise_http_code", params={"code": status_code})
     assert response.status == status_code
@@ -212,9 +248,14 @@ async def test_fails_with_http_client_error(client: TestClient, status_code: int
     assert not data
     assert error
     assert error["message"] == Handlers.HTTP_RESPONSE_REASON.format(status_code)
+    assert error["errors"]
 
 
-@pytest.mark.parametrize("status_code", get_http_status_codes(status, is_success))
+def _is_success(code):
+    return code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS and is_success(code)
+
+
+@pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_success))
 async def test_fails_with_http_successful(client: TestClient, status_code: int):
     response = await client.get("/v1/raise_http_code", params={"code": status_code})
     assert response.status == status_code
@@ -256,14 +297,19 @@ async def test_raised_unhandled_exception(
     data, error = unwrap_envelope(await response.json())
     assert not data
     assert error
-    assert "OEC" in error["message"]
 
+    # user friendly message with OEC reference
+    assert "OEC" in error["message"]
     parsed_oec = parse_error_code(error["message"]).pop()
     assert (
         MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(parsed_oec) == error["message"]
     )
 
-    # Log should look like this
+    # avoids details
+    assert not error.get("errors")
+    assert not error.get("logs")
+
+    # log sufficient information to diagnose the issue
     #
     # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:96 Request 'GET /v1/raise_unexpected' raised 'SomeUnhandledError' [OEC:140555466658464]
     #   request.remote='127.0.0.1'
@@ -277,7 +323,6 @@ async def test_raised_unhandled_exception(
     #     raise SomeUnhandledError(cls.raise_unexpected_REASON)
     # tests.aiohttp.test_rest_middlewares.SomeUnhandledError: Unexpected error
 
-    # log sufficient information to diagnose the issue
     assert response.method in caplog.text
     assert response.url.path in caplog.text
     assert "request.headers=" in caplog.text
