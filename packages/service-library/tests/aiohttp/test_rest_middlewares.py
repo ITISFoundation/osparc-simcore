@@ -185,9 +185,15 @@ async def test_fails_with_http_server_error(client: TestClient, status_code: int
     assert error["message"] == Handlers.FAIL_REASON.format(status_code)
 
 
-async def test_raised_unhandled_exception(client: TestClient):
+async def test_raised_unhandled_exception(
+    client: TestClient, capsys: pytest.CaptureFixture
+):
     response = await client.get("/v1/fail_unexpected")
     assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    # TODO: exception is
+    #
+    # - Response body conforms OAS schema model
 
     data, error = unwrap_envelope(await response.json())
     assert not data
