@@ -72,7 +72,9 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     createWalletSelector: function(accessRight = "read") {
       const store = osparc.store.Store.getInstance();
 
-      const walletSelector = new qx.ui.form.SelectBox();
+      const walletSelector = new qx.ui.form.SelectBox().set({
+        minWidth: 180,
+      });
 
       const populateSelectBox = selectBox => {
         selectBox.removeAll();
