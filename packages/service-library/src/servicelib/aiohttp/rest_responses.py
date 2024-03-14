@@ -1,15 +1,14 @@
 """ Utils to check, convert and compose server responses for the RESTApi
 
 """
-import inspect
 import json
 from collections.abc import Mapping
 from dataclasses import asdict
 from http import HTTPStatus
 from typing import Any
 
-from aiohttp import web, web_exceptions
-from aiohttp.web_exceptions import HTTPError, HTTPException
+from aiohttp import web
+from aiohttp.web_exceptions import HTTPError
 from servicelib.aiohttp.status import HTTP_200_OK
 
 from ..json_serialization import json_dumps
@@ -115,34 +114,3 @@ def create_error_response(
     return http_error_cls(
         reason=reason, text=json_dumps(payload), content_type=MIMETYPE_APPLICATION_JSON
     )
-
-
-# Inverse map from code to HTTPException classes
-def _collect_http_exceptions(exception_cls: type[HTTPException] = HTTPException):
-    def _pred(obj) -> bool:
-        return (
-            inspect.isclass(obj)
-            and issubclass(obj, exception_cls)
-            and getattr(obj, "status_code", 0) > 0
-        )
-
-    found: list[tuple[str, Any]] = inspect.getmembers(web_exceptions, _pred)
-    assert found  # nosec
-
-    http_statuses = {cls.status_code: cls for _, cls in found}
-    assert len(http_statuses) == len(found), "No duplicates"  # nosec
-
-    return http_statuses
-
-
-_STATUS_CODE_TO_HTTP_ERRORS: dict[int, type[HTTPError]] = _collect_http_exceptions(
-    HTTPError
-)
-
-
-def get_http_error(status_code: int) -> type[HTTPError] | None:
-    """Returns aiohttp error class corresponding to a 4XX or 5XX status code
-
-    NOTICE that any non-error code (i.e. 2XX, 3XX and 4XX) will return None
-    """
-    return _STATUS_CODE_TO_HTTP_ERRORS.get(status_code)

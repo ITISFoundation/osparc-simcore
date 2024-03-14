@@ -1,6 +1,8 @@
 from http import HTTPStatus
 
+import pytest
 from servicelib.aiohttp import status
+from servicelib.aiohttp.web_exceptions_extension import collect_aiohttp_http_exceptions
 from servicelib.status_utils import (
     _INVALID_STATUS_CODE_MSG,
     get_display_name,
@@ -52,3 +54,29 @@ def test_predicates_with_status():
         for c in get_http_status_codes(status)
         if c != status.HTTP_306_RESERVED
     ]
+
+
+AIOHTTP_EXCEPTION_CLASSES_MAP = collect_aiohttp_http_exceptions()
+
+
+codes_without_aiohttp_exception_class = (
+    status.HTTP_100_CONTINUE,
+    status.HTTP_101_SWITCHING_PROTOCOLS,
+    status.HTTP_102_PROCESSING,
+    status.HTTP_103_EARLY_HINTS,
+    status.HTTP_207_MULTI_STATUS,
+    status.HTTP_208_ALREADY_REPORTED,
+    status.HTTP_226_IM_USED,
+    status.HTTP_306_RESERVED,
+    status.HTTP_418_IM_A_TEAPOT,
+    status.HTTP_423_LOCKED,
+    status.HTTP_424_FAILED_DEPENDENCY,
+    status.HTTP_508_LOOP_DETECTED,
+)
+
+
+@pytest.mark.parametrize("status_code", get_http_status_codes(status))
+def test_most_status_codes_map_to_one_aiohttp_exception_class(status_code):
+
+    aiohttp_exception_cls = AIOHTTP_EXCEPTION_CLASSES_MAP.get(status_code)
+    assert aiohttp_exception_cls is not None

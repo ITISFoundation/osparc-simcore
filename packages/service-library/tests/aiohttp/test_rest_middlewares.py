@@ -17,13 +17,19 @@ from servicelib.aiohttp.rest_middlewares import (
     error_middleware_factory,
 )
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
+from servicelib.aiohttp.web_exceptions_extension import get_http_error_class_or_none
 from servicelib.json_serialization import json_dumps
+from servicelib.status_utils import get_http_status_codes, is_server_error
 
 
 @dataclass
 class Data:
     x: int = 3
     y: str = "foo"
+
+
+class SomeUnhandledError(Exception):
+    ...
 
 
 class Handlers:
@@ -59,7 +65,7 @@ class Handlers:
         return [{"x": 3, "y": "3"}] * 3
 
     @staticmethod
-    async def get_attobj(request: web.Request):
+    async def get_obj(request: web.Request):
         return Data(3, "3")
 
     @staticmethod
@@ -75,13 +81,27 @@ class Handlers:
         return [{"x": 3, "y": "3", "z": [Data(3, "3")] * 2}] * 3
 
     @classmethod
-    def get(cls, suffix):
+    def returns_value(cls, suffix):
         handlers = cls()
         coro = getattr(handlers, "get_" + suffix)
         loop = asyncio.get_event_loop()
-        data = loop.run_until_complete(coro(None))
+        returned_value = loop.run_until_complete(coro(None))
+        return json.loads(json_dumps(returned_value))
 
-        return json.loads(json_dumps(data))
+    FAIL_REASON = "Failed with  {}"
+
+    @classmethod
+    async def fail(cls, request: web.Request):
+        status_code = int(request.query["code"])
+        http_error_cls = get_http_error_class_or_none(status_code)
+        assert http_error_cls
+        raise http_error_cls(reason=cls.FAIL_REASON.format(status_code))
+
+    FAIL_UNEXPECTED_REASON = "Unexpected error"
+
+    @classmethod
+    async def fail_unexpected(cls, request: web.Request):
+        raise SomeUnhandledError(cls.FAIL_UNEXPECTED_REASON)
 
 
 @pytest.fixture
@@ -91,14 +111,19 @@ def client(event_loop, aiohttp_client):
     # routes
     app.router.add_routes(
         [
-            web.get("/v1/health", Handlers.get_health, name="get_health"),
-            web.get("/v1/dict", Handlers.get_dict, name="get_dict"),
-            web.get("/v1/envelope", Handlers.get_envelope, name="get_envelope"),
-            web.get("/v1/list", Handlers.get_list, name="get_list"),
-            web.get("/v1/attobj", Handlers.get_attobj, name="get_attobj"),
-            web.get("/v1/string", Handlers.get_string, name="get_string"),
-            web.get("/v1/number", Handlers.get_number, name="get_number"),
-            web.get("/v1/mixed", Handlers.get_mixed, name="get_mixed"),
+            web.get(path, handler, name=handler.__name__)
+            for path, handler in [
+                ("/v1/health", Handlers.get_health),
+                ("/v1/dict", Handlers.get_dict),
+                ("/v1/envelope", Handlers.get_envelope),
+                ("/v1/list", Handlers.get_list),
+                ("/v1/obj", Handlers.get_obj),
+                ("/v1/string", Handlers.get_string),
+                ("/v1/number", Handlers.get_number),
+                ("/v1/mixed", Handlers.get_mixed),
+                ("/v1/fail", Handlers.fail),
+                ("/v1/fail_unexpected", Handlers.fail_unexpected),
+            ]
         ]
     )
 
@@ -112,14 +137,14 @@ def client(event_loop, aiohttp_client):
 @pytest.mark.parametrize(
     "path,expected_data",
     [
-        ("/health", Handlers.get("health")),
-        ("/dict", Handlers.get("dict")),
-        ("/envelope", Handlers.get("envelope")["data"]),
-        ("/list", Handlers.get("list")),
-        ("/attobj", Handlers.get("attobj")),
-        ("/string", Handlers.get("string")),
-        ("/number", Handlers.get("number")),
-        ("/mixed", Handlers.get("mixed")),
+        ("/health", Handlers.returns_value("health")),
+        ("/dict", Handlers.returns_value("dict")),
+        ("/envelope", Handlers.returns_value("envelope")["data"]),
+        ("/list", Handlers.returns_value("list")),
+        ("/obj", Handlers.returns_value("obj")),
+        ("/string", Handlers.returns_value("string")),
+        ("/number", Handlers.returns_value("number")),
+        ("/mixed", Handlers.returns_value("mixed")),
     ],
 )
 async def test_envelope_middleware(path: str, expected_data: Any, client: TestClient):
@@ -147,3 +172,24 @@ async def test_404_not_found(client: TestClient):
     data, error = unwrap_envelope(payload)
     assert error
     assert not data
+
+
+@pytest.mark.parametrize("status_code", get_http_status_codes(status, is_server_error))
+async def test_fails_with_http_server_error(client: TestClient, status_code: int):
+    response = await client.get("/v1/fail", params={"code": status_code})
+    assert response.status == status_code
+
+    data, error = unwrap_envelope(await response.json())
+    assert not data
+    assert error
+    assert error["message"] == Handlers.FAIL_REASON.format(status_code)
+
+
+async def test_raised_unhandled_exception(client: TestClient):
+    response = await client.get("/v1/fail_unexpected")
+    assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    data, error = unwrap_envelope(await response.json())
+    assert not data
+    assert error
+    assert error["message"] == Handlers.FAIL_UNEXPECTED_REASON

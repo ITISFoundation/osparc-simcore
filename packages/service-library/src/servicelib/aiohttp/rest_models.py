@@ -24,6 +24,7 @@ class ErrorItem:
 
 @dataclass
 class ResponseErrorBody:
+    # FIXME: why these have defaults?
     logs: list[LogMessage] = field(default_factory=list)
     errors: list[ErrorItem] = field(default_factory=list)
     status: int = 400
