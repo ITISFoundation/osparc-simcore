@@ -19,10 +19,15 @@ from servicelib.aiohttp.rest_middlewares import (
     error_middleware_factory,
 )
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
-from servicelib.aiohttp.web_exceptions_extension import get_http_error_class_or_none
+from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exceptions
 from servicelib.error_codes import parse_error_code
 from servicelib.json_serialization import json_dumps
-from servicelib.status_codes_utils import get_http_status_codes, is_server_error
+from servicelib.status_codes_utils import (
+    get_http_status_codes,
+    is_client_error,
+    is_server_error,
+    is_success,
+)
 
 
 @dataclass
@@ -31,8 +36,11 @@ class Data:
     y: str = "foo"
 
 
-class SomeUnhandledError(Exception):
+class SomeUnexpectedError(Exception):
     ...
+
+
+all_aiohttp_http_exceptions = get_all_aiohttp_http_exceptions()
 
 
 class Handlers:
@@ -91,20 +99,26 @@ class Handlers:
         returned_value = loop.run_until_complete(coro(None))
         return json.loads(json_dumps(returned_value))
 
-    FAIL_REASON = "Failed with  {}"
+    HTTP_RESPONSE_REASON = "Response with code={}"
 
     @classmethod
-    async def fail(cls, request: web.Request):
+    async def raise_http_response(cls, request: web.Request):
         status_code = int(request.query["code"])
-        http_error_cls = get_http_error_class_or_none(status_code)
-        assert http_error_cls
-        raise http_error_cls(reason=cls.FAIL_REASON.format(status_code))
+        http_response_cls = all_aiohttp_http_exceptions[status_code]
+        raise http_response_cls(reason=cls.HTTP_RESPONSE_REASON.format(status_code))
 
-    FAIL_UNEXPECTED_REASON = "Unexpected error"
+    RAISE_UNEXPECTED_REASON = "Unexpected error"
 
     @classmethod
-    async def fail_unexpected(cls, request: web.Request):
-        raise SomeUnhandledError(cls.FAIL_UNEXPECTED_REASON)
+    async def raise_unexpected(cls, request: web.Request):
+        assert request
+        raise SomeUnexpectedError(cls.RAISE_UNEXPECTED_REASON)
+
+    @classmethod
+    async def raise_exception(cls, request: web.Request):
+        for exc_cls in (NotImplementedError, asyncio.TimeoutError):
+            if exc_cls.__name__ == request.query["exc"]:
+                raise exc_cls
 
 
 @pytest.fixture
@@ -124,8 +138,9 @@ def client(event_loop, aiohttp_client):
                 ("/v1/string", Handlers.get_string),
                 ("/v1/number", Handlers.get_number),
                 ("/v1/mixed", Handlers.get_mixed),
-                ("/v1/fail", Handlers.fail),
-                ("/v1/fail_unexpected", Handlers.fail_unexpected),
+                ("/v1/raise_http_code", Handlers.raise_http_response),
+                ("/v1/raise_unexpected", Handlers.raise_unexpected),
+                ("/v1/raise_exception", Handlers.raise_exception),
             ]
         ]
     )
@@ -179,20 +194,60 @@ async def test_404_not_found(client: TestClient):
 
 @pytest.mark.parametrize("status_code", get_http_status_codes(status, is_server_error))
 async def test_fails_with_http_server_error(client: TestClient, status_code: int):
-    response = await client.get("/v1/fail", params={"code": status_code})
+    response = await client.get("/v1/raise_http_code", params={"code": status_code})
     assert response.status == status_code
 
     data, error = unwrap_envelope(await response.json())
     assert not data
     assert error
-    assert error["message"] == Handlers.FAIL_REASON.format(status_code)
+    assert error["message"] == Handlers.HTTP_RESPONSE_REASON.format(status_code)
+
+
+@pytest.mark.parametrize("status_code", get_http_status_codes(status, is_client_error))
+async def test_fails_with_http_client_error(client: TestClient, status_code: int):
+    response = await client.get("/v1/raise_http_code", params={"code": status_code})
+    assert response.status == status_code
+
+    data, error = unwrap_envelope(await response.json())
+    assert not data
+    assert error
+    assert error["message"] == Handlers.HTTP_RESPONSE_REASON.format(status_code)
+
+
+@pytest.mark.parametrize("status_code", get_http_status_codes(status, is_success))
+async def test_fails_with_http_successful(client: TestClient, status_code: int):
+    response = await client.get("/v1/raise_http_code", params={"code": status_code})
+    assert response.status == status_code
+
+    data, error = unwrap_envelope(await response.json())
+    assert not error
+    assert data
+
+
+@pytest.mark.parametrize(
+    "exception_cls,expected_code",
+    [
+        (NotImplementedError, status.HTTP_501_NOT_IMPLEMENTED),
+        (asyncio.TimeoutError, status.HTTP_504_GATEWAY_TIMEOUT),
+    ],
+)
+async def test_raised_exception(
+    client: TestClient,
+    exception_cls: type[Exception],
+    expected_code: int,
+    caplog: pytest.LogCaptureFixture,
+):
+    response = await client.get(
+        "/v1/raise_exception", params={"exc": exception_cls.__name__}
+    )
+    assert response.status == expected_code
 
 
 async def test_raised_unhandled_exception(
     client: TestClient, caplog: pytest.LogCaptureFixture
 ):
     caplog.set_level(logging.ERROR)
-    response = await client.get("/v1/fail_unexpected")
+    response = await client.get("/v1/raise_unexpected")
 
     # respond the client with 500
     assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -210,7 +265,7 @@ async def test_raised_unhandled_exception(
 
     # Log should look like this
     #
-    # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:96 Request 'GET /v1/fail_unexpected' raised 'SomeUnhandledError' [OEC:140555466658464]
+    # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:96 Request 'GET /v1/raise_unexpected' raised 'SomeUnhandledError' [OEC:140555466658464]
     #   request.remote='127.0.0.1'
     #   request.headers={b'Host': b'127.0.0.1:33461', b'Accept': b'*/*', b'Accept-Encoding': b'gzip, deflate', b'User-Agent': b'Python/3.10 aiohttp/3.8.6'}
     # Traceback (most recent call last):
@@ -218,8 +273,8 @@ async def test_raised_unhandled_exception(
     #     return await handler(request)
     # File "osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 177, in _middleware_handler
     #     resp_or_data = await handler(request)
-    # File "osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py", line 107, in fail_unexpected
-    #     raise SomeUnhandledError(cls.FAIL_UNEXPECTED_REASON)
+    # File "osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py", line 107, in raise_unexpected
+    #     raise SomeUnhandledError(cls.raise_unexpected_REASON)
     # tests.aiohttp.test_rest_middlewares.SomeUnhandledError: Unexpected error
 
     # log sufficient information to diagnose the issue
@@ -227,7 +282,7 @@ async def test_raised_unhandled_exception(
     assert response.url.path in caplog.text
     assert "request.headers=" in caplog.text
     assert "request.remote=" in caplog.text
-    assert SomeUnhandledError.__name__ in caplog.text
-    assert Handlers.FAIL_UNEXPECTED_REASON in caplog.text
+    assert SomeUnexpectedError.__name__ in caplog.text
+    assert Handlers.RAISE_UNEXPECTED_REASON in caplog.text
     # log OEC
     assert "OEC:" in caplog.text
