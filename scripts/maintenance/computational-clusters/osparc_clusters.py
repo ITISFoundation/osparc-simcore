@@ -20,7 +20,7 @@ import typer
 from dotenv import dotenv_values
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
-from mypy_boto3_ec2.type_defs import FilterTypeDef
+from mypy_boto3_ec2.type_defs import FilterTypeDef, TagTypeDef
 from pydantic import ByteSize, TypeAdapter
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
@@ -111,7 +111,7 @@ def _get_last_heartbeat(instance) -> datetime.datetime | None:
 def _timedelta_formatting(
     time_diff: datetime.timedelta, *, color_code: bool = False
 ) -> str:
-    formatted_time_diff = f"{time_diff.days} day(s), " if time_diff.days else ""
+    formatted_time_diff = f"{time_diff.days} day(s), " if time_diff.days > 0 else ""
     formatted_time_diff += f"{time_diff.seconds // 3600:02}:{(time_diff.seconds // 60) % 60:02}:{time_diff.seconds % 60:02}"
     if time_diff.days and color_code:
         formatted_time_diff = f"[red]{formatted_time_diff}[/red]"
@@ -775,6 +775,7 @@ def cancel_jobs(
 ) -> None:
     """Cancel jobs from the cluster, this will rely on osparc platform to work properly
     The director-v2 should receive the cancellation and abort the concerned pipelines in the next 15 seconds.
+    NOTE: This should be called prior to clearing jobs on the cluster.
 
     Keyword Arguments:
         user_id -- the user ID
@@ -821,7 +822,8 @@ def clear_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
     wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
 ) -> None:
-    """DELETES all dask jobs from the cluster, if the osparc still wants to run these, it is useless. Use WITH CARE!!!
+    """DELETES all dask jobs from the cluster, if the osparc still wants to run these, it is useless.
+    TIP: Use first the cancel-jobs command!
 
     Arguments:
         user_id -- the user ID
@@ -846,6 +848,44 @@ def clear_jobs(
         with _dask_client(the_cluster.primary.ec2_instance.public_ip_address) as client:
             client.datasets.clear()
         print("proceeding with reseting jobs from cluster done.")
+    else:
+        print("not deleting anything")
+
+
+@app.command()
+def trigger_cluster_termination(
+    user_id: Annotated[int, typer.Option(help="the user ID")],
+    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+) -> None:
+    """this will set the Heartbeat tag on the primary machine to 1 hour, thus ensuring the
+    clusters-keeper will properly terminate that cluster.
+
+    Keyword Arguments:
+        user_id -- the user ID
+        wallet_id -- the wallet ID
+    """
+    instances = _list_running_ec2_instances(user_id, wallet_id)
+    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
+        instances, state["ssh_key_path"], user_id, wallet_id
+    )
+    assert not dynamic_autoscaled_instances
+    assert computational_clusters
+    assert (
+        len(computational_clusters) == 1
+    ), "too many clusters found! TIP: fix this code"
+
+    environment = state["environment"]
+    _print_computational_clusters(computational_clusters, environment)
+    if typer.confirm("Are you sure you want to trigger termination of that cluster?"):
+        the_cluster = computational_clusters[0]
+        new_heartbeat_tag: TagTypeDef = {
+            "Key": "last_heartbeat",
+            "Value": f"{arrow.utcnow().datetime - datetime.timedelta(hours=1)}",
+        }
+        the_cluster.primary.ec2_instance.create_tags(Tags=[new_heartbeat_tag])
+        print(
+            f"heartbeat tag on cluster of {user_id=}/{wallet_id=} changed, clusters-keeper will terminate that cluster soon."
+        )
     else:
         print("not deleting anything")
 
