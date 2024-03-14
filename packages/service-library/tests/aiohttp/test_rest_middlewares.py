@@ -5,6 +5,7 @@
 
 import asyncio
 import json
+import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -13,11 +14,13 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import (
+    MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE,
     envelope_middleware_factory,
     error_middleware_factory,
 )
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
 from servicelib.aiohttp.web_exceptions_extension import get_http_error_class_or_none
+from servicelib.error_codes import parse_error_code
 from servicelib.json_serialization import json_dumps
 from servicelib.status_codes_utils import get_http_status_codes, is_server_error
 
@@ -186,16 +189,26 @@ async def test_fails_with_http_server_error(client: TestClient, status_code: int
 
 
 async def test_raised_unhandled_exception(
-    client: TestClient, capsys: pytest.CaptureFixture
+    client: TestClient, caplog: pytest.LogCaptureFixture
 ):
+    caplog.set_level(logging.ERROR)
     response = await client.get("/v1/fail_unexpected")
+
+    # respond the client with 500
     assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
-    # TODO: exception is
-    #
-    # - Response body conforms OAS schema model
-
+    # response model
     data, error = unwrap_envelope(await response.json())
     assert not data
     assert error
-    assert error["message"] == Handlers.FAIL_UNEXPECTED_REASON
+    assert "OEC" in error["message"]
+
+    parsed_oec = parse_error_code(error["message"]).pop()
+    assert (
+        MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(parsed_oec) == error["message"]
+    )
+
+    # log sufficient information to diagnose the issue
+    assert Handlers.FAIL_UNEXPECTED_REASON in caplog.text
+    # log OEC
+    assert "OEC:" in caplog.text

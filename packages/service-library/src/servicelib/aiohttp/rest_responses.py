@@ -89,14 +89,17 @@ def create_error_response(
     if message is None:
         message = HTTPStatus(http_error_cls.status_code).description
 
-    error = ResponseErrorBody(
-        status=http_error_cls.status_code,
-        message=message,
-        errors=[ErrorItem.from_error(e) for e in errors],
-    )
+    text: str | None = None
+    if not http_error_cls.empty_body:
+        error = ResponseErrorBody(
+            status=http_error_cls.status_code,
+            message=message,
+            errors=[ErrorItem.from_error(e) for e in errors],
+        )
+        text = json_dumps(wrap_as_envelope(error=asdict(error)))
 
     return http_error_cls(
         reason=message,
-        text=json_dumps(wrap_as_envelope(error=asdict(error))),
+        text=text,
         content_type=MIMETYPE_APPLICATION_JSON,
     )
