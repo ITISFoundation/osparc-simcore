@@ -793,13 +793,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
-        with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
