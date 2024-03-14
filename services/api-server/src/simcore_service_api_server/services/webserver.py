@@ -23,6 +23,7 @@ from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataUpdate,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
+from models_library.api_schemas_webserver.projects_ports import ProjectInputUpdate
 from models_library.api_schemas_webserver.resource_usage import (
     PricingUnitGet,
     ServicePricingPlanGet,
@@ -428,7 +429,7 @@ class AuthSession:
     async def update_project_inputs(
         self,
         project_id: ProjectID,
-        new_inputs: dict[NodeID, dict[str, typing.Any]],
+        new_inputs: list[ProjectInputUpdate],
     ) -> dict[NodeID, dict[str, typing.Any]]:
         response = await self.client.patch(
             f"/projects/{project_id}/inputs",

@@ -3,12 +3,13 @@
     services/api-server/src/simcore_service_api_server/api/routes/studies_jobs.py
 """
 import collections.abc
+from typing import Any, NamedTuple
 from uuid import UUID
 
-import pydantic
 from models_library.api_schemas_webserver.projects import ProjectGet
-from models_library.generics import Envelope
+from models_library.api_schemas_webserver.projects_ports import ProjectInputUpdate
 from models_library.projects_nodes import InputID, NodeID
+from models_library.projects_nodes_io import SimcoreS3FileID
 
 from ..models.domain.projects import InputTypes, SimCoreFileLink
 from ..models.schemas.files import File
@@ -17,11 +18,16 @@ from ..models.schemas.studies import Study, StudyID
 from .storage import to_file_api_model
 
 
+class ProjectInputs(NamedTuple):
+    inputs: list[ProjectInputUpdate]
+    file_inputs: dict[InputID, InputTypes]
+
+
 def get_project_and_file_inputs_from_job_inputs(
-    project_inputs: dict[NodeID, dict[str, pydantic.typing.Any]],
+    project_inputs: dict[NodeID, dict[str, Any]],
     file_inputs: dict[InputID, InputTypes],
     job_inputs: JobInputs,
-) -> Envelope[dict[NodeID, str]]:
+) -> ProjectInputs:
     job_inputs_dict = job_inputs.values
 
     # TODO make sure all values are set at some point
@@ -29,26 +35,28 @@ def get_project_and_file_inputs_from_job_inputs(
     for name, value in job_inputs.values.items():
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
-            file_inputs[name] = SimCoreFileLink(
+            file_inputs[InputID(name)] = SimCoreFileLink(
                 store=0,
-                path=f"api/{value.id}/{value.filename}",
+                path=SimcoreS3FileID(f"api/{value.id}/{value.filename}"),
                 label=value.filename,
                 eTag=value.e_tag,
             )
 
-    new_inputs = []
+    new_inputs: list[ProjectInputUpdate] = []
     for node_id, node_dict in project_inputs.items():
         if node_dict["label"] in job_inputs_dict:
             new_inputs.append(
-                {"key": node_id, "value": job_inputs_dict[node_dict["label"]]}
+                ProjectInputUpdate(
+                    key=node_id, value=job_inputs_dict[node_dict["label"]]
+                )
             )
 
-    return new_inputs, file_inputs
+    return ProjectInputs(new_inputs, file_inputs)
 
 
 async def create_job_outputs_from_project_outputs(
     job_id: StudyID,
-    project_outputs: dict[NodeID, dict[str, pydantic.typing.Any]],
+    project_outputs: dict[NodeID, dict[str, Any]],
     user_id,
     storage_client,
 ) -> JobOutputs:

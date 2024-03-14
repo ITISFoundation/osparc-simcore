@@ -1,9 +1,10 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from models_library.api_schemas_webserver.projects import ProjectUpdate
+from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from pydantic import PositiveInt
 from simcore_service_api_server.api.dependencies.authentication import (
     get_current_user_id,
@@ -114,7 +115,7 @@ async def create_study_job(
             node_id = file_param_nodes[node_label]
 
             await webserver_api.update_node_outputs(
-                project.uuid, node_id, {"outputs": {"outFile": file_link}}
+                project.uuid, node_id, NodeOutputs(outputs={"outFile": file_link})
             )
 
         if len(new_project_inputs) > 0:
@@ -124,11 +125,11 @@ async def create_study_job(
 
         return job
 
-    except ProjectNotFoundError:
-        return create_error_json_response(
-            f"Cannot find study={study_id!r}.",
+    except ProjectNotFoundError as exc:
+        raise HTTPException(
+            detail=f"Cannot find study={study_id!r}.",
             status_code=status.HTTP_404_NOT_FOUND,
-        )
+        ) from exc
 
 
 @router.get(
