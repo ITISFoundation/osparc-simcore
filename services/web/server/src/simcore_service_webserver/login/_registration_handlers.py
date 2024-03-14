@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_webserver.auth import (
@@ -35,6 +36,21 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
+def _get_ipinfo(request: web.Request) -> dict[str, Any]:
+    # NOTE:  Traefik is also configured to transmit the original IP.
+    x_real_ip = request.headers.get("X-Real-IP", None)
+    # SEE https://docs.aiohttp.org/en/stable/web_reference.html#aiohttp.web.BaseRequest.transport
+    peername: tuple | None = (
+        request.transport.get_extra_info("peername") if request.transport else None
+    )
+    return {
+        "x-real-ip": x_real_ip,
+        "x-forwarded-for": request.headers.get("X-Forwarded-For", None),
+        "peername": peername,
+        "test_url": f"https://ipinfo.io/{x_real_ip}/json",
+    }
+
+
 @routes.post(
     f"/{API_VTAG}/auth/request-account",
     name="request_product_account",
@@ -45,24 +61,13 @@ async def request_product_account(request: web.Request):
     body = await parse_request_body_as(AccountRequestInfo, request)
     assert body.form  # nosec
 
-    ipinfo = {
-        # NOTE:  Traefik is also configured to transmit the original IP.
-        "x-real-ip": request.headers.get("X-Real-IP", None),
-        "x-forwarded-for": request.headers.get("X-Forwarded-For", None),
-        "peername": (
-            request.transport.get_extra_info("peername", default=None)
-            if request.transport
-            else None
-        ),
-    }
-
     # send email to fogbugz or user itself
     fire_and_forget_task(
         send_account_request_email_to_support(
             request,
             product=product,
             request_form=body.form,
-            ipinfo=ipinfo,
+            ipinfo=_get_ipinfo(request),
         ),
         task_suffix_name=f"{__name__}.request_product_account.send_account_request_email_to_support",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],

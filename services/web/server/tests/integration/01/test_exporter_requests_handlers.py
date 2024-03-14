@@ -234,6 +234,7 @@ async def test_export_project(
     dir_generated: Path,
 ):
     project_id = project["uuid"]
+    assert client.app
 
     url_export = client.app.router["export_project"].url_for(project_id=project_id)
     headers = {X_PRODUCT_NAME_HEADER: product_name}

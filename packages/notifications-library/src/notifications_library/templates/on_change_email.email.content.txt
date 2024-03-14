@@ -1,0 +1,10 @@
+Dear {{ user.first_name }},
+
+You have requested to change the email address linked to your {{ product.display_name }} account. Please follow the on-screen information in the link below:
+
+{{ link }}
+
+Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
+
+Best Regards,
+The {{ product.display_name }} Team

@@ -46,9 +46,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     HEIGHT: 700,
 
     popUpInWindow: function(moreOpts) {
-      const prjAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       // eslint-disable-next-line no-underscore-dangle
-      const title = qx.locale.Manager.tr(prjAlias + ` Details - ${moreOpts.__resourceData.name}`);
+      const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(moreOpts.__resourceData["resourceType"]);
+      // eslint-disable-next-line no-underscore-dangle
+      const title = `${resourceAlias} ${qx.locale.Manager.tr("Details")} - ${moreOpts.__resourceData.name}`
       return osparc.ui.window.Window.popUpInWindow(moreOpts, title, this.WIDTH, this.HEIGHT).set({
         maxHeight: 1000,
         layout: new qx.ui.layout.Grow(),
@@ -127,7 +128,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __openTapped: function() {
       if (this.__resourceData["resourceType"] !== "study") {
         // Nothing to pre-check
-        this.__openStudy();
+        this.__openResource();
         return;
       }
       this.__openButton.setFetching(true);
@@ -157,7 +158,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           if (anyUpdatable) {
             this.__confirmUpdate();
           } else {
-            this.__openStudy();
+            this.__openResource();
           }
         })
         .catch(() => this.__openButton.setFetching(false));
@@ -175,12 +176,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         if (win.getConfirmed()) {
           this.__openPage(this.__servicesUpdatePage);
         } else {
-          this.__openStudy();
+          this.__openResource();
         }
       });
     },
 
-    __openStudy: function() {
+    __openResource: function() {
       switch (this.__resourceData["resourceType"]) {
         case "study":
           this.fireDataEvent("openStudy", this.__resourceData);
@@ -195,11 +196,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __addTabPagesView: function() {
-      const detailsView = this.__tabsView = new qx.ui.tabview.TabView().set({
+      const tabsView = this.__tabsView = new qx.ui.tabview.TabView().set({
         barPosition: "left",
         contentPadding: 0
       });
-      this._add(detailsView, {
+      this._add(tabsView, {
         flex: 1
       });
 
@@ -241,7 +242,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __createServiceVersionSelector: function() {
-      const hBox = this.__serviceVersionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignY: "middle"
       }));
 
@@ -258,6 +259,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         .then(services => {
           const versions = osparc.service.Utils.getVersions(services, this.__resourceData["key"]);
           let selectedItem = null;
+
+          // first setSelection
           versions.reverse().forEach(version => {
             selectedItem = new qx.ui.form.ListItem(version);
             versionsBox.add(selectedItem);
@@ -265,38 +268,36 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
               versionsBox.setSelection([selectedItem]);
             }
           });
-        });
 
-      versionsBox.addListener("changeSelection", () => {
-        const selection = versionsBox.getSelection();
-        if (selection && selection.length) {
-          const serviceVersion = selection[0].getLabel();
-          if (serviceVersion !== this.__resourceData["version"]) {
-            store.getAllServices()
-              .then(services => {
+          // then listen to changes
+          versionsBox.addListener("changeSelection", () => {
+            const selection = versionsBox.getSelection();
+            if (selection && selection.length) {
+              const serviceVersion = selection[0].getLabel();
+              if (serviceVersion !== this.__resourceData["version"]) {
                 const serviceData = osparc.service.Utils.getFromObject(services, this.__resourceData["key"], serviceVersion);
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
                 this.__addPages();
-              });
-          }
-        }
-      }, this);
+              }
+            }
+          }, this);
+        });
 
       return hBox;
     },
 
     __addPages: function() {
-      const detailsView = this.__tabsView;
+      const tabsView = this.__tabsView;
 
       // keep selected page
-      const selection = detailsView.getSelection();
+      const selection = tabsView.getSelection();
       const selectedTabId = selection.length ? selection[0]["tabId"] : null;
 
       // removeAll
-      const pages = detailsView.getChildren().length;
+      const pages = tabsView.getChildren().length;
       for (let i=pages-1; i>=0; i--) {
-        detailsView.remove(detailsView.getChildren()[i]);
+        tabsView.remove(tabsView.getChildren()[i]);
       }
 
       // add Open service button
@@ -317,15 +318,15 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         if (pageCallee) {
           const page = pageCallee.call(this);
           if (page) {
-            detailsView.add(page);
+            tabsView.add(page);
           }
         }
       });
 
       if (selectedTabId) {
-        const pageFound = detailsView.getChildren().find(page => page.tabId === selectedTabId);
+        const pageFound = tabsView.getChildren().find(page => page.tabId === selectedTabId);
         if (pageFound) {
-          detailsView.setSelection([pageFound]);
+          tabsView.setSelection([pageFound]);
         }
       }
     },
@@ -392,7 +393,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __getPreviewPage: function() {
       const resourceData = this.__resourceData;
-      if (osparc.utils.Resources.isService(resourceData)) {
+      if (
+        osparc.utils.Resources.isService(resourceData) ||
+        osparc.product.Utils.isProduct("s4llite") ||
+        osparc.product.Utils.isProduct("tis")
+      ) {
+        // there is no pipelining
         return null;
       }
 

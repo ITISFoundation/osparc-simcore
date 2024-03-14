@@ -19,7 +19,9 @@ qx.Class.define("osparc.dashboard.resources.pages.BasePage", {
   extend: qx.ui.tabview.Page,
 
   construct: function(title, iconSrc = null, id) {
-    this.base(arguments, null, iconSrc, id);
+    this.base(arguments, null, iconSrc);
+
+    this.tabId = id;
 
     const grid = new qx.ui.layout.Grid(10, 10);
     grid.setColumnFlex(0, 1);

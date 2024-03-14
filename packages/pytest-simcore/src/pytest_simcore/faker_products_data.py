@@ -20,8 +20,8 @@ from .helpers.rawdata_fakers import random_product
 
 
 @pytest.fixture
-def product_name(faker: Faker) -> ProductName:
-    return ProductName(f"the_{faker.random_element(['blue', 'foo', 'test'])}_product")
+def product_name() -> ProductName:
+    return ProductName("the_test_product")
 
 
 @pytest.fixture

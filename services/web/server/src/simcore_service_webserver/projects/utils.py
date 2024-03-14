@@ -1,7 +1,8 @@
 import logging
 import re
 from copy import deepcopy
-from typing import Any, Match, TypedDict
+from re import Match
+from typing import Any, TypedDict
 from uuid import UUID, uuid1, uuid5
 
 from models_library.projects_nodes_io import NodeIDStr
@@ -12,16 +13,12 @@ from yarl import URL
 
 from .models import ProjectDict
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-VARIABLE_PATTERN = re.compile(r"^{{\W*(\w+)\W*}}$")
+_VARIABLE_PATTERN = re.compile(r"^{{\W*(\w+)\W*}}$")
 
 # NOTE: InputTypes/OutputTypes that are NOT links
-NOT_IO_LINK_TYPES_TUPLE = (str, int, float, bool)
-
-SUPPORTED_FRONTEND_KEYS: set[ServiceKey] = {
-    "simcore/services/frontend/file-picker",
-}
+_NOT_IO_LINK_TYPES_TUPLE = (str, int, float, bool)
 
 
 class NodeDict(TypedDict, total=False):
@@ -31,6 +28,8 @@ class NodeDict(TypedDict, total=False):
 
 NodesMap = dict[NodeIDStr, NodeIDStr]
 
+_FIELDS_TO_DELETE = ("outputs", "progress", "runHash")
+
 
 def clone_project_document(
     project: ProjectDict,
@@ -38,6 +37,7 @@ def clone_project_document(
     forced_copy_project_id: UUID | None = None,
     clean_output_data: bool = False,
 ) -> tuple[ProjectDict, NodesMap]:
+
     project_copy = deepcopy(project)
 
     # Update project id
@@ -58,7 +58,7 @@ def clone_project_document(
         return NodeIDStr(uuid5(project_copy_uuid, str(old_uuid)))
 
     nodes_map: NodesMap = {}
-    for node_uuid in project.get("workbench", {}).keys():
+    for node_uuid in project.get("workbench", {}):
         nodes_map[node_uuid] = _create_new_node_uuid(node_uuid)
 
     project_map = {project["uuid"]: project_copy["uuid"]}
@@ -94,14 +94,13 @@ def clone_project_document(
         )
 
     if clean_output_data:
-        FIELDS_TO_DELETE = ("outputs", "progress", "runHash")
         for node_data in project_copy.get("workbench", {}).values():
-            for field in FIELDS_TO_DELETE:
+            for field in _FIELDS_TO_DELETE:
                 node_data.pop(field, None)
     return project_copy, nodes_map
 
 
-@safe_return(if_fails_return=False, logger=log)
+@safe_return(if_fails_return=False, logger=_logger)
 def substitute_parameterized_inputs(
     parameterized_project: dict, parameters: dict
 ) -> dict:
@@ -129,8 +128,7 @@ def substitute_parameterized_inputs(
             isinstance(value, str)
             and access.get(name, "ReadAndWrite") == "ReadAndWrite"
         ):
-            match = VARIABLE_PATTERN.match(value)
-            return match
+            return _VARIABLE_PATTERN.match(value)
         return None
 
     for node in project["workbench"].values():
@@ -146,7 +144,7 @@ def substitute_parameterized_inputs(
                 if value in parameters:
                     new_inputs[name] = _normalize_value(parameters[value])
                 else:
-                    log.warning(
+                    _logger.warning(
                         "Could not resolve parameter %s. No value provided in %s",
                         value,
                         parameters,
@@ -166,25 +164,25 @@ def is_graph_equal(
     """
     try:
         if not set(rhs_workbench.keys()) == set(lhs_workbench.keys()):
-            raise ValueError()
+            raise ValueError
 
         for node_id, node in rhs_workbench.items():
             # same nodes
             if not all(
                 node.get(k) == lhs_workbench[node_id].get(k) for k in ["key", "version"]
             ):
-                raise ValueError()
+                raise ValueError
 
             # same connectivity (edges)
             if not set(node.get("inputNodes")) == set(
                 lhs_workbench[node_id].get("inputNodes")
             ):
-                raise ValueError()
+                raise ValueError
 
             # same input values
             for port_id, port in node.get("inputs", {}).items():
                 if port != lhs_workbench[node_id].get("inputs", {}).get(port_id):
-                    raise ValueError()
+                    raise ValueError
 
     except (ValueError, TypeError, AttributeError):
         return False
@@ -261,7 +259,7 @@ def any_node_inputs_changed(
             if (updated_inputs := updated_node.get("inputs")) != current_node.get(
                 "inputs"
             ):
-                log.debug(
+                _logger.debug(
                     "Change detected in projects[%s].workbench[%s].%s",
                     f"{project_uuid=}",
                     f"{node_id=}",
@@ -276,8 +274,8 @@ def any_node_inputs_changed(
                 # Anything outside of the PRIMITIVE_TYPES_TUPLE, is interpreted as links
                 # that node-ports need to handle. This is a simpler check with ProjectDict
                 # since otherwise test will require constructing BaseModels on input_values
-                if not isinstance(input_value, NOT_IO_LINK_TYPES_TUPLE):
-                    log.debug(
+                if not isinstance(input_value, _NOT_IO_LINK_TYPES_TUPLE):
+                    _logger.debug(
                         "Change detected in projects[%s].workbench[%s].inputs[%s]=%s. Link was added.",
                         f"{project_uuid=}",
                         f"{node_id=}",
@@ -288,18 +286,23 @@ def any_node_inputs_changed(
     return False
 
 
+_SUPPORTED_FRONTEND_KEYS: set[ServiceKey] = {
+    ServiceKey("simcore/services/frontend/file-picker"),
+}
+
+
 def get_frontend_node_outputs_changes(
     new_node: NodeDict, old_node: NodeDict
 ) -> set[str]:
     changed_keys: set[str] = set()
 
-    # if node changes it's outputs and is not a supported
+    # ANE: if node changes it's outputs and is not a supported
     # frontend type, return no frontend changes
-    nodes_keys = {old_node.get("key"), new_node.get("key")}
-    if len(nodes_keys) == 1 and nodes_keys.pop() not in SUPPORTED_FRONTEND_KEYS:
-        return changed_keys
+    old_key, new_key = old_node.get("key"), new_node.get("key")
+    if old_key == new_key and new_key not in _SUPPORTED_FRONTEND_KEYS:
+        return set()
 
-    log.debug("Comparing nodes %s %s", new_node, old_node)
+    _logger.debug("Comparing nodes %s %s", new_node, old_node)
 
     def _check_for_changes(d1: dict[str, Any], d2: dict[str, Any]) -> None:
         """
@@ -382,5 +385,4 @@ def default_copy_project_name(name: str) -> str:
 
 def replace_multiple_spaces(text: str) -> str:
     # Use regular expression to replace multiple spaces with a single space
-    cleaned_text = re.sub(r"\s+", " ", text)
-    return cleaned_text
+    return re.sub(r"\s+", " ", text)
