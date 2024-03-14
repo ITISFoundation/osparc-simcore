@@ -17,7 +17,6 @@ import distributed
 import paramiko
 import parse
 import typer
-from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from dotenv import dotenv_values
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
@@ -30,6 +29,8 @@ from rich.table import Column, Style, Table
 app = typer.Typer()
 
 _SSH_USER_NAME: Final[str] = "ubuntu"
+
+_TaskCancelEventName = "cancel_event_{}"
 
 
 @dataclass(slots=True, kw_only=True)
@@ -114,7 +115,7 @@ def _timedelta_formatting(
     formatted_time_diff += f"{time_diff.seconds // 3600:02}:{(time_diff.seconds // 60) % 60:02}:{time_diff.seconds % 60:02}"
     if time_diff.days and color_code:
         formatted_time_diff = f"[red]{formatted_time_diff}[/red]"
-    elif time_diff.seconds > 5 * HOUR and color_code:
+    elif (time_diff.seconds > 5 * HOUR) and color_code:
         formatted_time_diff = f"[orange]{formatted_time_diff}[/orange]"
     return formatted_time_diff
 
@@ -737,7 +738,7 @@ def _list_running_ec2_instances(
     if wallet_id:
         ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
     instances = ec2_resource.instances.filter(Filters=ec2_filters)
-    assert isinstance(instances, ServiceResourceInstancesCollection)  # nosec
+
     return instances
 
 
@@ -804,7 +805,7 @@ def cancel_jobs(
             for dataset in datasets:
                 task_future = distributed.Future(dataset)
                 cancel_event = distributed.Event(
-                    name=TaskCancelEventName.format(task_future.key), client=client
+                    name=_TaskCancelEventName.format(task_future.key), client=client
                 )
                 cancel_event.set()
                 task_future.cancel()
