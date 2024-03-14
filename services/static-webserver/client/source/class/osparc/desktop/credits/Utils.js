@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         wallets.forEach(wallet => {
           const found = wallet.getMyAccessRights();
           if (found && found[accessRight]) {
-            const sbItem = new qx.ui.form.ListItem(wallet.getName());
+            const sbItem = new qx.ui.form.ListItem(`${wallet.getName()} (${wallet.getCreditsAvailable()} credits)`);
             sbItem.walletId = wallet.getWalletId();
             selectBox.add(sbItem);
           }
