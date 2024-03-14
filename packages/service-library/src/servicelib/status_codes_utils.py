@@ -2,7 +2,7 @@
 
     - on aiohttp services
         from servicelib.aiohttp import status
-        from servicelib.status_utils import is_success
+        from servicelib.status_codes_utils import is_success
 
         assert is_success(status.HTTP_200_OK)
 
@@ -10,7 +10,7 @@
     - on fastapi services
 
         from fastapi import status
-        from servicelib.status_utils import is_success
+        from servicelib.status_codes_utils import is_success
 
         assert is_success(status.HTTP_200_OK)
 
@@ -36,6 +36,7 @@ def get_display_name(status_code: int) -> str:
         return f"HTTP_{status_code}_{code.name}"
     except ValueError:
         if status_code == 306:  # noqa: PLR2004
+            # NOTE: HttpStatus does not include 306
             return "HTTP_306_RESERVED"
         return _INVALID_STATUS_CODE_MSG
 

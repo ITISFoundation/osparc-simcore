@@ -19,7 +19,7 @@ from servicelib.aiohttp.rest_middlewares import (
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
 from servicelib.aiohttp.web_exceptions_extension import get_http_error_class_or_none
 from servicelib.json_serialization import json_dumps
-from servicelib.status_utils import get_http_status_codes, is_server_error
+from servicelib.status_codes_utils import get_http_status_codes, is_server_error
 
 
 @dataclass
