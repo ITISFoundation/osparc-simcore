@@ -6,10 +6,11 @@ import datetime
 import json
 import re
 from collections import defaultdict, namedtuple
+from collections.abc import Coroutine
 from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Coroutine, Final, TypeAlias
+from typing import Annotated, Any, Final, TypeAlias
 
 import arrow
 import boto3
@@ -30,7 +31,7 @@ app = typer.Typer()
 
 _SSH_USER_NAME: Final[str] = "ubuntu"
 
-_TaskCancelEventName = "cancel_event_{}"
+_TaskCancelEventNameTemplate: Final[str] = "cancel_event_{}"
 
 
 @dataclass(slots=True, kw_only=True)
@@ -806,7 +807,8 @@ def cancel_jobs(
             for dataset in datasets:
                 task_future = distributed.Future(dataset)
                 cancel_event = distributed.Event(
-                    name=_TaskCancelEventName.format(task_future.key), client=client
+                    name=_TaskCancelEventNameTemplate.format(task_future.key),
+                    client=client,
                 )
                 cancel_event.set()
                 task_future.cancel()
