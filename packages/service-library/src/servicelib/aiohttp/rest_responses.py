@@ -55,34 +55,27 @@ def unwrap_envelope(payload: dict[str, Any]) -> tuple:
 # RESPONSES FACTORIES -------------------------------
 
 
-def create_data_response(
-    data: Any, *, skip_internal_error_details=False, status=HTTP_200_OK
-) -> web.Response:
+def create_data_response(data: Any, *, status=HTTP_200_OK) -> web.Response:
     response = None
     try:
         payload = wrap_as_envelope(data) if not is_enveloped(data) else data
 
         response = web.json_response(payload, dumps=json_dumps, status=status)
     except (TypeError, ValueError) as err:
-        response = exception_to_response(
-            create_http_error(
-                [
-                    err,
-                ],
-                str(err),
-                web.HTTPInternalServerError,
-                skip_internal_error_details=skip_internal_error_details,
-            )
+        response = create_error_response(
+            errors=[
+                err,
+            ],
+            message=str(err),
+            http_error_cls=web.HTTPInternalServerError,
         )
     return response
 
 
 def create_http_error(
     errors: list[Exception] | Exception,
-    reason: str | None = None,
+    message: str | None = None,
     http_error_cls: type[HTTPError] = web.HTTPInternalServerError,
-    *,
-    skip_internal_error_details: bool = False,
 ) -> HTTPError:
     """
     - Response body conforms OAS schema model
@@ -92,44 +85,17 @@ def create_http_error(
     if not isinstance(errors, list):
         errors = [errors]
 
-    # TODO: guarantee no throw!
+    if message is None:
+        message = HTTPStatus(http_error_cls.status_code).description
 
-    is_internal_error: bool = http_error_cls == web.HTTPInternalServerError
-    default_message = reason or get_code_description(http_error_cls.status_code)
-
-    if is_internal_error and skip_internal_error_details:
-        error = ResponseErrorBody(
-            errors=[],
-            status=http_error_cls.status_code,
-            message=default_message,
-        )
-    else:
-        error = ResponseErrorBody(
-            errors=[ErrorItem.from_error(err) for err in errors],
-            status=http_error_cls.status_code,
-            message=default_message,
-        )
-
-    assert not http_error_cls.empty_body  # nosec
-    payload = wrap_as_envelope(error=asdict(error))
-
-    if reason is None:
-        reason = HTTPStatus(http_error_cls.status_code).description
-
-    return http_error_cls(
-        reason=reason,
-        text=json_dumps(payload),
-        content_type=MIMETYPE_APPLICATION_JSON,
+    error = ResponseErrorBody(
+        status=http_error_cls.status_code,
+        message=message,
+        errors=[ErrorItem.from_error(e) for e in errors],
     )
 
-
-def exception_to_response(exc: HTTPError) -> web.Response:
-    # Returning web.HTTPException is deprecated so here we have a converter to a response
-    # so it can be used as
-    # SEE https://github.com/aio-libs/aiohttp/issues/2415
-    return web.Response(
-        status=exc.status,
-        headers=exc.headers,
-        reason=exc.reason,
-        text=exc.text,
+    return http_error_cls(
+        reason=message,
+        text=json_dumps(wrap_as_envelope(error=asdict(error))),
+        content_type=MIMETYPE_APPLICATION_JSON,
     )
