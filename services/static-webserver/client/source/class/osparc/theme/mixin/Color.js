@@ -8,6 +8,7 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "busy-orange": "#FFA500",
     "failed-red": "#FF2D2D",
     "danger-red": "#E00020", // Z43 red
+    "text-on-warning": "#141414",
 
     "info": "rgba(9, 89, 122, 1)", // #09597A
     "info_bg": "rgba(9, 89, 122, 0.1)", // #09597A1A
