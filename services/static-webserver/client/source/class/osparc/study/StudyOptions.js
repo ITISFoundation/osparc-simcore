@@ -105,35 +105,23 @@ qx.Class.define("osparc.study.StudyOptions", {
       let control;
       switch (id) {
         case "title-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          control = osparc.study.StudyOptions.createGroupBox(this.tr("Title"));
           this._addAt(control, 0);
-          break;
-        case "title-label":
-          control = new qx.ui.basic.Label().set({
-            value: this.tr("Title:"),
-            font: "text-14"
-          });
-          this.getChildControl("title-layout").add(control);
           break;
         case "title-field":
           control = new qx.ui.form.TextField(this.__studyData["name"]).set({
-            maxWidth: 200
+            maxWidth: 220
           });
           this.getChildControl("title-layout").add(control);
           break;
         case "wallet-selector-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          control = osparc.study.StudyOptions.createGroupBox(this.tr("Credit Account"));
           this._addAt(control, 1);
           break;
-        case "wallet-selector-label":
-          control = new qx.ui.basic.Label().set({
-            value: this.tr("Credit Account:"),
-            font: "text-14"
-          });
-          this.getChildControl("wallet-selector-layout").add(control);
-          break;
         case "wallet-selector":
-          control = osparc.desktop.credits.Utils.createWalletSelector("read");
+          control = osparc.desktop.credits.Utils.createWalletSelector("read").set({
+            allowGrowX: false
+          });
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "advanced-layout":
