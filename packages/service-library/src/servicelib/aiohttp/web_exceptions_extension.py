@@ -2,14 +2,37 @@ import inspect
 from typing import Any
 
 from aiohttp import web_exceptions
-from aiohttp.web_exceptions import HTTPClientError, HTTPError, HTTPException
+from aiohttp.web_exceptions import (
+    HTTPClientError,
+    HTTPError,
+    HTTPException,
+    HTTPServerError,
+)
 
 from . import status
+
+# NOTE: these are the status codes that DO NOT have an aiohttp.HTTPException associated
+STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS = (
+    status.HTTP_100_CONTINUE,
+    status.HTTP_101_SWITCHING_PROTOCOLS,
+    status.HTTP_102_PROCESSING,
+    status.HTTP_103_EARLY_HINTS,
+    status.HTTP_207_MULTI_STATUS,
+    status.HTTP_208_ALREADY_REPORTED,
+    status.HTTP_226_IM_USED,
+    status.HTTP_306_RESERVED,
+    status.HTTP_418_IM_A_TEAPOT,
+    status.HTTP_425_TOO_EARLY,
+)
 
 
 class HTTPLockedError(HTTPClientError):
     # pylint: disable=too-many-ancestors
     status_code = status.HTTP_423_LOCKED
+
+
+class HTTPLoopDetectedError(HTTPServerError):
+    status_code = status.HTTP_508_LOOP_DETECTED
 
 
 # Inverse map from code to HTTPException classes
@@ -23,14 +46,17 @@ def collect_aiohttp_http_exceptions(
             and getattr(obj, "status_code", 0) > 0
         )
 
-    # TODO: add these here as well
     found: list[tuple[str, Any]] = inspect.getmembers(web_exceptions, _pred)
     assert found  # nosec
 
-    http_statuses = {cls.status_code: cls for _, cls in found}
-    assert len(http_statuses) == len(found), "No duplicates"  # nosec
+    status_to_http_exception_map = {cls.status_code: cls for _, cls in found}
+    assert len(status_to_http_exception_map) == len(found), "No duplicates"  # nosec
 
-    return http_statuses
+    status_to_http_exception_map[HTTPLockedError.status_code] = HTTPLockedError
+    status_to_http_exception_map[
+        HTTPLoopDetectedError.status_code
+    ] = HTTPLoopDetectedError
+    return status_to_http_exception_map
 
 
 _STATUS_CODE_TO_HTTP_ERRORS: dict[
