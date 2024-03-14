@@ -27,6 +27,9 @@ from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
 _DEFAULT_API_VERSION = "v0"
+MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = (
+    "Ups, something went wrong! But we took good note [{}]"
+)
 
 
 _logger = logging.getLogger(__name__)
@@ -87,15 +90,15 @@ def _handle_as_internal_server_error(request: web.BaseRequest, err: Exception):
     error_code = create_error_code(err)
     resp = create_error_response(
         err,
-        message=f"Ups, something went wrong. We took note [{error_code}]",
+        message=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(error_code),
         http_error_cls=web.HTTPInternalServerError,
     )
     _logger.exception(
-        "Unexpected '%s' for %s [%s]\n%s",
-        type(err),
+        "Request %s raised '%s' [%s]%s",
         f"'{request.method} {request.path}'",
+        type(err).__name__,
         error_code,
-        f"{request.remote=}, {request.headers=}",
+        f"\n {request.remote=}\n request.headers={dict(request.raw_headers)}",
         extra={"error_code": error_code},
     )
     raise resp
