@@ -6,7 +6,6 @@ import asyncio
 import json
 import logging
 from collections.abc import Awaitable, Callable
-from http import HTTPStatus
 from typing import Any, Union
 
 from aiohttp import web
@@ -16,7 +15,6 @@ from servicelib.error_codes import create_error_code
 from servicelib.json_serialization import json_dumps
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from ..utils import is_production_environ
 from .rest_models import ErrorItem, LogMessage, ResponseErrorBody
 from .rest_responses import (
     create_data_response,
@@ -28,7 +26,7 @@ from .rest_responses import (
 from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
-DEFAULT_API_VERSION = "v0"
+_DEFAULT_API_VERSION = "v0"
 
 
 _logger = logging.getLogger(__name__)
@@ -44,12 +42,8 @@ def _handle_http_error(request: web.BaseRequest, err: web.HTTPError):
     assert request  # nosec
 
     # TODO: differenciate between server/client error
-    if not err.reason:
-        err.set_status(
-            err.status_code,
-            reason=HTTPStatus(err.status_code).phrase,
-        )
 
+    assert err.reason  # nosec NOTE: set by default in set_status None provided
     err.content_type = MIMETYPE_APPLICATION_JSON
     if not err.text or not is_enveloped_from_text(err.text):
         error = ResponseErrorBody(
@@ -93,9 +87,8 @@ def _handle_as_internal_server_error(request: web.BaseRequest, err: Exception):
     error_code = create_error_code(err)
     resp = create_error_response(
         err,
-        reason=f"Ups, something went wrong. We took note [{error_code}]",
+        message=f"Ups, something went wrong. We took note [{error_code}]",
         http_error_cls=web.HTTPInternalServerError,
-        skip_internal_error_details=True,
     )
     _logger.exception(
         "Unexpected '%s' for %s [%s]\n%s",
@@ -111,8 +104,6 @@ def _handle_as_internal_server_error(request: web.BaseRequest, err: Exception):
 def error_middleware_factory(
     api_version: str,
 ) -> Middleware:
-    _is_prod: bool = is_production_environ()
-
     @web.middleware
     async def _middleware_handler(request: web.Request, handler: Handler):
         """
@@ -139,7 +130,6 @@ def error_middleware_factory(
             error_response = create_error_response(
                 err,
                 http_error_cls=web.HTTPNotImplemented,
-                skip_internal_error_details=_is_prod,
             )
             raise error_response from err
 
@@ -147,7 +137,6 @@ def error_middleware_factory(
             error_response = create_error_response(
                 err,
                 http_error_cls=web.HTTPGatewayTimeout,
-                skip_internal_error_details=_is_prod,
             )
             raise error_response from err
 
@@ -167,7 +156,6 @@ MiddlewareFlexible = Callable[[Request, HandlerFlexible], Awaitable[StreamRespon
 
 def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
     # FIXME: This data conversion is very error-prone. Use decorators instead!
-    _is_prod: bool = is_production_environ()
 
     @web.middleware
     async def _middleware_handler(
@@ -182,20 +170,17 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
             assert isinstance(resp, StreamResponse)  # nosec
             return resp
 
-        # NOTE: the return values of this handler
-        resp = await handler(request)
+        # NOTE: the values returned by this handle might be direclty data!
+        resp_or_data = await handler(request)
 
-        if isinstance(resp, web.FileResponse):
-            return resp
+        if isinstance(resp_or_data, web.FileResponse):
+            return resp_or_data
 
-        if not isinstance(resp, StreamResponse):
-            resp = create_data_response(
-                data=resp,
-                skip_internal_error_details=_is_prod,
-            )
+        if not isinstance(resp_or_data, StreamResponse):
+            resp_or_data = create_data_response(data=resp_or_data)
 
-        assert isinstance(resp, web.StreamResponse)  # nosec
-        return resp
+        assert isinstance(resp_or_data, web.StreamResponse)  # nosec
+        return resp_or_data
 
     # adds identifier (mostly for debugging)
     _middleware_handler.__middleware_name__ = f"{__name__}.envelope_{api_version}"
@@ -204,7 +189,7 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
 
 
 def append_rest_middlewares(
-    app: web.Application, api_version: str = DEFAULT_API_VERSION
+    app: web.Application, api_version: str = _DEFAULT_API_VERSION
 ):
     """Helper that appends rest-middlewares in the correct order"""
     app.middlewares.append(error_middleware_factory(api_version))

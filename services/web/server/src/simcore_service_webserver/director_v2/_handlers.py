@@ -165,7 +165,7 @@ async def start_computation(request: web.Request) -> web.Response:
     except DirectorServiceError as exc:
         return create_error_response(
             exc,
-            reason=exc.reason,
+            message=exc.reason,
             http_error_cls=get_http_error_class_or_none(exc.status)
             or web.HTTPServiceUnavailable,
         )
@@ -207,7 +207,7 @@ async def stop_computation(request: web.Request) -> web.Response:
     except DirectorServiceError as exc:
         return create_error_response(
             exc,
-            reason=exc.reason,
+            message=exc.reason,
             http_error_cls=get_http_error_class_or_none(exc.status)
             or web.HTTPServiceUnavailable,
         )
@@ -257,7 +257,7 @@ async def get_computation(request: web.Request) -> web.Response:
     except DirectorServiceError as exc:
         return create_error_response(
             exc,
-            reason=exc.reason,
+            message=exc.reason,
             http_error_cls=get_http_error_class_or_none(exc.status)
             or web.HTTPServiceUnavailable,
         )
