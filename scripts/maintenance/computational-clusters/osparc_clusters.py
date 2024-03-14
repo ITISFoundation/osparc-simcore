@@ -9,7 +9,7 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Final, TypeAlias
+from typing import Annotated, Any, Coroutine, Final, TypeAlias
 
 import arrow
 import boto3
@@ -17,9 +17,11 @@ import distributed
 import paramiko
 import parse
 import typer
+from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from dotenv import dotenv_values
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
+from mypy_boto3_ec2.type_defs import FilterTypeDef
 from pydantic import ByteSize, TypeAdapter
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
@@ -719,6 +721,26 @@ def main(
             break
 
 
+def _list_running_ec2_instances(
+    user_id: int | None, wallet_id: int | None
+) -> ServiceResourceInstancesCollection:
+    # get all the running instances
+    environment = state["environment"]
+    assert environment["EC2_INSTANCES_KEY_NAME"]
+    ec2_resource: EC2ServiceResource = state["ec2_resource"]
+    ec2_filters: list[FilterTypeDef] = [
+        {"Name": "instance-state-name", "Values": ["running", "pending"]},
+        {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
+    ]
+    if user_id:
+        ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+    if wallet_id:
+        ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+    instances = ec2_resource.instances.filter(Filters=ec2_filters)
+    assert isinstance(instances, ServiceResourceInstancesCollection)  # nosec
+    return instances
+
+
 @app.command()
 def summary(
     user_id: Annotated[int, typer.Option(help="the user ID")] = None,
@@ -735,46 +757,29 @@ def summary(
     """
 
     # get all the running instances
-    environment = state["environment"]
-    assert environment["EC2_INSTANCES_KEY_NAME"]
-    ec2_resource: EC2ServiceResource = state["ec2_resource"]
-    instances = ec2_resource.instances.filter(
-        Filters=[
-            {"Name": "instance-state-name", "Values": ["running", "pending"]},
-            {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
-        ]
-    )
-
+    instances = _list_running_ec2_instances(user_id, wallet_id)
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
         instances, state["ssh_key_path"], user_id, wallet_id
     )
 
+    environment = state["environment"]
     _print_dynamic_instances(dynamic_autoscaled_instances, environment)
     _print_computational_clusters(computational_clusters, environment)
 
 
 @app.command()
-def clear_jobs(
+def cancel_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
     wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
 ) -> None:
-    """remove any dask jobs from the cluster. Use WITH CARE!!!
+    """Cancel jobs from the cluster, this will rely on osparc platform to work properly
+    The director-v2 should receive the cancellation and abort the concerned pipelines in the next 15 seconds.
 
-    Arguments:
+    Keyword Arguments:
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    environment = state["environment"]
-    ec2_resource: EC2ServiceResource = state["ec2_resource"]
-    # Here we can filter like so since computational clusters have these as tags on the machines
-    instances = ec2_resource.instances.filter(
-        Filters=[
-            {"Name": "instance-state-name", "Values": ["running", "pending"]},
-            {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
-            {"Name": "tag:user_id", "Values": [f"{user_id}"]},
-            {"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]},
-        ]
-    )
+    instances = _list_running_ec2_instances(user_id, wallet_id)
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
         instances, state["ssh_key_path"], None, None
     )
@@ -784,6 +789,54 @@ def clear_jobs(
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
+    environment = state["environment"]
+    _print_computational_clusters(computational_clusters, environment)
+
+    if typer.confirm(
+        f"Are you sure you want to cancel all the jobs from that cluster ({user_id=} and {wallet_id=})?"
+    ):
+        print("cancelling jobs...")
+        the_cluster = computational_clusters[0]
+        with _dask_client(the_cluster.primary.ec2_instance.public_ip_address) as client:
+            datasets = client.list_datasets()
+            assert datasets is not None  # nosec
+            assert not isinstance(datasets, Coroutine)  # nosec
+            for dataset in datasets:
+                task_future = distributed.Future(dataset)
+                cancel_event = distributed.Event(
+                    name=TaskCancelEventName.format(task_future.key), client=client
+                )
+                cancel_event.set()
+                task_future.cancel()
+        print(
+            f"all jobs on cluster of {user_id=}/{wallet_id=} cancelled, please check again in about 15 seconds."
+        )
+    else:
+        print("not doing anything")
+
+
+@app.command()
+def clear_jobs(
+    user_id: Annotated[int, typer.Option(help="the user ID")],
+    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+) -> None:
+    """DELETES all dask jobs from the cluster, if the osparc still wants to run these, it is useless. Use WITH CARE!!!
+
+    Arguments:
+        user_id -- the user ID
+        wallet_id -- the wallet ID
+    """
+    instances = _list_running_ec2_instances(user_id, wallet_id)
+    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
+        instances, state["ssh_key_path"], None, None
+    )
+    assert not dynamic_autoscaled_instances
+    assert computational_clusters
+    assert (
+        len(computational_clusters) == 1
+    ), "too many clusters found! TIP: fix this code"
+
+    environment = state["environment"]
     _print_computational_clusters(computational_clusters, environment)
 
     if typer.confirm("Are you sure you want to erase all the jobs from that cluster?"):
@@ -792,11 +845,6 @@ def clear_jobs(
         with _dask_client(the_cluster.primary.ec2_instance.public_ip_address) as client:
             client.datasets.clear()
         print("proceeding with reseting jobs from cluster done.")
-        print("Refreshing...")
-        dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-            instances, state["ssh_key_path"], None, None
-        )
-        _print_computational_clusters(computational_clusters, environment)
     else:
         print("not deleting anything")
 
