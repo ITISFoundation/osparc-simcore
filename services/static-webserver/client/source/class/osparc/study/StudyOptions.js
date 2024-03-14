@@ -133,11 +133,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "wallet-selector":
-          control = osparc.desktop.credits.Utils.createWalletSelector("read").set({
-            width: 200,
-            allowGrowX: true,
-            alignX: "center"
-          });
+          control = osparc.desktop.credits.Utils.createWalletSelector("read");
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "advanced-layout":
