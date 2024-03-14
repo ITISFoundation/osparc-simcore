@@ -781,7 +781,7 @@ def cancel_jobs(
     """
     instances = _list_running_ec2_instances(user_id, wallet_id)
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"], None, None
+        instances, state["ssh_key_path"], user_id, wallet_id
     )
     assert not dynamic_autoscaled_instances
     assert computational_clusters
@@ -828,7 +828,7 @@ def clear_jobs(
     """
     instances = _list_running_ec2_instances(user_id, wallet_id)
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"], None, None
+        instances, state["ssh_key_path"], user_id, wallet_id
     )
     assert not dynamic_autoscaled_instances
     assert computational_clusters
