@@ -21,9 +21,7 @@ qx.Class.define("osparc.study.StudyOptions", {
   construct: function(studyId) {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(20, 20);
-    grid.setColumnFlex(0, 1);
-    this._setLayout(grid);
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.set({
       minWidth: 300
@@ -108,10 +106,7 @@ qx.Class.define("osparc.study.StudyOptions", {
       switch (id) {
         case "title-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-          this._add(control, {
-            column: 0,
-            row: 0
-          });
+          this._addAt(control, 0);
           break;
         case "title-label":
           control = new qx.ui.basic.Label().set({
@@ -128,10 +123,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           break;
         case "wallet-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(15));
-          this._add(control, {
-            column: 0,
-            row: 1
-          });
+          this._addAt(control, 1);
           break;
         case "wallet-selector-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
@@ -156,6 +148,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           control = new osparc.desktop.credits.CreditsIndicator().set({
             allowGrowY: false,
             alignY: "bottom",
+            maxWidth: 150,
             paddingBottom: 1
           });
           this.bind("wallet", control, "wallet");
@@ -163,61 +156,29 @@ qx.Class.define("osparc.study.StudyOptions", {
             flex: 1
           });
           break;
-        case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-            alignX: "right"
-          }));
-          this._add(control, {
-            column: 1,
-            row: 0,
-            rowSpan: 2
-          });
-          break;
-        case "open-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Open")).set({
-            appearance: "form-button",
-            font: "text-14",
-            minWidth: 150,
-            maxWidth: 150,
-            height: 35,
-            center: true
-          });
-          osparc.utils.Utils.setIdToWidget(control, "openWithResources");
-          this.getChildControl("buttons-layout").add(control);
-          break;
-        case "cancel-button":
-          control = new qx.ui.form.Button(this.tr("Cancel")).set({
-            appearance: "form-button-outlined",
-            font: "text-14",
-            minWidth: 150,
-            maxWidth: 150,
-            height: 35,
-            center: true
-          });
-          this.getChildControl("buttons-layout").add(control);
-          break;
         case "advanced-options":
           control = new qx.ui.form.CheckBox().set({
             label: this.tr("Advanced options"),
             value: false
           });
-          this._add(control, {
-            row: 2,
-            column: 0
-          });
+          this._addAt(control, 2);
           break;
-        case "options-layout":
+        case "options-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
             padding: 10
           });
           this.getChildControl("advanced-options").bind("value", control, "visibility", {
             converter: checked => checked ? "visible" : "excluded"
           });
-          this._add(control, {
-            row: 3,
-            column: 0
+          const scroll = new qx.ui.container.Scroll().set({
+            maxHeight: 200
+          });
+          scroll.add(control);
+          this._addAt(scroll, 3, {
+            flex: 1
           });
           break;
+        }
         case "loading-units-spinner":
           control = new qx.ui.basic.Image().set({
             source: "@FontAwesome5Solid/circle-notch/48",
@@ -235,6 +196,35 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("options-layout").add(control, {
             flex: 1
           });
+          break;
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignX: "right"
+          }));
+          this._addAt(control, 4);
+          break;
+        case "cancel-button":
+          control = new qx.ui.form.Button(this.tr("Cancel")).set({
+            appearance: "form-button-text",
+            font: "text-14",
+            minWidth: 150,
+            maxWidth: 150,
+            height: 35,
+            center: true
+          });
+          this.getChildControl("buttons-layout").addAt(control, 0);
+          break;
+        case "open-button":
+          control = new osparc.ui.form.FetchButton(this.tr("Start")).set({
+            appearance: "form-button",
+            font: "text-14",
+            minWidth: 150,
+            maxWidth: 150,
+            height: 35,
+            center: true
+          });
+          osparc.utils.Utils.setIdToWidget(control, "openWithResources");
+          this.getChildControl("buttons-layout").addAt(control, 1);
           break;
       }
       return control || this.base(arguments, id);
@@ -256,28 +246,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     __buildLayout: function() {
       this.__buildTopSummaryLayout();
       this.__buildOptionsLayout();
-    },
-
-    __buildOptionsLayout: function() {
-      this.__buildPricingPlans();
-    },
-
-    __buildPricingPlans: function() {
-      const loadingImage = this.getChildControl("loading-units-spinner");
-      const unitsBoxesLayout = this.getChildControl("services-resources-layout");
-      const unitsLoading = () => {
-        loadingImage.show();
-        unitsBoxesLayout.exclude();
-      };
-      const unitsReady = () => {
-        loadingImage.exclude();
-        unitsBoxesLayout.show();
-      };
-      unitsLoading();
-      const studyPricingUnits = new osparc.study.StudyPricingUnits(this.__studyData);
-      studyPricingUnits.addListener("loadingUnits", () => unitsLoading());
-      studyPricingUnits.addListener("unitsReady", () => unitsReady());
-      unitsBoxesLayout.add(studyPricingUnits);
+      this.__buildButtons();
     },
 
     __buildTopSummaryLayout: function() {
@@ -312,13 +281,33 @@ qx.Class.define("osparc.study.StudyOptions", {
       } else if (!osparc.desktop.credits.Utils.autoSelectActiveWallet(walletSelector)) {
         walletSelector.setSelection([]);
       }
+    },
 
+    __buildOptionsLayout: function() {
+      const loadingImage = this.getChildControl("loading-units-spinner");
+      const unitsBoxesLayout = this.getChildControl("services-resources-layout");
+      const unitsLoading = () => {
+        loadingImage.show();
+        unitsBoxesLayout.exclude();
+      };
+      const unitsReady = () => {
+        loadingImage.exclude();
+        unitsBoxesLayout.show();
+      };
+      unitsLoading();
+      const studyPricingUnits = new osparc.study.StudyPricingUnits(this.__studyData);
+      studyPricingUnits.addListener("loadingUnits", () => unitsLoading());
+      studyPricingUnits.addListener("unitsReady", () => unitsReady());
+      unitsBoxesLayout.add(studyPricingUnits);
+    },
+
+    __buildButtons: function() {
       // Open/Cancel buttons
-      const openButton = this.getChildControl("open-button");
-      openButton.addListener("execute", () => this.__openStudy());
-
       const cancelButton = this.getChildControl("cancel-button");
       cancelButton.addListener("execute", () => this.fireEvent("cancel"));
+
+      const openButton = this.getChildControl("open-button");
+      openButton.addListener("execute", () => this.__openStudy());
     },
 
     __openStudy: async function() {
