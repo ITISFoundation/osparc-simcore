@@ -39,5 +39,5 @@ down: .env ## stops local test app dependencies (running bare metal against AWS)
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 .PHONY: .init-swarm
 .init-swarm:
-	# Ensures swarm is initialized
-	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip))
+	# Ensures swarm is initialized (careful we use a default pool of 172.20.0.0/14. Ensure you do not use private IPs in that range!)
+	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip) --default-addr-pool 172.20.0.0/14)

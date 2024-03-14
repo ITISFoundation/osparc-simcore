@@ -393,7 +393,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __getPreviewPage: function() {
       const resourceData = this.__resourceData;
-      if (osparc.utils.Resources.isService(resourceData)) {
+      if (
+        osparc.utils.Resources.isService(resourceData) ||
+        osparc.product.Utils.isProduct("s4llite") ||
+        osparc.product.Utils.isProduct("tis")
+      ) {
+        // there is no pipelining
         return null;
       }
 

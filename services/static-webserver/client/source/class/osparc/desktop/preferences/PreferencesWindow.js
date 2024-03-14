@@ -29,11 +29,11 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     this.set({
       layout: new qx.ui.layout.Grow(),
       modal: true,
-      width: 550,
+      width: 750,
       height: 660,
       showMaximize: false,
       showMinimize: false,
-      resizable: false,
+      resizable: true,
       appearance: "service-window"
     });
     const closeBtn = this.getChildControl("close-button");
@@ -44,12 +44,8 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
       contentPadding: 0
     });
 
-    const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-    if (walletsEnabled) {
-      // Fix me: for now, it only exposes credits related preferences
-      const generalPage = new osparc.desktop.preferences.pages.GeneralPage();
-      tabView.add(generalPage);
-    }
+    const generalPage = new osparc.desktop.preferences.pages.GeneralPage();
+    tabView.add(generalPage);
 
     const confirmPage = new osparc.desktop.preferences.pages.ConfirmationsPage();
     tabView.add(confirmPage);
