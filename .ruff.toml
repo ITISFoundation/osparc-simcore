@@ -42,6 +42,7 @@ select = [
 ]
 ignore = [
   "E501",   # line too long, handled by black
+  "I001",   # Minor incompatibilites with isort:https://docs.astral.sh/ruff/rules/unsorted-imports/#unsorted-imports-i001
   "S101",   # use of `assert` detected hanbled by pylance, does not support noseq
   "TID252", # [*] Relative imports from parent modules are banned
   "TRY300", # Checks for return statements in try blocks. SEE https://beta.ruff.rs/docs/rules/try-consider-else/
