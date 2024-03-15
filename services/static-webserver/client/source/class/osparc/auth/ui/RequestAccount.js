@@ -91,6 +91,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const country = new qx.ui.form.SelectBox().set({
         required: true
       });
+      doubleSpaced.push(country);
       const countries = osparc.store.StaticInfo.getInstance().getCountries();
       countries.forEach(c => {
         const cItem = new qx.ui.form.ListItem(c.name, null, c.alpha2).set({
@@ -98,7 +99,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         });
         country.add(cItem);
       })
-      doubleSpaced.push(country);
       fetch("https://ipapi.co/json")
         .then(res => res.json())
         .then(data => {
