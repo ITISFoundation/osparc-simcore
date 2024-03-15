@@ -65,7 +65,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         firstUpperCase: true
       }) + qx.locale.Manager.tr(" Options");
       const width = 550;
-      const minHeight = 200;
+      const minHeight = 270;
       const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, minHeight).set({
         clickAwayClose: false
       });
