@@ -69,6 +69,10 @@ qx.Class.define("osparc.study.StudyOptions", {
       const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, minHeight).set({
         clickAwayClose: false
       });
+
+      win.set({
+        maxHeight: 600
+      });
       return win;
     },
 
@@ -136,7 +140,9 @@ qx.Class.define("osparc.study.StudyOptions", {
             converter: checked => checked ? "visible" : "excluded"
           });
           scroll.add(control);
-          this.getChildControl("advanced-layout").add(scroll);
+          this.getChildControl("advanced-layout").add(scroll, {
+            flex: 1
+          });
           break;
         }
         case "loading-units-spinner":
