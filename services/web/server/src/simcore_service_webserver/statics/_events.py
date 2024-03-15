@@ -13,7 +13,8 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from .._constants import APP_PRODUCTS_KEY, APP_SETTINGS_KEY
+from .._constants import APP_PRODUCTS_KEY
+from ..application_settings import ApplicationSettings, get_application_settings
 from ..products.api import Product
 from ._constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
@@ -94,12 +95,13 @@ async def create_statics_json(app: web.Application) -> None:
     # on_startup instead of upon setup
 
     # Adds general server settings
-    app_settings = app[APP_SETTINGS_KEY]
+    app_settings: ApplicationSettings = get_application_settings(app)
     common: dict = app_settings.to_client_statics()
 
     # Adds specifics to front-end app
-    frontend_settings: FrontEndAppSettings = app_settings.WEBSERVER_FRONTEND
-    common.update(frontend_settings.to_statics())
+    frontend_settings: FrontEndAppSettings | None = app_settings.WEBSERVER_FRONTEND
+    if frontend_settings:
+        common.update(frontend_settings.to_statics())
 
     # Adds products defined in db
     products: dict[str, Product] = app[APP_PRODUCTS_KEY]
