@@ -925,6 +925,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
+      if (osparc.product.Utils.isProduct("osparc")) {
+        const exportStudyButton = this.__getExportMenuButton(studyData);
+        menu.add(exportStudyButton);
+      }
+
       menu.addSeparator();
 
       if (writeAccess) {
