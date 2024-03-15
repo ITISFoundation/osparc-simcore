@@ -4688,8 +4688,6 @@ components:
           application: Antenna_Design
           description: Description of something
           hear: Search_Engine
-          privacyPolicy: true
-          eula: true
     Activity:
       title: Activity
       required:
@@ -7968,10 +7966,9 @@ components:
           title: Email
           type: string
           format: email
-        institution:
-          title: Institution
+        companyName:
+          title: Companyname
           type: string
-          description: company, university, ...
         phone:
           title: Phone
           type: string
@@ -7990,10 +7987,6 @@ components:
         country:
           title: Country
           type: string
-        extras:
-          title: Extras
-          type: object
-          description: Keeps extra information provided in the request form
     Preference:
       title: Preference
       required:
@@ -10224,8 +10217,8 @@ components:
           title: Email
           type: string
           format: email
-        institution:
-          title: Institution
+        companyName:
+          title: Companyname
           type: string
         phone:
           title: Phone
@@ -10246,10 +10239,6 @@ components:
         country:
           title: Country
           type: string
-        extras:
-          title: Extras
-          type: object
-          description: Keeps extra information provided in the request form
         registered:
           title: Registered
           type: boolean
