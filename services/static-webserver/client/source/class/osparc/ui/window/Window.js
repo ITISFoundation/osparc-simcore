@@ -84,6 +84,7 @@ qx.Class.define("osparc.ui.window.Window", {
       win.add(scroll);
 
       win.center();
+      win.moveItUp();
       win.open();
       win.addListener("close", () => scroll.remove(widget));
 
@@ -114,6 +115,13 @@ qx.Class.define("osparc.ui.window.Window", {
       } else {
         this.base(arguments);
       }
+    },
+
+    moveItUp: function(up=100) {
+      setTimeout(() => {
+        const props = this.getLayoutProperties();
+        this.moveTo(props.left, Math.max(props.top-up, 0));
+      }, 2);
     }
   }
 });
