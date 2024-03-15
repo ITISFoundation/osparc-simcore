@@ -215,7 +215,11 @@ qx.Class.define("osparc.study.StudyOptions", {
       const store = osparc.store.Store.getInstance();
 
       this._createChildControlImpl("title-label");
-      this.getChildControl("title-field");
+      const titleField = this.getChildControl("title-field");
+      this.addListener("appear", () => {
+        titleField.focus();
+        titleField.activate();
+      });
 
       // Wallet Selector
       this._createChildControlImpl("wallet-selector-label");
