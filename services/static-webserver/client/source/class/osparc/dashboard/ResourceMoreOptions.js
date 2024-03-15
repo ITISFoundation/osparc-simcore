@@ -196,11 +196,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __addTabPagesView: function() {
-      const detailsView = this.__tabsView = new qx.ui.tabview.TabView().set({
+      const tabsView = this.__tabsView = new qx.ui.tabview.TabView().set({
         barPosition: "left",
         contentPadding: 0
       });
-      this._add(detailsView, {
+      this._add(tabsView, {
         flex: 1
       });
 
@@ -242,7 +242,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __createServiceVersionSelector: function() {
-      const hBox = this.__serviceVersionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignY: "middle"
       }));
 
@@ -259,6 +259,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         .then(services => {
           const versions = osparc.service.Utils.getVersions(services, this.__resourceData["key"]);
           let selectedItem = null;
+
+          // first setSelection
           versions.reverse().forEach(version => {
             selectedItem = new qx.ui.form.ListItem(version);
             versionsBox.add(selectedItem);
@@ -266,38 +268,36 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
               versionsBox.setSelection([selectedItem]);
             }
           });
-        });
 
-      versionsBox.addListener("changeSelection", () => {
-        const selection = versionsBox.getSelection();
-        if (selection && selection.length) {
-          const serviceVersion = selection[0].getLabel();
-          if (serviceVersion !== this.__resourceData["version"]) {
-            store.getAllServices()
-              .then(services => {
+          // then listen to changes
+          versionsBox.addListener("changeSelection", () => {
+            const selection = versionsBox.getSelection();
+            if (selection && selection.length) {
+              const serviceVersion = selection[0].getLabel();
+              if (serviceVersion !== this.__resourceData["version"]) {
                 const serviceData = osparc.service.Utils.getFromObject(services, this.__resourceData["key"], serviceVersion);
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
                 this.__addPages();
-              });
-          }
-        }
-      }, this);
+              }
+            }
+          }, this);
+        });
 
       return hBox;
     },
 
     __addPages: function() {
-      const detailsView = this.__tabsView;
+      const tabsView = this.__tabsView;
 
       // keep selected page
-      const selection = detailsView.getSelection();
+      const selection = tabsView.getSelection();
       const selectedTabId = selection.length ? selection[0]["tabId"] : null;
 
       // removeAll
-      const pages = detailsView.getChildren().length;
+      const pages = tabsView.getChildren().length;
       for (let i=pages-1; i>=0; i--) {
-        detailsView.remove(detailsView.getChildren()[i]);
+        tabsView.remove(tabsView.getChildren()[i]);
       }
 
       // add Open service button
@@ -318,15 +318,15 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         if (pageCallee) {
           const page = pageCallee.call(this);
           if (page) {
-            detailsView.add(page);
+            tabsView.add(page);
           }
         }
       });
 
       if (selectedTabId) {
-        const pageFound = detailsView.getChildren().find(page => page.tabId === selectedTabId);
+        const pageFound = tabsView.getChildren().find(page => page.tabId === selectedTabId);
         if (pageFound) {
-          detailsView.setSelection([pageFound]);
+          tabsView.setSelection([pageFound]);
         }
       }
     },
