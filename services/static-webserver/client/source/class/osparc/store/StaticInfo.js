@@ -90,11 +90,9 @@ qx.Class.define("osparc.store.StaticInfo", {
     },
 
     getCountries: function() {
-      const metadata = this.__getMetadata();
       const staticKey = "countries";
-      if (staticKey in metadata) {
-        return metadata[staticKey];
-      }
+      const metadata = this.getValue(staticKey);
+      // return metadata ? metadata : [];
       return [{
         name: "Baskenland"
       }];
