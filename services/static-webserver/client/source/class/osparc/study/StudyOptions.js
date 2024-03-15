@@ -117,7 +117,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "advanced-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
           this._addAt(control, 2, {
             flex: 1
           });
@@ -131,10 +131,10 @@ qx.Class.define("osparc.study.StudyOptions", {
           break;
         case "options-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-          this.getChildControl("advanced-checkbox").bind("value", control, "visibility", {
+          const scroll = new qx.ui.container.Scroll();
+          this.getChildControl("advanced-checkbox").bind("value", scroll, "visibility", {
             converter: checked => checked ? "visible" : "excluded"
           });
-          const scroll = new qx.ui.container.Scroll();
           scroll.add(control);
           this.getChildControl("advanced-layout").add(scroll);
           break;
