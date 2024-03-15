@@ -23,10 +23,6 @@ qx.Class.define("osparc.study.StudyOptions", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.set({
-      minWidth: 300
-    });
-
     this.__studyId = studyId;
 
     const params = {
@@ -70,13 +66,9 @@ qx.Class.define("osparc.study.StudyOptions", {
       }) + qx.locale.Manager.tr(" Options");
       const width = 550;
       const minHeight = 200;
-      const maxHeight = 600;
       const win = osparc.ui.window.Window.popUpInWindow(resourceSelector, title, width, minHeight).set({
-        maxHeight,
         clickAwayClose: false
       });
-      win.center();
-      win.open();
       return win;
     },
 
@@ -125,7 +117,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("wallet-selector-layout").add(control);
           break;
         case "advanced-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this._addAt(control, 2, {
             flex: 1
           });
@@ -142,13 +134,9 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("advanced-checkbox").bind("value", control, "visibility", {
             converter: checked => checked ? "visible" : "excluded"
           });
-          const scroll = new qx.ui.container.Scroll().set({
-            maxHeight: 150
-          });
+          const scroll = new qx.ui.container.Scroll();
           scroll.add(control);
-          this.getChildControl("advanced-layout").add(control, {
-            flex: 1
-          });
+          this.getChildControl("advanced-layout").add(scroll);
           break;
         }
         case "loading-units-spinner":
@@ -159,15 +147,11 @@ qx.Class.define("osparc.study.StudyOptions", {
             marginTop: 20
           });
           control.getContentElement().addClass("rotate");
-          this.getChildControl("options-layout").add(control, {
-            flex: 1
-          });
+          this.getChildControl("options-layout").add(control);
           break;
         case "services-resources-layout":
           control = this.self().createGroupBox(this.tr("Tiers"));
-          this.getChildControl("options-layout").add(control, {
-            flex: 1
-          });
+          this.getChildControl("options-layout").add(control);
           break;
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
