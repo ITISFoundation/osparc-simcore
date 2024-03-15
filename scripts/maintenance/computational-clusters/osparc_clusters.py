@@ -6,6 +6,7 @@ import datetime
 import json
 import re
 from collections import defaultdict, namedtuple
+from collections.abc import Coroutine
 from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
@@ -20,6 +21,7 @@ import typer
 from dotenv import dotenv_values
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
+from mypy_boto3_ec2.type_defs import FilterTypeDef, TagTypeDef
 from pydantic import ByteSize, TypeAdapter
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
@@ -28,6 +30,8 @@ from rich.table import Column, Style, Table
 app = typer.Typer()
 
 _SSH_USER_NAME: Final[str] = "ubuntu"
+
+_TaskCancelEventNameTemplate: Final[str] = "cancel_event_{}"
 
 
 @dataclass(slots=True, kw_only=True)
@@ -108,11 +112,11 @@ def _get_last_heartbeat(instance) -> datetime.datetime | None:
 def _timedelta_formatting(
     time_diff: datetime.timedelta, *, color_code: bool = False
 ) -> str:
-    formatted_time_diff = f"{time_diff.days} day(s), " if time_diff.days else ""
+    formatted_time_diff = f"{time_diff.days} day(s), " if time_diff.days > 0 else ""
     formatted_time_diff += f"{time_diff.seconds // 3600:02}:{(time_diff.seconds // 60) % 60:02}:{time_diff.seconds % 60:02}"
     if time_diff.days and color_code:
         formatted_time_diff = f"[red]{formatted_time_diff}[/red]"
-    elif time_diff.seconds > 5 * HOUR and color_code:
+    elif (time_diff.seconds > 5 * HOUR) and color_code:
         formatted_time_diff = f"[orange]{formatted_time_diff}[/orange]"
     return formatted_time_diff
 
@@ -719,6 +723,26 @@ def main(
             break
 
 
+def _list_running_ec2_instances(
+    user_id: int | None, wallet_id: int | None
+) -> ServiceResourceInstancesCollection:
+    # get all the running instances
+    environment = state["environment"]
+    assert environment["EC2_INSTANCES_KEY_NAME"]
+    ec2_resource: EC2ServiceResource = state["ec2_resource"]
+    ec2_filters: list[FilterTypeDef] = [
+        {"Name": "instance-state-name", "Values": ["running", "pending"]},
+        {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
+    ]
+    if user_id:
+        ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+    if wallet_id:
+        ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+    instances = ec2_resource.instances.filter(Filters=ec2_filters)
+
+    return instances
+
+
 @app.command()
 def summary(
     user_id: Annotated[int, typer.Option(help="the user ID")] = None,
@@ -735,48 +759,32 @@ def summary(
     """
 
     # get all the running instances
-    environment = state["environment"]
-    assert environment["EC2_INSTANCES_KEY_NAME"]
-    ec2_resource: EC2ServiceResource = state["ec2_resource"]
-    instances = ec2_resource.instances.filter(
-        Filters=[
-            {"Name": "instance-state-name", "Values": ["running", "pending"]},
-            {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
-        ]
-    )
-
+    instances = _list_running_ec2_instances(user_id, wallet_id)
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
         instances, state["ssh_key_path"], user_id, wallet_id
     )
 
+    environment = state["environment"]
     _print_dynamic_instances(dynamic_autoscaled_instances, environment)
     _print_computational_clusters(computational_clusters, environment)
 
 
 @app.command()
-def clear_jobs(
+def cancel_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
     wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
 ) -> None:
-    """remove any dask jobs from the cluster. Use WITH CARE!!!
+    """Cancel jobs from the cluster, this will rely on osparc platform to work properly
+    The director-v2 should receive the cancellation and abort the concerned pipelines in the next 15 seconds.
+    NOTE: This should be called prior to clearing jobs on the cluster.
 
-    Arguments:
+    Keyword Arguments:
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    environment = state["environment"]
-    ec2_resource: EC2ServiceResource = state["ec2_resource"]
-    # Here we can filter like so since computational clusters have these as tags on the machines
-    instances = ec2_resource.instances.filter(
-        Filters=[
-            {"Name": "instance-state-name", "Values": ["running", "pending"]},
-            {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
-            {"Name": "tag:user_id", "Values": [f"{user_id}"]},
-            {"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]},
-        ]
-    )
+    instances = _list_running_ec2_instances(user_id, wallet_id)
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"], None, None
+        instances, state["ssh_key_path"], user_id, wallet_id
     )
     assert not dynamic_autoscaled_instances
     assert computational_clusters
@@ -784,6 +792,56 @@ def clear_jobs(
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
+    environment = state["environment"]
+    _print_computational_clusters(computational_clusters, environment)
+
+    if typer.confirm(
+        f"Are you sure you want to cancel all the jobs from that cluster ({user_id=} and {wallet_id=})?"
+    ):
+        print("cancelling jobs...")
+        the_cluster = computational_clusters[0]
+        with _dask_client(the_cluster.primary.ec2_instance.public_ip_address) as client:
+            datasets = client.list_datasets()
+            assert datasets is not None  # nosec
+            assert not isinstance(datasets, Coroutine)  # nosec
+            for dataset in datasets:
+                task_future = distributed.Future(dataset)
+                cancel_event = distributed.Event(
+                    name=_TaskCancelEventNameTemplate.format(task_future.key),
+                    client=client,
+                )
+                cancel_event.set()
+                task_future.cancel()
+        print(
+            f"all jobs on cluster of {user_id=}/{wallet_id=} cancelled, please check again in about 15 seconds."
+        )
+    else:
+        print("not doing anything")
+
+
+@app.command()
+def clear_jobs(
+    user_id: Annotated[int, typer.Option(help="the user ID")],
+    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+) -> None:
+    """DELETES all dask jobs from the cluster, if the osparc still wants to run these, it is useless.
+    TIP: Use first the cancel-jobs command!
+
+    Arguments:
+        user_id -- the user ID
+        wallet_id -- the wallet ID
+    """
+    instances = _list_running_ec2_instances(user_id, wallet_id)
+    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
+        instances, state["ssh_key_path"], user_id, wallet_id
+    )
+    assert not dynamic_autoscaled_instances
+    assert computational_clusters
+    assert (
+        len(computational_clusters) == 1
+    ), "too many clusters found! TIP: fix this code"
+
+    environment = state["environment"]
     _print_computational_clusters(computational_clusters, environment)
 
     if typer.confirm("Are you sure you want to erase all the jobs from that cluster?"):
@@ -792,11 +850,44 @@ def clear_jobs(
         with _dask_client(the_cluster.primary.ec2_instance.public_ip_address) as client:
             client.datasets.clear()
         print("proceeding with reseting jobs from cluster done.")
-        print("Refreshing...")
-        dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-            instances, state["ssh_key_path"], None, None
+    else:
+        print("not deleting anything")
+
+
+@app.command()
+def trigger_cluster_termination(
+    user_id: Annotated[int, typer.Option(help="the user ID")],
+    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+) -> None:
+    """this will set the Heartbeat tag on the primary machine to 1 hour, thus ensuring the
+    clusters-keeper will properly terminate that cluster.
+
+    Keyword Arguments:
+        user_id -- the user ID
+        wallet_id -- the wallet ID
+    """
+    instances = _list_running_ec2_instances(user_id, wallet_id)
+    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
+        instances, state["ssh_key_path"], user_id, wallet_id
+    )
+    assert not dynamic_autoscaled_instances
+    assert computational_clusters
+    assert (
+        len(computational_clusters) == 1
+    ), "too many clusters found! TIP: fix this code"
+
+    environment = state["environment"]
+    _print_computational_clusters(computational_clusters, environment)
+    if typer.confirm("Are you sure you want to trigger termination of that cluster?"):
+        the_cluster = computational_clusters[0]
+        new_heartbeat_tag: TagTypeDef = {
+            "Key": "last_heartbeat",
+            "Value": f"{arrow.utcnow().datetime - datetime.timedelta(hours=1)}",
+        }
+        the_cluster.primary.ec2_instance.create_tags(Tags=[new_heartbeat_tag])
+        print(
+            f"heartbeat tag on cluster of {user_id=}/{wallet_id=} changed, clusters-keeper will terminate that cluster soon."
         )
-        _print_computational_clusters(computational_clusters, environment)
     else:
         print("not deleting anything")
 
