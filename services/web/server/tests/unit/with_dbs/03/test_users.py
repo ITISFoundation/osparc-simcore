@@ -218,6 +218,7 @@ async def test_users_api_only_accessed_by_po(
 
 @pytest.fixture
 def request_form_data(request: pytest.FixtureRequest, faker: Faker) -> dict[str, Any]:
+    # This is AccountRequestInfo.form
     return {
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
