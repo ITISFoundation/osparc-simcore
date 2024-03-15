@@ -3,10 +3,12 @@
 """
 
 
+from typing import Any
+
 import pycountry
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.emails import LowerCaseEmailStr
-from pydantic import Field, validator
+from pydantic import Field, root_validator, validator
 from simcore_postgres_database.models.users import UserStatus
 
 
@@ -14,13 +16,17 @@ class UserProfile(OutputSchema):
     first_name: str | None
     last_name: str | None
     email: LowerCaseEmailStr
-    company_name: str | None
+    institution: str | None
     phone: str | None
     address: str | None
     city: str | None
     state: str | None = Field(description="State, province, canton, ...")
     postal_code: str | None
     country: str | None
+    extras: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Keeps extra information provided in the request form",
+    )
 
     # user status
     registered: bool
@@ -41,7 +47,7 @@ class PreUserProfile(InputSchema):
     first_name: str
     last_name: str
     email: LowerCaseEmailStr
-    company_name: str | None
+    institution: str | None = Field(None, description="company, university, ...")
     phone: str | None
     # billing details
     address: str
@@ -49,16 +55,50 @@ class PreUserProfile(InputSchema):
     state: str | None
     postal_code: str
     country: str
+    extras: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Keeps extra information provided in the request form",
+    )
 
     @validator("country")
     @classmethod
-    def valid_country(cls, v):
+    def _valid_country(cls, v):
         if v:
             try:
                 pycountry.countries.lookup(v)
             except LookupError as err:
                 raise ValueError(v) from err
         return v
+
+    @root_validator(pre=True)
+    @classmethod
+    def _preprocess_aliases_and_extras(cls, values):
+        # multiple aliases for "institution"
+        alias_by_priority = ("companyName", "company", "university", "universityName")
+        if "institution" not in values:
+
+            for alias in alias_by_priority:
+                if alias in values:
+                    values["institution"] = values.pop(alias)
+
+        # split extras
+        extra_fields = {}
+        field_names_and_aliases = (
+            set(cls.__fields__.keys())
+            | {f.alias for f in cls.__fields__.values() if f.alias}
+            | set(alias_by_priority)
+        )
+        for key, value in values.items():
+            if key not in field_names_and_aliases:
+                extra_fields[key] = value
+
+        for key in extra_fields:
+            values.pop(key)
+
+        values.setdefault("extras", {})
+        values["extras"].update(extra_fields)
+
+        return values
 
 
 assert set(PreUserProfile.__fields__).issubset(UserProfile.__fields__)  # nosec

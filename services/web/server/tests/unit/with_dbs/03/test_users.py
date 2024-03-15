@@ -6,6 +6,7 @@
 
 
 import functools
+from copy import deepcopy
 from http import HTTPStatus
 from typing import Any
 from unittest.mock import MagicMock, Mock
@@ -27,6 +28,7 @@ from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_service_webserver.users._preferences_api import (
     get_frontend_user_preferences_aggregation,
 )
+from simcore_service_webserver.users._schemas import PreUserProfile, UserProfile
 from simcore_service_webserver.users.schemas import ProfileGet, ProfileUpdate
 
 
@@ -214,6 +216,29 @@ async def test_users_api_only_accessed_by_po(
     await assert_status(resp, expected)
 
 
+@pytest.fixture
+def request_form_data(request: pytest.FixtureRequest, faker: Faker) -> dict[str, Any]:
+    return {
+        "firstName": faker.first_name(),
+        "lastName": faker.last_name(),
+        "email": faker.email(),
+        "phone": faker.phone_number(),
+        "institution": faker.company(),
+        # billing info
+        "address": faker.address().replace("\n", ", "),
+        "city": faker.city(),
+        "postalCode": faker.postcode(),
+        "state": faker.state(),
+        "country": faker.country(),
+        # extras
+        "application": faker.word(),
+        "description": faker.sentence(),
+        "hear": faker.word(),
+        "privacyPolicy": True,
+        "eula": True,
+    }
+
+
 @pytest.mark.acceptance_test(
     "pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
 )
@@ -224,7 +249,10 @@ async def test_users_api_only_accessed_by_po(
     ],
 )
 async def test_search_and_pre_registration(
-    client: TestClient, logged_user: UserInfoDict, faker: Faker
+    client: TestClient,
+    logged_user: UserInfoDict,
+    faker: Faker,
+    request_form_data: dict[str, Any],
 ):
     assert client.app
 
@@ -235,7 +263,8 @@ async def test_search_and_pre_registration(
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    assert found[0] == {
+    got = UserProfile(**found[0])
+    expected = {
         "firstName": logged_user.get("first_name"),
         "lastName": logged_user.get("last_name"),
         "email": logged_user["email"],
@@ -249,35 +278,22 @@ async def test_search_and_pre_registration(
         "registered": True,
         "status": "ACTIVE",
     }
+    assert got.dict(include=set(expected)) == expected
 
     # NOT in `users` and ONLY `users_pre_registration_details`
 
     # create pre-registration
-    requester_info = {
-        "firstName": faker.first_name(),
-        "lastName": faker.last_name(),
-        "email": faker.email(),
-        "companyName": faker.company(),
-        "phone": faker.phone_number(),
-        # billing info
-        "address": faker.address().replace("\n", ", "),
-        "city": faker.city(),
-        "state": faker.state(),
-        "postalCode": faker.postcode(),
-        "country": faker.country(),
-    }
-
-    resp = await client.post("/v0/users:pre-register", json=requester_info)
+    resp = await client.post("/v0/users:pre-register", json=request_form_data)
     assert resp.status == status.HTTP_200_OK
 
     resp = await client.get(
-        "/v0/users:search", params={"email": requester_info["email"]}
+        "/v0/users:search", params={"email": request_form_data["email"]}
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
+    got = UserProfile(**found[0])
 
-    assert found[0] == {
-        **requester_info,
+    assert got.dict(include={"registered", "status"}) == {
         "registered": False,
         "status": None,
     }
@@ -286,7 +302,7 @@ async def test_search_and_pre_registration(
     new_user = (
         await simcore_service_webserver.login._auth_api.create_user(  # noqa: SLF001
             client.app,
-            email=requester_info["email"],
+            email=request_form_data["email"],
             password=DEFAULT_TEST_PASSWORD,
             status_upon_creation=UserStatus.ACTIVE,
             expires_at=None,
@@ -294,13 +310,54 @@ async def test_search_and_pre_registration(
     )
 
     resp = await client.get(
-        "/v0/users:search", params={"email": requester_info["email"]}
+        "/v0/users:search", params={"email": request_form_data["email"]}
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
+    got = UserProfile(**found[0])
 
-    assert found[0] == {
-        **requester_info,
+    assert got.dict(include={"registered", "status"}) == {
         "registered": True,
         "status": new_user["status"].name,
     }
+
+
+@pytest.mark.parametrize(
+    "institution_key",
+    [
+        "institution",
+        "companyName",
+        "company",
+        "university",
+        "universityName",
+    ],
+)
+def test_parse_model_from_request_form_data(
+    request_form_data: dict[str, Any],
+    institution_key: str,
+):
+    data = deepcopy(request_form_data)
+    data[institution_key] = data.pop("institution")
+    data["comment"] = "extra comment"
+
+    # pre-processors
+    pre_user_profile = PreUserProfile(**data)
+
+    print(pre_user_profile.json(indent=1))
+
+    # institution aliases
+    assert pre_user_profile.institution == request_form_data["institution"]
+
+    # extras split
+    assert pre_user_profile.extras["comment"] == "extra comment"
+    assert {"application", "description", "hear", "privacyPolicy", "eula"}.issubset(
+        set(pre_user_profile.extras)
+    )
+
+
+def test_parse_model_without_extras(request_form_data: dict[str, Any]):
+    required = {
+        f.alias or f.name for f in PreUserProfile.__fields__.values() if f.required
+    }
+    data = {k: request_form_data[k] for k in required}
+    assert not PreUserProfile(**data).extras
