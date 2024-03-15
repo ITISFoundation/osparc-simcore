@@ -21,7 +21,7 @@ from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskProgress
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
-from simcore_service_webserver.application_settings import get_settings
+from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.projects.models import ProjectDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -285,7 +285,7 @@ async def test_copying_too_large_project_returns_422(
     request_create_project: Callable[..., Awaitable[ProjectDict]],
 ):
     assert client.app
-    app_settings = get_settings(client.app)
+    app_settings = get_application_settings(client.app)
     large_project_total_size = (
         app_settings.WEBSERVER_PROJECTS.PROJECTS_MAX_COPY_SIZE_BYTES + 1
     )

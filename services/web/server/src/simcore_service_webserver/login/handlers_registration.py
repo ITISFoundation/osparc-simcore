@@ -259,7 +259,7 @@ async def register(request: web.Request):
                 context={
                     "host": request.host,
                     "link": email_confirmation_url,  # SEE email_confirmation handler (action=REGISTRATION)
-                    "name": user["name"],
+                    "name": user.get("first_name") or user["name"],
                     "support_email": product.support_email,
                     "product": product,
                 },

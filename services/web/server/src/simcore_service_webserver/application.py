@@ -12,7 +12,7 @@ from ._meta import WELCOME_DB_LISTENER_MSG, WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
 from .announcements.plugin import setup_announcements
 from .api_keys.plugin import setup_api_keys
-from .application_settings import get_settings, setup_settings
+from .application_settings import get_application_settings, setup_settings
 from .catalog.plugin import setup_catalog
 from .clusters.plugin import setup_clusters
 from .db.plugin import setup_db
@@ -55,7 +55,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _welcome_banner(app: web.Application):
-    settings = get_settings(app)
+    settings = get_application_settings(app)
     print(WELCOME_MSG, flush=True)  # noqa: T201
     if settings.WEBSERVER_GARBAGE_COLLECTOR:
         print("with", WELCOME_GC_MSG, flush=True)  # noqa: T201

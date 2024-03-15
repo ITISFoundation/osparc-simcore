@@ -23,7 +23,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from ..application_settings import get_settings
+from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api
 from ..storage.api import (
@@ -67,7 +67,7 @@ async def _prepare_project_copy(
         project_uuid=f"{src_project_uuid}",
         user_id=user_id,
     )
-    settings = get_settings(app).WEBSERVER_PROJECTS
+    settings = get_application_settings(app).WEBSERVER_PROJECTS
     assert settings  # nosec
     if max_bytes := settings.PROJECTS_MAX_COPY_SIZE_BYTES:
         # get project total data size
