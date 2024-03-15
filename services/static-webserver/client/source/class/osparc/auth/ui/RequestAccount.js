@@ -88,9 +88,16 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       });
       this._form.add(postalCode, this.tr("Postal code"), null, "postalCode");
 
-      const country = new qx.ui.form.TextField().set({
+      const country = new qx.ui.form.SelectBox().set({
         required: true
       });
+      const countries = osparc.store.StaticInfo.getInstance().getCountries();
+      countries.forEach(c => {
+        const cItem = new qx.ui.form.ListItem(c.name, null, c.name).set({
+          rich: true
+        });
+        country.add(cItem);
+      })
       doubleSpaced.push(country);
       this._form.add(country, this.tr("Country"), null, "country");
 
