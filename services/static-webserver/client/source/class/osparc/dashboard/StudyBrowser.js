@@ -394,17 +394,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
     },
 
-    __reloadStudy: function(studyId) {
-      const params = {
-        url: {
-          "studyId": studyId
-        }
-      };
-      return osparc.data.Resources.getOne("studies", params)
-        .then(studyData => this._updateStudyData(studyData))
-        .catch(err => console.error(err));
-    },
-
     __getNextRequestParams: function() {
       if ("nextRequest" in this._resourcesContainer.getFlatList() &&
         this._resourcesContainer.getFlatList().nextRequest !== null &&
