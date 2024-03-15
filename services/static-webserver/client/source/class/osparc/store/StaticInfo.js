@@ -94,7 +94,11 @@ qx.Class.define("osparc.store.StaticInfo", {
       const metadata = this.getValue(staticKey);
       // return metadata ? metadata : [];
       return [{
-        name: "Baskenland"
+        name: "Baskenland",
+        alpha2: "eus"
+      }, {
+        name: "Schwiiz",
+        alpha2: "ch"
       }];
     }
   }
