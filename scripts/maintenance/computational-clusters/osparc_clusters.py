@@ -666,7 +666,8 @@ def _detect_instances(
 
 state = {
     "environment": {},
-    "ec2_resource": None,
+    "ec2_resource_autoscaling": None,
+    "ec2_resource_clusters-keeper": None,
     "dynamic_parser": parse.compile("osparc-dynamic-autoscaled-worker-{key_name}"),
 }
 
@@ -681,27 +682,42 @@ def main(
 
     state["deploy_config"] = deploy_config.expanduser()
     assert deploy_config.is_dir()
-    # get the repo.config file
+    # get the repo.config file (repo.config.frozen might be present for AWS that contains all the variables)
     repo_config = deploy_config / "repo.config"
     assert repo_config.exists()
     environment = dotenv_values(repo_config)
+    if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
+        print(
+            "Terraform variables detected, looking for repo.config.frozen as alternative"
+        )
+        repo_config = deploy_config / "repo.config.frozen"
+        assert repo_config.exists()
+        environment = dotenv_values(repo_config)
+
+        if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
+            error_msg = (
+                "Terraform is necessary in order to check into that deployment!\n"
+                f"install terraform (check README.md in {state['deploy_config']} for instructions)"
+                "then run make repo.config.frozen, then re-run this code"
+            )
+            print(error_msg)
+            raise typer.Abort(error_msg)
     assert environment
     state["environment"] = environment
     # connect to ec2
-    if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
-        error_msg = (
-            "Terraform is necessary in order to check into that deployment!\n"
-            f"install terraform (check README.md in {state['deploy_config']} for instructions)"
-            "then run make repo.config.frozen, and replace the repo.config, then re-run this code"
-        )
-        print(error_msg)
-        raise typer.Abort(error_msg)
 
-    state["ec2_resource"] = boto3.resource(
+    state["ec2_resource_autoscaling"] = boto3.resource(
         "ec2",
         region_name=environment["AUTOSCALING_EC2_REGION_NAME"],
         aws_access_key_id=environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
         aws_secret_access_key=environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
+    )
+
+    state["ec2_resource_clusters-keeper"] = boto3.resource(
+        "ec2",
+        region_name=environment["CLUSTERS_KEEPER_EC2_REGION_NAME"],
+        aws_access_key_id=environment["CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID"],
+        aws_secret_access_key=environment["CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY"],
     )
 
     # get all the running instances
@@ -725,20 +741,25 @@ def main(
 
 def _list_running_ec2_instances(
     user_id: int | None, wallet_id: int | None
-) -> ServiceResourceInstancesCollection:
+) -> tuple[ServiceResourceInstancesCollection, ...]:
     # get all the running instances
     environment = state["environment"]
     assert environment["EC2_INSTANCES_KEY_NAME"]
-    ec2_resource: EC2ServiceResource = state["ec2_resource"]
-    ec2_filters: list[FilterTypeDef] = [
-        {"Name": "instance-state-name", "Values": ["running", "pending"]},
-        {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
-    ]
-    if user_id:
-        ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
-    if wallet_id:
-        ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
-    instances = ec2_resource.instances.filter(Filters=ec2_filters)
+
+    for ec2_res, key_name_env in [
+        ("ec2_resource_autoscaling", "EC2_INSTANCES_KEY_NAME"),
+        ("ec2_resource_clusters-keeper", "PRIMARY_EC2_INSTANCES_KEY_NAME"),
+    ]:
+        ec2_resource: EC2ServiceResource = state[ec2_res]
+        ec2_filters: list[FilterTypeDef] = [
+            {"Name": "instance-state-name", "Values": ["running", "pending"]},
+            {"Name": "key-name", "Values": [environment[key_name_env]]},
+        ]
+        if user_id:
+            ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+        if wallet_id:
+            ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+        instances = ec2_resource.instances.filter(Filters=ec2_filters)
 
     return instances
 
