@@ -947,8 +947,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyDataButton = this.__getStudyDataMenuButton(card);
       menu.add(studyDataButton);
 
-      const billingsSettingsButton = this.__getBillingMenuButton(card);
-      menu.add(billingsSettingsButton);
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        const billingsSettingsButton = this.__getBillingMenuButton(card);
+        menu.add(billingsSettingsButton);
+      }
 
       if (deleteAccess) {
         const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
