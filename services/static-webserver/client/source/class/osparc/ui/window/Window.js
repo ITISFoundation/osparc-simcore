@@ -84,7 +84,6 @@ qx.Class.define("osparc.ui.window.Window", {
       win.add(scroll);
 
       win.center();
-      win.moveItUp();
       win.open();
       win.addListener("close", () => scroll.remove(widget));
 
