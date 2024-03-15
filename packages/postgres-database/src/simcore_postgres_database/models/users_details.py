@@ -53,7 +53,7 @@ users_pre_registration_details = sa.Table(
         "NOTE: this is not copied upon registration since it needs to be confirmed",
     ),
     # Billable address columns:
-    sa.Column("institution", sa.String()),
+    sa.Column("institution", sa.String(), doc="the name of a company or university"),
     sa.Column("address", sa.String()),
     sa.Column("city", sa.String()),
     sa.Column("state", sa.String()),
