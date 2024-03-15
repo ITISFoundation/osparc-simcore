@@ -177,7 +177,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("buttons-layout").addAt(control, 0);
           break;
         case "open-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Start")).set({
+          control = new osparc.ui.form.FetchButton(this.tr("Open")).set({
             appearance: "form-button",
             font: "text-14",
             minWidth: 150,
