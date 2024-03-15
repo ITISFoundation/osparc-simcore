@@ -15,8 +15,8 @@ _logger = logging.getLogger(__name__)
 async def send_close_account_email(
     request: web.Request,
     user_email: EmailStr,
-    user_name: str,
-    retention_days: PositiveInt = 30,
+    user_first_name: str,
+    retention_days: PositiveInt,
 ):
     template_name = "close_account.jinja2"
     email_template_path = await get_product_template_path(request, template_name)
@@ -30,7 +30,7 @@ async def send_close_account_email(
             template=email_template_path,
             context={
                 "host": request.host,
-                "name": user_name.capitalize(),
+                "name": user_first_name.capitalize(),
                 "support_email": product.support_email,
                 "retention_days": retention_days,
                 "product": product,
