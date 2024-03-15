@@ -216,7 +216,7 @@ qx.Class.define("osparc.study.StudyOptions", {
 
       this._createChildControlImpl("title-label");
       const titleField = this.getChildControl("title-field");
-      this.addListener("appear", () => {
+      titleField.addListener("appear", () => {
         titleField.focus();
         titleField.activate();
       });
