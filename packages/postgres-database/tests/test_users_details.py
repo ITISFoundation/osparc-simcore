@@ -42,14 +42,14 @@ async def po_user(
 async def test_user_creation_workflow(
     connection: SAConnection, faker: Faker, po_user: RowProxy
 ):
-
+    # TODO: create faker function
     # a PO creates an invitation
-    fake_invitation = {
+    fake_pre_registration_data = {
         "pre_first_name": faker.first_name(),
         "pre_last_name": faker.last_name(),
         "pre_email": faker.email(),  # mandatory
         "pre_phone": faker.phone_number(),
-        "company_name": faker.company(),
+        "institution": faker.company(),
         "address": faker.address().replace("\n", ", "),
         "city": faker.city(),
         "state": faker.state(),
@@ -60,11 +60,11 @@ async def test_user_creation_workflow(
 
     pre_email = await connection.scalar(
         sa.insert(users_pre_registration_details)
-        .values(**fake_invitation)
+        .values(**fake_pre_registration_data)
         .returning(users_pre_registration_details.c.pre_email)
     )
     assert pre_email is not None
-    assert pre_email == fake_invitation["pre_email"]
+    assert pre_email == fake_pre_registration_data["pre_email"]
 
     # user gets created
     new_user = await UsersRepo.new_user(
@@ -92,7 +92,7 @@ async def test_user_creation_workflow(
 
         @classmethod
         def create_from_db(cls, row: RowProxy):
-            parts = (row[c] for c in ("company_name", "address") if row[c])
+            parts = (row[c] for c in ("institution", "address") if row[c])
             return cls(
                 line1=". ".join(parts),
                 state=row.state,
@@ -113,9 +113,9 @@ async def test_user_creation_workflow(
     # }
 
     assert user_address.line1
-    assert user_address.state == fake_invitation["state"]
-    assert user_address.postal_code == fake_invitation["postal_code"]
-    assert user_address.country == fake_invitation["country"]
+    assert user_address.state == fake_pre_registration_data["state"]
+    assert user_address.postal_code == fake_pre_registration_data["postal_code"]
+    assert user_address.country == fake_pre_registration_data["country"]
 
     # now let's update the user
     result = await connection.execute(

@@ -202,7 +202,7 @@ async def test_get_profile_with_failing_db_connection(
         (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
     ],
 )
-async def test_users_api_only_accessed_by_po(
+async def test_only_product_owners_can_access_users_api(
     client: TestClient,
     logged_user: UserInfoDict,
     expected: HTTPStatus,
@@ -217,7 +217,7 @@ async def test_users_api_only_accessed_by_po(
 
 
 @pytest.fixture
-def request_form_data(request: pytest.FixtureRequest, faker: Faker) -> dict[str, Any]:
+def request_form_data(faker: Faker) -> dict[str, Any]:
     # This is AccountRequestInfo.form
     return {
         "firstName": faker.first_name(),
