@@ -39,7 +39,7 @@ class PricingUnitGet(BaseModel):
         }
 
 
-class ServicePricingPlanGet(BaseModel):
+class PricingPlanGet(BaseModel):
     pricing_plan_id: PricingPlanId
     display_name: str
     description: str
@@ -47,6 +47,7 @@ class ServicePricingPlanGet(BaseModel):
     created_at: datetime
     pricing_plan_key: str
     pricing_units: list[PricingUnitGet]
+    is_active: bool
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -59,6 +60,7 @@ class ServicePricingPlanGet(BaseModel):
                     "created_at": "2023-01-11 13:11:47.293595",
                     "pricing_plan_key": "pricing-plan-sleeper",
                     "pricing_units": [pricing_unit_get_example],
+                    "is_active": True,
                 }
                 for pricing_unit_get_example in PricingUnitGet.Config.schema_extra[
                     "examples"

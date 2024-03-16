@@ -282,7 +282,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServicePricingPlanGet"
+                  "$ref": "#/components/schemas/PricingPlanGet"
                 }
               }
             }
@@ -552,54 +552,8 @@
         "type": "string",
         "description": "An enumeration."
       },
-      "PricingUnitGet": {
-        "title": "PricingUnitGet",
-        "required": [
-          "pricing_unit_id",
-          "unit_name",
-          "unit_extra_info",
-          "current_cost_per_unit",
-          "current_cost_per_unit_id",
-          "default",
-          "specific_info"
-        ],
-        "type": "object",
-        "properties": {
-          "pricing_unit_id": {
-            "title": "Pricing Unit Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "unit_name": {
-            "title": "Unit Name",
-            "type": "string"
-          },
-          "unit_extra_info": {
-            "title": "Unit Extra Info",
-            "type": "object"
-          },
-          "current_cost_per_unit": {
-            "title": "Current Cost Per Unit",
-            "type": "number"
-          },
-          "current_cost_per_unit_id": {
-            "title": "Current Cost Per Unit Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "default": {
-            "title": "Default",
-            "type": "boolean"
-          },
-          "specific_info": {
-            "$ref": "#/components/schemas/HardwareInfo"
-          }
-        }
-      },
-      "ServicePricingPlanGet": {
-        "title": "ServicePricingPlanGet",
+      "PricingPlanGet": {
+        "title": "PricingPlanGet",
         "required": [
           "pricing_plan_id",
           "display_name",
@@ -643,6 +597,52 @@
             "items": {
               "$ref": "#/components/schemas/PricingUnitGet"
             }
+          }
+        }
+      },
+      "PricingUnitGet": {
+        "title": "PricingUnitGet",
+        "required": [
+          "pricing_unit_id",
+          "unit_name",
+          "unit_extra_info",
+          "current_cost_per_unit",
+          "current_cost_per_unit_id",
+          "default",
+          "specific_info"
+        ],
+        "type": "object",
+        "properties": {
+          "pricing_unit_id": {
+            "title": "Pricing Unit Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "unit_name": {
+            "title": "Unit Name",
+            "type": "string"
+          },
+          "unit_extra_info": {
+            "title": "Unit Extra Info",
+            "type": "object"
+          },
+          "current_cost_per_unit": {
+            "title": "Current Cost Per Unit",
+            "type": "number"
+          },
+          "current_cost_per_unit_id": {
+            "title": "Current Cost Per Unit Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "default": {
+            "title": "Default",
+            "type": "boolean"
+          },
+          "specific_info": {
+            "$ref": "#/components/schemas/HardwareInfo"
           }
         }
       },

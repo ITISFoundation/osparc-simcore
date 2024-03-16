@@ -1,8 +1,10 @@
 import logging
 from datetime import datetime, timezone
+from decimal import Decimal
 from enum import auto
 from typing import Any, ClassVar, NamedTuple, TypeAlias
 
+from models_library.products import ProductName
 from pydantic import BaseModel, Field, PositiveInt, validator
 
 from .rest_filters import Filters
@@ -132,3 +134,55 @@ class StartedAt(BaseModel):
 
 class ServiceResourceUsagesFilters(Filters):
     started_at: StartedAt
+
+
+## Pricing Plans
+
+
+class PricingPlanCreate(BaseModel):
+    product_name: ProductName
+    display_name: str
+    description: str
+    classification: PricingPlanClassification
+    pricing_plan_key: str
+
+
+class PricingPlanUpdate(BaseModel):
+    pricing_plan_id: PricingPlanId
+    display_name: str
+    description: str
+    is_active: bool
+
+
+## Pricing Units
+
+
+class SpecificInfo(HardwareInfo):
+    """Custom information that is not propagated to the frontend. For example can be used
+    to store aws ec2 instance type."""
+
+
+class PricingUnitWithCostCreate(BaseModel):
+    pricing_plan_id: PricingPlanId
+    pricing_plan_key: str
+    unit_name: str
+    unit_extra_info: dict
+    default: bool
+    specific_info: SpecificInfo
+    cost_per_unit: Decimal
+    comment: str
+
+
+class PricingUnitCostUpdate(BaseModel):
+    cost_per_unit: Decimal
+    comment: str
+
+
+class PricingUnitWithCostUpdate(BaseModel):
+    pricing_plan_id: PricingPlanId
+    pricing_unit_id: PricingUnitId
+    unit_name: str
+    unit_extra_info: dict
+    default: bool
+    specific_info: SpecificInfo
+    pricing_unit_cost_update: None | PricingUnitCostUpdate

@@ -1,9 +1,21 @@
 from fastapi import FastAPI
+from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    PricingPlanGet,
+    PricingUnitGet,
+)
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunPage,
 )
 from models_library.products import ProductName
-from models_library.resource_tracker import ServiceResourceUsagesFilters
+from models_library.resource_tracker import (
+    PricingPlanCreate,
+    PricingPlanId,
+    PricingPlanUpdate,
+    PricingUnitId,
+    PricingUnitWithCostCreate,
+    PricingUnitWithCostUpdate,
+    ServiceResourceUsagesFilters,
+)
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -16,9 +28,14 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 from ...core.settings import ApplicationSettings
 from ...modules.db.repositories.resource_tracker import ResourceTrackerRepository
 from ...modules.s3 import get_s3_client
+from ...services import resource_tracker_pricing_plans as pricing_plans
+from ...services import resource_tracker_pricing_units as pricing_units
 from ...services import resource_tracker_service_runs as service_runs
 
 router = RPCRouter()
+
+
+## Service runs
 
 
 @router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
@@ -72,4 +89,94 @@ async def export_service_runs(
         access_all_wallet_usage=access_all_wallet_usage,
         order_by=order_by,
         filters=filters,
+    )
+
+
+## Pricing plans
+
+
+@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+async def get_pricing_plan(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    pricing_plan_id: PricingPlanId,
+) -> PricingPlanGet:
+    return await pricing_plans.get_pricing_plan(
+        product_name=product_name,
+        pricing_plan_id=pricing_plan_id,
+        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+    )
+
+
+@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+async def create_pricing_plan(
+    app: FastAPI,
+    *,
+    data: PricingPlanCreate,
+) -> PricingPlanGet:
+    return await pricing_plans.create_pricing_plan(
+        data=data,
+        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+    )
+
+
+@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+async def update_pricing_plan(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    data: PricingPlanUpdate,
+) -> PricingPlanGet:
+    return await pricing_plans.update_pricing_plan(
+        product_name=product_name,
+        data=data,
+        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+    )
+
+
+## Pricing units
+
+
+@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+async def get_pricing_unit(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    pricing_plan_id: PricingPlanId,
+    pricing_unit_id: PricingUnitId,
+) -> PricingUnitGet:
+    return await pricing_units.get_pricing_unit(
+        product_name=product_name,
+        pricing_plan_id=pricing_plan_id,
+        pricing_unit_id=pricing_unit_id,
+        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+    )
+
+
+@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+async def create_pricing_unit(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    data: PricingUnitWithCostCreate,
+) -> PricingUnitGet:
+    return await pricing_units.create_pricing_unit(
+        product_name=product_name,
+        data=data,
+        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+    )
+
+
+@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+async def update_pricing_unit(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    data: PricingUnitWithCostUpdate,
+) -> PricingUnitGet:
+    return await pricing_units.update_pricing_unit(
+        product_name=product_name,
+        data=data,
+        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
     )
