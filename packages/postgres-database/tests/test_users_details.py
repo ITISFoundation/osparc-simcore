@@ -10,7 +10,10 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
-from pytest_simcore.helpers.rawdata_fakers import random_user
+from pytest_simcore.helpers.rawdata_fakers import (
+    random_pre_registration_details,
+    random_user,
+)
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
@@ -42,21 +45,10 @@ async def po_user(
 async def test_user_creation_workflow(
     connection: SAConnection, faker: Faker, po_user: RowProxy
 ):
-    # TODO: create faker function
     # a PO creates an invitation
-    fake_pre_registration_data = {
-        "pre_first_name": faker.first_name(),
-        "pre_last_name": faker.last_name(),
-        "pre_email": faker.email(),  # mandatory
-        "pre_phone": faker.phone_number(),
-        "institution": faker.company(),
-        "address": faker.address().replace("\n", ", "),
-        "city": faker.city(),
-        "state": faker.state(),
-        "country": faker.country(),
-        "postal_code": faker.postcode(),
-        "created_by": po_user.id,
-    }
+    fake_pre_registration_data = random_pre_registration_details(
+        faker, created_by=po_user.id
+    )
 
     pre_email = await connection.scalar(
         sa.insert(users_pre_registration_details)

@@ -221,7 +221,7 @@ async def test_only_product_owners_can_access_users_api(
 
 
 @pytest.fixture
-def request_form_data(faker: Faker) -> dict[str, Any]:
+def account_request_form(faker: Faker) -> dict[str, Any]:
     # This is AccountRequestInfo.form
     return {
         "firstName": faker.first_name(),
@@ -256,7 +256,7 @@ def request_form_data(faker: Faker) -> dict[str, Any]:
 async def test_search_and_pre_registration(
     client: TestClient,
     logged_user: UserInfoDict,
-    request_form_data: dict[str, Any],
+    account_request_form: dict[str, Any],
 ):
     assert client.app
 
@@ -287,11 +287,11 @@ async def test_search_and_pre_registration(
     # NOT in `users` and ONLY `users_pre_registration_details`
 
     # create pre-registration
-    resp = await client.post("/v0/users:pre-register", json=request_form_data)
+    resp = await client.post("/v0/users:pre-register", json=account_request_form)
     assert resp.status == status.HTTP_200_OK
 
     resp = await client.get(
-        "/v0/users:search", params={"email": request_form_data["email"]}
+        "/v0/users:search", params={"email": account_request_form["email"]}
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
@@ -306,7 +306,7 @@ async def test_search_and_pre_registration(
     new_user = (
         await simcore_service_webserver.login._auth_api.create_user(  # noqa: SLF001
             client.app,
-            email=request_form_data["email"],
+            email=account_request_form["email"],
             password=DEFAULT_TEST_PASSWORD,
             status_upon_creation=UserStatus.ACTIVE,
             expires_at=None,
@@ -314,7 +314,7 @@ async def test_search_and_pre_registration(
     )
 
     resp = await client.get(
-        "/v0/users:search", params={"email": request_form_data["email"]}
+        "/v0/users:search", params={"email": account_request_form["email"]}
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
@@ -336,10 +336,10 @@ async def test_search_and_pre_registration(
     ],
 )
 def test_parse_model_from_request_form_data(
-    request_form_data: dict[str, Any],
+    account_request_form: dict[str, Any],
     institution_key: str,
 ):
-    data = deepcopy(request_form_data)
+    data = deepcopy(account_request_form)
     data[institution_key] = data.pop("institution")
     data["comment"] = "extra comment"
     data["another-field"] = f"will not be included because of {MAX_NUM_EXTRAS=}"
@@ -350,7 +350,7 @@ def test_parse_model_from_request_form_data(
     print(pre_user_profile.json(indent=1))
 
     # institution aliases
-    assert pre_user_profile.institution == request_form_data["institution"]
+    assert pre_user_profile.institution == account_request_form["institution"]
 
     # extras
     assert len(pre_user_profile.extras) <= MAX_NUM_EXTRAS
@@ -366,9 +366,9 @@ def test_parse_model_from_request_form_data(
     assert "another-field" not in pre_user_profile.extras
 
 
-def test_parse_model_without_extras(request_form_data: dict[str, Any]):
+def test_parse_model_without_extras(account_request_form: dict[str, Any]):
     required = {
         f.alias or f.name for f in PreUserProfile.__fields__.values() if f.required
     }
-    data = {k: request_form_data[k] for k in required}
+    data = {k: account_request_form[k] for k in required}
     assert not PreUserProfile(**data).extras
