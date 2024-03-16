@@ -3,7 +3,7 @@
 """
 
 
-from typing import Any
+from typing import Any, Final
 
 import pycountry
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
@@ -43,6 +43,10 @@ class UserProfile(OutputSchema):
         return v
 
 
+MAX_NUM_EXTRAS: Final[int] = 6
+assert MAX_NUM_EXTRAS > 1  # nosec
+
+
 class PreUserProfile(InputSchema):
     first_name: str
     last_name: str
@@ -57,8 +61,12 @@ class PreUserProfile(InputSchema):
     country: str
     extras: dict[str, Any] = Field(
         default_factory=dict,
-        description="Keeps extra information provided in the request form",
+        description="Keeps extra information provided in the request form. At most MAX_NUM_EXTRAS fields",
     )
+
+    class Config(InputSchema.Config):
+        anystr_strip_whitespace = True
+        max_anystr_length = 200
 
     @validator("country")
     @classmethod
@@ -81,7 +89,7 @@ class PreUserProfile(InputSchema):
                 if alias in values:
                     values["institution"] = values.pop(alias)
 
-        # split extras
+        # collect extras
         extra_fields = {}
         field_names_and_aliases = (
             set(cls.__fields__.keys())
@@ -91,6 +99,8 @@ class PreUserProfile(InputSchema):
         for key, value in values.items():
             if key not in field_names_and_aliases:
                 extra_fields[key] = value
+                if len(extra_fields) + 1 > MAX_NUM_EXTRAS:
+                    break
 
         for key in extra_fields:
             values.pop(key)

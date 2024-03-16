@@ -28,7 +28,11 @@ from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_service_webserver.users._preferences_api import (
     get_frontend_user_preferences_aggregation,
 )
-from simcore_service_webserver.users._schemas import PreUserProfile, UserProfile
+from simcore_service_webserver.users._schemas import (
+    MAX_NUM_EXTRAS,
+    PreUserProfile,
+    UserProfile,
+)
 from simcore_service_webserver.users.schemas import ProfileGet, ProfileUpdate
 
 
@@ -252,13 +256,11 @@ def request_form_data(faker: Faker) -> dict[str, Any]:
 async def test_search_and_pre_registration(
     client: TestClient,
     logged_user: UserInfoDict,
-    faker: Faker,
     request_form_data: dict[str, Any],
 ):
     assert client.app
 
     # ONLY in `users` and NOT `users_pre_registration_details`
-
     resp = await client.get("/v0/users:search", params={"email": logged_user["email"]})
     assert resp.status == status.HTTP_200_OK
 
@@ -266,18 +268,19 @@ async def test_search_and_pre_registration(
     assert len(found) == 1
     got = UserProfile(**found[0])
     expected = {
-        "firstName": logged_user.get("first_name"),
-        "lastName": logged_user.get("last_name"),
+        "first_name": logged_user.get("first_name"),
+        "last_name": logged_user.get("last_name"),
         "email": logged_user["email"],
-        "companyName": None,
+        "institution": None,
         "phone": logged_user.get("phone"),
         "address": None,
         "city": None,
         "state": None,
-        "postalCode": None,
+        "postal_code": None,
         "country": None,
+        "extras": {},
         "registered": True,
-        "status": "ACTIVE",
+        "status": UserStatus.ACTIVE,
     }
     assert got.dict(include=set(expected)) == expected
 
@@ -316,7 +319,6 @@ async def test_search_and_pre_registration(
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
     got = UserProfile(**found[0])
-
     assert got.dict(include={"registered", "status"}) == {
         "registered": True,
         "status": new_user["status"].name,
@@ -340,6 +342,7 @@ def test_parse_model_from_request_form_data(
     data = deepcopy(request_form_data)
     data[institution_key] = data.pop("institution")
     data["comment"] = "extra comment"
+    data["another-field"] = f"will not be included because of {MAX_NUM_EXTRAS=}"
 
     # pre-processors
     pre_user_profile = PreUserProfile(**data)
@@ -349,11 +352,18 @@ def test_parse_model_from_request_form_data(
     # institution aliases
     assert pre_user_profile.institution == request_form_data["institution"]
 
-    # extras split
+    # extras
+    assert len(pre_user_profile.extras) <= MAX_NUM_EXTRAS
+    assert {
+        "application",
+        "description",
+        "hear",
+        "privacyPolicy",
+        "eula",
+        "comment",
+    } == set(pre_user_profile.extras)
     assert pre_user_profile.extras["comment"] == "extra comment"
-    assert {"application", "description", "hear", "privacyPolicy", "eula"}.issubset(
-        set(pre_user_profile.extras)
-    )
+    assert "another-field" not in pre_user_profile.extras
 
 
 def test_parse_model_without_extras(request_form_data: dict[str, Any]):
