@@ -6,6 +6,7 @@
 
 
 import functools
+import sys
 from copy import deepcopy
 from http import HTTPStatus
 from typing import Any
@@ -18,7 +19,10 @@ from aiopg.sa.connection import SAConnection
 from faker import Faker
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
-from pytest_simcore.helpers.rawdata_fakers import DEFAULT_TEST_PASSWORD
+from pytest_simcore.helpers.rawdata_fakers import (
+    DEFAULT_TEST_PASSWORD,
+    random_pre_registration_details,
+)
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
@@ -29,7 +33,7 @@ from simcore_service_webserver.users._preferences_api import (
     get_frontend_user_preferences_aggregation,
 )
 from simcore_service_webserver.users._schemas import (
-    MAX_NUM_EXTRAS,
+    MAX_BYTES_SIZE_EXTRAS,
     PreUserProfile,
     UserProfile,
 )
@@ -342,7 +346,6 @@ def test_parse_model_from_request_form_data(
     data = deepcopy(account_request_form)
     data[institution_key] = data.pop("institution")
     data["comment"] = "extra comment"
-    data["another-field"] = f"will not be included because of {MAX_NUM_EXTRAS=}"
 
     # pre-processors
     pre_user_profile = PreUserProfile(**data)
@@ -353,7 +356,6 @@ def test_parse_model_from_request_form_data(
     assert pre_user_profile.institution == account_request_form["institution"]
 
     # extras
-    assert len(pre_user_profile.extras) <= MAX_NUM_EXTRAS
     assert {
         "application",
         "description",
@@ -363,7 +365,6 @@ def test_parse_model_from_request_form_data(
         "comment",
     } == set(pre_user_profile.extras)
     assert pre_user_profile.extras["comment"] == "extra comment"
-    assert "another-field" not in pre_user_profile.extras
 
 
 def test_parse_model_without_extras(account_request_form: dict[str, Any]):
@@ -372,3 +373,10 @@ def test_parse_model_without_extras(account_request_form: dict[str, Any]):
     }
     data = {k: account_request_form[k] for k in required}
     assert not PreUserProfile(**data).extras
+
+
+def test_max_bytes_size_extras_limits(faker: Faker):
+    data = random_pre_registration_details(faker)
+    data_size = sys.getsizeof(data["extras"])
+
+    assert data_size < MAX_BYTES_SIZE_EXTRAS

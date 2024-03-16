@@ -3,6 +3,7 @@
 """
 
 
+import sys
 from typing import Any, Final
 
 import pycountry
@@ -43,8 +44,7 @@ class UserProfile(OutputSchema):
         return v
 
 
-MAX_NUM_EXTRAS: Final[int] = 6
-assert MAX_NUM_EXTRAS > 1  # nosec
+MAX_BYTES_SIZE_EXTRAS: Final[int] = 512
 
 
 class PreUserProfile(InputSchema):
@@ -99,7 +99,8 @@ class PreUserProfile(InputSchema):
         for key, value in values.items():
             if key not in field_names_and_aliases:
                 extra_fields[key] = value
-                if len(extra_fields) + 1 > MAX_NUM_EXTRAS:
+                if sys.getsizeof(extra_fields) > MAX_BYTES_SIZE_EXTRAS:
+                    extra_fields.pop(key)
                     break
 
         for key in extra_fields:

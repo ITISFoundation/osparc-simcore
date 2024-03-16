@@ -115,7 +115,7 @@ def random_pre_registration_details(
         "state": fake.state(),
         "country": fake.country(),
         "postal_code": fake.postcode(),
-        "extra": {
+        "extras": {
             "application": fake.word(),
             "description": fake.sentence(),
             "hear": fake.word(),
@@ -125,6 +125,10 @@ def random_pre_registration_details(
         },
         "created_by": created_by,  # user id
     }
+
+    assert set(data.keys()).issubset(
+        {c.name for c in users_pre_registration_details.columns}
+    )
 
     data.update(overrides)
     return data
