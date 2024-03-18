@@ -111,7 +111,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
 
     getValues: function() {
       return {
-        osparcCredits: parseInt(this.__amountInput.getValue()),
+        osparcCredits: this.__amountInput.getValue(),
         amountDollars: parseFloat(this.__totalInput.getValue().split(this.__currencySymbol)[0])
       }
     }

@@ -101,7 +101,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
         marginTop: 30,
         allowStretchX: false
       });
-      const paymentMethodLabel = new qx.ui.basic.Label("Pay with").set({
+      const paymentMethodLabel = new qx.ui.basic.Label(this.tr("Pay with")).set({
         marginLeft: 15
       });
       paymentMethodContainer.add(paymentMethodLabel);
@@ -109,7 +109,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
         width: 300,
         allowStretchX: false
       });
-      const unsavedCardOption = new qx.ui.form.ListItem("Enter card details in the next step...", null, null);
+      const unsavedCardOption = new qx.ui.form.ListItem(this.tr("Enter card details in the next step..."), null, null);
       paymentMethodSelect.add(unsavedCardOption);
       paymentMethods.forEach(({id, label}) => {
         const item = new qx.ui.form.ListItem(label, null, id);
