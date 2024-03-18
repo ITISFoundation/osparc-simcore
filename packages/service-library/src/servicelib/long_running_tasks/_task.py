@@ -187,9 +187,19 @@ class TasksManager:
                 if with_task_context and (
                     tasks[task_id].task_context != with_task_context
                 ):
+                    logger.debug(
+                        "Raising TaskNotFoundError for task_id=%s because %s != %s",
+                        task_id,
+                        f"{tasks[task_id].task_context=}",
+                        f"{with_task_context}=",
+                    )
                     raise TaskNotFoundError(task_id=task_id)
                 return tasks[task_id]
 
+        logger.debug(
+            "Raising TaskNotFoundError because task_id=%s was not a registered task",
+            task_id,
+        )
         raise TaskNotFoundError(task_id=task_id)
 
     def get_task_status(
