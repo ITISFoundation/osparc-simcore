@@ -157,20 +157,20 @@
         }
       }
     },
-    "/v1/containers/inactivity": {
+    "/v1/containers/activity": {
       "get": {
         "tags": [
           "containers"
         ],
-        "summary": "Get Containers Inactivity",
-        "operationId": "get_containers_inactivity_v1_containers_inactivity_get",
+        "summary": "Get Containers Activity",
+        "operationId": "get_containers_activity_v1_containers_activity_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InactivityResponse"
+                  "$ref": "#/components/schemas/ActivityInfo"
                 }
               }
             }
@@ -785,6 +785,20 @@
   },
   "components": {
     "schemas": {
+      "ActivityInfo": {
+        "properties": {
+          "seconds_inactive": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Seconds Inactive"
+          }
+        },
+        "type": "object",
+        "required": [
+          "seconds_inactive"
+        ],
+        "title": "ActivityInfo"
+      },
       "ApplicationHealth": {
         "properties": {
           "is_healthy": {
@@ -1045,17 +1059,6 @@
             }
           }
         }
-      },
-      "InactivityResponse": {
-        "properties": {
-          "seconds_inactive": {
-            "type": "number",
-            "minimum": 0.0,
-            "title": "Seconds Inactive"
-          }
-        },
-        "type": "object",
-        "title": "InactivityResponse"
       },
       "PatchPortsIOItem": {
         "properties": {
