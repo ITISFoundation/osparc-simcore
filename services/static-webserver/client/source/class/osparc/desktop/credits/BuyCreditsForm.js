@@ -20,11 +20,17 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
     });
     this._add(title);
 
+    const subtitleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+      alignX: "center"
+    }));
     const subtitle = new qx.ui.basic.Label(this.tr("A one-off, non recurring payment.")).set({
-      font: "text-14",
-      textAlign: "center"
+      font: "text-14"
     });
-    this._add(subtitle);
+    subtitleLayout.add(subtitle);
+    const minimum = osparc.desktop.credits.BuyCreditsInput.MINIMUM_TOTAL;
+    const tooltip = new osparc.ui.hint.InfoHint(`A minimum amount of ${minimum}$ is required`);
+    subtitleLayout.add(tooltip);
+    this._add(subtitleLayout);
 
     this._add(this.__getForm(paymentMethods));
 
