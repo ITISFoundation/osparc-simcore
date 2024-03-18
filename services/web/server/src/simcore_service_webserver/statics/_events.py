@@ -89,7 +89,7 @@ async def create_cached_indexes(app: web.Application) -> None:
     app[APP_FRONTEND_CACHED_INDEXES_KEY] = cached_indexes
 
 
-async def create_statics_json(app: web.Application) -> None:
+async def create_and_cache_statics_json(app: web.Application) -> None:
     # NOTE: in devel model, the folder might be under construction
     # (qx-compile takes time), therefore we create statics.json
     # on_startup instead of upon setup
@@ -108,7 +108,6 @@ async def create_statics_json(app: web.Application) -> None:
     assert products  # nosec
 
     app[APP_FRONTEND_CACHED_STATICS_JSON_KEY] = {}
-
     for product in products.values():
         data = deepcopy(common)
 
