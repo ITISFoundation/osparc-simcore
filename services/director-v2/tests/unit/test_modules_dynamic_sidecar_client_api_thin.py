@@ -359,12 +359,12 @@ async def test_get_containers_inactivity(
     mock_response = Response(status.HTTP_200_OK, json={})
     mock_request(
         "GET",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/inactivity",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/activity",
         mock_response,
         None,
     )
 
-    response = await thin_client.get_containers_inactivity(dynamic_sidecar_endpoint)
+    response = await thin_client.get_containers_activity(dynamic_sidecar_endpoint)
     assert_responses(mock_response, response)
 
 

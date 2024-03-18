@@ -157,7 +157,7 @@ async def remove_orphaned_services(
         _logger.debug("Could not fetch list_dynamic_services")
 
     _logger.info(
-        "Currently running services %s",
+        "Observing running services (this does not mean I am removing them) %s",
         [
             (x.get("service_uuid", ""), x.get("service_host", ""))
             for x in running_dynamic_services
