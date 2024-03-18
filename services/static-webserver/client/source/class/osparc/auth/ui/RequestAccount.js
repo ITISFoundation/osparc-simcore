@@ -88,10 +88,25 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       });
       this._form.add(postalCode, this.tr("Postal code"), null, "postalCode");
 
-      const country = new qx.ui.form.TextField().set({
+      const country = new qx.ui.form.SelectBox().set({
         required: true
       });
       doubleSpaced.push(country);
+      const countries = osparc.store.StaticInfo.getInstance().getCountries();
+      countries.forEach(c => {
+        const cItem = new qx.ui.form.ListItem(c.name, null, c.alpha2).set({
+          rich: true
+        });
+        country.add(cItem);
+      })
+      fetch("https://ipapi.co/json")
+        .then(res => res.json())
+        .then(data => {
+          const countryFound = country.getSelectables().find(c => c.getModel().toUpperCase() === data.country_code.toUpperCase());
+          if (countryFound) {
+            country.setSelection([countryFound])
+          }
+        });
       this._form.add(country, this.tr("Country"), null, "country");
 
       const application = new qx.ui.form.SelectBox();
