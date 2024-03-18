@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from ._common import (
     column_created_datetime,
@@ -52,12 +53,18 @@ users_pre_registration_details = sa.Table(
         "NOTE: this is not copied upon registration since it needs to be confirmed",
     ),
     # Billable address columns:
-    sa.Column("company_name", sa.String()),
+    sa.Column("institution", sa.String(), doc="the name of a company or university"),
     sa.Column("address", sa.String()),
     sa.Column("city", sa.String()),
     sa.Column("state", sa.String()),
     sa.Column("country", sa.String()),
     sa.Column("postal_code", sa.String()),
+    sa.Column(
+        "extras",
+        postgresql.JSONB(astext_type=sa.Text()),
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Extra information provided in the form but still not defined as a column.",
+    ),
     # Other related users
     sa.Column(
         "created_by",
