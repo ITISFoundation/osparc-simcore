@@ -71,6 +71,22 @@ qx.Class.define("osparc.store.StaticInfo", {
         return wsStaticData[key];
       }
       return null;
+    },
+
+    getAccountDeletionRetentionDays: function() {
+      const staticKey = "webserverLogin";
+      const wsStaticData = this.getValue(staticKey);
+      const key = "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS";
+      if (key in wsStaticData) {
+        return wsStaticData[key];
+      }
+      return 30;
+    },
+
+    getCountries: function() {
+      const staticKey = "countries";
+      const metadata = this.getValue(staticKey);
+      return metadata ? metadata : [];
     }
   }
 });

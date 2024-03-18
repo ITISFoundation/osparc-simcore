@@ -18,7 +18,7 @@ APP_PRODUCTS_KEY: Final[str] = f"{__name__ }.APP_PRODUCTS_KEY"
 RQ_PRODUCT_KEY: Final[str] = f"{__name__}.RQ_PRODUCT_KEY"
 
 # main index route name = front-end
-INDEX_RESOURCE_NAME: Final[str] = "statics.index"
+INDEX_RESOURCE_NAME: Final[str] = "get_cached_frontend_index"
 
 # Public config per product returned in /config
 APP_PUBLIC_CONFIG_PER_PRODUCT: Final[str] = f"{__name__}.APP_PUBLIC_CONFIG_PER_PRODUCT"

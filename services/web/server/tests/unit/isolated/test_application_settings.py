@@ -195,7 +195,7 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
     # all key in camelcase
     assert all(
         key[0] == key[0].lower() and "_" not in key and key.lower() != key
-        for key in statics.keys()
+        for key in statics
     ), f"Got {list(statics.keys())}"
 
     # special alias
@@ -218,12 +218,19 @@ def test_settings_to_client_statics_plugins(
 
     print("STATICS:\n", json_dumps(statics, indent=1))
 
+    assert settings.WEBSERVER_LOGIN
+
+    assert (
+        statics["webserverLogin"]["LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"]
+        == settings.WEBSERVER_LOGIN.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS
+    )
+
     assert set(statics["pluginsDisabled"]) == (disable_plugins | {"WEBSERVER_CLUSTERS"})
 
 
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
     # avoids display of sensitive info
-    assert not any("pass" in key for key in app_settings.public_dict().keys())
-    assert not any("token" in key for key in app_settings.public_dict().keys())
-    assert not any("secret" in key for key in app_settings.public_dict().keys())
-    assert not any("private" in key for key in app_settings.public_dict().keys())
+    assert not any("pass" in key for key in app_settings.public_dict())
+    assert not any("token" in key for key in app_settings.public_dict())
+    assert not any("secret" in key for key in app_settings.public_dict())
+    assert not any("private" in key for key in app_settings.public_dict())
