@@ -77,7 +77,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     SPACING_IN: 5,
     SPACING: 15,
     // TITLE_MAX_HEIGHT: 34, // two lines in Roboto
-    TITLE_MAX_HEIGHT: 44, // two lines in Manrope
+    TITLE_MAX_HEIGHT: 42, // two lines in Manrope
     POS: {
       TITLE: {
         row: 0,
