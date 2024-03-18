@@ -238,7 +238,6 @@ def account_request_form(faker: Faker) -> dict[str, Any]:
         "address": faker.address().replace("\n", ", "),
         "city": faker.city(),
         "postalCode": faker.postcode(),
-        "state": faker.state(),
         "country": faker.country(),
         # extras
         "application": faker.word(),
