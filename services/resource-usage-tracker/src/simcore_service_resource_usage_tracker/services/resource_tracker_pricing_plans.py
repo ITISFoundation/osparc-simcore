@@ -17,6 +17,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 )
 
 from ..api.rest.dependencies import get_repository
+from ..models.resource_tracker_pricing_plans import PricingPlansDB
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 
@@ -70,6 +71,32 @@ async def get_service_default_pricing_plan(
         ],
         is_active=default_pricing_plan.is_active,
     )
+
+
+async def list_pricing_plans_by_product(
+    product_name: ProductName,
+    resource_tracker_repo: Annotated[
+        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
+    ],
+) -> list[PricingPlanGet]:
+    pricing_plans_list_db: list[
+        PricingPlansDB
+    ] = await resource_tracker_repo.list_pricing_plans_by_product(
+        product_name=product_name
+    )
+    return [
+        PricingPlanGet(
+            pricing_plan_id=pricing_plan_db.pricing_plan_id,
+            display_name=pricing_plan_db.display_name,
+            description=pricing_plan_db.description,
+            classification=pricing_plan_db.classification,
+            created_at=pricing_plan_db.created,
+            pricing_plan_key=pricing_plan_db.pricing_plan_key,
+            pricing_units=None,
+            is_active=pricing_plan_db.is_active,
+        )
+        for pricing_plan_db in pricing_plans_list_db
+    ]
 
 
 async def get_pricing_plan(

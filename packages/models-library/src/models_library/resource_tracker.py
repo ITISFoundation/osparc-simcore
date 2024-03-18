@@ -164,7 +164,6 @@ class SpecificInfo(HardwareInfo):
 
 class PricingUnitWithCostCreate(BaseModel):
     pricing_plan_id: PricingPlanId
-    pricing_plan_key: str
     unit_name: str
     unit_extra_info: dict
     default: bool

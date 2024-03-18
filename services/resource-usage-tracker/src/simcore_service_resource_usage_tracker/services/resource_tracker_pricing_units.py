@@ -48,12 +48,12 @@ async def create_pricing_unit(
     ],
 ) -> PricingUnitGet:
     # Check whether pricing plan exists
-    await resource_tracker_repo.get_pricing_plan(
+    pricing_plan_db = await resource_tracker_repo.get_pricing_plan(
         product_name=product_name, pricing_plan_id=data.pricing_plan_id
     )
     # Create new pricing unit
     pricing_unit_id, _ = await resource_tracker_repo.create_pricing_unit_with_cost(
-        data=data
+        data=data, pricing_plan_key=pricing_plan_db.pricing_plan_key
     )
 
     pricing_unit = await resource_tracker_repo.get_valid_pricing_unit(

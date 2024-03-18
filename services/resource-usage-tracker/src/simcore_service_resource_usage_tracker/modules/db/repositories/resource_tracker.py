@@ -757,6 +757,23 @@ class ResourceTrackerRepository(BaseRepository):
             )
         return PricingPlansDB.from_orm(row)
 
+    async def list_pricing_plans_by_product(
+        self, product_name: ProductName
+    ) -> list[PricingPlansDB]:
+        async with self.db_engine.begin() as conn:
+            select_stmt = sa.select(
+                resource_tracker_pricing_plans.c.pricing_plan_id,
+                resource_tracker_pricing_plans.c.display_name,
+                resource_tracker_pricing_plans.c.description,
+                resource_tracker_pricing_plans.c.classification,
+                resource_tracker_pricing_plans.c.is_active,
+                resource_tracker_pricing_plans.c.created,
+                resource_tracker_pricing_plans.c.pricing_plan_key,
+            ).where(resource_tracker_pricing_plans.c.product_name == product_name)
+            result = await conn.execute(select_stmt)
+
+        return [PricingPlansDB.from_orm(row) for row in result.fetchall()]
+
     async def create_pricing_plan(self, data: PricingPlanCreate) -> PricingPlansDB:
         async with self.db_engine.begin() as conn:
             insert_stmt = (
@@ -832,9 +849,8 @@ class ResourceTrackerRepository(BaseRepository):
     # Pricing plan to service
     #################################
 
-    async def list_pricing_plan_to_service_by_product(
-        self,
-        product_name: ProductName,
+    async def list_connected_services_to_pricing_plan(
+        self, product_name: ProductName, pricing_plan_id: PricingPlanId
     ) -> list[PricingPlanToServiceDB]:
         async with self.db_engine.begin() as conn:
             query = (
@@ -866,27 +882,33 @@ class ResourceTrackerRepository(BaseRepository):
 
             return [PricingPlanToServiceDB.from_orm(row) for row in result.fetchall()]
 
-    # async def upsert_pricing_plan_to_service(self):
-    #     async with self.db_engine.begin() as conn:
-    #         insert_stmt = pg_insert(resource_tracker_pricing_plan_to_service).values(
-    #             pricing_plan_id=pricing_plan_id,
-    #             service_key=service_key,
-    #             service_version=service_version,
-    #             created=sa.func.now(),
-    #             modified=sa.func.now(),
-    #             service_default_plan=True,
-    #         )
-    #         on_update_stmt = insert_stmt.on_conflict_do_update(
-    #             index_elements=[
-    #                 resource_tracker_pricing_plan_to_service.c.project_node_id,
-    #             ],
-    #             set_={
-    #                 "pricing_plan_id": insert_stmt.excluded.pricing_plan_id,
-    #                 "pricing_unit_id": insert_stmt.excluded.pricing_unit_id,
-    #                 "modified": sa.func.now(),
-    #             },
-    #         )
-    #         await conn.execute(on_update_stmt)
+    async def connect_service_to_pricing_plan(
+        self,
+        product_name: ProductName,
+        pricing_plan_id: PricingPlanId,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ):
+        async with self.db_engine.begin() as conn:
+            insert_stmt = pg_insert(resource_tracker_pricing_plan_to_service).values(
+                pricing_plan_id=pricing_plan_id,
+                service_key=service_key,
+                service_version=service_version,
+                created=sa.func.now(),
+                modified=sa.func.now(),
+                service_default_plan=True,
+            )
+            on_update_stmt = insert_stmt.on_conflict_do_update(
+                index_elements=[
+                    resource_tracker_pricing_plan_to_service.c.project_node_id,
+                ],
+                set_={
+                    "pricing_plan_id": insert_stmt.excluded.pricing_plan_id,
+                    "pricing_unit_id": insert_stmt.excluded.pricing_unit_id,
+                    "modified": sa.func.now(),
+                },
+            )
+            await conn.execute(on_update_stmt)
 
     #################################
     # Pricing units
@@ -999,7 +1021,7 @@ class ResourceTrackerRepository(BaseRepository):
         return PricingUnitsDB.from_orm(row)
 
     async def create_pricing_unit_with_cost(
-        self, data: PricingUnitWithCostCreate
+        self, data: PricingUnitWithCostCreate, pricing_plan_key: str
     ) -> tuple[PricingUnitId, PricingUnitCostId]:
         async with self.db_engine.begin() as conn:
             # pricing units table
@@ -1029,7 +1051,7 @@ class ResourceTrackerRepository(BaseRepository):
                 resource_tracker_pricing_unit_costs.insert()
                 .values(
                     pricing_plan_id=data.pricing_plan_id,
-                    pricing_plan_key=data.pricing_plan_key,
+                    pricing_plan_key=pricing_plan_key,
                     pricing_unit_id=_pricing_unit_id,
                     pricing_unit_name=data.unit_name,
                     cost_per_unit=data.cost_per_unit,

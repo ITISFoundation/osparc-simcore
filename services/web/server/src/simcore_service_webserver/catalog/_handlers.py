@@ -37,6 +37,7 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _api, client
 from ._api import CatalogRequestContext
+from .exceptions import DefaultPricingUnitForServiceNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -338,5 +339,10 @@ async def get_service_pricing_plan(request: Request):
         service_key=path_params.service_key,
         service_version=path_params.service_version,
     )
+    if pricing_plan.pricing_units is None:
+        raise DefaultPricingUnitForServiceNotFoundError(
+            service_key=f"{path_params.service_key}",
+            service_version=f"{path_params.service_version}",
+        )
 
     return envelope_json_response(parse_obj_as(PricingPlanGet, pricing_plan))

@@ -44,6 +44,22 @@ async def get_pricing_plan(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
+async def list_pricing_plans(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+) -> list[PricingPlanGet]:
+    result: PricingPlanGet = await rabbitmq_rpc_client.request(
+        RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "list_pricing_plans"),
+        product_name=product_name,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, list)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
 async def create_pricing_plan(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,

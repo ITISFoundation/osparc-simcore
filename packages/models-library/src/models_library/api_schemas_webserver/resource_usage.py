@@ -6,11 +6,14 @@ from pydantic import BaseModel
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
 from ..resource_tracker import (
+    HardwareInfo,
     PricingPlanClassification,
     PricingPlanId,
+    PricingUnitCostUpdate,
     PricingUnitId,
     ServiceRunId,
     ServiceRunStatus,
+    SpecificInfo,
 )
 from ..services import ServiceKey, ServiceVersion
 from ..users import UserID
@@ -57,3 +60,61 @@ class PricingPlanGet(OutputSchema):
     pricing_plan_key: str
     pricing_units: list[PricingUnitGet]
     is_active: bool
+
+
+## Admin Pricing Plan and Unit
+
+
+class PricingUnitAdminGet(OutputSchema):
+    pricing_unit_id: PricingUnitId
+    unit_name: str
+    unit_extra_info: dict
+    specific_info: HardwareInfo
+    current_cost_per_unit: Decimal
+    default: bool
+
+
+class PricingPlanAdminGet(OutputSchema):
+    pricing_plan_id: PricingPlanId
+    display_name: str
+    description: str
+    classification: PricingPlanClassification
+    created_at: datetime
+    pricing_plan_key: str
+    pricing_units: list[PricingUnitAdminGet] | None
+    is_active: bool
+
+
+class PricingUnitInternalGet(PricingUnitGet):
+    specific_info: SpecificInfo
+
+
+class CreatePricingPlanBodyParams(OutputSchema):
+    display_name: str
+    description: str
+    classification: PricingPlanClassification
+    pricing_plan_key: str
+
+
+class UpdatePricingPlanBodyParams(OutputSchema):
+    name: str
+    display_name: str
+    description: str
+    is_active: bool
+
+
+class CreatePricingUnitBodyParams(OutputSchema):
+    unit_name: str
+    unit_extra_info: dict
+    default: bool
+    specific_info: SpecificInfo
+    cost_per_unit: Decimal
+    comment: str
+
+
+class UpdatePricingUnitBodyParams(OutputSchema):
+    unit_name: str
+    unit_extra_info: dict
+    default: bool
+    specific_info: SpecificInfo
+    pricing_unit_cost_update: PricingUnitCostUpdate | None

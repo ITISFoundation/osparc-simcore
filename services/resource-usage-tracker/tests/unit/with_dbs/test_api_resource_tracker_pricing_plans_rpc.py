@@ -105,6 +105,15 @@ async def test_rpc_pricing_plans_workflow(
     assert result.description == _update_description
     assert result.is_active is True
 
+    result = await pricing_plans.list_pricing_plans(
+        rpc_client,
+        product_name="s4l",
+    )
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert isinstance(result[0], PricingPlanGet)
+    assert result[0].pricing_units is None
+
     # Now I will deactivate the pricing plan
     result = await pricing_plans.update_pricing_plan(
         rpc_client,
@@ -169,6 +178,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
         pricing_plan_id=_pricing_plan_id,
     )
     assert isinstance(result, PricingPlanGet)
+    assert result.pricing_units
     assert len(result.pricing_units) == 1
     assert result.pricing_units[0].pricing_unit_id == _first_pricing_unit_id
 
@@ -250,6 +260,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
         pricing_plan_id=_pricing_plan_id,
     )
     assert isinstance(result, PricingPlanGet)
+    assert result.pricing_units
     assert len(result.pricing_units) == 2
     assert result.pricing_units[0].pricing_unit_id == _first_pricing_unit_id
     assert result.pricing_units[1].pricing_unit_id == _second_pricing_unit_id

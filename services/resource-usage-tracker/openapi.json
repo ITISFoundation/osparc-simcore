@@ -561,7 +561,7 @@
           "classification",
           "created_at",
           "pricing_plan_key",
-          "pricing_units"
+          "is_active"
         ],
         "type": "object",
         "properties": {
@@ -597,6 +597,10 @@
             "items": {
               "$ref": "#/components/schemas/PricingUnitGet"
             }
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
           }
         }
       },

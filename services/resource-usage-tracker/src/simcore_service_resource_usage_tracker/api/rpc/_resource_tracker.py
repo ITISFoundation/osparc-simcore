@@ -110,6 +110,18 @@ async def get_pricing_plan(
 
 
 @router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+async def list_pricing_plans(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+) -> list[PricingPlanGet]:
+    return await pricing_plans.list_pricing_plans_by_product(
+        product_name=product_name,
+        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+    )
+
+
+@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
 async def create_pricing_plan(
     app: FastAPI,
     *,
