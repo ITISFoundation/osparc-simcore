@@ -64,21 +64,33 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
       })).set({
         marginBottom: 35
       });
+
       const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
         appearance: "appmotion-button"
       });
+      cancelBtn.addListener("execute", () => this.fireEvent("cancel"));
+      buttonsContainer.add(cancelBtn);
+
       const buyBtn = this.__buyBtn = new osparc.ui.form.FetchButton(this.tr("Buy Credits")).set({
         appearance: "appmotion-button-action",
         enabled: false
       });
       this.bind("fetching", buyBtn, "fetching");
-      cancelBtn.addListener("execute", () => this.fireEvent("cancel"));
-      buttonsContainer.add(cancelBtn);
+      const isValid = (osparcCredits, amountDollars) => !isNaN(osparcCredits) && !isNaN(amountDollars);
+      const enabled = isValid(...Object.values(this.__amountInput.getValues()));
+      buyBtn.setEnabled(enabled);
+      this.__amountInput.addListener("input", e => {
+        const {osparcCredits, amountDollars} = e.getData();
+        if (!this.__buyBtn.isFetching()) {
+          this.__buyBtn.setEnabled(isValid(osparcCredits, amountDollars));
+        }
+      });
       buyBtn.addListener("execute", () => this.fireDataEvent("submit", {
         paymentMethodId: this.__paymentMethods.getSelection()[0].getModel(),
         ...this.__amountInput.getValues()
       }));
       buttonsContainer.add(buyBtn);
+
       return buttonsContainer;
     },
 
@@ -89,12 +101,6 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
         marginTop: 30
       });
       const amountContainer = this.__amountInput = new osparc.desktop.credits.BuyCreditsInput(osparc.store.Store.getInstance().getCreditPrice());
-      amountContainer.addListener("input", e => {
-        const {osparcCredits, amountDollars} = e.getData();
-        if (!this.__buyBtn.isFetching()) {
-          this.__buyBtn.setEnabled(!isNaN(osparcCredits) && !isNaN(amountDollars));
-        }
-      });
       formContainer.add(amountContainer);
 
       const paymentMethodContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
