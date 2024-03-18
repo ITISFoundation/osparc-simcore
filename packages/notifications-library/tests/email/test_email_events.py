@@ -240,6 +240,11 @@ async def test_email_with_reply_to(
     event_name: str,
     event_extra_data: dict[str, Any],
 ):
+    if smtp_mock_or_none is None:
+        pytest.skip(
+            reason="Skipping to avoid spamming issue-tracker system."
+            "Remove this only for manual exploratory testing."
+        )
 
     parts = render_email_parts(
         env=create_render_env_from_package(undefined=StrictUndefined),
