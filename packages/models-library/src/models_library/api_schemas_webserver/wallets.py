@@ -1,8 +1,9 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar, Literal, TypeAlias
+from wsgiref.validate import validator
 
-from pydantic import Field, HttpUrl
+from pydantic import Field, HttpUrl, validator
 
 from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
 from ..users import GroupID
@@ -193,3 +194,12 @@ class ReplaceWalletAutoRecharge(InputSchema):
     payment_method_id: PaymentMethodID
     top_up_amount_in_usd: NonNegativeDecimal
     monthly_limit_in_usd: NonNegativeDecimal | None
+
+    @validator("monthly_limit_in_usd")
+    @classmethod
+    def _monthly_limit_greater_than_top_up(cls, v, values):
+        top_up = values["PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT"]
+        if v is not None and v < top_up:
+            msg = "Monthly limit ({v} USD) should be greater than top up amount ({top_up} USD)"
+            raise ValueError(msg)
+        return v

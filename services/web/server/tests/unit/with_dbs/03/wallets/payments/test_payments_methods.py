@@ -178,10 +178,19 @@ async def _add_payment_method(
 @pytest.mark.acceptance_test(
     "Part of https://github.com/ITISFoundation/osparc-simcore/issues/4751"
 )
+@pytest.mark.parametrize(
+    "amount_usd,expected_status",
+    [
+        (1, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (123.45, status.HTTP_200_OK),
+    ],
+)
 async def test_wallet_autorecharge(
     client: TestClient,
     logged_user_wallet: WalletGet,
     mock_rpc_payments_service_api: dict[str, MagicMock],
+    amount_usd: int,
+    expected_status: int,
 ):
     assert client.app
     settings = get_payments_plugin_settings(client.app)
@@ -229,41 +238,44 @@ async def test_wallet_autorecharge(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
         json={
             "paymentMethodId": payment_method_id,
-            "topUpAmountInUsd": 123.45,  # $
+            "topUpAmountInUsd": amount_usd,  # $
             "monthlyLimitInUsd": 6543.21,  # $
             "enabled": True,
         },
     )
-    data, _ = await assert_status(response, status.HTTP_200_OK)
-    updated_auto_recharge = GetWalletAutoRecharge.parse_obj(data)
-    assert updated_auto_recharge == GetWalletAutoRecharge(
-        payment_method_id=payment_method_id,
-        min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
-        top_up_amount_in_usd=123.45,  # $
-        monthly_limit_in_usd=6543.21,  # $
-        enabled=True,
-    )
+    data, error = await assert_status(response, expected_status)
+    if not error:
+        updated_auto_recharge = GetWalletAutoRecharge.parse_obj(data)
+        assert updated_auto_recharge == GetWalletAutoRecharge(
+            payment_method_id=payment_method_id,
+            min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
+            top_up_amount_in_usd=amount_usd,  # $
+            monthly_limit_in_usd=6543.21,  # $
+            enabled=True,
+        )
 
-    # get
-    response = await client.get(
-        f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
-    )
-    data, _ = await assert_status(response, status.HTTP_200_OK)
-    assert updated_auto_recharge == GetWalletAutoRecharge.parse_obj(data)
+        # get
+        response = await client.get(
+            f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
+        )
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+        assert updated_auto_recharge == GetWalletAutoRecharge.parse_obj(data)
 
-    # payment-methods.auto_recharge
-    response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
-    data, _ = await assert_status(response, status.HTTP_200_OK)
-    wallet_payment_methods = parse_obj_as(list[PaymentMethodGet], data)
+        # payment-methods.auto_recharge
+        response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+        wallet_payment_methods = parse_obj_as(list[PaymentMethodGet], data)
 
-    for payment_method in wallet_payment_methods:
-        assert payment_method.auto_recharge == (payment_method.idr == payment_method_id)
+        for payment_method in wallet_payment_methods:
+            assert payment_method.auto_recharge == (
+                payment_method.idr == payment_method_id
+            )
 
-    assert {pm.idr for pm in wallet_payment_methods} == {
-        payment_method_id,
-        older_payment_method_id,
-    }
-    assert sum(pm.auto_recharge for pm in wallet_payment_methods) == 1
+        assert {pm.idr for pm in wallet_payment_methods} == {
+            payment_method_id,
+            older_payment_method_id,
+        }
+        assert sum(pm.auto_recharge for pm in wallet_payment_methods) == 1
 
 
 async def test_delete_primary_payment_method_in_autorecharge(
@@ -281,7 +293,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
         json={
             "paymentMethodId": payment_method_id,
-            "topUpAmountInUsd": 100.0,  # $
+            "topUpAmountInUsd": 100.0,
             "monthlyLimitInUsd": 123,
             "enabled": True,
         },
@@ -334,10 +346,7 @@ async def wallet_payment_method_id(
     "amount_usd,expected_status",
     [
         (1, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (
-            26,
-            status.HTTP_202_ACCEPTED,
-        ),
+        (26, status.HTTP_202_ACCEPTED),
     ],
 )
 async def test_one_time_payment_with_payment_method(
