@@ -915,6 +915,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
+      if (osparc.product.Utils.isProduct("osparc")) {
+        const exportStudyButton = this.__getExportMenuButton(studyData);
+        menu.add(exportStudyButton);
+      }
+
       menu.addSeparator();
 
       if (writeAccess) {
@@ -932,8 +937,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyDataButton = this.__getStudyDataMenuButton(card);
       menu.add(studyDataButton);
 
-      const billingsSettingsButton = this.__getBillingMenuButton(card);
-      menu.add(billingsSettingsButton);
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        const billingsSettingsButton = this.__getBillingMenuButton(card);
+        menu.add(billingsSettingsButton);
+      }
 
       if (deleteAccess) {
         const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
