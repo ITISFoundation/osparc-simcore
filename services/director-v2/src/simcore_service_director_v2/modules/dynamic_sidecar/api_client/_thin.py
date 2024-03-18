@@ -269,11 +269,11 @@ class ThinSidecarsClient(BaseThinClient):
 
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
-    async def get_containers_inactivity(
+    async def get_containers_activity(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/inactivity")
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/activity")
         return await self.client.get(url)
 
     @retry_on_errors()

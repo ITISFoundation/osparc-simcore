@@ -81,6 +81,12 @@ qx.Class.define("osparc.store.StaticInfo", {
         return wsStaticData[key];
       }
       return 30;
+    },
+
+    getCountries: function() {
+      const staticKey = "countries";
+      const metadata = this.getValue(staticKey);
+      return metadata ? metadata : [];
     }
   }
 });

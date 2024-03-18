@@ -422,7 +422,7 @@ async def list_user_payments_page(
     else:
         assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
         total_number_of_items, payments = await _rpc.get_payments_page(
-            app, user_id=user_id, offset=offset, limit=limit
+            app, user_id=user_id, product_name=product_name, offset=offset, limit=limit
         )
 
     return payments, total_number_of_items

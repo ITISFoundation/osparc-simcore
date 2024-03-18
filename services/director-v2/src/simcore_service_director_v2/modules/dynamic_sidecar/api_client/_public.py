@@ -6,7 +6,10 @@ from typing import Any, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
+from models_library.api_schemas_dynamic_sidecar.containers import (
+    ActivityInfo,
+    ActivityInfoOrNone,
+)
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
@@ -456,13 +459,14 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         )
         await self._thin_client.proxy_config_load(proxy_endpoint, proxy_configuration)
 
-    async def get_service_inactivity(
+    async def get_service_activity(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> InactivityResponse:
-        response = await self._thin_client.get_containers_inactivity(
+    ) -> ActivityInfoOrNone:
+        response = await self._thin_client.get_containers_activity(
             dynamic_sidecar_endpoint
         )
-        return InactivityResponse.parse_obj(response.json())
+        decoded_response = response.json()
+        return ActivityInfo.parse_obj(decoded_response) if decoded_response else None
 
     async def free_reserved_disk_space(
         self, dynamic_sidecar_endpoint: AnyHttpUrl

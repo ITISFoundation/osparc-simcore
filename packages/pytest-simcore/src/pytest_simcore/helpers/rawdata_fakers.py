@@ -31,6 +31,9 @@ from simcore_postgres_database.models.payments_transactions import (
 from simcore_postgres_database.models.products import Vendor, products
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
+from simcore_postgres_database.models.users_details import (
+    users_pre_registration_details,
+)
 from simcore_postgres_database.webserver_models import GroupType, UserStatus
 
 _STATES = [
@@ -84,6 +87,48 @@ def random_user(
     if password:
         assert len(password) >= 12
         overrides["password_hash"] = _compute_hash(password)
+
+    data.update(overrides)
+    return data
+
+
+def random_pre_registration_details(
+    fake: Faker = DEFAULT_FAKER,
+    *,
+    user_id: int | None = None,
+    created_by: int | None = None,
+    **overrides,
+):
+    assert set(overrides.keys()).issubset(
+        {c.name for c in users_pre_registration_details.columns}
+    )
+
+    data = {
+        "user_id": user_id,
+        "pre_first_name": fake.first_name(),
+        "pre_last_name": fake.last_name(),
+        "pre_email": fake.email(),
+        "pre_phone": fake.phone_number(),
+        "institution": fake.company(),
+        "address": fake.address().replace("\n", ", "),
+        "city": fake.city(),
+        "state": fake.state(),
+        "country": fake.country(),
+        "postal_code": fake.postcode(),
+        "extras": {
+            "application": fake.word(),
+            "description": fake.sentence(),
+            "hear": fake.word(),
+            "privacyPolicy": True,
+            "eula": True,
+            "ipinfo": {"x-real-ip": "127.0.0.1"},
+        },
+        "created_by": created_by,  # user id
+    }
+
+    assert set(data.keys()).issubset(
+        {c.name for c in users_pre_registration_details.columns}
+    )
 
     data.update(overrides)
     return data

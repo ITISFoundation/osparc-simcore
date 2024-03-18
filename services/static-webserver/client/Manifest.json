@@ -24,6 +24,7 @@
     "script": [
       "socketio/socket.io.min.js",
       "osparc/pacemaker.js",
+      "osparc/schedulerWorker.js",
       "svg/svg.js",
       "svg/svg.path.js",
       "jsondiffpatch/jsondiffpatch.min.js",

@@ -25,7 +25,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.basic_types import IDStr
 from models_library.payments import UserInvoiceAddress
-from models_library.products import StripePriceID, StripeTaxRateID
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -145,11 +145,13 @@ def mock_rpc_payments_service_api(
         app: web.Application,
         *,
         user_id: UserID,
+        product_name: ProductName,
         limit: int | None,
         offset: int | None,
     ):
         assert limit is not None
         assert offset is not None
+        assert product_name is not None
         return await _fake_get_payments_page(app, user_id, limit, offset)
 
     #  payment-methods  ----
@@ -298,7 +300,7 @@ def mock_rpc_payments_service_api(
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def setup_user_pre_registration_details_db(
     postgres_db: sa.engine.Engine, logged_user: UserInfoDict, faker: Faker
 ) -> Iterator[int]:
@@ -311,7 +313,7 @@ def setup_user_pre_registration_details_db(
                 pre_first_name=faker.first_name(),
                 pre_last_name=faker.last_name(),
                 pre_phone=faker.phone_number(),
-                company_name=faker.company(),
+                institution=faker.company(),
                 address=faker.address().replace("\n", ", "),
                 city=faker.city(),
                 state=faker.state(),

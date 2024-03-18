@@ -12,7 +12,7 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentInitiated,
 )
 from models_library.payments import UserInvoiceAddress
-from models_library.products import StripePriceID, StripeTaxRateID
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -106,12 +106,14 @@ async def get_payments_page(
     app: FastAPI,
     *,
     user_id: UserID,
+    product_name: ProductName,
     limit: int | None = None,
     offset: int | None = None,
 ) -> tuple[int, list[PaymentTransaction]]:
     return await payments.get_payments_page(
         repo=PaymentsTransactionsRepo(db_engine=app.state.engine),
         user_id=user_id,
+        product_name=product_name,
         limit=limit,
         offset=offset,
     )

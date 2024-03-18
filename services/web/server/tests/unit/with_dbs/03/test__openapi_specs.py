@@ -33,8 +33,6 @@ def app_environment(
     return mock_env_devel_environment | setenvs_from_dict(
         monkeypatch,
         {
-            # disable index and statics routings
-            "WEBSERVER_STATICWEB": "null",
             # disable bundle configs
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",

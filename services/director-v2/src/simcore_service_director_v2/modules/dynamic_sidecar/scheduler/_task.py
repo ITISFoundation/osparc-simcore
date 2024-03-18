@@ -6,7 +6,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     RetrieveDataOutEnveloped,
     RunningDynamicServiceDetails,
 )
-from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
+from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOrNone
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
@@ -137,8 +137,8 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
     async def restart_containers(self, node_uuid: NodeID) -> None:
         return await self.scheduler.restart_containers(node_uuid)
 
-    async def get_service_inactivity(self, node_id: NodeID) -> InactivityResponse:
-        return await self.scheduler.get_service_inactivity(node_id)
+    async def get_service_activity(self, node_id: NodeID) -> ActivityInfoOrNone:
+        return await self.scheduler.get_service_activity(node_id)
 
     async def free_reserved_disk_space(self, node_id: NodeID) -> None:
         await self.scheduler.free_reserved_disk_space(node_id)
