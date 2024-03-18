@@ -11,7 +11,7 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "text-on-warning": "#141414",
 
     "info": "rgba(9, 89, 122, 1)", // #09597A
-    "info_bg": "rgba(9, 89, 122, 0.1)", // #09597A1A
+    "info_bg": "rgba(228, 234, 237, 1)", // #E4EAEDAA
     "success": "rgba(10, 182, 255, 1)", // #0AB6FF
     "success_bg": "rgba(10, 182, 255, 0.1)", // #0AB6FF1A
     "warning": "rgba(255, 205, 108, 1)", // #FFCD6C

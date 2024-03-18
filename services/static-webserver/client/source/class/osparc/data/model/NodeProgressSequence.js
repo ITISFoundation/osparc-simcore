@@ -163,7 +163,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __mainLoadingPage: null,
     __sequenceLoadingPage: null,
     __clusterUpScalingTitle: null,
-    __clusterUpScalingSubtitle: null,
     __pullingSidecarTitle: null,
     __pullingOutputsTitle: null,
     __pullingStateTitle: null,
@@ -237,22 +236,24 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       sequenceLoadingPage.add(progressTitle);
       sequenceLoadingPage.add(defaultPBar);
 
-      const defaultProgressSubtitle = this.__defaultProgressSubtitle = new qx.ui.basic.Label(qx.locale.Manager.tr("Please be patient this process can take up to 5 minutes..."));
-      defaultProgressSubtitle.set({
-        margin: 0
+      const defaultProgressSubtitle = this.__defaultProgressSubtitle = new qx.ui.basic.Atom().set({
+        label: qx.locale.Manager.tr("Please be patient this process can take up to 5 minutes..."),
+        padding: [20, 10],
+        gap: 15,
+        icon: "@FontAwesome5Solid/exclamation-triangle/16",
+        backgroundColor: "info_bg",
+        textColor: "info",
+        alignX: "center"
       });
+      const icon = defaultProgressSubtitle.getChildControl("icon");
+      icon.set({
+        textColor: "info"
+      })
       defaultProgressSubtitle.exclude();
 
 
       const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Increasing system capacity..."));
       sequenceLoadingPage.add(scalingTitle);
-
-      const scalingSubtitle = this.__clusterUpScalingSubtitle = new qx.ui.basic.Label(qx.locale.Manager.tr("This step can take up to 3 minutes"));
-      scalingSubtitle.set({
-        margin: [0, 10]
-      })
-      scalingSubtitle.exclude();
-      sequenceLoadingPage.add(scalingSubtitle);
 
       const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your inputs..."));
       sequenceLoadingPage.add(pullingInputsTitle);
@@ -281,7 +282,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       if (value > 0 && value < 6) {
         setTimeout(() => {
           this.__defaultProgressSubtitle.show();
-        }, 5000);
+        }, 500);
       } else {
         this.__defaultProgressSubtitle.exclude();
       }
@@ -291,12 +292,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     __applyClusterUpScaling: function(value) {
       this.self().updateProgressLabel(this.__clusterUpScalingTitle, value);
-
-      if (value > 0 && value < 1) {
-        this.__clusterUpScalingSubtitle.show();
-      } else {
-        this.__clusterUpScalingSubtitle.exclude();
-      }
     },
 
     __applySidecarPulling: function(value) {

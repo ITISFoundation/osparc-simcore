@@ -19,7 +19,7 @@
  * The loading page
  *
  * -----------------------
- * |     disclaimer      |
+ * |                     |
  * | oSparc/service logo |
  * |   spinner + header  |
  * |     - msg_1         |
@@ -47,13 +47,6 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   properties: {
-    disclaimer: {
-      check: "String",
-      init: null,
-      nullable: true,
-      event: "changeDisclaimer"
-    },
-
     logo: {
       check: "String",
       init: null,
@@ -88,7 +81,6 @@ qx.Class.define("osparc.ui.message.Loading", {
     STATUS_ICON_SIZE: 20,
 
     GRID_POS: {
-      DISCLAIMER: 0,
       LOGO: 1,
       WAITING: 2,
       MESSAGES: 3,
@@ -124,33 +116,6 @@ qx.Class.define("osparc.ui.message.Loading", {
       this._add(mainLayout);
       this._add(new qx.ui.core.Widget(), {
         flex: 1
-      });
-
-      const disclaimer = new qx.ui.basic.Atom().set({
-        padding: 15,
-        gap: 20,
-        icon: "@FontAwesome5Solid/exclamation-triangle/20",
-        backgroundColor: "warning-yellow",
-        textColor: "black",
-        alignX: "center"
-      });
-      osparc.utils.Utils.setIdToWidget(disclaimer, "disclaimerMessage");
-      disclaimer.getContentElement().setStyles({
-        "border-radius": "8px"
-      });
-      disclaimer.getChildControl("label").set({
-        font: "text-16",
-        textColor: "black",
-        rich: true,
-        wrap: true
-      });
-      this.bind("disclaimer", disclaimer, "visibility", {
-        converter: d => d ? "visible" : "excluded"
-      });
-      this.bind("disclaimer", disclaimer, "label");
-      mainLayout.addAt(disclaimer, {
-        column: 0,
-        row: this.self().GRID_POS.DISCLAIMER
       });
 
       const defaultLogoPath = osparc.product.Utils.getLogoPath();
