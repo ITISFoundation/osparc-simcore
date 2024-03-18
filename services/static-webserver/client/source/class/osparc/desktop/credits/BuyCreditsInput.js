@@ -22,6 +22,10 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
     "input": "qx.event.type.Data"
   },
 
+  statics: {
+    MINIMUM_TOTAL: 10
+  },
+
   members: {
     _render: function() {
       this._removeAll()
@@ -36,7 +40,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       this.__priceInput = priceInput
 
       const [amountContainer, amountInput] = this.__getInputAndLabel("Credit Amount", {
-        filter: /^[0-9]*(?:[.][0-9]*)?$/
+        filter: /^[0-9]*$/ // integers only
       })
       this._add(amountContainer)
       this.__amountInput = amountInput
