@@ -50,7 +50,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       this._add(priceContainer);
       this.__priceInput = priceInput;
 
-      const [amountContainer, amountInput] = this.__getInputAndLabel(this.tr("Credit Amount"));
+      const [amountContainer, amountInput] = this.__getSpinnerAndLabel(this.tr("Credit Amount"));
       this.__amountInput = amountInput;
       this._add(amountContainer);
 
@@ -61,7 +61,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
         paddingRight: 0
       });
       this.__totalInput = totalInput;
-      amountInput.addListener("input", e => {
+      amountInput.addListener("changeValue", e => {
         const value = e.getData();
         totalInput.setValue(value ? 1 * (value * this.__pricePerCredit).toFixed(2) + this.__currencySymbol : "-");
         this.fireDataEvent("input", this.getValues());
@@ -69,7 +69,8 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       this._add(totalContainer);
 
       amountInput.set({
-        value: String(Math.ceil(this.self().MINIMUM_TOTAL/this.__pricePerCredit))
+        value: Math.ceil(this.self().MINIMUM_TOTAL/this.__pricePerCredit),
+        minimum: Math.ceil(this.self().MINIMUM_TOTAL/this.__pricePerCredit)
       });
     },
 
@@ -82,6 +83,25 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
         textAlign: "center",
         width: 80,
         ...inputProps
+      });
+      const label = new qx.ui.basic.Label(labelText);
+      container.add(input);
+      container.add(label);
+      return [container, input];
+    },
+
+    __getSpinnerAndLabel: function(labelText, inputProps) {
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignX: "center"
+      }));
+      const input = new qx.ui.form.Spinner().set({
+        appearance: "appmotion-buy-credits-spinner",
+        width: 80,
+        ...inputProps
+      });
+      input.getChildControl("textfield").set({
+        font: "text-18",
+        textAlign: "center"
       });
       const label = new qx.ui.basic.Label(labelText);
       container.add(input);
