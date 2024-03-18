@@ -24,17 +24,17 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
    *
    * @extends osparc.ui.basic.IconButton
    */
-  construct: function(hint) {
+  construct: function(hintText) {
     this.base(arguments, this.self().INFO_ICON);
 
     this.__createHint();
 
     this.bind("hintText", this, "visibility", {
-      converter: hintText => (hintText && hintText !== "") ? "visible" : "excluded"
+      converter: text => (text && text !== "") ? "visible" : "excluded"
     });
 
-    if (hint) {
-      this.setHintText(hint);
+    if (hintText) {
+      this.setHintText(hintText);
     }
   },
 
