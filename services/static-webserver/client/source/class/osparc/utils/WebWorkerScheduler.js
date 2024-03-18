@@ -20,7 +20,7 @@
   */
 
 /**
- * Singleton class to be used as a dorp-in replacement for`setInterval` and `clearInterval`.
+ * Singleton class to be used as a drop-in replacement for`setInterval` and `clearInterval`.
  * Depending on browser and OS, `setInterval` might not be called if the  window is
  * not visible on the screen.
  */
