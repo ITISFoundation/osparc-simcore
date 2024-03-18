@@ -83,9 +83,9 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   statics: {
-    LOGO_WIDTH: 240,
-    LOGO_HEIGHT: 100,
-    STATUS_ICON_SIZE: 32,
+    LOGO_WIDTH: 190,
+    LOGO_HEIGHT: 220,
+    STATUS_ICON_SIZE: 20,
 
     GRID_POS: {
       DISCLAIMER: 0,
@@ -115,9 +115,8 @@ qx.Class.define("osparc.ui.message.Loading", {
         alignX: "center",
         alignY: "middle"
       })).set({
-        width: this.self().LOGO_WIDTH*3,
-        maxWidth: this.self().LOGO_WIDTH*3,
-        padding: 20
+        width: 400,
+        padding: 0
       });
       this._add(new qx.ui.core.Widget(), {
         flex: 1

@@ -589,6 +589,15 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "progressbar": {
+      style: {
+        style: "solid",
+        width: 0,
+        color: "transparent",
+        backgroundColor: "progressbarRunner",
+      }
+    },
+
     /*
     ---------------------------------------------------------------------------
       Appmotion

@@ -179,7 +179,9 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
     "service-window-hint": "#808080",
 
-    "progressbar": "#60909e",
+    "progressbar": "success",
+    "progressbarDisabled": "rgba(113, 157, 181, 0.25)",
+    "progressbarRunner": "rgb(0, 72, 104)",
 
     "loading-page-background-color": "#202020",
     "loading-page-text": "#FFFFFF",
