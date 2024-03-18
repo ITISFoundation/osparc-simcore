@@ -6,7 +6,7 @@ import json
 
 import pytest
 from simcore_service_webserver.projects.utils import (
-    VARIABLE_PATTERN,
+    _VARIABLE_PATTERN,
     substitute_parameterized_inputs,
 )
 from yarl import URL
@@ -20,8 +20,8 @@ def mock_parametrized_project(fake_data_dir):
 
     # check parameterized
     inputs = prj["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]
-    assert VARIABLE_PATTERN.match(inputs["Na"])
-    assert VARIABLE_PATTERN.match(inputs["BCL"])
+    assert _VARIABLE_PATTERN.match(inputs["Na"])
+    assert _VARIABLE_PATTERN.match(inputs["BCL"])
     return prj
 
 

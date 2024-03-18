@@ -13,12 +13,12 @@ async def test_logout(client: TestClient, db: AsyncpgStorage):
     assert client.app
 
     logout_url = client.app.router["auth_logout"].url_for()
-    protected_url = client.app.router["auth_change_email"].url_for()
+    protected_url = client.app.router["get_my_profile"].url_for()
 
     async with LoggedUser(client) as user:
 
         # try to access protected page
-        response = await client.post(f"{protected_url}", json={"email": user["email"]})
+        response = await client.get(f"{protected_url}")
         assert response.url.path == protected_url.path
         await assert_status(response, status.HTTP_200_OK)
 
@@ -28,7 +28,7 @@ async def test_logout(client: TestClient, db: AsyncpgStorage):
         await assert_status(response, status.HTTP_200_OK)
 
         # and try again
-        response = await client.post(f"{protected_url}")
+        response = await client.get(f"{protected_url}")
         assert response.url.path == protected_url.path
         await assert_status(response, status.HTTP_401_UNAUTHORIZED)
 

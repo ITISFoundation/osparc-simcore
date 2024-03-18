@@ -93,6 +93,7 @@ qx.Class.define("osparc.info.CommentAdd", {
         }
         case "add-comment-button": {
           control = new qx.ui.form.Button(this.tr("Add")).set({
+            appearance: "form-button",
             allowGrowX: false,
             alignX: "right"
           });

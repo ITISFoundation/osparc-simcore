@@ -1,19 +1,17 @@
-🐼 {{ code }} is your security code for {{ host }}
+{{ code }} is Your 2FA Sign-In Code for {{ host }}
 <!--
-TEST host:{{ host }}
 TEST code:{{ code }}
+TEST host:{{ host }}
 TEST name:{{ name }}
 TEST support_email:{{ support_email }}
 -->
-<p>
-  Hi {{ name }} <br><br>
-  Sign in to {{ host }} with this one-time security code:
-</p>
+<p>Dear {{ name }},</p>
+<p>Please find below the Two-factor Authentication sign-in code for your {{ host }} account.</p>
 
 <p>
-  <b> {{ code }} </b>
+  Your code is: <b> {{ code }} </b>
 </p>
 
-<p>
-  If you did not sign in, please contact {{ support_email }}.
-</p>
+<p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>

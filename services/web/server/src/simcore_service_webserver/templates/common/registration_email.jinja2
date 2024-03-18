@@ -1,17 +1,14 @@
-🐼 Registration on {{ host }}
+Welcome to {{ product.display_name }}
 <!--
-TEST link:{{ link }}
 TEST host:{{ host }}
+TEST link:{{ link }}
+TEST name:{{ name }}
 TEST support_email:{{ support_email }}
 -->
-<h1>Welcome on {{ host }}</h1>
-
-<p>
-  You are successfully registered on <a href="{{ link }}">{{ host }}</a>.
-  To activate your account follow the link: <a href="{{ link }}">{{ link }}</a>
-</p>
-
-<p>
-  Our support team is here to help with anything you need. Please feel free to contact us to {{ support_email }} in case
-  of questions or any required assistance.
-</p>
+<p>Dear {{ name }},</p>
+<p>Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.</p>
+<p>Please activate your account via the link below:</p>
+<p><a href="{{ link }}">{{ link }}</a></p>
+<p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>

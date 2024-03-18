@@ -19,8 +19,10 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodID,
 )
 from models_library.basic_types import NonNegativeDecimal
-from models_library.products import CreditResultGet, ProductName
+from models_library.payments import InvoiceDataGet
+from models_library.products import ProductName
 from models_library.rabbitmq_messages import WalletCreditsMessage
+from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import (
     random_payment_autorecharge,
@@ -193,11 +195,13 @@ async def mock_rpc_server(
     # mocks the interface defined in the webserver
 
     @router.expose()
-    async def get_credit_amount(
-        dollar_amount: ProductName, product_name: ProductName
-    ) -> CreditResultGet:
-        return CreditResultGet.parse_obj(
-            CreditResultGet.Config.schema_extra["examples"][0]
+    async def get_invoice_data(
+        user_id: UserID,
+        dollar_amount: Decimal,
+        product_name: ProductName,
+    ) -> InvoiceDataGet:
+        return InvoiceDataGet.parse_obj(
+            InvoiceDataGet.Config.schema_extra["examples"][0]
         )
 
     await rpc_server.register_router(router, namespace=WEBSERVER_RPC_NAMESPACE)

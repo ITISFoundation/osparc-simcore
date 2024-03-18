@@ -18,7 +18,6 @@ import aiodocker
 import arrow
 import pytest
 from aws_library.ec2.models import EC2InstanceData, Resources
-from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
@@ -115,13 +114,6 @@ def mock_compute_node_used_resources(mocker: MockerFixture) -> mock.Mock:
         autospec=True,
         return_value=Resources.create_as_empty(),
     )
-
-
-@pytest.fixture
-def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> int:
-    num_machines_in_buffer = 5
-    monkeypatch.setenv("EC2_INSTANCES_MACHINES_BUFFER", f"{num_machines_in_buffer}")
-    return num_machines_in_buffer
 
 
 @pytest.fixture
@@ -1041,43 +1033,6 @@ async def test__find_terminateable_nodes_with_no_hosts(
         ],
     )
     assert await _find_terminateable_instances(initialized_app, active_cluster) == []
-
-
-@pytest.fixture
-def create_associated_instance(
-    fake_ec2_instance_data: Callable[..., EC2InstanceData],
-    app_settings: ApplicationSettings,
-    faker: Faker,
-    host_cpu_count: int,
-    host_memory_total: ByteSize,
-) -> Callable[[Node, bool], AssociatedInstance]:
-    def _creator(node: Node, terminateable_time: bool) -> AssociatedInstance:
-        assert app_settings.AUTOSCALING_EC2_INSTANCES
-        assert (
-            datetime.timedelta(seconds=10)
-            < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        ), "this tests relies on the fact that the time before termination is above 10 seconds"
-        assert app_settings.AUTOSCALING_EC2_INSTANCES
-        seconds_delta = (
-            -datetime.timedelta(seconds=10)
-            if terminateable_time
-            else datetime.timedelta(seconds=10)
-        )
-        return AssociatedInstance(
-            node=node,
-            ec2_instance=fake_ec2_instance_data(
-                launch_time=datetime.datetime.now(datetime.timezone.utc)
-                - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-                - datetime.timedelta(
-                    days=faker.pyint(min_value=0, max_value=100),
-                    hours=faker.pyint(min_value=0, max_value=100),
-                )
-                + seconds_delta,
-                resources=Resources(cpus=host_cpu_count, ram=host_memory_total),
-            ),
-        )
-
-    return _creator
 
 
 async def test__try_scale_down_cluster_with_no_nodes(

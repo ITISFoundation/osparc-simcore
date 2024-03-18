@@ -13,6 +13,7 @@ import pytest
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.basic_types import IDStr
+from models_library.payments import UserInvoiceAddress
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -112,12 +113,15 @@ async def test_fails_to_pay_with_payment_method_without_funds(
     # Mocker providers
     notifier = NotifierService(mock_email_provider, mock_ws_provider)
 
+    settings = app.state.settings
+
     payment = await payments.pay_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         rut=rut,
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
         notifier=notifier,
+        settings=settings,
         #
         payment_method_id=payment_method_without_funds.payment_method_id,
         amount_dollars=100,
@@ -128,6 +132,9 @@ async def test_fails_to_pay_with_payment_method_without_funds(
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
+        user_address=UserInvoiceAddress(country="CH"),
+        stripe_price_id="stripe-id",
+        stripe_tax_rate_id="stripe-id",
         comment="test_failure_in_pay_with_payment_method",
     )
 

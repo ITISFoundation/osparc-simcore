@@ -32,8 +32,8 @@ from simcore_postgres_database.webserver_models import (
 )
 
 pytest_plugins = [
-    "pytest_simcore.repository_paths",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.repository_paths",
 ]
 
 

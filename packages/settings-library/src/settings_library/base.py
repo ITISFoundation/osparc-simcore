@@ -13,8 +13,9 @@ from pydantic import (
 )
 from pydantic.error_wrappers import ErrorList, ErrorWrapper
 from pydantic.fields import ModelField, Undefined
+from pydantic.typing import is_literal_type
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _DEFAULTS_TO_NONE_MSG: Final[
     str
@@ -39,7 +40,7 @@ def create_settings_from_env(field: ModelField):
         except ValidationError as err:
             if field.allow_none:
                 # e.g. Optional[PostgresSettings] would warn if defaults to None
-                logger.warning(
+                _logger.warning(
                     _DEFAULTS_TO_NONE_MSG,
                     field.name,
                 )
@@ -101,8 +102,14 @@ class BaseCustomSettings(BaseSettings):
             is_not_composed = (
                 get_origin(field_type) is None
             )  # is not composed as dict[str, Any] or Generic[Base]
+            # avoid literals raising TypeError
+            is_not_literal = is_literal_type(field.type_) is False
 
-            if is_not_composed and issubclass(field_type, BaseCustomSettings):
+            if (
+                is_not_literal
+                and is_not_composed
+                and issubclass(field_type, BaseCustomSettings)
+            ):
                 if auto_default_from_env:
                     assert field.field_info.default is Undefined
                     assert field.field_info.default_factory is None
@@ -112,7 +119,11 @@ class BaseCustomSettings(BaseSettings):
                     field.default = None
                     field.required = False  # has a default now
 
-            elif is_not_composed and issubclass(field_type, BaseSettings):
+            elif (
+                is_not_literal
+                and is_not_composed
+                and issubclass(field_type, BaseSettings)
+            ):
                 msg = f"{cls}.{field.name} of type {field_type} must inherit from BaseCustomSettings"
                 raise ConfigError(msg)
 

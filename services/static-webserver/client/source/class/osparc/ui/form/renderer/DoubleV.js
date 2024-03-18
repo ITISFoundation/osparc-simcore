@@ -86,7 +86,8 @@ qx.Class.define("osparc.ui.form.renderer.DoubleV", {
 
         const itemLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
         const label = this._createLabel(name, item).set({
-          font: "text-12"
+          font: "text-12",
+          allowGrowX: true
         });
         label.setBuddy(item);
         itemLayout.add(label);

@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.38.0
+  version: 0.40.0
 servers:
 - url: ''
   description: webserver
@@ -340,38 +340,6 @@ paths:
                 $ref: '#/components/schemas/Envelope_Log_'
         '401':
           description: unauthorized reset due to invalid token code
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Error_'
-  /v0/auth/change-email:
-    post:
-      tags:
-      - auth
-      summary: Change Email
-      description: logged in user changes email
-      operationId: auth_change_email
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangeEmailBody'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Log_'
-        '401':
-          description: unauthorized user. Login required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Error_'
-        '503':
-          description: unable to send confirmation email
           content:
             application/json:
               schema:
@@ -1916,6 +1884,75 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_InvitationGenerated_'
+  /v0/projects/{project_id}/nodes/{node_id}/pricing-unit:
+    get:
+      tags:
+      - projects
+      summary: Get currently connected pricing unit to the project node.
+      operationId: get_project_node_pricing_unit
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+          format: uuid
+        name: node_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Union_PricingUnitGet__NoneType__'
+  /v0/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan_id}/pricing-unit/{pricing_unit_id}:
+    put:
+      tags:
+      - projects
+      summary: Connect pricing unit to the project node (Project node can have only
+        one pricing unit)
+      operationId: connect_pricing_unit_to_project_node
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+          format: uuid
+        name: node_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Unit Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_unit_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/projects/{project_uuid}/comments:
     get:
       tags:
@@ -2714,75 +2751,6 @@ paths:
                 $ref: '#/components/schemas/Envelope__ProjectNodePreview_'
         '404':
           description: Node has no preview
-  /v0/projects/{project_id}/nodes/{node_id}/pricing-unit:
-    get:
-      tags:
-      - projects
-      summary: Get currently connected pricing unit to the project node.
-      operationId: get_project_node_pricing_unit
-      parameters:
-      - required: true
-        schema:
-          title: Project Id
-          type: string
-          format: uuid
-        name: project_id
-        in: path
-      - required: true
-        schema:
-          title: Node Id
-          type: string
-          format: uuid
-        name: node_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Union_PricingUnitGet__NoneType__'
-  /v0/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan_id}/pricing-unit/{pricing_unit_id}:
-    put:
-      tags:
-      - projects
-      summary: Connect pricing unit to the project node (Project node can have only
-        one pricing unit)
-      operationId: connect_pricing_unit_to_project_node
-      parameters:
-      - required: true
-        schema:
-          title: Project Id
-          type: string
-          format: uuid
-        name: project_id
-        in: path
-      - required: true
-        schema:
-          title: Node Id
-          type: string
-          format: uuid
-        name: node_id
-        in: path
-      - required: true
-        schema:
-          title: Pricing Plan Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: pricing_plan_id
-        in: path
-      - required: true
-        schema:
-          title: Pricing Unit Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: pricing_unit_id
-        in: path
-      responses:
-        '204':
-          description: Successful Response
   /v0/projects/{project_id}/inputs:
     get:
       tags:
@@ -3237,6 +3205,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_PricingUnitGet_'
+  /:
+    get:
+      tags:
+      - statics
+      summary: Get Cached Frontend Index
+      operationId: get_cached_frontend_index
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            text/html:
+              schema:
+                type: string
+  /static-frontend-data.json:
+    get:
+      tags:
+      - statics
+      summary: Static Frontend Data
+      description: Generic static info on the product's app
+      operationId: static_frontend_data
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaticFrontEndDict'
   /v0/storage/locations:
     get:
       tags:
@@ -4686,12 +4681,13 @@ components:
           email: maxwel@email.com
           phone: +1 123456789
           company: EM Com
-          address: Infinite Loop. California
+          address: Infinite Loop
+          city: Washington
+          postalCode: '98001'
           country: USA
           application: Antenna_Design
-          description: Description of sometin
+          description: Description of something
           hear: Search_Engine
-          message: I would love to use your tool
     Activity:
       title: Activity
       required:
@@ -5004,17 +5000,6 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/BootChoice'
-    ChangeEmailBody:
-      title: ChangeEmailBody
-      required:
-      - email
-      type: object
-      properties:
-        email:
-          title: Email
-          type: string
-          format: email
-      additionalProperties: false
     ChangePasswordBody:
       title: ChangePasswordBody
       required:
@@ -5365,6 +5350,19 @@ components:
           title: Cluster Id
           minimum: 0
           type: integer
+    CountryInfoDict:
+      title: CountryInfoDict
+      required:
+      - name
+      - alpha2
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        alpha2:
+          title: Alpha2
+          type: string
     CreateWalletBodyParams:
       title: CreateWalletBodyParams
       required:
@@ -6667,7 +6665,7 @@ components:
           exclusiveMaximum: true
           minimum: 0
           type: integer
-          maximum: 200
+          maximum: 500
     GetCreditPrice:
       title: GetCreditPrice
       required:
@@ -9642,6 +9640,29 @@ components:
         f_lineno:
           title: F Lineno
           type: string
+    StaticFrontEndDict:
+      title: StaticFrontEndDict
+      required:
+      - third_party_references
+      - countries
+      type: object
+      properties:
+        third_party_references:
+          title: Third Party References
+          type: array
+          items:
+            $ref: '#/components/schemas/ThirdPartyInfoDict'
+        countries:
+          title: Countries
+          type: array
+          items:
+            $ref: '#/components/schemas/CountryInfoDict'
+        issues:
+          title: Issues
+        vendor:
+          title: Vendor
+        manuals:
+          title: Manuals
     Stats:
       title: Stats
       required:
@@ -9905,6 +9926,9 @@ components:
       title: TaskProgress
       type: object
       properties:
+        task_id:
+          title: Task Id
+          type: string
         message:
           title: Message
           type: string
@@ -9980,6 +10004,27 @@ components:
           description: minimum Height of the textarea
           minimum: 0
       additionalProperties: false
+    ThirdPartyInfoDict:
+      title: ThirdPartyInfoDict
+      required:
+      - name
+      - version
+      - url
+      - thumbnail
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        version:
+          title: Version
+          type: string
+        url:
+          title: Url
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
     ThirdPartyToken:
       title: ThirdPartyToken
       required:
@@ -10202,20 +10247,13 @@ components:
     UserStatus:
       title: UserStatus
       enum:
-      - PENDING
+      - CONFIRMATION_PENDING
       - ACTIVE
       - EXPIRED
       - BANNED
       - DELETED
-      description: 'pending: user registered but not confirmed
-
-        active: user is confirmed and can use the platform
-
-        expired: user is not authorized because it expired after a trial period
-
-        banned: user is not authorized
-
-        deleted: this account is marked for deletion'
+      type: string
+      description: An enumeration.
     UsersGroup:
       title: UsersGroup
       required:

@@ -68,6 +68,7 @@ async def test_one_time_payment_worfklow(
     mocker: MockerFixture,
     faker: Faker,
     mock_rpc_payments_service_api: dict[str, MagicMock],
+    setup_user_pre_registration_details_db: None,
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -145,6 +146,7 @@ async def test_multiple_payments(
     mocker: MockerFixture,
     faker: Faker,
     mock_rpc_payments_service_api: dict[str, MagicMock],
+    setup_user_pre_registration_details_db: None,
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -246,6 +248,7 @@ async def test_complete_payment_errors(
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
     mock_rpc_payments_service_api: dict[str, MagicMock],
+    setup_user_pre_registration_details_db: None,
 ):
     assert client.app
     send_message = mocker.patch(

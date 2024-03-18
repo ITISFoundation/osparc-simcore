@@ -13,7 +13,8 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from .._constants import APP_PRODUCTS_KEY, APP_SETTINGS_KEY
+from .._constants import APP_PRODUCTS_KEY
+from ..application_settings import ApplicationSettings, get_application_settings
 from ..products.api import Product
 from ._constants import (
     APP_FRONTEND_CACHED_INDEXES_KEY,
@@ -88,25 +89,25 @@ async def create_cached_indexes(app: web.Application) -> None:
     app[APP_FRONTEND_CACHED_INDEXES_KEY] = cached_indexes
 
 
-async def create_statics_json(app: web.Application) -> None:
+async def create_and_cache_statics_json(app: web.Application) -> None:
     # NOTE: in devel model, the folder might be under construction
     # (qx-compile takes time), therefore we create statics.json
     # on_startup instead of upon setup
 
     # Adds general server settings
-    app_settings = app[APP_SETTINGS_KEY]
+    app_settings: ApplicationSettings = get_application_settings(app)
     common: dict = app_settings.to_client_statics()
 
     # Adds specifics to front-end app
-    frontend_settings: FrontEndAppSettings = app_settings.WEBSERVER_FRONTEND
-    common.update(frontend_settings.to_statics())
+    frontend_settings: FrontEndAppSettings | None = app_settings.WEBSERVER_FRONTEND
+    if frontend_settings:
+        common.update(frontend_settings.to_statics())
 
     # Adds products defined in db
     products: dict[str, Product] = app[APP_PRODUCTS_KEY]
     assert products  # nosec
 
     app[APP_FRONTEND_CACHED_STATICS_JSON_KEY] = {}
-
     for product in products.values():
         data = deepcopy(common)
 

@@ -1,0 +1,11 @@
+Dear {{ user.first_name }},
+
+Thank you for your interest in {{ product.display_name }}. You have successfully registered for {{ host }}.
+
+Please activate your account via the link below:
+{{ link }}
+
+Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
+
+Best Regards,
+The {{ product.display_name }} Team

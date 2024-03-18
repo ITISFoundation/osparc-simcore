@@ -53,21 +53,22 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
     __setBackgroundImage: function() {
       let backgroundImage = "";
 
-      const defaultBG = "url(resource/osparc/Sim4Life_login_page_master_transparent_bg.png)";
+      const defaultBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-default.png)," +
+        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/clouds_11.png)";
+      const liteBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-lite.png)," +
+        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/clouds_11.png)";
+      const academyBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-academy.png)," +
+        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/clouds_11.png)";
 
       switch (osparc.product.Utils.getProductName()) {
         case "s4llite":
-          backgroundImage = defaultBG;
+          backgroundImage = liteBG;
           break;
         case "s4lacad":
-          backgroundImage = defaultBG;
+        case "s4ldesktopacad":
+          backgroundImage = academyBG;
           break;
         case "s4ldesktop":
-          backgroundImage = defaultBG;
-          break;
-        case "s4ldesktopacad":
-          backgroundImage = defaultBG;
-          break;
         case "s4l":
         default:
           backgroundImage = defaultBG;

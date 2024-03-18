@@ -84,7 +84,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
 
     __getProfilePage: function() {
       const page = new osparc.desktop.credits.ProfilePage();
-      page.showLabelOnTab();
       return page;
     },
 
@@ -92,7 +91,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const title = this.tr("Credit Accounts");
       const iconSrc = "@MaterialIcons/account_balance_wallet/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
       const walletsView = new osparc.desktop.wallets.WalletsView();
       walletsView.set({
         margin: 10
@@ -106,7 +104,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const title = this.tr("Payment Methods");
       const iconSrc = "@FontAwesome5Solid/credit-card/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
       this.__paymentMethods = new osparc.desktop.paymentMethods.PaymentMethods();
       page.add(this.__paymentMethods, {
         flex: 1
@@ -118,7 +115,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const title = this.tr("Transactions");
       const iconSrc = "@FontAwesome5Solid/exchange-alt/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
       const transactions = this.__transactionsTable = new osparc.desktop.credits.Transactions();
       transactions.set({
         margin: 10
@@ -131,7 +127,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const title = this.tr("Usage");
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
       const usage = new osparc.desktop.credits.Usage();
       usage.set({
         margin: 10

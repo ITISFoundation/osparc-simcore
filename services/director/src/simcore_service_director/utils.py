@@ -11,6 +11,7 @@ _MAXLEN = len("2020-10-09T12:28:14.7710")
 def parse_as_datetime(timestr: str, *, default: Optional[datetime] = None) -> datetime:
     """
     default: if parsing is not possible, it returs default
+
     """
     # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
     #  - The T separates the date portion from the time-of-day portion

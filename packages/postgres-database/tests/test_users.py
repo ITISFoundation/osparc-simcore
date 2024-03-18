@@ -11,7 +11,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_user
-from simcore_postgres_database.errors import UniqueViolation
+from simcore_postgres_database.errors import InvalidTextRepresentation, UniqueViolation
 from simcore_postgres_database.models.users import (
     _USER_ROLE_TO_LEVEL,
     UserRole,
@@ -101,8 +101,62 @@ def test_user_roles_compares():
 @pytest.fixture
 async def clean_users_db_table(connection: SAConnection):
     yield
-
     await connection.execute(users.delete())
+
+
+async def test_user_status_as_pending(
+    connection: SAConnection, faker: Faker, clean_users_db_table: None
+):
+    """Checks a bug where the expression
+
+        `user_status = UserStatus(user["status"])`
+
+    raise ValueError because **before** this change `UserStatus.CONFIRMATION_PENDING.value == "PENDING"`
+    """
+    # after changing to UserStatus.CONFIRMATION_PENDING == "CONFIRMATION_PENDING"
+    with pytest.raises(ValueError):  # noqa: PT011
+        assert UserStatus("PENDING") == UserStatus.CONFIRMATION_PENDING
+
+    assert UserStatus("CONFIRMATION_PENDING") == UserStatus.CONFIRMATION_PENDING
+    assert UserStatus.CONFIRMATION_PENDING.value == "CONFIRMATION_PENDING"
+    assert UserStatus.CONFIRMATION_PENDING == "CONFIRMATION_PENDING"
+    assert str(UserStatus.CONFIRMATION_PENDING) == "UserStatus.CONFIRMATION_PENDING"
+
+    # tests that the database never stores the word "PENDING"
+    data = random_user(faker, status="PENDING")
+    assert data["status"] == "PENDING"
+    with pytest.raises(InvalidTextRepresentation) as err_info:
+        await connection.execute(users.insert().values(data))
+
+    assert 'invalid input value for enum userstatus: "PENDING"' in f"{err_info.value}"
+
+
+@pytest.mark.parametrize(
+    "status_value",
+    [
+        UserStatus.CONFIRMATION_PENDING,
+        "CONFIRMATION_PENDING",
+    ],
+)
+async def test_user_status_inserted_as_enum_or_int(
+    status_value: UserStatus | str,
+    connection: SAConnection,
+    faker: Faker,
+    clean_users_db_table: None,
+):
+    # insert as `status_value`
+    data = random_user(faker, status=status_value)
+    assert data["status"] == status_value
+    user_id = await connection.scalar(users.insert().values(data).returning(users.c.id))
+
+    # get as UserStatus.CONFIRMATION_PENDING
+    user = await (
+        await connection.execute(users.select().where(users.c.id == user_id))
+    ).first()
+    assert user
+
+    assert UserStatus(user.status) == UserStatus.CONFIRMATION_PENDING
+    assert user.status == UserStatus.CONFIRMATION_PENDING
 
 
 async def test_unique_username(

@@ -21,6 +21,12 @@ APP_LOGIN_OPTIONS_KEY = f"{__name__}.APP_LOGIN_OPTIONS_KEY"
 
 
 class LoginSettings(BaseCustomSettings):
+    LOGIN_ACCOUNT_DELETION_RETENTION_DAYS: PositiveInt = Field(
+        default=30,
+        description="Retention time (in days) of all the data after a user has requested the deletion of their account"
+        "NOTE: exposed to the front-end as `to_client_statics`",
+    )
+
     LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool = Field(
         default=True,
     )

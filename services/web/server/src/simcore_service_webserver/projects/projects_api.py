@@ -80,7 +80,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from simcore_postgres_database.webserver_models import ProjectType
 
-from ..application_settings import get_settings
+from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
@@ -440,7 +440,7 @@ async def _start_dynamic_service(
         # Get wallet/pricing/hardware information
         wallet_info, pricing_info, hardware_info = None, None, None
         product = products_api.get_current_product(request)
-        app_settings = get_settings(request.app)
+        app_settings = get_application_settings(request.app)
         if (
             product.is_payment_enabled
             and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED

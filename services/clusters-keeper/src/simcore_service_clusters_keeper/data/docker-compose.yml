@@ -2,7 +2,6 @@ version: "3.8"
 services:
   dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
-    dns: 8.8.8.8 # needed to access internet from AWS
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
@@ -11,6 +10,7 @@ services:
       DASK_TLS_KEY: ${DASK_TLS_KEY}
       DASK_SCHEDULER_URL: tls://dask-scheduler:8786
       DASK_START_AS_SCHEDULER: 1
+      DASK_WORKER_SATURATION: ${DASK_WORKER_SATURATION}
       LOG_LEVEL: ${LOG_LEVEL}
     ports:
       - 8786:8786 # dask-scheduler access
@@ -22,17 +22,16 @@ services:
     secrets:
       - source: dask_tls_ca
         target: ${DASK_TLS_CA_FILE}
-        mode: 0444
+        mode: 444
       - source: dask_tls_key
         target: ${DASK_TLS_KEY}
-        mode: 0444
+        mode: 444
       - source: dask_tls_cert
         target: ${DASK_TLS_CERT}
-        mode: 0444
+        mode: 444
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
-    dns: 8.8.8.8 # needed to access internet from AWS
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     volumes:
@@ -49,6 +48,7 @@ services:
       DASK_TLS_CA_FILE: ${DASK_TLS_CA_FILE}
       DASK_TLS_CERT: ${DASK_TLS_CERT}
       DASK_TLS_KEY: ${DASK_TLS_KEY}
+      DASK_WORKER_SATURATION: ${DASK_WORKER_SATURATION}
       LOG_LEVEL: ${LOG_LEVEL}
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: /home/scu/computational_shared_data
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: computational_shared_data
@@ -60,17 +60,16 @@ services:
     secrets:
       - source: dask_tls_ca
         target: ${DASK_TLS_CA_FILE}
-        mode: 0444
+        mode: 444
       - source: dask_tls_key
         target: ${DASK_TLS_KEY}
-        mode: 0444
+        mode: 444
       - source: dask_tls_cert
         target: ${DASK_TLS_CERT}
-        mode: 0444
+        mode: 444
 
   autoscaling:
     image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG}
-    dns: 8.8.8.8 # needed to access internet from AWS
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
@@ -104,18 +103,17 @@ services:
     secrets:
       - source: dask_tls_ca
         target: ${DASK_TLS_CA_FILE}
-        mode: 0444
+        mode: 444
       - source: dask_tls_key
         target: ${DASK_TLS_KEY}
-        mode: 0444
+        mode: 444
       - source: dask_tls_cert
         target: ${DASK_TLS_CERT}
-        mode: 0444
+        mode: 444
 
   redis:
     # NOTE: currently autoscaling requires redis to run
     image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
-    dns: 8.8.8.8 # needed to access internet from AWS
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     healthcheck:
@@ -134,6 +132,7 @@ volumes:
   computational_shared_data:
     name: computational_shared_data
   redis-data:
+
 
 secrets:
   dask_tls_ca:

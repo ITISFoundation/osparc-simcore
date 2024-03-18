@@ -11,8 +11,9 @@ import os
 import tempfile
 import threading
 from asyncio import gather
+from collections.abc import Awaitable, Callable, Iterable
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Iterable
+from typing import Any
 from uuid import uuid4
 
 import np_helpers
@@ -85,7 +86,7 @@ async def _check_port_valid(
     if key_name in port_values:
         if isinstance(port_values[key_name], dict):
             assert port.value
-            assert isinstance(port.value, (DownloadLink, PortLink, BaseFileLink))
+            assert isinstance(port.value, DownloadLink | PortLink | BaseFileLink)
             assert (
                 port.value.dict(by_alias=True, exclude_unset=True)
                 == port_values[key_name]
@@ -100,7 +101,7 @@ async def _check_port_valid(
 
 async def _check_ports_valid(ports: Nodeports, config_dict: dict, port_type: str):
     port_schemas = config_dict["schema"][port_type]
-    for key in port_schemas.keys():
+    for key in port_schemas:
         # test using "key" name
         await _check_port_valid(ports, config_dict, port_type, key, key)
         # test using index
@@ -254,12 +255,7 @@ async def test_port_value_accessors(
         ("data:*/*", __file__, Path, {"store": 0, "path": __file__}),
         ("data:text/*", __file__, Path, {"store": 0, "path": __file__}),
         ("data:text/py", __file__, Path, {"store": 0, "path": __file__}),
-        (
-            "data:text/py",
-            pytest.lazy_fixture("symlink_path"),
-            Path,
-            pytest.lazy_fixture("config_value_symlink_path"),
-        ),
+        ("data:text/py", "symlink_path", Path, "config_value_symlink_path"),
     ],
 )
 async def test_port_file_accessors(
@@ -274,7 +270,14 @@ async def test_port_file_accessors(
     node_uuid: NodeIDStr,
     e_tag: str,
     option_r_clone_settings: RCloneSettings | None,
-):  # pylint: disable=W0613, W0621
+    request: pytest.FixtureRequest,
+):
+
+    if item_value == "symlink_path":
+        item_value = request.getfixturevalue("symlink_path")
+    if config_value == "config_value_symlink_path":
+        config_value = request.getfixturevalue("config_value_symlink_path")
+
     config_value["path"] = f"{project_id}/{node_uuid}/{Path(config_value['path']).name}"
 
     config_dict, _project_id, _node_uuid = create_special_configuration(
