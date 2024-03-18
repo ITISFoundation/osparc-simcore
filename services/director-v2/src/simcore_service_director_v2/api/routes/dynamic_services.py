@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections.abc import Coroutine
-from typing import Annotated, cast
+from typing import Annotated, Final, cast
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
@@ -13,13 +13,13 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
-from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
+from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOrNone
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
-from pydantic import NonNegativeFloat
+from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_decorator
@@ -56,6 +56,8 @@ from ..dependencies.dynamic_services import (
     get_service_base_url,
     get_services_client,
 )
+
+_MAX_PARALLELISM: Final[NonNegativeInt] = 10
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -342,6 +344,17 @@ async def update_projects_networks(
     )
 
 
+def is_service_inactive_since(
+    activity_info: ActivityInfoOrNone, threshold: float
+) -> bool:
+    if activity_info is None:
+        # services which do not support inactivity are treated as being inactive
+        return True
+
+    is_inactive: bool = activity_info.seconds_inactive >= threshold
+    return is_inactive
+
+
 @router.get(
     "/projects/{project_id}/inactivity", summary="returns if the project is inactive"
 )
@@ -354,32 +367,26 @@ async def get_project_inactivity(
         ProjectsRepository, Depends(get_repository(ProjectsRepository))
     ],
 ) -> GetProjectInactivityResponse:
-    project: ProjectAtDB = await projects_repository.get_project(project_id)
-
-    inactivity_responses: list[InactivityResponse] = await logged_gather(
-        *[
-            scheduler.get_service_inactivity(NodeID(node_id))
-            for node_id in project.workbench
-            # NOTE: only new style services expose service inactivity information
-            # director-v2 only tracks internally new style services
-            if scheduler.is_service_tracked(NodeID(node_id))
-        ]
-    )
-
-    # NOTE: if a service results in being active it means one of the following
-    # - it does not provide information about it's inactivity state
-    # - the service is actually used
-    inactive_services: list[InactivityResponse] = [
-        r for r in inactivity_responses if r.is_inactive
-    ]
-
     # A project is considered inactive when all it's services are inactive for
     # more than `max_inactivity_seconds`.
     # A `service` which does not support the inactivity callback is considered
     # inactive.
-    all_inactive_services_over_threshold = all(
-        r.seconds_inactive > max_inactivity_seconds for r in inactive_services
+
+    project: ProjectAtDB = await projects_repository.get_project(project_id)
+
+    inactivity_responses: list[ActivityInfoOrNone] = await logged_gather(
+        *[
+            scheduler.get_service_activity(NodeID(node_id))
+            for node_id in project.workbench
+            # NOTE: only new style services expose service inactivity information
+            # director-v2 only tracks internally new style services
+            if scheduler.is_service_tracked(NodeID(node_id))
+        ],
+        max_concurrency=_MAX_PARALLELISM,
     )
-    return GetProjectInactivityResponse(
-        is_inactive=all_inactive_services_over_threshold
+
+    all_services_inactive = all(
+        is_service_inactive_since(r, max_inactivity_seconds)
+        for r in inactivity_responses
     )
+    return GetProjectInactivityResponse(is_inactive=all_services_inactive)
