@@ -68,7 +68,6 @@ async def send_account_request_email_to_support(
                     include={
                         "name",
                         "display_name",
-                        "support_email",
                         "vendor",
                         "is_payment_enabled",
                     }
