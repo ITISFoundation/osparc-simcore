@@ -118,8 +118,14 @@ qx.Class.define("osparc.widget.IntlTelInput", {
 
     __inputToPhoneInput: function(input) {
       const iti = intlTelInput(input, {
-        initialCountry: "ch", // auto: geoIpLookup. need to unlock https://ipinfo.io/,
-        preferredCountries: ["ch", "us"]
+        initialCountry: "auto",
+        geoIpLookup: callback => {
+          fetch("https://ipapi.co/json")
+            .then(res => res.json())
+            .then(data => callback(data.country_code))
+            .catch(() => callback("ch"));
+        },
+        preferredCountries: []
       });
       const themeManager = qx.theme.manager.Meta.getInstance();
       themeManager.addListener("changeTheme", () => this.self().updateStyle(iti));
