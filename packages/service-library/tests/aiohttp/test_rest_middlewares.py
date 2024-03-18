@@ -140,9 +140,12 @@ class Handlers:
 
     @classmethod
     async def raise_exception(cls, request: web.Request):
-        for exc_cls in (NotImplementedError, asyncio.TimeoutError):
-            if exc_cls.__name__ == request.query["exc"]:
-                raise exc_cls
+        exc_name = request.query["exc"]
+        match exc_name:
+            case NotImplementedError.__name__:
+                raise NotImplementedError
+            case asyncio.TimeoutError.__name__:
+                raise asyncio.TimeoutError
 
 
 @pytest.fixture

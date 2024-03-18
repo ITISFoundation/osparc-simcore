@@ -81,8 +81,10 @@ def _handle_http_successful(request: web.BaseRequest, err: web.HTTPSuccessful):
 
 def _handle_as_internal_server_error(request: web.BaseRequest, err: Exception):
     """
-    This error handler is the last resource to catch unhandled exceptions and
-    are converted into web.HTTPInternalServerError (i.e. 500)
+    This error handler is the last resource to catch unhandled exceptions. When
+    an exception reaches this point, it is converted into a web.HTTPInternalServerError
+    reponse (i.e. HTTP_500_INTERNAL_ERROR) for the client and the server logs
+    the error to be diagnosed
 
     Its purpose is:
         - respond the client with 500 and a reference OEC
