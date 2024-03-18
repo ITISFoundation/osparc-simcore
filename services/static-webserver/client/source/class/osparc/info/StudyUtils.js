@@ -177,10 +177,7 @@ qx.Class.define("osparc.info.StudyUtils", {
         descriptionContainer.setMaxHeight(maxHeight);
       }
       descriptionContainer.add(description);
-      return {
-        description,
-        descriptionContainer
-      };
+      return descriptionContainer;
     },
 
     /**
