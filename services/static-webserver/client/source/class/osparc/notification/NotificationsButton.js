@@ -41,7 +41,7 @@ qx.Class.define("osparc.notification.NotificationsButton", {
     this.__notificationsContainer = new osparc.notification.NotificationsContainer();
     this.__notificationsContainer.exclude();
 
-    this.addListener("tap", () => this.__buttonTapped(), this);
+    this.addListener("tap", this.__buttonTapped, this);
   },
 
   members: {
@@ -104,21 +104,17 @@ qx.Class.define("osparc.notification.NotificationsButton", {
     },
 
     __buttonTapped: function() {
-      console.log("tapped on");
       this.__isNotificationsContainerVisible ? this.__hideNotifications() : this.__showNotifications();
     },
 
     __showNotifications: function() {
-      const that = this;
       const tapListener = event => {
         const notificationsContainer = this.__notificationsContainer;
         if (osparc.utils.Utils.isMouseOnElement(notificationsContainer, event)) {
           return;
         }
-        console.log("tapped out");
-        // eslint-disable-next-line no-underscore-dangle
-        that.__hideNotifications();
-        document.removeEventListener("mousedown", tapListener);
+        this.__hideNotifications();
+        document.removeEventListener("mousedown", tapListener, this);
       };
 
       const bounds = this.getBounds();
@@ -133,16 +129,12 @@ qx.Class.define("osparc.notification.NotificationsButton", {
       }
       this.__notificationsContainer.setPosition(bounds.left+bounds.width-2, bounds.top+bounds.height-2);
       this.__notificationsContainer.show();
-      console.log("show");
-      this.__isNotificationsContainerVisible = true;
 
-      document.addEventListener("mousedown", tapListener);
+      document.addEventListener("mousedown", tapListener, this);
     },
 
     __hideNotifications: function() {
       this.__notificationsContainer.exclude();
-      console.log("hide 1");
-      this.__isNotificationsContainerVisible = false;
     }
   }
 });
