@@ -113,6 +113,7 @@ qx.Class.define("osparc.notification.NotificationsButton", {
 
     __showNotifications: function() {
       const tapListener = event => {
+        // I somehow can't stop the propagation of the event so workaround:
         // If the user tapped on the bell we don't want to show it again
         if (osparc.utils.Utils.isMouseOnElement(this, event)) {
           this.__tappedOut = true;
