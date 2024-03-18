@@ -114,7 +114,7 @@ async def search_users_and_get_profile(
             users_pre_registration_details.c.pre_email,
             users_pre_registration_details.c.pre_first_name,
             users_pre_registration_details.c.pre_last_name,
-            users_pre_registration_details.c.company_name,
+            users_pre_registration_details.c.institution,
             users_pre_registration_details.c.pre_phone,
             users_pre_registration_details.c.address,
             users_pre_registration_details.c.city,
@@ -122,6 +122,7 @@ async def search_users_and_get_profile(
             users_pre_registration_details.c.postal_code,
             users_pre_registration_details.c.country,
             users_pre_registration_details.c.user_id,
+            users_pre_registration_details.c.extras,
             users.c.status,
         )
 
