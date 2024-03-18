@@ -17,7 +17,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.basic_types import IDStr
 from models_library.payments import UserInvoiceAddress
-from models_library.products import StripePriceID, StripeTaxRateID
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -93,6 +93,7 @@ async def get_payments_page(
     app: web.Application,
     *,
     user_id: UserID,
+    product_name: ProductName,
     limit: int | None,
     offset: int | None,
 ) -> tuple[int, list[PaymentTransaction]]:
@@ -102,6 +103,7 @@ async def get_payments_page(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "get_payments_page"),
         user_id=user_id,
+        product_name=product_name,
         limit=limit,
         offset=offset,
     )

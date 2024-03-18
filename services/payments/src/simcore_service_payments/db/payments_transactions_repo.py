@@ -8,6 +8,7 @@ from models_library.api_schemas_payments.errors import (
     PaymentNotFoundError,
 )
 from models_library.api_schemas_webserver.wallets import PaymentID
+from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import HttpUrl, PositiveInt, parse_obj_as
@@ -124,6 +125,7 @@ class PaymentsTransactionsRepo(BaseRepository):
     async def list_user_payment_transactions(
         self,
         user_id: UserID,
+        product_name: ProductName,
         *,
         offset: PositiveInt | None = None,
         limit: PositiveInt | None = None,
@@ -136,7 +138,10 @@ class PaymentsTransactionsRepo(BaseRepository):
             result = await connection.execute(
                 sa.select(sa.func.count())
                 .select_from(payments_transactions)
-                .where(payments_transactions.c.user_id == user_id)
+                .where(
+                    (payments_transactions.c.user_id == user_id)
+                    & (payments_transactions.c.product_name == product_name)
+                )
             )
             total_number_of_items = result.scalar()
             assert total_number_of_items is not None  # nosec
@@ -144,7 +149,10 @@ class PaymentsTransactionsRepo(BaseRepository):
             # NOTE: what if between these two calls there are new rows? can we get this in an atomic call?å
             stmt = (
                 payments_transactions.select()
-                .where(payments_transactions.c.user_id == user_id)
+                .where(
+                    (payments_transactions.c.user_id == user_id)
+                    & (payments_transactions.c.product_name == product_name)
+                )
                 .order_by(payments_transactions.c.created.desc())
             )  # newest first
 

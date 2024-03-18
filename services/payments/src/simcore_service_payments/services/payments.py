@@ -22,7 +22,7 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentInitiated,
 )
 from models_library.payments import UserInvoiceAddress
-from models_library.products import StripePriceID, StripeTaxRateID
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, PositiveInt
@@ -304,13 +304,14 @@ async def get_payments_page(
     repo: PaymentsTransactionsRepo,
     *,
     user_id: UserID,
+    product_name: ProductName,
     limit: PositiveInt | None = None,
     offset: PositiveInt | None = None,
 ) -> tuple[int, list[PaymentTransaction]]:
     """All payments associated to a user (i.e. including all the owned wallets)"""
 
     total_number_of_items, page = await repo.list_user_payment_transactions(
-        user_id=user_id, offset=offset, limit=limit
+        user_id=user_id, product_name=product_name, offset=offset, limit=limit
     )
 
     return total_number_of_items, [to_payments_api_model(t) for t in page]
