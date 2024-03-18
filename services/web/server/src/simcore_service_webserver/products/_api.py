@@ -11,7 +11,7 @@ from .._resources import webserver_resources
 from ._db import ProductRepository
 from ._events import APP_PRODUCTS_TEMPLATES_DIR_KEY
 from ._model import Product
-from .errors import ProductPriceNotDefinedError
+from .errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
 
 
 def get_product_name(request: web.Request) -> str:
@@ -52,7 +52,10 @@ async def get_current_product_credit_price_info(
 
 
 async def get_credit_amount(
-    app: web.Application, *, dollar_amount: Decimal, product_name: ProductName
+    app: web.Application,
+    *,
+    dollar_amount: Decimal,
+    product_name: ProductName,
 ) -> CreditResultGet:
     """For provided dollars and product gets credit amount.
 
@@ -60,6 +63,11 @@ async def get_credit_amount(
     gets the latest update from the database. Otherwise, products are loaded
     on startup and cached therefore in those cases would require a restart
     of the service for the latest changes to take effect.
+
+    Raises:
+        ProductPriceNotDefinedError
+        BelowMinimumPaymentError
+
     """
     repo = ProductRepository.create_from_app(app)
     price_info = await repo.get_product_latest_price_info_or_none(product_name)
@@ -67,6 +75,12 @@ async def get_credit_amount(
         # '0 or None' should raise
         raise ProductPriceNotDefinedError(
             reason=f"Product {product_name} usd_per_credit is either not defined or zero"
+        )
+
+    if dollar_amount < price_info.min_payment_amount_usd:
+        raise BelowMinimumPaymentError(
+            amount_usd=dollar_amount,
+            min_payment_amount_usd=price_info.min_payment_amount_usd,
         )
 
     credit_amount = dollar_amount / price_info.usd_per_credit

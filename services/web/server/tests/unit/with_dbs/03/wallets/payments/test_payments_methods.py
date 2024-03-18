@@ -330,6 +330,16 @@ async def wallet_payment_method_id(
     return await _add_payment_method(client, wallet_id=logged_user_wallet.wallet_id)
 
 
+@pytest.mark.parametrize(
+    "amount_usd,expected_status",
+    [
+        (1, status.HTTP_422_UNPROCESSABLE_ENTITY),
+        (
+            26,
+            status.HTTP_202_ACCEPTED,
+        ),
+    ],
+)
 async def test_one_time_payment_with_payment_method(
     latest_osparc_price: Decimal,
     client: TestClient,
@@ -338,6 +348,8 @@ async def test_one_time_payment_with_payment_method(
     wallet_payment_method_id: PaymentMethodID,
     mocker: MockerFixture,
     faker: Faker,
+    amount_usd: int,
+    expected_status: int,
     setup_user_pre_registration_details_db: None,
 ):
     assert client.app
@@ -365,40 +377,40 @@ async def test_one_time_payment_with_payment_method(
     response = await client.post(
         f"/v0/wallets/{logged_user_wallet.wallet_id}/payments-methods/{wallet_payment_method_id}:pay",
         json={
-            "priceDollars": 26,
+            "priceDollars": amount_usd,
         },
     )
-    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
-    assert error is None
-    payment = WalletPaymentInitiated.parse_obj(data)
-    assert mock_rpc_payments_service_api["pay_with_payment_method"].called
+    data, error = await assert_status(response, expected_status)
+    if not error:
+        payment = WalletPaymentInitiated.parse_obj(data)
+        assert mock_rpc_payments_service_api["pay_with_payment_method"].called
 
-    assert payment.payment_id
-    assert payment.payment_form_url is None
+        assert payment.payment_id
+        assert payment.payment_form_url is None
 
-    # check notification to RUT (fake)
-    assert mock_rut_add_credits_to_wallet.called
-    mock_rut_add_credits_to_wallet.assert_called_once()
+        # check notification to RUT (fake)
+        assert mock_rut_add_credits_to_wallet.called
+        mock_rut_add_credits_to_wallet.assert_called_once()
 
-    # check notification after response
-    await asyncio.sleep(0.1)
-    assert send_message.called
-    send_message.assert_called_once()
+        # check notification after response
+        await asyncio.sleep(0.1)
+        assert send_message.called
+        send_message.assert_called_once()
 
-    # list all payment transactions in all my wallets
-    response = await client.get("/v0/wallets/-/payments")
-    data, error = await assert_status(response, status.HTTP_200_OK)
+        # list all payment transactions in all my wallets
+        response = await client.get("/v0/wallets/-/payments")
+        data, error = await assert_status(response, status.HTTP_200_OK)
 
-    page = parse_obj_as(Page[PaymentTransaction], data)
+        page = parse_obj_as(Page[PaymentTransaction], data)
 
-    assert page.data
-    assert page.meta.total == 1
-    assert page.meta.offset == 0
+        assert page.data
+        assert page.meta.total == 1
+        assert page.meta.offset == 0
 
-    transaction = page.data[0]
-    assert transaction.payment_id == payment.payment_id
+        transaction = page.data[0]
+        assert transaction.payment_id == payment.payment_id
 
-    # payment was completed successfully
-    assert transaction.completed_at is not None
-    assert transaction.created_at < transaction.completed_at
-    assert transaction.invoice_url is not None
+        # payment was completed successfully
+        assert transaction.completed_at is not None
+        assert transaction.created_at < transaction.completed_at
+        assert transaction.invoice_url is not None
