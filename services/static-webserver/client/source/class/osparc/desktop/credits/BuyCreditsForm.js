@@ -14,24 +14,27 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
       alignX: "center"
     }));
 
-    const title = new qx.ui.basic.Label("Buy Credits").set({
+    const title = new qx.ui.basic.Label(this.tr("Buy Credits")).set({
       marginTop: 35,
       font: "title-18"
     });
-    const subtitle = new qx.ui.basic.Label("A one-off, non recurring payment.").set({
-      rich: true,
+    this._add(title);
+
+    const subtitle = new qx.ui.basic.Label(this.tr("A one-off, non recurring payment.")).set({
       font: "text-14",
       textAlign: "center"
     });
-
-    this._add(title);
     this._add(subtitle);
+
     this._add(this.__getForm(paymentMethods));
+
     this._add(new qx.ui.core.Spacer(), {
       flex: 1
     });
+
     this._add(this.__getButtons());
   },
+
   properties: {
     fetching: {
       check: "Boolean",
@@ -40,22 +43,25 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
       event: "changeFetching"
     }
   },
+
   events: {
     "submit": "qx.event.type.Data",
     "cancel": "qx.event.type.Event"
   },
+
   members: {
     __amountInput: null,
+
     __getButtons: function() {
       const buttonsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       })).set({
         marginBottom: 35
       });
-      const cancelBtn = new qx.ui.form.Button("Cancel").set({
+      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
         appearance: "appmotion-button"
       });
-      const buyBtn = this.__buyBtn = new osparc.ui.form.FetchButton("Buy Credits").set({
+      const buyBtn = this.__buyBtn = new osparc.ui.form.FetchButton(this.tr("Buy Credits")).set({
         appearance: "appmotion-button-action",
         enabled: false
       });
@@ -69,6 +75,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
       buttonsContainer.add(buyBtn);
       return buttonsContainer;
     },
+
     __getForm: function(paymentMethods) {
       const formContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
