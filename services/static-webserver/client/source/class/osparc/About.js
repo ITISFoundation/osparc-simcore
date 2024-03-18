@@ -25,7 +25,9 @@ qx.Class.define("osparc.About", {
     this.set({
       layout: new qx.ui.layout.VBox(10),
       maxWidth: this.self().MAX_WIDTH,
+      maxHeight: this.self().MAX_HEIGHT,
       contentPadding: this.self().PADDING,
+      resizable: true,
       showMaximize: false,
       showMinimize: false,
       centerOnAppear: true,
@@ -39,7 +41,8 @@ qx.Class.define("osparc.About", {
   },
 
   statics: {
-    MAX_WIDTH: 500,
+    MAX_WIDTH: 550,
+    MAX_HEIGHT: 680,
     PADDING: 15,
     OSPARC_OFFICIAL: "o<sup>2</sup>S<sup>2</sup>PARC"
   },
@@ -95,7 +98,9 @@ qx.Class.define("osparc.About", {
         barPosition: "top"
       });
       tabView.getChildControl("pane").setBackgroundColor("transparent");
-      this.add(tabView, {
+      const scrollView = new qx.ui.container.Scroll();
+      scrollView.add(tabView);
+      this.add(scrollView, {
         flex: 1
       });
 

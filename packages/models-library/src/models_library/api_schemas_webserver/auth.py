@@ -29,6 +29,8 @@ class AccountRequestInfo(InputSchema):
                     "application": "Antenna_Design",
                     "description": "Description of something",
                     "hear": "Search_Engine",
+                    "privacyPolicy": True,
+                    "eula": True,
                 }
             }
         }

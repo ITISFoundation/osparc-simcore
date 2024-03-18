@@ -18,7 +18,7 @@ class LastNameStr(FirstNameStr):
 class UserBillingDetails(BaseModel):
     first_name: str | None
     last_name: str | None
-    company_name: str | None
+    institution: str | None
     address: str | None
     city: str | None
     state: str | None = Field(description="State, province, canton, ...")

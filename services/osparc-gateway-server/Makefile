@@ -55,7 +55,7 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 PHONY: .init-swarm
 .init-swarm:
 	# Ensures swarm is initialized
-	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip))
+	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip) --default-addr-pool 172.20.0.0/14)
 
 .PHONY: config
 export OSPARC_GATEWAY_CONFIG_FILE_HOST = .osparc-dask-gateway-config.py

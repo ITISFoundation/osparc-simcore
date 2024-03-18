@@ -1,9 +1,18 @@
+from typing import Any, ClassVar, TypeAlias
+
 from pydantic import BaseModel, NonNegativeFloat
 
 
-class InactivityResponse(BaseModel):
-    seconds_inactive: NonNegativeFloat | None = None
+class ActivityInfo(BaseModel):
+    seconds_inactive: NonNegativeFloat
 
-    @property
-    def is_inactive(self) -> bool:
-        return self.seconds_inactive is not None
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {"seconds_inactive": 0},
+                {"seconds_inactive": 100},
+            ]
+        }
+
+
+ActivityInfoOrNone: TypeAlias = ActivityInfo | None

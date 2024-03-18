@@ -6,7 +6,7 @@ import json
 
 from pydantic import AnyHttpUrl, BaseModel, parse_obj_as
 from simcore_service_webserver.statics.settings import (
-    THIRD_PARTY_REFERENCES,
+    _THIRD_PARTY_REFERENCES,
     FrontEndAppSettings,
     StaticWebserverModuleSettings,
 )
@@ -23,7 +23,7 @@ class OsparcDependency(BaseModel):
 
 
 def test_valid_osparc_dependencies():
-    deps = parse_obj_as(list[OsparcDependency], THIRD_PARTY_REFERENCES)
+    deps = parse_obj_as(list[OsparcDependency], _THIRD_PARTY_REFERENCES)
     assert deps
 
 

@@ -396,8 +396,8 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 
 .PHONY: .init-swarm
 .init-swarm:
-	# Ensures swarm is initialized (careful we use a default pool of 10.20.0.0/16. Ensure you do not use private IPs in that range!)
-	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip) --default-addr-pool 10.20.0.0/16)
+	# Ensures swarm is initialized (careful we use a default pool of 172.20.0.0/14. Ensure you do not use private IPs in that range!)
+	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip) --default-addr-pool 172.20.0.0/14)
 
 
 ## DOCKER TAGS  -------------------------------
@@ -523,14 +523,13 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 
 pylint: ## python linting
 	# pylint version info
-	@/bin/bash -c "pylint --version"
+	@pylint --version
 	# Running linter in packages and services (except director)
 	@folders=$$(find $(CURDIR)/services $(CURDIR)/packages  -type d -not -path "*/director/*" -name 'src' -exec dirname {} \; | sort -u); \
 	exit_status=0; \
 	for folder in $$folders; do \
-		pushd "$$folder"; \
-		make pylint || exit_status=1; \
-		popd; \
+		echo "Linting $$folder"; \
+		$(MAKE_C) "$$folder" pylint || exit_status=1; \
 	done;\
 	exit $$exit_status
 	# Running linter elsewhere

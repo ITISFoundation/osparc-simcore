@@ -16,7 +16,7 @@ from servicelib.utils import fire_and_forget_task
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
-from ..products.api import get_current_product
+from ..products.api import Product, get_current_product
 from ..security.api import check_password, forget_identity
 from ..security.decorators import permission_required
 from ..users.api import get_user_credentials, set_user_as_deleted
@@ -28,6 +28,7 @@ from ._registration_api import (
     send_close_account_email,
 )
 from .decorators import login_required
+from .settings import LoginSettingsForProduct, get_plugin_settings
 from .utils import flash_response, notify_user_logout
 
 _logger = logging.getLogger(__name__)
@@ -87,6 +88,11 @@ async def unregister_account(request: web.Request):
     req_ctx = _AuthenticatedContext.parse_obj(request)
     body = await parse_request_body_as(UnregisterCheck, request)
 
+    product: Product = get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
+
     # checks before deleting
     credentials = await get_user_credentials(request.app, user_id=req_ctx.user_id)
     if body.email != credentials.email.lower() or not check_password(
@@ -118,8 +124,8 @@ async def unregister_account(request: web.Request):
             send_close_account_email(
                 request,
                 user_email=credentials.email,
-                user_name=credentials.display_name,
-                retention_days=30,
+                user_first_name=credentials.display_name,
+                retention_days=settings.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS,
             ),
             task_suffix_name=f"{__name__}.unregister_account.send_close_account_email",
             fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],

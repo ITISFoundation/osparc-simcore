@@ -27,7 +27,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     RetrieveDataOutEnveloped,
     RunningDynamicServiceDetails,
 )
-from models_library.api_schemas_dynamic_sidecar.containers import InactivityResponse
+from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfoOrNone
 from models_library.basic_types import PortInt
 from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkAlias
@@ -510,12 +510,12 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
         await sidecars_client.restart_containers(scheduler_data.endpoint)
 
-    async def get_service_inactivity(self, node_id: NodeID) -> InactivityResponse:
+    async def get_service_activity(self, node_id: NodeID) -> ActivityInfoOrNone:
         service_name: ServiceName = self._inverse_search_mapping[node_id]
         scheduler_data: SchedulerData = self._to_observe[service_name]
 
         sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_id)
-        return await sidecars_client.get_service_inactivity(scheduler_data.endpoint)
+        return await sidecars_client.get_service_activity(scheduler_data.endpoint)
 
     def _enqueue_observation_from_service_name(self, service_name: str) -> None:
         self._trigger_observation_queue.put_nowait(service_name)
