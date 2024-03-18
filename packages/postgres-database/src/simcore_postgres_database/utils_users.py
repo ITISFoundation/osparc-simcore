@@ -136,7 +136,7 @@ class UsersRepo:
             sa.select(
                 users.c.first_name,
                 users.c.last_name,
-                users_pre_registration_details.c.company_name,
+                users_pre_registration_details.c.institution,
                 users_pre_registration_details.c.address,
                 users_pre_registration_details.c.city,
                 users_pre_registration_details.c.state,
