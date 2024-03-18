@@ -48,7 +48,7 @@ class PricingUnitGet(OutputSchema):
     default: bool
 
 
-class ServicePricingPlanGet(OutputSchema):
+class PricingPlanGet(OutputSchema):
     pricing_plan_id: PricingPlanId
     display_name: str
     description: str
@@ -56,3 +56,4 @@ class ServicePricingPlanGet(OutputSchema):
     created_at: datetime
     pricing_plan_key: str
     pricing_units: list[PricingUnitGet]
+    is_active: bool

@@ -6625,7 +6625,7 @@ components:
           exclusiveMaximum: true
           minimum: 0
           type: integer
-          maximum: 200
+          maximum: 500
     GetCreditPrice:
       title: GetCreditPrice
       required:
@@ -10163,20 +10163,13 @@ components:
     UserStatus:
       title: UserStatus
       enum:
-      - PENDING
+      - CONFIRMATION_PENDING
       - ACTIVE
       - EXPIRED
       - BANNED
       - DELETED
-      description: 'pending: user registered but not confirmed
-
-        active: user is confirmed and can use the platform
-
-        expired: user is not authorized because it expired after a trial period
-
-        banned: user is not authorized
-
-        deleted: this account is marked for deletion'
+      type: string
+      description: An enumeration.
     UsersGroup:
       title: UsersGroup
       required:

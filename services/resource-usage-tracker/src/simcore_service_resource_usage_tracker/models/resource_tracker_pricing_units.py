@@ -32,29 +32,3 @@ class PricingUnitsDB(BaseModel):
         if not v:
             return HardwareInfo(aws_ec2_instances=[])
         return v
-
-
-# class PricingUnitWithCostCreate(BaseModel):
-#     pricing_plan_id: PricingPlanId
-#     pricing_plan_key: str
-#     unit_name: str
-#     unit_extra_info: dict
-#     default: bool
-#     specific_info: dict
-#     cost_per_unit: Decimal
-#     comment: str
-
-
-# class PricingUnitCostUpdate:
-#     pricing_plan_id: PricingPlanId
-#     pricing_plan_key: str
-#     cost_per_unit: Decimal
-#     comment: str
-
-# class PricingUnitWithCostUpdate(BaseModel):
-#     pricing_unit_id: PricingUnitId
-#     unit_name: str
-#     unit_extra_info: dict
-#     default: bool
-#     specific_info: dict
-#     pricing_unit_cost_update: None | PricingUnitCostUpdate

@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import pytest
 import sqlalchemy as sa
+from faker import Faker
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
     PricingUnitGet,
@@ -58,36 +59,40 @@ async def test_rpc_pricing_plans_workflow(
     mocked_redis_server: None,
     resource_tracker_setup_db: None,
     rpc_client: RabbitMQRPCClient,
+    faker: Faker,
 ):
+    _display_name = faker.word()
     result = await pricing_plans.create_pricing_plan(
         rpc_client,
         data=PricingPlanCreate(
             product_name="s4l",
-            display_name="Bla",
-            description="bla",
+            display_name=_display_name,
+            description=faker.sentence(),
             classification=PricingPlanClassification.TIER,
-            pricing_plan_key="unique",
+            pricing_plan_key=faker.word(),
         ),
     )
     assert isinstance(result, PricingPlanGet)
     assert result.pricing_units == []
-    assert result.display_name == "Bla"
+    assert result.display_name == _display_name
     _pricing_plan_id = result.pricing_plan_id
 
+    _update_display_name = "display name updated"
+    _update_description = "description name updated"
     result = await pricing_plans.update_pricing_plan(
         rpc_client,
         product_name="s4l",
         data=PricingPlanUpdate(
             pricing_plan_id=_pricing_plan_id,
-            display_name="blabla",
-            description="blabla",
+            display_name=_update_display_name,
+            description=_update_description,
             is_active=True,
         ),
     )
     assert isinstance(result, PricingPlanGet)
     assert result.pricing_units == []
-    assert result.display_name == "blabla"
-    assert result.description == "blabla"
+    assert result.display_name == _update_display_name
+    assert result.description == _update_description
 
     result = await pricing_plans.get_pricing_plan(
         rpc_client,
@@ -96,22 +101,23 @@ async def test_rpc_pricing_plans_workflow(
     )
     assert isinstance(result, PricingPlanGet)
     assert result.pricing_units == []
-    assert result.display_name == "blabla"
-    assert result.description == "blabla"
+    assert result.display_name == _update_display_name
+    assert result.description == _update_description
+    assert result.is_active is True
 
-    # Now I will deactivate (maybe I should add is_active fielnd in the response)
+    # Now I will deactivate the pricing plan
     result = await pricing_plans.update_pricing_plan(
         rpc_client,
         product_name="s4l",
         data=PricingPlanUpdate(
             pricing_plan_id=_pricing_plan_id,
-            display_name="blabla",
-            description="blabla",
-            is_active=False,
+            display_name=faker.word(),
+            description=faker.sentence(),
+            is_active=False,  # <-- deactivate
         ),
     )
     assert isinstance(result, PricingPlanGet)
-    assert result.pricing_units == []
+    assert result.is_active is False
 
 
 @pytest.mark.rpc_test()
@@ -119,20 +125,22 @@ async def test_rpc_pricing_plans_with_units_workflow(
     mocked_redis_server: None,
     resource_tracker_setup_db: None,
     rpc_client: RabbitMQRPCClient,
+    faker: Faker,
 ):
+    _display_name = faker.word()
     result = await pricing_plans.create_pricing_plan(
         rpc_client,
         data=PricingPlanCreate(
             product_name="s4l",
-            display_name="Bla",
-            description="bla",
+            display_name=_display_name,
+            description=faker.sentence(),
             classification=PricingPlanClassification.TIER,
-            pricing_plan_key="unique",
+            pricing_plan_key=faker.word(),
         ),
     )
     assert isinstance(result, PricingPlanGet)
     assert result.pricing_units == []
-    assert result.display_name == "Bla"
+    assert result.display_name == _display_name
     _pricing_plan_id = result.pricing_plan_id
 
     result = await pricing_units.create_pricing_unit(
@@ -146,7 +154,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             cost_per_unit=Decimal(10),
-            comment="Blabla",
+            comment=faker.sentence(),
         ),
     )
     assert isinstance(result, PricingUnitGet)
@@ -165,13 +173,14 @@ async def test_rpc_pricing_plans_with_units_workflow(
     assert result.pricing_units[0].pricing_unit_id == _first_pricing_unit_id
 
     # Update only pricing unit info with COST update
+    _unit_name = "VERY SMALL"
     result = await pricing_units.update_pricing_unit(
         rpc_client,
         product_name="s4l",
         data=PricingUnitWithCostUpdate(
             pricing_plan_id=_pricing_plan_id,
             pricing_unit_id=_first_pricing_unit_id,
-            unit_name="MEDIUM",
+            unit_name=_unit_name,
             unit_extra_info={},
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
@@ -179,7 +188,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
         ),
     )
     assert isinstance(result, PricingUnitGet)
-    assert result.unit_name == "MEDIUM"
+    assert result.unit_name == _unit_name
     assert result.current_cost_per_unit == Decimal(10)
     assert result.current_cost_per_unit_id == _current_cost_per_unit_id
 
@@ -196,7 +205,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             pricing_unit_cost_update=PricingUnitCostUpdate(
                 cost_per_unit=Decimal(15),
-                comment="Matus update",
+                comment="Comment update",
             ),
         ),
     )
@@ -221,13 +230,13 @@ async def test_rpc_pricing_plans_with_units_workflow(
         product_name="s4l",
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
-            pricing_plan_key="a",
+            pricing_plan_key=faker.word(),
             unit_name="LARGE",
             unit_extra_info={},
             default=False,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             cost_per_unit=Decimal(20),
-            comment="Blabla",
+            comment=faker.sentence(),
         ),
     )
     assert isinstance(result, PricingUnitGet)

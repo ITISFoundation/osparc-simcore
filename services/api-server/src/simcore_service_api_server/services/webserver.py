@@ -9,6 +9,7 @@ from uuid import UUID
 
 from cryptography import fernet
 from fastapi import FastAPI
+from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.api_schemas_webserver.product import GetCreditPrice
@@ -18,8 +19,8 @@ from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import (
+    PricingPlanGet,
     PricingUnitGet,
-    ServicePricingPlanGet,
 )
 from models_library.api_schemas_webserver.wallets import (
     WalletGet,
@@ -31,7 +32,7 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import PositiveInt
+from pydantic import PositiveInt, parse_obj_as
 from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from simcore_service_api_server.models.schemas.solvers import SolverKeyId
@@ -455,8 +456,12 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[ServicePricingPlanGet].parse_raw(response.text).data
-        return data
+        pricing_plan_get = Envelope[PricingPlanGet].parse_raw(response.text).data
+        if pricing_plan_get:
+            return parse_obj_as(
+                ServicePricingPlanGet, pricing_plan_get.dict(exclude={"is_active"})
+            )
+        return None
 
 
 # MODULES APP SETUP -------------------------------------------------------------

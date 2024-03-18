@@ -68,6 +68,7 @@ async def get_service_default_pricing_plan(
             )
             for unit in pricing_plan_unit_db
         ],
+        is_active=default_pricing_plan.is_active,
     )
 
 
@@ -188,28 +189,3 @@ async def update_pricing_plan(
         ],
         is_active=pricing_plan_db.is_active,
     )
-
-
-### Pricing Unit
-
-# async def get_pricing_unit(
-#     product_name: ProductName,
-#     pricing_plan_id: PricingPlanId,
-#     pricing_unit_id: PricingUnitId,
-#     resource_tracker_repo: Annotated[
-#         ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
-#     ],
-# ) -> PricingUnitGet:
-#     pricing_unit = await resource_tracker_repo.get_pricing_unit(
-#         product_name, pricing_plan_id, pricing_unit_id
-#     )
-
-#     return PricingUnitGet(
-#         pricing_unit_id=pricing_unit.pricing_unit_id,
-#         unit_name=pricing_unit.unit_name,
-#         unit_extra_info=pricing_unit.unit_extra_info,
-#         current_cost_per_unit=pricing_unit.current_cost_per_unit,
-#         current_cost_per_unit_id=pricing_unit.current_cost_per_unit_id,
-#         default=pricing_unit.default,
-#         specific_info=pricing_unit.specific_info,
-#     )
