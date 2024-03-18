@@ -46,7 +46,7 @@ qx.Class.define("osparc.notification.NotificationsButton", {
 
   members: {
     __notificationsContainer: null,
-    __isNotificationsContainerVisible: null,
+    __tappedOut: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -104,14 +104,18 @@ qx.Class.define("osparc.notification.NotificationsButton", {
     },
 
     __buttonTapped: function() {
-      this.__isNotificationsContainerVisible ? this.__hideNotifications() : this.__showNotifications();
+      if (this.__tappedOut) {
+        this.__tappedOut = false;
+        return;
+      }
+      this.__showNotifications();
     },
 
     __showNotifications: function() {
       const tapListener = event => {
-        const notificationsContainer = this.__notificationsContainer;
-        if (osparc.utils.Utils.isMouseOnElement(notificationsContainer, event)) {
-          return;
+        // If the user tapped on the bell we don't want to show it again
+        if (osparc.utils.Utils.isMouseOnElement(this, event)) {
+          this.__tappedOut = true;
         }
         this.__hideNotifications();
         document.removeEventListener("mousedown", tapListener, this);
