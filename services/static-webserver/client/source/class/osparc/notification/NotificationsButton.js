@@ -41,11 +41,12 @@ qx.Class.define("osparc.notification.NotificationsButton", {
     this.__notificationsContainer = new osparc.notification.NotificationsContainer();
     this.__notificationsContainer.exclude();
 
-    this.addListener("tap", () => this.__showNotifications(), this);
+    this.addListener("tap", () => this.__buttonTapped(), this);
   },
 
   members: {
     __notificationsContainer: null,
+    __isNotificationsContainerVisible: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -102,6 +103,10 @@ qx.Class.define("osparc.notification.NotificationsButton", {
       });
     },
 
+    __buttonTapped: function() {
+      this.__isNotificationsContainerVisible ? this.__hideNotifications() : this.__showNotifications();
+    },
+
     __showNotifications: function() {
       const that = this;
       const tapListener = event => {
@@ -126,12 +131,14 @@ qx.Class.define("osparc.notification.NotificationsButton", {
       }
       this.__notificationsContainer.setPosition(bounds.left+bounds.width-2, bounds.top+bounds.height-2);
       this.__notificationsContainer.show();
+      this.__isNotificationsContainerVisible = true;
 
       document.addEventListener("mousedown", tapListener);
     },
 
     __hideNotifications: function() {
       this.__notificationsContainer.exclude();
+      this.__isNotificationsContainerVisible = false;
     }
   }
 });
