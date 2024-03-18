@@ -46,7 +46,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
       }
 
       let msg = qx.locale.Manager.tr("Are you still there?") + "<br>";
-      msg += qx.locale.Manager.tr("If not, oSPARC will close the ") + osparc.product.Utils.getStudyAlias() + qx.locale.Manager.tr(" in: ");
+      msg += `If not, ${osparc.store.StaticInfo.getInstance().getDisplayName()} will try to close the ${osparc.product.Utils.getStudyAlias()} in:`;
       msg += osparc.utils.Utils.formatSeconds(timeoutSec);
       this.__idleFlashMessage.setMessage(msg);
     },
@@ -92,7 +92,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
         const flashMessageDurationS = Math.round(inactivityThresholdT * 0.2);
         this.__idlingTime++;
 
-        if (this.__idlingTime >= inactivityThresholdT && !this.__idleFlashMessageIsShowing) {
+        if (this.__idlingTime >= (inactivityThresholdT-flashMessageDurationS) && !this.__idleFlashMessageIsShowing) {
           const timeSinceInactivityThreshold = this.__idlingTime - inactivityThresholdT;
           if (timeSinceInactivityThreshold % this.self().INACTIVITY_REQUEST_PERIOD_S == 0) {
             // check if backend reports project as inactive
