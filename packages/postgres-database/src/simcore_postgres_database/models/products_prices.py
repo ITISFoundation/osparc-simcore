@@ -36,7 +36,7 @@ products_prices = sa.Table(
         "min_payment_amount_usd",
         sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
-        default=10.00,
+        server_default=sa.text("10.00"),
         doc="Minimum amount in USD that can be paid for this product.",
     ),
     sa.Column(

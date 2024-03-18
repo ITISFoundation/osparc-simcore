@@ -23,7 +23,8 @@ async def get_product_latest_price_info_or_none(
     # newest price of a product
     result = await conn.execute(
         sa.select(
-            products_prices.c.usd_per_credit, products_prices.c.min_payment_amount_usd
+            products_prices.c.usd_per_credit,
+            products_prices.c.min_payment_amount_usd,
         )
         .where(products_prices.c.product_name == product_name)
         .order_by(sa.desc(products_prices.c.valid_from))
