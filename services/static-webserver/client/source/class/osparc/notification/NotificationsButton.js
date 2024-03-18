@@ -85,9 +85,6 @@ qx.Class.define("osparc.notification.NotificationsButton", {
       const notifications = osparc.notification.Notifications.getInstance().getNotifications();
       notifications.forEach(notification => notification.addListener("changeRead", () => this.__updateButton(), this));
 
-      this.set({
-        visibility: notifications.length > 0 ? "visible" : "excluded"
-      });
 
       const nUnreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
       const icon = this.getChildControl("icon");
