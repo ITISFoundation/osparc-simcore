@@ -87,6 +87,12 @@ qx.Class.define("osparc.store.StaticInfo", {
       const staticKey = "countries";
       const metadata = this.getValue(staticKey);
       return metadata ? metadata : [];
+    },
+
+    getMinimumAmount: function() {
+      const staticKey = "minimumAmount";
+      const metadata = this.getValue(staticKey);
+      return metadata ? metadata : [];
     }
   }
 });

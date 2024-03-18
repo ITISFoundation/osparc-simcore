@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
       font: "text-14"
     });
     subtitleLayout.add(subtitle);
-    const minimum = osparc.desktop.credits.BuyCreditsInput.MINIMUM_TOTAL;
+    const minimum = osparc.store.StaticInfo.getInstance().getMinimumAmount();
     const tooltip = new osparc.ui.hint.InfoHint(`A minimum amount of ${minimum}$ is required`);
     subtitleLayout.add(tooltip);
     this._add(subtitleLayout);

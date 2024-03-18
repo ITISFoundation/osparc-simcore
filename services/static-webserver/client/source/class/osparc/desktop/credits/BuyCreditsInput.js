@@ -68,9 +68,10 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       });
       this._add(totalContainer);
 
+      const minimum = osparc.store.StaticInfo.getInstance().getMinimumAmount();
       amountInput.set({
-        value: Math.ceil(this.self().MINIMUM_TOTAL/this.__pricePerCredit),
-        minimum: Math.ceil(this.self().MINIMUM_TOTAL/this.__pricePerCredit)
+        value: Math.ceil(minimum/this.__pricePerCredit),
+        minimum: Math.ceil(minimum/this.__pricePerCredit)
       });
     },
 
