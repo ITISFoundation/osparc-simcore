@@ -17,6 +17,7 @@ import simcore_service_webserver.login._auth_api
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from faker import Faker
+from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.rawdata_fakers import (
@@ -227,12 +228,12 @@ async def test_only_product_owners_can_access_users_api(
 @pytest.fixture
 def account_request_form(faker: Faker) -> dict[str, Any]:
     # This is AccountRequestInfo.form
-    return {
+    form = {
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
         "email": faker.email(),
         "phone": faker.phone_number(),
-        "institution": faker.company(),
+        "company": faker.company(),
         # billing info
         "address": faker.address().replace("\n", ", "),
         "city": faker.city(),
@@ -246,6 +247,10 @@ def account_request_form(faker: Faker) -> dict[str, Any]:
         "privacyPolicy": True,
         "eula": True,
     }
+
+    # keeps in sync fields from example and this fixture
+    assert set(form) == set(AccountRequestInfo.Config.schema_extra["example"]["form"])
+    return form
 
 
 @pytest.mark.acceptance_test(
