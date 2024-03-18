@@ -282,7 +282,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       if (value > 0 && value < 6) {
         setTimeout(() => {
           this.__defaultProgressSubtitle.show();
-        }, 500);
+        }, 50000);
       } else {
         this.__defaultProgressSubtitle.exclude();
       }
