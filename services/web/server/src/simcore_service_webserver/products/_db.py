@@ -6,13 +6,12 @@ from typing import NamedTuple
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-from models_library.basic_types import NonNegativeDecimal
 from models_library.products import ProductName, ProductStripeInfoGet
-from pydantic import parse_obj_as
 from simcore_postgres_database.constants import QUANTIZE_EXP_ARG
 from simcore_postgres_database.models.products import jinja2_templates
 from simcore_postgres_database.utils_products_prices import (
-    get_product_latest_credit_price_or_none,
+    ProductPriceInfo,
+    get_product_latest_price_info_or_none,
     get_product_latest_stripe_info,
 )
 
@@ -49,22 +48,32 @@ _PRODUCTS_COLUMNS = [
 class PaymentFieldsTuple(NamedTuple):
     enabled: bool
     credits_per_usd: Decimal | None
+    min_payment_amount_usd: Decimal | None
 
 
 async def get_product_payment_fields(
     conn: SAConnection, product_name: ProductName
 ) -> PaymentFieldsTuple:
-    usd_per_credit = await get_product_latest_credit_price_or_none(
+    price_info = await get_product_latest_price_info_or_none(
         conn, product_name=product_name
     )
-    if usd_per_credit is None or usd_per_credit == 0:
-        enabled = False
-        credits_per_usd = None
-    else:
-        enabled = True
-        credits_per_usd = Decimal(1 / usd_per_credit).quantize(QUANTIZE_EXP_ARG)
+    if price_info is None or price_info.usd_per_credit == 0:
+        return PaymentFieldsTuple(
+            enabled=False,
+            credits_per_usd=None,
+            min_payment_amount_usd=None,
+        )
 
-    return PaymentFieldsTuple(enabled=enabled, credits_per_usd=credits_per_usd)
+    assert price_info.usd_per_credit > 0
+    assert price_info.min_payment_amount_usd > 0
+
+    return PaymentFieldsTuple(
+        enabled=True,
+        credits_per_usd=Decimal(1 / price_info.usd_per_credit).quantize(
+            QUANTIZE_EXP_ARG
+        ),
+        min_payment_amount_usd=price_info.min_payment_amount_usd,
+    )
 
 
 async def iter_products(conn: SAConnection) -> AsyncIterator[ResultProxy]:
@@ -96,15 +105,14 @@ class ProductRepository(BaseRepository):
                 )
             return None
 
-    async def get_product_latest_credit_price_or_none(
+    async def get_product_latest_price_info_or_none(
         self, product_name: str
-    ) -> NonNegativeDecimal | None:
+    ) -> ProductPriceInfo | None:
+        """newest price of a product or None if not billable"""
         async with self.engine.acquire() as conn:
-            # newest price of a product
-            usd_per_credit = await get_product_latest_credit_price_or_none(
+            return await get_product_latest_price_info_or_none(
                 conn, product_name=product_name
             )
-            return parse_obj_as(NonNegativeDecimal | None, usd_per_credit)
 
     async def get_product_stripe_info(self, product_name: str) -> ProductStripeInfoGet:
         async with self.engine.acquire() as conn:

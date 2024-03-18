@@ -26,7 +26,7 @@ from simcore_service_webserver.groups.api import auto_add_user_to_product_group
     [
         (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
         (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
-        *((role, status.HTTP_200_OK) for role in UserRole if role >= UserRole.USER),
+        *((_, status.HTTP_200_OK) for _ in UserRole if _ >= UserRole.USER),
     ],
 )
 async def test_get_product_price_when_undefined(
