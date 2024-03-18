@@ -32,22 +32,12 @@ from psycopg2 import (
 from psycopg2.errors import (
     CheckViolation,
     ForeignKeyViolation,
+    InvalidTextRepresentation,
     NotNullViolation,
     UniqueViolation,
 )
 
 assert issubclass(UniqueViolation, IntegrityError)  # nosec
-
-# TODO: see https://stackoverflow.com/questions/58740043/how-do-i-catch-a-psycopg2-errors-uniqueviolation-error-in-a-python-flask-app
-# from sqlalchemy.exc import IntegrityError
-#
-# from psycopg2.errors import UniqueViolation
-#
-#    try:
-#        s.commit()
-#   except IntegrityError as e:
-#        assert isinstance(e.orig, UniqueViolation)
-
 
 __all__: tuple[str, ...] = (
     "CheckViolation",
@@ -58,6 +48,7 @@ __all__: tuple[str, ...] = (
     "IntegrityError",
     "InterfaceError",
     "InternalError",
+    "InvalidTextRepresentation",
     "NotNullViolation",
     "NotSupportedError",
     "OperationalError",
