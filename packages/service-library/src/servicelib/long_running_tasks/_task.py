@@ -192,6 +192,7 @@ class TasksManager:
                         task_id,
                         f"{tasks[task_id].task_context=}",
                         f"{with_task_context}=",
+                        exc_info=True,
                     )
                     raise TaskNotFoundError(task_id=task_id)
                 return tasks[task_id]
@@ -199,6 +200,7 @@ class TasksManager:
         logger.debug(
             "Raising TaskNotFoundError because task_id=%s was not a registered task",
             task_id,
+            exc_info=True,
         )
         raise TaskNotFoundError(task_id=task_id)
 
