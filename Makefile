@@ -85,11 +85,6 @@ export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
 
-# Check Python version, throw error if compilation would fail with the installed version
-PYTHON_VERSION_TEST := $(shell python ./scripts/test_python_version.py 2>&1)
-ifneq ($(.SHELLSTATUS), 0)
-$(error "Python version test failed: ${PYTHON_VERSION_TEST}")
-endif
 
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
@@ -134,6 +129,8 @@ else
 	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 endif
 
+test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
+	python ./scripts/test_python_version.py
 
 
 ## DOCKER BUILD -------------------------------
@@ -481,7 +478,7 @@ push-version: tag-version
 		uv
 	@uv pip list
 
-devenv: .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
+devenv: test_python_version .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
 	@uv pip --quiet install -r requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
