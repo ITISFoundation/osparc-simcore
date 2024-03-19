@@ -799,9 +799,8 @@ def summary(
         instances, state.ssh_key_path, user_id, wallet_id
     )
 
-    environment = state.environment
-    _print_dynamic_instances(dynamic_autoscaled_instances, environment)
-    _print_computational_clusters(computational_clusters, environment)
+    _print_dynamic_instances(dynamic_autoscaled_instances, state.environment)
+    _print_computational_clusters(computational_clusters, state.environment)
 
 
 @app.command()
@@ -827,8 +826,7 @@ def cancel_jobs(
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    environment = state.environment
-    _print_computational_clusters(computational_clusters, environment)
+    _print_computational_clusters(computational_clusters, state.environment)
 
     if typer.confirm(
         f"Are you sure you want to cancel all the jobs from that cluster ({user_id=} and {wallet_id=})?"
@@ -876,8 +874,7 @@ def clear_jobs(
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    environment = state.environment
-    _print_computational_clusters(computational_clusters, environment)
+    _print_computational_clusters(computational_clusters, state.environment)
 
     if typer.confirm("Are you sure you want to erase all the jobs from that cluster?"):
         print("proceeding with reseting jobs from cluster...")
@@ -911,8 +908,7 @@ def trigger_cluster_termination(
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    environment = state.environment
-    _print_computational_clusters(computational_clusters, environment)
+    _print_computational_clusters(computational_clusters, state.environment)
     if typer.confirm("Are you sure you want to trigger termination of that cluster?"):
         the_cluster = computational_clusters[0]
         new_heartbeat_tag: TagTypeDef = {
