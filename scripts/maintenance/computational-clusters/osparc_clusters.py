@@ -74,9 +74,10 @@ TaskState: TypeAlias = str
 MINUTE: Final[int] = 60
 HOUR: Final[int] = 60 * MINUTE
 
-COMPUTATIONAL_INSTANCE_NAME_PARSER: Final[parse.Parser] = parse.compile(
-    r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:d}"
-)
+DEFAULT_COMPUTATIONAL_EC2_FORMAT: Final[
+    str
+] = r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:d}"
+DEFAULT_DYNAMIC_EC2_FORMAT: Final[str] = r"osparc-dynamic-autoscaled-worker-{key_name}"
 
 DEPLOY_SSH_KEY_PARSER: Final[parse.Parser] = parse.compile(r"osparc-{random_name}.pem")
 SSH_USER_NAME: Final[str] = "ubuntu"
@@ -99,6 +100,23 @@ DockerContainer = namedtuple(  # noqa: PYI024
         "service_name",
         "service_version",
     ],
+)
+
+
+@dataclass(kw_only=True)
+class AppState:
+    environment: dict[str, str | None] = field(default_factory=dict)
+    ec2_resource_autoscaling: EC2ServiceResource | None = None
+    ec2_resource_clusters_keeper: EC2ServiceResource | None = None
+    dynamic_parser: parse.Parser
+    computational_parser: parse.Parser
+    deploy_config: Path | None = None
+    ssh_key_path: Path | None = None
+
+
+state: AppState = AppState(
+    dynamic_parser=parse.compile(DEFAULT_DYNAMIC_EC2_FORMAT),
+    computational_parser=parse.compile(DEFAULT_COMPUTATIONAL_EC2_FORMAT),
 )
 
 
@@ -548,7 +566,8 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
 
 def _dask_client(ip_address: str) -> distributed.Client:
     security = distributed.Security()
-    dask_certificates = state["deploy_config"] / "assets" / "dask-certificates"
+    assert state.deploy_config
+    dask_certificates = state.deploy_config / "assets" / "dask-certificates"
     if dask_certificates.exists():
         security = distributed.Security(
             tls_ca_file=f"{dask_certificates / 'dask-cert.pem'}",
@@ -660,21 +679,6 @@ def _detect_instances(
     return dynamic_instances, computational_clusters
 
 
-@dataclass(kw_only=True)
-class AppState:
-    environment: dict[str, str | None] = field(default_factory=dict)
-    ec2_resource_autoscaling: EC2ServiceResource | None = None
-    ec2_resource_clusters_keeper: EC2ServiceResource | None = None
-    dynamic_parser: parse.Parser
-    deploy_config: Path | None = None
-    ssh_key_path: Path | None = None
-
-
-state: AppState = AppState(
-    dynamic_parser=parse.compile("osparc-dynamic-autoscaled-worker-{key_name}")
-)
-
-
 def _list_running_ec2_instances(
     user_id: int | None, wallet_id: int | None
 ) -> ServiceResourceInstancesCollection:
@@ -746,6 +750,9 @@ def main(
     assert environment["EC2_INSTANCES_KEY_NAME"]
     state.dynamic_parser = parse.compile(
         f"{environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
+    )
+    state.computational_parser = parse.compile(
+        f"{environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX']}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT}"
     )
 
     # locate ssh key path
