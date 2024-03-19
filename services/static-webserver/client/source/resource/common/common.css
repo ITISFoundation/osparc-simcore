@@ -36,3 +36,12 @@
 .qx-form-button-active {
   background-clip: border-box;
 }
+
+@keyframes clouds-transition {
+  0% {
+    background-position: right -813px bottom -1355px, left 30px bottom, right -230px top -125px;
+  }
+  100% {
+    background-position: left -413px bottom -355px, left 30px bottom, left -230px bottom -125px;
+  }
+}
