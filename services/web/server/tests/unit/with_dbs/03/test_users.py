@@ -17,6 +17,7 @@ import simcore_service_webserver.login._auth_api
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from faker import Faker
+from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.rawdata_fakers import (
@@ -227,17 +228,16 @@ async def test_only_product_owners_can_access_users_api(
 @pytest.fixture
 def account_request_form(faker: Faker) -> dict[str, Any]:
     # This is AccountRequestInfo.form
-    return {
+    form = {
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
         "email": faker.email(),
         "phone": faker.phone_number(),
-        "institution": faker.company(),
+        "company": faker.company(),
         # billing info
         "address": faker.address().replace("\n", ", "),
         "city": faker.city(),
         "postalCode": faker.postcode(),
-        "state": faker.state(),
         "country": faker.country(),
         # extras
         "application": faker.word(),
@@ -246,6 +246,10 @@ def account_request_form(faker: Faker) -> dict[str, Any]:
         "privacyPolicy": True,
         "eula": True,
     }
+
+    # keeps in sync fields from example and this fixture
+    assert set(form) == set(AccountRequestInfo.Config.schema_extra["example"]["form"])
+    return form
 
 
 @pytest.mark.acceptance_test(
@@ -344,7 +348,7 @@ def test_parse_model_from_request_form_data(
     institution_key: str,
 ):
     data = deepcopy(account_request_form)
-    data[institution_key] = data.pop("institution")
+    data[institution_key] = data.pop("company")
     data["comment"] = "extra comment"
 
     # pre-processors
@@ -353,7 +357,7 @@ def test_parse_model_from_request_form_data(
     print(pre_user_profile.json(indent=1))
 
     # institution aliases
-    assert pre_user_profile.institution == account_request_form["institution"]
+    assert pre_user_profile.institution == account_request_form["company"]
 
     # extras
     assert {
