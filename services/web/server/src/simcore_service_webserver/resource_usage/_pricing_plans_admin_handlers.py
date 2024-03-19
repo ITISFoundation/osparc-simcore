@@ -109,7 +109,7 @@ async def list_pricing_plans(request: web.Request):
     name="get_pricing_plan",
 )
 @login_required
-@permission_required("resource-usage.read")
+@permission_required("resource-usage.write")
 @_handle_resource_usage_exceptions
 async def get_pricing_plan(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
@@ -152,7 +152,7 @@ async def get_pricing_plan(request: web.Request):
     name="create_pricing_plan",
 )
 @login_required
-@permission_required("resource-usage.read")
+@permission_required("resource-usage.write")
 @_handle_resource_usage_exceptions
 async def create_pricing_plan(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
@@ -201,7 +201,7 @@ async def create_pricing_plan(request: web.Request):
     name="update_pricing_plan",
 )
 @login_required
-@permission_required("resource-usage.read")
+@permission_required("resource-usage.write")
 @_handle_resource_usage_exceptions
 async def update_pricing_plan(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
@@ -262,7 +262,7 @@ class _GetPricingUnitPathParams(BaseModel):
     name="get_pricing_unit",
 )
 @login_required
-@permission_required("resource-usage.read")
+@permission_required("resource-usage.write")
 @_handle_resource_usage_exceptions
 async def get_pricing_unit(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
@@ -292,7 +292,7 @@ async def get_pricing_unit(request: web.Request):
     name="create_pricing_unit",
 )
 @login_required
-@permission_required("resource-usage.read")
+@permission_required("resource-usage.write")
 @_handle_resource_usage_exceptions
 async def create_pricing_unit(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
@@ -331,7 +331,7 @@ async def create_pricing_unit(request: web.Request):
     name="update_pricing_unit",
 )
 @login_required
-@permission_required("resource-usage.read")
+@permission_required("resource-usage.write")
 @_handle_resource_usage_exceptions
 async def update_pricing_unit(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)

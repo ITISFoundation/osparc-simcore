@@ -2893,7 +2893,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -3178,9 +3178,9 @@ paths:
   /v0/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}:
     get:
       tags:
-      - pricing-plans
+      - admin
       summary: Retrieve detail information about pricing unit
-      operationId: get_pricing_plan_unit
+      operationId: get_pricing_unit
       parameters:
       - required: true
         schema:
@@ -3204,7 +3204,151 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_PricingUnitGet_'
+                $ref: '#/components/schemas/Envelope_PricingUnitAdminGet_'
+    put:
+      tags:
+      - admin
+      summary: Update detail information about pricing plan
+      operationId: update_pricing_unit
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Unit Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_unit_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePricingPlanBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingUnitAdminGet_'
+  /v0/pricing-plans:
+    get:
+      tags:
+      - admin
+      summary: List pricing plans
+      description: To keep the listing lightweight, the pricingUnits field is None.
+      operationId: list_pricing_plans
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanAdminGet__'
+    post:
+      tags:
+      - admin
+      summary: Create pricing plan
+      operationId: create_pricing_plan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePricingPlanBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
+  /v0/pricing-plans/{pricing_plan_id}:
+    get:
+      tags:
+      - admin
+      summary: Retrieve detail information about pricing plan
+      operationId: get_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
+    put:
+      tags:
+      - admin
+      summary: Update detail information about pricing plan
+      operationId: update_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePricingPlanBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
+  /v0/pricing-plans/{pricing_plan_id}/pricing-units:
+    post:
+      tags:
+      - admin
+      summary: Create pricing unit
+      operationId: create_pricing_unit
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePricingUnitBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingUnitAdminGet_'
   /:
     get:
       tags:
@@ -5365,6 +5509,54 @@ components:
         alpha2:
           title: Alpha2
           type: string
+    CreatePricingPlanBodyParams:
+      title: CreatePricingPlanBodyParams
+      required:
+      - displayName
+      - description
+      - classification
+      - pricingPlanKey
+      type: object
+      properties:
+        displayName:
+          title: Displayname
+          type: string
+        description:
+          title: Description
+          type: string
+        classification:
+          $ref: '#/components/schemas/PricingPlanClassification'
+        pricingPlanKey:
+          title: Pricingplankey
+          type: string
+    CreatePricingUnitBodyParams:
+      title: CreatePricingUnitBodyParams
+      required:
+      - unitName
+      - unitExtraInfo
+      - default
+      - specificInfo
+      - costPerUnit
+      - comment
+      type: object
+      properties:
+        unitName:
+          title: Unitname
+          type: string
+        unitExtraInfo:
+          title: Unitextrainfo
+          type: object
+        default:
+          title: Default
+          type: boolean
+        specificInfo:
+          $ref: '#/components/schemas/SpecificInfo'
+        costPerUnit:
+          title: Costperunit
+          type: number
+        comment:
+          title: Comment
+          type: string
     CreateWalletBodyParams:
       title: CreateWalletBodyParams
       required:
@@ -5738,6 +5930,22 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/PresignedLink'
+        error:
+          title: Error
+    Envelope_PricingPlanAdminGet_:
+      title: Envelope[PricingPlanAdminGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PricingPlanAdminGet'
+        error:
+          title: Error
+    Envelope_PricingUnitAdminGet_:
+      title: Envelope[PricingUnitAdminGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PricingUnitAdminGet'
         error:
           title: Error
     Envelope_PricingUnitGet_:
@@ -6136,6 +6344,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GroupUserGet'
+        error:
+          title: Error
+    Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanAdminGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.resource_usage.PricingPlanAdminGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/PricingPlanAdminGet'
         error:
           title: Error
     Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__:
@@ -6871,6 +7090,17 @@ components:
           read: true
           write: false
           delete: false
+    HardwareInfo:
+      title: HardwareInfo
+      required:
+      - aws_ec2_instances
+      type: object
+      properties:
+        aws_ec2_instances:
+          title: Aws Ec2 Instances
+          type: array
+          items:
+            type: string
     HealthInfoDict:
       title: HealthInfoDict
       required:
@@ -8020,12 +8250,82 @@ components:
           minLength: 1
           type: string
           format: uri
+    PricingPlanAdminGet:
+      title: PricingPlanAdminGet
+      required:
+      - pricingPlanId
+      - displayName
+      - description
+      - classification
+      - createdAt
+      - pricingPlanKey
+      - isActive
+      type: object
+      properties:
+        pricingPlanId:
+          title: Pricingplanid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        displayName:
+          title: Displayname
+          type: string
+        description:
+          title: Description
+          type: string
+        classification:
+          $ref: '#/components/schemas/PricingPlanClassification'
+        createdAt:
+          title: Createdat
+          type: string
+          format: date-time
+        pricingPlanKey:
+          title: Pricingplankey
+          type: string
+        pricingUnits:
+          title: Pricingunits
+          type: array
+          items:
+            $ref: '#/components/schemas/PricingUnitAdminGet'
+        isActive:
+          title: Isactive
+          type: boolean
     PricingPlanClassification:
       title: PricingPlanClassification
       enum:
       - TIER
       type: string
       description: An enumeration.
+    PricingUnitAdminGet:
+      title: PricingUnitAdminGet
+      required:
+      - pricingUnitId
+      - unitName
+      - unitExtraInfo
+      - specificInfo
+      - currentCostPerUnit
+      - default
+      type: object
+      properties:
+        pricingUnitId:
+          title: Pricingunitid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        unitName:
+          title: Unitname
+          type: string
+        unitExtraInfo:
+          title: Unitextrainfo
+          type: object
+        specificInfo:
+          $ref: '#/components/schemas/HardwareInfo'
+        currentCostPerUnit:
+          title: Currentcostperunit
+          type: number
+        default:
+          title: Default
+          type: boolean
     PricingUnitGet:
       title: PricingUnitGet
       required:
@@ -9635,6 +9935,21 @@ components:
         instructions:
           title: Instructions
           type: string
+    SpecificInfo:
+      title: SpecificInfo
+      required:
+      - aws_ec2_instances
+      type: object
+      properties:
+        aws_ec2_instances:
+          title: Aws Ec2 Instances
+          type: array
+          items:
+            type: string
+      description: 'Custom information that is not propagated to the frontend. For
+        example can be used
+
+        to store aws ec2 instance type.'
     StackInfoDict:
       title: StackInfoDict
       required:
@@ -10099,6 +10414,27 @@ components:
           type: string
           format: password
           writeOnly: true
+    UpdatePricingPlanBodyParams:
+      title: UpdatePricingPlanBodyParams
+      required:
+      - name
+      - displayName
+      - description
+      - isActive
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        displayName:
+          title: Displayname
+          type: string
+        description:
+          title: Description
+          type: string
+        isActive:
+          title: Isactive
+          type: boolean
     UpdateProductTemplate:
       title: UpdateProductTemplate
       required:

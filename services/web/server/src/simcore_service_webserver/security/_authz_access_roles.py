@@ -97,10 +97,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
         inherits=[UserRole.TESTER],
     ),
     UserRole.ADMIN: PermissionDict(
-        can=[
-            "admin.*",
-            "storage.files.sync",
-        ],
+        can=["admin.*", "storage.files.sync", "resource-usage.write"],
         inherits=[UserRole.TESTER],
     ),
 }
