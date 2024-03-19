@@ -172,7 +172,7 @@ def _create_graylog_permalinks(
 
 def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
     name = _get_instance_name(instance)
-    if result := state["dynamic_parser"].search(name):
+    if result := state.dynamic_parser.search(name):
         assert isinstance(result, parse.Result)
 
         return DynamicInstance(
@@ -683,10 +683,11 @@ def _list_running_ec2_instances(
     assert environment["EC2_INSTANCES_KEY_NAME"]
 
     for ec2_res, key_name_env in [
-        ("ec2_resource_autoscaling", "EC2_INSTANCES_KEY_NAME"),
+        (state.ec2_resource_autoscaling, "EC2_INSTANCES_KEY_NAME"),
         # ("ec2_resource_clusters-keeper", "PRIMARY_EC2_INSTANCES_KEY_NAME"),
     ]:
-        ec2_resource: EC2ServiceResource = state[ec2_res]
+        assert ec2_res
+        ec2_resource: EC2ServiceResource = ec2_res
         ec2_filters: list[FilterTypeDef] = [
             {"Name": "instance-state-name", "Values": ["running", "pending"]},
             {"Name": "key-name", "Values": [environment[key_name_env]]},
