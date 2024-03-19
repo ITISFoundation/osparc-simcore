@@ -25,7 +25,11 @@ class GetCreditPrice(OutputSchema):
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
-                {"productName": "osparc", "usdPerCredit": None},
+                {
+                    "productName": "osparc",
+                    "usdPerCredit": None,
+                    "minPaymentAmountUsd": None,
+                },
                 {
                     "productName": "osparc",
                     "usdPerCredit": "10",
