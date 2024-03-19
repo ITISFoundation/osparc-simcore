@@ -185,13 +185,13 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     addProgressMessage: function(progressType, progress) {
-      const defaultProgress = this.getClusterUpScaling()
-        + this.getSidecarPulling()
-        + this.getOutputsPulling()
-        + this.getStatePulling()
-        + this.getImagesPulling()
-        + this.getInputsPulling();
-      if(progress) {
+      const defaultProgress = this.getClusterUpScaling() +
+        this.getSidecarPulling() +
+        this.getOutputsPulling() +
+        this.getStatePulling() +
+        this.getImagesPulling() +
+        this.getInputsPulling();
+      if (progress) {
         const val = defaultProgress
         this.setDefaultProgress(val)
       }
@@ -295,7 +295,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __applySidecarPulling: function(value) {
-      if(this.getClusterUpScaling() < 1) {
+      if (this.getClusterUpScaling() < 1) {
         this.setClusterUpScaling(1)
       }
       this.self().updateProgressLabel(this.__pullingSidecarTitle, value);
