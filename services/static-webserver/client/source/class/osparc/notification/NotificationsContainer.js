@@ -26,7 +26,8 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
     this.set({
       zIndex: 110000,
       maxWidth: osparc.notification.NotificationUI.MAX_WIDTH,
-      maxHeight: 250
+      maxHeight: 250,
+      backgroundColor: "background-main-3"
     });
 
     const root = qx.core.Init.getApplication().getRoot();
@@ -66,7 +67,7 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
         const aboutLabel = new qx.ui.basic.Label().set({
           value: "If something is shared with you, it will appear here",
           font: "text-14",
-          maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
+          padding: osparc.notification.NotificationUI.PADDING,
           rich: true,
           wrap: true
         });
