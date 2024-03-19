@@ -27,10 +27,6 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
     "input": "qx.event.type.Data"
   },
 
-  statics: {
-    MINIMUM_TOTAL: 10
-  },
-
   members: {
     __pricePerCredit: null,
     __currencySymbol: null,
@@ -68,9 +64,8 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       });
       this._add(totalContainer);
 
-      osparc.data.Resources.fetch("creditPrice", "get")
-        .then(data => {
-          const minimum = "minPaymentAmountUsd" in data ? data["minPaymentAmountUsd"] : 10;
+      osparc.store.Store.getInstance().getMinimumAmount()
+        .then(minimum => {
           amountInput.set({
             value: Math.ceil(minimum/this.__pricePerCredit),
             minimum: Math.ceil(minimum/this.__pricePerCredit)
