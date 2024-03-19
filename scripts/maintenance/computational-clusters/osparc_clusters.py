@@ -856,7 +856,11 @@ def cancel_jobs(
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    _print_computational_clusters(computational_clusters, state.environment)
+    _print_computational_clusters(
+        computational_clusters,
+        state.environment,
+        state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+    )
 
     if typer.confirm(
         f"Are you sure you want to cancel all the jobs from that cluster ({user_id=} and {wallet_id=})?"
@@ -906,7 +910,11 @@ def clear_jobs(
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    _print_computational_clusters(computational_clusters, state.environment)
+    _print_computational_clusters(
+        computational_clusters,
+        state.environment,
+        state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+    )
 
     if typer.confirm("Are you sure you want to erase all the jobs from that cluster?"):
         print("proceeding with reseting jobs from cluster...")
@@ -942,7 +950,11 @@ def trigger_cluster_termination(
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    _print_computational_clusters(computational_clusters, state.environment)
+    _print_computational_clusters(
+        computational_clusters,
+        state.environment,
+        state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+    )
     if typer.confirm("Are you sure you want to trigger termination of that cluster?"):
         the_cluster = computational_clusters[0]
         new_heartbeat_tag: TagTypeDef = {
