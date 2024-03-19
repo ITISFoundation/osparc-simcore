@@ -2893,7 +2893,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -3383,7 +3383,7 @@ paths:
     get:
       tags:
       - admin
-      summary: Update detail information about pricing plan
+      summary: List services that are connected to the provided pricing plan
       operationId: list_connected_services_to_pricing_plan
       parameters:
       - required: true
@@ -3404,7 +3404,7 @@ paths:
     post:
       tags:
       - admin
-      summary: Update detail information about pricing plan
+      summary: Connect service with pricing plan
       operationId: connect_service_to_pricing_plan
       parameters:
       - required: true
@@ -3419,7 +3419,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConnectServiceToProcingPlanBodyParams'
+              $ref: '#/components/schemas/ConnectServiceToPricingPlanBodyParams'
         required: true
       responses:
         '200':
@@ -5575,8 +5575,8 @@ components:
           title: Cluster Id
           minimum: 0
           type: integer
-    ConnectServiceToProcingPlanBodyParams:
-      title: ConnectServiceToProcingPlanBodyParams
+    ConnectServiceToPricingPlanBodyParams:
+      title: ConnectServiceToPricingPlanBodyParams
       required:
       - serviceKey
       - serviceVersion

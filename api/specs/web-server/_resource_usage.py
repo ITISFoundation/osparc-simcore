@@ -14,7 +14,7 @@ from typing import Annotated
 from _common import assert_handler_signature_against_model
 from fastapi import APIRouter, Query, status
 from models_library.api_schemas_webserver.resource_usage import (
-    ConnectServiceToProcingPlanBodyParams,
+    ConnectServiceToPricingPlanBodyParams,
     CreatePricingPlanBodyParams,
     CreatePricingUnitBodyParams,
     PricingPlanAdminGet,
@@ -248,7 +248,7 @@ assert_handler_signature_against_model(update_pricing_unit, _GetPricingUnitPathP
 @router.get(
     "/admin/pricing-plans/{pricing_plan_id}/connect-services",
     response_model=Envelope[list[PricingPlanToServiceAdminGet]],
-    summary="Update detail information about pricing plan",
+    summary="List services that are connected to the provided pricing plan",
     tags=["admin"],
 )
 async def list_connected_services_to_pricing_plan(
@@ -263,12 +263,12 @@ assert_handler_signature_against_model(update_pricing_unit, _GetPricingPlanPathP
 @router.post(
     "/admin/pricing-plans/{pricing_plan_id}/connect-services",
     response_model=Envelope[PricingPlanToServiceAdminGet],
-    summary="Update detail information about pricing plan",
+    summary="Connect service with pricing plan",
     tags=["admin"],
 )
 async def connect_service_to_pricing_plan(
     pricing_plan_id: PricingPlanId,
-    body: ConnectServiceToProcingPlanBodyParams,
+    body: ConnectServiceToPricingPlanBodyParams,
 ):
     ...
 

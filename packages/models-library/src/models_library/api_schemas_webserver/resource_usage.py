@@ -122,6 +122,6 @@ class UpdatePricingUnitBodyParams(OutputSchema):
     pricing_unit_cost_update: PricingUnitCostUpdate | None
 
 
-class ConnectServiceToProcingPlanBodyParams(OutputSchema):
+class ConnectServiceToPricingPlanBodyParams(OutputSchema):
     service_key: ServiceKey
     service_version: ServiceVersion

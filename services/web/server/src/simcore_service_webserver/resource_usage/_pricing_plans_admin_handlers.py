@@ -2,7 +2,7 @@ import functools
 
 from aiohttp import web
 from models_library.api_schemas_webserver.resource_usage import (
-    ConnectServiceToProcingPlanBodyParams,
+    ConnectServiceToPricingPlanBodyParams,
     CreatePricingPlanBodyParams,
     CreatePricingUnitBodyParams,
     PricingPlanAdminGet,
@@ -412,7 +412,7 @@ async def connect_service_to_pricing_plan(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
     body_params = await parse_request_body_as(
-        ConnectServiceToProcingPlanBodyParams, request
+        ConnectServiceToPricingPlanBodyParams, request
     )
 
     connected_service = await admin_api.connect_service_to_pricing_plan(
