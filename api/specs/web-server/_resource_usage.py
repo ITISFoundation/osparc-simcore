@@ -14,9 +14,11 @@ from typing import Annotated
 from _common import assert_handler_signature_against_model
 from fastapi import APIRouter, Query, status
 from models_library.api_schemas_webserver.resource_usage import (
+    ConnectServiceToProcingPlanBodyParams,
     CreatePricingPlanBodyParams,
     CreatePricingUnitBodyParams,
     PricingPlanAdminGet,
+    PricingPlanToServiceAdminGet,
     PricingUnitAdminGet,
     PricingUnitGet,
     ServiceRunGet,
@@ -238,3 +240,37 @@ async def update_pricing_unit(
 
 
 assert_handler_signature_against_model(update_pricing_unit, _GetPricingUnitPathParams)
+
+
+## Pricing Plans to Service Admin panel
+
+
+@router.get(
+    "/admin/pricing-plans/{pricing_plan_id}/connect-services",
+    response_model=Envelope[list[PricingPlanToServiceAdminGet]],
+    summary="Update detail information about pricing plan",
+    tags=["admin"],
+)
+async def list_connected_services_to_pricing_plan(
+    pricing_plan_id: PricingPlanId,
+):
+    ...
+
+
+assert_handler_signature_against_model(update_pricing_unit, _GetPricingPlanPathParams)
+
+
+@router.post(
+    "/admin/pricing-plans/{pricing_plan_id}/connect-services",
+    response_model=Envelope[PricingPlanToServiceAdminGet],
+    summary="Update detail information about pricing plan",
+    tags=["admin"],
+)
+async def connect_service_to_pricing_plan(
+    pricing_plan_id: PricingPlanId,
+    body: ConnectServiceToProcingPlanBodyParams,
+):
+    ...
+
+
+assert_handler_signature_against_model(update_pricing_unit, _GetPricingPlanPathParams)

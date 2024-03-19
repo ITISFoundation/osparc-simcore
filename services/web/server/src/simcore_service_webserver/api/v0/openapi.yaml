@@ -2893,7 +2893,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -3379,6 +3379,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_PricingUnitAdminGet_'
+  /v0/admin/pricing-plans/{pricing_plan_id}/connect-services:
+    get:
+      tags:
+      - admin
+      summary: Update detail information about pricing plan
+      operationId: list_connected_services_to_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanToServiceAdminGet__'
+    post:
+      tags:
+      - admin
+      summary: Update detail information about pricing plan
+      operationId: connect_service_to_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectServiceToProcingPlanBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanToServiceAdminGet_'
   /:
     get:
       tags:
@@ -5526,6 +5575,21 @@ components:
           title: Cluster Id
           minimum: 0
           type: integer
+    ConnectServiceToProcingPlanBodyParams:
+      title: ConnectServiceToProcingPlanBodyParams
+      required:
+      - serviceKey
+      - serviceVersion
+      type: object
+      properties:
+        serviceKey:
+          title: Servicekey
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        serviceVersion:
+          title: Serviceversion
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
     CountryInfoDict:
       title: CountryInfoDict
       required:
@@ -5970,6 +6034,14 @@ components:
           $ref: '#/components/schemas/PricingPlanAdminGet'
         error:
           title: Error
+    Envelope_PricingPlanToServiceAdminGet_:
+      title: Envelope[PricingPlanToServiceAdminGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PricingPlanToServiceAdminGet'
+        error:
+          title: Error
     Envelope_PricingUnitAdminGet_:
       title: Envelope[PricingUnitAdminGet]
       type: object
@@ -6385,6 +6457,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PricingPlanAdminGet'
+        error:
+          title: Error
+    Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanToServiceAdminGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.resource_usage.PricingPlanToServiceAdminGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/PricingPlanToServiceAdminGet'
         error:
           title: Error
     Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__:
@@ -8326,6 +8409,32 @@ components:
       - TIER
       type: string
       description: An enumeration.
+    PricingPlanToServiceAdminGet:
+      title: PricingPlanToServiceAdminGet
+      required:
+      - pricingPlanId
+      - serviceKey
+      - serviceVersion
+      - created
+      type: object
+      properties:
+        pricingPlanId:
+          title: Pricingplanid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        serviceKey:
+          title: Servicekey
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        serviceVersion:
+          title: Serviceversion
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        created:
+          title: Created
+          type: string
+          format: date-time
     PricingUnitAdminGet:
       title: PricingUnitAdminGet
       required:

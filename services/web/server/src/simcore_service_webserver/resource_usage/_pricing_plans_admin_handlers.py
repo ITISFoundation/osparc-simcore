@@ -2,9 +2,11 @@ import functools
 
 from aiohttp import web
 from models_library.api_schemas_webserver.resource_usage import (
+    ConnectServiceToProcingPlanBodyParams,
     CreatePricingPlanBodyParams,
     CreatePricingUnitBodyParams,
     PricingPlanAdminGet,
+    PricingPlanToServiceAdminGet,
     PricingUnitAdminGet,
     UpdatePricingPlanBodyParams,
     UpdatePricingUnitBodyParams,
@@ -365,3 +367,67 @@ async def update_pricing_unit(request: web.Request):
     )
 
     return envelope_json_response(webserver_pricing_unit_get, web.HTTPOk)
+
+
+## Admin Pricing Plans To Service endpoints
+
+
+@routes.get(
+    f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}/connect-services",
+    name="list_connected_services_to_pricing_plan",
+)
+@login_required
+@permission_required("resource-usage.write")
+@_handle_pricing_plan_admin_exceptions
+async def list_connected_services_to_pricing_plan(request: web.Request):
+    req_ctx = _RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+
+    connected_services_list = await admin_api.list_connected_services_to_pricing_plan(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        pricing_plan_id=path_params.pricing_plan_id,
+    )
+    connected_services_get = [
+        PricingPlanToServiceAdminGet(
+            pricing_plan_id=connected_service.pricing_plan_id,
+            service_key=connected_service.service_key,
+            service_version=connected_service.service_version,
+            created=connected_service.created,
+        )
+        for connected_service in connected_services_list
+    ]
+
+    return envelope_json_response(connected_services_get, web.HTTPOk)
+
+
+@routes.post(
+    f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}/connect-services",
+    name="connect_service_to_pricing_plan",
+)
+@login_required
+@permission_required("resource-usage.write")
+@_handle_pricing_plan_admin_exceptions
+async def connect_service_to_pricing_plan(request: web.Request):
+    req_ctx = _RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
+    body_params = await parse_request_body_as(
+        ConnectServiceToProcingPlanBodyParams, request
+    )
+
+    connected_service = await admin_api.connect_service_to_pricing_plan(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        pricing_plan_id=path_params.pricing_plan_id,
+        service_key=body_params.service_key,
+        service_version=body_params.service_version,
+    )
+    connected_service_get = PricingPlanToServiceAdminGet(
+        pricing_plan_id=connected_service.pricing_plan_id,
+        service_key=connected_service.service_key,
+        service_version=connected_service.service_version,
+        created=connected_service.created,
+    )
+
+    return envelope_json_response(connected_service_get, web.HTTPOk)

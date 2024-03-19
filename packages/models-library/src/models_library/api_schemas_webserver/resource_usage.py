@@ -85,8 +85,11 @@ class PricingPlanAdminGet(OutputSchema):
     is_active: bool
 
 
-class PricingUnitInternalGet(PricingUnitGet):
-    specific_info: SpecificInfo
+class PricingPlanToServiceAdminGet(OutputSchema):
+    pricing_plan_id: PricingPlanId
+    service_key: ServiceKey
+    service_version: ServiceVersion
+    created: datetime
 
 
 class CreatePricingPlanBodyParams(OutputSchema):
@@ -117,3 +120,8 @@ class UpdatePricingUnitBodyParams(OutputSchema):
     default: bool
     specific_info: SpecificInfo
     pricing_unit_cost_update: PricingUnitCostUpdate | None
+
+
+class ConnectServiceToProcingPlanBodyParams(OutputSchema):
+    service_key: ServiceKey
+    service_version: ServiceVersion
