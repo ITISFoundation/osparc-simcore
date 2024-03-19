@@ -237,7 +237,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       sequenceLoadingPage.add(defaultPBar);
 
       const defaultProgressSubtitle = this.__defaultProgressSubtitle = new qx.ui.basic.Atom().set({
-        label: qx.locale.Manager.tr("Please be patient this process can take up to 5 minutes..."),
+        label: qx.locale.Manager.tr("Please be patient, this process can take up to 5 minutes..."),
         padding: [20, 10],
         gap: 15,
         icon: "@FontAwesome5Solid/exclamation-triangle/16",
@@ -255,13 +255,13 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Increasing system capacity..."));
       sequenceLoadingPage.add(scalingTitle);
 
-      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your inputs..."));
+      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your input data..."));
       sequenceLoadingPage.add(pullingInputsTitle);
 
       const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Setting up key components..."));
       sequenceLoadingPage.add(pullingSidecarTitle);
 
-      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your outputs..."));
+      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your output data..."));
       sequenceLoadingPage.add(pullingOutputsTitle);
 
       const pullingStateTitle = this.__pullingStateTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your work..."));
