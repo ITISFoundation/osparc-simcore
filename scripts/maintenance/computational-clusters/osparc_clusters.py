@@ -337,7 +337,6 @@ def _print_dynamic_instances(
     time_now = arrow.utcnow()
     table = Table(
         Column("Instance"),
-        Column("Links", overflow="fold"),
         Column(
             "Running services",
             footer="[red]Intervention detection might show false positive if in transient state, be careful and always double-check!![/red]",
@@ -360,6 +359,8 @@ def _print_dynamic_instances(
                 "ServiceVersion",
                 "Created Since",
                 "Need intervention",
+                expand=True,
+                padding=(0, 0),
             )
             for service in instance.running_services:
                 service_table.add_row(
@@ -377,7 +378,8 @@ def _print_dynamic_instances(
                 [
                     f"{_color_encode_with_state(instance.name, instance.ec2_instance)}",
                     f"ID: {instance.ec2_instance.instance_id}",
-                    f"AMI: {instance.ec2_instance.image_id}({instance.ec2_instance.image.name})",
+                    f"AMI: {instance.ec2_instance.image_id}",
+                    f"AMI name: {instance.ec2_instance.image.name}",
                     f"Type: {instance.ec2_instance.instance_type}",
                     f"Up: {_timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {instance.ec2_instance.public_ip_address}",
@@ -385,8 +387,11 @@ def _print_dynamic_instances(
                     f"/mnt/docker(free): {_color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
                 ]
             ),
-            f"Graylog: {_create_graylog_permalinks(environment, instance.ec2_instance)}",
             service_table,
+        )
+        table.add_row(
+            "Graylog: ",
+            f"{_create_graylog_permalinks(environment, instance.ec2_instance)}",
             end_section=True,
         )
     print(table, flush=True)
@@ -442,7 +447,8 @@ def _print_computational_clusters(
                     f"[bold]{_color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
                     f"Name: {cluster.primary.name}",
                     f"ID: {cluster.primary.ec2_instance.id}",
-                    f"AMI: {cluster.primary.ec2_instance.image_id}({cluster.primary.ec2_instance.image.name})",
+                    f"AMI: {cluster.primary.ec2_instance.image_id}",
+                    f"AMI name: {cluster.primary.ec2_instance.image.name}",
                     f"Type: {cluster.primary.ec2_instance.instance_type}",
                     f"Up: {_timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
@@ -476,7 +482,8 @@ def _print_computational_clusters(
                         f"[italic]{_color_encode_with_state(f'Worker {index+1}', worker.ec2_instance)}[/italic]",
                         f"Name: {worker.name}",
                         f"ID: {worker.ec2_instance.id}",
-                        f"AMI: {worker.ec2_instance.image_id}({worker.ec2_instance.image.name})",
+                        f"AMI: {worker.ec2_instance.image_id}",
+                        f"AMI name: {worker.ec2_instance.image.name}",
                         f"Type: {worker.ec2_instance.instance_type}",
                         f"Up: {_timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)}",
                         f"ExtIP: {worker.ec2_instance.public_ip_address}",
@@ -699,25 +706,23 @@ def _list_running_ec2_instances(
 ) -> ServiceResourceInstancesCollection:
     # get all the running instances
 
-    assert state.environment["EC2_INSTANCES_KEY_NAME"]
-
     ec2_filters: list[FilterTypeDef] = [
         {"Name": "instance-state-name", "Values": ["running", "pending"]},
-        {"Name": "key-name", "Values": [state.environment["EC2_INSTANCES_KEY_NAME"]]},
+        {"Name": "key-name", "Values": [key_name]},
     ]
-    if state.environment["EC2_INSTANCES_CUSTOM_TAGS"]:
-        custom_tags = json.loads(state.environment["EC2_INSTANCES_CUSTOM_TAGS"])
-        ec2_filters.extend(
-            [
-                {"Name": f"tag:{key}", "Values": [f"{value}"]}
-                for key, value in custom_tags.items()
-            ]
-        )
+    # if custom_tags:
+    #     ec2_filters.extend(
+    #         [
+    #             {"Name": f"tag:{key}", "Values": [f"{value}"]}
+    #             for key, value in custom_tags.items()
+    #         ]
+    #     )
 
     if user_id:
         ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
     if wallet_id:
         ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+
     return ec2_resource.instances.filter(Filters=ec2_filters)
 
 
@@ -756,9 +761,9 @@ def _list_computational_instances_from_ec2(
             == state.environment["WORKERS_EC2_INSTANCES_CUSTOM_TAGS"]
         ), "custom tags are different on primary and workers. TIP: adjust this code now"
         custom_tags = json.loads(state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"])
-    assert state.ec2_resource_autoscaling
+    assert state.ec2_resource_clusters_keeper
     return _list_running_ec2_instances(
-        state.ec2_resource_autoscaling,
+        state.ec2_resource_clusters_keeper,
         state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
         custom_tags,
         user_id,
