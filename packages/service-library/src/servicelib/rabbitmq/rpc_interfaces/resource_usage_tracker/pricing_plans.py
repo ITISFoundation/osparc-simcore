@@ -6,6 +6,7 @@ from models_library.api_schemas_resource_usage_tracker import (
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
+    PricingPlanToServiceGet,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -14,6 +15,7 @@ from models_library.resource_tracker import (
     PricingPlanId,
     PricingPlanUpdate,
 )
+from models_library.services import ServiceKey, ServiceVersion
 from pydantic import NonNegativeInt, parse_obj_as
 
 from ....logging_utils import log_decorator
@@ -90,4 +92,46 @@ async def update_pricing_plan(
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, PricingPlanGet)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def list_connected_services_to_pricing_plan_by_pricing_plan(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    pricing_plan_id: PricingPlanId,
+) -> list[PricingPlanToServiceGet]:
+    result: PricingPlanGet = await rabbitmq_rpc_client.request(
+        RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
+        parse_obj_as(
+            RPCMethodName, "list_connected_services_to_pricing_plan_by_pricing_plan"
+        ),
+        product_name=product_name,
+        pricing_plan_id=pricing_plan_id,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, list)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def connect_service_to_pricing_plan(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    pricing_plan_id: PricingPlanId,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> PricingPlanToServiceGet:
+    result: PricingPlanGet = await rabbitmq_rpc_client.request(
+        RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "connect_service_to_pricing_plan"),
+        product_name=product_name,
+        pricing_plan_id=pricing_plan_id,
+        service_key=service_key,
+        service_version=service_version,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, PricingPlanToServiceGet)  # nosec
     return result

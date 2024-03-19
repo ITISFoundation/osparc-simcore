@@ -32,7 +32,6 @@ class PricingPlanToServiceDB(BaseModel):
     service_key: ServiceKey
     service_version: ServiceVersion
     created: datetime
-    pricing_plan_key: str
 
     class Config:
         orm_mode = True

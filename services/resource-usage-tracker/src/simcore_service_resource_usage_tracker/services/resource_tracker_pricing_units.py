@@ -16,7 +16,6 @@ from ..api.rest.dependencies import get_repository
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 
-# MD: Maybe not needed
 async def get_pricing_unit(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,

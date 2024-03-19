@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar
 
+from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel
 
 from ..resource_tracker import (
@@ -65,5 +66,24 @@ class PricingPlanGet(BaseModel):
                 for pricing_unit_get_example in PricingUnitGet.Config.schema_extra[
                     "examples"
                 ]
+            ]
+        }
+
+
+class PricingPlanToServiceGet(BaseModel):
+    pricing_plan_id: PricingPlanId
+    service_key: ServiceKey
+    service_version: ServiceVersion
+    created: datetime
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "pricing_plan_id": 1,
+                    "service_key": "simcore/services/comp/itis/sleeper",
+                    "service_version": "2.0.2",
+                    "created": "2023-01-11 13:11:47.293595",
+                }
             ]
         }

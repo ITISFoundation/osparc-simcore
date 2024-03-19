@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
+    PricingPlanToServiceGet,
     PricingUnitGet,
 )
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
@@ -17,6 +18,7 @@ from models_library.resource_tracker import (
     ServiceResourceUsagesFilters,
 )
 from models_library.rest_ordering import OrderBy
+from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import AnyUrl
@@ -190,5 +192,40 @@ async def update_pricing_unit(
     return await pricing_units.update_pricing_unit(
         product_name=product_name,
         data=data,
+        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+    )
+
+
+## Pricing plan to service
+
+
+@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+async def list_connected_services_to_pricing_plan_by_pricing_plan(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    pricing_plan_id: PricingPlanId,
+) -> list[PricingPlanToServiceGet]:
+    return await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+        product_name=product_name,
+        pricing_plan_id=pricing_plan_id,
+        resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
+    )
+
+
+@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+async def connect_service_to_pricing_plan(
+    app: FastAPI,
+    *,
+    product_name: ProductName,
+    pricing_plan_id: PricingPlanId,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> PricingPlanToServiceGet:
+    return await pricing_plans.connect_service_to_pricing_plan(
+        product_name=product_name,
+        pricing_plan_id=pricing_plan_id,
+        service_key=service_key,
+        service_version=service_version,
         resource_tracker_repo=ResourceTrackerRepository(db_engine=app.state.engine),
     )

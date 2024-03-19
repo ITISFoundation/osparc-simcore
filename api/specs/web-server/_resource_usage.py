@@ -21,6 +21,7 @@ from models_library.api_schemas_webserver.resource_usage import (
     PricingUnitGet,
     ServiceRunGet,
     UpdatePricingPlanBodyParams,
+    UpdatePricingUnitBodyParams,
 )
 from models_library.generics import Envelope
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
@@ -231,7 +232,7 @@ assert_handler_signature_against_model(create_pricing_unit, _GetPricingPlanPathP
 async def update_pricing_unit(
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
-    body: UpdatePricingPlanBodyParams,
+    body: UpdatePricingUnitBodyParams,
 ):
     ...
 

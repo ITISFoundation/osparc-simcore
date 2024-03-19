@@ -24,6 +24,9 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
+    CustomResourceUsageTrackerError,
+)
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -31,7 +34,6 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from ..wallets.errors import WalletAccessForbiddenError
 from . import _pricing_plans_admin_api as admin_api
 
 #
@@ -39,14 +41,14 @@ from . import _pricing_plans_admin_api as admin_api
 #
 
 
-def _handle_resource_usage_exceptions(handler: Handler):
+def _handle_pricing_plan_admin_exceptions(handler: Handler):
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
             return await handler(request)
 
-        except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
+        except CustomResourceUsageTrackerError:  # noqa: TRY302
+            raise
 
     return wrapper
 
@@ -79,7 +81,7 @@ class _GetPricingPlanPathParams(BaseModel):
 )
 @login_required
 @permission_required("resource-usage.write")
-@_handle_resource_usage_exceptions
+@_handle_pricing_plan_admin_exceptions
 async def list_pricing_plans(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
 
@@ -110,7 +112,7 @@ async def list_pricing_plans(request: web.Request):
 )
 @login_required
 @permission_required("resource-usage.write")
-@_handle_resource_usage_exceptions
+@_handle_pricing_plan_admin_exceptions
 async def get_pricing_plan(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
@@ -153,7 +155,7 @@ async def get_pricing_plan(request: web.Request):
 )
 @login_required
 @permission_required("resource-usage.write")
-@_handle_resource_usage_exceptions
+@_handle_pricing_plan_admin_exceptions
 async def create_pricing_plan(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     body_params = await parse_request_body_as(CreatePricingPlanBodyParams, request)
@@ -202,7 +204,7 @@ async def create_pricing_plan(request: web.Request):
 )
 @login_required
 @permission_required("resource-usage.write")
-@_handle_resource_usage_exceptions
+@_handle_pricing_plan_admin_exceptions
 async def update_pricing_plan(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
@@ -263,7 +265,7 @@ class _GetPricingUnitPathParams(BaseModel):
 )
 @login_required
 @permission_required("resource-usage.write")
-@_handle_resource_usage_exceptions
+@_handle_pricing_plan_admin_exceptions
 async def get_pricing_unit(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GetPricingUnitPathParams, request)
@@ -293,7 +295,7 @@ async def get_pricing_unit(request: web.Request):
 )
 @login_required
 @permission_required("resource-usage.write")
-@_handle_resource_usage_exceptions
+@_handle_pricing_plan_admin_exceptions
 async def create_pricing_unit(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GetPricingPlanPathParams, request)
@@ -332,7 +334,7 @@ async def create_pricing_unit(request: web.Request):
 )
 @login_required
 @permission_required("resource-usage.write")
-@_handle_resource_usage_exceptions
+@_handle_pricing_plan_admin_exceptions
 async def update_pricing_unit(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GetPricingUnitPathParams, request)

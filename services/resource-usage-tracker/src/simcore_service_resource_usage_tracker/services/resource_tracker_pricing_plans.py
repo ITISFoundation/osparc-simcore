@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
+    PricingPlanToServiceGet,
     PricingUnitGet,
 )
 from models_library.products import ProductName
@@ -17,7 +18,10 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 )
 
 from ..api.rest.dependencies import get_repository
-from ..models.resource_tracker_pricing_plans import PricingPlansDB
+from ..models.resource_tracker_pricing_plans import (
+    PricingPlansDB,
+    PricingPlanToServiceDB,
+)
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 
@@ -71,6 +75,41 @@ async def get_service_default_pricing_plan(
         ],
         is_active=default_pricing_plan.is_active,
     )
+
+
+async def list_connected_services_to_pricing_plan_by_pricing_plan(
+    product_name: ProductName,
+    pricing_plan_id: PricingPlanId,
+    resource_tracker_repo: Annotated[
+        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
+    ],
+):
+    output_list: list[
+        PricingPlanToServiceDB
+    ] = await resource_tracker_repo.list_connected_services_to_pricing_plan_by_pricing_plan(
+        product_name=product_name, pricing_plan_id=pricing_plan_id
+    )
+    return [PricingPlanToServiceGet.parse_obj(item) for item in output_list]
+
+
+async def connect_service_to_pricing_plan(
+    product_name: ProductName,
+    pricing_plan_id: PricingPlanId,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    resource_tracker_repo: Annotated[
+        ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
+    ],
+):
+    output: PricingPlanToServiceDB = (
+        await resource_tracker_repo.upsert_service_to_pricing_plan(
+            product_name=product_name,
+            pricing_plan_id=pricing_plan_id,
+            service_key=service_key,
+            service_version=service_version,
+        )
+    )
+    return PricingPlanToServiceGet.parse_obj(output)
 
 
 async def list_pricing_plans_by_product(

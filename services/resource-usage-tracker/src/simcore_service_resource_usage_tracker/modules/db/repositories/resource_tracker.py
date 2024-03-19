@@ -61,6 +61,7 @@ from ....models.resource_tracker_credit_transactions import (
 from ....models.resource_tracker_pricing_plans import (
     PricingPlansDB,
     PricingPlansWithServiceDefaultPlanDB,
+    PricingPlanToServiceDB,
 )
 from ....models.resource_tracker_pricing_units import PricingUnitsDB
 from ....models.resource_tracker_service_runs import (
@@ -850,66 +851,127 @@ class ResourceTrackerRepository(
     # Pricing plan to service
     #################################
 
-    # async def list_connected_services_to_pricing_plan(
-    #     self, product_name: ProductName, pricing_plan_id: PricingPlanId
-    # ) -> list[PricingPlanToServiceDB]:
-    #     async with self.db_engine.begin() as conn:
-    #         query = (
-    #             sa.select(
-    #                 resource_tracker_pricing_plan_to_service.c.pricing_plan_id,
-    #                 resource_tracker_pricing_plan_to_service.c.service_key,
-    #                 resource_tracker_pricing_plan_to_service.c.service_version,
-    #                 resource_tracker_pricing_plan_to_service.c.created,
-    #                 resource_tracker_pricing_plans.c.pricing_plan_key,
-    #             )
-    #             .select_from(
-    #                 resource_tracker_pricing_plan_to_service.join(
-    #                     resource_tracker_pricing_plans,
-    #                     (
-    #                         resource_tracker_pricing_plan_to_service.c.pricing_plan_id
-    #                         == resource_tracker_pricing_plans.c.pricing_plan_id
-    #                     ),
-    #                 )
-    #             )
-    #             .where(
-    #                 (resource_tracker_pricing_plans.c.product_name == product_name)
-    #                 & (resource_tracker_pricing_plans.c.is_active.is_(True))
-    #             )
-    #             .order_by(
-    #                 resource_tracker_pricing_plan_to_service.c.pricing_plan_id.desc()
-    #             )
-    #         )
-    #         result = await conn.execute(query)
+    async def list_connected_services_to_pricing_plan_by_pricing_plan(
+        self, product_name: ProductName, pricing_plan_id: PricingPlanId
+    ) -> list[PricingPlanToServiceDB]:
+        async with self.db_engine.begin() as conn:
+            query = (
+                sa.select(
+                    resource_tracker_pricing_plan_to_service.c.pricing_plan_id,
+                    resource_tracker_pricing_plan_to_service.c.service_key,
+                    resource_tracker_pricing_plan_to_service.c.service_version,
+                    resource_tracker_pricing_plan_to_service.c.created,
+                )
+                .select_from(
+                    resource_tracker_pricing_plan_to_service.join(
+                        resource_tracker_pricing_plans,
+                        (
+                            resource_tracker_pricing_plan_to_service.c.pricing_plan_id
+                            == resource_tracker_pricing_plans.c.pricing_plan_id
+                        ),
+                    )
+                )
+                .where(
+                    (resource_tracker_pricing_plans.c.product_name == product_name)
+                    & (
+                        resource_tracker_pricing_plans.c.pricing_plan_id
+                        == pricing_plan_id
+                    )
+                )
+                .order_by(
+                    resource_tracker_pricing_plan_to_service.c.pricing_plan_id.desc()
+                )
+            )
+            result = await conn.execute(query)
 
-    #         return [PricingPlanToServiceDB.from_orm(row) for row in result.fetchall()]
+            return [PricingPlanToServiceDB.from_orm(row) for row in result.fetchall()]
 
-    # async def connect_service_to_pricing_plan(
-    #     self,
-    #     product_name: ProductName,
-    #     pricing_plan_id: PricingPlanId,
-    #     service_key: ServiceKey,
-    #     service_version: ServiceVersion,
-    # ):
-    #     async with self.db_engine.begin() as conn:
-    #         insert_stmt = pg_insert(resource_tracker_pricing_plan_to_service).values(
-    #             pricing_plan_id=pricing_plan_id,
-    #             service_key=service_key,
-    #             service_version=service_version,
-    #             created=sa.func.now(),
-    #             modified=sa.func.now(),
-    #             service_default_plan=True,
-    #         )
-    #         on_update_stmt = insert_stmt.on_conflict_do_update(
-    #             index_elements=[
-    #                 resource_tracker_pricing_plan_to_service.c.project_node_id,
-    #             ],
-    #             set_={
-    #                 "pricing_plan_id": insert_stmt.excluded.pricing_plan_id,
-    #                 "pricing_unit_id": insert_stmt.excluded.pricing_unit_id,
-    #                 "modified": sa.func.now(),
-    #             },
-    #         )
-    #         await conn.execute(on_update_stmt)
+    async def upsert_service_to_pricing_plan(
+        self,
+        product_name: ProductName,
+        pricing_plan_id: PricingPlanId,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ) -> PricingPlanToServiceDB:
+        async with self.db_engine.begin() as conn:
+            query = (
+                sa.select(
+                    resource_tracker_pricing_plan_to_service.c.pricing_plan_id,
+                    resource_tracker_pricing_plan_to_service.c.service_key,
+                    resource_tracker_pricing_plan_to_service.c.service_version,
+                    resource_tracker_pricing_plan_to_service.c.created,
+                )
+                .select_from(
+                    resource_tracker_pricing_plan_to_service.join(
+                        resource_tracker_pricing_plans,
+                        (
+                            resource_tracker_pricing_plan_to_service.c.pricing_plan_id
+                            == resource_tracker_pricing_plans.c.pricing_plan_id
+                        ),
+                    )
+                )
+                .where(
+                    (resource_tracker_pricing_plans.c.product_name == product_name)
+                    & (
+                        resource_tracker_pricing_plans.c.pricing_plan_id
+                        == pricing_plan_id
+                    )
+                    & (
+                        resource_tracker_pricing_plan_to_service.c.service_key
+                        == service_key
+                    )
+                    & (
+                        resource_tracker_pricing_plan_to_service.c.service_version
+                        == service_version
+                    )
+                )
+            )
+            result = await conn.execute(query)
+            row = result.first()
+
+            if row is not None:
+                delete_stmt = resource_tracker_pricing_plan_to_service.delete().where(
+                    (
+                        resource_tracker_pricing_plans.c.pricing_plan_id
+                        == pricing_plan_id
+                    )
+                    & (
+                        resource_tracker_pricing_plan_to_service.c.service_key
+                        == service_key
+                    )
+                    & (
+                        resource_tracker_pricing_plan_to_service.c.service_version
+                        == service_version
+                    )
+                )
+                await conn.execute(delete_stmt)
+
+            insert_stmt = (
+                resource_tracker_pricing_plan_to_service.insert()
+                .values(
+                    pricing_plan_id=pricing_plan_id,
+                    service_key=service_key,
+                    service_version=service_version,
+                    created=sa.func.now(),
+                    modified=sa.func.now(),
+                    service_default_plan=True,
+                )
+                .returning(
+                    *[
+                        resource_tracker_pricing_plan_to_service.c.pricing_plan_id,
+                        resource_tracker_pricing_plan_to_service.c.service_key,
+                        resource_tracker_pricing_plan_to_service.c.service_version,
+                        resource_tracker_pricing_plan_to_service.c.created,
+                    ]
+                )
+            )
+            result = await conn.execute(insert_stmt)
+            row = result.first()
+            if row is None:
+                raise CustomResourceUsageTrackerError(
+                    msg="Pricing plan to service record was not created"
+                )
+            return PricingPlanToServiceDB.from_orm(row)
 
     #################################
     # Pricing units

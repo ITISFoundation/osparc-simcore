@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from faker import Faker
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
+    PricingPlanToServiceGet,
     PricingUnitGet,
 )
 from models_library.resource_tracker import (
@@ -17,6 +18,7 @@ from models_library.resource_tracker import (
     PricingUnitWithCostUpdate,
     SpecificInfo,
 )
+from models_library.services import ServiceKey, ServiceVersion
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     pricing_plans,
@@ -129,7 +131,6 @@ async def test_rpc_pricing_plans_workflow(
     assert result.is_active is False
 
 
-@pytest.mark.rpc_test()
 async def test_rpc_pricing_plans_with_units_workflow(
     mocked_redis_server: None,
     resource_tracker_setup_db: None,
@@ -264,3 +265,101 @@ async def test_rpc_pricing_plans_with_units_workflow(
     assert len(result.pricing_units) == 2
     assert result.pricing_units[0].pricing_unit_id == _first_pricing_unit_id
     assert result.pricing_units[1].pricing_unit_id == _second_pricing_unit_id
+
+
+async def test_rpc_pricing_plans_to_service_workflow(
+    mocked_redis_server: None,
+    resource_tracker_setup_db: None,
+    rpc_client: RabbitMQRPCClient,
+    faker: Faker,
+):
+    result = await pricing_plans.create_pricing_plan(
+        rpc_client,
+        data=PricingPlanCreate(
+            product_name="s4l",
+            display_name=faker.word(),
+            description=faker.sentence(),
+            classification=PricingPlanClassification.TIER,
+            pricing_plan_key=faker.word(),
+        ),
+    )
+    assert isinstance(result, PricingPlanGet)
+    _pricing_plan_id = result.pricing_plan_id
+
+    result = (
+        await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+            rpc_client,
+            product_name="s4l",
+            pricing_plan_id=_pricing_plan_id,
+        )
+    )
+    assert isinstance(result, list)
+    assert result == []
+
+    _first_service_version = ServiceVersion("2.0.2")
+    result = await pricing_plans.connect_service_to_pricing_plan(
+        rpc_client,
+        product_name="s4l",
+        pricing_plan_id=_pricing_plan_id,
+        service_key=ServiceKey("simcore/services/comp/itis/sleeper"),
+        service_version=_first_service_version,
+    )
+    assert isinstance(result, PricingPlanToServiceGet)
+    assert result.pricing_plan_id == _pricing_plan_id
+    assert result.service_version == _first_service_version
+
+    result = (
+        await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+            rpc_client,
+            product_name="s4l",
+            pricing_plan_id=_pricing_plan_id,
+        )
+    )
+    assert isinstance(result, list)
+    assert len(result) == 1
+
+    # Connect different version
+    _second_service_version = ServiceVersion("3.0.0")
+    result = await pricing_plans.connect_service_to_pricing_plan(
+        rpc_client,
+        product_name="s4l",
+        pricing_plan_id=_pricing_plan_id,
+        service_key=ServiceKey("simcore/services/comp/itis/sleeper"),
+        service_version=_second_service_version,
+    )
+    assert isinstance(result, PricingPlanToServiceGet)
+    assert result.pricing_plan_id == _pricing_plan_id
+    assert result.service_version == _second_service_version
+
+    result = (
+        await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+            rpc_client,
+            product_name="s4l",
+            pricing_plan_id=_pricing_plan_id,
+        )
+    )
+    assert isinstance(result, list)
+    assert len(result) == 2
+
+    # Connect different service
+    _different_service_key = ServiceKey("simcore/services/comp/itis/different-service")
+    result = await pricing_plans.connect_service_to_pricing_plan(
+        rpc_client,
+        product_name="s4l",
+        pricing_plan_id=_pricing_plan_id,
+        service_key=_different_service_key,
+        service_version=ServiceVersion("1.0.0"),
+    )
+    assert isinstance(result, PricingPlanToServiceGet)
+    assert result.pricing_plan_id == _pricing_plan_id
+    assert result.service_key == _different_service_key
+
+    result = (
+        await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+            rpc_client,
+            product_name="s4l",
+            pricing_plan_id=_pricing_plan_id,
+        )
+    )
+    assert isinstance(result, list)
+    assert len(result) == 3

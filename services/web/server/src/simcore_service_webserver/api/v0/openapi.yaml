@@ -2893,7 +2893,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -3342,7 +3342,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdatePricingPlanBodyParams'
+              $ref: '#/components/schemas/UpdatePricingUnitBodyParams'
         required: true
       responses:
         '200':
@@ -8356,6 +8356,19 @@ components:
         default:
           title: Default
           type: boolean
+    PricingUnitCostUpdate:
+      title: PricingUnitCostUpdate
+      required:
+      - cost_per_unit
+      - comment
+      type: object
+      properties:
+        cost_per_unit:
+          title: Cost Per Unit
+          type: number
+        comment:
+          title: Comment
+          type: string
     PricingUnitGet:
       title: PricingUnitGet
       required:
@@ -10447,15 +10460,11 @@ components:
     UpdatePricingPlanBodyParams:
       title: UpdatePricingPlanBodyParams
       required:
-      - name
       - displayName
       - description
       - isActive
       type: object
       properties:
-        name:
-          title: Name
-          type: string
         displayName:
           title: Displayname
           type: string
@@ -10465,6 +10474,28 @@ components:
         isActive:
           title: Isactive
           type: boolean
+    UpdatePricingUnitBodyParams:
+      title: UpdatePricingUnitBodyParams
+      required:
+      - unitName
+      - unitExtraInfo
+      - default
+      - specificInfo
+      type: object
+      properties:
+        unitName:
+          title: Unitname
+          type: string
+        unitExtraInfo:
+          title: Unitextrainfo
+          type: object
+        default:
+          title: Default
+          type: boolean
+        specificInfo:
+          $ref: '#/components/schemas/SpecificInfo'
+        pricingUnitCostUpdate:
+          $ref: '#/components/schemas/PricingUnitCostUpdate'
     UpdateProductTemplate:
       title: UpdateProductTemplate
       required:
