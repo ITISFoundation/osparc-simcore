@@ -650,35 +650,6 @@ def _analyze_computational_instances(
     return computational_clusters
 
 
-def _detect_instances(
-    instances: ServiceResourceInstancesCollection,
-    ssh_key_path: Path | None,
-    user_id: int | None,
-    wallet_id: int | None,
-) -> tuple[list[DynamicInstance], list[ComputationalCluster]]:
-    dynamic_instances = []
-    computational_instances = []
-    for instance in track(instances, description="Detecting running instances..."):
-        if comp_instance := _parse_computational(instance):
-            if (user_id is None or comp_instance.user_id == user_id) and (
-                wallet_id is None or comp_instance.wallet_id == wallet_id
-            ):
-                computational_instances.append(comp_instance)
-        elif dyn_instance := _parse_dynamic(instance):
-            dynamic_instances.append(dyn_instance)
-
-    if dynamic_instances and ssh_key_path:
-        dynamic_instances = _analyze_dynamic_instances_running_services(
-            dynamic_instances, ssh_key_path, user_id
-        )
-
-    computational_clusters = _analyze_computational_instances(
-        computational_instances, ssh_key_path
-    )
-
-    return dynamic_instances, computational_clusters
-
-
 def _parse_computational_clusters(
     instances: ServiceResourceInstancesCollection,
     ssh_key_path: Path | None,
@@ -861,11 +832,13 @@ def cancel_jobs(
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    instances = _list_running_ec2_instances(user_id, wallet_id)
-    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state.ssh_key_path, user_id, wallet_id
+    assert state.ec2_resource_clusters_keeper
+    computational_instances = _list_running_ec2_instances(
+        state.ec2_resource_clusters_keeper, user_id, wallet_id
     )
-    assert not dynamic_autoscaled_instances
+    computational_clusters = _parse_computational_clusters(
+        computational_instances, state.ssh_key_path, user_id, wallet_id
+    )
     assert computational_clusters
     assert (
         len(computational_clusters) == 1
@@ -909,11 +882,13 @@ def clear_jobs(
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    instances = _list_running_ec2_instances(user_id, wallet_id)
-    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state.ssh_key_path, user_id, wallet_id
+    assert state.ec2_resource_clusters_keeper
+    computational_instances = _list_running_ec2_instances(
+        state.ec2_resource_clusters_keeper, user_id, wallet_id
     )
-    assert not dynamic_autoscaled_instances
+    computational_clusters = _parse_computational_clusters(
+        computational_instances, state.ssh_key_path, user_id, wallet_id
+    )
     assert computational_clusters
     assert (
         len(computational_clusters) == 1
@@ -943,11 +918,13 @@ def trigger_cluster_termination(
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    instances = _list_running_ec2_instances(user_id, wallet_id)
-    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state.ssh_key_path, user_id, wallet_id
+    assert state.ec2_resource_clusters_keeper
+    computational_instances = _list_running_ec2_instances(
+        state.ec2_resource_clusters_keeper, user_id, wallet_id
     )
-    assert not dynamic_autoscaled_instances
+    computational_clusters = _parse_computational_clusters(
+        computational_instances, state.ssh_key_path, user_id, wallet_id
+    )
     assert computational_clusters
     assert (
         len(computational_clusters) == 1
