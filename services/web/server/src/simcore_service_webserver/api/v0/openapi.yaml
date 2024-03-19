@@ -3178,6 +3178,117 @@ paths:
   /v0/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}:
     get:
       tags:
+      - pricing-plans
+      summary: Retrieve detail information about pricing unit
+      operationId: get_pricing_plan_unit
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Unit Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_unit_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingUnitGet_'
+  /v0/admin/pricing-plans:
+    get:
+      tags:
+      - admin
+      summary: List pricing plans
+      description: To keep the listing lightweight, the pricingUnits field is None.
+      operationId: list_pricing_plans
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanAdminGet__'
+    post:
+      tags:
+      - admin
+      summary: Create pricing plan
+      operationId: create_pricing_plan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePricingPlanBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
+  /v0/admin/pricing-plans/{pricing_plan_id}:
+    get:
+      tags:
+      - admin
+      summary: Retrieve detail information about pricing plan
+      operationId: get_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
+    put:
+      tags:
+      - admin
+      summary: Update detail information about pricing plan
+      operationId: update_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePricingPlanBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
+  /v0/admin/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}:
+    get:
+      tags:
       - admin
       summary: Retrieve detail information about pricing unit
       operationId: get_pricing_unit
@@ -3240,88 +3351,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_PricingUnitAdminGet_'
-  /v0/pricing-plans:
-    get:
-      tags:
-      - admin
-      summary: List pricing plans
-      description: To keep the listing lightweight, the pricingUnits field is None.
-      operationId: list_pricing_plans
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanAdminGet__'
-    post:
-      tags:
-      - admin
-      summary: Create pricing plan
-      operationId: create_pricing_plan
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePricingPlanBodyParams'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
-  /v0/pricing-plans/{pricing_plan_id}:
-    get:
-      tags:
-      - admin
-      summary: Retrieve detail information about pricing plan
-      operationId: get_pricing_plan
-      parameters:
-      - required: true
-        schema:
-          title: Pricing Plan Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: pricing_plan_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
-    put:
-      tags:
-      - admin
-      summary: Update detail information about pricing plan
-      operationId: update_pricing_plan
-      parameters:
-      - required: true
-        schema:
-          title: Pricing Plan Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: pricing_plan_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdatePricingPlanBodyParams'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
-  /v0/pricing-plans/{pricing_plan_id}/pricing-units:
+  /v0/admin/pricing-plans/{pricing_plan_id}/pricing-units:
     post:
       tags:
       - admin

@@ -74,7 +74,7 @@ class _GetPricingPlanPathParams(BaseModel):
 
 
 @routes.get(
-    f"/{VTAG}/pricing-plans",
+    f"/{VTAG}/admin/admin/pricing-plans",
     name="list_pricing_plans",
 )
 @login_required
@@ -105,7 +105,7 @@ async def list_pricing_plans(request: web.Request):
 
 
 @routes.get(
-    f"/{VTAG}/pricing-plans/{{pricing_plan_id}}",
+    f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}",
     name="get_pricing_plan",
 )
 @login_required
@@ -148,7 +148,7 @@ async def get_pricing_plan(request: web.Request):
 
 
 @routes.post(
-    f"/{VTAG}/pricing-plans",
+    f"/{VTAG}/admin/pricing-plans",
     name="create_pricing_plan",
 )
 @login_required
@@ -197,7 +197,7 @@ async def create_pricing_plan(request: web.Request):
 
 
 @routes.put(
-    f"/{VTAG}/pricing-plans/{{pricing_plan_id}}",
+    f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}",
     name="update_pricing_plan",
 )
 @login_required
@@ -258,7 +258,7 @@ class _GetPricingUnitPathParams(BaseModel):
 
 
 @routes.get(
-    f"/{VTAG}/pricing-plans/{{pricing_plan_id}}/pricing-units/{{pricing_unit_id}}",
+    f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}/pricing-units/{{pricing_unit_id}}",
     name="get_pricing_unit",
 )
 @login_required
@@ -288,7 +288,7 @@ async def get_pricing_unit(request: web.Request):
 
 
 @routes.post(
-    f"/{VTAG}/pricing-plans/{{pricing_plan_id}}/pricing-units",
+    f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}/pricing-units",
     name="create_pricing_unit",
 )
 @login_required
@@ -327,7 +327,7 @@ async def create_pricing_unit(request: web.Request):
 
 
 @routes.put(
-    f"/{VTAG}/pricing-plans/{{pricing_plan_id}}/pricing-units/{{pricing_unit_id}}",
+    f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}/pricing-units/{{pricing_unit_id}}",
     name="update_pricing_unit",
 )
 @login_required

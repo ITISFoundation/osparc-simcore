@@ -139,7 +139,7 @@ assert_handler_signature_against_model(
 
 
 @router.get(
-    "/pricing-plans",
+    "/admin/pricing-plans",
     response_model=Envelope[list[PricingPlanAdminGet]],
     summary="List pricing plans",
     tags=["admin"],
@@ -150,7 +150,7 @@ async def list_pricing_plans():
 
 
 @router.get(
-    "/pricing-plans/{pricing_plan_id}",
+    "/admin/pricing-plans/{pricing_plan_id}",
     response_model=Envelope[PricingPlanAdminGet],
     summary="Retrieve detail information about pricing plan",
     tags=["admin"],
@@ -165,7 +165,7 @@ assert_handler_signature_against_model(get_pricing_plan, _GetPricingPlanPathPara
 
 
 @router.post(
-    "/pricing-plans",
+    "/admin/pricing-plans",
     response_model=Envelope[PricingPlanAdminGet],
     summary="Create pricing plan",
     tags=["admin"],
@@ -175,7 +175,7 @@ async def create_pricing_plan(body: CreatePricingPlanBodyParams):
 
 
 @router.put(
-    "/pricing-plans/{pricing_plan_id}",
+    "/admin/pricing-plans/{pricing_plan_id}",
     response_model=Envelope[PricingPlanAdminGet],
     summary="Update detail information about pricing plan",
     tags=["admin"],
@@ -193,7 +193,7 @@ assert_handler_signature_against_model(update_pricing_plan, _GetPricingPlanPathP
 
 
 @router.get(
-    "/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",
+    "/admin/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",
     response_model=Envelope[PricingUnitAdminGet],
     summary="Retrieve detail information about pricing unit",
     tags=["admin"],
@@ -208,7 +208,7 @@ assert_handler_signature_against_model(get_pricing_unit, _GetPricingUnitPathPara
 
 
 @router.post(
-    "/pricing-plans/{pricing_plan_id}/pricing-units",
+    "/admin/pricing-plans/{pricing_plan_id}/pricing-units",
     response_model=Envelope[PricingUnitAdminGet],
     summary="Create pricing unit",
     tags=["admin"],
@@ -223,7 +223,7 @@ assert_handler_signature_against_model(create_pricing_unit, _GetPricingPlanPathP
 
 
 @router.put(
-    "/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",
+    "/admin/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}",
     response_model=Envelope[PricingUnitAdminGet],
     summary="Update detail information about pricing plan",
     tags=["admin"],
