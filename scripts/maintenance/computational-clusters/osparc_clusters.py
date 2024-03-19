@@ -7,7 +7,7 @@ import json
 import re
 from collections import defaultdict, namedtuple
 from collections.abc import Coroutine
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from pathlib import Path
 from typing import Annotated, Any, Final, TypeAlias
@@ -25,13 +25,10 @@ from mypy_boto3_ec2.type_defs import FilterTypeDef, TagTypeDef
 from pydantic import ByteSize, TypeAdapter
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
-from rich.table import Column, Style, Table
+from rich.style import Style
+from rich.table import Column, Table
 
 app = typer.Typer()
-
-_SSH_USER_NAME: Final[str] = "ubuntu"
-
-_TaskCancelEventNameTemplate: Final[str] = "cancel_event_{}"
 
 
 @dataclass(slots=True, kw_only=True)
@@ -82,6 +79,27 @@ COMPUTATIONAL_INSTANCE_NAME_PARSER: Final[parse.Parser] = parse.compile(
 )
 
 DEPLOY_SSH_KEY_PARSER: Final[parse.Parser] = parse.compile(r"osparc-{random_name}.pem")
+SSH_USER_NAME: Final[str] = "ubuntu"
+UNDEFINED_BYTESIZE: Final[ByteSize] = ByteSize(-1)
+TASK_CANCEL_EVENT_NAME_TEMPLATE: Final[str] = "cancel_event_{}"
+
+# NOTE: service_name and service_version are not available on dynamic-sidecar/dynamic-proxies!
+DYN_SERVICES_NAMING_CONVENTION: Final[re.Pattern] = re.compile(
+    r"^dy-(proxy|sidecar)(-|_)(?P<node_id>.{8}-.{4}-.{4}-.{4}-.{12}).*\t(?P<created_at>[^\t]+)\t(?P<user_id>\d+)\t(?P<project_id>.{8}-.{4}-.{4}-.{4}-.{12})\t(?P<service_name>[^\t]*)\t(?P<service_version>.*)$"
+)
+
+DockerContainer = namedtuple(  # noqa: PYI024
+    "docker_container",
+    [
+        "node_id",
+        "user_id",
+        "project_id",
+        "created_at",
+        "name",
+        "service_name",
+        "service_version",
+    ],
+)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -152,9 +170,6 @@ def _create_graylog_permalinks(
     return f"https://monitoring.{environment['MACHINE_FQDN']}/graylog/search?q=source%3A%22ip-{source_name}%22&rangetype=relative&from={time_span}"
 
 
-UNDEFINED_BYTESIZE: Final[ByteSize] = ByteSize(-1)
-
-
 def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
     name = _get_instance_name(instance)
     if result := state["dynamic_parser"].search(name):
@@ -167,25 +182,6 @@ def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
             disk_space=UNDEFINED_BYTESIZE,
         )
     return None
-
-
-# NOTE: service_name and service_version are not available on dynamic-sidecar/dynamic-proxies!
-_DYN_SERVICES_NAMING_CONVENTION: Final[re.Pattern] = re.compile(
-    r"^dy-(proxy|sidecar)(-|_)(?P<node_id>.{8}-.{4}-.{4}-.{4}-.{12}).*\t(?P<created_at>[^\t]+)\t(?P<user_id>\d+)\t(?P<project_id>.{8}-.{4}-.{4}-.{4}-.{12})\t(?P<service_name>[^\t]*)\t(?P<service_version>.*)$"
-)
-
-DockerContainer = namedtuple(  # noqa: PYI024
-    "docker_container",
-    [
-        "node_id",
-        "user_id",
-        "project_id",
-        "created_at",
-        "name",
-        "service_name",
-        "service_version",
-    ],
-)
 
 
 def _ssh_and_get_available_disk_space(
@@ -253,7 +249,7 @@ def _ssh_and_list_running_dyn_services(
         # Extract containers that follow the naming convention
         running_service: dict[str, list[DockerContainer]] = defaultdict(list)
         for container in output.splitlines():
-            if match := re.match(_DYN_SERVICES_NAMING_CONVENTION, container):
+            if match := re.match(DYN_SERVICES_NAMING_CONVENTION, container):
                 named_container = DockerContainer(
                     match["node_id"],
                     int(match["user_id"]),
@@ -490,7 +486,7 @@ def _analyze_dynamic_instances_running_services(
                     None,
                     _ssh_and_list_running_dyn_services,
                     instance.ec2_instance,
-                    _SSH_USER_NAME,
+                    SSH_USER_NAME,
                     ssh_key_path,
                 )
                 for instance in dynamic_instances
@@ -506,7 +502,7 @@ def _analyze_dynamic_instances_running_services(
                     None,
                     _ssh_and_get_available_disk_space,
                     instance.ec2_instance,
-                    _SSH_USER_NAME,
+                    SSH_USER_NAME,
                     ssh_key_path,
                 )
                 for instance in dynamic_instances
@@ -579,7 +575,7 @@ def _analyze_computational_instances(
                         None,
                         _ssh_and_get_available_disk_space,
                         instance.ec2_instance,
-                        _SSH_USER_NAME,
+                        SSH_USER_NAME,
                         ssh_key_path,
                     )
                     for instance in computational_instances
@@ -664,19 +660,26 @@ def _detect_instances(
     return dynamic_instances, computational_clusters
 
 
-state = {
-    "environment": {},
-    "ec2_resource_autoscaling": None,
-    "ec2_resource_clusters-keeper": None,
-    "dynamic_parser": parse.compile("osparc-dynamic-autoscaled-worker-{key_name}"),
-}
+@dataclass(kw_only=True)
+class AppState:
+    environment: dict[str, str | None] = field(default_factory=dict)
+    ec2_resource_autoscaling: EC2ServiceResource | None = None
+    ec2_resource_clusters_keeper: EC2ServiceResource | None = None
+    dynamic_parser: parse.Parser
+    deploy_config: Path | None = None
+    ssh_key_path: Path | None = None
+
+
+state: AppState = AppState(
+    dynamic_parser=parse.compile("osparc-dynamic-autoscaled-worker-{key_name}")
+)
 
 
 def _list_running_ec2_instances(
     user_id: int | None, wallet_id: int | None
 ) -> tuple[ServiceResourceInstancesCollection, ...]:
     # get all the running instances
-    environment = state["environment"]
+    environment = state.environment
     assert environment["EC2_INSTANCES_KEY_NAME"]
 
     for ec2_res, key_name_env in [
@@ -705,7 +708,7 @@ def main(
 ):
     """Manages external clusters"""
 
-    state["deploy_config"] = deploy_config.expanduser()
+    state.deploy_config = deploy_config.expanduser()
     assert deploy_config.is_dir()
     # get the repo.config file (repo.config.frozen might be present for AWS that contains all the variables)
     repo_config = deploy_config / "repo.config"
@@ -723,23 +726,23 @@ def main(
         if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
             error_msg = (
                 "Terraform is necessary in order to check into that deployment!\n"
-                f"install terraform (check README.md in {state['deploy_config']} for instructions)"
+                f"install terraform (check README.md in {state.deploy_config} for instructions)"
                 "then run make repo.config.frozen, then re-run this code"
             )
             print(error_msg)
             raise typer.Abort(error_msg)
     assert environment
-    state["environment"] = environment
+    state.environment = environment
 
     # connect to ec2s
-    state["ec2_resource_autoscaling"] = boto3.resource(
+    state.ec2_resource_autoscaling = boto3.resource(
         "ec2",
         region_name=environment["AUTOSCALING_EC2_REGION_NAME"],
         aws_access_key_id=environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
         aws_secret_access_key=environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
     )
 
-    state["ec2_resource_clusters-keeper"] = boto3.resource(
+    state.ec2_resource_clusters_keeper = boto3.resource(
         "ec2",
         region_name=environment["CLUSTERS_KEEPER_EC2_REGION_NAME"],
         aws_access_key_id=environment["CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID"],
@@ -747,7 +750,7 @@ def main(
     )
 
     assert environment["EC2_INSTANCES_KEY_NAME"]
-    state["dynamic_parser"] = parse.compile(
+    state.dynamic_parser = parse.compile(
         f"{environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
     )
 
@@ -762,7 +765,7 @@ def main(
                 f"will be using following ssh_key_path: {file_path}. "
                 "TIP: if wrong adapt the code or manually remove some of them."
             )
-            state["ssh_key_path"] = file_path
+            state.ssh_key_path = file_path
             break
 
 
@@ -784,10 +787,10 @@ def summary(
     # get all the running instances
     instances = _list_running_ec2_instances(user_id, wallet_id)
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"], user_id, wallet_id
+        instances, state.ssh_key_path, user_id, wallet_id
     )
 
-    environment = state["environment"]
+    environment = state.environment
     _print_dynamic_instances(dynamic_autoscaled_instances, environment)
     _print_computational_clusters(computational_clusters, environment)
 
@@ -807,7 +810,7 @@ def cancel_jobs(
     """
     instances = _list_running_ec2_instances(user_id, wallet_id)
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"], user_id, wallet_id
+        instances, state.ssh_key_path, user_id, wallet_id
     )
     assert not dynamic_autoscaled_instances
     assert computational_clusters
@@ -815,7 +818,7 @@ def cancel_jobs(
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    environment = state["environment"]
+    environment = state.environment
     _print_computational_clusters(computational_clusters, environment)
 
     if typer.confirm(
@@ -830,7 +833,7 @@ def cancel_jobs(
             for dataset in datasets:
                 task_future = distributed.Future(dataset)
                 cancel_event = distributed.Event(
-                    name=_TaskCancelEventNameTemplate.format(task_future.key),
+                    name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
                     client=client,
                 )
                 cancel_event.set()
@@ -856,7 +859,7 @@ def clear_jobs(
     """
     instances = _list_running_ec2_instances(user_id, wallet_id)
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"], user_id, wallet_id
+        instances, state.ssh_key_path, user_id, wallet_id
     )
     assert not dynamic_autoscaled_instances
     assert computational_clusters
@@ -864,7 +867,7 @@ def clear_jobs(
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    environment = state["environment"]
+    environment = state.environment
     _print_computational_clusters(computational_clusters, environment)
 
     if typer.confirm("Are you sure you want to erase all the jobs from that cluster?"):
@@ -891,7 +894,7 @@ def trigger_cluster_termination(
     """
     instances = _list_running_ec2_instances(user_id, wallet_id)
     dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"], user_id, wallet_id
+        instances, state.ssh_key_path, user_id, wallet_id
     )
     assert not dynamic_autoscaled_instances
     assert computational_clusters
@@ -899,7 +902,7 @@ def trigger_cluster_termination(
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    environment = state["environment"]
+    environment = state.environment
     _print_computational_clusters(computational_clusters, environment)
     if typer.confirm("Are you sure you want to trigger termination of that cluster?"):
         the_cluster = computational_clusters[0]
