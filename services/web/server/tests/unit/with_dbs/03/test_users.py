@@ -348,7 +348,7 @@ def test_parse_model_from_request_form_data(
     institution_key: str,
 ):
     data = deepcopy(account_request_form)
-    data[institution_key] = data.pop("institution")
+    data[institution_key] = data.pop("company")
     data["comment"] = "extra comment"
 
     # pre-processors
@@ -357,7 +357,7 @@ def test_parse_model_from_request_form_data(
     print(pre_user_profile.json(indent=1))
 
     # institution aliases
-    assert pre_user_profile.institution == account_request_form["institution"]
+    assert pre_user_profile.institution == account_request_form["company"]
 
     # extras
     assert {
