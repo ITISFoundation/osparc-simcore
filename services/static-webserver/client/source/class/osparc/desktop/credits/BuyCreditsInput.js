@@ -70,7 +70,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
 
       osparc.data.Resources.fetch("creditPrice", "get")
         .then(data => {
-          const minimum = "minimumAmount" in data ? data["minimumAmount"] : 10;
+          const minimum = "minPaymentAmountUsd" in data ? data["minPaymentAmountUsd"] : 10;
           amountInput.set({
             value: Math.ceil(minimum/this.__pricePerCredit),
             minimum: Math.ceil(minimum/this.__pricePerCredit)
