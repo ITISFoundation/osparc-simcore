@@ -74,7 +74,7 @@ class _GetPricingPlanPathParams(BaseModel):
 
 
 @routes.get(
-    f"/{VTAG}/admin/admin/pricing-plans",
+    f"/{VTAG}/admin/pricing-plans",
     name="list_pricing_plans",
 )
 @login_required

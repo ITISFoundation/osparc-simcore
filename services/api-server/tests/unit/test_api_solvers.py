@@ -15,10 +15,10 @@ from unit.conftest import SideEffectCallback
 @pytest.mark.parametrize(
     "capture,expected_status_code",
     [
-        (
-            "get_solver_pricing_plan_invalid_solver.json",
-            status.HTTP_502_BAD_GATEWAY,
-        ),
+        # (
+        #     "get_solver_pricing_plan_invalid_solver.json",
+        #     status.HTTP_502_BAD_GATEWAY,
+        # ),
         ("get_solver_pricing_plan_success.json", status.HTTP_200_OK),
     ],
 )

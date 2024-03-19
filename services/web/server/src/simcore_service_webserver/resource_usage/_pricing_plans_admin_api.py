@@ -27,7 +27,10 @@ async def list_pricing_plans(
     product_name: ProductName,
 ) -> list[PricingPlanGet]:
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await pricing_plans.list_pricing_plans(rpc_client, product_name=product_name)
+    output: list[PricingPlanGet] = await pricing_plans.list_pricing_plans(
+        rpc_client, product_name=product_name
+    )
+    return output
 
 
 async def get_pricing_plan(
