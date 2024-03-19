@@ -832,9 +832,10 @@ def main(
     state.dynamic_parser = parse.compile(
         f"{state.environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
     )
-    state.computational_parser = parse.compile(
-        f"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX']}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT}"
-    )
+    if state.environment["CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX"]:
+        state.computational_parser = parse.compile(
+            f"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX']}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT}"
+        )
 
     # locate ssh key path
     for file_path in deploy_config.glob("**/*.pem"):
