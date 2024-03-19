@@ -7,6 +7,7 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass
+from http import HTTPStatus
 from typing import Any
 
 import pytest
@@ -33,6 +34,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.status_codes_utils import (
     get_http_status_codes,
     is_client_error,
+    is_error,
     is_server_error,
     is_success,
 )
@@ -107,12 +109,12 @@ class Handlers:
         returned_value = loop.run_until_complete(coro(None))
         return json.loads(json_dumps(returned_value))
 
-    HTTP_RESPONSE_REASON = "Response with code={}"
+    EXPECTED_HTTP_RESPONSE_REASON = "custom reason for code {}"
 
     @classmethod
-    async def raise_http_response(cls, request: web.Request):
+    async def get_http_response(cls, request: web.Request):
         status_code = int(request.query["code"])
-        reason = cls.HTTP_RESPONSE_REASON.format(status_code)
+        reason = cls.EXPECTED_HTTP_RESPONSE_REASON.format(status_code)
 
         match status_code:
             case status.HTTP_405_METHOD_NOT_ALLOWED:
@@ -129,14 +131,14 @@ class Handlers:
                 )
             case _:
                 http_response_cls = all_aiohttp_http_exceptions[status_code]
-                raise http_response_cls(reason=reason)
+                if is_error(status_code):
+                    # 4XX and 5XX are raised
+                    raise http_response_cls(reason=reason)
+                else:
+                    # otherwise returned
+                    return http_response_cls(reason=reason)
 
-    RAISE_UNEXPECTED_REASON = "Unexpected error"
-
-    @classmethod
-    async def raise_unexpected(cls, request: web.Request):
-        assert request
-        raise SomeUnexpectedError(cls.RAISE_UNEXPECTED_REASON)
+    EXPECTED_RAISE_UNEXPECTED_REASON = "Unexpected error"
 
     @classmethod
     async def raise_exception(cls, request: web.Request):
@@ -146,6 +148,14 @@ class Handlers:
                 raise NotImplementedError
             case asyncio.TimeoutError.__name__:
                 raise asyncio.TimeoutError
+            case web.HTTPOk.__name__:
+                raise web.HTTPOk  # 2XX
+            case web.HTTPUnauthorized.__name__:
+                raise web.HTTPUnauthorized  # 4XX
+            case web.HTTPServiceUnavailable.__name__:
+                raise web.HTTPServiceUnavailable  # 5XX
+            case _:  # unexpected
+                raise SomeUnexpectedError(cls.EXPECTED_RAISE_UNEXPECTED_REASON)
 
 
 @pytest.fixture
@@ -165,10 +175,19 @@ def client(event_loop, aiohttp_client):
                 ("/v1/string", Handlers.get_string),
                 ("/v1/number", Handlers.get_number),
                 ("/v1/mixed", Handlers.get_mixed),
-                ("/v1/raise_http_code", Handlers.raise_http_response),
-                ("/v1/raise_unexpected", Handlers.raise_unexpected),
+                ("/v1/get_http_response", Handlers.get_http_response),
                 ("/v1/raise_exception", Handlers.raise_exception),
             ]
+        ]
+    )
+
+    app.router.add_routes(
+        [
+            web.get(
+                "/free/raise_exception",
+                Handlers.raise_exception,
+                name="raise_exception_without_middleware",
+            )
         ]
     )
 
@@ -227,13 +246,15 @@ def _is_server_error(code):
 
 @pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_server_error))
 async def test_fails_with_http_server_error(client: TestClient, status_code: int):
-    response = await client.get("/v1/raise_http_code", params={"code": status_code})
+    response = await client.get("/v1/get_http_response", params={"code": status_code})
     assert response.status == status_code
 
     data, error = unwrap_envelope(await response.json())
     assert not data
     assert error
-    assert error["message"] == Handlers.HTTP_RESPONSE_REASON.format(status_code)
+    assert error["message"] == Handlers.EXPECTED_HTTP_RESPONSE_REASON.format(
+        status_code
+    )
 
 
 def _is_client_error(code):
@@ -244,13 +265,15 @@ def _is_client_error(code):
 
 @pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_client_error))
 async def test_fails_with_http_client_error(client: TestClient, status_code: int):
-    response = await client.get("/v1/raise_http_code", params={"code": status_code})
+    response = await client.get("/v1/get_http_response", params={"code": status_code})
     assert response.status == status_code
 
     data, error = unwrap_envelope(await response.json())
     assert not data
     assert error
-    assert error["message"] == Handlers.HTTP_RESPONSE_REASON.format(status_code)
+    assert error["message"] == Handlers.EXPECTED_HTTP_RESPONSE_REASON.format(
+        status_code
+    )
     assert error["errors"]
 
 
@@ -260,8 +283,10 @@ def _is_success(code):
 
 @pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_success))
 async def test_fails_with_http_successful(client: TestClient, status_code: int):
-    response = await client.get("/v1/raise_http_code", params={"code": status_code})
+    response = await client.get("/v1/get_http_response", params={"code": status_code})
     assert response.status == status_code
+
+    print(await response.text())
 
     data, error = unwrap_envelope(await response.json())
     assert not error
@@ -291,7 +316,7 @@ async def test_raised_unhandled_exception(
     client: TestClient, caplog: pytest.LogCaptureFixture
 ):
     caplog.set_level(logging.ERROR)
-    response = await client.get("/v1/raise_unexpected")
+    response = await client.get("/v1/raise_exception")
 
     # respond the client with 500
     assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -314,7 +339,7 @@ async def test_raised_unhandled_exception(
 
     # log sufficient information to diagnose the issue
     #
-    # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:96 Request 'GET /v1/raise_unexpected' raised 'SomeUnhandledError' [OEC:140555466658464]
+    # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:96 Request 'GET /v1/raise_exception' raised 'SomeUnhandledError' [OEC:140555466658464]
     #   request.remote='127.0.0.1'
     #   request.headers={b'Host': b'127.0.0.1:33461', b'Accept': b'*/*', b'Accept-Encoding': b'gzip, deflate', b'User-Agent': b'Python/3.10 aiohttp/3.8.6'}
     # Traceback (most recent call last):
@@ -322,8 +347,8 @@ async def test_raised_unhandled_exception(
     #     return await handler(request)
     # File "osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 177, in _middleware_handler
     #     resp_or_data = await handler(request)
-    # File "osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py", line 107, in raise_unexpected
-    #     raise SomeUnhandledError(cls.raise_unexpected_REASON)
+    # File "osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py", line 107, in raise_exception
+    #     raise SomeUnhandledError(cls.EXPECTED_RAISE_UNEXPECTED_REASON)
     # tests.aiohttp.test_rest_middlewares.SomeUnhandledError: Unexpected error
 
     assert response.method in caplog.text
@@ -331,6 +356,46 @@ async def test_raised_unhandled_exception(
     assert "request.headers=" in caplog.text
     assert "request.remote=" in caplog.text
     assert SomeUnexpectedError.__name__ in caplog.text
-    assert Handlers.RAISE_UNEXPECTED_REASON in caplog.text
+    assert Handlers.EXPECTED_RAISE_UNEXPECTED_REASON in caplog.text
     # log OEC
     assert "OEC:" in caplog.text
+
+
+async def test_aiohttp_exceptions_construction_policies(client: TestClient):
+
+    # using default constructor
+    err = web.HTTPOk()
+    assert err.status == status.HTTP_200_OK
+    assert err.content_type == "text/plain"
+    # reason is an exception property and is default to
+    assert err.reason == HTTPStatus(status.HTTP_200_OK).phrase
+    # default text if nothing set!
+    assert err.text == f"{err.status}: {err.reason}"
+
+    # This is how it is transformed into a response
+    #
+    # NOTE: that the reqson is somehow transmitted in the header
+    #
+    #   version = request.version
+    #   status_line = "HTTP/{}.{} {} {}".format(
+    #         version[0], version[1], self._status, self._reason
+    #    )
+    #    await writer.write_headers(status_line, self._headers)
+    #
+    #
+    assert client.app
+    assert (
+        client.app.router["raise_exception_without_middleware"].url_for().path
+        == "/free/raise_exception"
+    )
+
+    response = await client.get(
+        "/free/raise_exception", params={"exc": web.HTTPOk.__name__}
+    )
+    assert response.status == status.HTTP_200_OK
+    assert response.reason == err.reason  # I wonder how this is passed
+    assert response.content_type == err.content_type
+
+    text = await response.text()
+    assert err.text == f"{err.status}: {err.reason}"
+    print(text)
