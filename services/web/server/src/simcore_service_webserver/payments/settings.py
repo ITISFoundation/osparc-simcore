@@ -90,6 +90,15 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
             raise ValueError(msg)
         return v
 
+    @validator("PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT")
+    @classmethod
+    def _monthly_limit_greater_than_top_up(cls, v, values):
+        top_up = values["PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT"]
+        if v < 2 * top_up:
+            msg = "PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT (={v}) should be at least twice PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT ({top_up})"
+            raise ValueError(msg)
+        return v
+
 
 def get_plugin_settings(app: web.Application) -> PaymentsSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_PAYMENTS

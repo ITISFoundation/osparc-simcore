@@ -37,10 +37,14 @@ class _ProductsRequestContext(RequestParams):
 @permission_required("product.price.read")
 async def _get_current_product_price(request: web.Request):
     req_ctx = _ProductsRequestContext.parse_obj(request)
+    price_info = await _api.get_current_product_credit_price_info(request)
 
     credit_price = GetCreditPrice(
         product_name=req_ctx.product_name,
-        usd_per_credit=await _api.get_current_product_credit_price(request),
+        usd_per_credit=price_info.usd_per_credit if price_info else None,
+        min_payment_amount_usd=price_info.min_payment_amount_usd
+        if price_info
+        else None,
     )
     return envelope_json_response(credit_price)
 

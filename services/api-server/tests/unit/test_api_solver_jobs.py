@@ -351,7 +351,7 @@ async def test_stop_job(
 
 @pytest.mark.parametrize(
     "sufficient_credits,expected_status_code",
-    [(True, 200), (False, 402)],
+    [(True, status.HTTP_200_OK), (False, status.HTTP_402_PAYMENT_REQUIRED)],
 )
 async def test_get_solver_job_outputs(
     client: AsyncClient,
