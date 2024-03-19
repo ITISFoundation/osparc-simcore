@@ -478,7 +478,7 @@ push-version: tag-version
 		uv
 	@uv pip list
 
-devenv: test_python_version .venv .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
+devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
 	@uv pip --quiet install -r requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
