@@ -153,10 +153,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
 
     hasDependencies: function() {
       const dependencies = this.getDependencies();
-      if (dependencies && dependencies.length) {
-        return true;
-      }
-      return false;
+      return !!(dependencies && dependencies.length);
     },
 
     __applyRunning: function(value) {
@@ -191,7 +188,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     },
 
     setState: function(state) {
-      if (state == undefined || state === null) {
+      if (state === undefined || state === null) {
         return;
       }
       if ("dependencies" in state) {

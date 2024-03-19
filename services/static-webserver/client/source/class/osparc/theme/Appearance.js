@@ -384,7 +384,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         return {
           decorator: "progressbar",
           padding: 1,
-          backgroundColor: "fab-background",
+          backgroundColor: "progressbar-runner",
           margin: [7, 10],
           width: 200,
           height: 20
@@ -395,7 +395,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     "progressbar/progress": {
       style: function(states) {
         return {
-          backgroundColor: states.disabled ? "background-disabled-checked" : "success"
+          backgroundColor: states.disabled ? "progressbar-disabled" : "progressbar"
         };
       }
     },
