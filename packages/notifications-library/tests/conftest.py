@@ -79,7 +79,6 @@ def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
         print("🚨 EXTERNAL `envfile` option detected. Loading", envfile, "...")
 
         assert isinstance(envfile, Path)
-        assert envfile.exists()
         assert envfile.is_file()
 
         envs = load_dotenv(envfile)
