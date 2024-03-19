@@ -672,6 +672,31 @@ state = {
 }
 
 
+def _list_running_ec2_instances(
+    user_id: int | None, wallet_id: int | None
+) -> tuple[ServiceResourceInstancesCollection, ...]:
+    # get all the running instances
+    environment = state["environment"]
+    assert environment["EC2_INSTANCES_KEY_NAME"]
+
+    for ec2_res, key_name_env in [
+        ("ec2_resource_autoscaling", "EC2_INSTANCES_KEY_NAME"),
+        # ("ec2_resource_clusters-keeper", "PRIMARY_EC2_INSTANCES_KEY_NAME"),
+    ]:
+        ec2_resource: EC2ServiceResource = state[ec2_res]
+        ec2_filters: list[FilterTypeDef] = [
+            {"Name": "instance-state-name", "Values": ["running", "pending"]},
+            {"Name": "key-name", "Values": [environment[key_name_env]]},
+        ]
+        if user_id:
+            ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+        if wallet_id:
+            ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+        instances = ec2_resource.instances.filter(Filters=ec2_filters)
+
+    return instances
+
+
 @app.callback()
 def main(
     deploy_config: Annotated[
@@ -688,7 +713,8 @@ def main(
     environment = dotenv_values(repo_config)
     if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
         print(
-            "Terraform variables detected, looking for repo.config.frozen as alternative"
+            "Terraform variables detected, looking for repo.config.frozen as alternative."
+            " TIP: you are responsible for them being up to date!!"
         )
         repo_config = deploy_config / "repo.config.frozen"
         assert repo_config.exists()
@@ -704,8 +730,8 @@ def main(
             raise typer.Abort(error_msg)
     assert environment
     state["environment"] = environment
-    # connect to ec2
 
+    # connect to ec2s
     state["ec2_resource_autoscaling"] = boto3.resource(
         "ec2",
         region_name=environment["AUTOSCALING_EC2_REGION_NAME"],
@@ -720,48 +746,24 @@ def main(
         aws_secret_access_key=environment["CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY"],
     )
 
-    # get all the running instances
     assert environment["EC2_INSTANCES_KEY_NAME"]
-
     state["dynamic_parser"] = parse.compile(
         f"{environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
     )
 
-    # find ssh key path
+    # locate ssh key path
     for file_path in deploy_config.glob("**/*.pem"):
         # very bad HACK
         if "sim4life.io" in f"{file_path}" and "openssh" not in f"{file_path}":
             continue
 
         if DEPLOY_SSH_KEY_PARSER.parse(f"{file_path.name}") is not None:
-            print(f"found following ssh_key_path: {file_path}")
+            print(
+                f"will be using following ssh_key_path: {file_path}. "
+                "TIP: if wrong adapt the code or manually remove some of them."
+            )
             state["ssh_key_path"] = file_path
             break
-
-
-def _list_running_ec2_instances(
-    user_id: int | None, wallet_id: int | None
-) -> tuple[ServiceResourceInstancesCollection, ...]:
-    # get all the running instances
-    environment = state["environment"]
-    assert environment["EC2_INSTANCES_KEY_NAME"]
-
-    for ec2_res, key_name_env in [
-        ("ec2_resource_autoscaling", "EC2_INSTANCES_KEY_NAME"),
-        ("ec2_resource_clusters-keeper", "PRIMARY_EC2_INSTANCES_KEY_NAME"),
-    ]:
-        ec2_resource: EC2ServiceResource = state[ec2_res]
-        ec2_filters: list[FilterTypeDef] = [
-            {"Name": "instance-state-name", "Values": ["running", "pending"]},
-            {"Name": "key-name", "Values": [environment[key_name_env]]},
-        ]
-        if user_id:
-            ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
-        if wallet_id:
-            ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
-        instances = ec2_resource.instances.filter(Filters=ec2_filters)
-
-    return instances
 
 
 @app.command()
