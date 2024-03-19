@@ -17,12 +17,12 @@
 
 /**
  * The progress sequence of a dynamic service is as follows:
- * - CLUSTER_UP_SCALING      (1)
- * - SIDECARS_PULLING        (2)
- * - SERVICE_OUTPUTS_PULLING (3)
- * - SERVICE_STATE_PULLING   (4)
- * - SERVICE_IMAGES_PULLING  (5)
- * - SERVICE_INPUTS_PULLING  (6)
+ *
+ * [CLUSTER_UP_SCALING]
+ * [SIDECARS_PULLING]
+ * [SERVICE_OUTPUTS_PULLING, SERVICE_STATE_PULLING] (notice the parallelism here)
+ * [SERVICE_IMAGES_PULLING]
+ * [SERVICE_INPUTS_PULLING] (when this happens, the frontend has already loaded the service and is displaying it to the user) I would still keep it as is, when we decide to make inputs pulling part of the boot sequence this will be helpful.
  *
  * This class provides different widgets that render the progress status
  *
@@ -120,7 +120,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         margin: 0,
         padding: 0
       });
-      progressBar.getChildControl("progress");
       progressBar.exclude();
       return progressBar;
     },
@@ -156,25 +155,22 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
   },
 
   members: {
-    __defaultProgressTitle: null,
-    __defaultProgressSubtitle: null,
-    __defaultProgressBar: null,
-
     __mainLoadingPage: null,
     __sequenceLoadingPage: null,
+    __defaultProgressBar: null,
     __clusterUpScalingTitle: null,
     __pullingSidecarTitle: null,
     __pullingOutputsTitle: null,
     __pullingStateTitle: null,
     __pullingImagesTitle: null,
     __pullingInputsTitle: null,
+    __disclaimerText: null,
 
     getWidgetForLoadingPage: function() {
       return this.__mainLoadingPage;
     },
 
     resetSequence: function() {
-      // reverted setting
       this.setDefaultProgress(0);
       this.setClusterUpScaling(0);
       this.setSidecarPulling(0);
@@ -236,12 +232,12 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       sequenceLoadingPage.add(progressTitle);
       sequenceLoadingPage.add(defaultPBar);
 
-      const defaultProgressSubtitle = this.__defaultProgressSubtitle = new qx.ui.basic.Atom().set({
+      const defaultProgressSubtitle = this.__disclaimerText = new qx.ui.basic.Atom().set({
         label: qx.locale.Manager.tr("Please be patient, this process can take up to 5 minutes..."),
         padding: [20, 10],
         gap: 15,
         icon: "@FontAwesome5Solid/exclamation-triangle/16",
-        backgroundColor: "info_bg",
+        backgroundColor: "info-bg",
         textColor: "info",
         alignX: "center"
       });
@@ -273,7 +269,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       this.__mainLoadingPage.addAt(sequenceLoadingPage, 0, {
         flex: 1
       });
-      this.__mainLoadingPage.addAt(this.__defaultProgressSubtitle, 1, {
+      this.__mainLoadingPage.addAt(this.__disclaimerText, 1, {
         flex: 1
       });
     },
@@ -281,10 +277,10 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __applyDefaultProgress: function(value) {
       if (value > 0 && value < 6) {
         setTimeout(() => {
-          this.__defaultProgressSubtitle.show();
+          this.__disclaimerText.show();
         }, 50000);
       } else {
-        this.__defaultProgressSubtitle.exclude();
+        this.__disclaimerText.exclude();
       }
 
       this.self().progressReceived(this.__defaultProgressBar, value);

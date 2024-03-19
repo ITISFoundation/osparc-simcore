@@ -68,10 +68,10 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background":  "fab-background",
-    "material-button-background-disabled":  "default-button-disabled-background",
-    "material-button-background-hovered":  "default-button-hover-background",
-    "material-button-background-pressed":  "default-button-active-background",
+    "material-button-background": "fab-background",
+    "material-button-background-disabled": "default-button-disabled-background",
+    "material-button-background-hovered": "default-button-hover-background",
+    "material-button-background-pressed": "default-button-active-background",
     "material-button-text-disabled": "default-button-disabled-background",
     "material-button-text": "default-button-text-outline",
 
@@ -180,8 +180,8 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "service-window-hint": "#808080",
 
     "progressbar": "success",
-    "progressbarDisabled": "rgba(113, 157, 181, 0.25)",
-    "progressbarRunner": "rgb(0, 72, 104)",
+    "progressbar-disabled": "rgba(113, 157, 181, 0.25)",
+    "progressbar-runner": "rgb(0, 72, 104)",
 
     "loading-page-background-color": "#202020",
     "loading-page-text": "#FFFFFF",

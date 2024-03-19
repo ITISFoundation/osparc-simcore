@@ -594,7 +594,7 @@ qx.Theme.define("osparc.theme.Decoration", {
         style: "solid",
         width: 0,
         color: "transparent",
-        backgroundColor: "progressbarRunner",
+        backgroundColor: "progressbar-runner",
       }
     },
 
