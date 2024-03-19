@@ -97,7 +97,6 @@ class CreatePricingPlanBodyParams(OutputSchema):
 
 
 class UpdatePricingPlanBodyParams(OutputSchema):
-    name: str
     display_name: str
     description: str
     is_active: bool

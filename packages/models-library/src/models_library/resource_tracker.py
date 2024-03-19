@@ -146,12 +146,37 @@ class PricingPlanCreate(BaseModel):
     classification: PricingPlanClassification
     pricing_plan_key: str
 
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "product_name": "osparc",
+                    "display_name": "My pricing plan",
+                    "description": "This is general pricing plan",
+                    "classification": PricingPlanClassification.TIER,
+                    "pricing_plan_key": "my-unique-pricing-plan",
+                }
+            ]
+        }
+
 
 class PricingPlanUpdate(BaseModel):
     pricing_plan_id: PricingPlanId
     display_name: str
     description: str
     is_active: bool
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "pricing_plan_id": 1,
+                    "display_name": "My pricing plan",
+                    "description": "This is general pricing plan",
+                    "is_active": True,
+                }
+            ]
+        }
 
 
 ## Pricing Units
@@ -171,6 +196,21 @@ class PricingUnitWithCostCreate(BaseModel):
     cost_per_unit: Decimal
     comment: str
 
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "pricing_plan_id": 1,
+                    "unit_name": "My pricing plan",
+                    "unit_extra_info": {"CPU": 4, "GPU": "32GB", "VRAM": "No"},
+                    "default": True,
+                    "specific_info": {"aws_ec2_instances": ["t3.medium"]},
+                    "cost_per_unit": 10,
+                    "comment": "This pricing unit was create by Foo",
+                }
+            ]
+        }
+
 
 class PricingUnitCostUpdate(BaseModel):
     cost_per_unit: Decimal
@@ -185,3 +225,30 @@ class PricingUnitWithCostUpdate(BaseModel):
     default: bool
     specific_info: SpecificInfo
     pricing_unit_cost_update: None | PricingUnitCostUpdate
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "pricing_plan_id": 1,
+                    "pricing_unit_id": 1,
+                    "unit_name": "My pricing plan",
+                    "unit_extra_info": {"CPU": 4, "GPU": "32GB", "VRAM": "No"},
+                    "default": True,
+                    "specific_info": {"aws_ec2_instances": ["t3.medium"]},
+                    "pricing_unit_cost_update": {
+                        "cost_per_unit": 10,
+                        "comment": "This pricing unit was updated by Foo",
+                    },
+                },
+                {
+                    "pricing_plan_id": 1,
+                    "pricing_unit_id": 1,
+                    "unit_name": "My pricing plan",
+                    "unit_extra_info": {"CPU": 4, "GPU": "32GB", "VRAM": "No"},
+                    "default": True,
+                    "specific_info": {"aws_ec2_instances": ["t3.medium"]},
+                    "pricing_unit_cost_update": None,
+                },
+            ]
+        }
