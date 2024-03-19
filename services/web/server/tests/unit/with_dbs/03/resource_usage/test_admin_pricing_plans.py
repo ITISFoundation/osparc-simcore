@@ -13,6 +13,7 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
+    PricingPlanToServiceGet,
     PricingUnitGet,
 )
 from models_library.resource_tracker import (
@@ -87,6 +88,35 @@ def mock_rpc_resource_usage_tracker_service_api(
                 PricingUnitGet, PricingUnitGet.Config.schema_extra["examples"][0]
             ),
         ),
+        ## Pricing plan to service
+        "list_connected_services_to_pricing_plan_by_pricing_plan": mocker.patch(
+            "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan",
+            autospec=True,
+            return_value=[
+                parse_obj_as(
+                    PricingPlanToServiceGet,
+                    PricingPlanToServiceGet.Config.schema_extra["examples"][0],
+                )
+            ],
+        ),
+        "connect_service_to_pricing_plan": mocker.patch(
+            "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_plans.connect_service_to_pricing_plan",
+            autospec=True,
+            return_value=parse_obj_as(
+                PricingPlanToServiceGet,
+                PricingPlanToServiceGet.Config.schema_extra["examples"][0],
+            ),
+        ),
+    }
+
+
+@pytest.fixture
+def mock_catalog_client(mocker: MockerFixture, faker: Faker) -> dict[str, MagicMock]:
+    return {
+        "get_service": mocker.patch(
+            "simcore_service_webserver.resource_usage._pricing_plans_admin_api.catalog_client.get_service",
+            autospec=True,
+        )
     }
 
 
@@ -105,6 +135,7 @@ async def test_get_admin_pricing_endpoints_user_role_access(
     client: TestClient,
     logged_user: UserInfoDict,
     mock_rpc_resource_usage_tracker_service_api: dict,
+    mock_catalog_client: dict,
     user_role: UserRole,
     expected: HTTPStatus,
 ):
@@ -149,5 +180,25 @@ async def test_get_admin_pricing_endpoints_user_role_access(
     )
     resp = await client.put(
         f"{url}", json=PricingUnitWithCostUpdate.Config.schema_extra["examples"][0]
+    )
+    await assert_status(resp, expected)
+
+    ## Pricing Plan to Service
+
+    url = client.app.router["list_connected_services_to_pricing_plan"].url_for(
+        pricing_plan_id="1"
+    )
+    resp = await client.get(f"{url}")
+    await assert_status(resp, expected)
+
+    url = client.app.router["connect_service_to_pricing_plan"].url_for(
+        pricing_plan_id="1"
+    )
+    resp = await client.post(
+        f"{url}",
+        json={
+            "service_key": "simcore/services/comp/sleeper",
+            "service_version": "2.0.2",
+        },
     )
     await assert_status(resp, expected)
