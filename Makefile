@@ -84,6 +84,13 @@ export SWARM_STACK_NAME_NO_HYPHEN = $(subst -,_,$(SWARM_STACK_NAME))
 export DOCKER_IMAGE_TAG ?= latest
 export DOCKER_REGISTRY  ?= itisfoundation
 
+
+# Check Python version, throw error if compilation would fail with the installed version
+PYTHON_VERSION_TEST := $(shell python ./scripts/test_python_version.py 2>&1)
+ifneq ($(.SHELLSTATUS), 0)
+$(error "Python version test failed: ${PYTHON_VERSION_TEST}")
+endif
+
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
