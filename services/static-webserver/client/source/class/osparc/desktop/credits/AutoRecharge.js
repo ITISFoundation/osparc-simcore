@@ -190,11 +190,17 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       topUpAmountTitleLayout.add(topUpAmountInfo);
       topUpAmountLayout.add(topUpAmountTitleLayout);
       const topUpAmountField = this.__topUpAmountField = new qx.ui.form.Spinner().set({
-        minimum: 10,
         maximum: 10000,
         width: 300,
         appearance: "appmotion-buy-credits-spinner"
       });
+      osparc.store.Store.getInstance().getMinimumAmount()
+        .then(minimum => {
+          topUpAmountInfo.setHintText(topUpAmountInfo.getText() + `. A minimum amount of ${minimum} USD is required.`);
+          topUpAmountField.set({
+            minimum
+          });
+        });
       topUpAmountLayout.add(topUpAmountField);
       autoRechargeLayout.add(topUpAmountLayout);
 
@@ -206,7 +212,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         marginLeft: 15
       });
       monthlyLimitTitleLayout.add(monthlyLimitTitle);
-      const monthlyLimitTitleInfo = new osparc.ui.hint.InfoHint(this.tr("Maximum amount in US$ charged within a natural month."));
+      const monthlyLimitTitleInfo = new osparc.ui.hint.InfoHint(this.tr("Maximum amount in USD charged within a natural month."));
       monthlyLimitTitleLayout.add(monthlyLimitTitleInfo);
       monthlyLimitLayout.add(monthlyLimitTitleLayout);
       const monthlyLimitField = this.__monthlyLimitField = new qx.ui.form.Spinner().set({

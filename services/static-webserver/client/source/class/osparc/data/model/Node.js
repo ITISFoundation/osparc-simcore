@@ -1031,35 +1031,12 @@ qx.Class.define("osparc.data.model.Node", {
       return statusText + " " + this.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + this.getVersion() + "</sub></span>";
     },
 
-    __addDisclaimer: function(loadingPage) {
-      if (this.getKey() && this.getKey().includes("pub-nat-med")) {
-        loadingPage.set({
-          disclaimer: this.tr("This might take a couple of minutes")
-        });
-      }
-      if (
-        (this.getKey() && this.getKey().includes("sim4life-lite")) ||
-        osparc.product.Utils.isProduct("tis")
-      ) {
-        // show disclaimer after 1'
-        setTimeout(() => {
-          if (loadingPage) {
-            loadingPage.set({
-              disclaimer: this.tr("Platform demand is currently exceptional and efforts are underway to increase system capacity.<br>There may be a delay of a few minutes in starting services.")
-            });
-          }
-        }, 60*1000);
-      }
-      return null;
-    },
-
     __initLoadingPage: function() {
       const showZoomMaximizeButton = !osparc.product.Utils.isProduct("s4llite");
       const loadingPage = new osparc.ui.message.Loading(showZoomMaximizeButton);
       loadingPage.set({
         header: this.__getLoadingPageHeader()
       });
-      this.__addDisclaimer(loadingPage);
 
       const thumbnail = this.getMetaData()["thumbnail"];
       if (thumbnail) {
