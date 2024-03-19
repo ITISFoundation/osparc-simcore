@@ -158,7 +158,6 @@ async def test_rpc_pricing_plans_with_units_workflow(
         product_name="s4l",
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
-            pricing_plan_key="",
             unit_name="SMALL",
             unit_extra_info={},
             default=True,
@@ -241,7 +240,6 @@ async def test_rpc_pricing_plans_with_units_workflow(
         product_name="s4l",
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
-            pricing_plan_key=faker.word(),
             unit_name="LARGE",
             unit_extra_info={},
             default=False,
