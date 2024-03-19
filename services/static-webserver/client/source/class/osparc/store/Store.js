@@ -715,7 +715,7 @@ qx.Class.define("osparc.store.Store", {
       return new Promise(resolve => {
         osparc.data.Resources.fetch("creditPrice", "get")
           .then(data => {
-            data && data["minPaymentAmountUsd"] ? resolve(data["minPaymentAmountUsd"]) : resolve(defaultMinimum)
+            data && ("minPaymentAmountUsd" in data) ? resolve(data["minPaymentAmountUsd"]) : resolve(defaultMinimum)
           })
           .catch(err => {
             console.error(err);
