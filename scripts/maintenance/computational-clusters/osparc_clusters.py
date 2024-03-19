@@ -698,17 +698,7 @@ def _list_running_ec2_instances(
     return state.ec2_resource_autoscaling.instances.filter(Filters=ec2_filters)
 
 
-@app.callback()
-def main(
-    deploy_config: Annotated[
-        Path, typer.Option(help="path to the deploy configuration")
-    ]
-):
-    """Manages external clusters"""
-
-    state.deploy_config = deploy_config.expanduser()
-    assert deploy_config.is_dir()
-    # get the repo.config file (repo.config.frozen might be present for AWS that contains all the variables)
+def _parse_environment(deploy_config: Path) -> dict[str, str | None]:
     repo_config = deploy_config / "repo.config"
     assert repo_config.exists()
     environment = dotenv_values(repo_config)
@@ -730,29 +720,47 @@ def main(
             print(error_msg)
             raise typer.Abort(error_msg)
     assert environment
-    state.environment = environment
+    return environment
+
+
+@app.callback()
+def main(
+    deploy_config: Annotated[
+        Path, typer.Option(help="path to the deploy configuration")
+    ]
+):
+    """Manages external clusters"""
+
+    state.deploy_config = deploy_config.expanduser()
+    assert (
+        deploy_config.is_dir()
+    ), "deploy-config argument is not pointing to a directory!"
+
+    state.environment = _parse_environment(deploy_config)
 
     # connect to ec2s
     state.ec2_resource_autoscaling = boto3.resource(
         "ec2",
-        region_name=environment["AUTOSCALING_EC2_REGION_NAME"],
-        aws_access_key_id=environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
-        aws_secret_access_key=environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
+        region_name=state.environment["AUTOSCALING_EC2_REGION_NAME"],
+        aws_access_key_id=state.environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
+        aws_secret_access_key=state.environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
     )
 
     state.ec2_resource_clusters_keeper = boto3.resource(
         "ec2",
-        region_name=environment["CLUSTERS_KEEPER_EC2_REGION_NAME"],
-        aws_access_key_id=environment["CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID"],
-        aws_secret_access_key=environment["CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY"],
+        region_name=state.environment["CLUSTERS_KEEPER_EC2_REGION_NAME"],
+        aws_access_key_id=state.environment["CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID"],
+        aws_secret_access_key=state.environment[
+            "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY"
+        ],
     )
 
-    assert environment["EC2_INSTANCES_KEY_NAME"]
+    assert state.environment["EC2_INSTANCES_KEY_NAME"]
     state.dynamic_parser = parse.compile(
-        f"{environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
+        f"{state.environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
     )
     state.computational_parser = parse.compile(
-        f"{environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX']}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT}"
+        f"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX']}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT}"
     )
 
     # locate ssh key path
