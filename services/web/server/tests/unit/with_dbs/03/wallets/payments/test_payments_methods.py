@@ -47,6 +47,7 @@ async def test_payment_method_worfklow(
 ):
     # preamble
     assert client.app
+
     settings: PaymentsSettings = get_payments_plugin_settings(client.app)
 
     assert settings.PAYMENTS_FAKE_COMPLETION is False
@@ -186,6 +187,7 @@ async def _add_payment_method(
     ],
 )
 async def test_wallet_autorecharge(
+    latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
     mock_rpc_payments_service_api: dict[str, MagicMock],
@@ -193,6 +195,8 @@ async def test_wallet_autorecharge(
     expected_status: int,
 ):
     assert client.app
+    assert latest_osparc_price > 0, "current product should be billable"
+
     settings = get_payments_plugin_settings(client.app)
     wallet = logged_user_wallet
 
@@ -281,9 +285,11 @@ async def test_wallet_autorecharge(
 async def test_delete_primary_payment_method_in_autorecharge(
     client: TestClient,
     logged_user_wallet: WalletGet,
+    latest_osparc_price: Decimal,
     mock_rpc_payments_service_api: dict[str, MagicMock],
 ):
     assert client.app
+    assert latest_osparc_price > 0, "current product should be billable"
 
     wallet = logged_user_wallet
     payment_method_id = await _add_payment_method(client, wallet_id=wallet.wallet_id)
@@ -362,6 +368,7 @@ async def test_one_time_payment_with_payment_method(
     setup_user_pre_registration_details_db: None,
 ):
     assert client.app
+    assert latest_osparc_price > 0, "current product should be billable"
 
     send_message = mocker.patch(
         "simcore_service_webserver.payments._socketio.send_message_to_user",

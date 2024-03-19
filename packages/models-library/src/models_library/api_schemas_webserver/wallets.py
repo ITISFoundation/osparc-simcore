@@ -197,7 +197,7 @@ class ReplaceWalletAutoRecharge(InputSchema):
     @validator("monthly_limit_in_usd")
     @classmethod
     def _monthly_limit_greater_than_top_up(cls, v, values):
-        top_up = values["PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT"]
+        top_up = values["top_up_amount_in_usd"]
         if v is not None and v < top_up:
             msg = "Monthly limit ({v} USD) should be greater than top up amount ({top_up} USD)"
             raise ValueError(msg)
