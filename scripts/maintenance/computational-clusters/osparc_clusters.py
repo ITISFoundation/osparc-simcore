@@ -710,13 +710,13 @@ def _list_running_ec2_instances(
         {"Name": "instance-state-name", "Values": ["running", "pending"]},
         {"Name": "key-name", "Values": [key_name]},
     ]
-    # if custom_tags:
-    #     ec2_filters.extend(
-    #         [
-    #             {"Name": f"tag:{key}", "Values": [f"{value}"]}
-    #             for key, value in custom_tags.items()
-    #         ]
-    #     )
+    if custom_tags:
+        ec2_filters.extend(
+            [
+                {"Name": f"tag:{key}", "Values": [f"{value}"]}
+                for key, value in custom_tags.items()
+            ]
+        )
 
     if user_id:
         ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
