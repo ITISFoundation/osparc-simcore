@@ -18,12 +18,17 @@ def compose_email(
     to: Address,
     subject: str,
     content_text: str,
-    content_html: str | None,
+    content_html: str | None = None,
+    reply_to: Address | None = None,
 ) -> EmailMessage:
     msg = EmailMessage()
     msg["From"] = from_
     msg["To"] = to
+    if reply_to:
+        msg["Reply-To"] = reply_to
+
     msg["Subject"] = subject
+
     msg.set_content(content_text)
     if content_html:
         msg.add_alternative(content_html, subtype="html")

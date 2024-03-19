@@ -294,9 +294,8 @@ qx.Class.define("osparc.info.MergedLarge", {
       });
       descriptionLayout.add(label);
 
-      const description = osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), maxHeight);
-      description.setValue(this.getStudy().getDescription());
-      descriptionLayout.add(description);
+      const descriptionContainer = osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), maxHeight);
+      descriptionLayout.add(descriptionContainer);
 
       return descriptionLayout;
     },

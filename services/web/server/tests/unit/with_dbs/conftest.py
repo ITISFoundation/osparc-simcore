@@ -141,15 +141,25 @@ def app_environment(
 def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
     # WARNING: this fixture is commonly overriden. Check before renaming.
     async def _print_mail_to_stdout(
-        settings: SMTPSettings, *, sender: str, recipient: str, subject: str, body: str
+        settings: SMTPSettings,
+        *,
+        sender: str,
+        recipient: str,
+        subject: str,
+        body: str,
+        **kwargs,
     ):
         print(
-            f"=== EMAIL FROM: {sender}\n=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}"
+            f"=== EMAIL FROM: {sender}\n",
+            f"=== EMAIL TO: {recipient}\n",
+            f"=== SUBJECT: {subject}\n",
+            f"=== BODY:\n{body}\n",
+            f"=== EXTRA:\n{kwargs}",
         )
 
     # pylint: disable=protected-access
     monkeypatch.setattr(
-        simcore_service_webserver.email._core,
+        simcore_service_webserver.email._core,  # noqa: SLF001
         "_send_email",
         _print_mail_to_stdout,
     )
