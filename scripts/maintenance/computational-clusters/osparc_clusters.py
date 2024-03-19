@@ -7,7 +7,7 @@ import json
 import re
 from collections import defaultdict, namedtuple
 from collections.abc import Coroutine
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from pathlib import Path
 from typing import Annotated, Any, Final, TypeAlias
@@ -25,13 +25,10 @@ from mypy_boto3_ec2.type_defs import FilterTypeDef, TagTypeDef
 from pydantic import ByteSize, TypeAdapter
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
-from rich.table import Column, Style, Table
+from rich.style import Style
+from rich.table import Column, Table
 
 app = typer.Typer()
-
-_SSH_USER_NAME: Final[str] = "ubuntu"
-
-_TaskCancelEventNameTemplate: Final[str] = "cancel_event_{}"
 
 
 @dataclass(slots=True, kw_only=True)
@@ -77,11 +74,50 @@ TaskState: TypeAlias = str
 MINUTE: Final[int] = 60
 HOUR: Final[int] = 60 * MINUTE
 
-COMPUTATIONAL_INSTANCE_NAME_PARSER: Final[parse.Parser] = parse.compile(
-    r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:d}"
-)
+DEFAULT_COMPUTATIONAL_EC2_FORMAT: Final[
+    str
+] = r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:d}"
+DEFAULT_DYNAMIC_EC2_FORMAT: Final[str] = r"osparc-dynamic-autoscaled-worker-{key_name}"
 
 DEPLOY_SSH_KEY_PARSER: Final[parse.Parser] = parse.compile(r"osparc-{random_name}.pem")
+SSH_USER_NAME: Final[str] = "ubuntu"
+UNDEFINED_BYTESIZE: Final[ByteSize] = ByteSize(-1)
+TASK_CANCEL_EVENT_NAME_TEMPLATE: Final[str] = "cancel_event_{}"
+
+# NOTE: service_name and service_version are not available on dynamic-sidecar/dynamic-proxies!
+DYN_SERVICES_NAMING_CONVENTION: Final[re.Pattern] = re.compile(
+    r"^dy-(proxy|sidecar)(-|_)(?P<node_id>.{8}-.{4}-.{4}-.{4}-.{12}).*\t(?P<created_at>[^\t]+)\t(?P<user_id>\d+)\t(?P<project_id>.{8}-.{4}-.{4}-.{4}-.{12})\t(?P<service_name>[^\t]*)\t(?P<service_version>.*)$"
+)
+
+DockerContainer = namedtuple(  # noqa: PYI024
+    "docker_container",
+    [
+        "node_id",
+        "user_id",
+        "project_id",
+        "created_at",
+        "name",
+        "service_name",
+        "service_version",
+    ],
+)
+
+
+@dataclass(kw_only=True)
+class AppState:
+    environment: dict[str, str | None] = field(default_factory=dict)
+    ec2_resource_autoscaling: EC2ServiceResource | None = None
+    ec2_resource_clusters_keeper: EC2ServiceResource | None = None
+    dynamic_parser: parse.Parser
+    computational_parser: parse.Parser
+    deploy_config: Path | None = None
+    ssh_key_path: Path | None = None
+
+
+state: AppState = AppState(
+    dynamic_parser=parse.compile(DEFAULT_DYNAMIC_EC2_FORMAT),
+    computational_parser=parse.compile(DEFAULT_COMPUTATIONAL_EC2_FORMAT),
+)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -123,7 +159,7 @@ def _timedelta_formatting(
 
 def _parse_computational(instance: Instance) -> ComputationalInstance | None:
     name = _get_instance_name(instance)
-    if result := COMPUTATIONAL_INSTANCE_NAME_PARSER.search(name):
+    if result := state.computational_parser.search(name):
         assert isinstance(result, parse.Result)
         last_heartbeat = _get_last_heartbeat(instance)
         return ComputationalInstance(
@@ -152,12 +188,9 @@ def _create_graylog_permalinks(
     return f"https://monitoring.{environment['MACHINE_FQDN']}/graylog/search?q=source%3A%22ip-{source_name}%22&rangetype=relative&from={time_span}"
 
 
-UNDEFINED_BYTESIZE: Final[ByteSize] = ByteSize(-1)
-
-
 def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
     name = _get_instance_name(instance)
-    if result := state["dynamic_parser"].search(name):
+    if result := state.dynamic_parser.search(name):
         assert isinstance(result, parse.Result)
 
         return DynamicInstance(
@@ -167,25 +200,6 @@ def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
             disk_space=UNDEFINED_BYTESIZE,
         )
     return None
-
-
-# NOTE: service_name and service_version are not available on dynamic-sidecar/dynamic-proxies!
-_DYN_SERVICES_NAMING_CONVENTION: Final[re.Pattern] = re.compile(
-    r"^dy-(proxy|sidecar)(-|_)(?P<node_id>.{8}-.{4}-.{4}-.{4}-.{12}).*\t(?P<created_at>[^\t]+)\t(?P<user_id>\d+)\t(?P<project_id>.{8}-.{4}-.{4}-.{4}-.{12})\t(?P<service_name>[^\t]*)\t(?P<service_version>.*)$"
-)
-
-DockerContainer = namedtuple(  # noqa: PYI024
-    "docker_container",
-    [
-        "node_id",
-        "user_id",
-        "project_id",
-        "created_at",
-        "name",
-        "service_name",
-        "service_version",
-    ],
-)
 
 
 def _ssh_and_get_available_disk_space(
@@ -253,7 +267,7 @@ def _ssh_and_list_running_dyn_services(
         # Extract containers that follow the naming convention
         running_service: dict[str, list[DockerContainer]] = defaultdict(list)
         for container in output.splitlines():
-            if match := re.match(_DYN_SERVICES_NAMING_CONVENTION, container):
+            if match := re.match(DYN_SERVICES_NAMING_CONVENTION, container):
                 named_container = DockerContainer(
                     match["node_id"],
                     int(match["user_id"]),
@@ -316,17 +330,18 @@ def _ssh_and_list_running_dyn_services(
 
 
 def _print_dynamic_instances(
-    instances: list[DynamicInstance], environment: dict[str, str | None]
+    instances: list[DynamicInstance],
+    environment: dict[str, str | None],
+    aws_region: str,
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
         Column("Instance"),
-        Column("Links", overflow="fold"),
         Column(
             "Running services",
             footer="[red]Intervention detection might show false positive if in transient state, be careful and always double-check!![/red]",
         ),
-        title="dynamic autoscaled instances",
+        title=f"dynamic autoscaled instances: {aws_region}",
         show_footer=True,
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
@@ -344,6 +359,8 @@ def _print_dynamic_instances(
                 "ServiceVersion",
                 "Created Since",
                 "Need intervention",
+                expand=True,
+                padding=(0, 0),
             )
             for service in instance.running_services:
                 service_table.add_row(
@@ -361,7 +378,8 @@ def _print_dynamic_instances(
                 [
                     f"{_color_encode_with_state(instance.name, instance.ec2_instance)}",
                     f"ID: {instance.ec2_instance.instance_id}",
-                    f"AMI: {instance.ec2_instance.image_id}({instance.ec2_instance.image.name})",
+                    f"AMI: {instance.ec2_instance.image_id}",
+                    f"AMI name: {instance.ec2_instance.image.name}",
                     f"Type: {instance.ec2_instance.instance_type}",
                     f"Up: {_timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {instance.ec2_instance.public_ip_address}",
@@ -369,8 +387,11 @@ def _print_dynamic_instances(
                     f"/mnt/docker(free): {_color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
                 ]
             ),
-            f"Graylog: {_create_graylog_permalinks(environment, instance.ec2_instance)}",
             service_table,
+        )
+        table.add_row(
+            "Graylog: ",
+            f"{_create_graylog_permalinks(environment, instance.ec2_instance)}",
             end_section=True,
         )
     print(table, flush=True)
@@ -402,14 +423,16 @@ def _color_encode_with_threshold(string: str, value, threshold) -> str:
 
 
 def _print_computational_clusters(
-    clusters: list[ComputationalCluster], environment: dict[str, str | None]
+    clusters: list[ComputationalCluster],
+    environment: dict[str, str | None],
+    aws_region: str,
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
         Column("Instance", justify="left", overflow="fold"),
         Column("Links", justify="left", overflow="fold"),
         Column("Computational details"),
-        title="computational clusters",
+        title=f"computational clusters: {aws_region}",
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
     )
@@ -424,7 +447,8 @@ def _print_computational_clusters(
                     f"[bold]{_color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
                     f"Name: {cluster.primary.name}",
                     f"ID: {cluster.primary.ec2_instance.id}",
-                    f"AMI: {cluster.primary.ec2_instance.image_id}({cluster.primary.ec2_instance.image.name})",
+                    f"AMI: {cluster.primary.ec2_instance.image_id}",
+                    f"AMI name: {cluster.primary.ec2_instance.image.name}",
                     f"Type: {cluster.primary.ec2_instance.instance_type}",
                     f"Up: {_timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
@@ -458,7 +482,8 @@ def _print_computational_clusters(
                         f"[italic]{_color_encode_with_state(f'Worker {index+1}', worker.ec2_instance)}[/italic]",
                         f"Name: {worker.name}",
                         f"ID: {worker.ec2_instance.id}",
-                        f"AMI: {worker.ec2_instance.image_id}({worker.ec2_instance.image.name})",
+                        f"AMI: {worker.ec2_instance.image_id}",
+                        f"AMI name: {worker.ec2_instance.image.name}",
                         f"Type: {worker.ec2_instance.instance_type}",
                         f"Up: {_timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)}",
                         f"ExtIP: {worker.ec2_instance.public_ip_address}",
@@ -490,7 +515,7 @@ def _analyze_dynamic_instances_running_services(
                     None,
                     _ssh_and_list_running_dyn_services,
                     instance.ec2_instance,
-                    _SSH_USER_NAME,
+                    SSH_USER_NAME,
                     ssh_key_path,
                 )
                 for instance in dynamic_instances
@@ -506,7 +531,7 @@ def _analyze_dynamic_instances_running_services(
                     None,
                     _ssh_and_get_available_disk_space,
                     instance.ec2_instance,
-                    _SSH_USER_NAME,
+                    SSH_USER_NAME,
                     ssh_key_path,
                 )
                 for instance in dynamic_instances
@@ -552,7 +577,8 @@ def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[Ta
 
 def _dask_client(ip_address: str) -> distributed.Client:
     security = distributed.Security()
-    dask_certificates = state["deploy_config"] / "assets" / "dask-certificates"
+    assert state.deploy_config
+    dask_certificates = state.deploy_config / "assets" / "dask-certificates"
     if dask_certificates.exists():
         security = distributed.Security(
             tls_ca_file=f"{dask_certificates / 'dask-cert.pem'}",
@@ -579,7 +605,7 @@ def _analyze_computational_instances(
                         None,
                         _ssh_and_get_available_disk_space,
                         instance.ec2_instance,
-                        _SSH_USER_NAME,
+                        SSH_USER_NAME,
                         ssh_key_path,
                     )
                     for instance in computational_instances
@@ -635,40 +661,139 @@ def _analyze_computational_instances(
     return computational_clusters
 
 
-def _detect_instances(
+def _parse_computational_clusters(
     instances: ServiceResourceInstancesCollection,
     ssh_key_path: Path | None,
     user_id: int | None,
     wallet_id: int | None,
-) -> tuple[list[DynamicInstance], list[ComputationalCluster]]:
-    dynamic_instances = []
-    computational_instances = []
-    for instance in track(instances, description="Detecting running instances..."):
-        if comp_instance := _parse_computational(instance):
-            if (user_id is None or comp_instance.user_id == user_id) and (
-                wallet_id is None or comp_instance.wallet_id == wallet_id
-            ):
-                computational_instances.append(comp_instance)
-        elif dyn_instance := _parse_dynamic(instance):
-            dynamic_instances.append(dyn_instance)
+) -> list[ComputationalCluster]:
+    computational_instances = [
+        comp_instance
+        for instance in track(
+            instances, description="Parsing computational instances..."
+        )
+        if (comp_instance := _parse_computational(instance))
+        and (user_id is None or comp_instance.user_id == user_id)
+        and (wallet_id is None or comp_instance.wallet_id == wallet_id)
+    ]
+    return _analyze_computational_instances(computational_instances, ssh_key_path)
 
+
+def _parse_dynamic_instances(
+    instances: ServiceResourceInstancesCollection,
+    ssh_key_path: Path | None,
+    user_id: int | None,
+    wallet_id: int | None,
+) -> list[DynamicInstance]:
+    dynamic_instances = [
+        dyn_instance
+        for instance in track(instances, description="Parsing dynamic instances...")
+        if (dyn_instance := _parse_dynamic(instance))
+    ]
     if dynamic_instances and ssh_key_path:
         dynamic_instances = _analyze_dynamic_instances_running_services(
             dynamic_instances, ssh_key_path, user_id
         )
+    return dynamic_instances
 
-    computational_clusters = _analyze_computational_instances(
-        computational_instances, ssh_key_path
+
+def _list_running_ec2_instances(
+    ec2_resource: EC2ServiceResource,
+    key_name: str,
+    custom_tags: dict[str, str],
+    user_id: int | None,
+    wallet_id: int | None,
+) -> ServiceResourceInstancesCollection:
+    # get all the running instances
+
+    ec2_filters: list[FilterTypeDef] = [
+        {"Name": "instance-state-name", "Values": ["running", "pending"]},
+        {"Name": "key-name", "Values": [key_name]},
+    ]
+    if custom_tags:
+        ec2_filters.extend(
+            [
+                {"Name": f"tag:{key}", "Values": [f"{value}"]}
+                for key, value in custom_tags.items()
+            ]
+        )
+
+    if user_id:
+        ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
+    if wallet_id:
+        ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
+
+    return ec2_resource.instances.filter(Filters=ec2_filters)
+
+
+def _list_dynamic_instances_from_ec2(
+    user_id: int | None,
+    wallet_id: int | None,
+) -> ServiceResourceInstancesCollection:
+    assert state.environment["EC2_INSTANCES_KEY_NAME"]
+    custom_tags = {}
+    if state.environment["EC2_INSTANCES_CUSTOM_TAGS"]:
+        custom_tags = json.loads(state.environment["EC2_INSTANCES_CUSTOM_TAGS"])
+    assert state.ec2_resource_autoscaling
+    return _list_running_ec2_instances(
+        state.ec2_resource_autoscaling,
+        state.environment["EC2_INSTANCES_KEY_NAME"],
+        custom_tags,
+        user_id,
+        wallet_id,
     )
 
-    return dynamic_instances, computational_clusters
+
+def _list_computational_instances_from_ec2(
+    user_id: int | None,
+    wallet_id: int | None,
+) -> ServiceResourceInstancesCollection:
+    assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]
+    assert state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"]
+    assert (
+        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]
+        == state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"]
+    ), "key name is different on primary and workers. TIP: adjust this code now"
+    custom_tags = {}
+    if state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"]:
+        assert (
+            state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"]
+            == state.environment["WORKERS_EC2_INSTANCES_CUSTOM_TAGS"]
+        ), "custom tags are different on primary and workers. TIP: adjust this code now"
+        custom_tags = json.loads(state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"])
+    assert state.ec2_resource_clusters_keeper
+    return _list_running_ec2_instances(
+        state.ec2_resource_clusters_keeper,
+        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
+        custom_tags,
+        user_id,
+        wallet_id,
+    )
 
 
-state = {
-    "environment": {},
-    "ec2_resource": None,
-    "dynamic_parser": parse.compile("osparc-dynamic-autoscaled-worker-{key_name}"),
-}
+def _parse_environment(deploy_config: Path) -> dict[str, str | None]:
+    repo_config = deploy_config / "repo.config"
+    assert repo_config.exists()
+    environment = dotenv_values(repo_config)
+    if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
+        print(
+            "Terraform variables detected, looking for repo.config.frozen as alternative."
+            " TIP: you are responsible for them being up to date!!"
+        )
+        repo_config = deploy_config / "repo.config.frozen"
+        assert repo_config.exists()
+        environment = dotenv_values(repo_config)
+
+        if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
+            error_msg = (
+                "Terraform is necessary in order to check into that deployment!\n"
+                f"install terraform (check README.md in {state.deploy_config} for instructions)"
+                "then run make repo.config.frozen, then re-run this code"
+            )
+            print(error_msg)
+            raise typer.Abort(error_msg)
+    assert environment
+    return environment
 
 
 @app.callback()
@@ -679,68 +804,52 @@ def main(
 ):
     """Manages external clusters"""
 
-    state["deploy_config"] = deploy_config.expanduser()
-    assert deploy_config.is_dir()
-    # get the repo.config file
-    repo_config = deploy_config / "repo.config"
-    assert repo_config.exists()
-    environment = dotenv_values(repo_config)
-    assert environment
-    state["environment"] = environment
-    # connect to ec2
-    if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
-        error_msg = (
-            "Terraform is necessary in order to check into that deployment!\n"
-            f"install terraform (check README.md in {state['deploy_config']} for instructions)"
-            "then run make repo.config.frozen, and replace the repo.config, then re-run this code"
-        )
-        print(error_msg)
-        raise typer.Abort(error_msg)
+    state.deploy_config = deploy_config.expanduser()
+    assert (
+        deploy_config.is_dir()
+    ), "deploy-config argument is not pointing to a directory!"
 
-    state["ec2_resource"] = boto3.resource(
+    state.environment = _parse_environment(deploy_config)
+
+    # connect to ec2s
+    state.ec2_resource_autoscaling = boto3.resource(
         "ec2",
-        region_name=environment["AUTOSCALING_EC2_REGION_NAME"],
-        aws_access_key_id=environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
-        aws_secret_access_key=environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
+        region_name=state.environment["AUTOSCALING_EC2_REGION_NAME"],
+        aws_access_key_id=state.environment["AUTOSCALING_EC2_ACCESS_KEY_ID"],
+        aws_secret_access_key=state.environment["AUTOSCALING_EC2_SECRET_ACCESS_KEY"],
     )
 
-    # get all the running instances
-    assert environment["EC2_INSTANCES_KEY_NAME"]
-
-    state["dynamic_parser"] = parse.compile(
-        f"{environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
+    state.ec2_resource_clusters_keeper = boto3.resource(
+        "ec2",
+        region_name=state.environment["CLUSTERS_KEEPER_EC2_REGION_NAME"],
+        aws_access_key_id=state.environment["CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID"],
+        aws_secret_access_key=state.environment[
+            "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY"
+        ],
     )
 
-    # find ssh key path
+    assert state.environment["EC2_INSTANCES_KEY_NAME"]
+    state.dynamic_parser = parse.compile(
+        f"{state.environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
+    )
+    if state.environment["CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX"]:
+        state.computational_parser = parse.compile(
+            f"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX']}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT}"
+        )
+
+    # locate ssh key path
     for file_path in deploy_config.glob("**/*.pem"):
         # very bad HACK
         if "sim4life.io" in f"{file_path}" and "openssh" not in f"{file_path}":
             continue
 
         if DEPLOY_SSH_KEY_PARSER.parse(f"{file_path.name}") is not None:
-            print(f"found following ssh_key_path: {file_path}")
-            state["ssh_key_path"] = file_path
+            print(
+                f"will be using following ssh_key_path: {file_path}. "
+                "TIP: if wrong adapt the code or manually remove some of them."
+            )
+            state.ssh_key_path = file_path
             break
-
-
-def _list_running_ec2_instances(
-    user_id: int | None, wallet_id: int | None
-) -> ServiceResourceInstancesCollection:
-    # get all the running instances
-    environment = state["environment"]
-    assert environment["EC2_INSTANCES_KEY_NAME"]
-    ec2_resource: EC2ServiceResource = state["ec2_resource"]
-    ec2_filters: list[FilterTypeDef] = [
-        {"Name": "instance-state-name", "Values": ["running", "pending"]},
-        {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
-    ]
-    if user_id:
-        ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
-    if wallet_id:
-        ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
-    instances = ec2_resource.instances.filter(Filters=ec2_filters)
-
-    return instances
 
 
 @app.command()
@@ -759,14 +868,27 @@ def summary(
     """
 
     # get all the running instances
-    instances = _list_running_ec2_instances(user_id, wallet_id)
-    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"], user_id, wallet_id
+    assert state.ec2_resource_autoscaling
+    dynamic_instances = _list_dynamic_instances_from_ec2(user_id, wallet_id)
+    dynamic_autoscaled_instances = _parse_dynamic_instances(
+        dynamic_instances, state.ssh_key_path, user_id, wallet_id
+    )
+    _print_dynamic_instances(
+        dynamic_autoscaled_instances,
+        state.environment,
+        state.ec2_resource_autoscaling.meta.client.meta.region_name,
     )
 
-    environment = state["environment"]
-    _print_dynamic_instances(dynamic_autoscaled_instances, environment)
-    _print_computational_clusters(computational_clusters, environment)
+    assert state.ec2_resource_clusters_keeper
+    computational_instances = _list_computational_instances_from_ec2(user_id, wallet_id)
+    computational_clusters = _parse_computational_clusters(
+        computational_instances, state.ssh_key_path, user_id, wallet_id
+    )
+    _print_computational_clusters(
+        computational_clusters,
+        state.environment,
+        state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+    )
 
 
 @app.command()
@@ -782,18 +904,21 @@ def cancel_jobs(
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    instances = _list_running_ec2_instances(user_id, wallet_id)
-    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"], user_id, wallet_id
+    assert state.ec2_resource_clusters_keeper
+    computational_instances = _list_computational_instances_from_ec2(user_id, wallet_id)
+    computational_clusters = _parse_computational_clusters(
+        computational_instances, state.ssh_key_path, user_id, wallet_id
     )
-    assert not dynamic_autoscaled_instances
     assert computational_clusters
     assert (
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    environment = state["environment"]
-    _print_computational_clusters(computational_clusters, environment)
+    _print_computational_clusters(
+        computational_clusters,
+        state.environment,
+        state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+    )
 
     if typer.confirm(
         f"Are you sure you want to cancel all the jobs from that cluster ({user_id=} and {wallet_id=})?"
@@ -807,7 +932,7 @@ def cancel_jobs(
             for dataset in datasets:
                 task_future = distributed.Future(dataset)
                 cancel_event = distributed.Event(
-                    name=_TaskCancelEventNameTemplate.format(task_future.key),
+                    name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
                     client=client,
                 )
                 cancel_event.set()
@@ -831,18 +956,21 @@ def clear_jobs(
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    instances = _list_running_ec2_instances(user_id, wallet_id)
-    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"], user_id, wallet_id
+    assert state.ec2_resource_clusters_keeper
+    computational_instances = _list_computational_instances_from_ec2(user_id, wallet_id)
+    computational_clusters = _parse_computational_clusters(
+        computational_instances, state.ssh_key_path, user_id, wallet_id
     )
-    assert not dynamic_autoscaled_instances
     assert computational_clusters
     assert (
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    environment = state["environment"]
-    _print_computational_clusters(computational_clusters, environment)
+    _print_computational_clusters(
+        computational_clusters,
+        state.environment,
+        state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+    )
 
     if typer.confirm("Are you sure you want to erase all the jobs from that cluster?"):
         print("proceeding with reseting jobs from cluster...")
@@ -866,18 +994,21 @@ def trigger_cluster_termination(
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    instances = _list_running_ec2_instances(user_id, wallet_id)
-    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state["ssh_key_path"], user_id, wallet_id
+    assert state.ec2_resource_clusters_keeper
+    computational_instances = _list_computational_instances_from_ec2(user_id, wallet_id)
+    computational_clusters = _parse_computational_clusters(
+        computational_instances, state.ssh_key_path, user_id, wallet_id
     )
-    assert not dynamic_autoscaled_instances
     assert computational_clusters
     assert (
         len(computational_clusters) == 1
     ), "too many clusters found! TIP: fix this code"
 
-    environment = state["environment"]
-    _print_computational_clusters(computational_clusters, environment)
+    _print_computational_clusters(
+        computational_clusters,
+        state.environment,
+        state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+    )
     if typer.confirm("Are you sure you want to trigger termination of that cluster?"):
         the_cluster = computational_clusters[0]
         new_heartbeat_tag: TagTypeDef = {
