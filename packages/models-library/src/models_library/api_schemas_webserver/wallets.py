@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar, Literal, TypeAlias
-from wsgiref.validate import validator
 
 from pydantic import Field, HttpUrl, validator
 
