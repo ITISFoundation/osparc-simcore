@@ -330,7 +330,9 @@ def _ssh_and_list_running_dyn_services(
 
 
 def _print_dynamic_instances(
-    instances: list[DynamicInstance], environment: dict[str, str | None]
+    instances: list[DynamicInstance],
+    environment: dict[str, str | None],
+    aws_region: str,
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
@@ -340,7 +342,7 @@ def _print_dynamic_instances(
             "Running services",
             footer="[red]Intervention detection might show false positive if in transient state, be careful and always double-check!![/red]",
         ),
-        title="dynamic autoscaled instances",
+        title=f"dynamic autoscaled instances: {aws_region}",
         show_footer=True,
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
@@ -416,14 +418,16 @@ def _color_encode_with_threshold(string: str, value, threshold) -> str:
 
 
 def _print_computational_clusters(
-    clusters: list[ComputationalCluster], environment: dict[str, str | None]
+    clusters: list[ComputationalCluster],
+    environment: dict[str, str | None],
+    aws_region: str,
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
         Column("Instance", justify="left", overflow="fold"),
         Column("Links", justify="left", overflow="fold"),
         Column("Computational details"),
-        title="computational clusters",
+        title=f"computational clusters: {aws_region}",
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
     )
@@ -807,7 +811,11 @@ def summary(
     dynamic_autoscaled_instances = _parse_dynamic_instances(
         dynamic_instances, state.ssh_key_path, user_id, wallet_id
     )
-    _print_dynamic_instances(dynamic_autoscaled_instances, state.environment)
+    _print_dynamic_instances(
+        dynamic_autoscaled_instances,
+        state.environment,
+        state.ec2_resource_autoscaling.meta.client.meta.region_name,
+    )
 
     assert state.ec2_resource_clusters_keeper
     computational_instances = _list_running_ec2_instances(
@@ -816,7 +824,11 @@ def summary(
     computational_clusters = _parse_computational_clusters(
         computational_instances, state.ssh_key_path, user_id, wallet_id
     )
-    _print_computational_clusters(computational_clusters, state.environment)
+    _print_computational_clusters(
+        computational_clusters,
+        state.environment,
+        state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+    )
 
 
 @app.command()
