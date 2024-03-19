@@ -54,7 +54,14 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const email = new qx.ui.form.TextField().set({
         required: true
       });
-      this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
+      if (
+        osparc.product.Utils.isProduct("s4lacad") ||
+        osparc.product.Utils.isProduct("s4ldesktopacad")
+      ) {
+        this._form.add(email, this.tr("University Email"), qx.util.Validate.email(), "email");
+      } else {
+        this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
+      }
 
       const phone = new qx.ui.form.TextField();
       this._form.add(phone, this.tr("Phone Number"), null, "phone");

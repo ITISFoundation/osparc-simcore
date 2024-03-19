@@ -26,7 +26,8 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
     this.set({
       zIndex: 110000,
       maxWidth: osparc.notification.NotificationUI.MAX_WIDTH,
-      maxHeight: 250
+      maxHeight: 250,
+      backgroundColor: "background-main-3"
     });
 
     const root = qx.core.Init.getApplication().getRoot();
@@ -56,11 +57,22 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
     __updateContainer: function() {
       this.__container.removeAll();
       const notifications = osparc.notification.Notifications.getInstance().getNotifications();
-      notifications.forEach(notification => {
-        const notificationUI = new osparc.notification.NotificationUI(notification);
-        notificationUI.addListener("notificationTapped", () => this.exclude());
-        this.__container.add(notificationUI);
-      });
+      if (notifications.length) {
+        notifications.forEach(notification => {
+          const notificationUI = new osparc.notification.NotificationUI(notification);
+          notificationUI.addListener("notificationTapped", () => this.exclude());
+          this.__container.add(notificationUI);
+        });
+      } else {
+        const aboutLabel = new qx.ui.basic.Label().set({
+          value: "If something is shared with you, it will appear here",
+          font: "text-14",
+          padding: osparc.notification.NotificationUI.PADDING,
+          rich: true,
+          wrap: true
+        });
+        this.__container.add(aboutLabel);
+      }
     },
 
     setPosition: function(x, y) {
