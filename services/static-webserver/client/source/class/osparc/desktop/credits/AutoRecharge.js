@@ -190,11 +190,18 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       topUpAmountTitleLayout.add(topUpAmountInfo);
       topUpAmountLayout.add(topUpAmountTitleLayout);
       const topUpAmountField = this.__topUpAmountField = new qx.ui.form.Spinner().set({
-        minimum: 10,
         maximum: 10000,
         width: 300,
         appearance: "appmotion-buy-credits-spinner"
       });
+      osparc.data.Resources.fetch("creditPrice", "get")
+        .then(data => {
+          const minimum = "minPaymentAmountUsd" in data ? data["minPaymentAmountUsd"] : 10;
+          topUpAmountInfo.setHintText(topUpAmountInfo.getText() + `. A minimum amount of ${minimum}$ is required.`);
+          topUpAmountField.set({
+            minimum
+          });
+        });
       topUpAmountLayout.add(topUpAmountField);
       autoRechargeLayout.add(topUpAmountLayout);
 
