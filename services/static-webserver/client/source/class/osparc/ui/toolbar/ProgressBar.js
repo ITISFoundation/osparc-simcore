@@ -37,7 +37,7 @@ qx.Class.define("osparc.ui.toolbar.ProgressBar", {
     _applyVisibility : function(value, old) {
       this.base(arguments, value, old);
       // trigger a appearance recalculation of the parent
-      var parent = this.getLayoutParent();
+      const parent = this.getLayoutParent();
       if (parent && parent instanceof qx.ui.toolbar.PartContainer) {
         qx.ui.core.queue.Appearance.add(parent);
       }
