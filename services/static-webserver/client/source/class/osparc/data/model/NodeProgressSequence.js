@@ -233,7 +233,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       sequenceLoadingPage.add(defaultPBar);
 
       const defaultProgressSubtitle = this.__disclaimerText = new qx.ui.basic.Atom().set({
-        label: qx.locale.Manager.tr("Please be patient, this process can take up to 5 minutes..."),
+        label: qx.locale.Manager.tr("Please be patient, this process can take a few minutes..."),
         padding: [20, 10],
         gap: 15,
         icon: "@FontAwesome5Solid/exclamation-triangle/16",
