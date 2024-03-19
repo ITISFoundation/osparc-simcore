@@ -1,6 +1,6 @@
 #!/bin/env python
 
-def main():
+def update_apps_metadata():
     applications = [{
         "application": "osparc",
         "replaces": [{
@@ -80,4 +80,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    update_apps_metadata()
