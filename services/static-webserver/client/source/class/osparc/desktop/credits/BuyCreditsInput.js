@@ -68,11 +68,14 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       });
       this._add(totalContainer);
 
-      const minimum = osparc.store.StaticInfo.getInstance().getMinimumAmount();
-      amountInput.set({
-        value: Math.ceil(minimum/this.__pricePerCredit),
-        minimum: Math.ceil(minimum/this.__pricePerCredit)
-      });
+      osparc.data.Resources.fetch("creditPrice", "get")
+        .then(data => {
+          const minimum = "minimumAmount" in data ? data["minimumAmount"] : 10;
+          amountInput.set({
+            value: Math.ceil(minimum/this.__pricePerCredit),
+            minimum: Math.ceil(minimum/this.__pricePerCredit)
+          });
+        });
     },
 
     __getInputAndLabel: function(labelText, inputProps) {
