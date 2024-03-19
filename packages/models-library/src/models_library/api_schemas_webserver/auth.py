@@ -34,6 +34,8 @@ class AccountRequestInfo(InputSchema):
                 }
             }
         }
+        anystr_strip_whitespace = True
+        max_anystr_length = 200
 
 
 class UnregisterCheck(InputSchema):
