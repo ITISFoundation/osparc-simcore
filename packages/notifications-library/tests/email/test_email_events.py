@@ -30,7 +30,11 @@ from notifications_library._email import (
     compose_email,
     create_email_session,
 )
-from notifications_library._email_render import render_email_parts
+from notifications_library._email_render import (
+    get_support_address,
+    get_user_address,
+    render_email_parts,
+)
 from notifications_library._models import ProductData, UserData
 from notifications_library._render import create_render_env_from_package
 from notifications_library.payments import PaymentData
@@ -84,7 +88,6 @@ def event_extra_data(  # noqa: PLR0911
                     for k in (
                         "name",
                         "display_name",
-                        "support_email",
                         "vendor",
                         "is_payment_enabled",
                     )
@@ -184,10 +187,20 @@ async def test_email_event(
         # extras
         **event_extra_data,
     )
-    assert parts.from_.addr_spec == product_data.support_email
-    assert parts.to.addr_spec == user_email
 
-    msg = compose_email(*parts)
+    from_ = get_support_address(product_data)
+    to = get_user_address(user_data)
+
+    assert from_.addr_spec == product_data.support_email
+    assert to.addr_spec == user_email
+
+    msg = compose_email(
+        from_,
+        to,
+        subject=parts.suject,
+        content_text=parts.text_content,
+        content_html=parts.html_content,
+    )
     if event_attachments:
         add_attachments(msg, event_attachments)
 
@@ -199,6 +212,65 @@ async def test_email_event(
     if parts.text_content:
         p = dump_path.with_suffix(".txt")
         p.write_text(parts.text_content)
+
+    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
+        await smtp.send_message(msg)
+
+    # check email was sent
+    if smtp_mock_or_none:
+        assert smtp_mock_or_none.called
+        assert isinstance(smtp, AsyncMock)
+        assert smtp.login.called
+        assert smtp.send_message.called
+
+
+@pytest.mark.parametrize(
+    "event_name",
+    [
+        "on_account_form",
+    ],
+)
+async def test_email_with_reply_to(
+    app_environment: EnvVarsDict,
+    smtp_mock_or_none: MagicMock | None,
+    user_data: UserData,
+    user_email: EmailStr,
+    support_email: EmailStr,
+    product_data: ProductData,
+    event_name: str,
+    event_extra_data: dict[str, Any],
+):
+    if smtp_mock_or_none is None:
+        pytest.skip(
+            reason="Skipping to avoid spamming issue-tracker system."
+            "Remove this only for manual exploratory testing."
+        )
+
+    parts = render_email_parts(
+        env=create_render_env_from_package(undefined=StrictUndefined),
+        event_name=event_name,
+        user=user_data,
+        product=product_data,
+        # extras
+        **event_extra_data,
+    )
+
+    from_ = get_support_address(product_data)
+    to = get_support_address(product_data)
+    reply_to = get_user_address(user_data)
+
+    assert user_email == reply_to.addr_spec
+    assert from_.addr_spec == to.addr_spec
+    assert to.addr_spec == support_email
+
+    msg = compose_email(
+        from_,
+        to,
+        subject=parts.suject,
+        content_text=parts.text_content,
+        content_html=parts.html_content,
+        reply_to=reply_to,
+    )
 
     async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
         await smtp.send_message(msg)

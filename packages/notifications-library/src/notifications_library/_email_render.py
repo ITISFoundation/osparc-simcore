@@ -11,11 +11,25 @@ _logger = logging.getLogger(__name__)
 
 
 class EmailPartsTuple(NamedTuple):
-    from_: Address
-    to: Address
     suject: str
     text_content: str
     html_content: str | None
+
+
+def get_user_address(
+    user: UserData,
+) -> Address:
+    return Address(
+        display_name=f"{user.first_name} {user.last_name}",
+        addr_spec=user.email,
+    )
+
+
+def get_support_address(product: ProductData) -> Address:
+    return Address(
+        display_name=f"{product.display_name} support",
+        addr_spec=product.support_email,
+    )
 
 
 def render_email_parts(
@@ -26,14 +40,6 @@ def render_email_parts(
     product: ProductData,
     **other_data,
 ) -> EmailPartsTuple:
-    from_ = Address(
-        display_name=f"{product.display_name} support",
-        addr_spec=product.support_email,
-    )
-    to = Address(
-        display_name=f"{user.first_name} {user.last_name}",
-        addr_spec=user.email,
-    )
 
     data = other_data | {"user": user, "product": product}
 
@@ -51,4 +57,6 @@ def render_email_parts(
         _logger.debug("Event %s has no html template: %s", event_name, err)
         html_content = None
 
-    return EmailPartsTuple(from_, to, subject, text_content, html_content)
+    return EmailPartsTuple(
+        suject=subject, text_content=text_content, html_content=html_content
+    )
