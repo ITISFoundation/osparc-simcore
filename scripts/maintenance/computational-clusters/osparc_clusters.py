@@ -691,21 +691,79 @@ def _parse_dynamic_instances(
 
 
 def _list_running_ec2_instances(
-    ec2_resource: EC2ServiceResource, user_id: int | None, wallet_id: int | None
+    ec2_resource: EC2ServiceResource,
+    key_name: str,
+    custom_tags: dict[str, str],
+    user_id: int | None,
+    wallet_id: int | None,
 ) -> ServiceResourceInstancesCollection:
     # get all the running instances
-    environment = state.environment
-    assert environment["EC2_INSTANCES_KEY_NAME"]
+
+    assert state.environment["EC2_INSTANCES_KEY_NAME"]
 
     ec2_filters: list[FilterTypeDef] = [
         {"Name": "instance-state-name", "Values": ["running", "pending"]},
-        {"Name": "key-name", "Values": [environment["EC2_INSTANCES_KEY_NAME"]]},
+        {"Name": "key-name", "Values": [state.environment["EC2_INSTANCES_KEY_NAME"]]},
     ]
+    if state.environment["EC2_INSTANCES_CUSTOM_TAGS"]:
+        custom_tags = json.loads(state.environment["EC2_INSTANCES_CUSTOM_TAGS"])
+        ec2_filters.extend(
+            [
+                {"Name": f"tag:{key}", "Values": [f"{value}"]}
+                for key, value in custom_tags.items()
+            ]
+        )
+
     if user_id:
         ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
     if wallet_id:
         ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
     return ec2_resource.instances.filter(Filters=ec2_filters)
+
+
+def _list_dynamic_instances_from_ec2(
+    user_id: int | None,
+    wallet_id: int | None,
+) -> ServiceResourceInstancesCollection:
+    assert state.environment["EC2_INSTANCES_KEY_NAME"]
+    custom_tags = {}
+    if state.environment["EC2_INSTANCES_CUSTOM_TAGS"]:
+        custom_tags = json.loads(state.environment["EC2_INSTANCES_CUSTOM_TAGS"])
+    assert state.ec2_resource_autoscaling
+    return _list_running_ec2_instances(
+        state.ec2_resource_autoscaling,
+        state.environment["EC2_INSTANCES_KEY_NAME"],
+        custom_tags,
+        user_id,
+        wallet_id,
+    )
+
+
+def _list_computational_instances_from_ec2(
+    user_id: int | None,
+    wallet_id: int | None,
+) -> ServiceResourceInstancesCollection:
+    assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]
+    assert state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"]
+    assert (
+        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]
+        == state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"]
+    ), "key name is different on primary and workers. TIP: adjust this code now"
+    custom_tags = {}
+    if state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"]:
+        assert (
+            state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"]
+            == state.environment["WORKERS_EC2_INSTANCES_CUSTOM_TAGS"]
+        ), "custom tags are different on primary and workers. TIP: adjust this code now"
+        custom_tags = json.loads(state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"])
+    assert state.ec2_resource_autoscaling
+    return _list_running_ec2_instances(
+        state.ec2_resource_autoscaling,
+        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"],
+        custom_tags,
+        user_id,
+        wallet_id,
+    )
 
 
 def _parse_environment(deploy_config: Path) -> dict[str, str | None]:
@@ -805,9 +863,7 @@ def summary(
 
     # get all the running instances
     assert state.ec2_resource_autoscaling
-    dynamic_instances = _list_running_ec2_instances(
-        state.ec2_resource_autoscaling, user_id, wallet_id
-    )
+    dynamic_instances = _list_dynamic_instances_from_ec2(user_id, wallet_id)
     dynamic_autoscaled_instances = _parse_dynamic_instances(
         dynamic_instances, state.ssh_key_path, user_id, wallet_id
     )
@@ -818,9 +874,7 @@ def summary(
     )
 
     assert state.ec2_resource_clusters_keeper
-    computational_instances = _list_running_ec2_instances(
-        state.ec2_resource_clusters_keeper, user_id, wallet_id
-    )
+    computational_instances = _list_computational_instances_from_ec2(user_id, wallet_id)
     computational_clusters = _parse_computational_clusters(
         computational_instances, state.ssh_key_path, user_id, wallet_id
     )
@@ -845,9 +899,7 @@ def cancel_jobs(
         wallet_id -- the wallet ID
     """
     assert state.ec2_resource_clusters_keeper
-    computational_instances = _list_running_ec2_instances(
-        state.ec2_resource_clusters_keeper, user_id, wallet_id
-    )
+    computational_instances = _list_computational_instances_from_ec2(user_id, wallet_id)
     computational_clusters = _parse_computational_clusters(
         computational_instances, state.ssh_key_path, user_id, wallet_id
     )
@@ -899,9 +951,7 @@ def clear_jobs(
         wallet_id -- the wallet ID
     """
     assert state.ec2_resource_clusters_keeper
-    computational_instances = _list_running_ec2_instances(
-        state.ec2_resource_clusters_keeper, user_id, wallet_id
-    )
+    computational_instances = _list_computational_instances_from_ec2(user_id, wallet_id)
     computational_clusters = _parse_computational_clusters(
         computational_instances, state.ssh_key_path, user_id, wallet_id
     )
@@ -939,9 +989,7 @@ def trigger_cluster_termination(
         wallet_id -- the wallet ID
     """
     assert state.ec2_resource_clusters_keeper
-    computational_instances = _list_running_ec2_instances(
-        state.ec2_resource_clusters_keeper, user_id, wallet_id
-    )
+    computational_instances = _list_computational_instances_from_ec2(user_id, wallet_id)
     computational_clusters = _parse_computational_clusters(
         computational_instances, state.ssh_key_path, user_id, wallet_id
     )
