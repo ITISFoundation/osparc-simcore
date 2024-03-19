@@ -159,7 +159,7 @@ def _timedelta_formatting(
 
 def _parse_computational(instance: Instance) -> ComputationalInstance | None:
     name = _get_instance_name(instance)
-    if result := COMPUTATIONAL_INSTANCE_NAME_PARSER.search(name):
+    if result := state.computational_parser.search(name):
         assert isinstance(result, parse.Result)
         last_heartbeat = _get_last_heartbeat(instance)
         return ComputationalInstance(
@@ -679,8 +679,44 @@ def _detect_instances(
     return dynamic_instances, computational_clusters
 
 
+def _parse_computational_clusters(
+    instances: ServiceResourceInstancesCollection,
+    ssh_key_path: Path | None,
+    user_id: int | None,
+    wallet_id: int | None,
+) -> list[ComputationalCluster]:
+    computational_instances = [
+        comp_instance
+        for instance in track(
+            instances, description="Parsing computational instances..."
+        )
+        if (comp_instance := _parse_computational(instance))
+        and (user_id is None or comp_instance.user_id == user_id)
+        and (wallet_id is None or comp_instance.wallet_id == wallet_id)
+    ]
+    return _analyze_computational_instances(computational_instances, ssh_key_path)
+
+
+def _parse_dynamic_instances(
+    instances: ServiceResourceInstancesCollection,
+    ssh_key_path: Path | None,
+    user_id: int | None,
+    wallet_id: int | None,
+) -> list[DynamicInstance]:
+    dynamic_instances = [
+        dyn_instance
+        for instance in track(instances, description="Parsing dynamic instances...")
+        if (dyn_instance := _parse_dynamic(instance))
+    ]
+    if dynamic_instances and ssh_key_path:
+        dynamic_instances = _analyze_dynamic_instances_running_services(
+            dynamic_instances, ssh_key_path, user_id
+        )
+    return dynamic_instances
+
+
 def _list_running_ec2_instances(
-    user_id: int | None, wallet_id: int | None
+    ec2_resource: EC2ServiceResource, user_id: int | None, wallet_id: int | None
 ) -> ServiceResourceInstancesCollection:
     # get all the running instances
     environment = state.environment
@@ -694,8 +730,7 @@ def _list_running_ec2_instances(
         ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
     if wallet_id:
         ec2_filters.append({"Name": "tag:wallet_id", "Values": [f"{wallet_id}"]})
-    assert state.ec2_resource_autoscaling
-    return state.ec2_resource_autoscaling.instances.filter(Filters=ec2_filters)
+    return ec2_resource.instances.filter(Filters=ec2_filters)
 
 
 def _parse_environment(deploy_config: Path) -> dict[str, str | None]:
@@ -794,12 +829,22 @@ def summary(
     """
 
     # get all the running instances
-    instances = _list_running_ec2_instances(user_id, wallet_id)
-    dynamic_autoscaled_instances, computational_clusters = _detect_instances(
-        instances, state.ssh_key_path, user_id, wallet_id
+    assert state.ec2_resource_autoscaling
+    dynamic_instances = _list_running_ec2_instances(
+        state.ec2_resource_autoscaling, user_id, wallet_id
     )
-
+    dynamic_autoscaled_instances = _parse_dynamic_instances(
+        dynamic_instances, state.ssh_key_path, user_id, wallet_id
+    )
     _print_dynamic_instances(dynamic_autoscaled_instances, state.environment)
+
+    assert state.ec2_resource_clusters_keeper
+    computational_instances = _list_running_ec2_instances(
+        state.ec2_resource_clusters_keeper, user_id, wallet_id
+    )
+    computational_clusters = _parse_computational_clusters(
+        computational_instances, state.ssh_key_path, user_id, wallet_id
+    )
     _print_computational_clusters(computational_clusters, state.environment)
 
 
