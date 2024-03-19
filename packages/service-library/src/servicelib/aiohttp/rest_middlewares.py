@@ -27,9 +27,7 @@ from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
 _DEFAULT_API_VERSION = "v0"
-MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = (
-    "Ups, something went wrong! But we took good note [{}]"
-)
+MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience! [{}]"
 
 
 _logger = logging.getLogger(__name__)
