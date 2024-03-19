@@ -31,7 +31,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsForm", {
     osparc.data.Resources.fetch("creditPrice", "get")
       .then(data => {
         const minimum = "minPaymentAmountUsd" in data ? data["minPaymentAmountUsd"] : 10;
-        tooltip.setHintText(`A minimum amount of ${minimum}$ is required`);
+        tooltip.setHintText(`A minimum amount of ${minimum} USD is required`);
       });
     subtitleLayout.add(tooltip);
     this._add(subtitleLayout);
