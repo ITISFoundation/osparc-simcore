@@ -56,7 +56,7 @@ qx.Class.define("osparc.po.POCenter", {
   {
     __getUsersPage: function() {
       const title = this.tr("Users");
-      const iconSrc = "@FontAwesome5Solid/envelope/22";
+      const iconSrc = "@FontAwesome5Solid/user/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       const users = new osparc.po.Users();
       users.set({
