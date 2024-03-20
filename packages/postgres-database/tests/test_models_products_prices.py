@@ -14,7 +14,7 @@ from simcore_postgres_database.errors import CheckViolation, ForeignKeyViolation
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_prices import products_prices
 from simcore_postgres_database.utils_products_prices import (
-    get_product_latest_credit_price_or_none,
+    get_product_latest_price_info_or_none,
     get_product_latest_stripe_info,
     is_payment_enabled,
 )
@@ -110,7 +110,7 @@ async def test_get_product_latest_price_or_none(
 ):
     # undefined product
     assert (
-        await get_product_latest_credit_price_or_none(
+        await get_product_latest_price_info_or_none(
             connection, product_name="undefined"
         )
         is None
@@ -120,7 +120,7 @@ async def test_get_product_latest_price_or_none(
 
     # defined product but undefined price
     assert (
-        await get_product_latest_credit_price_or_none(
+        await get_product_latest_price_info_or_none(
             connection, product_name=fake_product.name
         )
         is None
@@ -155,12 +155,9 @@ async def test_price_history_of_a_product(
     )
 
     # latest is 2 USD!
-    assert (
-        await get_product_latest_credit_price_or_none(
-            connection, product_name=fake_product.name
-        )
-        == 2
-    )
+    assert await get_product_latest_price_info_or_none(
+        connection, product_name=fake_product.name
+    ) == (2, 10)
 
     assert await is_payment_enabled(connection, product_name=fake_product.name) is True
 

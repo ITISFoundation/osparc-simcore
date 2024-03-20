@@ -3,15 +3,15 @@ from pathlib import Path
 
 import aiofiles
 from aiohttp import web
-from models_library.basic_types import NonNegativeDecimal
 from models_library.products import CreditResultGet, ProductName, ProductStripeInfoGet
+from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
 from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
 from .._resources import webserver_resources
 from ._db import ProductRepository
 from ._events import APP_PRODUCTS_TEMPLATES_DIR_KEY
 from ._model import Product
-from .errors import ProductPriceNotDefinedError
+from .errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
 
 
 def get_product_name(request: web.Request) -> str:
@@ -36,9 +36,9 @@ def list_products(app: web.Application) -> list[Product]:
     return products
 
 
-async def get_current_product_credit_price(
+async def get_current_product_credit_price_info(
     request: web.Request,
-) -> NonNegativeDecimal | None:
+) -> ProductPriceInfo | None:
     """Gets latest credit price for this product.
 
     NOTE: Contrary to other product api functions (e.g. get_current_product) this function
@@ -48,11 +48,14 @@ async def get_current_product_credit_price(
     """
     current_product_name = get_product_name(request)
     repo = ProductRepository.create_from_request(request)
-    return await repo.get_product_latest_credit_price_or_none(current_product_name)
+    return await repo.get_product_latest_price_info_or_none(current_product_name)
 
 
 async def get_credit_amount(
-    app: web.Application, *, dollar_amount: Decimal, product_name: ProductName
+    app: web.Application,
+    *,
+    dollar_amount: Decimal,
+    product_name: ProductName,
 ) -> CreditResultGet:
     """For provided dollars and product gets credit amount.
 
@@ -60,18 +63,27 @@ async def get_credit_amount(
     gets the latest update from the database. Otherwise, products are loaded
     on startup and cached therefore in those cases would require a restart
     of the service for the latest changes to take effect.
+
+    Raises:
+        ProductPriceNotDefinedError
+        BelowMinimumPaymentError
+
     """
     repo = ProductRepository.create_from_app(app)
-    usd_per_credit: NonNegativeDecimal | None = (
-        await repo.get_product_latest_credit_price_or_none(product_name)
-    )
-    if not usd_per_credit:
+    price_info = await repo.get_product_latest_price_info_or_none(product_name)
+    if price_info is None or not price_info.usd_per_credit:
         # '0 or None' should raise
         raise ProductPriceNotDefinedError(
             reason=f"Product {product_name} usd_per_credit is either not defined or zero"
         )
 
-    credit_amount = dollar_amount / usd_per_credit
+    if dollar_amount < price_info.min_payment_amount_usd:
+        raise BelowMinimumPaymentError(
+            amount_usd=dollar_amount,
+            min_payment_amount_usd=price_info.min_payment_amount_usd,
+        )
+
+    credit_amount = dollar_amount / price_info.usd_per_credit
     return CreditResultGet(product_name=product_name, credit_amount=credit_amount)
 
 

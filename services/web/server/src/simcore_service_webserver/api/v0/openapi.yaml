@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.40.0
+  version: 0.40.1
 servers:
 - url: ''
   description: webserver
@@ -7005,6 +7005,7 @@ components:
       required:
       - productName
       - usdPerCredit
+      - minPaymentAmountUsd
       type: object
       properties:
         productName:
@@ -7016,6 +7017,12 @@ components:
           type: number
           description: Price of a credit in USD. If None, then this product's price
             is UNDEFINED
+        minPaymentAmountUsd:
+          title: Minpaymentamountusd
+          minimum: 0
+          type: integer
+          description: Minimum amount (included) in USD that can be paid for this
+            productCan be None if this product's price is UNDEFINED
     GetProduct:
       title: GetProduct
       required:
