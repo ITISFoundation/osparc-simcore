@@ -1,4 +1,5 @@
-#!/bin/env python
+import os
+
 
 def update_apps_metadata():
     applications = [{
@@ -68,11 +69,12 @@ def update_apps_metadata():
         "build-output"
     ]
 
+    dirname = os.path.dirname(__file__)
     for i in applications:
         application = i.get("application")
         for output_folder in output_folders:
-            path = "./"+output_folder+"/"+application+"/index.html"
-            with open(path, "r") as file:
+            filename = os.path.join(dirname, output_folder, "index.html")
+            with open(filename, "r") as file:
                 data = file.read()
                 replacements = i.get("replacements")
                 for j in replacements:
@@ -80,7 +82,7 @@ def update_apps_metadata():
                     replace_text = j.get("replace_text")
                     data = data.replace(search_text, replace_text) 
 
-            with open(path, "w") as file: 
+            with open(filename, "w") as file: 
                 print(f"Updating {application}'s index.html")
                 file.write(data)
 
