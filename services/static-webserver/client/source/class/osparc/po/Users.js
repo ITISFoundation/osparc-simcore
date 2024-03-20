@@ -59,8 +59,8 @@ qx.Class.define("osparc.po.Users", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "create-users":
-          control = this.__createUsers();
+        case "search-users":
+          control = this.__searchUsers();
           this._add(control);
           break;
       }
@@ -68,30 +68,26 @@ qx.Class.define("osparc.po.Users", {
     },
 
     __buildLayout: function() {
-      this._createChildControlImpl("create-users");
+      this._createChildControlImpl("search-users");
     },
 
-    __createUsers: function() {
-      const usersGroupBox = this.self().createGroupBox(this.tr("Create users"));
+    __searchUsers: function() {
+      const usersGroupBox = this.self().createGroupBox(this.tr("Search users"));
 
-      const disclaimer = this.self().createHelpLabel(this.tr("There is no users required in this product/deployment.")).set({
+      const disclaimer = this.self().createHelpLabel(this.tr("This is a draft.")).set({
         textColor: "info"
       });
-      disclaimer.exclude();
-      const config = osparc.store.Store.getInstance().get("config");
-      if ("users_required" in config && config["users_required"] === false) {
-        disclaimer.show();
-      }
+      disclaimer.show();
       usersGroupBox.add(disclaimer);
 
-      const newTokenForm = this.__createUsersForm();
-      const form = new qx.ui.form.renderer.Single(newTokenForm);
+      const searchUsersForm = this.__searchUsersForm();
+      const form = new qx.ui.form.renderer.Single(searchUsersForm);
       usersGroupBox.add(form);
 
       return usersGroupBox;
     },
 
-    __createUsersForm: function() {
+    __searchUsersForm: function() {
       const form = new qx.ui.form.Form();
 
       const userEmail = new qx.ui.form.TextField().set({

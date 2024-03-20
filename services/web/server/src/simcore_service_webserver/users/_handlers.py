@@ -75,7 +75,7 @@ class _SearchQueryParams(BaseModel):
 
 @routes.get(f"/{API_VTAG}/users:search", name="search_users")
 @login_required
-@permission_required("users.others.*")
+@permission_required("user.users.*")
 @_handle_users_exceptions
 async def search_users(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
@@ -90,7 +90,7 @@ async def search_users(request: web.Request) -> web.Response:
 
 @routes.post(f"/{API_VTAG}/users:pre-register", name="pre_register_user")
 @login_required
-@permission_required("users.others.*")
+@permission_required("user.users.*")
 @_handle_users_exceptions
 async def pre_register_user(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
