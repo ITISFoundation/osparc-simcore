@@ -99,6 +99,11 @@ class Product(BaseModel):
         description="Price of the credits in this product given in credit/USD. None for free product.",
     )
 
+    min_payment_amount_usd: NonNegativeDecimal | None = Field(
+        default=None,
+        description="Price of the credits in this product given in credit/USD. None for free product.",
+    )
+
     @validator("*", pre=True)
     @classmethod
     def parse_empty_string_as_null(cls, v):
