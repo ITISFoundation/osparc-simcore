@@ -73,7 +73,6 @@ def update_apps_metadata():
         for output_folder in output_folders:
             path = "./"+output_folder+"/"+application+"/index.html"
             with open(path, "r") as file:
-                print(f"Updating {application}'s index.html")
                 data = file.read()
                 replacements = i.get("replacements")
                 for j in replacements:
@@ -82,6 +81,7 @@ def update_apps_metadata():
                     data = data.replace(search_text, replace_text) 
 
             with open(path, "w") as file: 
+                print(f"Updating {application}'s index.html")
                 file.write(data)
 
 
