@@ -655,6 +655,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: function(states) {
         const style = {
           decorator: "form-button-text",
+          center: true,
           cursor: "pointer",
           textColor: "link",
           padding: 5,
@@ -667,9 +668,6 @@ qx.Theme.define("osparc.theme.Appearance", {
         }
         if (states.focused) {
           style.textColor = "default-button-focus";
-        }
-        if (states.active) {
-          style.textColor = "default-button-active";
         }
         if (states.disabled) {
           style.cursor = "not-allowed";
