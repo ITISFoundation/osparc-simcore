@@ -67,6 +67,7 @@ async def search_users(app: web.Application, email: str) -> list[_schemas.UserPr
     rows = await _db.search_users_and_get_profile(
         get_database_engine(app), email_like=email
     )
+
     return [
         _schemas.UserProfile(
             first_name=r.first_name or r.pre_first_name,
@@ -80,6 +81,15 @@ async def search_users(app: web.Application, email: str) -> list[_schemas.UserPr
             postal_code=r.postal_code,
             country=r.country,
             extras=r.extras or {},
+            invited_by=r.invited_by,
+            products=[
+                dict(_)
+                for _ in await _db.get_user_products(
+                    get_database_engine(app), user_id=r.user_id
+                )
+            ]
+            if r.user_id
+            else None,
             # NOTE: old users will not have extra details
             registered=r.user_id is not None if r.pre_email else r.status is not None,
             status=r.status,

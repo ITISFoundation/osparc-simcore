@@ -11,6 +11,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
@@ -85,7 +86,9 @@ async def search_users(request: web.Request) -> web.Response:
 
     found = await _api.search_users(request.app, email=query_params.email)
 
-    return envelope_json_response(found)
+    policy = RESPONSE_MODEL_POLICY.copy()
+    policy["exclude_none"] = True
+    return envelope_json_response([_.dict(**policy) for _ in found])
 
 
 @routes.post(f"/{API_VTAG}/users:pre-register", name="pre_register_user")

@@ -29,9 +29,16 @@ class UserProfile(OutputSchema):
         description="Keeps extra information provided in the request form",
     )
 
+    # authorization
+    invited_by: str | None = None
+
     # user status
     registered: bool
     status: UserStatus | None
+    products: list[dict] | None = Field(
+        default=None,
+        description="List of products this users is included or None if fields is unset",
+    )
 
     @validator("status")
     @classmethod
