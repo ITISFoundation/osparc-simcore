@@ -73,7 +73,10 @@ def update_apps_metadata():
     for i in applications:
         application = i.get("application")
         for output_folder in output_folders:
-            filename = os.path.join(dirname, output_folder, "index.html")
+            filename = os.path.join(dirname, '..', output_folder, application, "index.html")
+            if not os.path.isfile(filename):
+                print(f"File not found: {filename}")
+                continue
             with open(filename, "r") as file:
                 data = file.read()
                 replacements = i.get("replacements")
@@ -83,7 +86,7 @@ def update_apps_metadata():
                     data = data.replace(search_text, replace_text) 
 
             with open(filename, "w") as file: 
-                print(f"Updating {application}'s index.html")
+                print(f"Updating app metadata: {filename}")
                 file.write(data)
 
 
