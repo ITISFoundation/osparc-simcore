@@ -3,7 +3,6 @@
 import asyncio
 import contextlib
 import datetime
-
 import json
 import re
 from collections import defaultdict, namedtuple
@@ -209,164 +208,154 @@ def _ssh_and_get_dask_ip(
     instance: Instance, username: str, private_key_path: Path
 ) -> str:
     # Establish SSH connection with key-based authentication
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    try:
-        client.connect(
-            instance.public_ip_address,
-            username=username,
-            key_filename=f"{private_key_path}",
-            timeout=5,
-        )
-        # Command to get disk space for /docker partition
-        dask_ip_command = "docker inspect -f '{{.NetworkSettings.Networks.dask_stack_default.IPAddress}}' $(docker ps --filter 'name=dask-sidecar|dask-scheduler' --format '{{.ID}}')"
+    with paramiko.SSHClient() as client:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        try:
+            client.connect(
+                instance.public_ip_address,
+                username=username,
+                key_filename=f"{private_key_path}",
+                timeout=5,
+            )
+            # Command to get disk space for /docker partition
+            dask_ip_command = "docker inspect -f '{{.NetworkSettings.Networks.dask_stack_default.IPAddress}}' $(docker ps --filter 'name=dask-sidecar|dask-scheduler' --format '{{.ID}}')"
 
-        # Run the command on the remote machine
-        _stdin, stdout, stderr = client.exec_command(dask_ip_command)
-        error = stderr.read().decode()
+            # Run the command on the remote machine
+            _, stdout, _ = client.exec_command(dask_ip_command)
+            exit_status = stdout.channel.recv_exit_status()
 
-        if error:
-            return "Not Found / Drained / Not Ready"
+            if exit_status != 0:
+                return "Not Found / Drained / Not Ready"
 
-        # Available disk space will be captured here
-        return stdout.read().decode("utf-8").strip()
-    except (
-        paramiko.AuthenticationException,
-        paramiko.SSHException,
-        TimeoutError,
-    ):
-        return "Not Ready"
-
-    finally:
-        # Close the SSH connection
-        client.close()
+            # Available disk space will be captured here
+            return stdout.read().decode("utf-8").strip()
+        except (
+            paramiko.AuthenticationException,
+            paramiko.SSHException,
+            TimeoutError,
+        ):
+            return "Not Ready"
 
 
 def _ssh_and_get_available_disk_space(
     instance: Instance, username: str, private_key_path: Path
 ) -> ByteSize:
     # Establish SSH connection with key-based authentication
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    try:
-        client.connect(
-            instance.public_ip_address,
-            username=username,
-            key_filename=f"{private_key_path}",
-            timeout=5,
-        )
-        # Command to get disk space for /docker partition
-        disk_space_command = "df --block-size=1 /mnt/docker | awk 'NR==2{print $4}'"
+    with paramiko.SSHClient() as client:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        try:
+            client.connect(
+                instance.public_ip_address,
+                username=username,
+                key_filename=f"{private_key_path}",
+                timeout=5,
+            )
+            # Command to get disk space for /docker partition
+            disk_space_command = "df --block-size=1 /mnt/docker | awk 'NR==2{print $4}'"
 
-        # Run the command on the remote machine
-        _stdin, stdout, stderr = client.exec_command(disk_space_command)
-        error = stderr.read().decode()
+            # Run the command on the remote machine
+            _, stdout, stderr = client.exec_command(disk_space_command)
+            exit_status = stdout.channel.recv_exit_status()
+            error = stderr.read().decode()
 
-        if error:
-            print(error)
-            raise typer.Abort(error)
+            if exit_status != 0:
+                print(error)
+                raise typer.Abort(error)
 
-        # Available disk space will be captured here
-        available_space = stdout.read().decode("utf-8").strip()
-        return ByteSize(available_space)
-    except (
-        paramiko.AuthenticationException,
-        paramiko.SSHException,
-        TimeoutError,
-    ):
-        return ByteSize(0)
-
-    finally:
-        # Close the SSH connection
-        client.close()
+            # Available disk space will be captured here
+            available_space = stdout.read().decode("utf-8").strip()
+            return ByteSize(available_space)
+        except (
+            paramiko.AuthenticationException,
+            paramiko.SSHException,
+            TimeoutError,
+        ):
+            return ByteSize(0)
 
 
 def _ssh_and_list_running_dyn_services(
     instance: Instance, username: str, private_key_path: Path
 ) -> list[DynamicService]:
     # Establish SSH connection with key-based authentication
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    try:
-        client.connect(
-            instance.public_ip_address,
-            username=username,
-            key_filename=f"{private_key_path}",
-            timeout=5,
-        )
-        # Run the Docker command to list containers
-        _stdin, stdout, stderr = client.exec_command(
-            'docker ps --format=\'{{.Names}}\t{{.CreatedAt}}\t{{.Label "io.simcore.runtime.user-id"}}\t{{.Label "io.simcore.runtime.project-id"}}\t{{.Label "io.simcore.name"}}\t{{.Label "io.simcore.version"}}\' --filter=name=dy-',
-        )
-        error = stderr.read().decode()
-        if error:
-            print(error)
-            raise typer.Abort(error)
-
-        output = stdout.read().decode("utf-8")
-        # Extract containers that follow the naming convention
-        running_service: dict[str, list[DockerContainer]] = defaultdict(list)
-        for container in output.splitlines():
-            if match := re.match(DYN_SERVICES_NAMING_CONVENTION, container):
-                named_container = DockerContainer(
-                    match["node_id"],
-                    int(match["user_id"]),
-                    match["project_id"],
-                    arrow.get(
-                        match["created_at"],
-                        "YYYY-MM-DD HH:mm:ss",
-                        tzinfo=datetime.timezone.utc,
-                    ).datetime,
-                    container,
-                    (
-                        json.loads(match["service_name"])["name"]
-                        if match["service_name"]
-                        else ""
-                    ),
-                    (
-                        json.loads(match["service_version"])["version"]
-                        if match["service_version"]
-                        else ""
-                    ),
-                )
-                running_service[match["node_id"]].append(named_container)
-
-        def _needs_manual_intervention(
-            running_containers: list[DockerContainer],
-        ) -> bool:
-            valid_prefixes = ["dy-sidecar_", "dy-proxy_", "dy-sidecar-"]
-            for prefix in valid_prefixes:
-                found = any(
-                    container.name.startswith(prefix)
-                    for container in running_containers
-                )
-                if not found:
-                    return True
-            return False
-
-        return [
-            DynamicService(
-                node_id=node_id,
-                user_id=containers[0].user_id,
-                project_id=containers[0].project_id,
-                created_at=containers[0].created_at,
-                needs_manual_intervention=_needs_manual_intervention(containers),
-                containers=[c.name for c in containers],
-                service_name=containers[0].service_name,
-                service_version=containers[0].service_version,
+    with paramiko.SSHClient() as client:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        try:
+            client.connect(
+                instance.public_ip_address,
+                username=username,
+                key_filename=f"{private_key_path}",
+                timeout=5,
             )
-            for node_id, containers in running_service.items()
-        ]
-    except (
-        paramiko.AuthenticationException,
-        paramiko.SSHException,
-        TimeoutError,
-    ):
-        return []
+            # Run the Docker command to list containers
+            _stdin, stdout, stderr = client.exec_command(
+                'docker ps --format=\'{{.Names}}\t{{.CreatedAt}}\t{{.Label "io.simcore.runtime.user-id"}}\t{{.Label "io.simcore.runtime.project-id"}}\t{{.Label "io.simcore.name"}}\t{{.Label "io.simcore.version"}}\' --filter=name=dy-',
+            )
+            exit_status = stdout.channel.recv_exit_status()
+            error = stderr.read().decode()
+            if exit_status != 0:
+                print(error)
+                raise typer.Abort(error)
 
-    finally:
-        # Close the SSH connection
-        client.close()
+            output = stdout.read().decode("utf-8")
+            # Extract containers that follow the naming convention
+            running_service: dict[str, list[DockerContainer]] = defaultdict(list)
+            for container in output.splitlines():
+                if match := re.match(DYN_SERVICES_NAMING_CONVENTION, container):
+                    named_container = DockerContainer(
+                        match["node_id"],
+                        int(match["user_id"]),
+                        match["project_id"],
+                        arrow.get(
+                            match["created_at"],
+                            "YYYY-MM-DD HH:mm:ss",
+                            tzinfo=datetime.timezone.utc,
+                        ).datetime,
+                        container,
+                        (
+                            json.loads(match["service_name"])["name"]
+                            if match["service_name"]
+                            else ""
+                        ),
+                        (
+                            json.loads(match["service_version"])["version"]
+                            if match["service_version"]
+                            else ""
+                        ),
+                    )
+                    running_service[match["node_id"]].append(named_container)
+
+            def _needs_manual_intervention(
+                running_containers: list[DockerContainer],
+            ) -> bool:
+                valid_prefixes = ["dy-sidecar_", "dy-proxy_", "dy-sidecar-"]
+                for prefix in valid_prefixes:
+                    found = any(
+                        container.name.startswith(prefix)
+                        for container in running_containers
+                    )
+                    if not found:
+                        return True
+                return False
+
+            return [
+                DynamicService(
+                    node_id=node_id,
+                    user_id=containers[0].user_id,
+                    project_id=containers[0].project_id,
+                    created_at=containers[0].created_at,
+                    needs_manual_intervention=_needs_manual_intervention(containers),
+                    containers=[c.name for c in containers],
+                    service_name=containers[0].service_name,
+                    service_version=containers[0].service_version,
+                )
+                for node_id, containers in running_service.items()
+            ]
+        except (
+            paramiko.AuthenticationException,
+            paramiko.SSHException,
+            TimeoutError,
+        ):
+            return []
 
 
 def _print_dynamic_instances(
@@ -556,53 +545,68 @@ def _print_computational_clusters(
     print(table)
 
 
+async def _fetch_instance_details(
+    instance: DynamicInstance, ssh_key_path: Path
+) -> tuple[list[DynamicService] | BaseException, ByteSize | BaseException]:
+    # Run both SSH operations concurrently for this instance
+    running_services, disk_space = await asyncio.gather(
+        asyncio.get_event_loop().run_in_executor(
+            None,
+            _ssh_and_list_running_dyn_services,
+            instance.ec2_instance,
+            SSH_USER_NAME,
+            ssh_key_path,
+        ),
+        asyncio.get_event_loop().run_in_executor(
+            None,
+            _ssh_and_get_available_disk_space,
+            instance.ec2_instance,
+            SSH_USER_NAME,
+            ssh_key_path,
+        ),
+        return_exceptions=True,
+    )
+    return running_services, disk_space
+
+
+async def _analyze_dynamic_instances_running_services_concurrently(
+    dynamic_instances: list[DynamicInstance],
+    ssh_key_path: Path,
+    user_id: int | None,
+) -> list[DynamicInstance]:
+    details = await asyncio.gather(
+        *(
+            _fetch_instance_details(instance, ssh_key_path)
+            for instance in dynamic_instances
+        ),
+        return_exceptions=True,
+    )
+
+    # Filter and update instances based on results and given criteria
+    return [
+        replace(
+            instance,
+            running_services=instance_details[0],
+            disk_space=instance_details[1],
+        )
+        for instance, instance_details in zip(dynamic_instances, details, strict=True)
+        if isinstance(instance_details, tuple)
+        and isinstance(instance_details[0], list)
+        and isinstance(instance_details[1], ByteSize)
+        and (user_id is None or any(s.user_id == user_id for s in instance_details[0]))
+    ]
+
+
 def _analyze_dynamic_instances_running_services(
     dynamic_instances: list[DynamicInstance],
     ssh_key_path: Path,
     user_id: int | None,
 ) -> list[DynamicInstance]:
-    # this construction makes the retrieval much faster
-    all_running_services = asyncio.get_event_loop().run_until_complete(
-        asyncio.gather(
-            *(
-                asyncio.get_event_loop().run_in_executor(
-                    None,
-                    _ssh_and_list_running_dyn_services,
-                    instance.ec2_instance,
-                    SSH_USER_NAME,
-                    ssh_key_path,
-                )
-                for instance in dynamic_instances
-            ),
-            return_exceptions=True,
+    return asyncio.get_event_loop().run_until_complete(
+        _analyze_dynamic_instances_running_services_concurrently(
+            dynamic_instances, ssh_key_path, user_id
         )
     )
-
-    all_disk_spaces = asyncio.get_event_loop().run_until_complete(
-        asyncio.gather(
-            *(
-                asyncio.get_event_loop().run_in_executor(
-                    None,
-                    _ssh_and_get_available_disk_space,
-                    instance.ec2_instance,
-                    SSH_USER_NAME,
-                    ssh_key_path,
-                )
-                for instance in dynamic_instances
-            ),
-            return_exceptions=True,
-        )
-    )
-
-    return [
-        replace(instance, running_services=running_services, disk_space=disk_space)
-        for instance, running_services, disk_space in zip(
-            dynamic_instances, all_running_services, all_disk_spaces, strict=True
-        )
-        if isinstance(running_services, list)
-        and isinstance(disk_space, ByteSize)
-        and (user_id is None or any(s.user_id == user_id for s in running_services))
-    ]
 
 
 def _dask_list_tasks(dask_client: distributed.Client) -> dict[TaskState, list[TaskId]]:
@@ -691,7 +695,8 @@ def _analyze_computational_instances(
     ):
         if isinstance(disk_space, ByteSize):
             instance.disk_space = disk_space
-        instance.dask_ip = dask_ip
+        if isinstance(dask_ip, str):
+            instance.dask_ip = dask_ip
         if instance.role is InstanceRole.manager:
             scheduler_info = {}
             datasets_on_cluster = ()
