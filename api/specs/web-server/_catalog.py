@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_webserver.catalog import (
     ServiceGet,
     ServiceInputGet,
@@ -10,7 +11,6 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceResourcesGet,
     ServiceUpdate,
 )
-from models_library.api_schemas_webserver.resource_usage import ServicePricingPlanGet
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.catalog._handlers import (
