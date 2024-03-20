@@ -83,7 +83,7 @@ async def search_users(app: web.Application, email: str) -> list[_schemas.UserPr
             extras=r.extras or {},
             invited_by=r.invited_by,
             products=[
-                dict(_)
+                _.product_nane
                 for _ in await _db.get_user_products(
                     get_database_engine(app), user_id=r.user_id
                 )
