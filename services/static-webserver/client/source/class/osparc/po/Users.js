@@ -73,13 +73,6 @@ qx.Class.define("osparc.po.Users", {
 
     __searchUsers: function() {
       const usersGroupBox = this.self().createGroupBox(this.tr("Search"));
-
-      const disclaimer = this.self().createHelpLabel(this.tr("This is a temporary GUI")).set({
-        textColor: "info"
-      });
-      disclaimer.show();
-      usersGroupBox.add(disclaimer);
-
       const searchUsersForm = this.__searchUsersForm();
       const form = new qx.ui.form.renderer.Single(searchUsersForm);
       usersGroupBox.add(form);
@@ -133,14 +126,14 @@ qx.Class.define("osparc.po.Users", {
     },
 
     __createFoundUsersLayout: function(respData) {
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
 
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
       vBox.add(hBox);
 
-      const respLabel = new qx.ui.basic.Label(this.tr("Found users"));
+      const respLabel = new qx.ui.basic.Label(this.tr("Found users:"));
       vBox.add(respLabel);
 
       const usersRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "users-data");
