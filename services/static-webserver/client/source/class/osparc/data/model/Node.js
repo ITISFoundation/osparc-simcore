@@ -230,6 +230,7 @@ qx.Class.define("osparc.data.model.Node", {
     "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
     "probeRequested": "qx.event.type.Data",
+    "fileUploaded": "qx.event.type.Event",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event",
     "changeInputNodes": "qx.event.type.Event"
@@ -1143,7 +1144,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.fireDataEvent("retrieveInputs", data);
     },
 
-    retrieveInputs: function(portKey = null) {
+    retrieveInputs: function(portKey) {
       if (this.isDynamic()) {
         if (!osparc.data.Permissions.getInstance().canDo("study.update")) {
           return;

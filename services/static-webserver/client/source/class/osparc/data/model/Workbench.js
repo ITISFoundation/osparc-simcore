@@ -106,7 +106,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return Array.from(upstreamNodes).reverse();
     },
 
-    getDownstreamNodes: function(node) {
+    __getDownstreamNodes: function(node) {
       const downstreamNodes = [];
       Object.values(this.getNodes()).forEach(n => {
         const inputNodes = n.getInputNodes();
@@ -355,6 +355,12 @@ qx.Class.define("osparc.data.model.Workbench", {
             nodeId
           } = e.getData();
           this.__probeNodeRequested(nodeId, portId);
+        }, this);
+        node.addListener("fileUploaded", () => {
+          // downstream nodes might have started downloading file picker's output.
+          // show feedback to the user
+          const downstreamNodes = this.__getDownstreamNodes(node);
+          downstreamNodes.forEach(downstreamNode => downstreamNode.retrieveInputs("input_1"));
         }, this);
       }
     },
