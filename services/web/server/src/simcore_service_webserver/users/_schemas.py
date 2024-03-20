@@ -9,6 +9,7 @@ from typing import Any, Final
 import pycountry
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.emails import LowerCaseEmailStr
+from models_library.products import ProductName
 from pydantic import Field, root_validator, validator
 from simcore_postgres_database.models.users import UserStatus
 
@@ -29,9 +30,16 @@ class UserProfile(OutputSchema):
         description="Keeps extra information provided in the request form",
     )
 
+    # authorization
+    invited_by: str | None = None
+
     # user status
     registered: bool
     status: UserStatus | None
+    products: list[ProductName] | None = Field(
+        default=None,
+        description="List of products this users is included or None if fields is unset",
+    )
 
     @validator("status")
     @classmethod

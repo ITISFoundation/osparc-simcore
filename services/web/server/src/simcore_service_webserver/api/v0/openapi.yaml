@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.40.1
+  version: 0.40.2
 servers:
 - url: ''
   description: webserver
@@ -2893,7 +2893,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -10764,11 +10764,21 @@ components:
           title: Extras
           type: object
           description: Keeps extra information provided in the request form
+        invitedBy:
+          title: Invitedby
+          type: string
         registered:
           title: Registered
           type: boolean
         status:
           $ref: '#/components/schemas/UserStatus'
+        products:
+          title: Products
+          type: array
+          items:
+            type: object
+          description: List of products this users is included or None if fields is
+            unset
     UserStatus:
       title: UserStatus
       enum:
