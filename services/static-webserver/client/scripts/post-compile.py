@@ -2,67 +2,44 @@ import os
 
 
 def update_apps_metadata():
-    applications = [{
-        "application": "osparc",
-        "replacements": [{
-            "search_text": "replace_me_og_title",
-            "replace_text": "oSPARC"
+    applications = [
+        {
+            "application": "osparc",
+             "replacements": {
+                "replace_me_og_title": "oSPARC",
+                "replace_me_og_description": "open online simulations for Stimulating Peripheral Activity to Relieve Conditions",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/static-webserver/client/source/resource/osparc/favicon-osparc.png"
+            },
         }, {
-            "search_text": "replace_me_og_description",
-            "replace_text": "open online simulations for Stimulating Peripheral Activity to Relieve Conditions"
+            "application": "s4l",
+            "replacements": {
+                "replace_me_og_title": "Sim4Life",
+                "replace_me_og_description": "Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models.",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-default.png"
+            }
         }, {
-            "search_text": "replace_me_og_image",
-            "replace_text": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/static-webserver/client/source/resource/osparc/favicon-osparc.png"
-        }]
-    }, {
-        "application": "s4l",
-        "replacements": [{
-            "search_text": "replace_me_og_title",
-            "replace_text": "Sim4Life"
+            "application": "s4lacad",
+            "replacements": {
+                "replace_me_og_title": "Sim4Life Science",
+                "replace_me_og_description": "Sim4Life for Science - Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models.",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-academy.png"
+            }
         }, {
-            "search_text": "replace_me_og_description",
-            "replace_text": "Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models."
+            "application": "s4llite",
+            "replacements": {
+                "replace_me_og_title": "S4L Lite",
+                "replace_me_og_description": "Sim4Life for Students - Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models.",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-lite.png"
+            }
         }, {
-            "search_text": "replace_me_og_image",
-            "replace_text": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-default.png"
-        }]
-    }, {
-        "application": "s4lacad",
-        "replacements": [{
-            "search_text": "replace_me_og_title",
-            "replace_text": "Sim4Life Science"
-        }, {
-            "search_text": "replace_me_og_description",
-            "replace_text": "Sim4Life for Science - Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models."
-        }, {
-            "search_text": "replace_me_og_image",
-            "replace_text": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-academy.png"
-        }]
-    }, {
-        "application": "s4llite",
-        "replacements": [{
-            "search_text": "replace_me_og_title",
-            "replace_text": "S4L Lite"
-        }, {
-            "search_text": "replace_me_og_description",
-            "replace_text": "Sim4Life for Students - Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models."
-        }, {
-            "search_text": "replace_me_og_image",
-            "replace_text": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-lite.png"
-        }]
-    }, {
-        "application": "tis",
-        "replacements": [{
-            "search_text": "replace_me_og_title",
-            "replace_text": "TI Plan - IT'IS"
-        }, {
-            "search_text": "replace_me_og_description",
-            "replace_text": "my osparc description"
-        }, {
-            "search_text": "replace_me_og_image",
-            "replace_text": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/static-webserver/client/source/resource/osparc/tip_splitimage.png"
-        }]
-    }]
+            "application": "tis",
+            "replacements": {
+                "replace_me_og_title": "TI Plan - IT'IS",
+                "replace_me_og_description": "my osparc description",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/static-webserver/client/source/resource/osparc/tip_splitimage.png"
+            }
+        }
+    ]
 
     output_folders = [
         "source-output", # dev output
@@ -80,10 +57,9 @@ def update_apps_metadata():
             with open(filename, "r") as file:
                 data = file.read()
                 replacements = i.get("replacements")
-                for j in replacements:
-                    search_text = j.get("search_text")
-                    replace_text = j.get("replace_text")
-                    data = data.replace(search_text, replace_text) 
+                for key in replacements:
+                    replace_text = replacements[key]
+                    data = data.replace(key, replace_text) 
 
             with open(filename, "w") as file: 
                 print(f"Updating app metadata: {filename}")
