@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2023 IT'IS Foundation, https://itis.swiss
+     2024 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -43,14 +43,6 @@ qx.Class.define("osparc.po.Users", {
       return box;
     },
 
-    createHelpLabel: function(text) {
-      const label = new qx.ui.basic.Label(text).set({
-        font: "text-13",
-        rich: true,
-        alignX: "left"
-      });
-      return label;
-    }
   },
 
   members: {

@@ -51,9 +51,7 @@ qx.Class.define("osparc.po.POCenter", {
     this._add(tabViews);
   },
 
-  members:
-
-  {
+  members: {
     __getUsersPage: function() {
       const title = this.tr("Users");
       const iconSrc = "@FontAwesome5Solid/user/22";
