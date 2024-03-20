@@ -226,7 +226,7 @@ def _ssh_and_get_dask_ip(
         error = stderr.read().decode()
 
         if error:
-            return "Not Found"
+            return "Not Found / Drained / Not Ready"
 
         # Available disk space will be captured here
         return stdout.read().decode("utf-8").strip()
@@ -235,7 +235,7 @@ def _ssh_and_get_dask_ip(
         paramiko.SSHException,
         TimeoutError,
     ):
-        return "Not Found"
+        return "Not Ready"
 
     finally:
         # Close the SSH connection
@@ -548,7 +548,7 @@ def _print_computational_clusters(
                     [
                         f"Graylog: {_create_graylog_permalinks(environment, worker.ec2_instance)}",
                         f"Dask metrics: {json.dumps(worker_dask_metrics, indent=2)}",
-                        f"Running tasks: {json.dumps(worker_processing_jobs, indent=2)}",
+                        f"Running tasks: {worker_processing_jobs}",
                     ]
                 ),
             )
