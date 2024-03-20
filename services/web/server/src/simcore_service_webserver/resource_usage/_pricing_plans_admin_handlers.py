@@ -49,8 +49,8 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except CustomResourceUsageTrackerError:  # noqa: TRY302
-            raise
+        except CustomResourceUsageTrackerError as exc:
+            raise CustomResourceUsageTrackerError from exc
 
     return wrapper
 
