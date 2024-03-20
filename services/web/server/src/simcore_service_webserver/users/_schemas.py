@@ -68,12 +68,12 @@ class PreUserProfile(InputSchema):
         anystr_strip_whitespace = True
         max_anystr_length = 200
 
-    @validator("country")
+    @validator("country", pre=True)
     @classmethod
-    def _valid_country(cls, v):
+    def _check_country_and_use_standard_name(cls, v):
         if v:
             try:
-                pycountry.countries.lookup(v)
+                return pycountry.countries.lookup(v).name
             except LookupError as err:
                 raise ValueError(v) from err
         return v
