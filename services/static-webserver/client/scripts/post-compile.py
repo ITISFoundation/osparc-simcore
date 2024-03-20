@@ -3,7 +3,7 @@
 def update_apps_metadata():
     applications = [{
         "application": "osparc",
-        "replaces": [{
+        "replacements": [{
             "search_text": "replace_me_og_title",
             "replace_text": "oSPARC"
         }, {
@@ -15,7 +15,7 @@ def update_apps_metadata():
         }]
     }, {
         "application": "s4l",
-        "replaces": [{
+        "replacements": [{
             "search_text": "replace_me_og_title",
             "replace_text": "Sim4Life"
         }, {
@@ -27,7 +27,7 @@ def update_apps_metadata():
         }]
     }, {
         "application": "s4lacad",
-        "replaces": [{
+        "replacements": [{
             "search_text": "replace_me_og_title",
             "replace_text": "Sim4Life Science"
         }, {
@@ -39,7 +39,7 @@ def update_apps_metadata():
         }]
     }, {
         "application": "s4llite",
-        "replaces": [{
+        "replacements": [{
             "search_text": "replace_me_og_title",
             "replace_text": "S4L Lite"
         }, {
@@ -51,7 +51,7 @@ def update_apps_metadata():
         }]
     }, {
         "application": "tis",
-        "replaces": [{
+        "replacements": [{
             "search_text": "replace_me_og_title",
             "replace_text": "TI Plan - IT'IS"
         }, {
@@ -63,20 +63,26 @@ def update_apps_metadata():
         }]
     }]
 
+    output_folders = [
+        "source-output",
+        "build-output"
+    ]
+
     for i in applications:
         application = i.get("application")
-        path = "./source-output/"+application+"/index.html"
-        with open(path, "r") as file:
-            print(f"Updating {application}'s index.html")
-            data = file.read()
-            replaces = i.get("replaces")
-            for j in replaces:
-                search_text = j.get("search_text")
-                replace_text = j.get("replace_text")
-                data = data.replace(search_text, replace_text) 
+        for output_folder in output_folders:
+            path = "./"+output_folder+"/"+application+"/index.html"
+            with open(path, "r") as file:
+                print(f"Updating {application}'s index.html")
+                data = file.read()
+                replacements = i.get("replacements")
+                for j in replacements:
+                    search_text = j.get("search_text")
+                    replace_text = j.get("replace_text")
+                    data = data.replace(search_text, replace_text) 
 
-        with open(path, "w") as file: 
-            file.write(data)
+            with open(path, "w") as file: 
+                file.write(data)
 
 
 if __name__ == "__main__":
