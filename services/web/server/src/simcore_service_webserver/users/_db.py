@@ -172,8 +172,8 @@ async def get_user_products(engine: Engine, user_id: UserID) -> list[RowProxy]:
         products_gis_subq = sa.select(products.c.group_id).distinct().subquery()
         query = (
             sa.select(
-                product_name_subq,
                 groups.c.gid,
+                product_name_subq,
             )
             .select_from(
                 users.join(user_to_groups, user_to_groups.c.uid == users.c.id).join(

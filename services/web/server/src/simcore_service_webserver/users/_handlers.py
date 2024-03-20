@@ -71,7 +71,7 @@ async def update_my_profile(request: web.Request) -> web.Response:
 
 
 class _SearchQueryParams(BaseModel):
-    email: str = Field(min_length=3)
+    email: str = Field(min_length=3, max_length=200)
 
 
 @routes.get(f"/{API_VTAG}/users:search", name="search_users")
@@ -84,7 +84,9 @@ async def search_users(request: web.Request) -> web.Response:
 
     query_params = parse_request_query_parameters_as(_SearchQueryParams, request)
 
-    found = await _api.search_users(request.app, email=query_params.email)
+    found = await _api.search_users(
+        request.app, email_like=query_params.email, include_products=True
+    )
 
     policy = RESPONSE_MODEL_POLICY.copy()
     policy["exclude_none"] = True

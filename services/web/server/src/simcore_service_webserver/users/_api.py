@@ -62,11 +62,21 @@ async def set_user_as_deleted(app: web.Application, user_id: UserID) -> None:
     )
 
 
-async def search_users(app: web.Application, email: str) -> list[_schemas.UserProfile]:
+async def search_users(
+    app: web.Application, email_like: str, *, include_products: bool = False
+) -> list[_schemas.UserProfile]:
     # NOTE: this search is deploy-wide i.e. independent of the product!
     rows = await _db.search_users_and_get_profile(
-        get_database_engine(app), email_like=email
+        get_database_engine(app), email_like=email_like
     )
+
+    async def _list_products_or_none(user_id):
+        if user_id is not None and include_products:
+            products = await _db.get_user_products(
+                get_database_engine(app), user_id=user_id
+            )
+            return [_.product_name for _ in products]
+        return None
 
     return [
         _schemas.UserProfile(
@@ -82,14 +92,7 @@ async def search_users(app: web.Application, email: str) -> list[_schemas.UserPr
             country=r.country,
             extras=r.extras or {},
             invited_by=r.invited_by,
-            products=[
-                _.product_nane
-                for _ in await _db.get_user_products(
-                    get_database_engine(app), user_id=r.user_id
-                )
-            ]
-            if r.user_id
-            else None,
+            products=await _list_products_or_none(r.user_id),
             # NOTE: old users will not have extra details
             registered=r.user_id is not None if r.pre_email else r.status is not None,
             status=r.status,
@@ -102,7 +105,7 @@ async def pre_register_user(
     app: web.Application, profile: _schemas.PreUserProfile, creator_user_id: UserID
 ) -> _schemas.UserProfile:
 
-    found = await search_users(app, email=profile.email)
+    found = await search_users(app, email_like=profile.email, include_products=False)
     if found:
         raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
 
@@ -133,7 +136,7 @@ async def pre_register_user(
         **details,
     )
 
-    found = await search_users(app, email=profile.email)
+    found = await search_users(app, email_like=profile.email, include_products=False)
 
     assert len(found) == 1  # nosec
     return found[0]
