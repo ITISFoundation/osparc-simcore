@@ -732,6 +732,14 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      "users": {
+        endpoints: {
+          search: {
+            method: "GET",
+            url: statics.API + "/users:search?email={email}"
+          }
+        }
+      },
       /*
        * PAYMENTS
        */

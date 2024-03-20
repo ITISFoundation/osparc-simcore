@@ -141,7 +141,8 @@ qx.Class.define("osparc.data.Permissions", {
           "statics.read"
         ],
         "product_owner": [
-          "user.invitation.generate"
+          "user.invitation.generate",
+          "user.users.search"
         ],
         "admin": []
       };
