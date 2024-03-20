@@ -54,7 +54,7 @@ qx.Class.define("osparc.po.Users", {
   },
 
   members: {
-    __generatedUsersLayout: null,
+    __foundUsersLayout: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -72,9 +72,9 @@ qx.Class.define("osparc.po.Users", {
     },
 
     __searchUsers: function() {
-      const usersGroupBox = this.self().createGroupBox(this.tr("Search users"));
+      const usersGroupBox = this.self().createGroupBox(this.tr("Search"));
 
-      const disclaimer = this.self().createHelpLabel(this.tr("This is a draft.")).set({
+      const disclaimer = this.self().createHelpLabel(this.tr("This is a temporary GUI")).set({
         textColor: "info"
       });
       disclaimer.show();
@@ -94,45 +94,45 @@ qx.Class.define("osparc.po.Users", {
         required: true,
         placeholder: this.tr("new.user@email.address")
       });
-      form.add(userEmail, this.tr("User Email"));
+      form.add(userEmail, this.tr("Email"));
 
-      const generateUsersBtn = new osparc.ui.form.FetchButton(this.tr("Search"));
-      generateUsersBtn.set({
+      const searchBtn = new osparc.ui.form.FetchButton(this.tr("Search"));
+      searchBtn.set({
         appearance: "form-button"
       });
-      generateUsersBtn.addListener("execute", () => {
-        if (!osparc.data.Permissions.getInstance().canDo("user.users.generate", true)) {
+      searchBtn.addListener("execute", () => {
+        if (!osparc.data.Permissions.getInstance().canDo("user.users.search", true)) {
           return;
         }
         if (form.validate()) {
-          if (this.__generatedUsersLayout) {
-            this._remove(this.__generatedUsersLayout);
+          if (this.__foundUsersLayout) {
+            this._remove(this.__foundUsersLayout);
           }
           const params = {
-            data: {
-              "email": userEmail.getValue()
+            url:{
+              email: userEmail.getValue()
             }
           };
 
-          generateUsersBtn.setFetching(true);
-          osparc.data.Resources.fetch("users", "post", params)
+          searchBtn.setFetching(true);
+          osparc.data.Resources.fetch("users", "search", params)
             .then(data => {
-              const generatedUsersLayout = this.__generatedUsersLayout = this.__createGeneratedUsersLayout(data);
-              this._add(generatedUsersLayout);
+              const foundUsersLayout = this.__foundUsersLayout = this.__createFoundUsersLayout(data);
+              this._add(foundUsersLayout);
             })
             .catch(err => {
               console.error(err);
               osparc.FlashMessenger.logAs(err.message, "ERROR");
             })
-            .finally(() => generateUsersBtn.setFetching(false));
+            .finally(() => searchBtn.setFetching(false));
         }
       }, this);
-      form.addButton(generateUsersBtn);
+      form.addButton(searchBtn);
 
       return form;
     },
 
-    __createGeneratedUsersLayout: function(respData) {
+    __createFoundUsersLayout: function(respData) {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
@@ -140,19 +140,9 @@ qx.Class.define("osparc.po.Users", {
       }));
       vBox.add(hBox);
 
-      const usersField = new qx.ui.form.TextField(respData["users_link"]).set({
-        readOnly: true
-      });
-      hBox.add(usersField, {
-        flex: 1
-      });
-
-
-      const respLabel = new qx.ui.basic.Label(this.tr("Data encrypted in the users"));
+      const respLabel = new qx.ui.basic.Label(this.tr("Found users"));
       vBox.add(respLabel);
 
-      const printData = osparc.utils.Utils.deepCloneObject(respData);
-      delete printData["users_link"];
       const usersRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "users-data");
       const container = new qx.ui.container.Scroll();
       container.add(usersRespViewer);
