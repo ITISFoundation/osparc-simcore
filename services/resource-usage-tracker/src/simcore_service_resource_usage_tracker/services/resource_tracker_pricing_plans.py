@@ -22,7 +22,34 @@ from ..models.resource_tracker_pricing_plans import (
     PricingPlansDB,
     PricingPlanToServiceDB,
 )
+from ..models.resource_tracker_pricing_units import PricingUnitsDB
 from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
+
+
+async def _create_pricing_plan_get(
+    pricing_plan_db: PricingPlansDB, pricing_plan_unit_db: list[PricingUnitsDB]
+):
+    return PricingPlanGet(
+        pricing_plan_id=pricing_plan_db.pricing_plan_id,
+        display_name=pricing_plan_db.display_name,
+        description=pricing_plan_db.description,
+        classification=pricing_plan_db.classification,
+        created_at=pricing_plan_db.created,
+        pricing_plan_key=pricing_plan_db.pricing_plan_key,
+        pricing_units=[
+            PricingUnitGet(
+                pricing_unit_id=unit.pricing_unit_id,
+                unit_name=unit.unit_name,
+                unit_extra_info=unit.unit_extra_info,
+                current_cost_per_unit=unit.current_cost_per_unit,
+                current_cost_per_unit_id=unit.current_cost_per_unit_id,
+                default=unit.default,
+                specific_info=unit.specific_info,
+            )
+            for unit in pricing_plan_unit_db
+        ],
+        is_active=pricing_plan_db.is_active,
+    )
 
 
 async def get_service_default_pricing_plan(
@@ -54,27 +81,7 @@ async def get_service_default_pricing_plan(
         )
     )
 
-    return PricingPlanGet(
-        pricing_plan_id=default_pricing_plan.pricing_plan_id,
-        display_name=default_pricing_plan.display_name,
-        description=default_pricing_plan.description,
-        classification=default_pricing_plan.classification,
-        created_at=default_pricing_plan.created,
-        pricing_plan_key=default_pricing_plan.pricing_plan_key,
-        pricing_units=[
-            PricingUnitGet(
-                pricing_unit_id=unit.pricing_unit_id,
-                unit_name=unit.unit_name,
-                unit_extra_info=unit.unit_extra_info,
-                current_cost_per_unit=unit.current_cost_per_unit,
-                current_cost_per_unit_id=unit.current_cost_per_unit_id,
-                default=unit.default,
-                specific_info=unit.specific_info,
-            )
-            for unit in pricing_plan_unit_db
-        ],
-        is_active=default_pricing_plan.is_active,
-    )
+    return await _create_pricing_plan_get(default_pricing_plan, pricing_plan_unit_db)
 
 
 async def list_connected_services_to_pricing_plan_by_pricing_plan(
@@ -153,27 +160,7 @@ async def get_pricing_plan(
             pricing_plan_id=pricing_plan_db.pricing_plan_id
         )
     )
-    return PricingPlanGet(
-        pricing_plan_id=pricing_plan_db.pricing_plan_id,
-        display_name=pricing_plan_db.display_name,
-        description=pricing_plan_db.description,
-        classification=pricing_plan_db.classification,
-        created_at=pricing_plan_db.created,
-        pricing_plan_key=pricing_plan_db.pricing_plan_key,
-        pricing_units=[
-            PricingUnitGet(
-                pricing_unit_id=unit.pricing_unit_id,
-                unit_name=unit.unit_name,
-                unit_extra_info=unit.unit_extra_info,
-                current_cost_per_unit=unit.current_cost_per_unit,
-                current_cost_per_unit_id=unit.current_cost_per_unit_id,
-                default=unit.default,
-                specific_info=unit.specific_info,
-            )
-            for unit in pricing_plan_unit_db
-        ],
-        is_active=pricing_plan_db.is_active,
-    )
+    return await _create_pricing_plan_get(pricing_plan_db, pricing_plan_unit_db)
 
 
 async def create_pricing_plan(
@@ -188,27 +175,7 @@ async def create_pricing_plan(
             pricing_plan_id=pricing_plan_db.pricing_plan_id
         )
     )
-    return PricingPlanGet(
-        pricing_plan_id=pricing_plan_db.pricing_plan_id,
-        display_name=pricing_plan_db.display_name,
-        description=pricing_plan_db.description,
-        classification=pricing_plan_db.classification,
-        created_at=pricing_plan_db.created,
-        pricing_plan_key=pricing_plan_db.pricing_plan_key,
-        pricing_units=[
-            PricingUnitGet(
-                pricing_unit_id=unit.pricing_unit_id,
-                unit_name=unit.unit_name,
-                unit_extra_info=unit.unit_extra_info,
-                current_cost_per_unit=unit.current_cost_per_unit,
-                current_cost_per_unit_id=unit.current_cost_per_unit_id,
-                default=unit.default,
-                specific_info=unit.specific_info,
-            )
-            for unit in pricing_plan_unit_db
-        ],
-        is_active=pricing_plan_db.is_active,
-    )
+    return await _create_pricing_plan_get(pricing_plan_db, pricing_plan_unit_db)
 
 
 async def update_pricing_plan(
@@ -234,24 +201,4 @@ async def update_pricing_plan(
             pricing_plan_id=pricing_plan_db.pricing_plan_id
         )
     )
-    return PricingPlanGet(
-        pricing_plan_id=pricing_plan_db.pricing_plan_id,
-        display_name=pricing_plan_db.display_name,
-        description=pricing_plan_db.description,
-        classification=pricing_plan_db.classification,
-        created_at=pricing_plan_db.created,
-        pricing_plan_key=pricing_plan_db.pricing_plan_key,
-        pricing_units=[
-            PricingUnitGet(
-                pricing_unit_id=unit.pricing_unit_id,
-                unit_name=unit.unit_name,
-                unit_extra_info=unit.unit_extra_info,
-                current_cost_per_unit=unit.current_cost_per_unit,
-                current_cost_per_unit_id=unit.current_cost_per_unit_id,
-                default=unit.default,
-                specific_info=unit.specific_info,
-            )
-            for unit in pricing_plan_unit_db
-        ],
-        is_active=pricing_plan_db.is_active,
-    )
+    return await _create_pricing_plan_get(pricing_plan_db, pricing_plan_unit_db)

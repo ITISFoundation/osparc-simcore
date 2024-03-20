@@ -70,8 +70,15 @@ class PricingUnitAdminGet(PricingUnitGet):
     specific_info: HardwareInfo
 
 
-class PricingPlanAdminGet(PricingPlanGet):
-    pricing_units: list[PricingUnitAdminGet] | None
+class PricingPlanAdminGet(OutputSchema):
+    pricing_plan_id: PricingPlanId
+    display_name: str
+    description: str
+    classification: PricingPlanClassification
+    created_at: datetime
+    pricing_plan_key: str
+    pricing_units: list[PricingUnitGet] | None
+    is_active: bool
 
 
 class PricingPlanToServiceAdminGet(OutputSchema):

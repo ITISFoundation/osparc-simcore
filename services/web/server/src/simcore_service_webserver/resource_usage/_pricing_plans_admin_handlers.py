@@ -125,7 +125,7 @@ async def get_pricing_plan(request: web.Request):
         pricing_plan_id=path_params.pricing_plan_id,
     )
     if pricing_plan_get.pricing_units is None:
-        raise ValueError
+        raise ValueError("Pricing plan units should not be None")
 
     webserver_admin_pricing_plan_get = PricingPlanAdminGet(
         pricing_plan_id=pricing_plan_get.pricing_plan_id,
