@@ -65,8 +65,9 @@ def update_apps_metadata():
     }]
 
     output_folders = [
-        "source-output",
-        "build-output"
+        "source-output", # dev output
+        "build-output",  # default production output
+        "build-client"   # I believe we create the production outputs here
     ]
 
     dirname = os.path.dirname(__file__)
@@ -75,7 +76,6 @@ def update_apps_metadata():
         for output_folder in output_folders:
             filename = os.path.join(dirname, '..', output_folder, application, "index.html")
             if not os.path.isfile(filename):
-                print(f"File not found: {filename}")
                 continue
             with open(filename, "r") as file:
                 data = file.read()
