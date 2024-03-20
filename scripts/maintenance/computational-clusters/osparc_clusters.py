@@ -3,6 +3,7 @@
 import asyncio
 import contextlib
 import datetime
+
 import json
 import re
 from collections import defaultdict, namedtuple
@@ -49,6 +50,7 @@ class ComputationalInstance(AutoscaledInstance):
     user_id: int
     wallet_id: int
     last_heartbeat: datetime.datetime | None
+    dask_ip: str
 
 
 @dataclass
@@ -74,9 +76,9 @@ TaskState: TypeAlias = str
 MINUTE: Final[int] = 60
 HOUR: Final[int] = 60 * MINUTE
 
-DEFAULT_COMPUTATIONAL_EC2_FORMAT: Final[
-    str
-] = r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:d}"
+DEFAULT_COMPUTATIONAL_EC2_FORMAT: Final[str] = (
+    r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:d}"
+)
 DEFAULT_DYNAMIC_EC2_FORMAT: Final[str] = r"osparc-dynamic-autoscaled-worker-{key_name}"
 
 DEPLOY_SSH_KEY_PARSER: Final[parse.Parser] = parse.compile(r"osparc-{random_name}.pem")
@@ -170,6 +172,7 @@ def _parse_computational(instance: Instance) -> ComputationalInstance | None:
             last_heartbeat=last_heartbeat,
             ec2_instance=instance,
             disk_space=UNDEFINED_BYTESIZE,
+            dask_ip="unknown",
         )
 
     return None
@@ -200,6 +203,45 @@ def _parse_dynamic(instance: Instance) -> DynamicInstance | None:
             disk_space=UNDEFINED_BYTESIZE,
         )
     return None
+
+
+def _ssh_and_get_dask_ip(
+    instance: Instance, username: str, private_key_path: Path
+) -> str:
+    # Establish SSH connection with key-based authentication
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        client.connect(
+            instance.public_ip_address,
+            username=username,
+            key_filename=f"{private_key_path}",
+            timeout=5,
+        )
+        # Command to get disk space for /docker partition
+        dask_ip_command = "docker inspect -f '{{.NetworkSettings.Networks.dask_stack_default.IPAddress}}' $(docker ps --filter 'name=dask-sidecar|dask-scheduler' --format '{{.ID}}')"
+
+        # Run the command on the remote machine
+        _stdin, stdout, stderr = client.exec_command(dask_ip_command)
+        error = stderr.read().decode()
+
+        if error:
+            print(error)
+            raise typer.Abort(error)
+
+        # Available disk space will be captured here
+        sidecar_cidr = stdout.read().decode("utf-8").strip()
+        return sidecar_cidr
+    except (
+        paramiko.AuthenticationException,
+        paramiko.SSHException,
+        TimeoutError,
+    ):
+        return "Not Found"
+
+    finally:
+        # Close the SSH connection
+        client.close()
 
 
 def _ssh_and_get_available_disk_space(
@@ -429,12 +471,12 @@ def _print_computational_clusters(
 ) -> None:
     time_now = arrow.utcnow()
     table = Table(
-        Column("Instance", justify="left", overflow="fold"),
-        Column("Links", justify="left", overflow="fold"),
-        Column("Computational details"),
+        Column("Instance", justify="left", overflow="ellipsis", ratio=1),
+        Column("Computational details", overflow="fold", ratio=2),
         title=f"computational clusters: {aws_region}",
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
+        expand=True,
     )
 
     for cluster in track(
@@ -453,6 +495,7 @@ def _print_computational_clusters(
                     f"Up: {_timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
                     f"IntIP: {cluster.primary.ec2_instance.private_ip_address}",
+                    f"DaskWorkerIP: {cluster.primary.dask_ip}",
                     f"UserID: {cluster.primary.user_id}",
                     f"WalletID: {cluster.primary.wallet_id}",
                     f"Heartbeat: {_timedelta_formatting(time_now - cluster.primary.last_heartbeat) if cluster.primary.last_heartbeat else 'n/a'}",
@@ -464,10 +507,7 @@ def _print_computational_clusters(
                     f"Dask Scheduler UI: http://{cluster.primary.ec2_instance.public_ip_address}:8787",
                     f"Dask Scheduler TCP: tcp://{cluster.primary.ec2_instance.public_ip_address}:8786",
                     f"Graylog: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
-                ]
-            ),
-            "\n".join(
-                [
+                    f"processing: {json.dumps(cluster.processing_jobs, indent=2)}",
                     f"tasks: {json.dumps(cluster.task_states_to_tasks, indent=2)}",
                     f"Worker metrics: {json.dumps(_get_worker_metrics(cluster.scheduler_info), indent=2)}",
                 ]
@@ -476,6 +516,7 @@ def _print_computational_clusters(
 
         # now add the workers
         for index, worker in enumerate(cluster.workers):
+            table.add_row()
             table.add_row(
                 "\n".join(
                     [
@@ -488,6 +529,7 @@ def _print_computational_clusters(
                         f"Up: {_timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)}",
                         f"ExtIP: {worker.ec2_instance.public_ip_address}",
                         f"IntIP: {worker.ec2_instance.private_ip_address}",
+                        f"DaskWorkerIP: {worker.dask_ip}",
                         f"/mnt/docker(free): {_color_encode_with_threshold(worker.disk_space.human_readable(), worker.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
                         "",
                     ]
@@ -614,13 +656,30 @@ def _analyze_computational_instances(
             )
         )
 
+        all_dask_ips = asyncio.get_event_loop().run_until_complete(
+            asyncio.gather(
+                *(
+                    asyncio.get_event_loop().run_in_executor(
+                        None,
+                        _ssh_and_get_dask_ip,
+                        instance.ec2_instance,
+                        SSH_USER_NAME,
+                        ssh_key_path,
+                    )
+                    for instance in computational_instances
+                ),
+                return_exceptions=True,
+            )
+        )
+
     computational_clusters = []
-    for instance, disk_space in track(
-        zip(computational_instances, all_disk_spaces, strict=True),
+    for instance, disk_space, dask_ip in track(
+        zip(computational_instances, all_disk_spaces, all_dask_ips, strict=True),
         description="Collecting computational clusters data...",
     ):
         if isinstance(disk_space, ByteSize):
             instance.disk_space = disk_space
+        instance.dask_ip = dask_ip
         if instance.role is InstanceRole.manager:
             scheduler_info = {}
             datasets_on_cluster = ()
