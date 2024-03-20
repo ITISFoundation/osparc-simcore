@@ -3379,7 +3379,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_PricingUnitAdminGet_'
-  /v0/admin/pricing-plans/{pricing_plan_id}/connect-services:
+  /v0/admin/pricing-plans/{pricing_plan_id}/billable-services:
     get:
       tags:
       - admin
@@ -8448,9 +8448,9 @@ components:
       - pricingUnitId
       - unitName
       - unitExtraInfo
-      - specificInfo
       - currentCostPerUnit
       - default
+      - specificInfo
       type: object
       properties:
         pricingUnitId:
@@ -8464,14 +8464,14 @@ components:
         unitExtraInfo:
           title: Unitextrainfo
           type: object
-        specificInfo:
-          $ref: '#/components/schemas/HardwareInfo'
         currentCostPerUnit:
           title: Currentcostperunit
           type: number
         default:
           title: Default
           type: boolean
+        specificInfo:
+          $ref: '#/components/schemas/HardwareInfo'
     PricingUnitCostUpdate:
       title: PricingUnitCostUpdate
       required:

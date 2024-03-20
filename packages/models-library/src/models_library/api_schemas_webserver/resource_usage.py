@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel
+from models_library.utils.common_validators import ensure_unique_dict_values_validator
+from pydantic import BaseModel, validator
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
@@ -18,7 +19,7 @@ from ..resource_tracker import (
 from ..services import ServiceKey, ServiceVersion
 from ..users import UserID
 from ..wallets import WalletID
-from ._base import OutputSchema
+from ._base import InputSchema, OutputSchema
 
 # Frontend API
 
@@ -65,24 +66,12 @@ class PricingPlanGet(OutputSchema):
 ## Admin Pricing Plan and Unit
 
 
-class PricingUnitAdminGet(OutputSchema):
-    pricing_unit_id: PricingUnitId
-    unit_name: str
-    unit_extra_info: dict
+class PricingUnitAdminGet(PricingUnitGet):
     specific_info: HardwareInfo
-    current_cost_per_unit: Decimal
-    default: bool
 
 
-class PricingPlanAdminGet(OutputSchema):
-    pricing_plan_id: PricingPlanId
-    display_name: str
-    description: str
-    classification: PricingPlanClassification
-    created_at: datetime
-    pricing_plan_key: str
+class PricingPlanAdminGet(PricingPlanGet):
     pricing_units: list[PricingUnitAdminGet] | None
-    is_active: bool
 
 
 class PricingPlanToServiceAdminGet(OutputSchema):
@@ -92,20 +81,28 @@ class PricingPlanToServiceAdminGet(OutputSchema):
     created: datetime
 
 
-class CreatePricingPlanBodyParams(OutputSchema):
+class CreatePricingPlanBodyParams(InputSchema):
     display_name: str
     description: str
     classification: PricingPlanClassification
     pricing_plan_key: str
 
+    class Config:
+        anystr_strip_whitespace = True
+        max_anystr_length = 200
 
-class UpdatePricingPlanBodyParams(OutputSchema):
+
+class UpdatePricingPlanBodyParams(InputSchema):
     display_name: str
     description: str
     is_active: bool
 
+    class Config:
+        anystr_strip_whitespace = True
+        max_anystr_length = 200
 
-class CreatePricingUnitBodyParams(OutputSchema):
+
+class CreatePricingUnitBodyParams(InputSchema):
     unit_name: str
     unit_extra_info: dict
     default: bool
@@ -113,15 +110,37 @@ class CreatePricingUnitBodyParams(OutputSchema):
     cost_per_unit: Decimal
     comment: str
 
+    # validators
+    _unique_unit_extra_info_validator = validator(
+        "unit_extra_info", allow_reuse=True, pre=True
+    )(ensure_unique_dict_values_validator)
 
-class UpdatePricingUnitBodyParams(OutputSchema):
+    class Config:
+        anystr_strip_whitespace = True
+        max_anystr_length = 200
+
+
+class UpdatePricingUnitBodyParams(InputSchema):
     unit_name: str
     unit_extra_info: dict
     default: bool
     specific_info: SpecificInfo
     pricing_unit_cost_update: PricingUnitCostUpdate | None
 
+    # validators
+    _unique_unit_extra_info_validator = validator(
+        "unit_extra_info", allow_reuse=True, pre=True
+    )(ensure_unique_dict_values_validator)
 
-class ConnectServiceToPricingPlanBodyParams(OutputSchema):
+    class Config:
+        anystr_strip_whitespace = True
+        max_anystr_length = 200
+
+
+class ConnectServiceToPricingPlanBodyParams(InputSchema):
     service_key: ServiceKey
     service_version: ServiceVersion
+
+    class Config:
+        anystr_strip_whitespace = True
+        max_anystr_length = 200

@@ -32,7 +32,7 @@ from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import PositiveInt, parse_obj_as
+from pydantic import PositiveInt
 from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from simcore_service_api_server.models.schemas.solvers import SolverKeyId
@@ -458,8 +458,8 @@ class AuthSession:
         response.raise_for_status()
         pricing_plan_get = Envelope[PricingPlanGet].parse_raw(response.text).data
         if pricing_plan_get:
-            return parse_obj_as(
-                ServicePricingPlanGet, pricing_plan_get.dict(exclude={"is_active"})
+            return ServicePricingPlanGet.construct(
+                **pricing_plan_get.dict(exclude={"is_active"})
             )
         return None
 

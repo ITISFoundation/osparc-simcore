@@ -373,7 +373,7 @@ async def update_pricing_unit(request: web.Request):
 
 
 @routes.get(
-    f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}/connect-services",
+    f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}/billable-services",
     name="list_connected_services_to_pricing_plan",
 )
 @login_required
@@ -402,7 +402,7 @@ async def list_connected_services_to_pricing_plan(request: web.Request):
 
 
 @routes.post(
-    f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}/connect-services",
+    f"/{VTAG}/admin/pricing-plans/{{pricing_plan_id}}/billable-services",
     name="connect_service_to_pricing_plan",
 )
 @login_required

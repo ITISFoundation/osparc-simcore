@@ -246,7 +246,7 @@ assert_handler_signature_against_model(update_pricing_unit, _GetPricingUnitPathP
 
 
 @router.get(
-    "/admin/pricing-plans/{pricing_plan_id}/connect-services",
+    "/admin/pricing-plans/{pricing_plan_id}/billable-services",
     response_model=Envelope[list[PricingPlanToServiceAdminGet]],
     summary="List services that are connected to the provided pricing plan",
     tags=["admin"],
@@ -261,7 +261,7 @@ assert_handler_signature_against_model(update_pricing_unit, _GetPricingPlanPathP
 
 
 @router.post(
-    "/admin/pricing-plans/{pricing_plan_id}/connect-services",
+    "/admin/pricing-plans/{pricing_plan_id}/billable-services",
     response_model=Envelope[PricingPlanToServiceAdminGet],
     summary="Connect service with pricing plan",
     tags=["admin"],
