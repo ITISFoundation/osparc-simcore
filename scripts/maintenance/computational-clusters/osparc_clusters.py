@@ -226,8 +226,7 @@ def _ssh_and_get_dask_ip(
         error = stderr.read().decode()
 
         if error:
-            print(error)
-            raise typer.Abort(error)
+            return "Not Found"
 
         # Available disk space will be captured here
         return stdout.read().decode("utf-8").strip()
@@ -481,6 +480,7 @@ def _print_computational_clusters(
     for cluster in track(
         clusters, "Collecting information about computational clusters..."
     ):
+        cluster_worker_metrics = _get_worker_metrics(cluster.scheduler_info)
         # first print primary machine info
         table.add_row(
             "\n".join(
@@ -506,15 +506,26 @@ def _print_computational_clusters(
                     f"Dask Scheduler UI: http://{cluster.primary.ec2_instance.public_ip_address}:8787",
                     f"Dask Scheduler TCP: tcp://{cluster.primary.ec2_instance.public_ip_address}:8786",
                     f"Graylog: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
-                    f"processing: {json.dumps(cluster.processing_jobs, indent=2)}",
                     f"tasks: {json.dumps(cluster.task_states_to_tasks, indent=2)}",
-                    f"Worker metrics: {json.dumps(_get_worker_metrics(cluster.scheduler_info), indent=2)}",
                 ]
             ),
         )
 
         # now add the workers
         for index, worker in enumerate(cluster.workers):
+            worker_dask_metrics = next(
+                (
+                    worker_metrics
+                    for worker_name, worker_metrics in cluster_worker_metrics.items()
+                    if worker.dask_ip in worker_name
+                ),
+                "no metrics???",
+            )
+            worker_processing_jobs = [
+                job_id
+                for worker_name, job_id in cluster.processing_jobs.items()
+                if worker.dask_ip in worker_name
+            ]
             table.add_row()
             table.add_row(
                 "\n".join(
@@ -536,6 +547,8 @@ def _print_computational_clusters(
                 "\n".join(
                     [
                         f"Graylog: {_create_graylog_permalinks(environment, worker.ec2_instance)}",
+                        f"Dask metrics: {json.dumps(worker_dask_metrics, indent=2)}",
+                        f"Running tasks: {json.dumps(worker_processing_jobs, indent=2)}",
                     ]
                 ),
             )
