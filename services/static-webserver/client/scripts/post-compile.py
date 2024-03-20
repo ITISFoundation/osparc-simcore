@@ -35,7 +35,7 @@ def update_apps_metadata():
             "application": "tis",
             "replacements": {
                 "replace_me_og_title": "TI Plan - IT'IS",
-                "replace_me_og_description": "my osparc description",
+                "replace_me_og_description": "A tool powered by o²S²PARC technology that reduces optimization of targeted neurostimulation protocols.",
                 "replace_me_og_image": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/static-webserver/client/source/resource/osparc/tip_splitimage.png"
             }
         }
