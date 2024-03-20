@@ -1,7 +1,6 @@
 from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
 from typing import Any, Generic, TypeVar
 
-from pydantic import validator
 from pydantic.generics import GenericModel
 
 DictKey = TypeVar("DictKey")
@@ -65,10 +64,3 @@ class Envelope(GenericModel, Generic[DataT]):
     @classmethod
     def parse_data(cls, obj):
         return cls.parse_obj({"data": obj})
-
-    @validator("data", pre=True)
-    @classmethod
-    def empty_dict_is_none(cls, v):
-        if v == {}:
-            return None
-        return v
