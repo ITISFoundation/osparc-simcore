@@ -230,8 +230,7 @@ def _ssh_and_get_dask_ip(
             raise typer.Abort(error)
 
         # Available disk space will be captured here
-        sidecar_cidr = stdout.read().decode("utf-8").strip()
-        return sidecar_cidr
+        return stdout.read().decode("utf-8").strip()
     except (
         paramiko.AuthenticationException,
         paramiko.SSHException,
