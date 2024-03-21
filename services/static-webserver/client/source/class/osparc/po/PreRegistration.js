@@ -74,10 +74,10 @@ qx.Class.define("osparc.po.PreRegistration", {
 
     __preRegistrationForm: function() {
       const form = new qx.ui.form.Form();
-      const requestAccountData = new qx.ui.form.TextAream().set({
+      const requestAccountData = new qx.ui.form.TextArea().set({
         required: true,
-        minHeight: 100,
-        placeholder: this.tr("Copy&paste the Request Account Form in JSON format here ...")
+        minHeight: 200,
+        placeholder: this.tr("Copy&Paste the Request Account Form in JSON format here ...")
       });
       form.add(requestAccountData, this.tr("Request Form"));
 
@@ -96,7 +96,7 @@ qx.Class.define("osparc.po.PreRegistration", {
           }
 
           const params = {
-            data: requestAccountData.getValue()
+            data: JSON.parse(requestAccountData.getValue())
           };
           submitBtn.setFetching(true);
           osparc.data.Resources.fetch("users", "preRegister", params)
