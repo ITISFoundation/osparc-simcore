@@ -7,7 +7,7 @@
   "configurations": [
     {
       "name": "Python: Test",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "module": "pytest",
       "args": [
@@ -25,7 +25,7 @@
     },
     {
       "name": "Python: Testit",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "module": "pytest",
       "args": [
@@ -44,10 +44,27 @@
     },
     {
       "name": "Python: Remote Attach api-server",
-      "type": "python",
+      "type": "debugpy",
       "request": "attach",
-      "port": 3015,
-      "host": "127.0.0.1",
+      "connect": {
+        "port": 3015,
+        "host": "127.0.0.1"
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/devel"
+        }
+      ]
+    },
+    {
+      "name": "Python: Remote Attach autoscaling",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "port": 3012,
+        "host": "127.0.0.1"
+      },
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",
@@ -57,10 +74,12 @@
     },
     {
       "name": "Python: Remote Attach clusters-keeper",
-      "type": "python",
+      "type": "debugpy",
       "request": "attach",
-      "port": 3006,
-      "host": "127.0.0.1",
+      "connect": {
+        "port": 3006,
+        "host": "127.0.0.1"
+      },
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",
@@ -70,10 +89,12 @@
     },
     {
       "name": "Python: Remote Attach datcore-adapter",
-      "type": "python",
+      "type": "debugpy",
       "request": "attach",
-      "port": 3010,
-      "host": "127.0.0.1",
+      "connect": {
+        "port": 3010,
+        "host": "127.0.0.1"
+      },
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",
@@ -83,10 +104,12 @@
     },
     {
       "name": "Python: Remote Attach director",
-      "type": "python",
+      "type": "debugpy",
       "request": "attach",
-      "port": 3004,
-      "host": "127.0.0.1",
+      "connect": {
+        "port": 3004,
+        "host": "127.0.0.1"
+      },
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",
@@ -96,10 +119,12 @@
     },
     {
       "name": "Python: Remote Attach director-v2",
-      "type": "python",
+      "type": "debugpy",
       "request": "attach",
-      "port": 3009,
-      "host": "127.0.0.1",
+      "connect": {
+        "port": 3009,
+        "host": "127.0.0.1"
+      },
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",
@@ -109,10 +134,12 @@
     },
     {
       "name": "Python: Remote Attach webserver",
-      "type": "python",
+      "type": "debugpy",
       "request": "attach",
-      "port": 3001,
-      "host": "127.0.0.1",
+      "connect": {
+        "port": 3001,
+        "host": "127.0.0.1"
+      },
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",
@@ -122,10 +149,12 @@
     },
     {
       "name": "Python: Remote Attach webserver-garbage-collector",
-      "type": "python",
+      "type": "debugpy",
       "request": "attach",
-      "port": 3011,
-      "host": "127.0.0.1",
+      "connect": {
+        "port": 3011,
+        "host": "127.0.0.1"
+      },
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",
@@ -135,10 +164,12 @@
     },
     {
       "name": "Python: Remote Attach storage",
-      "type": "python",
+      "type": "debugpy",
       "request": "attach",
-      "port": 3003,
-      "host": "127.0.0.1",
+      "connect": {
+        "port": 3003,
+        "host": "127.0.0.1"
+      },
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",
@@ -148,10 +179,12 @@
     },
     {
       "name": "Python: Remote Attach catalog",
-      "type": "python",
+      "type": "debugpy",
       "request": "attach",
-      "port": 3005,
-      "host": "127.0.0.1",
+      "connect": {
+        "port": 3005,
+        "host": "127.0.0.1"
+      },
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",
@@ -161,10 +194,12 @@
     },
     {
       "name": "Python: Remote Attach dynamic-schduler (SCALE 1 replica first)",
-      "type": "python",
+      "type": "debugpy",
       "request": "attach",
-      "port": 3016,
-      "host": "127.0.0.1",
+      "connect": {
+        "port": 3016,
+        "host": "127.0.0.1"
+      },
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",
