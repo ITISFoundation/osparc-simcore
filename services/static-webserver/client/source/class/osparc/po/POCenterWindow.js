@@ -41,9 +41,7 @@ qx.Class.define("osparc.po.POCenterWindow", {
 
   statics: {
     openWindow: function() {
-      const accountWindow = new osparc.po.POCenterWindow().set({
-        maxHeight: 600
-      });
+      const accountWindow = new osparc.po.POCenterWindow();
       accountWindow.center();
       accountWindow.open();
       return accountWindow;
