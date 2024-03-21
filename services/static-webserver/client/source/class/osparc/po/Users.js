@@ -20,8 +20,6 @@ qx.Class.define("osparc.po.Users", {
   extend: osparc.po.BaseView,
 
   members: {
-    __container: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -34,8 +32,7 @@ qx.Class.define("osparc.po.Users", {
           this._add(control);
           break;
         case "found-users-container": {
-          this.__container = new qx.ui.container.Composite(new qx.ui.layout.Grow());
-          control = new qx.ui.container.Scroll(this.__container);
+          control = new qx.ui.container.Scroll();
           this._add(control, {
             flex: 1
           });
@@ -106,11 +103,10 @@ qx.Class.define("osparc.po.Users", {
     },
 
     __populateFoundUsersLayout: function(respData) {
-      // const foundUsersContainer = this.getChildControl("found-users-container");
-      // osparc.utils.Utils.removeAllChildren(foundUsersContainer);
-      this.__container.removeAll();
+      const foundUsersContainer = this.getChildControl("found-users-container");
+      osparc.utils.Utils.removeAllChildren(foundUsersContainer);
       const usersRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "users-data");
-      this.__container.add(usersRespViewer);
+      foundUsersContainer.add(usersRespViewer);
     }
   }
 });
