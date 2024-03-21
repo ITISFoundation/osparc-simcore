@@ -27,16 +27,15 @@ qx.Class.define("osparc.po.Users", {
           control = this.__searchUsers();
           this._add(control);
           break;
-        case "found-users-layout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-          const respLabel = new qx.ui.basic.Label(this.tr("Found users:"));
-          control.add(respLabel);
+        case "finding-status":
+          control = new qx.ui.basic.Label();
           this._add(control);
           break;
-        }
         case "found-users-container":
           control = new qx.ui.container.Scroll();
-          this.getChildControl("found-users-layout").add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
       }
       return control || this.base(arguments, id);
@@ -44,6 +43,7 @@ qx.Class.define("osparc.po.Users", {
 
     _buildLayout: function() {
       this.getChildControl("search-users");
+      this.getChildControl("finding-status");
       this.getChildControl("found-users-container");
     },
 
@@ -75,18 +75,21 @@ qx.Class.define("osparc.po.Users", {
           return;
         }
         if (form.validate()) {
-          const foundUsersContainer = this.getChildControl("found-users-container");
-          osparc.utils.Utils.removeAllChildren(foundUsersContainer);
-
           searchBtn.setFetching(true);
+          const findingStatus = this.getChildControl("finding-status");
+          findingStatus.setValue(this.tr("Searching users..."));
           const params = {
             url: {
               email: userEmail.getValue()
             }
           };
           osparc.data.Resources.fetch("users", "search", params)
-            .then(data => this.__populateFoundUsersLayout(data))
+            .then(data => {
+              findingStatus.setValue(data.length + this.tr(" user(s) found"));
+              this.__populateFoundUsersLayout(data);
+            })
             .catch(err => {
+              findingStatus.setValue(this.tr("Error searching users"));
               console.error(err);
               osparc.FlashMessenger.logAs(err.message, "ERROR");
             })
@@ -99,8 +102,9 @@ qx.Class.define("osparc.po.Users", {
     },
 
     __populateFoundUsersLayout: function(respData) {
-      const usersRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "users-data");
       const foundUsersContainer = this.getChildControl("found-users-container");
+      // osparc.utils.Utils.removeAllChildren(foundUsersContainer);
+      const usersRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "users-data");
       foundUsersContainer.add(usersRespViewer);
     }
   }
