@@ -21,7 +21,7 @@ def _update_gauge(
     gauge.clear()
 
     for node in nodes:
-        gauge.labels(node.ec2_instance.type).inc()
+        gauge.labels(instance_type=node.ec2_instance.type).inc()
 
 
 @dataclass(slots=True, kw_only=True)
@@ -86,10 +86,10 @@ class AutoscalingInstrumentation:
         self._disconnected_nodes.set(len(cluster.disconnected_nodes))
 
     def instance_started(self, instance_type: str) -> None:
-        self._started_instances.labels(ec2_instance_type=instance_type).inc()
+        self._started_instances.labels(instance_type=instance_type).inc()
 
     def instance_terminated(self, instance_type: str) -> None:
-        self._terminated_instances.labels(ec2_instance_type=instance_type).inc()
+        self._terminated_instances.labels(instance_type=instance_type).inc()
 
 
 def setup(app: FastAPI) -> None:
