@@ -363,7 +363,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           downstreamNodes.forEach(downstreamNode => {
             downstreamNode.getPortIds().forEach(portId => {
               const link = downstreamNode.getLink(portId);
-              if (link["nodeUuid"] === node.getNodeId() && link["output"] === "outFile") {
+              if (link && link["nodeUuid"] === node.getNodeId() && link["output"] === "outFile") {
                 // connected to file picker's output
                 downstreamNode.retrieveInputs(portId);
               }

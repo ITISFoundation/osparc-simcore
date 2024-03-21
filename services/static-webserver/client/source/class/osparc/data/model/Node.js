@@ -869,6 +869,11 @@ qx.Class.define("osparc.data.model.Node", {
       });
     },
 
+    getLink: function(portId) {
+      const link = this.getPropsForm() ? this.getPropsForm().getLink(portId) : null;
+      return link;
+    },
+
     getLinks: function() {
       const links = this.getPropsForm() ? this.getPropsForm().getLinks() : [];
       return links;
