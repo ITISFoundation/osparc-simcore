@@ -8,13 +8,18 @@ output_folders = [
     "build-client"   # I believe we create the production outputs here
 ]
 
-def update_apps_metadata():
+
+def read_json_file(filename):
     dirname = os.path.dirname(__file__)
-    meta_filename = os.path.join(dirname, "apps_metadata.json")
+    meta_filename = os.path.join(dirname, filename)
     f = open(meta_filename)
     metadata = json.load(f)
-    applications = metadata["applications"]
+    return metadata["applications"]
 
+
+def update_apps_metadata():
+    dirname = os.path.dirname(__file__)
+    applications = read_json_file("apps_metadata.json")
     for i in applications:
         application = i.get("application")
         for output_folder in output_folders:
@@ -34,11 +39,7 @@ def update_apps_metadata():
 
 def update_routes():
     dirname = os.path.dirname(__file__)
-    meta_filename = os.path.join(dirname, "apps_metadata.json")
-    f = open(meta_filename)
-    metadata = json.load(f)
-    applications = metadata["applications"]
-
+    applications = read_json_file("apps_metadata.json")
     for i in applications:
         application = i.get("application")
         for output_folder in output_folders:
