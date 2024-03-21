@@ -89,7 +89,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
         inherits=[UserRole.USER],
     ),
     UserRole.PRODUCT_OWNER: PermissionDict(
-        # NOTE: do not forget to add tags=["po"] to this entrypoint
+        # NOTE: Add `tags=["po"]` to entrypoints with this access requirements
         can=[
             "product.details.*",
             "product.invitations.create",
@@ -98,7 +98,11 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
         inherits=[UserRole.TESTER],
     ),
     UserRole.ADMIN: PermissionDict(
-        can=["admin.*", "storage.files.sync", "resource-usage.write"],
+        can=[
+            "admin.*",
+            "storage.files.sync",
+            "resource-usage.write",
+        ],
         inherits=[UserRole.TESTER],
     ),
 }
