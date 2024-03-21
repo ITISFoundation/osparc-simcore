@@ -233,7 +233,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         alignX: "center"
       });
       this.__fieldOptsBtnMap[field.key] = fieldOptsBtn;
-      // populaten the button/menu when the it appears
+      // populate the button/menu when the it appears
       fieldOptsBtn.addListenerOnce("appear", () => {
         if (this.getStudy()) {
           this.__populateFieldOptionsMenu(optionsMenu, field);
