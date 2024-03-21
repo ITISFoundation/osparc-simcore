@@ -36,10 +36,19 @@ qx.Class.define("osparc.po.BaseView", {
       });
       box.getChildControl("frame").set({
         backgroundColor: "transparent",
-        marginTop: 10,
+        marginTop: 15,
         padding: 2
       });
       return box;
+    },
+
+    createHelpLabel: function(text) {
+      const label = new qx.ui.basic.Label(text).set({
+        font: "text-13",
+        rich: true,
+        alignX: "left"
+      });
+      return label;
     }
   }
 });
