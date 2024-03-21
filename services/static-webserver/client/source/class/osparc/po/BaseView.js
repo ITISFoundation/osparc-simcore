@@ -29,15 +29,15 @@ qx.Class.define("osparc.po.BaseView", {
   statics: {
     createGroupBox: function(title) {
       const box = new qx.ui.groupbox.GroupBox(title).set({
-        appearance: "settings-groupbox",
-        layout: new qx.ui.layout.VBox(5),
-        alignX: "center"
+        layout: new qx.ui.layout.VBox(5)
       });
       box.getChildControl("legend").set({
         font: "text-14"
       });
       box.getChildControl("frame").set({
-        backgroundColor: "transparent"
+        backgroundColor: "transparent",
+        marginTop: 10,
+        padding: 2
       });
       return box;
     }

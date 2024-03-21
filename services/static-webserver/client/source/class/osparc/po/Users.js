@@ -31,12 +31,10 @@ qx.Class.define("osparc.po.Users", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox());
           const respLabel = new qx.ui.basic.Label(this.tr("Found users:"));
           control.add(respLabel);
-          this._add(control, {
-            flex: 1
-          });
+          this._add(control);
           break;
         }
-        case "found-users":
+        case "found-users-container":
           control = new qx.ui.container.Scroll();
           this.getChildControl("found-users-layout").add(control);
           break;
@@ -46,7 +44,7 @@ qx.Class.define("osparc.po.Users", {
 
     _buildLayout: function() {
       this.getChildControl("search-users");
-      this.getChildControl("found-users");
+      this.getChildControl("found-users-container");
     },
 
     __searchUsers: function() {
@@ -77,7 +75,7 @@ qx.Class.define("osparc.po.Users", {
           return;
         }
         if (form.validate()) {
-          const foundUsersContainer = this.getChildControl("found-users");
+          const foundUsersContainer = this.getChildControl("found-users-container");
           osparc.utils.Utils.removeAllChildren(foundUsersContainer);
 
           searchBtn.setFetching(true);
@@ -102,8 +100,8 @@ qx.Class.define("osparc.po.Users", {
 
     __populateFoundUsersLayout: function(respData) {
       const usersRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "users-data");
-      const foundUsersLayout = this.getChildControl("found-users");
-      foundUsersLayout.add(usersRespViewer);
+      const foundUsersContainer = this.getChildControl("found-users-container");
+      foundUsersContainer.add(usersRespViewer);
     }
   }
 });
