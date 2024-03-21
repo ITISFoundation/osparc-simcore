@@ -73,9 +73,7 @@ qx.Class.define("osparc.po.Invitations", {
     __createInvitations: function() {
       const invitationGroupBox = this.self().createGroupBox(this.tr("Create invitation"));
 
-      const disclaimer = this.self().createHelpLabel(this.tr("There is no invitation required in this product/deployment.")).set({
-        textColor: "info"
-      });
+      const disclaimer = this.self().createHelpLabel(this.tr("There is no invitation required in this product/deployment."));
       disclaimer.exclude();
       const config = osparc.store.Store.getInstance().get("config");
       if ("invitation_required" in config && config["invitation_required"] === false) {
