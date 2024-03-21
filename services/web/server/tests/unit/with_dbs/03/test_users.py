@@ -343,7 +343,7 @@ async def test_search_and_pre_registration(
         "universityName",
     ],
 )
-def test_parse_model_from_request_form_data(
+def test_preuserprofile_parse_model_from_request_form_data(
     account_request_form: dict[str, Any],
     institution_key: str,
 ):
@@ -371,7 +371,9 @@ def test_parse_model_from_request_form_data(
     assert pre_user_profile.extras["comment"] == "extra comment"
 
 
-def test_parse_model_without_extras(account_request_form: dict[str, Any]):
+def test_preuserprofile_parse_model_without_extras(
+    account_request_form: dict[str, Any]
+):
     required = {
         f.alias or f.name for f in PreUserProfile.__fields__.values() if f.required
     }
@@ -379,8 +381,24 @@ def test_parse_model_without_extras(account_request_form: dict[str, Any]):
     assert not PreUserProfile(**data).extras
 
 
-def test_max_bytes_size_extras_limits(faker: Faker):
+def test_preuserprofile_max_bytes_size_extras_limits(faker: Faker):
     data = random_pre_registration_details(faker)
     data_size = sys.getsizeof(data["extras"])
 
     assert data_size < MAX_BYTES_SIZE_EXTRAS
+
+
+@pytest.mark.parametrize(
+    "given_name", ["PEDrO-luis", "pedro luis", "   pedro  LUiS   ", "pedro  lUiS   "]
+)
+def test_preuserprofile_pre_given_names(
+    given_name: str,
+    account_request_form: dict[str, Any],
+):
+    account_request_form["firstName"] = given_name
+    account_request_form["lastName"] = given_name
+
+    pre_user_profile = PreUserProfile(**account_request_form)
+    print(pre_user_profile.json(indent=1))
+    assert pre_user_profile.first_name in ["Pedro-Luis", "Pedro Luis"]
+    assert pre_user_profile.first_name == pre_user_profile.last_name
