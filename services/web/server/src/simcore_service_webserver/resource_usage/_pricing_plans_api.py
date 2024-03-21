@@ -1,7 +1,7 @@
 from aiohttp import web
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    PricingPlanGet,
     PricingUnitGet,
-    ServicePricingPlanGet,
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
@@ -15,8 +15,8 @@ async def get_default_service_pricing_plan(
     product_name: ProductName,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-) -> ServicePricingPlanGet:
-    data: ServicePricingPlanGet = (
+) -> PricingPlanGet:
+    data: PricingPlanGet = (
         await resource_tracker_client.get_default_service_pricing_plan(
             app=app,
             product_name=product_name,

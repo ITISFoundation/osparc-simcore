@@ -387,6 +387,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_PROJECTS": {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES"},
+                "WEBSERVER_LOGIN": {"LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"},
             },
             exclude_none=True,
         )
@@ -406,7 +407,7 @@ def setup_settings(app: web.Application) -> ApplicationSettings:
     return settings
 
 
-def get_settings(app: web.Application) -> ApplicationSettings:
+def get_application_settings(app: web.Application) -> ApplicationSettings:
     settings: ApplicationSettings = app[APP_SETTINGS_KEY]
     assert settings, "Forgot to setup plugin?"  # nosec
     return settings

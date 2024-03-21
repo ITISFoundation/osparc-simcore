@@ -21,6 +21,7 @@ class TaskProgress(BaseModel):
     defined as a float bound between 0.0 and 1.0
     """
 
+    task_id: TaskId | None = Field(default=None)
     message: ProgressMessage = Field(default="")
     percent: ProgressPercent = Field(default=0.0)  # type: ignore[assignment]
 
@@ -43,8 +44,8 @@ class TaskProgress(BaseModel):
         _logger.debug("Progress update: %s", f"{self}")
 
     @classmethod
-    def create(cls) -> "TaskProgress":
-        return cls.parse_obj({"message": "", "percent": 0.0})
+    def create(cls, task_id: TaskId | None = None) -> "TaskProgress":
+        return cls(task_id=task_id)
 
     @validator("percent")
     @classmethod

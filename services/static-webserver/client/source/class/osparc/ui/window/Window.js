@@ -47,7 +47,10 @@ qx.Class.define("osparc.ui.window.Window", {
     });
 
     const commandEsc = new qx.ui.command.Command("Esc");
-    commandEsc.addListener("execute", () => this.close());
+    commandEsc.addListener("execute", () => {
+      this.fireEvent("cancel");
+      this.close();
+    });
   },
 
   properties: {
@@ -55,6 +58,10 @@ qx.Class.define("osparc.ui.window.Window", {
       check: "Boolean",
       init: false
     }
+  },
+
+  events: {
+    "cancel": "qx.event.type.Event"
   },
 
   statics: {
@@ -107,6 +114,13 @@ qx.Class.define("osparc.ui.window.Window", {
       } else {
         this.base(arguments);
       }
+    },
+
+    moveItUp: function(up=100) {
+      setTimeout(() => {
+        const props = this.getLayoutProperties();
+        this.moveTo(props.left, Math.max(props.top-up, 0));
+      }, 2);
     }
   }
 });

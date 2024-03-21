@@ -5,7 +5,6 @@ services:
       - DASK_MONITORING_URL=tcp://dask-scheduler:8786
       - DASK_SCHEDULER_AUTH='{}'
   dask-sidecar:
-    dns: 8.8.8.8 # needed to access internet
     image: itisfoundation/dask-sidecar:master-github-latest
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
@@ -31,7 +30,6 @@ services:
           - "node.role==worker"
 
   dask-scheduler:
-    dns: 8.8.8.8 # needed to access internet
     image: itisfoundation/dask-sidecar:master-github-latest
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"

@@ -61,7 +61,8 @@
             "currentCostPerUnit": 50,
             "default": true
           }
-        ]
+        ],
+        "isActive": true
       }
     },
     "status_code": 200

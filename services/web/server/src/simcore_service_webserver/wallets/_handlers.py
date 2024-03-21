@@ -34,7 +34,7 @@ from ..payments.errors import (
     PaymentServiceUnavailableError,
     PaymentUniqueViolationError,
 )
-from ..products.errors import ProductPriceNotDefinedError
+from ..products.errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
 from ..security.decorators import permission_required
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
@@ -73,6 +73,9 @@ def handle_wallets_exceptions(handler: Handler):
 
         except WalletAccessForbiddenError as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
+
+        except BelowMinimumPaymentError as exc:
+            raise web.HTTPUnprocessableEntity(reason=f"{exc}") from exc
 
         except ProductPriceNotDefinedError as exc:
             raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR) from exc

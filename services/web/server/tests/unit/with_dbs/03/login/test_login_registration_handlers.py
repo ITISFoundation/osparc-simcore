@@ -178,6 +178,6 @@ async def test_request_an_account(
 
     # sent email?
     mimetext = mocked_send_email.call_args[1]["message"]
-    assert "account" in mimetext["Subject"]
+    assert "account" in mimetext["Subject"].lower()
     assert mimetext["From"] == product.support_email
     assert mimetext["To"] == product.support_email

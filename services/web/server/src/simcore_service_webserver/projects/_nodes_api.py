@@ -24,7 +24,7 @@ from pydantic import (
 )
 from servicelib.utils import logged_gather
 
-from ..application_settings import get_settings
+from ..application_settings import get_application_settings
 from ..storage.api import get_download_link, get_files_in_node_folder
 from .exceptions import ProjectStartsTooManyDynamicNodesError
 
@@ -51,7 +51,7 @@ def check_num_service_per_projects_limit(
     """
     raises ProjectStartsTooManyDynamicNodes if the user cannot start more services
     """
-    project_settings = get_settings(app).WEBSERVER_PROJECTS
+    project_settings = get_application_settings(app).WEBSERVER_PROJECTS
     assert project_settings  # nosec
     if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
         number_of_services >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES

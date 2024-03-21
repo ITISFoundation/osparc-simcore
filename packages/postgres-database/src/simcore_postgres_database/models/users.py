@@ -50,19 +50,16 @@ class UserRole(Enum):
         return NotImplemented
 
 
-class UserStatus(Enum):
-    """
-    pending: user registered but not confirmed
-    active: user is confirmed and can use the platform
-    expired: user is not authorized because it expired after a trial period
-    banned: user is not authorized
-    deleted: this account is marked for deletion
-    """
-
-    CONFIRMATION_PENDING = "PENDING"
+class UserStatus(str, Enum):
+    # This is a transition state. The user is registered but not confirmed. NOTE that state is optional depending on LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
+    CONFIRMATION_PENDING = "CONFIRMATION_PENDING"
+    # This user can now operate the platform
     ACTIVE = "ACTIVE"
+    # This user is inactive because it expired after a trial period
     EXPIRED = "EXPIRED"
+    # This user is inactive because he has been a bad boy
     BANNED = "BANNED"
+    # This user is inactive because it was marked for deletion
     DELETED = "DELETED"
 
 
@@ -101,7 +98,8 @@ users = sa.Table(
         "phone",
         sa.String(),
         nullable=True,  # since 2FA can be configured optional
-        doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication",
+        doc="Confirmed user phone used e.g. to send a code for a two-factor-authentication."
+        "NOTE: new policy (NK) is that the same phone can be reused therefore it does not has to be unique",
     ),
     sa.Column(
         "password_hash",
@@ -160,11 +158,6 @@ users = sa.Table(
     sa.PrimaryKeyConstraint("id", name="user_pkey"),
     sa.UniqueConstraint("name", name="user_name_ukey"),
     sa.UniqueConstraint("email", name="user_login_key"),
-    sa.UniqueConstraint(
-        "phone",
-        name="user_phone_unique_constraint",
-        # NOTE: that cannot use same phone for two user accounts
-    ),
 )
 
 

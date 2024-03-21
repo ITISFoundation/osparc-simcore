@@ -31,7 +31,7 @@ from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from settings_library.catalog import CatalogSettings
-from simcore_service_webserver.application_settings import get_settings
+from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -282,7 +282,7 @@ def disable_max_number_of_running_dynamic_nodes(
 @pytest.fixture
 def max_amount_of_auto_started_dyn_services(client: TestClient) -> int:
     assert client.app
-    projects_settings = get_settings(client.app).WEBSERVER_PROJECTS
+    projects_settings = get_application_settings(client.app).WEBSERVER_PROJECTS
     assert projects_settings
     return projects_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
 

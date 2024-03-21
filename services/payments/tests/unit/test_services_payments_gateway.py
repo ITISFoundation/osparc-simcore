@@ -8,12 +8,14 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
+from models_library.payments import UserInvoiceAddress
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from respx import MockRouter
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.payments_gateway import (
     InitPayment,
     InitPaymentMethod,
+    StripeTaxExempt,
 )
 from simcore_service_payments.services.payments_gateway import (
     PaymentsGatewayApi,
@@ -104,8 +106,13 @@ async def test_one_time_payment_workflow(
             credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
             user_name=faker.user_name(),
             user_email=faker.email(),
+            user_address=UserInvoiceAddress(country="CH"),
             wallet_name=faker.word(),
-        )
+            stripe_price_id=faker.word(),
+            stripe_tax_rate_id=faker.word(),
+            stripe_tax_exempt_value=StripeTaxExempt.none,
+        ),
+        payment_gateway_tax_feature_enabled=True,
     )
 
     # form url
@@ -179,8 +186,13 @@ async def test_payment_methods_workflow(
             credits=faker.pydecimal(positive=True, right_digits=2, left_digits=4),  # type: ignore
             user_name=faker.user_name(),
             user_email=faker.email(),
+            user_address=UserInvoiceAddress(country="CH"),
             wallet_name=faker.word(),
+            stripe_price_id=faker.word(),
+            stripe_tax_rate_id=faker.word(),
+            stripe_tax_exempt_value=StripeTaxExempt.none,
         ),
+        payment_gateway_tax_feature_enabled=True,
     )
     assert payment_with_payment_method.success
 

@@ -76,8 +76,11 @@ def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
     """
     envs = {}
     if envfile := request.config.getoption("--external-envfile"):
-        assert isinstance(envfile, Path)
         print("🚨 EXTERNAL `envfile` option detected. Loading", envfile, "...")
+
+        assert isinstance(envfile, Path)
+        assert envfile.is_file()
+
         envs = load_dotenv(envfile)
         assert "PAYMENTS_GATEWAY_API_SECRET" in envs
         assert "PAYMENTS_GATEWAY_URL" in envs

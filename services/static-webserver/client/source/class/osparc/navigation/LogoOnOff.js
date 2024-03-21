@@ -63,11 +63,7 @@ qx.Class.define("osparc.navigation.LogoOnOff", {
           break;
         }
         case "off-logo": {
-          control = new qx.ui.basic.Image("osparc/offline.svg").set({
-            width: 92,
-            height: 35,
-            scale: true
-          });
+          control = new qx.ui.basic.Image("osparc/offline.svg");
           const container = this.getChildControl("off-logo-container");
           container.add(control, {
             flex: 1
@@ -76,10 +72,6 @@ qx.Class.define("osparc.navigation.LogoOnOff", {
         }
         case "on-logo": {
           control = new osparc.ui.basic.LogoWPlatform();
-          control.setSize({
-            width: 100,
-            height: osparc.navigation.NavigationBar.HEIGHT
-          });
           control.setFont("text-9");
           this.add(control);
           break;

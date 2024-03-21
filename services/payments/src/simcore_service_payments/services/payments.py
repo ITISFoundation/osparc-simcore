@@ -21,6 +21,8 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentInitiated,
 )
+from models_library.payments import UserInvoiceAddress
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, PositiveInt
@@ -34,10 +36,16 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 
 from .._constants import RUT
+from ..core.settings import ApplicationSettings
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
 from ..models.db_to_api import to_payments_api_model
-from ..models.payments_gateway import InitPayment, PaymentInitiated
+from ..models.payments_gateway import (
+    COUNTRIES_WITH_VAT,
+    InitPayment,
+    PaymentInitiated,
+    StripeTaxExempt,
+)
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
 from .notifier import NotifierService
@@ -50,6 +58,7 @@ _logger = logging.getLogger()
 async def init_one_time_payment(
     gateway: PaymentsGatewayApi,
     repo: PaymentsTransactionsRepo,
+    settings: ApplicationSettings,
     *,
     amount_dollars: Decimal,
     target_credits: Decimal,
@@ -59,18 +68,30 @@ async def init_one_time_payment(
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    user_address: UserInvoiceAddress,
+    stripe_price_id: StripePriceID,
+    stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
     initiated_at = arrow.utcnow().datetime
 
-    init = await gateway.init_payment(
+    init: PaymentInitiated = await gateway.init_payment(
         payment=InitPayment(
             amount_dollars=amount_dollars,
             credits=target_credits,
             user_name=user_name,
             user_email=user_email,
+            user_address=user_address,
             wallet_name=wallet_name,
-        )
+            stripe_price_id=stripe_price_id,
+            stripe_tax_rate_id=stripe_tax_rate_id,
+            stripe_tax_exempt_value=(
+                StripeTaxExempt.none
+                if user_address.country in COUNTRIES_WITH_VAT
+                else StripeTaxExempt.reverse
+            ),
+        ),
+        payment_gateway_tax_feature_enabled=settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED,
     )
 
     submission_link = gateway.get_form_payment_url(init.payment_id)
@@ -196,6 +217,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
     notifier: NotifierService,
+    settings: ApplicationSettings,
     *,
     payment_method_id: PaymentMethodID,
     amount_dollars: Decimal,
@@ -206,6 +228,9 @@ async def pay_with_payment_method(  # noqa: PLR0913
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    user_address: UserInvoiceAddress,
+    stripe_price_id: StripePriceID,
+    stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> PaymentTransaction:
     initiated_at = arrow.utcnow().datetime
@@ -221,8 +246,17 @@ async def pay_with_payment_method(  # noqa: PLR0913
             credits=target_credits,
             user_name=user_name,
             user_email=user_email,
+            user_address=user_address,
             wallet_name=wallet_name,
+            stripe_price_id=stripe_price_id,
+            stripe_tax_rate_id=stripe_tax_rate_id,
+            stripe_tax_exempt_value=(
+                StripeTaxExempt.none
+                if user_address.country in COUNTRIES_WITH_VAT
+                else StripeTaxExempt.reverse
+            ),
         ),
+        payment_gateway_tax_feature_enabled=settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED,
     )
 
     payment_id = ack.payment_id
@@ -270,13 +304,14 @@ async def get_payments_page(
     repo: PaymentsTransactionsRepo,
     *,
     user_id: UserID,
+    product_name: ProductName,
     limit: PositiveInt | None = None,
     offset: PositiveInt | None = None,
 ) -> tuple[int, list[PaymentTransaction]]:
     """All payments associated to a user (i.e. including all the owned wallets)"""
 
     total_number_of_items, page = await repo.list_user_payment_transactions(
-        user_id=user_id, offset=offset, limit=limit
+        user_id=user_id, product_name=product_name, offset=offset, limit=limit
     )
 
     return total_number_of_items, [to_payments_api_model(t) for t in page]

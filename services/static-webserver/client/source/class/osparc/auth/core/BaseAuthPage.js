@@ -18,8 +18,7 @@
 /**
  * This is a basic Auth-Page with common functionality
  *
- *  - Fixed-size widget with header (title/logo), body and footer (buttons)
- *  - Positioned at the upper center of the root document's window
+ *  - Widget with title, form and buttons
  */
 qx.Class.define("osparc.auth.core.BaseAuthPage", {
   extend: qx.ui.container.Composite,
@@ -34,11 +33,9 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
   construct: function() {
     this.base(arguments);
 
-    // TODO: remove fix dimensions for the outer container?
     this.set({
       layout: new qx.ui.layout.VBox(20),
-      width: this.self().FORM_WIDTH,
-      height: 300
+      width: this.self().FORM_WIDTH
     });
 
     this._form = new qx.ui.form.Form();
@@ -59,7 +56,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
   },
 
   statics: {
-    FORM_WIDTH: 300
+    FORM_WIDTH: 310
   },
 
   /*
@@ -117,13 +114,11 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
      * Creates and adds an underlined title at the header
      */
     _addTitleHeader: function(txt) {
-      const lbl = new qx.ui.basic.Label(txt).set({
+      const title = new qx.ui.basic.Label(txt).set({
         font: "text-18",
         alignX: "center"
       });
-      this.add(lbl, {
-        flex:1
-      });
+      this.add(title);
     },
 
     _onAppear: function() {

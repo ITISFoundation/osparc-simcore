@@ -710,6 +710,20 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
+    getMinimumAmount: function() {
+      const defaultMinimum = 10;
+      return new Promise(resolve => {
+        osparc.data.Resources.fetch("creditPrice", "get")
+          .then(data => {
+            data && ("minPaymentAmountUsd" in data) ? resolve(data["minPaymentAmountUsd"]) : resolve(defaultMinimum)
+          })
+          .catch(err => {
+            console.error(err);
+            resolve(defaultMinimum);
+          });
+      });
+    },
+
     sortWallets: function(a, b) {
       const aAccessRights = a.getAccessRights();
       const bAccessRights = b.getAccessRights();

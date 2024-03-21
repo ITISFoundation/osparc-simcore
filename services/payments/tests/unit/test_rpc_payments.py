@@ -11,6 +11,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_payments.errors import PaymentNotFoundError
 from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
+from models_library.payments import UserInvoiceAddress
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -65,6 +66,9 @@ def init_payment_kwargs(faker: Faker) -> dict[str, Any]:
         "user_id": 1,
         "user_name": "user",
         "user_email": "user@email.com",
+        "user_address": UserInvoiceAddress(country="CH"),
+        "stripe_price_id": "stripe-price-id",
+        "stripe_tax_rate_id": "stripe-tax-rate-id",
     }
 
 

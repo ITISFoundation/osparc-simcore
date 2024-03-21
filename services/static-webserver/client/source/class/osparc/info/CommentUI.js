@@ -29,9 +29,7 @@ qx.Class.define("osparc.info.CommentUI", {
 
     const isMyComment = this.__isMyComment();
     const layout = new qx.ui.layout.Grid(12, 5);
-    layout.setColumnWidth(isMyComment ? 2 : 0, 32); // thumbnail
-    layout.setColumnFlex(isMyComment ? 0 : 2, 1); // message content
-    layout.setColumnAlign(isMyComment ? 0 : 2, isMyComment ? "right" : "left", "top"); // message content
+    layout.setColumnFlex(isMyComment ? 0 : 1, 1); // message content
     this._setLayout(layout);
     this.setPadding(5);
 
@@ -48,23 +46,28 @@ qx.Class.define("osparc.info.CommentUI", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "meta-data-grid": {
+          const layout = new qx.ui.layout.Grid(12, 5)
+          layout.setColumnWidth(this.__isMyComment() ? 1 : 0, 32); // thumbnail
+          control = new qx.ui.container.Composite(layout);
+          this._add(control, {
+            row: 0,
+            column: this.__isMyComment() ? 1 : 0
+          });
+          break;
+        }
         case "thumbnail":
           control = new qx.ui.basic.Image().set({
-            alignY: "middle",
             scale: true,
-            allowGrowX: true,
-            allowGrowY: true,
-            allowShrinkX: true,
-            allowShrinkY: true,
             maxWidth: 32,
             maxHeight: 32
           });
           control.getContentElement().setStyles({
             "border-radius": "8px"
           });
-          this._add(control, {
+          this.getChildControl("meta-data-grid").add(control, {
             row: 0,
-            column: this.__isMyComment() ? 2 : 0,
+            column: this.__isMyComment() ? 1 : 0,
             rowSpan: 2
           });
           break;
@@ -72,30 +75,30 @@ qx.Class.define("osparc.info.CommentUI", {
           control = new qx.ui.basic.Label().set({
             font: "text-14"
           });
-          this._add(control, {
+          this.getChildControl("meta-data-grid").add(control, {
             row: 0,
-            column: 1
+            column: this.__isMyComment() ? 0 : 1
           });
           break;
         case "last-updated":
           control = new qx.ui.basic.Label().set({
             font: "text-12"
           });
-          this._add(control, {
+          this.getChildControl("meta-data-grid").add(control, {
             row: 1,
-            column: 1
+            column: this.__isMyComment() ? 0 : 1
           });
           break;
         case "comment-content":
-          control = new qx.ui.basic.Label().set({
-            font: "text-13",
-            rich: true,
-            wrap: true
+          control = new osparc.ui.markdown.Markdown().set({
+            noMargin: true
+          });
+          control.getContentElement().setStyles({
+            "text-align": this.__isMyComment() ? "right" : "left"
           });
           this._add(control, {
             row: 0,
-            column: this.__isMyComment() ? 0 : 2,
-            rowSpan: 2
+            column: this.__isMyComment() ? 0 : 1
           });
           break;
       }

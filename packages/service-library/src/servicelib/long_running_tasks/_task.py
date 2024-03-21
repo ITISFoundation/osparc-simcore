@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Any, Protocol
 from uuid import uuid4
 
+from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from pydantic import PositiveFloat
 
 from ._errors import (
@@ -126,7 +127,8 @@ class TasksManager:
                 )
 
     @staticmethod
-    def _create_task_id(task_name: TaskName) -> str:
+    def create_task_id(task_name: TaskName) -> str:
+        assert len(task_name) > 0
         return f"{task_name}.{uuid4()}"
 
     def is_task_running(self, task_name: TaskName) -> bool:
@@ -158,11 +160,10 @@ class TasksManager:
         task: asyncio.Task,
         task_progress: TaskProgress,
         task_context: TaskContext,
+        task_id: TaskId,
         *,
         fire_and_forget: bool,
     ) -> TrackedTask:
-        task_id = self._create_task_id(task_name)
-
         if task_name not in self._tasks_groups:
             self._tasks_groups[task_name] = {}
 
@@ -315,8 +316,12 @@ class TasksManager:
         reraise_errors: bool = True,
     ) -> None:
         """cancels and removes task"""
+        logger.debug(
+            "Attempting to remove task with task_id=%s.", task_id, exc_info=True
+        )
         try:
             tracked_task = self._get_tracked_task(task_id, with_task_context)
+            logger.debug("Succeeded in getting task with task_id=%s", task_id)
         except TaskNotFoundError:
             if reraise_errors:
                 raise
@@ -325,8 +330,10 @@ class TasksManager:
             await self._cancel_tracked_task(
                 tracked_task.task, task_id, reraise_errors=reraise_errors
             )
+            logger.debug("Succeeded in canceling task with task_id=%s", task_id)
         finally:
             del self._tasks_groups[tracked_task.task_name][task_id]
+            logger.debug("Removed task_id=%s from tracked tasks", task_id)
 
     async def close(self) -> None:
         """
@@ -409,15 +416,16 @@ def start_task(
         ]
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
-    task_progress = TaskProgress.create()
+    task_id = tasks_manager.create_task_id(task_name=task_name)
+    task_progress = TaskProgress.create(task_id=task_id)
 
     # bind the task with progress 0 and 1
     async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
-        progress.update(message="starting", percent=0)
+        progress.update(message="starting", percent=ProgressPercent(0))
         try:
             return await handler(progress, **task_kwargs)
         finally:
-            progress.update(message="finished", percent=1)
+            progress.update(message="finished", percent=ProgressPercent(1))
 
     async_task = asyncio.create_task(
         _progress_task(task_progress, task), name=f"{task_name}"
@@ -429,6 +437,7 @@ def start_task(
         task_progress=task_progress,
         task_context=task_context or {},
         fire_and_forget=fire_and_forget,
+        task_id=task_id,
     )
 
     return tracked_task.task_id

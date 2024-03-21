@@ -8,6 +8,7 @@ import json
 from collections import Counter
 from html.parser import HTMLParser
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -21,13 +22,14 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from servicelib.aiohttp import status
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import safe_json_dumps
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver._resources import webserver_resources
 from simcore_service_webserver.email._core import _remove_comments, _render_template
 from simcore_service_webserver.email._handlers import EmailTestFailed, EmailTestPassed
 from simcore_service_webserver.email.plugin import setup_email
+from simcore_service_webserver.login._registration_handlers import _get_ipinfo
 
 
 @pytest.fixture
@@ -163,9 +165,18 @@ def test_render_templates(template_path: Path, faker: Faker):
     app = web.Application()
     setup_email(app)
 
-    request = make_mocked_request("GET", "/fake", app=app)
+    request = make_mocked_request(
+        "GET",
+        "/fake",
+        headers={
+            "x-real-ip": faker.ipv4(),
+            "x-forwarded-for": faker.ipv4(),
+            "peername": faker.ipv4(),
+        },
+        app=app,
+    )
 
-    fake_json_object = {
+    fake_request_form = {
         "name": faker.name(),
         "user": {
             "name": faker.name(),
@@ -183,15 +194,16 @@ def test_render_templates(template_path: Path, faker: Faker):
         template_path,
         context={
             "host": request.host,
-            "support_email": "support@company.com",
-            "name": "foo",
+            "support_email": faker.email(),
+            "name": "this is user.first_name",
             "code": "123",
             "reason": "no reason",
-            "link": "https://link.com",
-            "product": {"name": "foo"},
-            "dumps": functools.partial(json_dumps, indent=1),
-            "request_form": fake_json_object,
-            "ipinfo": fake_json_object,
+            "link": faker.url(),
+            "product": SimpleNamespace(name="foobar", display_name="Foo Bar"),
+            "retention_days": 30,
+            "dumps": functools.partial(safe_json_dumps, indent=1),
+            "request_form": fake_request_form,
+            "ipinfo": _get_ipinfo(request),
         },
     )
 

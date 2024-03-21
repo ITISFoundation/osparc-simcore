@@ -46,9 +46,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     HEIGHT: 700,
 
     popUpInWindow: function(moreOpts) {
-      const prjAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       // eslint-disable-next-line no-underscore-dangle
-      const title = qx.locale.Manager.tr(prjAlias + ` Details - ${moreOpts.__resourceData.name}`);
+      const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(moreOpts.__resourceData["resourceType"]);
+      // eslint-disable-next-line no-underscore-dangle
+      const title = `${resourceAlias} ${qx.locale.Manager.tr("Details")} - ${moreOpts.__resourceData.name}`
       return osparc.ui.window.Window.popUpInWindow(moreOpts, title, this.WIDTH, this.HEIGHT).set({
         maxHeight: 1000,
         layout: new qx.ui.layout.Grow(),
@@ -74,7 +75,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
   members: {
     __resourceData: null,
-    __toolbar: null,
     __tabsView: null,
     __dataPage: null,
     __permissionsPage: null,
@@ -84,41 +84,33 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __qualityPage: null,
     __servicesUpdatePage: null,
     __openButton: null,
-    __anyUpdatable: null,
     _services: null,
 
-    __addToolbar: function() {
-      const toolbar = this.__toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
+    __createToolbar: function() {
+      const toolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
         alignX: "right",
         alignY: "top"
       })).set({
         maxHeight: 40
       });
+      return toolbar;
+    },
 
+    __addOpenButton: function(page) {
       const resourceData = this.__resourceData;
+
+      const toolbar = this.__createToolbar();
+      page.addToHeader(toolbar);
 
       if (osparc.utils.Resources.isService(resourceData)) {
         const serviceVersionSelector = this.__createServiceVersionSelector();
         toolbar.add(serviceVersionSelector);
       }
 
-      this.__createOpenButton();
-      this.__handleServiceUpdatableCheck(resourceData.workbench);
-
-      return toolbar;
-    },
-
-    __createOpenButton: function() {
-      const openButton = this.__openButton = new qx.ui.form.Button(this.tr("Open")).set({
-        appearance: "form-button",
-        font: "text-14",
-        alignX: "right",
-        minWidth: 150,
-        maxWidth: 150,
-        height: 35,
-        center: true,
+      const openButton = this.__openButton = new osparc.ui.form.FetchButton(this.tr("Open")).set({
         enabled: true
       });
+      osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(openButton);
       osparc.utils.Utils.setIdToWidget(openButton, "openResource");
       const store = osparc.store.Store.getInstance();
       store.bind("currentStudy", openButton, "visibility", {
@@ -127,85 +119,88 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       this.bind("showOpenButton", openButton, "visibility", {
         converter: show => (store.getCurrentStudy() === null && show) ? "visible" : "excluded"
       });
+
+      openButton.addListener("execute", () => this.__openTapped());
+
+      toolbar.add(openButton);
     },
 
-    __handleServiceUpdatableCheck: function(workbench) {
-      const updatableServices = [];
-      this.__anyUpdatable = false;
-      for (const nodeId in workbench) {
-        const node = workbench[nodeId];
-        const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(this._services, node["key"], node["version"]);
-        if (latestCompatibleMetadata === null) {
-          osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
-        }
-        const isUpdatable = osparc.service.Utils.isUpdatable(node);
-        if (isUpdatable) {
-          this.__anyUpdatable = true;
-          updatableServices.push(nodeId);
-        }
+    __openTapped: function() {
+      if (this.__resourceData["resourceType"] !== "study") {
+        // Nothing to pre-check
+        this.__openResource();
+        return;
       }
-      if (this.__anyUpdatable) {
-        this.__confirmUpdate();
-      } else {
-        this.__openStudy();
-      }
-      this.__toolbar.add(this.__openButton);
-    },
-
-    __openStudy: function() {
-      this.__openButton.setLabel("Open");
-      this.__openButton.addListenerOnce("execute", () => {
-        switch (this.__resourceData["resourceType"]) {
-          case "study":
-            this.fireDataEvent("openStudy", this.__resourceData);
-            break;
-          case "template":
-            this.fireDataEvent("openTemplate", this.__resourceData);
-            break;
-          case "service":
-            this.fireDataEvent("openService", this.__resourceData);
-            break;
+      this.__openButton.setFetching(true);
+      const params = {
+        url: {
+          "studyId": this.__resourceData["uuid"]
         }
-      }, true);
+      };
+      osparc.data.Resources.getOne("studies", params)
+        .then(updatedStudyData => {
+          this.__openButton.setFetching(false);
+          const workbench = updatedStudyData.workbench;
+          const updatableServices = [];
+          let anyUpdatable = false;
+          for (const nodeId in workbench) {
+            const node = workbench[nodeId];
+            const latestCompatibleMetadata = osparc.service.Utils.getLatestCompatible(this._services, node["key"], node["version"]);
+            if (latestCompatibleMetadata === null) {
+              osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
+            }
+            const isUpdatable = osparc.service.Utils.isUpdatable(node);
+            if (isUpdatable) {
+              anyUpdatable = true;
+              updatableServices.push(nodeId);
+            }
+          }
+          if (anyUpdatable) {
+            this.__confirmUpdate();
+          } else {
+            this.__openResource();
+          }
+        })
+        .catch(() => this.__openButton.setFetching(false));
     },
 
     __confirmUpdate: function() {
-      this.__openButton.addListenerOnce("tap", () => {
-        const msg = this.tr("Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?");
-        const win = new osparc.dashboard.ResourceUpgradeHelper(msg).set({
-          primaryAction: "create",
-          secondaryAction: "primary"
-        });
-        win.center();
-        win.open();
-        win.addListenerOnce("close", () => {
-          if (win.getConfirmed()) {
-            this.__isUpdatable = false;
-            this.__openPage(this.__servicesUpdatePage);
-          } else {
-            this.__isUpdatable = false;
-            switch (this.__resourceData["resourceType"]) {
-              case "study":
-                this.fireDataEvent("openStudy", this.__resourceData);
-                break;
-              case "template":
-                this.fireDataEvent("openTemplate", this.__resourceData);
-                break;
-              case "service":
-                this.fireDataEvent("openService", this.__resourceData);
-                break;
-            }
-          }
-        });
-      }, this);
+      const msg = this.tr("Some of your services are outdated. Please update to the latest version for better performance.\n\nDo you want to update now?");
+      const win = new osparc.dashboard.ResourceUpgradeHelper(msg).set({
+        primaryAction: "create",
+        secondaryAction: "primary"
+      });
+      win.center();
+      win.open();
+      win.addListenerOnce("close", () => {
+        if (win.getConfirmed()) {
+          this.__openPage(this.__servicesUpdatePage);
+        } else {
+          this.__openResource();
+        }
+      });
+    },
+
+    __openResource: function() {
+      switch (this.__resourceData["resourceType"]) {
+        case "study":
+          this.fireDataEvent("openStudy", this.__resourceData);
+          break;
+        case "template":
+          this.fireDataEvent("openTemplate", this.__resourceData);
+          break;
+        case "service":
+          this.fireDataEvent("openService", this.__resourceData);
+          break;
+      }
     },
 
     __addTabPagesView: function() {
-      const detailsView = this.__tabsView = new qx.ui.tabview.TabView().set({
+      const tabsView = this.__tabsView = new qx.ui.tabview.TabView().set({
         barPosition: "left",
         contentPadding: 0
       });
-      this._add(detailsView, {
+      this._add(tabsView, {
         flex: 1
       });
 
@@ -247,7 +242,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __createServiceVersionSelector: function() {
-      const hBox = this.__serviceVersionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignY: "middle"
       }));
 
@@ -264,6 +259,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         .then(services => {
           const versions = osparc.service.Utils.getVersions(services, this.__resourceData["key"]);
           let selectedItem = null;
+
+          // first setSelection
           versions.reverse().forEach(version => {
             selectedItem = new qx.ui.form.ListItem(version);
             versionsBox.add(selectedItem);
@@ -271,38 +268,36 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
               versionsBox.setSelection([selectedItem]);
             }
           });
-        });
 
-      versionsBox.addListener("changeSelection", () => {
-        const selection = versionsBox.getSelection();
-        if (selection && selection.length) {
-          const serviceVersion = selection[0].getLabel();
-          if (serviceVersion !== this.__resourceData["version"]) {
-            store.getAllServices()
-              .then(services => {
+          // then listen to changes
+          versionsBox.addListener("changeSelection", () => {
+            const selection = versionsBox.getSelection();
+            if (selection && selection.length) {
+              const serviceVersion = selection[0].getLabel();
+              if (serviceVersion !== this.__resourceData["version"]) {
                 const serviceData = osparc.service.Utils.getFromObject(services, this.__resourceData["key"], serviceVersion);
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
                 this.__addPages();
-              });
-          }
-        }
-      }, this);
+              }
+            }
+          }, this);
+        });
 
       return hBox;
     },
 
     __addPages: function() {
-      const detailsView = this.__tabsView;
+      const tabsView = this.__tabsView;
 
       // keep selected page
-      const selection = detailsView.getSelection();
+      const selection = tabsView.getSelection();
       const selectedTabId = selection.length ? selection[0]["tabId"] : null;
 
       // removeAll
-      const pages = detailsView.getChildren().length;
+      const pages = tabsView.getChildren().length;
       for (let i=pages-1; i>=0; i--) {
-        detailsView.remove(detailsView.getChildren()[i]);
+        tabsView.remove(tabsView.getChildren()[i]);
       }
 
       // add Open service button
@@ -323,15 +318,15 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         if (pageCallee) {
           const page = pageCallee.call(this);
           if (page) {
-            detailsView.add(page);
+            tabsView.add(page);
           }
         }
       });
 
       if (selectedTabId) {
-        const pageFound = detailsView.getChildren().find(page => page.tabId === selectedTabId);
+        const pageFound = tabsView.getChildren().find(page => page.tabId === selectedTabId);
         if (pageFound) {
-          detailsView.setSelection([pageFound]);
+          tabsView.setSelection([pageFound]);
         }
       }
     },
@@ -370,12 +365,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       });
 
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(infoCard, {
-        flex: 1
-      });
+      this.__addOpenButton(page);
+      page.addToContent(infoCard);
       return page;
     },
 
@@ -394,19 +385,20 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       const billingSettings = new osparc.study.BillingSettings(resourceData);
       const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
       const billingScroll = new qx.ui.container.Scroll(billingSettings);
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(billingScroll, {
-        flex: 1
-      });
+      this.__addOpenButton(page);
+      page.addToContent(billingScroll);
       return page;
     },
 
     __getPreviewPage: function() {
       const resourceData = this.__resourceData;
-      if (osparc.utils.Resources.isService(resourceData)) {
+      if (
+        osparc.utils.Resources.isService(resourceData) ||
+        osparc.product.Utils.isProduct("s4llite") ||
+        osparc.product.Utils.isProduct("tis")
+      ) {
+        // there is no pipelining
         return null;
       }
 
@@ -415,13 +407,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const iconSrc = "@FontAwesome5Solid/eye/22";
       const preview = new osparc.study.StudyPreview(resourceData);
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(preview, {
-        flex: 1
-      });
-
+      this.__addOpenButton(page);
+      page.addToContent(preview);
       return page;
     },
 
@@ -435,23 +422,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Comments");
       const iconSrc = "@FontAwesome5Solid/comments/22";
 
-      const commentsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       const commentsList = new osparc.info.CommentsList(resourceData["uuid"]);
-      commentsLayout.add(commentsList);
+      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      this.__addOpenButton(page);
+      page.addToContent(commentsList);
       if (osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
         const addComment = new osparc.info.CommentAdd(resourceData["uuid"]);
         addComment.setPaddingLeft(10);
         addComment.addListener("commentAdded", () => commentsList.fetchComments());
-        commentsLayout.add(addComment);
+        page.addToFooter(addComment);
       }
-      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      const commentsScroll = new qx.ui.container.Scroll(commentsLayout);
-      page.add(commentsScroll, {
-        flex: 1
-      })
       return page;
     },
 
@@ -467,13 +447,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const studyDataManager = new osparc.widget.NodeDataManager(resourceData["uuid"]);
 
       const page = this.__dataPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(studyDataManager, {
-        flex: 1
-      });
-
+      this.__addOpenButton(page);
+      page.addToContent(studyDataManager);
       return page;
     },
 
@@ -509,13 +484,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         }, this);
       }
       const page = this.__permissionsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(permissionsView, {
-        flex: 1
-      });
-
+      this.__addOpenButton(page);
+      page.addToContent(permissionsView);
       return page;
     },
 
@@ -551,13 +521,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
 
       const page = this.__permissionsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(classifiers, {
-        flex: 1
-      });
-
+      this.__addOpenButton(page);
+      page.addToContent(classifiers);
       return page;
     },
 
@@ -584,13 +549,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         });
 
         const page = this.__qualityPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-        page.showLabelOnTab();
-        const toolBar = this.__addToolbar();
-        page.add(toolBar);
-        page.add(qualityEditor, {
-          flex: 1
-        });
-
+        this.__addOpenButton(page);
+        page.addToContent(qualityEditor);
         return page;
       }
       return null;
@@ -615,12 +575,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         this.fireDataEvent("updateStudy", updatedData);
       }, this);
       const page = this.__tagsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(tagManager, {
-        flex: 1
-      });
+      this.__addOpenButton(page);
+      page.addToContent(tagManager);
       return page;
     },
 
@@ -641,16 +597,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         } else if (osparc.utils.Resources.isTemplate(resourceData)) {
           this.fireDataEvent("updateTemplate", updatedData);
         }
-        this.__handleServiceUpdatableCheck(updatedData.workbench);
       });
 
       const page = this.__servicesUpdatePage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(servicesUpdate, {
-        flex: 1
-      });
+      this.__addOpenButton(page);
+      page.addToContent(servicesUpdate);
       return page;
     },
 
@@ -674,12 +625,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       });
 
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      page.showLabelOnTab();
-      const toolBar = this.__addToolbar();
-      page.add(toolBar);
-      page.add(servicesBootOpts, {
-        flex: 1
-      });
+      this.__addOpenButton(page);
+      page.addToContent(servicesBootOpts);
 
       if (osparc.utils.Resources.isStudy(resourceData)) {
         if (osparc.product.Utils.showDisableServiceAutoStart()) {
@@ -710,10 +657,13 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         saveAsTemplate.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
 
         const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-        page.showLabelOnTab();
-        page.add(saveAsTemplate, {
-          flex: 1
-        });
+        const publishTemplateButton = saveAsTemplate.getPublishTemplateButton();
+        osparc.dashboard.resources.pages.BasePage.decorateHeaderButton(publishTemplateButton);
+        const toolbar = this.__createToolbar();
+        toolbar.add(publishTemplateButton);
+        page.addToHeader(toolbar);
+        page.addToContent(saveAsTemplate);
+
         return page;
       }
       return null;

@@ -1,6 +1,7 @@
 import logging
 from collections import deque
-from typing import Any, Coroutine
+from collections.abc import Coroutine
+from typing import Any
 
 from aiohttp import web
 from models_library.errors import ErrorDict

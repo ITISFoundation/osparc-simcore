@@ -119,7 +119,7 @@ body:
         ```
         - [ ] Draft [release changelog](https://github.com/ITISFoundation/osparc-simcore/releases)
         - [ ] Announce maintenance ( ** ANNOUNCE AT LEAST 24 HOURS BEFORE ** )
-        - redis ``{"start": "2023-03-06T13:00:00.000Z", "end": "2023-03-06T15:00:00.000Z", "reason": "Release <vX.X.0>"}``
+        - redis add an entry in db `scheduled_maintenance` with key `maintenance` ``{"start": "2023-03-06T13:00:00.000Z", "end": "2023-03-06T15:00:00.000Z", "reason": "Release <vX.X.0>"}``. Note the time is in UTC, please adjust accordingly
             - [ ] aws
             - [ ] dalco
             - [ ] tip

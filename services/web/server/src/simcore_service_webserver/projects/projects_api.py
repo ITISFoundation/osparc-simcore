@@ -80,7 +80,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from simcore_postgres_database.webserver_models import ProjectType
 
-from ..application_settings import get_settings
+from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
@@ -106,7 +106,6 @@ from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
     PreferredWalletIdFrontendUserPreference,
     UserDefaultWalletNotFoundError,
-    UserInactivityThresholdFrontendUserPreference,
     get_frontend_user_preference,
 )
 from ..wallets import api as wallets_api
@@ -265,15 +264,15 @@ async def _get_default_pricing_and_hardware_info(
         service_key=ServiceKey(service_key),
         service_version=ServiceVersion(service_version),
     )
-    for unit in service_pricing_plan_get.pricing_units:
-        if unit.default:
-            return PricingAndHardwareInfoTuple(
-                service_pricing_plan_get.pricing_plan_id,
-                unit.pricing_unit_id,
-                unit.current_cost_per_unit_id,
-                unit.specific_info.aws_ec2_instances,
-            )
-
+    if service_pricing_plan_get.pricing_units:
+        for unit in service_pricing_plan_get.pricing_units:
+            if unit.default:
+                return PricingAndHardwareInfoTuple(
+                    service_pricing_plan_get.pricing_plan_id,
+                    unit.pricing_unit_id,
+                    unit.current_cost_per_unit_id,
+                    unit.specific_info.aws_ec2_instances,
+                )
     raise DefaultPricingUnitNotFoundError(
         project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}"
     )
@@ -441,7 +440,7 @@ async def _start_dynamic_service(
         # Get wallet/pricing/hardware information
         wallet_info, pricing_info, hardware_info = None, None, None
         product = products_api.get_current_product(request)
-        app_settings = get_settings(request.app)
+        app_settings = get_application_settings(request.app)
         if (
             product.is_payment_enabled
             and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
@@ -1554,23 +1553,16 @@ async def lock_with_notification(
 
 
 async def get_project_inactivity(
-    app: web.Application, project_id: ProjectID, user_id: UserID, product_name: str
+    app: web.Application, project_id: ProjectID
 ) -> GetProjectInactivityResponse:
-    preference = await get_frontend_user_preference(
-        app,
-        user_id=user_id,
-        product_name=product_name,
-        preference_class=UserInactivityThresholdFrontendUserPreference,
-    )
-
-    # preference not present in the DB, use the default value
-    if preference is None:
-        preference = UserInactivityThresholdFrontendUserPreference()
-
-    assert preference.value is not None  # nosec
-    max_inactivity_seconds: int = preference.value
-
+    project_settings: ProjectsSettings = get_plugin_settings(app)
     project_inactivity = await director_v2_api.get_project_inactivity(
-        app, project_id, max_inactivity_seconds
+        app,
+        project_id,
+        # NOTE: project is considered inactive if all services exposing an /inactivity
+        # endpoint were inactive since at least PROJECTS_INACTIVITY_INTERVAL
+        max_inactivity_seconds=int(
+            project_settings.PROJECTS_INACTIVITY_INTERVAL.total_seconds()
+        ),
     )
     return parse_obj_as(GetProjectInactivityResponse, project_inactivity)

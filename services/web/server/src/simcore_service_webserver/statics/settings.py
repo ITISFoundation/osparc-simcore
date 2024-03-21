@@ -4,6 +4,7 @@
 """
 from typing import Any, TypedDict
 
+import pycountry
 from aiohttp import web
 from models_library.utils.change_case import snake_to_camel
 from pydantic import AnyHttpUrl, Field, parse_obj_as
@@ -19,7 +20,7 @@ class ThirdPartyInfoDict(TypedDict):
     thumbnail: str
 
 
-THIRD_PARTY_REFERENCES = [
+_THIRD_PARTY_REFERENCES = [
     ThirdPartyInfoDict(
         name="adminer",
         version="4.8.1",
@@ -71,6 +72,19 @@ THIRD_PARTY_REFERENCES = [
 ]
 
 
+# NOTE: syncs info on countries with UI
+
+
+class CountryInfoDict(TypedDict):
+    name: str
+    alpha2: str
+
+
+class FrontEndInfoDict(TypedDict, total=True):
+    third_party_references: list[ThirdPartyInfoDict]
+    countries: list[CountryInfoDict]
+
+
 class FrontEndAppSettings(BaseCustomSettings):
     """
     Any settings to be transmitted to the front-end via statics goes here
@@ -83,7 +97,21 @@ class FrontEndAppSettings(BaseCustomSettings):
             exclude_none=True,
             by_alias=True,
         )
-        data["third_party_references"] = THIRD_PARTY_REFERENCES
+        data.update(
+            FrontEndInfoDict(
+                third_party_references=_THIRD_PARTY_REFERENCES,
+                countries=sorted(
+                    (
+                        CountryInfoDict(
+                            name=c.name,
+                            alpha2=c.alpha_2,
+                        )
+                        for c in pycountry.countries
+                    ),
+                    key=lambda i: i["name"],
+                ),
+            ),
+        )
 
         return {
             snake_to_camel(k.replace("WEBSERVER_", "").lower()): v

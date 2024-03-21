@@ -101,10 +101,10 @@ qx.Class.define("osparc.po.Invitations", {
 
       const extraCreditsInUsd = new qx.ui.form.Spinner().set({
         minimum: 0,
-        maximum: 199,
+        maximum: 1000,
         value: 100
       });
-      form.add(extraCreditsInUsd, this.tr("Welcome Credits (US$)"));
+      form.add(extraCreditsInUsd, this.tr("Welcome Credits (USD)"));
 
       const withExpiration = new qx.ui.form.CheckBox().set({
         value: false

@@ -54,7 +54,14 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const email = new qx.ui.form.TextField().set({
         required: true
       });
-      this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
+      if (
+        osparc.product.Utils.isProduct("s4lacad") ||
+        osparc.product.Utils.isProduct("s4ldesktopacad")
+      ) {
+        this._form.add(email, this.tr("University Email"), qx.util.Validate.email(), "email");
+      } else {
+        this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
+      }
 
       const phone = new qx.ui.form.TextField();
       this._form.add(phone, this.tr("Phone Number"), null, "phone");
@@ -75,46 +82,84 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const address = new qx.ui.form.TextField().set({
         required: true
       });
+      doubleSpaced.push(address);
       this._form.add(address, this.tr("Address"), null, "address");
 
-      const country = new qx.ui.form.TextField().set({
+      const city = new qx.ui.form.TextField().set({
         required: true
       });
+      this._form.add(city, this.tr("City"), null, "city");
+
+      const postalCode = new qx.ui.form.TextField().set({
+        required: true
+      });
+      this._form.add(postalCode, this.tr("Postal code"), null, "postalCode");
+
+      const country = new qx.ui.form.SelectBox().set({
+        required: true
+      });
+      doubleSpaced.push(country);
+      const countries = osparc.store.StaticInfo.getInstance().getCountries();
+      countries.forEach(c => {
+        const cItem = new qx.ui.form.ListItem(c.name, null, c.alpha2).set({
+          rich: true
+        });
+        country.add(cItem);
+      })
+      fetch("https://ipapi.co/json")
+        .then(res => res.json())
+        .then(data => {
+          const countryFound = country.getSelectables().find(c => c.getModel().toUpperCase() === data.country_code.toUpperCase());
+          if (countryFound) {
+            country.setSelection([countryFound])
+          }
+        });
       this._form.add(country, this.tr("Country"), null, "country");
 
       const application = new qx.ui.form.SelectBox();
       [{
-        id: "Antenna_Design",
-        label: "Antenna Design"
+        id: "Antenna_Design_for_Wireless_Communication",
+        label: "Antenna Design for Wireless Communication"
       }, {
-        id: "MRI_System_Design_and_Optimization",
-        label: "MRI System Design and Optimization"
+        id: "Bioelectronics,_Electroceuticals_and_Neuroprosthetics",
+        label: "Bioelectronics, Electroceuticals & Neuroprosthetics"
       }, {
-        id: "MRI_Implant_Safety",
-        label: "MRI Implant Safety"
+        id: "Safety_and_Efficacy_Assessment",
+        label: "Safety & Efficacy Assessment"
       }, {
-        id: "MRI_Safety",
-        label: "MRI Safety"
+        id: "Exposure_and_Compliance",
+        label: "Exposure & Compliance"
       }, {
         id: "Focused_Ultrasound",
         label: "Focused Ultrasound"
       }, {
-        id: "EM-induced_Neuronal_Dynamics",
-        label: "EM-induced Neuronal Dynamics"
+        id: "In_Silico_Trials",
+        label: "In <i>Silico</i> Trials"
+      }, {
+        id: "Implant_Design",
+        label: "Implant Design"
+      }, {
+        id: "Magnetic_Resonance_Imaging",
+        label: "Magnetic Resonance Imaging"
+      }, {
+        id: "Neurostimulation",
+        label: "Neurostimulation"
+      }, {
+        id: "Personalized_Medicine",
+        label: "Personalized Medicine"
       }, {
         id: "Thermal_Therapies",
         label: "Thermal Therapies"
       }, {
-        id: "Wireless_Body_Area_Networks",
-        label: "Wireless Body Area Networks"
+        id: "Wireless_Power_Transfer_Systems",
+        label: "Wireless Power Transfer Systems"
       }, {
-        id: "Wireless_Power_Transfer",
-        label: "Wireless Power Transfer"
-      }, {
-        id: "Other",
-        label: "Other (please specify below)"
+        id: "Vascular_Flow_and_Perfusion",
+        label: "Vascular Flow & Perfusion"
       }].forEach(appData => {
-        const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id);
+        const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id).set({
+          rich: true
+        });
         application.add(lItem);
       });
       doubleSpaced.push(application);
@@ -139,7 +184,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         label: "Social Media"
       }, {
         id: "Other",
-        label: "Other (please specify below)"
+        label: "Other"
       }].forEach(hearData => {
         const lItem = new qx.ui.form.ListItem(hearData.label, null, hearData.id);
         hear.add(lItem);
@@ -147,24 +192,13 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       doubleSpaced.push(hear);
       this._form.add(hear, this.tr("How did you hear about us?"), null, "hear");
 
-      const message = new qx.ui.form.TextField();
-      doubleSpaced.push(message);
-      this._form.add(message, this.tr("Message"), null, "message");
-
-      // const formRenderer = new qx.ui.form.renderer.Single(this._form);
-      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
-      this.add(formRenderer);
-
-      // buttons and eula links
-      const grp = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
-      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-
+      // eula links
       const color = qx.theme.manager.Color.getInstance().resolve("text");
       const ppText = `I acknowledge that data will be processed in accordance with <a href='https://sim4life.swiss/privacy' style='color: ${color}' target='_blank''>our privacy policy</a>`;
       const privacyPolicy = new qx.ui.form.CheckBox().set({
         required: true,
         value: false
-      })
+      });
       doubleSpaced.push(privacyPolicy);
       this._form.add(privacyPolicy, ppText, null, "privacyPolicy")
 
@@ -172,10 +206,21 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const eula = new qx.ui.form.CheckBox().set({
         required: true,
         value: false
-      })
+      });
       doubleSpaced.push(eula);
-      this._form.add(eula, eulaText, null, "eula")
+      this._form.add(eula, eulaText, null, "eula");
 
+      // const formRenderer = new qx.ui.form.renderer.Single(this._form);
+      const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
+      const scrollView = new qx.ui.container.Scroll();
+      scrollView.add(formRenderer);
+      this.add(scrollView, {
+        flex: 1
+      });
+
+      // buttons
+      const grp = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+      const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const submitBtn = this.__requestButton = new qx.ui.form.Button(this.tr("Request")).set({
         center: true,
         appearance: "strong-button"

@@ -85,6 +85,7 @@ def _compose_mime(
     sender: str,
     recipient: str,
     subject: str,
+    reply_to: str | None = None,
 ) -> None:
     # SEE required fields https://www.rfc-editor.org/rfc/rfc5322#section-3.6
     message["From"] = sender
@@ -92,6 +93,8 @@ def _compose_mime(
     message["Subject"] = subject
     message["Date"] = formatdate()
     message["Message-ID"] = make_msgid(domain=settings.SMTP_HOST)
+    if reply_to:
+        message["Reply-To"] = reply_to
 
 
 class SMTPServerInfo(TypedDict):
@@ -119,6 +122,7 @@ async def _send_email(
     recipient: str,
     subject: str,
     body: str,
+    reply_to: str | None = None,
 ) -> MIMEMessage:
     """
     Sends an email with a body/subject marked as html
@@ -130,6 +134,7 @@ async def _send_email(
         sender=sender,
         recipient=recipient,
         subject=subject,
+        reply_to=reply_to,
     )
     await _do_send_mail(settings=settings, message=message)
     return message
@@ -148,6 +153,7 @@ async def _send_email_with_attachements(
     subject: str,
     body: str,
     attachments: list[AttachmentTuple],
+    reply_to: str | None = None,
 ) -> MIMEMessage:
     """
     Sends an email with a body/subject marked as html with file attachement/s
@@ -161,6 +167,7 @@ async def _send_email_with_attachements(
         sender=sender,
         recipient=recipient,
         subject=subject,
+        reply_to=reply_to,
     )
     message.attach(MIMEText(body, "html"))
 
@@ -222,6 +229,7 @@ async def send_email_from_template(
     template: Path,
     context: Mapping[str, Any],
     attachments: list[AttachmentTuple] | None = None,
+    reply_to: str | None = None,
 ):
     """Render template in context and send email w/ or w/o attachments"""
     settings: SMTPSettings = get_plugin_settings(request.app)
@@ -235,6 +243,7 @@ async def send_email_from_template(
             subject=subject,
             body=body,
             attachments=attachments,
+            reply_to=reply_to,
         )
 
     return await _send_email(
@@ -243,4 +252,5 @@ async def send_email_from_template(
         recipient=to,
         subject=subject,
         body=body,
+        reply_to=reply_to,
     )
