@@ -128,10 +128,14 @@ services:
         constraints:
           - "node.role==manager"
 
+  prometheus:
+    image: prom/prometheus:v2.47.2
+
 volumes:
   computational_shared_data:
     name: computational_shared_data
   redis-data:
+  prometheus_data:
 
 
 secrets:
