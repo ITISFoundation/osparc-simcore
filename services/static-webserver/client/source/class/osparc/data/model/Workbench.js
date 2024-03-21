@@ -360,7 +360,15 @@ qx.Class.define("osparc.data.model.Workbench", {
           // downstream nodes might have started downloading file picker's output.
           // show feedback to the user
           const downstreamNodes = this.__getDownstreamNodes(node);
-          downstreamNodes.forEach(downstreamNode => downstreamNode.retrieveInputs("input_1"));
+          downstreamNodes.forEach(downstreamNode => {
+            downstreamNode.getPortIds().forEach(portId => {
+              const link = downstreamNode.getLink(portId);
+              if (link["nodeUuid"] === node.getNodeId() && link["output"] === "outFile") {
+                // connected to file picker's output
+                downstreamNode.retrieveInputs(portId);
+              }
+            });
+          });
         }, this);
       }
     },
