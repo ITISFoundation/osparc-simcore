@@ -48,7 +48,7 @@ from ..utils.rabbitmq import post_autoscaling_status_message
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
 from .ec2 import get_ec2_client
-from .instrumentation import get_instrumentation
+from .instrumentation import get_instrumentation, has_instrumentation
 
 _logger = logging.getLogger(__name__)
 
@@ -647,8 +647,15 @@ async def _start_instances(
             last_issue = f"{r}"
         elif isinstance(r, list):
             new_pending_instances.extend(r)
+            if has_instrumentation(app):
+                instrumentation = get_instrumentation(app)
+                for instance_data in r:
+                    instrumentation.instance_started(instance_data.type)
         else:
             new_pending_instances.append(r)
+            if has_instrumentation(app):
+                instrumentation = get_instrumentation(app)
+                instrumentation.instance_terminated(r.type)
 
     log_message = (
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"
@@ -948,7 +955,8 @@ async def _notify_autoscaling_status(
         await post_autoscaling_status_message(
             app, cluster, total_resources, used_resources
         )
-        get_instrumentation(app).update_from_cluster(cluster)
+        if has_instrumentation(app):
+            get_instrumentation(app).update_from_cluster(cluster)
 
 
 async def auto_scale_cluster(
