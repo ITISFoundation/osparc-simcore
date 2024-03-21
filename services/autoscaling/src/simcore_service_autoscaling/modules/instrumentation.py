@@ -118,7 +118,7 @@ def get_instrumentation(app: FastAPI) -> AutoscalingInstrumentation:
         raise ConfigurationError(
             msg="Instrumentation not setup. Please check the configuration."
         )
-    return cast(AutoscalingInstrumentation, app.state.insrumentation)
+    return cast(AutoscalingInstrumentation, app.state.instrumentation)
 
 
 def has_instrumentation(app: FastAPI) -> bool:
