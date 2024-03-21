@@ -7,7 +7,7 @@ from uuid import uuid4
 import aiodocker
 import pytest
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    ServicePricingPlanGet,
+    PricingPlanGet,
 )
 from models_library.projects_networks import ProjectsNetworks
 from models_library.services_resources import (
@@ -81,8 +81,8 @@ def service_resources() -> ServiceResourcesDict:
 @pytest.fixture
 def mock_resource_usage_tracker(mocker: MockerFixture) -> None:
     base_module = "simcore_service_director_v2.modules.resource_usage_tracker_client"
-    service_pricing_plan = ServicePricingPlanGet.parse_obj(
-        ServicePricingPlanGet.Config.schema_extra["examples"][1]
+    service_pricing_plan = PricingPlanGet.parse_obj(
+        PricingPlanGet.Config.schema_extra["examples"][1]
     )
     for unit in service_pricing_plan.pricing_units:
         unit.specific_info.aws_ec2_instances.clear()

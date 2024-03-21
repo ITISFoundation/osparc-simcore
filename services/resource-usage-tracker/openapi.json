@@ -282,7 +282,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServicePricingPlanGet"
+                  "$ref": "#/components/schemas/PricingPlanGet"
                 }
               }
             }
@@ -552,6 +552,58 @@
         "type": "string",
         "description": "An enumeration."
       },
+      "PricingPlanGet": {
+        "title": "PricingPlanGet",
+        "required": [
+          "pricing_plan_id",
+          "display_name",
+          "description",
+          "classification",
+          "created_at",
+          "pricing_plan_key",
+          "is_active"
+        ],
+        "type": "object",
+        "properties": {
+          "pricing_plan_id": {
+            "title": "Pricing Plan Id",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "minimum": 0
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "classification": {
+            "$ref": "#/components/schemas/PricingPlanClassification"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "pricing_plan_key": {
+            "title": "Pricing Plan Key",
+            "type": "string"
+          },
+          "pricing_units": {
+            "title": "Pricing Units",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PricingUnitGet"
+            }
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          }
+        }
+      },
       "PricingUnitGet": {
         "title": "PricingUnitGet",
         "required": [
@@ -595,54 +647,6 @@
           },
           "specific_info": {
             "$ref": "#/components/schemas/HardwareInfo"
-          }
-        }
-      },
-      "ServicePricingPlanGet": {
-        "title": "ServicePricingPlanGet",
-        "required": [
-          "pricing_plan_id",
-          "display_name",
-          "description",
-          "classification",
-          "created_at",
-          "pricing_plan_key",
-          "pricing_units"
-        ],
-        "type": "object",
-        "properties": {
-          "pricing_plan_id": {
-            "title": "Pricing Plan Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "classification": {
-            "$ref": "#/components/schemas/PricingPlanClassification"
-          },
-          "created_at": {
-            "title": "Created At",
-            "type": "string",
-            "format": "date-time"
-          },
-          "pricing_plan_key": {
-            "title": "Pricing Plan Key",
-            "type": "string"
-          },
-          "pricing_units": {
-            "title": "Pricing Units",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PricingUnitGet"
-            }
           }
         }
       },
