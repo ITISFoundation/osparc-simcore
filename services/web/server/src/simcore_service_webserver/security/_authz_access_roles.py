@@ -89,6 +89,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
         inherits=[UserRole.USER],
     ),
     UserRole.PRODUCT_OWNER: PermissionDict(
+        # NOTE: do not forget to add tags=["po"] to this entrypoint
         can=[
             "product.details.*",
             "product.invitations.create",
