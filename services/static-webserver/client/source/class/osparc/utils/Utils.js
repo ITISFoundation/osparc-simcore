@@ -928,8 +928,8 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     removeAllChildren: function(container) {
-      const pages = container.getChildren().length;
-      for (let i=pages-1; i>=0; i--) {
+      const nChildren = container.getChildren().length;
+      for (let i=nChildren-1; i>=0; i--) {
         container.remove(container.getChildren()[i]);
       }
     }
