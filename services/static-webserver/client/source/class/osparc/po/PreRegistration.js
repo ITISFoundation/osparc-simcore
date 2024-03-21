@@ -64,12 +64,12 @@ qx.Class.define("osparc.po.PreRegistration", {
     },
 
     __searchPreRegistration: function() {
-      const _group_box = this.self().createGroupBox(this.tr("Pre-Registration"));
-      const _form = this.__preRegistrationForm();
-      const _formRenderer = new qx.ui.form.renderer.Single(_form);
-      _group_box.add(_formRenderer);
+      const groupBox = this.self().createGroupBox(this.tr("Pre-Registration"));
+      const form = this.__preRegistrationForm();
+      const formRenderer = new qx.ui.form.renderer.Single(form);
+      groupBox.add(formRenderer);
 
-      return _group_box;
+      return groupBox;
     },
 
     __preRegistrationForm: function() {
@@ -101,8 +101,8 @@ qx.Class.define("osparc.po.PreRegistration", {
           submitBtn.setFetching(true);
           osparc.data.Resources.fetch("users", "preRegister", params)
             .then(data => {
-              const _layout = this.__preRegistrationLayout = this.__createPreRegistrationLayout(data);
-              this._add(_layout);
+              const layout = this.__preRegistrationLayout = this.__createPreRegistrationLayout(data);
+              this._add(layout);
             })
             .catch(err => {
               console.error(err);
