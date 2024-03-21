@@ -17,37 +17,9 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.po.Users", {
-  extend: qx.ui.core.Widget,
-
-  construct: function() {
-    this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.VBox(10));
-
-    this.__buildLayout();
-  },
-
-  statics: {
-    createGroupBox: function(title) {
-      const box = new qx.ui.groupbox.GroupBox(title).set({
-        appearance: "settings-groupbox",
-        layout: new qx.ui.layout.VBox(5),
-        alignX: "center"
-      });
-      box.getChildControl("legend").set({
-        font: "text-14"
-      });
-      box.getChildControl("frame").set({
-        backgroundColor: "transparent"
-      });
-      return box;
-    },
-
-  },
+  extend: osparc.po.BaseView,
 
   members: {
-    __foundUsersLayout: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -55,16 +27,31 @@ qx.Class.define("osparc.po.Users", {
           control = this.__searchUsers();
           this._add(control);
           break;
+        case "found-users-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+          const respLabel = new qx.ui.basic.Label(this.tr("Found users:"));
+          control.add(respLabel);
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        }
+        case "found-users":
+          control = new qx.ui.container.Scroll();
+          this.getChildControl("found-users-layout").add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
-      this._createChildControlImpl("search-users");
+    _buildLayout: function() {
+      this.getChildControl("search-users");
+      this.getChildControl("found-users");
     },
 
     __searchUsers: function() {
-      const usersGroupBox = this.self().createGroupBox(this.tr("Search"));
+      const usersGroupBox = osparc.po.BaseView.createGroupBox(this.tr("Search"));
+
       const searchUsersForm = this.__searchUsersForm();
       const form = new qx.ui.form.renderer.Single(searchUsersForm);
       usersGroupBox.add(form);
@@ -90,21 +77,17 @@ qx.Class.define("osparc.po.Users", {
           return;
         }
         if (form.validate()) {
-          if (this.__foundUsersLayout) {
-            this._remove(this.__foundUsersLayout);
-          }
+          const foundUsersContainer = this.getChildControl("found-users");
+          osparc.utils.Utils.removeAllChildren(foundUsersContainer);
+
+          searchBtn.setFetching(true);
           const params = {
-            url:{
+            url: {
               email: userEmail.getValue()
             }
           };
-
-          searchBtn.setFetching(true);
           osparc.data.Resources.fetch("users", "search", params)
-            .then(data => {
-              const foundUsersLayout = this.__foundUsersLayout = this.__createFoundUsersLayout(data);
-              this._add(foundUsersLayout);
-            })
+            .then(data => this.__populateFoundUsersLayout(data))
             .catch(err => {
               console.error(err);
               osparc.FlashMessenger.logAs(err.message, "ERROR");
@@ -117,23 +100,10 @@ qx.Class.define("osparc.po.Users", {
       return form;
     },
 
-    __createFoundUsersLayout: function(respData) {
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
-
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignY: "middle"
-      }));
-      vBox.add(hBox);
-
-      const respLabel = new qx.ui.basic.Label(this.tr("Found users:"));
-      vBox.add(respLabel);
-
+    __populateFoundUsersLayout: function(respData) {
       const usersRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "users-data");
-      const container = new qx.ui.container.Scroll();
-      container.add(usersRespViewer);
-      vBox.add(container);
-
-      return vBox;
+      const foundUsersLayout = this.getChildControl("found-users");
+      foundUsersLayout.add(usersRespViewer);
     }
   }
 });
