@@ -124,7 +124,7 @@ qx.Class.define("osparc.po.PreRegistration", {
       }));
       vBox.add(hBox);
 
-      const respLabel = new qx.ui.basic.Label(this.tr("Pre-Registration"));
+      const respLabel = new qx.ui.basic.Label(this.tr("Pre-Registered as:"));
       vBox.add(respLabel);
 
       const preregistrationRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "preregistration-data");
