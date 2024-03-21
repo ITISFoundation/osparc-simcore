@@ -365,7 +365,10 @@ qx.Class.define("osparc.data.model.Workbench", {
               const link = downstreamNode.getLink(portId);
               if (link && link["nodeUuid"] === node.getNodeId() && link["output"] === "outFile") {
                 // connected to file picker's output
-                downstreamNode.retrieveInputs(portId);
+                setTimeout(() => {
+                  // start retrieving state after 2"
+                  downstreamNode.retrieveInputs(portId);
+                }, 2000);
               }
             });
           });
