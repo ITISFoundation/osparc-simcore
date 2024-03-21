@@ -39,6 +39,9 @@ qx.Class.define("osparc.po.POCenter", {
     const usersPage = this.__getUsersPage();
     tabViews.add(usersPage);
 
+    const preRegistration = this.__getPreRegistrationPage();
+    tabViews.add(preRegistration);
+
     const invitationsPage = this.__getInvitationsPage();
     tabViews.add(invitationsPage);
 
@@ -64,6 +67,17 @@ qx.Class.define("osparc.po.POCenter", {
       return page;
     },
 
+    __getPreRegistrationPage: function() {
+      const title = this.tr("PreRegistration");
+      const iconSrc = "@FontAwesome5Solid/address-card/22";
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      const preRegistration = new osparc.po.PreRegistration();
+      preRegistration.set({
+        margin: 10
+      });
+      page.add(preRegistration);
+      return page;
+    },
 
     __getInvitationsPage: function() {
       const title = this.tr("Invitations");
