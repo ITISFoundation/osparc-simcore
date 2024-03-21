@@ -655,7 +655,7 @@ async def _start_instances(
             new_pending_instances.append(r)
             if has_instrumentation(app):
                 instrumentation = get_instrumentation(app)
-                instrumentation.instance_terminated(r.type)
+                instrumentation.instance_started(r.type)
 
     log_message = (
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"
@@ -805,6 +805,10 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
             "EC2 terminated: '%s'",
             f"{[i.node.Description.Hostname for i in terminateable_instances if i.node.Description]}",
         )
+        if has_instrumentation(app):
+            instrumentation = get_instrumentation(app)
+            for i in terminateable_instances:
+                instrumentation.instance_terminated(i.ec2_instance.type)
         # since these nodes are being terminated, remove them from the swarm
 
         await utils_docker.remove_nodes(
