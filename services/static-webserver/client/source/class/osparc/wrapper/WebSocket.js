@@ -113,8 +113,8 @@ qx.Class.define("osparc.wrapper.WebSocket", {
       init: 500,
       check: "Number"
     },
-    /** Max reconnection attemps */
-    maxReconnectionAttemps: {
+    /** Max reconnection attempts */
+    maxReconnectionAttempts: {
       nullable: false,
       init: 1000,
       check: "Number"
