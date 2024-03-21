@@ -48,6 +48,7 @@ from ..utils.rabbitmq import post_autoscaling_status_message
 from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
 from .ec2 import get_ec2_client
+from .instrumentation import get_instrumentation
 
 _logger = logging.getLogger(__name__)
 
@@ -947,6 +948,7 @@ async def _notify_autoscaling_status(
         await post_autoscaling_status_message(
             app, cluster, total_resources, used_resources
         )
+        get_instrumentation(app).update_from_cluster(cluster)
 
 
 async def auto_scale_cluster(
