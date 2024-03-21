@@ -4,6 +4,15 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
+aiohttp==3.8.5
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   pytest-aiohttp
+aiosignal==1.3.1
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 alembic==1.8.1
     # via
     #   -c requirements/_base.txt
@@ -12,9 +21,14 @@ anyio==3.6.2
     # via
     #   -c requirements/_base.txt
     #   httpcore
+async-timeout==4.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 attrs==21.4.0
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   jsonschema
     #   pytest-docker
 certifi==2023.7.22
@@ -27,21 +41,25 @@ certifi==2023.7.22
 charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   requests
 click==8.1.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-coverage==7.4.1
-    # via
-    #   coverage
-    #   pytest-cov
-docker==7.0.0
+coverage==7.3.2
+    # via pytest-cov
+docker==6.1.3
     # via -r requirements/_test.in
-exceptiongroup==1.2.0
+exceptiongroup==1.1.3
     # via pytest
-faker==23.2.1
+faker==19.13.0
     # via -r requirements/_test.in
+frozenlist==1.3.3
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   aiosignal
 greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
@@ -65,6 +83,7 @@ idna==2.10
     #   anyio
     #   httpx
     #   requests
+    #   yarl
 iniconfig==2.0.0
     # via pytest
 jsonschema==3.2.0
@@ -80,7 +99,12 @@ markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
-mypy==1.8.0
+multidict==6.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   yarl
+mypy==1.6.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -89,7 +113,7 @@ packaging==23.1
     #   -c requirements/_base.txt
     #   docker
     #   pytest
-pluggy==1.4.0
+pluggy==1.3.0
     # via pytest
 ptvsd==4.3.2
     # via -r requirements/_test.in
@@ -99,27 +123,28 @@ pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==8.0.1
+pytest==7.4.3
     # via
     #   -r requirements/_test.in
+    #   pytest-aiohttp
     #   pytest-asyncio
     #   pytest-benchmark
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
+pytest-aiohttp==1.0.5
+    # via -r requirements/_test.in
 pytest-asyncio==0.21.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+    # via pytest-aiohttp
 pytest-benchmark==4.0.0
     # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-docker==3.1.1
+pytest-docker==2.0.1
     # via -r requirements/_test.in
 pytest-mock==3.12.0
     # via -r requirements/_test.in
-pytest-runner==6.0.1
+pytest-runner==6.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
@@ -146,7 +171,7 @@ sqlalchemy==1.4.47
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
-sqlalchemy2-stubs==0.0.2a38
+sqlalchemy2-stubs==0.0.2a36
     # via sqlalchemy
 tomli==2.0.1
     # via
@@ -158,11 +183,17 @@ typing-extensions==4.3.0
     #   -c requirements/_base.txt
     #   mypy
     #   sqlalchemy2-stubs
-urllib3==2.2.1
+urllib3==2.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests
+websocket-client==1.6.4
+    # via docker
+yarl==1.9.2
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

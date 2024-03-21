@@ -43,19 +43,19 @@ aws-sam-translator==1.55.0
     #   cfn-lint
 aws-xray-sdk==2.12.1
     # via moto
-boto3==1.34.44
+boto3==1.29.2
     # via
     #   aws-sam-translator
     #   moto
-boto3-stubs==1.34.44
+boto3-stubs==1.29.2
     # via types-boto3
-botocore==1.34.44
+botocore==1.32.2
     # via
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.34.44
+botocore-stubs==1.32.2
     # via boto3-stubs
 certifi==2023.7.22
     # via
@@ -82,10 +82,8 @@ click==8.1.3
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   flask
-coverage==7.4.1
-    # via
-    #   coverage
-    #   pytest-cov
+coverage==7.3.2
+    # via pytest-cov
 cryptography==41.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -93,7 +91,7 @@ cryptography==41.0.7
     #   moto
     #   python-jose
     #   sshpubkeys
-docker==7.0.0
+docker==6.1.3
     # via
     #   -r requirements/_test.in
     #   moto
@@ -107,7 +105,7 @@ exceptiongroup==1.1.1
     #   -c requirements/_base.txt
     #   anyio
     #   pytest
-faker==23.2.1
+faker==20.0.3
     # via -r requirements/_test.in
 flask==2.1.3
     # via
@@ -205,7 +203,7 @@ multidict==6.0.4
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.8.0
+mypy==1.7.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -226,9 +224,9 @@ pbr==6.0.0
     # via
     #   jschema-to-python
     #   sarif-om
-pluggy==1.4.0
+pluggy==1.3.0
     # via pytest
-pyasn1==0.5.1
+pyasn1==0.5.0
     # via
     #   python-jose
     #   rsa
@@ -246,7 +244,7 @@ pyrsistent==0.19.3
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==8.0.1
+pytest==7.4.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -254,16 +252,14 @@ pytest==8.0.1
     #   pytest-docker
     #   pytest-mock
 pytest-asyncio==0.21.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+    # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
-pytest-docker==3.1.1
+pytest-docker==2.0.1
     # via -r requirements/_test.in
 pytest-mock==3.12.0
     # via -r requirements/_test.in
-pytest-runner==6.0.1
+pytest-runner==6.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
@@ -272,10 +268,8 @@ python-dateutil==2.8.2
     #   faker
     #   moto
 python-jose==3.3.0
-    # via
-    #   moto
-    #   python-jose
-pytz==2024.1
+    # via moto
+pytz==2023.3.post1
     # via moto
 pyyaml==6.0.1
     # via
@@ -290,7 +284,7 @@ requests==2.31.0
     #   docker
     #   moto
     #   responses
-responses==0.25.0
+responses==0.24.1
     # via moto
 respx==0.20.2
     # via -r requirements/_test.in
@@ -298,7 +292,7 @@ rsa==4.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   python-jose
-s3transfer==0.10.0
+s3transfer==0.7.0
     # via boto3
 sarif-om==1.0.4
     # via cfn-lint
@@ -322,7 +316,7 @@ sqlalchemy==1.4.48
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   alembic
-sqlalchemy2-stubs==0.0.2a38
+sqlalchemy2-stubs==0.0.2a37
     # via sqlalchemy
 sshpubkeys==3.3.1
     # via moto
@@ -331,11 +325,11 @@ tomli==2.0.1
     #   coverage
     #   mypy
     #   pytest
-types-awscrt==0.20.3
+types-awscrt==0.19.12
     # via botocore-stubs
 types-boto3==1.0.2
     # via -r requirements/_test.in
-types-s3transfer==0.10.0
+types-s3transfer==0.7.0
     # via boto3-stubs
 typing-extensions==4.6.3
     # via
@@ -351,6 +345,8 @@ urllib3==2.0.7
     #   docker
     #   requests
     #   responses
+websocket-client==1.6.4
+    # via docker
 werkzeug==2.1.2
     # via
     #   flask

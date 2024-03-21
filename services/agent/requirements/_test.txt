@@ -38,7 +38,7 @@ attrs==21.4.0
     #   jschema-to-python
     #   jsonschema
     #   sarif-om
-aws-sam-translator==1.85.0
+aws-sam-translator==1.79.0
     # via cfn-lint
 aws-xray-sdk==2.12.1
     # via moto
@@ -66,7 +66,7 @@ certifi==2023.11.17
     #   requests
 cffi==1.16.0
     # via cryptography
-cfn-lint==0.85.2
+cfn-lint==0.83.1
     # via moto
 charset-normalizer==2.1.1
     # via
@@ -77,28 +77,28 @@ click==8.1.3
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.4.1
+coverage==7.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==42.0.3
+cryptography==41.0.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   moto
     #   python-jose
     #   sshpubkeys
-docker==7.0.0
+docker==6.1.3
     # via moto
 ecdsa==0.18.0
     # via
     #   moto
     #   python-jose
     #   sshpubkeys
-exceptiongroup==1.2.0
+exceptiongroup==1.1.3
     # via pytest
-faker==23.2.1
+faker==19.13.0
     # via -r requirements/_test.in
-flask==3.0.2
+flask==3.0.0
     # via
     #   flask-cors
     #   moto
@@ -135,7 +135,7 @@ iniconfig==2.0.0
     # via pytest
 itsdangerous==2.1.2
     # via flask
-jinja2==3.1.3
+jinja2==3.1.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   flask
@@ -163,7 +163,7 @@ jsonschema==3.2.0
     #   openapi-spec-validator
 junit-xml==1.9
     # via cfn-lint
-markupsafe==2.1.5
+markupsafe==2.1.3
     # via
     #   jinja2
     #   werkzeug
@@ -189,15 +189,15 @@ packaging==23.1
     #   -c requirements/_base.txt
     #   docker
     #   pytest
-pbr==6.0.0
+pbr==5.11.1
     # via
     #   jschema-to-python
     #   sarif-om
-pluggy==1.4.0
+pluggy==1.3.0
     # via pytest
 py-partiql-parser==0.4.0
     # via moto
-pyasn1==0.5.1
+pyasn1==0.5.0
     # via
     #   python-jose
     #   rsa
@@ -214,21 +214,19 @@ pyrsistent==0.19.2
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==8.0.1
+pytest==7.4.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
 pytest-asyncio==0.21.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+    # via -r requirements/_test.in
 pytest-cov==4.1.0
     # via -r requirements/_test.in
 pytest-mock==3.12.0
     # via -r requirements/_test.in
-pytest-runner==6.0.1
+pytest-runner==6.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
@@ -247,14 +245,14 @@ pyyaml==6.0.1
     #   moto
     #   openapi-spec-validator
     #   responses
-regex==2023.12.25
+regex==2023.10.3
     # via cfn-lint
 requests==2.31.0
     # via
     #   docker
     #   moto
     #   responses
-responses==0.25.0
+responses==0.23.3
     # via moto
 rsa==4.9
     # via
@@ -284,6 +282,8 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
+types-pyyaml==6.0.12.12
+    # via responses
 typing-extensions==4.4.0
     # via
     #   -c requirements/_base.txt
@@ -296,11 +296,13 @@ urllib3==1.26.18
     #   docker
     #   requests
     #   responses
+websocket-client==1.6.4
+    # via docker
 werkzeug==3.0.1
     # via
     #   flask
     #   moto
-wrapt==1.16.0
+wrapt==1.15.0
     # via
     #   aiobotocore
     #   aws-xray-sdk
