@@ -60,7 +60,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.setStudy(study);
     }
     this.set({
-      nodeId: uuid || osparc.utils.Utils.uuidv4(),
+      nodeId: uuid || osparc.utils.Utils.uuidV4(),
       key,
       version,
       status: new osparc.data.model.NodeStatus(this)
@@ -1314,7 +1314,7 @@ qx.Class.define("osparc.data.model.Node", {
           const errorMsgData = {
             nodeId: this.getNodeId(),
             msg,
-            lvel: "ERROR"
+            level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
           return;

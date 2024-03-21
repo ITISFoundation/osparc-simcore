@@ -31,7 +31,7 @@ qx.Class.define("osparc.workbench.Annotation", {
     }
 
     if (id === undefined) {
-      id = osparc.utils.Utils.uuidv4();
+      id = osparc.utils.Utils.uuidV4();
     }
     this.set({
       id,
