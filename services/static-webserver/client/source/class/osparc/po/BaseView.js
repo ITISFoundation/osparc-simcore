@@ -44,9 +44,7 @@ qx.Class.define("osparc.po.BaseView", {
 
     createHelpLabel: function(text) {
       const label = new qx.ui.basic.Label(text).set({
-        font: "text-13",
-        rich: true,
-        alignX: "left"
+        font: "text-13"
       });
       return label;
     }
