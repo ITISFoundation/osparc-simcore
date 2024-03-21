@@ -8,8 +8,8 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
     WalletTotalCredits,
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    PricingPlanGet,
     PricingUnitGet,
-    ServicePricingPlanGet,
 )
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     ServiceRunGet,
@@ -28,6 +28,7 @@ from ...models.pagination import LimitOffsetPage, LimitOffsetParamsWithDefault
 from ...services import (
     resource_tracker_credit_transactions,
     resource_tracker_pricing_plans,
+    resource_tracker_pricing_units,
     resource_tracker_service_runs,
 )
 
@@ -123,14 +124,14 @@ async def create_credit_transaction(
 
 @router.get(
     "/services/{service_key:path}/{service_version}/pricing-plan",
-    response_model=ServicePricingPlanGet,
+    response_model=PricingPlanGet,
     operation_id="get_service_default_pricing_plan",
     description="Returns a default pricing plan with pricing details for a specified service",
     tags=["pricing-plans"],
 )
 async def get_service_default_pricing_plan(
     service_pricing_plans: Annotated[
-        ServicePricingPlanGet,
+        PricingPlanGet,
         Depends(resource_tracker_pricing_plans.get_service_default_pricing_plan),
     ],
 ):
@@ -147,7 +148,7 @@ async def get_service_default_pricing_plan(
 async def get_pricing_plan_unit(
     pricing_unit: Annotated[
         PricingUnitGet,
-        Depends(resource_tracker_pricing_plans.get_pricing_unit),
+        Depends(resource_tracker_pricing_units.get_pricing_unit),
     ]
 ):
     return pricing_unit
