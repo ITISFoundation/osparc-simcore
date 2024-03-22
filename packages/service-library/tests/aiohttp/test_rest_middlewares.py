@@ -134,9 +134,9 @@ class Handlers:
                 if is_error(status_code):
                     # 4XX and 5XX are raised
                     raise http_response_cls(reason=reason)
-                else:
-                    # otherwise returned
-                    return http_response_cls(reason=reason)
+
+                # otherwise returned
+                return http_response_cls(reason=reason)
 
     EXPECTED_RAISE_UNEXPECTED_REASON = "Unexpected error"
 
@@ -337,19 +337,20 @@ async def test_raised_unhandled_exception(
     assert not error.get("errors")
     assert not error.get("logs")
 
-    # log sufficient information to diagnose the issue
+    # - log sufficient information to diagnose the issue
     #
-    # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:96 Request 'GET /v1/raise_exception' raised 'SomeUnhandledError' [OEC:140555466658464]
-    #   request.remote='127.0.0.1'
-    #   request.headers={b'Host': b'127.0.0.1:33461', b'Accept': b'*/*', b'Accept-Encoding': b'gzip, deflate', b'User-Agent': b'Python/3.10 aiohttp/3.8.6'}
-    # Traceback (most recent call last):
-    # File "osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 120, in _middleware_handler
-    #     return await handler(request)
-    # File "osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 177, in _middleware_handler
-    #     resp_or_data = await handler(request)
-    # File "osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py", line 107, in raise_exception
-    #     raise SomeUnhandledError(cls.EXPECTED_RAISE_UNEXPECTED_REASON)
-    # tests.aiohttp.test_rest_middlewares.SomeUnhandledError: Unexpected error
+    #       ERROR servicelib.aiohttp.rest_middlewares:rest_middlewares.py:96 Request 'GET /v1/raise_exception' raised 'SomeUnhandledError' [OEC:140555466658464]
+    #         request.remote='127.0.0.1'
+    #         request.headers={b'Host': b'127.0.0.1:33461', b'Accept': b'*/*', b'Accept-Encoding': b'gzip, deflate', b'User-Agent': b'Python/3.10 aiohttp/3.8.6'}
+    #       Traceback (most recent call last):
+    #       File "osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 120, in _middleware_handler
+    #           return await handler(request)
+    #       File "osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 177, in _middleware_handler
+    #           resp_or_data = await handler(request)
+    #       File "osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py", line 107, in raise_exception
+    #           raise SomeUnhandledError(cls.EXPECTED_RAISE_UNEXPECTED_REASON)
+    #       tests.aiohttp.test_rest_middlewares.SomeUnhandledError: Unexpected error
+    #
 
     assert response.method in caplog.text
     assert response.url.path in caplog.text
