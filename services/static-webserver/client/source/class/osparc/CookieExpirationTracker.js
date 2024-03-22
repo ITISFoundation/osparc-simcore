@@ -50,7 +50,9 @@ qx.Class.define("osparc.CookieExpirationTracker", {
 
     startTracker: function() {
       const checkCookieExpiration = () => {
-        this.__scheduleStart();
+        const cookie = osparc.utils.Utils.cookie.getCookie("osparc-sc");
+        console.log(cookie);
+        // this.__scheduleStart();
       };
       checkCookieExpiration();
       this.__checkInterval = setInterval(checkCookieExpiration, this.self().CHECK_INTERVAL);
@@ -63,19 +65,17 @@ qx.Class.define("osparc.CookieExpirationTracker", {
     },
 
     __getText: function() {
-      const text = this.tr("You session will expire in 1h. Please, log out and log in again.");
-      return text;
+      return "You session will expire in 1h. Please, log out and log in again.";
     },
 
     __scheduleStart: function() {
       this.__showRibbonMessage();
-      this.__scheduleLogout();
+      // this.__scheduleLogout();
     },
 
     __showRibbonMessage: function() {
-      const now = new Date();
-      const diffClosable = this.getStart().getTime() - now.getTime() - this.self().CLOSABLE_WARN_IN_ADVANCE;
-      const diffPermanent = this.getStart().getTime() - now.getTime() - this.self().PERMANENT_WARN_IN_ADVANCE;
+      // const now = new Date();
+      // const diffPermanent = this.getStart().getTime() - now.getTime() - this.self().PERMANENT_WARN_IN_ADVANCE;
 
       const messageToRibbon = () => {
         const text = this.__getText();
@@ -83,16 +83,8 @@ qx.Class.define("osparc.CookieExpirationTracker", {
         const notification = new osparc.notification.RibbonNotification(text, "maintenance", closable);
         osparc.notification.RibbonNotifications.getInstance().addNotification(notification);
       };
-      if (diffClosable < 0) {
-        messageToRibbon(true);
-      } else {
-        setTimeout(() => messageToRibbon(true), diffClosable);
-      }
-      if (diffPermanent < 0) {
-        messageToRibbon(false);
-      } else {
-        setTimeout(() => messageToRibbon(false), diffPermanent);
-      }
+
+      messageToRibbon(false);
     },
 
     __scheduleLogout: function() {
