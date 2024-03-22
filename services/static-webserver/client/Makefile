@@ -26,18 +26,8 @@ source-output:
 	# making fast a folder to allow volume binding in dev-mode
 	mkdir $@
 
-pre-compile-dev: qx_packages source-output ## go through a full compilation in dev mode and the post-compilation step
-	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	$(docker_compose) run --rm --name=$(container_name) qooxdoo-kit \
-		qx compile $(flags) \
-			--set-env osparc.vcsRef="${VCS_REF}" \
-			--set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
-			--set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}" \
-			--set-env osparc.vcsOriginUrl="${VCS_URL}"
-		python ./scripts/post-compile.py
-
 .PHONY: compile-dev
-compile-dev: pre-compile-dev ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
+compile-dev: qx_packages source-output ## qx compiles host' 'source' -> host's 'source-output'. Use 'make compile-dev flags=--watch' for continuous compilation.
 	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	$(docker_compose) run --detach --rm --name=$(container_name) qooxdoo-kit \
 		qx compile $(flags) \
