@@ -4,6 +4,8 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    networks:
+      - cluster
     environment:
       DASK_TLS_CA_FILE: ${DASK_TLS_CA_FILE}
       DASK_TLS_CERT: ${DASK_TLS_CERT}
@@ -16,6 +18,8 @@ services:
       - 8786:8786 # dask-scheduler access
       - 8787:8787 # dashboard
     deploy:
+      labels:
+        prometheus-job: scheduler
       placement:
         constraints:
           - "node.role==manager"
@@ -41,6 +45,8 @@ services:
       - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
+    networks:
+      - cluster
     environment:
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: 1
       DASK_NPROCS: 1
@@ -57,6 +63,8 @@ services:
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: computational_shared_data
     deploy:
       mode: global
+      labels:
+        prometheus-job: sidecars
       placement:
         constraints:
           - "node.role==worker"
@@ -98,8 +106,12 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - cluster
     deploy:
+      labels:
+        prometheus-job: autoscaling
       placement:
         constraints:
           - "node.role==manager"
@@ -129,6 +141,8 @@ services:
       retries: 50
     volumes:
       - redis-data:/data
+    networks:
+      - cluster
     deploy:
       placement:
         constraints:
@@ -140,8 +154,16 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.51.0
+    ports:
+      - 9090:9090
+    configs:
+      - source: prometheus-config
+        target: /etc/prometheus/prometheus.yml
     volumes:
       - prometheus_data:/prometheus
+    networks:
+      - cluster
+      - docker-access
     deploy:
       placement:
         constraints:
@@ -150,6 +172,37 @@ services:
         limits:
           memory: 1024M
           cpus: "1.0"
+
+  docker-api-socat:
+    image: tecnativa/docker-socket-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      NODES: 1
+      NETWORKS: 1
+      SERVICES: 1
+      TASKS: 1
+    logging:
+      # Socat logs send to black hole (we don't need them)
+      driver: none
+    networks:
+      - docker-access
+    deploy:
+      mode: global
+      resources:
+        reservations:
+          memory: 5M
+          cpus: '0.05'
+        limits:
+          memory: 10M
+          cpus: '0.1'
+      placement:
+        constraints:
+          - node.role == manager
+
+configs:
+  prometheus-config:
+    file: ./prometheus.yml
 
 volumes:
   computational_shared_data:
