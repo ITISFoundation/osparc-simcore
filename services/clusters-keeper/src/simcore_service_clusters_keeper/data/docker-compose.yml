@@ -162,6 +162,7 @@ services:
     volumes:
       - prometheus_data:/prometheus
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    user: root # because of docker
     networks:
       - cluster
     deploy:
