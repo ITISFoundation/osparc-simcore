@@ -62,12 +62,19 @@ async def set_user_as_deleted(app: web.Application, user_id: UserID) -> None:
     )
 
 
+def _glob_to_sql_like(glob_pattern):
+    # Escape SQL LIKE special characters in the glob pattern
+    sql_like_pattern = glob_pattern.replace("%", r"\%").replace("_", r"\_")
+    # Convert glob wildcards to SQL LIKE wildcards
+    return sql_like_pattern.replace("*", "%").replace("?", "_")
+
+
 async def search_users(
-    app: web.Application, email_like: str, *, include_products: bool = False
+    app: web.Application, email_glob: str, *, include_products: bool = False
 ) -> list[_schemas.UserProfile]:
     # NOTE: this search is deploy-wide i.e. independent of the product!
     rows = await _db.search_users_and_get_profile(
-        get_database_engine(app), email_like=email_like
+        get_database_engine(app), email_like=_glob_to_sql_like(email_glob)
     )
 
     async def _list_products_or_none(user_id):
@@ -105,7 +112,7 @@ async def pre_register_user(
     app: web.Application, profile: _schemas.PreUserProfile, creator_user_id: UserID
 ) -> _schemas.UserProfile:
 
-    found = await search_users(app, email_like=profile.email, include_products=False)
+    found = await search_users(app, email_glob=profile.email, include_products=False)
     if found:
         raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
 
@@ -136,7 +143,7 @@ async def pre_register_user(
         **details,
     )
 
-    found = await search_users(app, email_like=profile.email, include_products=False)
+    found = await search_users(app, email_glob=profile.email, include_products=False)
 
     assert len(found) == 1  # nosec
     return found[0]
