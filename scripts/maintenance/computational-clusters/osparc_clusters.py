@@ -75,9 +75,9 @@ TaskState: TypeAlias = str
 MINUTE: Final[int] = 60
 HOUR: Final[int] = 60 * MINUTE
 
-DEFAULT_COMPUTATIONAL_EC2_FORMAT: Final[str] = (
-    r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:d}"
-)
+DEFAULT_COMPUTATIONAL_EC2_FORMAT: Final[
+    str
+] = r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:d}"
 DEFAULT_DYNAMIC_EC2_FORMAT: Final[str] = r"osparc-dynamic-autoscaled-worker-{key_name}"
 
 DEPLOY_SSH_KEY_PARSER: Final[parse.Parser] = parse.compile(r"osparc-{random_name}.pem")
@@ -398,7 +398,9 @@ def _print_dynamic_instances(
                     service.node_id,
                     service.service_name,
                     service.service_version,
-                    _timedelta_formatting(time_now - service.created_at),
+                    _timedelta_formatting(
+                        time_now - service.created_at, color_code=True
+                    ),
                     f"{'[red]' if service.needs_manual_intervention else ''}{service.needs_manual_intervention}{'[/red]' if service.needs_manual_intervention else ''}",
                 )
 

@@ -3,7 +3,9 @@
 """
 
 
+import re
 import sys
+from contextlib import suppress
 from typing import Any, Final
 
 import pycountry
@@ -76,16 +78,6 @@ class PreUserProfile(InputSchema):
         anystr_strip_whitespace = True
         max_anystr_length = 200
 
-    @validator("country", pre=True)
-    @classmethod
-    def _check_country_and_use_standard_name(cls, v):
-        if v:
-            try:
-                return pycountry.countries.lookup(v).name
-            except LookupError as err:
-                raise ValueError(v) from err
-        return v
-
     @root_validator(pre=True)
     @classmethod
     def _preprocess_aliases_and_extras(cls, values):
@@ -118,6 +110,25 @@ class PreUserProfile(InputSchema):
         values["extras"].update(extra_fields)
 
         return values
+
+    @validator("first_name", "last_name", "institution", pre=True)
+    @classmethod
+    def _pre_normalize_given_names(cls, v):
+        if v:
+            with suppress(Exception):  # skip if funny characters
+                name = re.sub(r"\s+", " ", v)
+                return re.sub(r"\b\w+\b", lambda m: m.group(0).capitalize(), name)
+        return v
+
+    @validator("country", pre=True)
+    @classmethod
+    def _pre_check_and_normalize_country(cls, v):
+        if v:
+            try:
+                return pycountry.countries.lookup(v).name
+            except LookupError as err:
+                raise ValueError(v) from err
+        return v
 
 
 assert set(PreUserProfile.__fields__).issubset(UserProfile.__fields__)  # nosec
