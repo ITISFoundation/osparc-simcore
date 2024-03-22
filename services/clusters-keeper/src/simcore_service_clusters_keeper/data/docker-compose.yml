@@ -157,6 +157,8 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.51.0
+    command:
+      - "--storage.tsdb.retention.size=1GB"
     ports:
       - 9090:9090
     configs:
