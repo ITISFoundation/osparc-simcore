@@ -27,7 +27,7 @@ def _update_gauge(
 
 
 @dataclass(slots=True, kw_only=True)
-class AutoscalingInstrumentation:
+class AutoscalingInstrumentation:  # pylint: disable=too-many-instance-attributes
     registry: CollectorRegistry
     subsystem: str
     _active_nodes: Gauge = field(init=False)
