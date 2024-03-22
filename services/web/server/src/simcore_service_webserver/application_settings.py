@@ -388,6 +388,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_PROJECTS": {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES"},
                 "WEBSERVER_LOGIN": {"LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"},
+                "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
             },
             exclude_none=True,
         )
