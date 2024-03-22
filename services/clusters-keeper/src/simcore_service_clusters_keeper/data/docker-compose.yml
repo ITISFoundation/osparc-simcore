@@ -161,6 +161,7 @@ services:
         target: /etc/prometheus/prometheus.yml
     volumes:
       - prometheus_data:/prometheus
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - cluster
       - docker-access
@@ -173,32 +174,8 @@ services:
           memory: 1024M
           cpus: "1.0"
 
-  docker-api-socat:
-    image: tecnativa/docker-socket-proxy
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      NODES: 1
-      NETWORKS: 1
-      SERVICES: 1
-      TASKS: 1
-    logging:
-      # Socat logs send to black hole (we don't need them)
-      driver: none
-    networks:
-      - docker-access
-    deploy:
-      mode: global
-      resources:
-        reservations:
-          memory: 5M
-          cpus: '0.05'
-        limits:
-          memory: 10M
-          cpus: '0.1'
-      placement:
-        constraints:
-          - node.role == manager
+networks:
+  cluster:
 
 configs:
   prometheus-config:
@@ -209,7 +186,6 @@ volumes:
     name: computational_shared_data
   redis-data:
   prometheus_data:
-
 
 secrets:
   dask_tls_ca:

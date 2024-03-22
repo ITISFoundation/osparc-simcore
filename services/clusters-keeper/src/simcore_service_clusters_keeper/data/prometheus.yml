@@ -8,7 +8,7 @@ scrape_configs:
   # Create a job for Docker Swarm containers.
   - job_name: 'docker nodes'
     dockerswarm_sd_configs:
-      - host: tcp://docker-api-socat:2375
+      - host: unix:///var/run/docker.sock
         role: nodes
     relabel_configs:
       # Fetch metrics on port 9323.
@@ -21,7 +21,7 @@ scrape_configs:
   # Create a job for Docker Swarm containers.
   - job_name: 'docker tasks'
     dockerswarm_sd_configs:
-      - host: tcp://docker-api-socat:2375
+      - host: unix:///var/run/docker.sock
         role: tasks
     relabel_configs:
       # Only keep containers that should be running.
