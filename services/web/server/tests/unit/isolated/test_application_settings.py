@@ -224,6 +224,10 @@ def test_settings_to_client_statics_plugins(
         statics["webserverLogin"]["LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"]
         == settings.WEBSERVER_LOGIN.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS
     )
+    assert (
+        statics["webserverSession"]["SESSION_COOKIE_MAX_AGE"]
+        == settings.WEBSERVER_SESSION.SESSION_COOKIE_MAX_AGE
+    )
 
     assert set(statics["pluginsDisabled"]) == (disable_plugins | {"WEBSERVER_CLUSTERS"})
 
