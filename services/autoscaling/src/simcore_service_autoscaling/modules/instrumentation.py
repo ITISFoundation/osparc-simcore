@@ -12,7 +12,7 @@ from ..core.errors import ConfigurationError
 from ..core.settings import get_application_settings
 from ..models import AssociatedInstance, Cluster, NonAssociatedInstance
 
-METRICS_NAMESPACE: Final[str] = APP_NAME
+METRICS_NAMESPACE: Final[str] = APP_NAME.replace("-", "_")
 EC2_INSTANCE_LABELS: Final[tuple[str]] = ("instance_type",)
 
 
