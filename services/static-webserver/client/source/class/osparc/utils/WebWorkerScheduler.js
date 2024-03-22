@@ -52,7 +52,7 @@ qx.Class.define("osparc.utils.WebWorkerScheduler", {
     __registeredCallbacks: null,
 
     setInterval: function(callback, interval) {
-      const id = osparc.utils.Utils.uuidv4();
+      const id = osparc.utils.Utils.uuidV4();
       this.__registeredCallbacks[id] = {
         callback,
         interval,
