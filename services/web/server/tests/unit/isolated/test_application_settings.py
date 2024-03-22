@@ -60,7 +60,7 @@ def mock_env_makefile(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 
 
 @pytest.fixture
-def mock_env_Dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
+def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     #
     # docker run -it --hostname "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}" local/webserver:production printenv
     #
@@ -100,8 +100,8 @@ def mock_webserver_service_environment(
     monkeypatch: pytest.MonkeyPatch,
     mock_env_makefile: EnvVarsDict,
     mock_env_devel_environment: EnvVarsDict,
-    mock_env_Dockerfile_build: EnvVarsDict,
-    mock_env_auto_deployer_agent: EnvVarsDict,
+    mock_env_dockerfile_build: EnvVarsDict,
+    mock_env_deployer_pipeline: EnvVarsDict,
 ) -> EnvVarsDict:
     """
     Mocks environment produce in the docker compose config with a .env (.env-devel)
@@ -150,8 +150,8 @@ def mock_webserver_service_environment(
     return (
         mock_env_makefile
         | mock_env_devel_environment
-        | mock_env_Dockerfile_build
-        | mock_env_auto_deployer_agent
+        | mock_env_dockerfile_build
+        | mock_env_deployer_pipeline
         | mock_envs_docker_compose_environment
     )
 
@@ -228,6 +228,9 @@ def test_settings_to_client_statics_plugins(
         statics["webserverSession"]["SESSION_COOKIE_MAX_AGE"]
         == settings.WEBSERVER_SESSION.SESSION_COOKIE_MAX_AGE
     )
+
+    assert statics["SIMCORE_VCS_RELEASE_URL"]
+    assert statics["SIMCORE_VCS_RELEASE_TAG"]
 
     assert set(statics["pluginsDisabled"]) == (disable_plugins | {"WEBSERVER_CLUSTERS"})
 

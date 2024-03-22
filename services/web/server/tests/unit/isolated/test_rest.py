@@ -27,7 +27,7 @@ def client(
     aiohttp_client: Callable,
     api_version_prefix: str,
     mock_env_devel_environment: EnvVarsDict,
-    mock_env_auto_deployer_agent: EnvVarsDict,
+    mock_env_deployer_pipeline: EnvVarsDict,
 ) -> TestClient:
     app = create_safe_application()
 
