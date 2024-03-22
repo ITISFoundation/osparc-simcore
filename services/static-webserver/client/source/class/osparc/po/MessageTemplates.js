@@ -16,20 +16,12 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.po.MessageTemplates", {
-  extend: qx.ui.core.Widget,
-
-  construct: function() {
-    this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.VBox(10));
-
-    this.__fetchInfo();
-  },
+  extend: osparc.po.BaseView,
 
   members: {
     __messageTemplates: null,
 
-    __fetchInfo: function() {
+    _buildLayout: function() {
       const params = {
         url: {
           productName: osparc.product.Utils.getProductName()
@@ -101,7 +93,7 @@ qx.Class.define("osparc.po.MessageTemplates", {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
         })
-        .finally(() => this.__fetchInfo());
+        .finally(() => this._buildLayout());
     }
   }
 });

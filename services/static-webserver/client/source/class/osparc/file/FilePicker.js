@@ -365,12 +365,12 @@ qx.Class.define("osparc.file.FilePicker", {
       formRend.setEnabled(false);
       this._add(formRend);
 
-      const hbox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const downloadFileBtn = this.__getDownloadFileButton();
-      hbox.add(downloadFileBtn);
+      hBox.add(downloadFileBtn);
       const resetFileBtn = this.__getResetFileButton();
-      hbox.add(resetFileBtn);
-      this._add(hbox);
+      hBox.add(resetFileBtn);
+      this._add(hBox);
     },
 
     __getDownloadFileButton: function() {
@@ -440,7 +440,10 @@ qx.Class.define("osparc.file.FilePicker", {
         if (files.length === 1) {
           const fileUploader = new osparc.file.FileUploader(this.getNode());
           fileUploader.addListener("uploadAborted", () => this.__resetOutput());
-          fileUploader.addListener("fileUploaded", () => this.fireEvent("fileUploaded"));
+          fileUploader.addListener("fileUploaded", () => {
+            this.fireEvent("fileUploaded");
+            this.getNode().fireEvent("fileUploaded");
+          }, this);
           fileUploader.retrieveUrlAndUpload(files[0]);
           return true;
         }
