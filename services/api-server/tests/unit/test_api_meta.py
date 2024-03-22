@@ -2,12 +2,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import pytest
 from httpx import AsyncClient
 from models_library.api_schemas__common.meta import BaseMeta
 from simcore_service_api_server._meta import API_VERSION, API_VTAG
-
-pytestmark = pytest.mark.asyncio
 
 
 async def test_read_service_meta(client: AsyncClient):

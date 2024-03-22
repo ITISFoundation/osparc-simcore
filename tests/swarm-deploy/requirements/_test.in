@@ -13,7 +13,7 @@ click
 docker
 jsonschema
 pytest
-pytest-aiohttp
+pytest-asyncio
 pytest-instafail
 pytest-mock
 pytest-runner
