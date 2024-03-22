@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 
 
-def setup_prometheus_instrumentation(app: FastAPI):
+def setup_prometheus_instrumentation(app: FastAPI) -> Instrumentator:
 
     instrumentator = (
         Instrumentator(
@@ -21,3 +21,4 @@ def setup_prometheus_instrumentation(app: FastAPI):
 
     # avoid registering collectors multiple times when running unittests consecutively (https://stackoverflow.com/a/62489287)
     app.add_event_handler("shutdown", _unregister)
+    return instrumentator
