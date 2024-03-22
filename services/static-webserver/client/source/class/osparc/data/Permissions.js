@@ -142,7 +142,8 @@ qx.Class.define("osparc.data.Permissions", {
         ],
         "product_owner": [
           "user.invitation.generate",
-          "user.users.search"
+          "user.users.search",
+          "user.users.pre-register"
         ],
         "admin": []
       };
