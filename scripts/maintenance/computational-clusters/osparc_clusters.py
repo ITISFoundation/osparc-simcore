@@ -6,7 +6,6 @@ import datetime
 import json
 import re
 from collections import defaultdict, namedtuple
-from collections.abc import Coroutine
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from pathlib import Path
@@ -998,28 +997,39 @@ def cancel_jobs(
         state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
     )
 
-    if typer.confirm(
-        f"Are you sure you want to cancel all the jobs from that cluster ({user_id=} and {wallet_id=})?"
-    ):
-        print("cancelling jobs...")
-        the_cluster = computational_clusters[0]
-        with _dask_client(the_cluster.primary.ec2_instance.public_ip_address) as client:
-            datasets = client.list_datasets()
-            assert datasets is not None  # nosec
-            assert not isinstance(datasets, Coroutine)  # nosec
-            for dataset in datasets:
-                task_future = distributed.Future(dataset)
+    print("Please choose which jobs to cancel, write all to cancel all of them.")
+    the_cluster = computational_clusters[0]
+    with _dask_client(the_cluster.primary.ec2_instance.public_ip_address) as client:
+        published_datasets = client.list_datasets()
+        assert published_datasets
+        assert isinstance(published_datasets, tuple)
+        for index, dataset in enumerate(published_datasets):
+            print(f"[{index}]: {dataset}")
+        if response := typer.prompt(
+            "Which dataset to cancel? all for all of them.", default=""
+        ):
+            if response == "all":
+                for dataset in published_datasets:
+                    task_future = distributed.Future(dataset)
+                    cancel_event = distributed.Event(
+                        name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
+                        client=client,
+                    )
+                    cancel_event.set()
+                    task_future.cancel()
+                print("cancelled all tasks")
+            else:
+                selected_index = TypeAdapter(int).validate_python(response)
+                task_future = distributed.Future(published_datasets[selected_index])
                 cancel_event = distributed.Event(
                     name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
                     client=client,
                 )
                 cancel_event.set()
                 task_future.cancel()
-        print(
-            f"all jobs on cluster of {user_id=}/{wallet_id=} cancelled, please check again in about 15 seconds."
-        )
-    else:
-        print("not doing anything")
+                print(f"cancelled {published_datasets[selected_index]}")
+        else:
+            print("not cancelling anything")
 
 
 @app.command()
@@ -1050,14 +1060,26 @@ def clear_jobs(
         state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
     )
 
-    if typer.confirm("Are you sure you want to erase all the jobs from that cluster?"):
-        print("proceeding with reseting jobs from cluster...")
-        the_cluster = computational_clusters[0]
-        with _dask_client(the_cluster.primary.ec2_instance.public_ip_address) as client:
-            client.datasets.clear()
-        print("proceeding with reseting jobs from cluster done.")
-    else:
-        print("not deleting anything")
+    print("Please choose which jobs to remove, write all to remove all of them.")
+    the_cluster = computational_clusters[0]
+    with _dask_client(the_cluster.primary.ec2_instance.public_ip_address) as client:
+        published_datasets = client.list_datasets()
+        assert published_datasets
+        assert isinstance(published_datasets, tuple)
+        for index, dataset in enumerate(published_datasets):
+            print(f"[{index}]: {dataset}")
+        if response := typer.prompt(
+            "Which dataset to remove? all for all of them.", default=""
+        ):
+            if response == "all":
+                client.datasets.clear()
+                print("removed all tasks")
+            else:
+                selected_index = TypeAdapter(int).validate_python(response)
+                client.unpublish_dataset(published_datasets[selected_index])
+                print(f"removed {published_datasets[selected_index]}")
+        else:
+            print("not deleting anything")
 
 
 @app.command()
