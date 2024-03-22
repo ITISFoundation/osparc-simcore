@@ -79,10 +79,6 @@ async def create_cached_indexes(app: web.Application) -> None:
             msg = f"Could not fetch index at {url!s}. Stopping application boot"
             raise RuntimeError(msg) from err
 
-        # fixes relative paths
-        body = body.replace(f"../resource/{frontend_name}", f"resource/{frontend_name}")
-        body = body.replace("boot.js", f"{frontend_name}/boot.js")
-
         _logger.info("Storing index for %s", url)
         cached_indexes[frontend_name] = body
 
