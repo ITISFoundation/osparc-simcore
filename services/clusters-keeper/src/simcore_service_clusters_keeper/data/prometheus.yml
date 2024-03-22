@@ -1,10 +1,6 @@
 global:
   scrape_interval: "29s"
 scrape_configs:
-  # Make Prometheus scrape itself for metrics.
-  - job_name: 'prometheus'
-    static_configs:
-    - targets: ['localhost:9090']
   # Create a job for Docker Swarm containers.
   - job_name: 'docker nodes'
     dockerswarm_sd_configs:
@@ -24,6 +20,9 @@ scrape_configs:
       - host: unix:///var/run/docker.sock
         role: tasks
     relabel_configs:
+      # Set hostname as instance label
+      - source_labels: [__meta_dockerswarm_node_hostname]
+        target_label: instance
       # Only keep containers that should be running.
       - source_labels: [__meta_dockerswarm_task_desired_state]
         regex: running
