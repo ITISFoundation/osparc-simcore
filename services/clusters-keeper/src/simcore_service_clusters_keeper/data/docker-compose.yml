@@ -163,7 +163,7 @@ services:
       - source: prometheus-config
         target: /etc/prometheus/prometheus.yml
     volumes:
-      - prometheus_data:/prometheus
+      - prometheus-data:/prometheus
       - /var/run/docker.sock:/var/run/docker.sock:ro
     user: root # because of docker
     networks:
@@ -188,7 +188,7 @@ volumes:
   computational_shared_data:
     name: computational_shared_data
   redis-data:
-  prometheus_data:
+  prometheus-data:
 
 secrets:
   dask_tls_ca:
