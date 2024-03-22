@@ -164,7 +164,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - cluster
-      - docker-access
     deploy:
       placement:
         constraints:
