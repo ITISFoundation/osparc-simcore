@@ -25,7 +25,7 @@ from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, PositiveInt
+from pydantic import EmailStr, HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -47,6 +47,7 @@ from ..models.payments_gateway import (
 )
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
+from ..services.stripe import StripeApi
 from .notifier import NotifierService
 from .notifier_ws import WebSocketProvider
 from .payments_gateway import PaymentsGatewayApi
@@ -313,3 +314,24 @@ async def get_payments_page(
     )
 
     return total_number_of_items, [to_payments_api_model(t) for t in page]
+
+
+async def get_payment_invoice_url(
+    repo: PaymentsTransactionsRepo,
+    stripe_api: StripeApi,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    """Get invoice data from Stripe. As invoice url expires after some time, Stripe always generates a new
+    invoice url with 10 day validity."""
+
+    payment: PaymentsTransactionsDB | None = await repo.get_payment_transaction(
+        payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
+    )
+    if payment is None or payment.stripe_invoice_id is None:
+        raise PaymentNotFoundError(payment_id=payment_id)
+    invoice_data = await stripe_api.get_invoice(payment.stripe_invoice_id)
+
+    return invoice_data.hosted_invoice_url

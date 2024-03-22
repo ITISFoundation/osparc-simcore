@@ -223,6 +223,20 @@ async def _fake_get_payments_page(
     return total_number_of_items, [_to_api_model(t) for t in transactions]
 
 
+@log_decorator(_logger, level=logging.INFO)
+async def _fake_get_payment_invoice_url(
+    app: web.Application,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    assert app  ## nosec
+    assert user_id  # nosec
+    assert wallet_id  # nosec
+
+    return HttpUrl(f"https://fake-invoice.com/?id={payment_id}")
+
+
 async def raise_for_wallet_payments_permissions(
     app: web.Application,
     *,
@@ -426,3 +440,29 @@ async def list_user_payments_page(
         )
 
     return payments, total_number_of_items
+
+
+async def get_payment_invoice_url(
+    app: web.Application,
+    product_name: str,
+    user_id: UserID,
+    *,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    assert product_name  # nosec
+    assert wallet_id  # nosec
+
+    settings: PaymentsSettings = get_plugin_settings(app)
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        payment_invoice_url = await _fake_get_payment_invoice_url(
+            app, user_id=user_id, wallet_id=wallet_id, payment_id=payment_id
+        )
+
+    else:
+        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+        payment_invoice_url = await _rpc.get_payment_invoice_url(
+            app, user_id=user_id, wallet_id=wallet_id, payment_id=payment_id
+        )
+
+    return payment_invoice_url
