@@ -5,7 +5,7 @@ beforeAll(async () => {
 }, ourTimeout);
 
 test('Check site title', async () => {
-  // osparc ([¨0]) is the product served by default
+  // osparc ([0]) is the product served by default
   const replacements = appMetadata["applications"][0]["replacements"];
 
   const title = await page.title();
