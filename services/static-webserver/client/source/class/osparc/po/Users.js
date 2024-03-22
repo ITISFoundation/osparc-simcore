@@ -31,13 +31,12 @@ qx.Class.define("osparc.po.Users", {
           control = new qx.ui.basic.Label();
           this._add(control);
           break;
-        case "found-users-container": {
+        case "found-users-container":
           control = new qx.ui.container.Scroll();
           this._add(control, {
             flex: 1
           });
           break;
-        }
       }
       return control || this.base(arguments, id);
     },
