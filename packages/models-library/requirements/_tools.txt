@@ -39,7 +39,7 @@ isort==5.13.2
     # via pylint
 mccabe==0.7.0
     # via pylint
-multidict==6.0.4
+multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
@@ -91,5 +91,5 @@ virtualenv==20.25.0
     # via pre-commit
 wheel==0.42.0
     # via pip-tools
-yarl==1.9.2
+yarl==1.9.4
     # via aiohttp
