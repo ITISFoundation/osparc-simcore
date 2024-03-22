@@ -3,6 +3,8 @@ module.exports = {
   verbose: true,
   collectCoverage: true,
   coverageReporters: ["lcov", "text"],
+  // this is needed to access the document in the tests
+  testEnvironment: "jsdom",
   globals: {
     url: "http://127.0.0.1:9081/", // For local testing, set your deployed url here
     apiVersion: 'v0/',
