@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from starlette.requests import Request
@@ -9,10 +11,13 @@ from ...long_running_tasks._errors import (
     TaskNotFoundError,
 )
 
+_logger = logging.getLogger(__name__)
+
 
 async def base_long_running_error_handler(
     _: Request, exception: BaseLongRunningError
 ) -> JSONResponse:
+    _logger.debug("%s", exception, stack_info=True)
     error_fields = dict(code=exception.code, message=f"{exception}")
     status_code = (
         status.HTTP_404_NOT_FOUND

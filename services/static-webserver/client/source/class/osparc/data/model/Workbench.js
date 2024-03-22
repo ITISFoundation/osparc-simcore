@@ -106,6 +106,17 @@ qx.Class.define("osparc.data.model.Workbench", {
       return Array.from(upstreamNodes).reverse();
     },
 
+    __getDownstreamNodes: function(node) {
+      const downstreamNodes = [];
+      Object.values(this.getNodes()).forEach(n => {
+        const inputNodes = n.getInputNodes();
+        if (inputNodes.includes(node.getNodeId())) {
+          downstreamNodes.push(n);
+        }
+      });
+      return downstreamNodes;
+    },
+
     isPipelineLinear: function() {
       const nodes = this.getNodes(true);
       const inputNodeIds = [];
@@ -127,7 +138,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         return false;
       }
 
-      // Make sure there are no more than one upstreams nodes
+      // Make sure there are no more than one upstream nodes
       return nodesWithoutInputs.length < 2;
     },
 
@@ -344,6 +355,23 @@ qx.Class.define("osparc.data.model.Workbench", {
             nodeId
           } = e.getData();
           this.__probeNodeRequested(nodeId, portId);
+        }, this);
+        node.addListener("fileUploaded", () => {
+          // downstream nodes might have started downloading file picker's output.
+          // show feedback to the user
+          const downstreamNodes = this.__getDownstreamNodes(node);
+          downstreamNodes.forEach(downstreamNode => {
+            downstreamNode.getPortIds().forEach(portId => {
+              const link = downstreamNode.getLink(portId);
+              if (link && link["nodeUuid"] === node.getNodeId() && link["output"] === "outFile") {
+                // connected to file picker's output
+                setTimeout(() => {
+                  // start retrieving state after 2"
+                  downstreamNode.retrieveInputs(portId);
+                }, 2000);
+              }
+            });
+          });
         }, this);
       }
     },
@@ -622,7 +650,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           if (parentNode === null) {
             // If parent was not yet created, delay the creation of its' children
             nodeIds.push(nodeId);
-            // check if there is an inconsitency
+            // check if there is an inconsistency
             const nKeys = nodeIds.length;
             if (nKeys > 1) {
               if (nodeIds[nKeys-1] === nodeIds[nKeys-2]) {

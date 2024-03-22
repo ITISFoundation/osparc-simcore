@@ -127,7 +127,7 @@ qx.Class.define("osparc.study.Utils", {
           .then(services => {
             if (key in services) {
               const service = version ? osparc.service.Utils.getFromObject(services, key, version) : osparc.service.Utils.getLatest(services, key);
-              const newUuid = osparc.utils.Utils.uuidv4();
+              const newUuid = osparc.utils.Utils.uuidV4();
               const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
               if (newStudyLabel === undefined) {
                 newStudyLabel = service["name"];
