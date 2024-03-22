@@ -11,8 +11,8 @@ test('Check site title', async () => {
   const title = await page.title();
   expect(title).toBe(replacements["replace_me_og_title"]);
 
-  const desc = document.querySelectorAll("head > meta[name='description']")[0].content;
-  expect(desc).toBe(replacements["replace_me_og_description"]);
+  const description = document.querySelectorAll("head > meta[name='description']")[0].content;
+  expect(description).toBe(replacements["replace_me_og_description"]);
 
   // Open Graph metadata
   const ogTitle = document.querySelectorAll("head > meta[property='og:title']")[0].content;
