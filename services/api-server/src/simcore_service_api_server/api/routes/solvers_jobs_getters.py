@@ -430,7 +430,6 @@ async def get_job_pricing_unit(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/logstream",
     response_class=LogStreamingResponse,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     responses=_LOGSTREAM_STATUS_CODES,
 )
 @cancel_on_disconnect

@@ -13,7 +13,7 @@ faker
 pint
 psutil
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-asyncio
 pytest-cov
 pytest-icdiff
 pytest-instafail
@@ -22,3 +22,4 @@ pytest-runner
 pytest-sugar
 python-dotenv
 pyyaml
+yarl
