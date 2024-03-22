@@ -6,7 +6,7 @@ beforeAll(async () => {
 
 test('Check site title', async () => {
   const title = await page.title();
-  expect(title).toBe("oSPARC (master)");
+  expect(title).toBe("oSPARC");
   
   // oSPARC ([0]) is the product served by default
   const replacements = appMetadata["applications"][0]["replacements"];
