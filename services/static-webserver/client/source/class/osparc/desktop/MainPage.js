@@ -56,6 +56,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     // Some resources request before building the main stack
     osparc.WindowSizeTracker.getInstance().startTracker();
     osparc.MaintenanceTracker.getInstance().startTracker();
+    osparc.CookieExpirationTracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
     const preloadPromises = [];
