@@ -1,10 +1,12 @@
 from decimal import Decimal
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeAlias
 
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, validator
 
 from .products import StripePriceID, StripeTaxRateID
+
+StripeInvoiceID: TypeAlias = str
 
 
 class UserInvoiceAddress(BaseModel):
