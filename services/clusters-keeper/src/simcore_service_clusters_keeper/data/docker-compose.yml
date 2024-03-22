@@ -20,6 +20,7 @@ services:
     deploy:
       labels:
         prometheus-job: scheduler
+        prometheus-port: 8787
       placement:
         constraints:
           - "node.role==manager"
@@ -65,6 +66,7 @@ services:
       mode: global
       labels:
         prometheus-job: sidecars
+        prometheus-port: 8787
       placement:
         constraints:
           - "node.role==worker"
@@ -112,6 +114,7 @@ services:
     deploy:
       labels:
         prometheus-job: autoscaling
+        prometheus-port: 8000
       placement:
         constraints:
           - "node.role==manager"

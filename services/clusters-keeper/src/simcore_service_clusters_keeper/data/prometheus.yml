@@ -28,6 +28,10 @@ scrape_configs:
       - source_labels: [__meta_dockerswarm_task_desired_state]
         regex: running
         action: keep
+      # Only keep tasks with a `prometheus_port` label.
+      - source_labels: [__meta_dockerswarm_service_label_prometheus_port]
+        regex: .+
+        action: keep
       # Only keep containers that have a `prometheus-job` label.
       - source_labels: [__meta_dockerswarm_service_label_prometheus_job]
         regex: .+
@@ -35,3 +39,14 @@ scrape_configs:
       # Use the prometheus-job Swarm label as Prometheus job label.
       - source_labels: [__meta_dockerswarm_service_label_prometheus_job]
         target_label: job
+      # Specify the metric path if needed (optional)
+      - source_labels: [__meta_dockerswarm_service_label_prometheus_path]
+        target_label: __metrics_path__
+        regex: (.+)
+      # Use the `prometheus_port` Swarm label to set the __address__ for scraping.
+      - source_labels: [__address__, __meta_dockerswarm_service_label_prometheus_port]
+        separator: ':'
+        target_label: __address__
+        regex: (.+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        action: replace
