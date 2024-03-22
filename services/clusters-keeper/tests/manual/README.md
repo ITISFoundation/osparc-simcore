@@ -34,6 +34,7 @@ flowchart TD
 1. build simcore
 ```bash
 git clone https://github.com/ITISFoundation/osparc-simcore.git
+cd osparc-simcore
 make .env # generate initial .env file
 make build-devel # build for development mode or
 make build # for production mode
@@ -81,6 +82,13 @@ WORKERS_EC2_INSTANCES_SUBNET_ID=XXXXXXX
 WORKERS_EC2_INSTANCES_TIME_BEFORE_TERMINATION="00:03:00"
 WORKERS_EC2_INSTANCES_CUSTOM_TAGS='{"osparc-tag": "some fun tag value"}'
 ```
+
+4. prepare dask TLS certificates
+NOTE: the dask TLS certificates are in AWS and shall be copied into the local stack such that the director-v2 can access the clusters
+these are defined by PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA, PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT and PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY
+  1. one need to go to the AWS Parameter Store (SSM)
+  2. find these entries then copy their contents into respectively services/dask-sidecar/.dask-certificates/dask-cert.pem and services/dask-sidecar/.dask-certificates/dask-key.pem
+
 
 5. start osparc
 ```bash
