@@ -1807,6 +1807,7 @@ paths:
     get:
       tags:
       - products
+      - po
       summary: Get Product
       operationId: get_product
       parameters:
@@ -1833,6 +1834,7 @@ paths:
     put:
       tags:
       - products
+      - po
       summary: Update Product Template
       operationId: update_product_template
       parameters:
@@ -1869,6 +1871,7 @@ paths:
     post:
       tags:
       - products
+      - po
       summary: Generate Invitation
       operationId: generate_invitation
       requestBody:
@@ -4088,12 +4091,14 @@ paths:
     get:
       tags:
       - user
+      - po
       summary: Search Users
       operationId: search_users
       parameters:
       - required: true
         schema:
           title: Email
+          maxLength: 200
           minLength: 3
           type: string
         name: email
@@ -4109,6 +4114,7 @@ paths:
     post:
       tags:
       - user
+      - po
       summary: Pre Register User
       operationId: pre_register_user
       requestBody:
@@ -8406,7 +8412,7 @@ components:
           title: Pricingunits
           type: array
           items:
-            $ref: '#/components/schemas/PricingUnitAdminGet'
+            $ref: '#/components/schemas/PricingUnitGet'
         isActive:
           title: Isactive
           type: boolean
@@ -10776,7 +10782,7 @@ components:
           title: Products
           type: array
           items:
-            type: object
+            type: string
           description: List of products this users is included or None if fields is
             unset
     UserStatus:

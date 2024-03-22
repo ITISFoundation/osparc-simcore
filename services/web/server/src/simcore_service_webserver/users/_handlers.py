@@ -74,6 +74,10 @@ class _SearchQueryParams(BaseModel):
     email: str = Field(min_length=3, max_length=200)
 
 
+_RESPONSE_MODEL_MINIMAL_POLICY = RESPONSE_MODEL_POLICY.copy()
+_RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
+
+
 @routes.get(f"/{API_VTAG}/users:search", name="search_users")
 @login_required
 @permission_required("user.users.*")
@@ -88,9 +92,9 @@ async def search_users(request: web.Request) -> web.Response:
         request.app, email_like=query_params.email, include_products=True
     )
 
-    policy = RESPONSE_MODEL_POLICY.copy()
-    policy["exclude_none"] = True
-    return envelope_json_response([_.dict(**policy) for _ in found])
+    return envelope_json_response(
+        [_.dict(**_RESPONSE_MODEL_MINIMAL_POLICY) for _ in found]
+    )
 
 
 @routes.post(f"/{API_VTAG}/users:pre-register", name="pre_register_user")
@@ -105,6 +109,8 @@ async def pre_register_user(request: web.Request) -> web.Response:
         user_profile = await _api.pre_register_user(
             request.app, profile=pre_user_profile, creator_user_id=req_ctx.user_id
         )
-        return envelope_json_response(user_profile)
+        return envelope_json_response(
+            user_profile.dict(**_RESPONSE_MODEL_MINIMAL_POLICY)
+        )
     except AlreadyPreRegisteredError as err:
         raise web.HTTPConflict(reason=f"{err}") from err
