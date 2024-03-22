@@ -128,12 +128,24 @@ async def list_user_permissions():
     ...
 
 
-@router.get("/users:search", response_model=Envelope[list[UserProfile]])
+@router.get(
+    "/users:search",
+    response_model=Envelope[list[UserProfile]],
+    tags=[
+        "po",
+    ],
+)
 async def search_users(_params: Annotated[_SearchQueryParams, Depends()]):
     # NOTE: see `Search` in `Common Custom Methods` in https://cloud.google.com/apis/design/custom_methods
     ...
 
 
-@router.post("/users:pre-register", response_model=Envelope[UserProfile])
+@router.post(
+    "/users:pre-register",
+    response_model=Envelope[UserProfile],
+    tags=[
+        "po",
+    ],
+)
 async def pre_register_user(_body: PreUserProfile):
     ...

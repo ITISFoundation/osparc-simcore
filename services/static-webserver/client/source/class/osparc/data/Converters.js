@@ -182,7 +182,7 @@ qx.Class.define("osparc.data.Converters", {
       const innerNodeIds = Object.keys(workbench);
       for (let i=0; i<innerNodeIds.length; i++) {
         const innerNodeId = innerNodeIds[i];
-        const newNodeId = osparc.utils.Utils.uuidv4();
+        const newNodeId = osparc.utils.Utils.uuidV4();
         // workbenchStr = workbenchStr.replace(innerNodeId, newNodeId);
         const re = new RegExp(innerNodeId, "g");
         workbenchStr = workbenchStr.replace(re, newNodeId); // Using regex for replacing ALL matches

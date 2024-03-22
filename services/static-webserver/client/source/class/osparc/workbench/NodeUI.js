@@ -486,7 +486,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __setProbeValue: function(label) {
-      const link = this.getNode().getPropsForm().getLink("in_1");
+      const link = this.getNode().getLink("in_1");
       if (link && "nodeUuid" in link) {
         const inputNodeId = link["nodeUuid"];
         const portKey = link["output"];
