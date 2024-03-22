@@ -7,6 +7,7 @@ import os
 
 import pytest
 from aiohttp import web
+from pydantic import HttpUrl, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
 from servicelib.json_serialization import json_dumps
@@ -144,6 +145,7 @@ def mock_webserver_service_environment(
             "STORAGE_PORT": os.environ.get("STORAGE_PORT", "8080"),
             "SWARM_STACK_NAME": os.environ.get("SWARM_STACK_NAME", "simcore"),
             "WEBSERVER_LOGLEVEL": os.environ.get("LOG_LEVEL", "WARNING"),
+            "SESSION_COOKIE_MAX_AGE": str(7 * 24 * 60 * 60),
         },
     )
 
@@ -225,12 +227,12 @@ def test_settings_to_client_statics_plugins(
         == settings.WEBSERVER_LOGIN.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS
     )
     assert (
-        statics["webserverSession"]["SESSION_COOKIE_MAX_AGE"]
+        statics["webserverSession"].get("SESSION_COOKIE_MAX_AGE")
         == settings.WEBSERVER_SESSION.SESSION_COOKIE_MAX_AGE
     )
 
-    assert statics["SIMCORE_VCS_RELEASE_URL"]
-    assert statics["SIMCORE_VCS_RELEASE_TAG"]
+    assert statics["vcsReleaseTag"]
+    assert parse_obj_as(HttpUrl, statics["vcsReleaseUrl"])
 
     assert set(statics["pluginsDisabled"]) == (disable_plugins | {"WEBSERVER_CLUSTERS"})
 
