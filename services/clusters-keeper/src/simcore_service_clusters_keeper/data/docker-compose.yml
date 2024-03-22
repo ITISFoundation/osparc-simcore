@@ -129,7 +129,13 @@ services:
           - "node.role==manager"
 
   prometheus:
-    image: prom/prometheus:v2.47.2
+    image: prom/prometheus:v2.51.0
+    volumes:
+      - prometheus_data:/prometheus
+    deploy:
+      placement:
+        constraints:
+          - "node.role==manager"
 
 volumes:
   computational_shared_data:
