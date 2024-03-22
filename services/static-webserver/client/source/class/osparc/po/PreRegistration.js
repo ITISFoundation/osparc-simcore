@@ -41,7 +41,7 @@ qx.Class.define("osparc.po.PreRegistration", {
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
+    _buildLayout: function() {
       this.getChildControl("search-preregistration");
       this.getChildControl("finding-status");
       this.getChildControl("pre-registration-container");
