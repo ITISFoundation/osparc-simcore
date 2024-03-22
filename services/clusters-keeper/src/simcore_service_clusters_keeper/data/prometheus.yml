@@ -45,7 +45,6 @@ scrape_configs:
         regex: (.+)
       # Use the `prometheus_port` Swarm label to set the __address__ for scraping.
       - source_labels: [__address__, __meta_dockerswarm_service_label_prometheus_port]
-        separator: ':'
         target_label: __address__
         regex: ([^:]+)(?::\d+)?;(\d+)
         replacement: $1:$2
