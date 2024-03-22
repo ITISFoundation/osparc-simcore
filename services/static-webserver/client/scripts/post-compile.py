@@ -12,9 +12,9 @@ output_folders = [
 def read_json_file(filename):
     dirname = os.path.dirname(__file__)
     meta_filename = os.path.join(dirname, filename)
-    f = open(meta_filename)
-    metadata = json.load(f)
-    return metadata["applications"]
+    with open(meta_filename, "r") as file:
+        metadata = json.load(file)
+        return metadata["applications"]
 
 
 def update_apps_metadata():
