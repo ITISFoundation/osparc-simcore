@@ -19,6 +19,9 @@ services:
       placement:
         constraints:
           - "node.role==manager"
+      resources:
+        limits:
+          memory: 2048M
     secrets:
       - source: dask_tls_ca
         target: ${DASK_TLS_CA_FILE}
@@ -100,6 +103,9 @@ services:
       placement:
         constraints:
           - "node.role==manager"
+      resources:
+        limits:
+          memory: 512M
     secrets:
       - source: dask_tls_ca
         target: ${DASK_TLS_CA_FILE}
@@ -127,6 +133,10 @@ services:
       placement:
         constraints:
           - "node.role==manager"
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
 
   prometheus:
     image: prom/prometheus:v2.51.0
@@ -136,6 +146,10 @@ services:
       placement:
         constraints:
           - "node.role==manager"
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "1.0"
 
 volumes:
   computational_shared_data:
