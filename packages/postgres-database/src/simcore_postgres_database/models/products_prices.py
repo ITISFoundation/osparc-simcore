@@ -33,6 +33,13 @@ products_prices = sa.Table(
         doc="Price in USD/credit >=0. Must be in sync with Stripe product price (stripe_price_id column in this table).",
     ),
     sa.Column(
+        "min_payment_amount_usd",
+        sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
+        nullable=False,
+        server_default=sa.text("10.00"),
+        doc="Minimum amount in USD that can be paid for this product.",
+    ),
+    sa.Column(
         "comment",
         sa.String,
         nullable=False,

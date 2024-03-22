@@ -324,5 +324,6 @@ def setup_user_pre_registration_details_db(
             .returning(sa.literal_column("*"))
         )
         row = result.fetchone()
+        assert row
         yield cast(int, row[0])
         con.execute(users_pre_registration_details.delete())

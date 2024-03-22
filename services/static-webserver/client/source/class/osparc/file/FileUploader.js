@@ -70,7 +70,7 @@ qx.Class.define("osparc.file.FileUploader", {
       const download = false;
       const locationId = 0;
       const studyId = this.getNode().getStudy().getUuid();
-      const nodeId = this.getNode() ? this.getNode().getNodeId() : osparc.utils.Utils.uuidv4();
+      const nodeId = this.getNode() ? this.getNode().getNodeId() : osparc.utils.Utils.uuidV4();
       const fileId = file.name;
       const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
       const fileSize = file.size;
