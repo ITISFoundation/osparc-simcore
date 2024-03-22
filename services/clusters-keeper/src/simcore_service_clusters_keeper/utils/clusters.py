@@ -21,7 +21,9 @@ from ..core.settings import ApplicationSettings
 from .dask import get_scheduler_url
 
 _DOCKER_COMPOSE_FILE_NAME: Final[str] = "docker-compose.yml"
+_PROMETHEUS_FILE_NAME: Final[str] = "prometheus.yml"
 _HOST_DOCKER_COMPOSE_PATH: Final[Path] = Path(f"/{_DOCKER_COMPOSE_FILE_NAME}")
+_HOST_PROMETHEUS_PATH: Final[Path] = Path(f"/{_PROMETHEUS_FILE_NAME}")
 _HOST_CERTIFICATES_BASE_PATH: Final[Path] = Path("/.dask-sidecar-certificates")
 _HOST_TLS_CA_FILE_PATH: Final[Path] = _HOST_CERTIFICATES_BASE_PATH / "tls_dask_ca.pem"
 _HOST_TLS_CERT_FILE_PATH: Final[Path] = (
@@ -39,6 +41,12 @@ def _base_64_encode(file: Path) -> str:
 @functools.lru_cache
 def _docker_compose_yml_base64_encoded() -> str:
     file_path = PACKAGE_DATA_FOLDER / _DOCKER_COMPOSE_FILE_NAME
+    return _base_64_encode(file_path)
+
+
+@functools.lru_cache
+def _prometheus_yml_base64_encoded() -> str:
+    file_path = PACKAGE_DATA_FOLDER / _PROMETHEUS_FILE_NAME
     return _base_64_encode(file_path)
 
 
@@ -117,6 +125,7 @@ def create_startup_script(
             # NOTE: https://stackoverflow.com/questions/41203492/solving-redis-warnings-on-overcommit-memory-and-transparent-huge-pages-for-ubunt
             "sysctl vm.overcommit_memory=1",
             f"echo '{_docker_compose_yml_base64_encoded()}' | base64 -d > {_HOST_DOCKER_COMPOSE_PATH}",
+            f"echo '{_prometheus_yml_base64_encoded()}' | base64 -d > {_HOST_PROMETHEUS_PATH}",
             # NOTE: --default-addr-pool is necessary in order to prevent conflicts with AWS node IPs
             "docker swarm init --default-addr-pool 172.20.0.0/14",
             f"{' '.join(environment_variables)} docker stack deploy --with-registry-auth --compose-file={_HOST_DOCKER_COMPOSE_PATH} dask_stack",
