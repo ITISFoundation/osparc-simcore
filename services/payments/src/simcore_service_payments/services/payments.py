@@ -218,7 +218,6 @@ async def pay_with_payment_method(  # noqa: PLR0913
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
     notifier: NotifierService,
-    settings: ApplicationSettings,
     *,
     payment_method_id: PaymentMethodID,
     amount_dollars: Decimal,
