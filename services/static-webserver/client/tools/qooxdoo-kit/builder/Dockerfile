@@ -51,8 +51,11 @@ RUN \
   ls -la build-output
 # -> /project/build-output
 
-# Run post compilation step
+# Install python and run post compilation step
 RUN \
+  apt-get update \
+  && apt-get install -y --no-install-recommends \
+  python
   --mount=type=bind,source=scripts,target=scripts \
   python ./scripts/post-compile.py
 
