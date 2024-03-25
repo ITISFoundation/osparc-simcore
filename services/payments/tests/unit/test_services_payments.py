@@ -113,15 +113,12 @@ async def test_fails_to_pay_with_payment_method_without_funds(
     # Mocker providers
     notifier = NotifierService(mock_email_provider, mock_ws_provider)
 
-    settings = app.state.settings
-
     payment = await payments.pay_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         rut=rut,
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
         notifier=notifier,
-        settings=settings,
         #
         payment_method_id=payment_method_without_funds.payment_method_id,
         amount_dollars=100,
