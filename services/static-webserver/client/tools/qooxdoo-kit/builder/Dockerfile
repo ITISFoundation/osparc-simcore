@@ -51,6 +51,11 @@ RUN \
   ls -la build-output
 # -> /project/build-output
 
+# Run post compilation step
+RUN \
+  --mount=type=bind,source=scripts,target=scripts \
+  python ./scripts/post-compile.py
+
 
 FROM joseluisq/static-web-server:1.16.0-alpine as server-base
 
