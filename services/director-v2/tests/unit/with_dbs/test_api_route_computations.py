@@ -28,7 +28,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 )
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    ServicePricingPlanGet,
+    PricingPlanGet,
 )
 from models_library.basic_types import VersionStr
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
@@ -253,16 +253,16 @@ def mocked_catalog_service_fcts_deprecated(
 
 
 @pytest.fixture(
-    params=ServicePricingPlanGet.Config.schema_extra["examples"],
+    params=PricingPlanGet.Config.schema_extra["examples"],
     ids=["with ec2 restriction", "without"],
 )
-def default_pricing_plan(request: pytest.FixtureRequest) -> ServicePricingPlanGet:
-    return ServicePricingPlanGet(**request.param)
+def default_pricing_plan(request: pytest.FixtureRequest) -> PricingPlanGet:
+    return PricingPlanGet(**request.param)
 
 
 @pytest.fixture
 def default_pricing_plan_aws_ec2_type(
-    default_pricing_plan: ServicePricingPlanGet,
+    default_pricing_plan: PricingPlanGet,
 ) -> str | None:
     for p in default_pricing_plan.pricing_units:
         if p.default:
@@ -276,7 +276,7 @@ def default_pricing_plan_aws_ec2_type(
 
 @pytest.fixture
 def mocked_resource_usage_tracker_service_fcts(
-    minimal_app: FastAPI, default_pricing_plan: ServicePricingPlanGet
+    minimal_app: FastAPI, default_pricing_plan: PricingPlanGet
 ) -> Iterator[respx.MockRouter]:
     def _mocked_service_default_pricing_plan(
         request, service_key: str, service_version: str
@@ -539,7 +539,7 @@ async def test_create_computation_with_wallet(
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [ServicePricingPlanGet.Config.schema_extra["examples"][0]],
+    [PricingPlanGet.Config.schema_extra["examples"][0]],
 )
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_409(
     minimal_configuration: None,
@@ -577,7 +577,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [ServicePricingPlanGet.Config.schema_extra["examples"][0]],
+    [PricingPlanGet.Config.schema_extra["examples"][0]],
 )
 async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503(
     minimal_configuration: None,

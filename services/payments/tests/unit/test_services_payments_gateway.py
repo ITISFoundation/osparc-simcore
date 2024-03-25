@@ -112,7 +112,6 @@ async def test_one_time_payment_workflow(
             stripe_tax_rate_id=faker.word(),
             stripe_tax_exempt_value=StripeTaxExempt.none,
         ),
-        payment_gateway_tax_feature_enabled=True,
     )
 
     # form url
@@ -192,7 +191,6 @@ async def test_payment_methods_workflow(
             stripe_tax_rate_id=faker.word(),
             stripe_tax_exempt_value=StripeTaxExempt.none,
         ),
-        payment_gateway_tax_feature_enabled=True,
     )
     assert payment_with_payment_method.success
 

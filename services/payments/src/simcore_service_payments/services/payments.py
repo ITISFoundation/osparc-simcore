@@ -36,7 +36,6 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 
 from .._constants import RUT
-from ..core.settings import ApplicationSettings
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
 from ..models.db_to_api import to_payments_api_model
@@ -58,7 +57,6 @@ _logger = logging.getLogger()
 async def init_one_time_payment(
     gateway: PaymentsGatewayApi,
     repo: PaymentsTransactionsRepo,
-    settings: ApplicationSettings,
     *,
     amount_dollars: Decimal,
     target_credits: Decimal,
@@ -91,7 +89,6 @@ async def init_one_time_payment(
                 else StripeTaxExempt.reverse
             ),
         ),
-        payment_gateway_tax_feature_enabled=settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED,
     )
 
     submission_link = gateway.get_form_payment_url(init.payment_id)
@@ -146,6 +143,7 @@ async def cancel_one_time_payment(
         completion_state=PaymentTransactionState.CANCELED,
         state_message=payment_cancelled.message,
         invoice_url=None,
+        stripe_invoice_id=None,
     )
 
 
@@ -164,6 +162,7 @@ async def acknowledge_one_time_payment(
         ),
         state_message=ack.message,
         invoice_url=ack.invoice_url,
+        stripe_invoice_id=ack.stripe_invoice_id,
     )
 
 
@@ -217,7 +216,6 @@ async def pay_with_payment_method(  # noqa: PLR0913
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
     notifier: NotifierService,
-    settings: ApplicationSettings,
     *,
     payment_method_id: PaymentMethodID,
     amount_dollars: Decimal,
@@ -256,7 +254,6 @@ async def pay_with_payment_method(  # noqa: PLR0913
                 else StripeTaxExempt.reverse
             ),
         ),
-        payment_gateway_tax_feature_enabled=settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED,
     )
 
     payment_id = ack.payment_id
@@ -290,6 +287,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
         ),
         state_message=ack.message,
         invoice_url=ack.invoice_url,
+        stripe_invoice_id=ack.stripe_invoice_id,
     )
 
     # NOTE: notifications here are done as background-task after responding `POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay`

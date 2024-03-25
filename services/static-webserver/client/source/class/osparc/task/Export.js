@@ -31,25 +31,9 @@ qx.Class.define("osparc.task.Export", {
   members: {
     __study: null,
 
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "icon":
-          control = new qx.ui.basic.Image(this.self().ICON+"/14").set({
-            alignY: "middle",
-            alignX: "center",
-            paddingLeft: 3,
-            width: 25
-          });
-          this._add(control);
-          break;
-      }
-      return control || this.base(arguments, id);
-    },
-
     // overridden
     _buildLayout: function() {
-      this.getChildControl("icon");
+      this.setIcon(this.self().ICON+"/14");
       this.getChildControl("title");
       this.getChildControl("subtitle");
       this.getChildControl("stop");

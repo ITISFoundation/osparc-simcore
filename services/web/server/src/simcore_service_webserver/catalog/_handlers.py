@@ -17,7 +17,7 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceOutputKey,
     ServiceUpdate,
 )
-from models_library.api_schemas_webserver.resource_usage import ServicePricingPlanGet
+from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import (
     ServiceResourcesDict,
@@ -37,6 +37,7 @@ from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _api, client
 from ._api import CatalogRequestContext
+from .exceptions import DefaultPricingUnitForServiceNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -332,13 +333,16 @@ async def get_service_pricing_plan(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
-    service_pricing_plan = await get_default_service_pricing_plan(
+    pricing_plan = await get_default_service_pricing_plan(
         app=request.app,
         product_name=ctx.product_name,
         service_key=path_params.service_key,
         service_version=path_params.service_version,
     )
+    if pricing_plan.pricing_units is None:
+        raise DefaultPricingUnitForServiceNotFoundError(
+            service_key=f"{path_params.service_key}",
+            service_version=f"{path_params.service_version}",
+        )
 
-    return envelope_json_response(
-        parse_obj_as(ServicePricingPlanGet, service_pricing_plan)
-    )
+    return envelope_json_response(parse_obj_as(PricingPlanGet, pricing_plan))

@@ -11,8 +11,8 @@ from http import HTTPStatus
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    PricingPlanGet,
     PricingUnitGet,
-    ServicePricingPlanGet,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
@@ -37,8 +37,8 @@ def mock_rut_api_responses(
     )
 
     service_pricing_plan_get = parse_obj_as(
-        ServicePricingPlanGet,
-        ServicePricingPlanGet.Config.schema_extra["examples"][0],
+        PricingPlanGet,
+        PricingPlanGet.Config.schema_extra["examples"][0],
     )
 
     aioresponses_mocker.get(

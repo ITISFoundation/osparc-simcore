@@ -264,15 +264,15 @@ async def _get_default_pricing_and_hardware_info(
         service_key=ServiceKey(service_key),
         service_version=ServiceVersion(service_version),
     )
-    for unit in service_pricing_plan_get.pricing_units:
-        if unit.default:
-            return PricingAndHardwareInfoTuple(
-                service_pricing_plan_get.pricing_plan_id,
-                unit.pricing_unit_id,
-                unit.current_cost_per_unit_id,
-                unit.specific_info.aws_ec2_instances,
-            )
-
+    if service_pricing_plan_get.pricing_units:
+        for unit in service_pricing_plan_get.pricing_units:
+            if unit.default:
+                return PricingAndHardwareInfoTuple(
+                    service_pricing_plan_get.pricing_plan_id,
+                    unit.pricing_unit_id,
+                    unit.current_cost_per_unit_id,
+                    unit.specific_info.aws_ec2_instances,
+                )
     raise DefaultPricingUnitNotFoundError(
         project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}"
     )

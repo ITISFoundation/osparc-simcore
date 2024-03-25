@@ -10,7 +10,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    ServicePricingPlanGet,
+    PricingPlanGet,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
@@ -31,8 +31,8 @@ def mock_rut_api_responses(
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
     service_pricing_plan_get = parse_obj_as(
-        ServicePricingPlanGet,
-        ServicePricingPlanGet.Config.schema_extra["examples"][0],
+        PricingPlanGet,
+        PricingPlanGet.Config.schema_extra["examples"][0],
     )
     aioresponses_mocker.get(
         re.compile(f"^{settings.api_base_url}/services/+.+$"),

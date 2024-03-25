@@ -21,15 +21,14 @@ qx.Class.define("osparc.task.TaskUI", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.HBox(5).set({
-      alignY: "middle"
-    });
-    this._setLayout(layout);
+    const grid = new qx.ui.layout.Grid(5, 5);
+    grid.setColumnFlex(1, 1);
+    this._setLayout(grid);
 
     this.set({
-      height: 30,
+      padding: 5,
       maxWidth: this.self().MAX_WIDTH,
-      backgroundColor: "material-button-background"
+      backgroundColor: "background-main-3"
     });
 
     this._buildLayout();
@@ -67,34 +66,45 @@ qx.Class.define("osparc.task.TaskUI", {
       let control;
       switch (id) {
         case "icon":
-          control = new osparc.ui.form.FetchButton().set({
-            width: 25
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/14").set({
+            width: 25,
+            alignY: "middle"
           });
-          this._add(control);
+          control.getContentElement().addClass("rotate");
+          this._add(control, {
+            column: 0,
+            row: 0,
+            rowSpan: 2
+          });
           break;
         case "title":
           control = new qx.ui.basic.Label();
           this.bind("title", control, "value");
-          this._add(control);
+          this._add(control, {
+            column: 1,
+            row: 0
+          });
           break;
         case "subtitle":
-          control = new qx.ui.basic.Label().set({
-            allowGrowX: true
-          });
+          control = new qx.ui.basic.Label();
           this.bind("subtitle", control, "value");
           this._add(control, {
-            flex: 1
+            column: 1,
+            row: 1
           });
           break;
         case "stop":
           control = new qx.ui.basic.Image("@MaterialIcons/close/16").set({
-            alignY: "middle",
-            alignX: "center",
             width: 25,
             cursor: "pointer",
-            visibility: "excluded"
+            visibility: "excluded",
+            alignY: "middle"
           });
-          this._add(control);
+          this._add(control, {
+            column: 2,
+            row: 0,
+            rowSpan: 2
+          });
           break;
       }
       return control || this.base(arguments, id);
@@ -130,6 +140,11 @@ qx.Class.define("osparc.task.TaskUI", {
     stop: function() {
       const tasks = osparc.task.Tasks.getInstance();
       tasks.removeTask(this);
+    },
+
+    setIcon: function(source) {
+      this.getChildControl("icon").getContentElement().removeClass("rotate");
+      this.getChildControl("icon").setSource(source);
     },
 
     /**
