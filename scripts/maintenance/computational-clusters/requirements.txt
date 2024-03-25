@@ -12,3 +12,4 @@ pydantic[email]
 pylint
 python-dotenv
 typer[all]
+sqlalchemy[asyncio]
