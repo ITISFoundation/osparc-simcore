@@ -116,7 +116,9 @@ qx.Class.define("osparc.FlashMessenger", {
         const wordCount = flashMessage.getMessage() ? flashMessage.getMessage().split(" ").length : 20;
         duration = Math.max(5500, wordCount*500); // An average reader takes 300ms to read a word
       }
-      qx.event.Timer.once(() => this.removeMessage(flashMessage), this, duration);
+      if (duration !== 0) {
+        qx.event.Timer.once(() => this.removeMessage(flashMessage), this, duration);
+      }
     },
 
     /**
