@@ -1,6 +1,6 @@
 import logging
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 import arrow
@@ -234,7 +234,9 @@ async def _fake_get_payment_invoice_url(
     assert user_id  # nosec
     assert wallet_id  # nosec
 
-    return parse_obj_as(HttpUrl, f"https://fake-invoice.com/?id={payment_id}")
+    return cast(
+        HttpUrl, parse_obj_as(HttpUrl, f"https://fake-invoice.com/?id={payment_id}")
+    )
 
 
 async def raise_for_wallet_payments_permissions(
