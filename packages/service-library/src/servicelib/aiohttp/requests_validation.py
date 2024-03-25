@@ -14,7 +14,6 @@ from typing import TypeAlias, TypeVar, Union
 
 from aiohttp import web
 from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
-from servicelib.aiohttp import status
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -42,8 +41,8 @@ def handle_validation_as_http_error(
     """Context manager to handle ValidationError and reraise them as HTTPUnprocessableEntity error
 
     Arguments:
-        error_msg_template -- _description_
-        resource_name --
+        error_msg_template
+        resource_name
         use_error_v1 -- If True, it uses new error response
 
     Raises:
@@ -52,14 +51,15 @@ def handle_validation_as_http_error(
     """
 
     try:
+
         yield
 
     except ValidationError as err:
         details = [
             {
-                "loc": ".".join(map(str, e["loc"])),
                 "msg": e["msg"],
                 "type": e["type"],
+                "loc": e["loc"],  # e.g. ["x",0,"y"]
             }
             for e in err.errors()
         ]
@@ -69,24 +69,17 @@ def handle_validation_as_http_error(
 
         if use_error_v1:
             # NOTE: keeps backwards compatibility until ligher error response is implemented in the entire API
-            # Implements servicelib.aiohttp.rest_responses.ErrorItemType
+            # Implements servicelib.aiohttp.rest_responses.ErrorItem
             errors = [
                 {
-                    "code": e["type"],
-                    "message": e["msg"],
-                    "resource": resource_name,
-                    "field": e["loc"],
+                    "type": e["type"],
+                    "msg": e["msg"],
+                    "loc": e["loc"],
                 }
                 for e in details
             ]
-            error_str = json_dumps(
-                {
-                    "error": {
-                        "status": status.HTTP_422_UNPROCESSABLE_ENTITY,
-                        "errors": errors,
-                    }
-                }
-            )
+
+            error_str = json_dumps({"error": errors[0] if len(errors) == 1 else errors})
         else:
             # NEW proposed error for https://github.com/ITISFoundation/osparc-simcore/issues/443
             error_str = json_dumps(
