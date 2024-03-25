@@ -47,7 +47,7 @@ click==8.1.7
     # via
     #   dask
     #   distributed
-cloudpickle==2.2.1
+cloudpickle==3.0.0
     # via
     #   dask
     #   distributed
@@ -75,7 +75,7 @@ frozenlist==1.4.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2023.6.0
+fsspec==2024.3.1
     # via dask
 greenlet==2.0.2
     # via sqlalchemy
@@ -93,11 +93,11 @@ idna==3.4
     #   httpx
     #   requests
     #   yarl
-importlib-metadata==6.8.0
+importlib-metadata==7.1.0
     # via dask
 iniconfig==2.0.0
     # via pytest
-jinja2==3.1.2
+jinja2==3.1.3
     # via
     #   bokeh
     #   dask
@@ -112,11 +112,11 @@ locket==1.0.0
     #   partd
 mako==1.2.4
     # via alembic
-markupsafe==2.1.3
+markupsafe==2.1.5
     # via
     #   jinja2
     #   mako
-msgpack==1.0.5
+msgpack==1.0.8
     # via distributed
 multidict==6.0.4
     # via
@@ -127,9 +127,9 @@ mypy==1.6.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
-numpy==1.25.2
+numpy==1.26.4
     # via bokeh
-packaging==23.1
+packaging==24.0
     # via
     #   bokeh
     #   dask
@@ -138,7 +138,7 @@ packaging==23.1
     #   pytest
 pamqp==3.2.1
     # via aiormq
-partd==1.4.0
+partd==1.4.1
     # via dask
 pillow==10.1.0
     # via bokeh
@@ -146,7 +146,7 @@ pluggy==1.3.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-psutil==5.9.5
+psutil==5.9.8
     # via distributed
 pycparser==2.21
     # via cffi
@@ -197,19 +197,19 @@ sqlalchemy==1.4.49
     #   dask-gateway-server
 sqlalchemy2-stubs==0.0.2a36
     # via sqlalchemy
-tblib==2.0.0
+tblib==3.0.0
     # via distributed
 tomli==2.0.1
     # via
     #   coverage
     #   mypy
     #   pytest
-toolz==0.12.0
+toolz==0.12.1
     # via
     #   dask
     #   distributed
     #   partd
-tornado==6.3.3
+tornado==6.4
     # via
     #   bokeh
     #   distributed
@@ -221,7 +221,7 @@ typing-extensions==4.7.1
     #   bokeh
     #   mypy
     #   sqlalchemy2-stubs
-urllib3==1.26.16
+urllib3==2.0.7
     # via
     #   botocore
     #   distributed
@@ -238,5 +238,5 @@ yarl==1.9.2
     #   aiormq
 zict==3.0.0
     # via distributed
-zipp==3.16.2
+zipp==3.18.1
     # via importlib-metadata
