@@ -1191,7 +1191,9 @@ async def _remove_job_from_scheduler(
         print(f"unpublished {task_id} from scheduler")
 
 
-async def _cancel_jobs(user_id: int, wallet_id: int) -> None:
+async def _cancel_jobs(  # noqa: C901, PLR0912
+    user_id: int, wallet_id: int, *, force: bool
+) -> None:
     # get the theory
     computational_tasks = await _list_computational_tasks_from_db(user_id)
 
@@ -1247,7 +1249,7 @@ async def _cancel_jobs(user_id: int, wallet_id: int) -> None:
                             await _remove_job_from_scheduler(
                                 the_cluster, dask_task.job_id
                             )
-                    if comp_task is not None:
+                    if comp_task is not None and force:
                         await _abort_job_in_db(comp_task.project_id, comp_task.node_id)
 
                 print("cancelled all tasks")
@@ -1262,7 +1264,7 @@ async def _cancel_jobs(user_id: int, wallet_id: int) -> None:
                         # we need to clear it of the cluster
                         await _remove_job_from_scheduler(the_cluster, dask_task.job_id)
 
-                if comp_task is not None:
+                if comp_task is not None and force:
                     await _abort_job_in_db(comp_task.project_id, comp_task.node_id)
 
     except ValidationError:
@@ -1273,6 +1275,13 @@ async def _cancel_jobs(user_id: int, wallet_id: int) -> None:
 def cancel_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
     wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+    *,
+    force: Annotated[
+        bool,
+        typer.Option(
+            help="will also force the job to abort in the database (use only if job is in WAITING FOR CLUSTER/WAITING FOR RESOURCE)"
+        ),
+    ] = False,
 ) -> None:
     """Cancel jobs from the cluster, this will rely on osparc platform to work properly
     The director-v2 should receive the cancellation and abort the concerned pipelines in the next 15 seconds.
@@ -1282,7 +1291,7 @@ def cancel_jobs(
         user_id -- the user ID
         wallet_id -- the wallet ID
     """
-    asyncio.run(_cancel_jobs(user_id, wallet_id))
+    asyncio.run(_cancel_jobs(user_id, wallet_id, force=force))
 
 
 async def _trigger_cluster_termination(user_id: int, wallet_id: int) -> None:
