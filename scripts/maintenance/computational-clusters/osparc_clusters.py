@@ -495,7 +495,8 @@ def _print_computational_clusters(
                 [
                     f"Dask Scheduler UI: http://{cluster.primary.ec2_instance.public_ip_address}:8787",
                     f"Dask Scheduler TCP: tcp://{cluster.primary.ec2_instance.public_ip_address}:8786",
-                    f"Graylog: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
+                    f"Graylog UI: {_create_graylog_permalinks(environment, cluster.primary.ec2_instance)}",
+                    f"Prometheus UI: http://{cluster.primary.ec2_instance.public_ip_address}:9090",
                     f"tasks: {json.dumps(cluster.task_states_to_tasks, indent=2)}",
                 ]
             ),
