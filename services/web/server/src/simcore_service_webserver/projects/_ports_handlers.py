@@ -1,6 +1,6 @@
-""" Handlers for some CRUD operations for
-    - /projects/{*}/inputs
-    - /projects/{*}/outputs
+"""Handlers for some CRUD operations for
+- /projects/{*}/inputs
+- /projects/{*}/outputs
 """
 
 import functools
@@ -8,6 +8,7 @@ import logging
 from typing import Any, Literal
 
 from aiohttp import web
+from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID
 from models_library.users import UserID
@@ -18,7 +19,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.json_serialization import json_dumps
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
@@ -37,12 +37,7 @@ log = logging.getLogger(__name__)
 
 
 def _web_json_response_enveloped(data: Any):
-    return web.json_response(
-        {
-            "data": jsonable_encoder(data),
-        },
-        dumps=json_dumps,
-    )
+    return Envelope(data=data)
 
 
 def _handle_project_exceptions(handler):
@@ -139,7 +134,9 @@ async def get_project_inputs(request: web.Request) -> web.Response:
     assert request.app  # nosec
 
     workbench = await _get_validated_workbench_model(
-        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
+        app=request.app,
+        project_id=path_params.project_id,
+        user_id=req_ctx.user_id,
     )
     inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
 
@@ -166,7 +163,9 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     assert request.app  # nosec
 
     workbench = await _get_validated_workbench_model(
-        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
+        app=request.app,
+        project_id=path_params.project_id,
+        user_id=req_ctx.user_id,
     )
     current_inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
 
@@ -220,7 +219,9 @@ async def get_project_outputs(request: web.Request) -> web.Response:
     assert request.app  # nosec
 
     workbench = await _get_validated_workbench_model(
-        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
+        app=request.app,
+        project_id=path_params.project_id,
+        user_id=req_ctx.user_id,
     )
     outputs: dict[NodeID, Any] = _ports_api.get_project_outputs(workbench)
 
@@ -265,7 +266,9 @@ async def list_project_metadata_ports(request: web.Request) -> web.Response:
     assert request.app  # nosec
 
     workbench = await _get_validated_workbench_model(
-        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
+        app=request.app,
+        project_id=path_params.project_id,
+        user_id=req_ctx.user_id,
     )
 
     return _web_json_response_enveloped(
