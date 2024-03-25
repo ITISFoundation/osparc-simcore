@@ -24,7 +24,14 @@ from dotenv import dotenv_values
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from mypy_boto3_ec2.type_defs import FilterTypeDef, TagTypeDef
-from pydantic import BaseModel, ByteSize, PostgresDsn, TypeAdapter, field_validator
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    PostgresDsn,
+    TypeAdapter,
+    ValidationError,
+    field_validator,
+)
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
 from rich.style import Style
@@ -55,16 +62,6 @@ class ComputationalInstance(AutoscaledInstance):
     dask_ip: str
 
 
-@dataclass(slots=True, kw_only=True, frozen=True)
-class ComputationalTask:
-    project_id: uuid.UUID
-    node_id: uuid.UUID
-    job_id: str | None
-    service_name: str
-    service_version: str
-    state: str
-
-
 @dataclass
 class DynamicService:
     node_id: str
@@ -84,6 +81,34 @@ class DynamicInstance(AutoscaledInstance):
 
 TaskId: TypeAlias = str
 TaskState: TypeAlias = str
+
+
+@dataclass(slots=True, kw_only=True, frozen=True)
+class ComputationalTask:
+    project_id: uuid.UUID
+    node_id: uuid.UUID
+    job_id: TaskId | None
+    service_name: str
+    service_version: str
+    state: str
+
+
+@dataclass(slots=True, kw_only=True, frozen=True)
+class DaskTask:
+    job_id: TaskId
+    state: TaskState
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ComputationalCluster:
+    primary: ComputationalInstance
+    workers: list[ComputationalInstance]
+
+    scheduler_info: dict[str, Any]
+    datasets: tuple[str, ...]
+    processing_jobs: dict[str, str]
+    task_states_to_tasks: dict[str, list[TaskState]]
+
 
 MINUTE: Final[int] = 60
 HOUR: Final[int] = 60 * MINUTE
@@ -171,17 +196,6 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, Any]:
     finally:
         if engine:
             await engine.dispose()
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ComputationalCluster:
-    primary: ComputationalInstance
-    workers: list[ComputationalInstance]
-
-    scheduler_info: dict[str, Any]
-    datasets: tuple[str, ...]
-    processing_jobs: dict[str, str]
-    task_states_to_tasks: dict[TaskId, list[TaskState]]
 
 
 def _get_instance_name(instance) -> str:
@@ -753,7 +767,7 @@ async def _analyze_computational_instances(
             scheduler_info = {}
             datasets_on_cluster = ()
             processing_jobs = {}
-            unrunnable_tasks = {}
+            all_tasks = {}
             with contextlib.suppress(TimeoutError, OSError):
                 async with _dask_client(
                     instance.ec2_instance.public_ip_address
@@ -761,7 +775,7 @@ async def _analyze_computational_instances(
                     scheduler_info = client.scheduler_info()
                     datasets_on_cluster = await client.list_datasets()
                     processing_jobs = await client.processing()
-                    unrunnable_tasks = await _dask_list_tasks(client)
+                    all_tasks = await _dask_list_tasks(client)
 
             assert isinstance(datasets_on_cluster, tuple)
             assert isinstance(processing_jobs, dict)
@@ -773,7 +787,7 @@ async def _analyze_computational_instances(
                     scheduler_info=scheduler_info,
                     datasets=datasets_on_cluster,
                     processing_jobs=processing_jobs,
-                    task_states_to_tasks=unrunnable_tasks,
+                    task_states_to_tasks=all_tasks,
                 )
             )
 
@@ -1036,6 +1050,19 @@ def summary(
     asyncio.run(_summary(user_id or None, wallet_id or None))
 
 
+async def _abort_job_in_db(project_id: uuid.UUID, node_id: uuid.UUID) -> None:
+    async with contextlib.AsyncExitStack() as stack:
+        engine = await stack.enter_async_context(db_engine())
+        db_connection = await stack.enter_async_context(engine.begin())
+
+        await db_connection.execute(
+            sa.text(
+                f"UPDATE comp_tasks SET state = 'ABORTED' WHERE project_id='{project_id}' AND node_id='{node_id}'"
+            )
+        )
+        print(f"set comp_tasks for {project_id=}/{node_id=} set to ABORTED")
+
+
 async def _list_computational_tasks_from_db(user_id: int) -> list[ComputationalTask]:
     async with contextlib.AsyncExitStack() as stack:
         engine = await stack.enter_async_context(db_engine())
@@ -1059,7 +1086,12 @@ async def _list_computational_tasks_from_db(user_id: int) -> list[ComputationalT
         query = (
             sa.select("*")
             .select_from(sa.table("comp_tasks"))
-            .where(sa.column("project_id").in_(subquery))
+            .where(
+                sa.column("project_id").in_(subquery)
+                & (sa.cast(sa.column("state"), sa.VARCHAR) != "SUCCESS")
+                & (sa.cast(sa.column("state"), sa.VARCHAR) != "FAILED")
+                & (sa.cast(sa.column("state"), sa.VARCHAR) != "ABORTED")
+            )
         )
 
         result = await db_connection.execute(query)
@@ -1082,38 +1114,42 @@ async def _list_computational_tasks_from_db(user_id: int) -> list[ComputationalT
 
 
 def _print_computational_tasks(
-    user_id: int, wallet_id: int, tasks: list[ComputationalTask]
+    user_id: int,
+    wallet_id: int,
+    tasks: list[tuple[ComputationalTask | None, DaskTask | None]],
 ) -> None:
     table = Table(
+        "index",
         "ProjectID",
         "NodeID",
         "ServiceName",
         "ServiceVersion",
-        "State",
+        "State in DB",
+        "State in Dask cluster",
         title=f"{len(tasks)} Tasks running for {user_id=}/{wallet_id=}",
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
     )
-    by_project_dict: dict[uuid.UUID, list[ComputationalTask]] = defaultdict(list)
-    for task in tasks:
-        by_project_dict[task.project_id].append(task)
-    for project_id, sorted_tasks in by_project_dict.items():
-        task = sorted_tasks[0]
+
+    for index, (db_task, dask_task) in enumerate(tasks):
         table.add_row(
-            f"{project_id}",
-            f"{task.node_id}",
-            task.service_name,
-            task.service_version,
-            task.state,
+            f"{index}",
+            (
+                f"{db_task.project_id}"
+                if db_task
+                else "[red][bold]intervention needed[/bold][/red]"
+            ),
+            f"{db_task.node_id}" if db_task else "",
+            f"{db_task.service_name}" if db_task else "",
+            f"{db_task.service_version}" if db_task else "",
+            f"{db_task.state}" if db_task else "",
+            (
+                dask_task.state
+                if dask_task
+                else "[orange]task not yet in cluster[/orange]"
+            ),
         )
-        for task in sorted_tasks[1:]:
-            table.add_row(
-                "",
-                f"{task.node_id}",
-                task.service_name,
-                task.service_version,
-                task.state,
-            )
+
     print(table)
 
 
@@ -1129,67 +1165,108 @@ async def _list_computational_clusters(
     )
 
 
+async def _trigger_job_cancellation_in_scheduler(
+    cluster: ComputationalCluster, task_id: TaskId
+) -> None:
+    async with _dask_client(
+        cluster.primary.ec2_instance.public_ip_address
+    ) as dask_client:
+        task_future = distributed.Future(task_id)
+        cancel_event = distributed.Event(
+            name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
+            client=dask_client,
+        )
+        await cancel_event.set()
+        await task_future.cancel()
+        print(f"cancelled {task_id} in scheduler/workers")
+
+
+async def _remove_job_from_scheduler(
+    cluster: ComputationalCluster, task_id: TaskId
+) -> None:
+    async with _dask_client(
+        cluster.primary.ec2_instance.public_ip_address
+    ) as dask_client:
+        await dask_client.unpublish_dataset(task_id)
+        print(f"unpublished {task_id} from scheduler")
+
+
 async def _cancel_jobs(user_id: int, wallet_id: int) -> None:
     # get the theory
     computational_tasks = await _list_computational_tasks_from_db(user_id)
-    _print_computational_tasks(user_id, wallet_id, computational_tasks)
 
     # get the reality
     computational_clusters = await _list_computational_clusters(user_id, wallet_id)
+    job_id_to_dask_state: dict[TaskId, TaskState] = {}
     if computational_clusters:
         assert (
             len(computational_clusters) == 1
         ), "too many clusters found! TIP: fix this code or something weird is playing out"
 
-    # _print_computational_clusters(
-    #     computational_clusters,
-    #     state.environment,
-    #     state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
-    # )
-
-    print(
-        "Please choose which jobs to cancel, write all to cancel all of them, let empty to stop cancelling."
-    )
-
-    async with contextlib.AsyncExitStack() as stack:
-
         the_cluster = computational_clusters[0]
-        dask_client = await stack.enter_async_context(
-            _dask_client(the_cluster.primary.ec2_instance.public_ip_address)
-        )
+        print(f"{the_cluster.task_states_to_tasks=}")
 
-        published_datasets = await dask_client.list_datasets()
-        if not published_datasets:
-            print("no tasks running. nothing to cancel.")
-        assert published_datasets
-        assert isinstance(published_datasets, tuple)
-        for index, dataset in enumerate(published_datasets):
-            print(f"[{index}]: {dataset}")
+        for job_state, job_ids in the_cluster.task_states_to_tasks.items():
+            for job_id in job_ids:
+                job_id_to_dask_state[job_id] = job_state
+
+    task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = []
+    for task in computational_tasks:
+        dask_task = None
+        if task.job_id:
+            dask_task = DaskTask(
+                job_id=task.job_id,
+                state=job_id_to_dask_state.pop(task.job_id, None) or "unknown",
+            )
+        task_to_dask_job.append((task, dask_task))
+    # keep the jobs still in the cluster
+    for job_id, dask_state in job_id_to_dask_state.items():
+        task_to_dask_job.append((None, DaskTask(job_id=job_id, state=dask_state)))
+
+    if not task_to_dask_job:
+        print("[red]nothing found![/red]")
+        raise typer.Exit
+
+    _print_computational_tasks(user_id, wallet_id, task_to_dask_job)
+    print(the_cluster.datasets)
+    try:
         if response := typer.prompt(
-            "Which dataset to cancel? all for all of them.", default=""
+            "[yellow]Which dataset to cancel? all for all of them.[/yellow]",
+            default="none",
         ):
-            if response == "all":
-                for dataset in published_datasets:
-                    task_future = distributed.Future(dataset)
-                    cancel_event = distributed.Event(
-                        name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
-                        client=dask_client,
-                    )
-                    await cancel_event.set()
-                    await task_future.cancel()
+            if response == "none":
+                print("[yellow]not cancelling anything[/yellow]")
+            elif response == "all":
+                for comp_task, dask_task in task_to_dask_job:
+                    if dask_task is not None and dask_task.state != "unknown":
+                        await _trigger_job_cancellation_in_scheduler(
+                            the_cluster, dask_task.job_id
+                        )
+                        if comp_task is None:
+                            # we need to clear it of the cluster
+                            await _remove_job_from_scheduler(
+                                the_cluster, dask_task.job_id
+                            )
+                    if comp_task is not None:
+                        await _abort_job_in_db(comp_task.project_id, comp_task.node_id)
+
                 print("cancelled all tasks")
             else:
                 selected_index = TypeAdapter(int).validate_python(response)
-                task_future = distributed.Future(published_datasets[selected_index])
-                cancel_event = distributed.Event(
-                    name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
-                    client=dask_client,
-                )
-                await cancel_event.set()
-                await task_future.cancel()
-                print(f"cancelled {published_datasets[selected_index]}")
-        else:
-            print("not cancelling anything")
+                comp_task, dask_task = task_to_dask_job[selected_index]
+                if dask_task is not None and dask_task.state != "unknown":
+                    await _trigger_job_cancellation_in_scheduler(
+                        the_cluster, dask_task.job_id
+                    )
+                    if comp_task is None:
+                        # we need to clear it of the cluster
+                        await _remove_job_from_scheduler(the_cluster, dask_task.job_id)
+
+                if comp_task is not None:
+                    await _abort_job_in_db(comp_task.project_id, comp_task.node_id)
+
+    except ValidationError:
+        print("[yellow]wrong index, not cancelling anything[/yellow]")
 
 
 @app.command()
@@ -1206,64 +1283,6 @@ def cancel_jobs(
         wallet_id -- the wallet ID
     """
     asyncio.run(_cancel_jobs(user_id, wallet_id))
-
-
-async def _clear_jobs(user_id: int, wallet_id: int) -> None:
-    assert state.ec2_resource_clusters_keeper
-    computational_instances = await _list_computational_instances_from_ec2(
-        user_id, wallet_id
-    )
-    computational_clusters = await _parse_computational_clusters(
-        computational_instances, state.ssh_key_path, user_id, wallet_id
-    )
-    assert computational_clusters
-    assert (
-        len(computational_clusters) == 1
-    ), "too many clusters found! TIP: fix this code"
-
-    _print_computational_clusters(
-        computational_clusters,
-        state.environment,
-        state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
-    )
-
-    print("Please choose which jobs to remove, write all to remove all of them.")
-    the_cluster = computational_clusters[0]
-    async with _dask_client(
-        the_cluster.primary.ec2_instance.public_ip_address
-    ) as client:
-        published_datasets = await client.list_datasets()
-        assert published_datasets
-        assert isinstance(published_datasets, tuple)
-        for index, dataset in enumerate(published_datasets):
-            print(f"[{index}]: {dataset}")
-        if response := typer.prompt(
-            "Which dataset to remove? all for all of them.", default=""
-        ):
-            if response == "all":
-                client.datasets.clear()
-                print("removed all tasks")
-            else:
-                selected_index = TypeAdapter(int).validate_python(response)
-                await client.unpublish_dataset(published_datasets[selected_index])
-                print(f"removed {published_datasets[selected_index]}")
-        else:
-            print("not deleting anything")
-
-
-@app.command()
-def clear_jobs(
-    user_id: Annotated[int, typer.Option(help="the user ID")],
-    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
-) -> None:
-    """DELETES all dask jobs from the cluster, if the osparc still wants to run these, it is useless.
-    TIP: Use first the cancel-jobs command!
-
-    Arguments:
-        user_id -- the user ID
-        wallet_id -- the wallet ID
-    """
-    asyncio.run(_clear_jobs(user_id, wallet_id))
 
 
 async def _trigger_cluster_termination(user_id: int, wallet_id: int) -> None:
