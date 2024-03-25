@@ -62,7 +62,7 @@ async def set_user_as_deleted(app: web.Application, user_id: UserID) -> None:
     )
 
 
-def _glob_to_sql_like(glob_pattern):
+def _glob_to_sql_like(glob_pattern: str) -> str:
     # Escape SQL LIKE special characters in the glob pattern
     sql_like_pattern = glob_pattern.replace("%", r"\%").replace("_", r"\_")
     # Convert glob wildcards to SQL LIKE wildcards
