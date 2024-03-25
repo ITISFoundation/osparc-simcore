@@ -128,26 +128,26 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       let layout;
       let control;
       switch (id) {
-        case "main-layout":
+        case "main-layout": {
           const grid = new qx.ui.layout.Grid();
           grid.setSpacing(this.self().SPACING_IN);
           grid.setRowFlex(2, 1);
           grid.setColumnFlex(0, 1);
           grid.setRowMaxHeight(0, this.self().TITLE_MAX_HEIGHT);
 
-          const mainLayout = new qx.ui.container.Composite().set({
+          control = new qx.ui.container.Composite().set({
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().ITEM_HEIGHT
           });
-          mainLayout.setLayout(grid);
+          control.setLayout(grid);
           const header = this.getChildControl("header");
           const body = this.getChildControl("body");
           const footer = this.getChildControl("footer");
-          mainLayout.add(header, this.self().POS.TITLE);
-          mainLayout.add(body, this.self().POS.THUMBNAIL);
-          mainLayout.add(footer, this.self().POS.FOOTER);
-          return mainLayout
+          control.add(header, this.self().POS.TITLE);
+          control.add(body, this.self().POS.THUMBNAIL);
+          control.add(footer, this.self().POS.FOOTER);
           break;
+        }
         case "header":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
             anonymous: true,
@@ -159,7 +159,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control.set({
             backgroundColor: "background-card-overlay"
           });
-          return control;
           break;
         case "body":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
@@ -172,23 +171,22 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control.getContentElement().setStyles({
             "border-width": 0
           });
-          return control;
           break;
-        case "footer":
+        case "footer": {
           const fgrid = new qx.ui.layout.Grid();
           fgrid.setSpacing(2);
           fgrid.setRowFlex(2, 1);
           fgrid.setColumnFlex(0, 1);
-          const footerLayout = new qx.ui.container.Composite().set({
+          control = new qx.ui.container.Composite().set({
             backgroundColor: "background-card-overlay",
             padding: this.self().PADDING - 2,
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().ITEM_HEIGHT,
             visibility: "excluded"
           });
-          footerLayout.setLayout(fgrid);
-          return footerLayout;
+          control.setLayout(fgrid);
           break;
+        }
         case "title-row":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
             anonymous: true
@@ -215,7 +213,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           break;
         case "subtitle":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
-            anonymous: true
+            anonymous: true,
+            height: 20
           });
           layout = this.getChildControl("title-row");
           layout.addAt(control, 1, {
@@ -282,8 +281,11 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           layout.add(control, this.self().FPOS.MODIFIED);
           break;
         case "project-status":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
-            anonymous: true,
+          control = new qx.ui.basic.Image().set({
+            alignY: "middle",
+            textColor: "status_icon",
+            height: 12,
+            width: 12,
           });
           layout = this.getChildControl("subtitle");
           layout.set({
@@ -291,30 +293,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           });
           layout.addAt(control, 2);
           break;
-        // case "project-status-icon":
-        //   control = new qx.ui.basic.Image().set({
-        //     alignY: "middle",
-        //     textColor: "status_icon",
-        //     height: 12,
-        //     width: 12,
-        //     padding: 1
-        //   });
-        //   layout = this.getChildControl("project-status");
-        //   layout.addAt(control, 0);
-        //   break;
-        // case "project-status-label":
-        //   control = new qx.ui.basic.Label().set({
-        //     alignY: "middle",
-        //     rich: true,
-        //     anonymous: true,
-        //     font: "text-12",
-        //     allowGrowY: false
-        //   });
-        //   layout = this.getChildControl("project-status");
-        //   layout.addAt(control, 1, {
-        //     flex: 1
-        //   });
-        //   break;
       }
       return control || this.base(arguments, id);
     },
