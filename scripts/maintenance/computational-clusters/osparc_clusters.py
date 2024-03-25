@@ -1117,35 +1117,39 @@ def _print_computational_tasks(
     print(table)
 
 
-async def _cancel_jobs(user_id: int, wallet_id: int) -> None:
-    computational_tasks = await _list_computational_tasks_from_db(user_id)
-    _print_computational_tasks(user_id, wallet_id, computational_tasks)
-
+async def _list_computational_clusters(
+    user_id: int, wallet_id: int
+) -> list[ComputationalCluster]:
     assert state.ec2_resource_clusters_keeper
     computational_instances = await _list_computational_instances_from_ec2(
         user_id, wallet_id
     )
-    if not computational_instances:
-        print(f"no computational machines found for {user_id=}/{wallet_id=}")
-        raise typer.Exit
-    computational_clusters = await _parse_computational_clusters(
+    return await _parse_computational_clusters(
         computational_instances, state.ssh_key_path, user_id, wallet_id
     )
-    if not computational_clusters:
-        print(f"no computational clusters found for {user_id=}/{wallet_id=}")
-        raise typer.Exit
-    assert computational_clusters
-    assert (
-        len(computational_clusters) == 1
-    ), "too many clusters found! TIP: fix this code"
 
-    _print_computational_clusters(
-        computational_clusters,
-        state.environment,
-        state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+
+async def _cancel_jobs(user_id: int, wallet_id: int) -> None:
+    # get the theory
+    computational_tasks = await _list_computational_tasks_from_db(user_id)
+    _print_computational_tasks(user_id, wallet_id, computational_tasks)
+
+    # get the reality
+    computational_clusters = await _list_computational_clusters(user_id, wallet_id)
+    if computational_clusters:
+        assert (
+            len(computational_clusters) == 1
+        ), "too many clusters found! TIP: fix this code or something weird is playing out"
+
+    # _print_computational_clusters(
+    #     computational_clusters,
+    #     state.environment,
+    #     state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
+    # )
+
+    print(
+        "Please choose which jobs to cancel, write all to cancel all of them, let empty to stop cancelling."
     )
-
-    print("Please choose which jobs to cancel, write all to cancel all of them.")
 
     async with contextlib.AsyncExitStack() as stack:
 
