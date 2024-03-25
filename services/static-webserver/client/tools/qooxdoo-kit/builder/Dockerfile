@@ -52,11 +52,7 @@ RUN \
 # -> /project/build-output
 
 # Install python...
-RUN \
-  apt-get update \
-  && apt-get install -y --no-install-recommends \
-  python \
-  && apt-get clean
+RUN apk add --update python3 py3-pip
 # ...and run post compilation step
 RUN \
   --mount=type=bind,source=scripts,target=scripts && \
