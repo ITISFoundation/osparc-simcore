@@ -139,7 +139,7 @@ async def _list_all_payments(request: web.Request):
 
 @routes.get(
     f"/{VTAG}/wallets/{{wallet_id}}/payments/{{payment_id}}/invoice-link",
-    name="get_payment_invoice_url",
+    name="get_payment_invoice_link",
 )
 @login_required
 @permission_required("wallets.*")
