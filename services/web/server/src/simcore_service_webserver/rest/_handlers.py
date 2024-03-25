@@ -9,7 +9,7 @@ from typing import Any
 from aiohttp import web
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
 from pydantic import BaseModel, parse_obj_as
-from servicelib.aiohttp import status
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
 from .._meta import API_VTAG
@@ -42,7 +42,7 @@ async def healthcheck_liveness_probe(request: web.Request):
         _logger.warning("%s", err)
         raise web.HTTPServiceUnavailable(reason="unhealthy") from err
 
-    return web.json_response(data={"data": health_report})
+    return envelope_json_response(health_report)
 
 
 @routes.get(f"/{API_VTAG}/", name="healthcheck_readiness_probe")
@@ -108,6 +108,4 @@ async def get_scheduled_maintenance(request: web.Request):
         )
         return envelope_json_response(maintenance_data)
 
-    response = web.json_response(status=status.HTTP_204_NO_CONTENT)
-    assert response.status == status.HTTP_204_NO_CONTENT  # nosec
-    return response
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

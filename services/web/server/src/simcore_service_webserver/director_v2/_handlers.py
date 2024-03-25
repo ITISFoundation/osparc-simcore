@@ -254,10 +254,8 @@ async def get_computation(request: web.Request) -> web.Response:
             c.cluster_id == list_computation_tasks[0].cluster_id
             for c in list_computation_tasks
         )
-        return web.json_response(
-            data={"data": list_computation_tasks[0].dict(by_alias=True)},
-            dumps=json_dumps,
-        )
+        return envelope_json_response(list_computation_tasks[0].dict(by_alias=True))
+
     except DirectorServiceError as exc:
         return create_http_error(
             exc,

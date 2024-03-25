@@ -86,7 +86,7 @@ async def create_cluster(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         new_cluster=new_cluster,
     )
-    return envelope_json_response(created_cluster, web.HTTPCreated)
+    return envelope_json_response(created_cluster, status_cls=web.HTTPCreated)
 
 
 @routes.get(f"/{api_version_prefix}/clusters", name="list_clusters")
