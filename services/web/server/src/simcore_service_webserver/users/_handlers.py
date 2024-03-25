@@ -71,7 +71,11 @@ async def update_my_profile(request: web.Request) -> web.Response:
 
 
 class _SearchQueryParams(BaseModel):
-    email: str = Field(min_length=3, max_length=200)
+    email: str = Field(
+        min_length=3,
+        max_length=200,
+        description="complete or glob pattern for an email",
+    )
 
 
 _RESPONSE_MODEL_MINIMAL_POLICY = RESPONSE_MODEL_POLICY.copy()
@@ -89,7 +93,7 @@ async def search_users(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(_SearchQueryParams, request)
 
     found = await _api.search_users(
-        request.app, email_like=query_params.email, include_products=True
+        request.app, email_glob=query_params.email, include_products=True
     )
 
     return envelope_json_response(
