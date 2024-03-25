@@ -22,11 +22,12 @@ from dotenv import dotenv_values
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from mypy_boto3_ec2.type_defs import FilterTypeDef, TagTypeDef
-from pydantic import ByteSize, TypeAdapter
+from pydantic import BaseModel, ByteSize, PostgresDsn, TypeAdapter, field_validator
 from rich import print  # pylint: disable=redefined-builtin
 from rich.progress import track
 from rich.style import Style
 from rich.table import Column, Table
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 app = typer.Typer()
 
@@ -121,41 +122,41 @@ state: AppState = AppState(
 )
 
 
-# class PostgresDB(BaseModel):
-#     dsn: PostgresDsn
+class PostgresDB(BaseModel):
+    dsn: PostgresDsn
 
-#     @field_validator("db")
-#     @classmethod
-#     def check_db_name(cls, v):
-#         assert v.path and len(v.path) > 1, "database must be provided"  # noqa: PT018
-#         return v
+    @classmethod
+    @field_validator("db")
+    def check_db_name(cls, v):
+        assert v.path and len(v.path) > 1, "database must be provided"  # noqa: PT018
+        return v
 
 
-# @contextlib.asynccontextmanager
-# async def db_engine() -> AsyncGenerator[AsyncEngine, Any]:
-#     try:
-#         for env in [
-#             "POSTGRES_USER",
-#             "POSTGRES_PASSWORD",
-#             "POSTGRES_ENDPOINT",
-#             "POSTGRES_DB",
-#         ]:
-#             assert state.environment[env]
-#         postgres_db = PostgresDB(
-#             dsn=f"postgresql+asyncpg://{state.environment['POSTGRES_USER']}:{state.environment['POSTGRESS_PASSWORD']}@{state.environment['POSTGRES_ENDPOINT']}/{state.environment['POSTGRES_DB']}"
-#         )
+@contextlib.asynccontextmanager
+async def db_engine() -> AsyncGenerator[AsyncEngine, Any]:
+    try:
+        for env in [
+            "POSTGRES_USER",
+            "POSTGRES_PASSWORD",
+            "POSTGRES_ENDPOINT",
+            "POSTGRES_DB",
+        ]:
+            assert state.environment[env]
+        postgres_db = PostgresDB(
+            dsn=f"postgresql+asyncpg://{state.environment['POSTGRES_USER']}:{state.environment['POSTGRESS_PASSWORD']}@{state.environment['POSTGRES_ENDPOINT']}/{state.environment['POSTGRES_DB']}"
+        )
 
-#         engine = create_async_engine(
-#             f"{postgres_db.dsn}".replace("postgresql", "postgresql+asyncpg"),
-#             connect_args={
-#                 "server_settings": {
-#                     "application_name": "osparc-clusters-monitoring-script"
-#                 }
-#             },
-#         )
-#         yield engine
-#     finally:
-#         await engine.dispose()
+        engine = create_async_engine(
+            f"{postgres_db.dsn}".replace("postgresql", "postgresql+asyncpg"),
+            connect_args={
+                "server_settings": {
+                    "application_name": "osparc-clusters-monitoring-script"
+                }
+            },
+        )
+        yield engine
+    finally:
+        await engine.dispose()
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
