@@ -5,7 +5,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import asdict
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError
@@ -15,19 +15,20 @@ from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorDetail, ResponseErrorBody
 
-_ENVELOPE_KEYS = ("data", "error")
+_ENVELOPE_KEYS: Final = ("data", "error")
 
 
 def is_enveloped_from_map(payload: Mapping) -> bool:
-    return all(k in _ENVELOPE_KEYS for k in payload if not f"{k}".startswith("_"))
+    # NOTE: keys starting with _ are metadata (e.g. pagination metadata)
+    return all(key in _ENVELOPE_KEYS for key in payload if not f"{key}".startswith("_"))
 
 
 def is_enveloped_from_text(text: str) -> bool:
     try:
         payload = json.loads(text)
+        return is_enveloped_from_map(payload)
     except json.decoder.JSONDecodeError:
         return False
-    return is_enveloped_from_map(payload)
 
 
 def is_enveloped(payload: Mapping | str) -> bool:
@@ -56,13 +57,13 @@ def unwrap_envelope(payload: dict[str, Any]) -> tuple:
 # RESPONSES FACTORIES -------------------------------
 
 
-def create_data_response(data: Any, *, status=HTTP_200_OK) -> web.Response:
+def create_enveloped_response(data: Any, *, status: int = HTTP_200_OK) -> web.Response:
     response = None
     try:
-        payload = wrap_as_envelope(data) if not is_enveloped(data) else data
-
-        response = web.json_response(payload, dumps=json_dumps, status=status)
+        enveloped_payload = wrap_as_envelope(data) if not is_enveloped(data) else data
+        response = web.json_response(enveloped_payload, dumps=json_dumps, status=status)
     except (TypeError, ValueError) as err:
+        # FIXME: this should never happen!
         response = create_error_response(
             errors=[
                 err,
