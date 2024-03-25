@@ -55,7 +55,7 @@ all_aiohttp_http_exceptions = get_all_aiohttp_http_exceptions()
 
 class Handlers:
     @staticmethod
-    async def get_health_wrong(request: web.Request):
+    async def get_health_wrong(_request: web.Request):
         return {
             "name": __name__.split(".")[0],
             "version": "1.0",
@@ -64,7 +64,7 @@ class Handlers:
         }
 
     @staticmethod
-    async def get_health(request: web.Request):
+    async def get_health(_request: web.Request):
         return {
             "name": __name__.split(".")[0],
             "version": "1.0",
@@ -73,32 +73,32 @@ class Handlers:
         }
 
     @staticmethod
-    async def get_dict(request: web.Request):
+    async def get_dict(_request: web.Request):
         return {"x": 3, "y": "3"}
 
     @staticmethod
-    async def get_envelope(request: web.Request):
+    async def get_envelope(_request: web.Request):
         data = {"x": 3, "y": "3"}
         return {"error": None, "data": data}
 
     @staticmethod
-    async def get_list(request: web.Request):
+    async def get_list(_request: web.Request):
         return [{"x": 3, "y": "3"}] * 3
 
     @staticmethod
-    async def get_obj(request: web.Request):
+    async def get_obj(_request: web.Request):
         return Data(3, "3")
 
     @staticmethod
-    async def get_string(request: web.Request):
+    async def get_string(_request: web.Request):
         return "foo"
 
     @staticmethod
-    async def get_number(request: web.Request):
+    async def get_number(_request: web.Request):
         return 3
 
     @staticmethod
-    async def get_mixed(request: web.Request):
+    async def get_mixed(_request: web.Request):
         return [{"x": 3, "y": "3", "z": [Data(3, "3")] * 2}] * 3
 
     @classmethod
@@ -285,12 +285,10 @@ def _is_success(code):
 async def test_fails_with_http_successful(client: TestClient, status_code: int):
     response = await client.get("/v1/get_http_response", params={"code": status_code})
     assert response.status == status_code
-
-    print(await response.text())
-
-    data, error = unwrap_envelope(await response.json())
-    assert not error
-    assert data
+    assert await response.text() == Handlers.EXPECTED_HTTP_RESPONSE_REASON.format(
+        status_code
+    )
+    # NOTE: non json response are sometimes necessary mostly on redirects
 
 
 @pytest.mark.parametrize(

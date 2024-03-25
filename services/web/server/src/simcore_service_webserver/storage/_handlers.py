@@ -21,7 +21,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.rest_responses import create_data_response, unwrap_envelope
+from servicelib.aiohttp.rest_responses import create_enveloped_response, unwrap_envelope
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
@@ -107,7 +107,7 @@ _path_prefix = f"/{API_VTAG}/storage/locations"
 @permission_required("storage.files.*")
 async def get_storage_locations(request: web.Request) -> web.Response:
     payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+    return create_enveloped_response(payload, status=status)
 
 
 @routes.get(_path_prefix + "/{location_id}/datasets", name="get_datasets_metadata")
@@ -120,7 +120,7 @@ async def get_datasets_metadata(request: web.Request) -> web.Response:
     parse_request_path_parameters_as(_PathParams, request)
 
     payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+    return create_enveloped_response(payload, status=status)
 
 
 @routes.get(
@@ -142,7 +142,7 @@ async def get_files_metadata(request: web.Request) -> web.Response:
     parse_request_query_parameters_as(_QueryParams, request)
 
     payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+    return create_enveloped_response(payload, status=status)
 
 
 _LIST_ALL_DATASETS_TIMEOUT_S: Final[int] = 60
@@ -173,7 +173,7 @@ async def get_files_metadata_dataset(request: web.Request) -> web.Response:
         body=None,
         timeout=ClientTimeout(total=_LIST_ALL_DATASETS_TIMEOUT_S),
     )
-    return create_data_response(payload, status=status)
+    return create_enveloped_response(payload, status=status)
 
 
 @routes.get(
@@ -190,7 +190,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
     parse_request_path_parameters_as(_PathParams, request)
 
     payload, status = await _forward_request_to_storage(request, "GET")
-    return create_data_response(payload, status=status)
+    return create_enveloped_response(payload, status=status)
 
 
 @routes.get(
@@ -212,7 +212,7 @@ async def download_file(request: web.Request) -> web.Response:
     parse_request_query_parameters_as(_QueryParams, request)
 
     payload, status = await _forward_request_to_storage(request, "GET", body=None)
-    return create_data_response(payload, status=status)
+    return create_enveloped_response(payload, status=status)
 
 
 @routes.put(
@@ -244,7 +244,9 @@ async def upload_file(request: web.Request) -> web.Response:
     file_upload_schema.links.abort_upload = _from_storage_url(
         request, file_upload_schema.links.abort_upload
     )
-    return create_data_response(jsonable_encoder(file_upload_schema), status=status)
+    return create_enveloped_response(
+        jsonable_encoder(file_upload_schema), status=status
+    )
 
 
 @routes.post(
@@ -269,7 +271,9 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     file_upload_complete.links.state = _from_storage_url(
         request, file_upload_complete.links.state
     )
-    return create_data_response(jsonable_encoder(file_upload_complete), status=status)
+    return create_enveloped_response(
+        jsonable_encoder(file_upload_complete), status=status
+    )
 
 
 @routes.post(
@@ -286,7 +290,7 @@ async def abort_upload_file(request: web.Request) -> web.Response:
     parse_request_path_parameters_as(_PathParams, request)
 
     payload, status = await _forward_request_to_storage(request, "POST", body=None)
-    return create_data_response(payload, status=status)
+    return create_enveloped_response(payload, status=status)
 
 
 @routes.post(
@@ -304,7 +308,7 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
     parse_request_path_parameters_as(_PathParams, request)
 
     payload, status = await _forward_request_to_storage(request, "POST", body=None)
-    return create_data_response(payload, status=status)
+    return create_enveloped_response(payload, status=status)
 
 
 @routes.delete(
@@ -321,7 +325,7 @@ async def delete_file(request: web.Request) -> web.Response:
     parse_request_path_parameters_as(_PathParams, request)
 
     payload, status = await _forward_request_to_storage(request, "DELETE", body=None)
-    return create_data_response(payload, status=status)
+    return create_enveloped_response(payload, status=status)
 
 
 @routes.post(
@@ -343,4 +347,4 @@ async def synchronise_meta_data_table(request: web.Request) -> web.Response:
     parse_request_query_parameters_as(_QueryParams, request)
 
     payload, status = await _forward_request_to_storage(request, "POST", body=None)
-    return create_data_response(payload, status=status)
+    return create_enveloped_response(payload, status=status)
