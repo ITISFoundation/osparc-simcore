@@ -421,8 +421,11 @@ qx.Class.define("osparc.Application", {
     /**
      * Resets session and restarts
     */
-    logout: function() {
+    logout: function(reason) {
       osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"));
+      if (reason) {
+        osparc.FlashMessenger.getInstance().logAs(reason, "WARNING");
+      }
 
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
