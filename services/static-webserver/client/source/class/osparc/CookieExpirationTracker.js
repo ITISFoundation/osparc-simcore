@@ -27,6 +27,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
   members: {
     __message: null,
     __messageTimer: null,
+    __messageInterval: null,
     __logoutTimer: null,
 
     startTracker: function() {
@@ -37,8 +38,8 @@ qx.Class.define("osparc.CookieExpirationTracker", {
         const expirationDate = new Date(expirationTime);
         const showMessageIn = Math.max(cookieMaxAge - this.self().PERMANENT_WARN_IN_ADVANCE, 0);
         this.__messageTimer = setTimeout(() => {
-          const text = qx.locale.Manager.tr(`Your session will expire at ${osparc.utils.Utils.formatTime(expirationDate)}.<br>Please, log out and log in again.`);
-          this.__message = osparc.FlashMessenger.getInstance().logAs(text, "WARNING", expirationDate - nowDate);
+          const willExpireIn = parseInt((expirationDate - nowDate)/1000);
+          this.__displayFlashMessage(willExpireIn);
         }, showMessageIn*1000);
 
         const logOutIn = Math.max(cookieMaxAge - this.self().LOG_OUT_BEFORE_EXPIRING, 0);
@@ -47,15 +48,47 @@ qx.Class.define("osparc.CookieExpirationTracker", {
     },
 
     stopTracker: function() {
-      if (this.__message) {
-        osparc.FlashMessenger.getInstance().removeMessage(this.__message);
-      }
-
       if (this.__messageTimer) {
         clearTimeout(this.__messageTimer);
       }
       if (this.__logoutTimer) {
         clearTimeout(this.__logoutTimer);
+      }
+
+      this.__removeFlashMessage();
+    },
+
+    __displayFlashMessage: function(willExpireIn) {
+      const updateFlashMessage = () => {
+        if (willExpireIn <= 0) {
+          this.__removeFlashMessage();
+          return;
+        }
+
+        this.__updateFlashMessage(willExpireIn);
+        willExpireIn--;
+      };
+      this.__messageInterval = setInterval(updateFlashMessage, 1000);
+    },
+
+    __removeFlashMessage: function() {
+      // removes a flash message if displaying
+      if (this.__messageInterval) {
+        clearInterval(this.__messageInterval);
+      }
+      if (this.__message) {
+        osparc.FlashMessenger.getInstance().removeMessage(this.__message);
+        this.__message = null;
+      }
+    },
+
+    __updateFlashMessage: function(timeoutSec = 1000) {
+      const timeout = osparc.utils.Utils.formatSeconds(timeoutSec);
+      const text = qx.locale.Manager.tr(`Your session will expire in ${timeout}.<br>Please log out and log in again.`);
+      if (this.__message === null) {
+        this.__message = osparc.FlashMessenger.getInstance().logAs(text, "WARNING", timeoutSec*1000);
+      } else {
+        this.__message.setMessage(text);
       }
     },
 
