@@ -1,0 +1,50 @@
+global:
+  scrape_interval: "29s"
+scrape_configs:
+  # Create a job for Docker Swarm containers.
+  - job_name: 'docker nodes'
+    dockerswarm_sd_configs:
+      - host: unix:///var/run/docker.sock
+        role: nodes
+    relabel_configs:
+      # Fetch metrics on port 9323.
+      - source_labels: [__meta_dockerswarm_node_address]
+        target_label: __address__
+        replacement: $1:9323
+      # Set hostname as instance label
+      - source_labels: [__meta_dockerswarm_node_hostname]
+        target_label: instance
+  # Create a job for Docker Swarm containers.
+  - job_name: 'docker tasks'
+    dockerswarm_sd_configs:
+      - host: unix:///var/run/docker.sock
+        role: tasks
+    relabel_configs:
+      # Set hostname as instance label
+      - source_labels: [__meta_dockerswarm_node_hostname]
+        target_label: instance
+      # Only keep containers that should be running.
+      - source_labels: [__meta_dockerswarm_task_desired_state]
+        regex: running
+        action: keep
+      # Only keep tasks with a `prometheus_port` label.
+      - source_labels: [__meta_dockerswarm_service_label_prometheus_port]
+        regex: .+
+        action: keep
+      # Only keep containers that have a `prometheus-job` label.
+      - source_labels: [__meta_dockerswarm_service_label_prometheus_job]
+        regex: .+
+        action: keep
+      # Use the prometheus-job Swarm label as Prometheus job label.
+      - source_labels: [__meta_dockerswarm_service_label_prometheus_job]
+        target_label: job
+      # Specify the metric path if needed (optional)
+      - source_labels: [__meta_dockerswarm_service_label_prometheus_path]
+        target_label: __metrics_path__
+        regex: (.+)
+      # Use the `prometheus_port` Swarm label to set the __address__ for scraping.
+      - source_labels: [__address__, __meta_dockerswarm_service_label_prometheus_port]
+        target_label: __address__
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        action: replace

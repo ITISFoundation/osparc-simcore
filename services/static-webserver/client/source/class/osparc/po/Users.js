@@ -31,13 +31,12 @@ qx.Class.define("osparc.po.Users", {
           control = new qx.ui.basic.Label();
           this._add(control);
           break;
-        case "found-users-container": {
+        case "found-users-container":
           control = new qx.ui.container.Scroll();
           this._add(control, {
             flex: 1
           });
           break;
-        }
       }
       return control || this.base(arguments, id);
     },
@@ -63,7 +62,7 @@ qx.Class.define("osparc.po.Users", {
 
       const userEmail = new qx.ui.form.TextField().set({
         required: true,
-        placeholder: this.tr("new.user@email.address")
+        placeholder: this.tr("user@email.address or user@*")
       });
       form.add(userEmail, this.tr("Email"));
 

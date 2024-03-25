@@ -14,8 +14,6 @@ from simcore_service_api_server.utils.client_base import (
     setup_client_instance,
 )
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 def the_service():

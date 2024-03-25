@@ -46,6 +46,7 @@ help: ## this colorful help
 %.txt: %.in
 	cd ..; \
 	uv pip compile $(UPGRADE_OPTION) \
+		--no-header \
 		--output-file requirements/$@ requirements/$<
 
 _test.txt: _base.txt
