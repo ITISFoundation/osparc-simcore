@@ -524,57 +524,80 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const status = projectStatus["value"];
       let icon;
       let label;
+      let toolTip;
       let border;
       switch (status) {
         case "STARTED":
-          icon = "@FontAwesome5Solid/spinner/8";
+          icon = "@FontAwesome5Solid/spinner/10";
           label = this.tr("Running");
+          toolTip = this.tr("Running");
           border = "info";
           break;
         case "SUCCESS":
-          icon = "@FontAwesome5Solid/check/8";
-          label = this.tr("Ran successfully");
+          icon = "@FontAwesome5Solid/check/10";
+          label = this.tr("Success");
+          toolTip = this.tr("Ran successfully");
           border = "success";
           break;
         case "ABORTED":
-          icon = "@FontAwesome5Solid/info/8";
-          label = this.tr("Run aborted");
+          icon = "@FontAwesome5Solid/info/10";
+          label = this.tr("Aborted");
+          toolTip = this.tr("Run aborted");
           border = "warning";
           break;
         case "FAILED":
-          icon = "@FontAwesome5Solid/times/8";
-          label = this.tr("Ran with error");
+          icon = "@FontAwesome5Solid/times/10";
+          label = this.tr("Error");
+          toolTip = this.tr("Ran with error");
           border = "error";
           break;
         default:
           icon = null;
           label = null;
+          toolTip = null;
           border = null;
           break;
       }
-      this.__applyProjectLabel(icon, label, border);
+      this.__applyProjectLabel(icon, label, toolTip, border);
     },
 
-    __applyProjectLabel: function(icn, lbl, bdr) {
-      const projectStatusLabel = this.getChildControl("project-status");
-      projectStatusLabel.setVisibility(icn && lbl && bdr ? "visible" : "excluded");
+    __applyProjectLabel: function(icn, lbl, toolTipText, bdr) {
       const border = new qx.ui.decoration.Decorator().set({
+        radius: 15,
         width: 1,
         style: "solid",
         color: bdr,
-        backgroundColor: bdr
+        backgroundColor: bdr ? bdr + "-bg" : null
       });
-      const icon = this.getChildControl("project-status-icon");
-      const label = this.getChildControl("project-status-label");
-      icon.setSource(icn);
-      icon.set({
-        decorator: border
+      const projectStatusLabel = this.getChildControl("project-status").set({
+        decorator: border,
+        padding: [0, 5],
       });
-      icon.getContentElement().setStyles({
-        "border-radius": "50%",
-        "background-clip": "border-box"
+
+      projectStatusLabel.setVisibility(icn && lbl && bdr ? "visible" : "excluded");
+
+
+      const icon = new qx.ui.basic.Image(icn).set({
+        textColor: bdr,
+        alignY: "middle",
+        height: 12,
+        width: 12,
+        padding: 1
       });
-      label.setValue(lbl);
+      projectStatusLabel.addAt(icon, 0);
+
+      const label = new qx.ui.basic.Label(lbl).set({
+        textColor: bdr,
+        alignY: "middle",
+        rich: true,
+        anonymous: true,
+        font: "text-12",
+        allowGrowY: false
+      });
+      projectStatusLabel.setToolTipText(toolTipText)
+      projectStatusLabel.addAt(label, 1, {
+        flex: 1
+      });
     },
 
     __showBlockedCardFromStatus: function(lockedStatus) {
