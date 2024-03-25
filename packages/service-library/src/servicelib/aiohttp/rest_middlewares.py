@@ -3,7 +3,6 @@
     SEE  https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
 """
 import asyncio
-import json
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any, Union
@@ -12,16 +11,13 @@ from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 from servicelib.error_codes import create_error_code
-from servicelib.json_serialization import json_dumps
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorDetail, LogMessage, ResponseErrorBody
 from .rest_responses import (
-    create_data_response,
+    create_enveloped_response,
     create_error_response,
-    is_enveloped_from_map,
     is_enveloped_from_text,
-    wrap_as_envelope,
 )
 from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
@@ -33,12 +29,12 @@ MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we'
 _logger = logging.getLogger(__name__)
 
 
-def is_api_request(request: web.Request, api_version: str) -> bool:
+def _is_api_request(request: web.Request, api_version: str) -> bool:
     base_path = "/" + api_version.lstrip("/")
     return bool(request.path.startswith(base_path))
 
 
-def _handle_http_error(request: web.BaseRequest, err: web.HTTPError):
+def _handle_http_error_and_reraise(request: web.BaseRequest, err: web.HTTPError):
     """Ensures response for a web.HTTPError is complete"""
     assert request  # nosec
 
@@ -62,22 +58,7 @@ def _handle_http_error(request: web.BaseRequest, err: web.HTTPError):
     raise err
 
 
-def _handle_http_successful(request: web.BaseRequest, err: web.HTTPSuccessful):
-    """Ensures raised web.HTTPSuccessful responses are complete"""
-    err.content_type = MIMETYPE_APPLICATION_JSON
-    if err.text:
-        try:
-            payload = json.loads(err.text)
-            if not is_enveloped_from_map(payload):
-                payload = wrap_as_envelope(data=payload)
-                err.text = json_dumps(payload)
-        except Exception as other_error:  # pylint: disable=broad-except
-            _handle_as_internal_server_error(request, other_error)
-
-    raise err
-
-
-def _handle_as_internal_server_error(request: web.BaseRequest, err: Exception):
+def _handle_unexpected_error_and_reraise(request: web.BaseRequest, err: Exception):
     """
     This error handler is the last resource to catch unhandled exceptions. When
     an exception reaches this point, it is converted into a web.HTTPInternalServerError
@@ -113,21 +94,17 @@ def error_middleware_factory(
         """
         Ensure all error raised are properly enveloped and json responses
         """
-        if not is_api_request(request, api_version):
+        if not _is_api_request(request, api_version):
             return await handler(request)
 
-        # FIXME: review when to send info to client and when not!
         try:
             return await handler(request)
 
         except web.HTTPError as err:
-            _handle_http_error(request, err)
+            _handle_http_error_and_reraise(request, err)
 
-        except web.HTTPSuccessful as err:
-            _handle_http_successful(request, err)
-
-        except web.HTTPRedirection as err:
-            _logger.debug("Redirected to %s", err)
+        except (web.HTTPRedirection, web.HTTPSuccessful) as err:
+            _logger.debug("Gone through error middleware %s", err)
             raise
 
         except NotImplementedError as err:
@@ -145,7 +122,7 @@ def error_middleware_factory(
             raise error_response from err
 
         except Exception as err:  # pylint: disable=broad-except
-            _handle_as_internal_server_error(request, err)
+            _handle_unexpected_error_and_reraise(request, err)
 
     # adds identifier (mostly for debugging)
     _middleware_handler.__middleware_name__ = f"{__name__}.error_{api_version}"
@@ -159,7 +136,7 @@ MiddlewareFlexible = Callable[[Request, HandlerFlexible], Awaitable[StreamRespon
 
 
 def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
-    # FIXME: This data conversion is very error-prone. Use decorators instead!
+    # FIXME: This data conversion is very error-prone. Use decorators instead!!!
 
     @web.middleware
     async def _middleware_handler(
@@ -169,7 +146,7 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
         Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
         ONLY for API-requests
         """
-        if not is_api_request(request, api_version):
+        if not _is_api_request(request, api_version):
             resp = await handler(request)
             assert isinstance(resp, StreamResponse)  # nosec
             return resp
@@ -181,7 +158,9 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
             return resp_or_data
 
         if not isinstance(resp_or_data, StreamResponse):
-            resp_or_data = create_data_response(data=resp_or_data)
+            # NOTE: ensures envelopes if data is returned
+            # NOTE: at this point any response is expected to be enveloped!!
+            resp_or_data = create_enveloped_response(data=resp_or_data)
 
         assert isinstance(resp_or_data, web.StreamResponse)  # nosec
         return resp_or_data
