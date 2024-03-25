@@ -142,7 +142,7 @@ class Handlers:
 
     @classmethod
     async def raise_exception(cls, request: web.Request):
-        exc_name = request.query["exc"]
+        exc_name = request.query.get("exc")
         match exc_name:
             case NotImplementedError.__name__:
                 raise NotImplementedError
@@ -285,10 +285,16 @@ def _is_success(code):
 async def test_fails_with_http_successful(client: TestClient, status_code: int):
     response = await client.get("/v1/get_http_response", params={"code": status_code})
     assert response.status == status_code
-    assert await response.text() == Handlers.EXPECTED_HTTP_RESPONSE_REASON.format(
-        status_code
+    assert response.reason == Handlers.EXPECTED_HTTP_RESPONSE_REASON.format(status_code)
+
+    # NOTE: non-json response are sometimes necessary mostly on redirects
+    # NOTE: this is how aiohptt defaults text using status and reason when empty_body is not expected
+    expected = (
+        ""
+        if all_aiohttp_http_exceptions[status_code].empty_body
+        else f"{response.status}: {response.reason}"
     )
-    # NOTE: non json response are sometimes necessary mostly on redirects
+    assert await response.text() == expected
 
 
 @pytest.mark.parametrize(
