@@ -202,9 +202,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
             font: "text-14",
             maxWidth: this.self().ITEM_WIDTH,
             width: this.self().ITEM_WIDTH - 50,
-            maxHeight: this.self().TITLE_MAX_HEIGHT,
-            // rich: true,
-            // wrap: false
+            maxHeight: this.self().TITLE_MAX_HEIGHT
           });
           layout = this.getChildControl("title-row");
           layout.addAt(control, 0, {
@@ -327,14 +325,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     _applyTitle: function(value, old) {
       const label = this.getChildControl("title");
       label.setValue(value);
-      label.addListener("appear", () => {
-        qx.event.Timer.once(() => {
-          const labelDom = label.getContentElement().getDomElement();
-          if (label.getMaxWidth() === parseInt(labelDom.style.width)) {
-            label.setToolTipText(value);
-          }
-        }, this, 50);
-      });
+      label.setToolTipText(value);
     },
 
     // overridden

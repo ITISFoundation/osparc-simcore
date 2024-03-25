@@ -134,36 +134,15 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           });
           break;
         case "project-status":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
-            anonymous: true
-          });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.STATUS
-          });
-          break;
-        case "project-status-icon":
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
             textColor: "status_icon",
             height: 12,
-            width: 12,
-            padding: 1
+            width: 12
           });
-          titleRow = this.getChildControl("project-status");
-          titleRow.addAt(control, 0);
-          break;
-        case "project-status-label":
-          control = new qx.ui.basic.Label().set({
-            alignY: "middle",
-            rich: true,
-            anonymous: true,
-            font: "text-12",
-            allowGrowY: false
-          });
-          titleRow = this.getChildControl("project-status");
-          titleRow.addAt(control, 1, {
-            flex: 1
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.STATUS
           });
           break;
       }
