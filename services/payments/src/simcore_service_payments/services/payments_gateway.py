@@ -121,25 +121,10 @@ class PaymentsGatewayApi(
     #
 
     @_handle_status_errors
-    async def init_payment(
-        self, payment: InitPayment, payment_gateway_tax_feature_enabled: bool
-    ) -> PaymentInitiated:
-        _payment_json = payment.dict(
-            exclude_none=True,
-            by_alias=True,
-            exclude={
-                "user_address",
-                "stripe_price_id",
-                "stripe_tax_rate_id",
-                "stripe_tax_exempt_value",
-            },
-        )
-        if payment_gateway_tax_feature_enabled:
-            _payment_json = payment.dict(exclude_none=True, by_alias=True)
-
+    async def init_payment(self, payment: InitPayment) -> PaymentInitiated:
         response = await self.client.post(
             "/init",
-            json=jsonable_encoder(_payment_json),
+            json=jsonable_encoder(payment.dict(exclude_none=True, by_alias=True)),
         )
         response.raise_for_status()
         return PaymentInitiated.parse_obj(response.json())
@@ -210,24 +195,10 @@ class PaymentsGatewayApi(
         self,
         id_: PaymentMethodID,
         payment: InitPayment,
-        payment_gateway_tax_feature_enabled: bool,  # noqa: FBT001
     ) -> AckPaymentWithPaymentMethod:
-        _payment_json = payment.dict(
-            exclude_none=True,
-            by_alias=True,
-            exclude={
-                "user_address",
-                "stripe_price_id",
-                "stripe_tax_rate_id",
-                "stripe_tax_exempt_value",
-            },
-        )
-        if payment_gateway_tax_feature_enabled:
-            _payment_json = payment.dict(exclude_none=True, by_alias=True)
-
         response = await self.client.post(
             f"/payment-methods/{id_}:pay",
-            json=jsonable_encoder(_payment_json),
+            json=jsonable_encoder(payment.dict(exclude_none=True, by_alias=True)),
         )
         response.raise_for_status()
         return AckPaymentWithPaymentMethod.parse_obj(response.json())

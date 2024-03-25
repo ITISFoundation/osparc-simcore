@@ -5,7 +5,7 @@ aiohttp
 coverage
 openapi-core
 pytest
-pytest-aiohttp
+pytest-asyncio
 pytest-cov
 pytest-instafail
 pytest-sugar

@@ -12,9 +12,13 @@ from models_library.products import ProductName
 from models_library.resource_tracker import (
     CreditTransactionId,
     CreditTransactionStatus,
+    PricingPlanCreate,
     PricingPlanId,
+    PricingPlanUpdate,
     PricingUnitCostId,
     PricingUnitId,
+    PricingUnitWithCostCreate,
+    PricingUnitWithCostUpdate,
     ServiceRunId,
     ServiceRunStatus,
 )
@@ -55,7 +59,9 @@ from ....models.resource_tracker_credit_transactions import (
     CreditTransactionCreditsUpdate,
 )
 from ....models.resource_tracker_pricing_plans import (
+    PricingPlansDB,
     PricingPlansWithServiceDefaultPlanDB,
+    PricingPlanToServiceDB,
 )
 from ....models.resource_tracker_pricing_units import PricingUnitsDB
 from ....models.resource_tracker_service_runs import (
@@ -71,7 +77,9 @@ from ._base import BaseRepository
 _logger = logging.getLogger(__name__)
 
 
-class ResourceTrackerRepository(BaseRepository):
+class ResourceTrackerRepository(
+    BaseRepository
+):  # pylint: disable=too-many-public-methods
     ###############
     # Service Run
     ###############
@@ -727,6 +735,244 @@ class ResourceTrackerRepository(BaseRepository):
             for row in result.fetchall()
         ]
 
+    async def get_pricing_plan(
+        self, product_name: ProductName, pricing_plan_id: PricingPlanId
+    ) -> PricingPlansDB:
+        async with self.db_engine.begin() as conn:
+            select_stmt = sa.select(
+                resource_tracker_pricing_plans.c.pricing_plan_id,
+                resource_tracker_pricing_plans.c.display_name,
+                resource_tracker_pricing_plans.c.description,
+                resource_tracker_pricing_plans.c.classification,
+                resource_tracker_pricing_plans.c.is_active,
+                resource_tracker_pricing_plans.c.created,
+                resource_tracker_pricing_plans.c.pricing_plan_key,
+            ).where(
+                (resource_tracker_pricing_plans.c.pricing_plan_id == pricing_plan_id)
+                & (resource_tracker_pricing_plans.c.product_name == product_name)
+            )
+            result = await conn.execute(select_stmt)
+        row = result.first()
+        if row is None:
+            raise CustomResourceUsageTrackerError(
+                msg=f"Pricing plan does not exists: {pricing_plan_id}"
+            )
+        return PricingPlansDB.from_orm(row)
+
+    async def list_pricing_plans_by_product(
+        self, product_name: ProductName
+    ) -> list[PricingPlansDB]:
+        async with self.db_engine.begin() as conn:
+            select_stmt = sa.select(
+                resource_tracker_pricing_plans.c.pricing_plan_id,
+                resource_tracker_pricing_plans.c.display_name,
+                resource_tracker_pricing_plans.c.description,
+                resource_tracker_pricing_plans.c.classification,
+                resource_tracker_pricing_plans.c.is_active,
+                resource_tracker_pricing_plans.c.created,
+                resource_tracker_pricing_plans.c.pricing_plan_key,
+            ).where(resource_tracker_pricing_plans.c.product_name == product_name)
+            result = await conn.execute(select_stmt)
+
+        return [PricingPlansDB.from_orm(row) for row in result.fetchall()]
+
+    async def create_pricing_plan(self, data: PricingPlanCreate) -> PricingPlansDB:
+        async with self.db_engine.begin() as conn:
+            insert_stmt = (
+                resource_tracker_pricing_plans.insert()
+                .values(
+                    product_name=data.product_name,
+                    display_name=data.display_name,
+                    description=data.description,
+                    classification=data.classification,
+                    is_active=True,
+                    created=sa.func.now(),
+                    modified=sa.func.now(),
+                    pricing_plan_key=data.pricing_plan_key,
+                )
+                .returning(
+                    *[
+                        resource_tracker_pricing_plans.c.pricing_plan_id,
+                        resource_tracker_pricing_plans.c.display_name,
+                        resource_tracker_pricing_plans.c.description,
+                        resource_tracker_pricing_plans.c.classification,
+                        resource_tracker_pricing_plans.c.is_active,
+                        resource_tracker_pricing_plans.c.created,
+                        resource_tracker_pricing_plans.c.pricing_plan_key,
+                    ]
+                )
+            )
+            result = await conn.execute(insert_stmt)
+        row = result.first()
+        if row is None:
+            raise CustomResourceUsageTrackerError(
+                msg=f"Pricing plan was not created: {data}"
+            )
+        return PricingPlansDB.from_orm(row)
+
+    async def update_pricing_plan(
+        self, product_name: ProductName, data: PricingPlanUpdate
+    ) -> PricingPlansDB | None:
+        async with self.db_engine.begin() as conn:
+            update_stmt = (
+                resource_tracker_pricing_plans.update()
+                .values(
+                    display_name=data.display_name,
+                    description=data.description,
+                    is_active=data.is_active,
+                    modified=sa.func.now(),
+                )
+                .where(
+                    (
+                        resource_tracker_pricing_plans.c.pricing_plan_id
+                        == data.pricing_plan_id
+                    )
+                    & (resource_tracker_pricing_plans.c.product_name == product_name)
+                )
+                .returning(
+                    *[
+                        resource_tracker_pricing_plans.c.pricing_plan_id,
+                        resource_tracker_pricing_plans.c.display_name,
+                        resource_tracker_pricing_plans.c.description,
+                        resource_tracker_pricing_plans.c.classification,
+                        resource_tracker_pricing_plans.c.is_active,
+                        resource_tracker_pricing_plans.c.created,
+                        resource_tracker_pricing_plans.c.pricing_plan_key,
+                    ]
+                )
+            )
+            result = await conn.execute(update_stmt)
+        row = result.first()
+        if row is None:
+            return None
+        return PricingPlansDB.from_orm(row)
+
+    #################################
+    # Pricing plan to service
+    #################################
+
+    async def list_connected_services_to_pricing_plan_by_pricing_plan(
+        self, product_name: ProductName, pricing_plan_id: PricingPlanId
+    ) -> list[PricingPlanToServiceDB]:
+        async with self.db_engine.begin() as conn:
+            query = (
+                sa.select(
+                    resource_tracker_pricing_plan_to_service.c.pricing_plan_id,
+                    resource_tracker_pricing_plan_to_service.c.service_key,
+                    resource_tracker_pricing_plan_to_service.c.service_version,
+                    resource_tracker_pricing_plan_to_service.c.created,
+                )
+                .select_from(
+                    resource_tracker_pricing_plan_to_service.join(
+                        resource_tracker_pricing_plans,
+                        (
+                            resource_tracker_pricing_plan_to_service.c.pricing_plan_id
+                            == resource_tracker_pricing_plans.c.pricing_plan_id
+                        ),
+                    )
+                )
+                .where(
+                    (resource_tracker_pricing_plans.c.product_name == product_name)
+                    & (
+                        resource_tracker_pricing_plans.c.pricing_plan_id
+                        == pricing_plan_id
+                    )
+                )
+                .order_by(
+                    resource_tracker_pricing_plan_to_service.c.pricing_plan_id.desc()
+                )
+            )
+            result = await conn.execute(query)
+
+            return [PricingPlanToServiceDB.from_orm(row) for row in result.fetchall()]
+
+    async def upsert_service_to_pricing_plan(
+        self,
+        product_name: ProductName,
+        pricing_plan_id: PricingPlanId,
+        service_key: ServiceKey,
+        service_version: ServiceVersion,
+    ) -> PricingPlanToServiceDB:
+        async with self.db_engine.begin() as conn:
+            query = (
+                sa.select(
+                    resource_tracker_pricing_plan_to_service.c.pricing_plan_id,
+                    resource_tracker_pricing_plan_to_service.c.service_key,
+                    resource_tracker_pricing_plan_to_service.c.service_version,
+                    resource_tracker_pricing_plan_to_service.c.created,
+                )
+                .select_from(
+                    resource_tracker_pricing_plan_to_service.join(
+                        resource_tracker_pricing_plans,
+                        (
+                            resource_tracker_pricing_plan_to_service.c.pricing_plan_id
+                            == resource_tracker_pricing_plans.c.pricing_plan_id
+                        ),
+                    )
+                )
+                .where(
+                    (resource_tracker_pricing_plans.c.product_name == product_name)
+                    & (
+                        resource_tracker_pricing_plans.c.pricing_plan_id
+                        == pricing_plan_id
+                    )
+                    & (
+                        resource_tracker_pricing_plan_to_service.c.service_key
+                        == service_key
+                    )
+                    & (
+                        resource_tracker_pricing_plan_to_service.c.service_version
+                        == service_version
+                    )
+                )
+            )
+            result = await conn.execute(query)
+            row = result.first()
+
+            if row is not None:
+                delete_stmt = resource_tracker_pricing_plan_to_service.delete().where(
+                    (
+                        resource_tracker_pricing_plans.c.pricing_plan_id
+                        == pricing_plan_id
+                    )
+                    & (
+                        resource_tracker_pricing_plan_to_service.c.service_key
+                        == service_key
+                    )
+                    & (
+                        resource_tracker_pricing_plan_to_service.c.service_version
+                        == service_version
+                    )
+                )
+                await conn.execute(delete_stmt)
+
+            insert_stmt = (
+                resource_tracker_pricing_plan_to_service.insert()
+                .values(
+                    pricing_plan_id=pricing_plan_id,
+                    service_key=service_key,
+                    service_version=service_version,
+                    created=sa.func.now(),
+                    modified=sa.func.now(),
+                    service_default_plan=True,
+                )
+                .returning(
+                    *[
+                        resource_tracker_pricing_plan_to_service.c.pricing_plan_id,
+                        resource_tracker_pricing_plan_to_service.c.service_key,
+                        resource_tracker_pricing_plan_to_service.c.service_version,
+                        resource_tracker_pricing_plan_to_service.c.created,
+                    ]
+                )
+            )
+            result = await conn.execute(insert_stmt)
+            row = result.first()
+            if row is None:
+                raise CustomResourceUsageTrackerError(
+                    msg="Pricing plan to service record was not created"
+                )
+            return PricingPlanToServiceDB.from_orm(row)
+
     #################################
     # Pricing units
     #################################
@@ -785,7 +1031,7 @@ class ResourceTrackerRepository(BaseRepository):
 
         return [PricingUnitsDB.from_orm(row) for row in result.fetchall()]
 
-    async def get_pricing_unit(
+    async def get_valid_pricing_unit(
         self,
         product_name: ProductName,
         pricing_plan_id: PricingPlanId,
@@ -836,6 +1082,124 @@ class ResourceTrackerRepository(BaseRepository):
                 msg=f"Pricing plan {pricing_plan_id} and pricing unit {pricing_unit_id} for product {product_name} not found"
             )
         return PricingUnitsDB.from_orm(row)
+
+    async def create_pricing_unit_with_cost(
+        self, data: PricingUnitWithCostCreate, pricing_plan_key: str
+    ) -> tuple[PricingUnitId, PricingUnitCostId]:
+        async with self.db_engine.begin() as conn:
+            # pricing units table
+            insert_stmt = (
+                resource_tracker_pricing_units.insert()
+                .values(
+                    pricing_plan_id=data.pricing_plan_id,
+                    unit_name=data.unit_name,
+                    unit_extra_info=data.unit_extra_info,
+                    default=data.default,
+                    specific_info=data.specific_info.dict(),
+                    created=sa.func.now(),
+                    modified=sa.func.now(),
+                )
+                .returning(resource_tracker_pricing_units.c.pricing_unit_id)
+            )
+            result = await conn.execute(insert_stmt)
+            row = result.first()
+            if row is None:
+                raise CustomResourceUsageTrackerError(
+                    msg=f"Pricing unit was not created: {data}"
+                )
+            _pricing_unit_id = row[0]
+
+            # pricing unit cost table
+            insert_stmt = (
+                resource_tracker_pricing_unit_costs.insert()
+                .values(
+                    pricing_plan_id=data.pricing_plan_id,
+                    pricing_plan_key=pricing_plan_key,
+                    pricing_unit_id=_pricing_unit_id,
+                    pricing_unit_name=data.unit_name,
+                    cost_per_unit=data.cost_per_unit,
+                    valid_from=sa.func.now(),
+                    valid_to=None,
+                    created=sa.func.now(),
+                    comment=data.comment,
+                    modified=sa.func.now(),
+                )
+                .returning(resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id)
+            )
+            result = await conn.execute(insert_stmt)
+            row = result.first()
+            if row is None:
+                raise CustomResourceUsageTrackerError(
+                    msg=f"Pricing unit cost was not created: {data}"
+                )
+            _pricing_unit_cost_id = row[0]
+
+        return (_pricing_unit_id, _pricing_unit_cost_id)
+
+    async def update_pricing_unit_with_cost(
+        self, data: PricingUnitWithCostUpdate, pricing_plan_key: str
+    ) -> None:
+        async with self.db_engine.begin() as conn:
+            # pricing units table
+            update_stmt = (
+                resource_tracker_pricing_units.update()
+                .values(
+                    unit_name=data.unit_name,
+                    unit_extra_info=data.unit_extra_info,
+                    default=data.default,
+                    specific_info=data.specific_info.dict(),
+                    modified=sa.func.now(),
+                )
+                .where(
+                    resource_tracker_pricing_units.c.pricing_unit_id
+                    == data.pricing_unit_id
+                )
+                .returning(resource_tracker_pricing_units.c.pricing_unit_id)
+            )
+            await conn.execute(update_stmt)
+
+            # If price change, then we update pricing unit cost table
+            if data.pricing_unit_cost_update:
+                # Firstly we close previous price
+                update_stmt = (
+                    resource_tracker_pricing_unit_costs.update()
+                    .values(
+                        valid_to=sa.func.now(),  # <-- Closing previous price
+                        modified=sa.func.now(),
+                    )
+                    .where(
+                        resource_tracker_pricing_unit_costs.c.pricing_unit_id
+                        == data.pricing_unit_id
+                    )
+                    .returning(resource_tracker_pricing_unit_costs.c.pricing_unit_id)
+                )
+                result = await conn.execute(update_stmt)
+
+                # Then we create a new price
+                insert_stmt = (
+                    resource_tracker_pricing_unit_costs.insert()
+                    .values(
+                        pricing_plan_id=data.pricing_plan_id,
+                        pricing_plan_key=pricing_plan_key,
+                        pricing_unit_id=data.pricing_unit_id,
+                        pricing_unit_name=data.unit_name,
+                        cost_per_unit=data.pricing_unit_cost_update.cost_per_unit,
+                        valid_from=sa.func.now(),
+                        valid_to=None,  # <-- New price is valid
+                        created=sa.func.now(),
+                        comment=data.pricing_unit_cost_update.comment,
+                        modified=sa.func.now(),
+                    )
+                    .returning(
+                        resource_tracker_pricing_unit_costs.c.pricing_unit_cost_id
+                    )
+                )
+                result = await conn.execute(insert_stmt)
+                row = result.first()
+                if row is None:
+                    raise CustomResourceUsageTrackerError(
+                        msg=f"Pricing unit cost was not created: {data}"
+                    )
 
     #################################
     # Pricing unit-costs

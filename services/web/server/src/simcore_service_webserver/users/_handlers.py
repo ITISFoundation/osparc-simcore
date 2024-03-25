@@ -11,6 +11,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
@@ -70,12 +71,20 @@ async def update_my_profile(request: web.Request) -> web.Response:
 
 
 class _SearchQueryParams(BaseModel):
-    email: str = Field(min_length=3)
+    email: str = Field(
+        min_length=3,
+        max_length=200,
+        description="complete or glob pattern for an email",
+    )
+
+
+_RESPONSE_MODEL_MINIMAL_POLICY = RESPONSE_MODEL_POLICY.copy()
+_RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 
 
 @routes.get(f"/{API_VTAG}/users:search", name="search_users")
 @login_required
-@permission_required("users.others.*")
+@permission_required("user.users.*")
 @_handle_users_exceptions
 async def search_users(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
@@ -83,14 +92,18 @@ async def search_users(request: web.Request) -> web.Response:
 
     query_params = parse_request_query_parameters_as(_SearchQueryParams, request)
 
-    found = await _api.search_users(request.app, email=query_params.email)
+    found = await _api.search_users(
+        request.app, email_glob=query_params.email, include_products=True
+    )
 
-    return envelope_json_response(found)
+    return envelope_json_response(
+        [_.dict(**_RESPONSE_MODEL_MINIMAL_POLICY) for _ in found]
+    )
 
 
 @routes.post(f"/{API_VTAG}/users:pre-register", name="pre_register_user")
 @login_required
-@permission_required("users.others.*")
+@permission_required("user.users.*")
 @_handle_users_exceptions
 async def pre_register_user(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
@@ -100,6 +113,8 @@ async def pre_register_user(request: web.Request) -> web.Response:
         user_profile = await _api.pre_register_user(
             request.app, profile=pre_user_profile, creator_user_id=req_ctx.user_id
         )
-        return envelope_json_response(user_profile)
+        return envelope_json_response(
+            user_profile.dict(**_RESPONSE_MODEL_MINIMAL_POLICY)
+        )
     except AlreadyPreRegisteredError as err:
         raise web.HTTPConflict(reason=f"{err}") from err

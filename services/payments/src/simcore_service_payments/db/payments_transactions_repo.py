@@ -8,6 +8,7 @@ from models_library.api_schemas_payments.errors import (
     PaymentNotFoundError,
 )
 from models_library.api_schemas_webserver.wallets import PaymentID
+from models_library.payments import StripeInvoiceID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -66,6 +67,7 @@ class PaymentsTransactionsRepo(BaseRepository):
         completion_state: PaymentTransactionState,
         state_message: str | None,
         invoice_url: HttpUrl | None,
+        stripe_invoice_id: StripeInvoiceID | None,
     ) -> PaymentsTransactionsDB:
         """
         - ACKs payment by updating state with SUCCESS, CANCEL, etc
@@ -112,6 +114,7 @@ class PaymentsTransactionsRepo(BaseRepository):
                     completed_at=sa.func.now(),
                     state=completion_state,
                     invoice_url=invoice_url,
+                    stripe_invoice_id=stripe_invoice_id,
                     **optional,
                 )
                 .where(payments_transactions.c.payment_id == f"{payment_id}")

@@ -50,7 +50,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -60,7 +60,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -70,7 +70,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -80,7 +80,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -90,7 +90,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -100,7 +100,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -144,7 +144,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -154,7 +154,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -164,7 +164,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -174,7 +174,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -184,7 +184,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -194,7 +194,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -245,7 +245,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -255,7 +255,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -265,7 +265,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -275,7 +275,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -285,7 +285,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -295,7 +295,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -353,7 +353,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -363,7 +363,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -373,7 +373,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -383,7 +383,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -393,7 +393,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -403,7 +403,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -462,7 +462,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -472,7 +472,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -482,7 +482,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -492,7 +492,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -502,7 +502,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -512,7 +512,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -563,7 +563,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -573,7 +573,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -583,7 +583,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -593,7 +593,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -603,7 +603,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -613,7 +613,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -664,7 +664,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -674,7 +674,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -684,7 +684,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -694,7 +694,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -704,7 +704,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -714,7 +714,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -755,7 +755,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -765,7 +765,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -775,7 +775,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -785,7 +785,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -795,7 +795,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -805,7 +805,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -854,7 +854,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -864,7 +864,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -874,7 +874,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -884,7 +884,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -894,7 +894,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -904,7 +904,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -967,7 +967,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -977,7 +977,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -987,7 +987,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -997,7 +997,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1007,7 +1007,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1017,7 +1017,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1086,7 +1086,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1096,7 +1096,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1106,7 +1106,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1116,7 +1116,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1126,7 +1126,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1136,7 +1136,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1205,7 +1205,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1215,7 +1215,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1225,7 +1225,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1235,7 +1235,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1245,7 +1245,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1255,7 +1255,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1328,7 +1328,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1338,7 +1338,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1348,7 +1348,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1358,7 +1358,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1368,7 +1368,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1378,7 +1378,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1388,7 +1388,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1465,7 +1465,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1475,7 +1475,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1485,7 +1485,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1495,7 +1495,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1505,7 +1505,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1515,7 +1515,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1525,7 +1525,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1614,7 +1614,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1624,7 +1624,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1634,7 +1634,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1644,7 +1644,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1654,7 +1654,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1664,7 +1664,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1674,7 +1674,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1752,7 +1752,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1762,7 +1762,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1772,7 +1772,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1782,7 +1782,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1792,7 +1792,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1802,7 +1802,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1812,7 +1812,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1890,7 +1890,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1900,7 +1900,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1910,7 +1910,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1920,7 +1920,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1930,7 +1930,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1940,7 +1940,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -1950,7 +1950,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2029,7 +2029,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2039,7 +2039,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2049,7 +2049,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2059,7 +2059,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2069,7 +2069,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2079,7 +2079,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2089,7 +2089,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2167,7 +2167,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2177,7 +2177,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2187,7 +2187,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2197,7 +2197,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2207,7 +2207,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2217,7 +2217,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2227,7 +2227,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2324,7 +2324,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2334,7 +2334,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2344,7 +2344,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2354,7 +2354,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2364,7 +2364,135 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPExceptionModel"
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/logstream": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Log Stream",
+        "operationId": "get_log_stream",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Key",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "type": "string"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: Logs are already being streamed",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
                 }
               }
             }
@@ -2401,6 +2529,20 @@
             "title": "File",
             "type": "string",
             "format": "binary"
+          }
+        }
+      },
+      "ErrorGet": {
+        "title": "ErrorGet",
+        "required": [
+          "errors"
+        ],
+        "type": "object",
+        "properties": {
+          "errors": {
+            "title": "Errors",
+            "type": "array",
+            "items": {}
           }
         }
       },
@@ -2463,19 +2605,6 @@
           },
           "all": {
             "$ref": "#/components/schemas/UsersGroup"
-          }
-        }
-      },
-      "HTTPExceptionModel": {
-        "title": "HTTPExceptionModel",
-        "required": [
-          "detail"
-        ],
-        "type": "object",
-        "properties": {
-          "detail": {
-            "title": "Detail",
-            "type": "string"
           }
         }
       },

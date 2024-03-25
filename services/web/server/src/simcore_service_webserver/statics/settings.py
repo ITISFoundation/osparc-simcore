@@ -100,14 +100,17 @@ class FrontEndAppSettings(BaseCustomSettings):
         data.update(
             FrontEndInfoDict(
                 third_party_references=_THIRD_PARTY_REFERENCES,
-                countries=[
-                    CountryInfoDict(
-                        name=c.name,
-                        alpha2=c.alpha_2,
-                    )
-                    for c in pycountry.countries
-                ],
-            )
+                countries=sorted(
+                    (
+                        CountryInfoDict(
+                            name=c.name,
+                            alpha2=c.alpha_2,
+                        )
+                        for c in pycountry.countries
+                    ),
+                    key=lambda i: i["name"],
+                ),
+            ),
         )
 
         return {
