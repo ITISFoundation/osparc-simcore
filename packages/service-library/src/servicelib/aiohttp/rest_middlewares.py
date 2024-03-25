@@ -71,7 +71,7 @@ def _handle_unexpected_error_and_reraise(request: web.BaseRequest, err: Exceptio
     """
     error_code = create_error_code(err)
     resp = create_error_response(
-        err,
+        errors=[],  # avoid details
         message=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(error_code),
         http_error_cls=web.HTTPInternalServerError,
     )
