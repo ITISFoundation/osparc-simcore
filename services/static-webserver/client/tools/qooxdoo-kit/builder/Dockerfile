@@ -55,7 +55,7 @@ RUN \
 RUN apk add --update python3 py3-pip
 # ...and run post compilation step
 RUN \
-  --mount=type=bind,source=scripts,target=scripts && \
+  --mount=type=bind,source=scripts,target=scripts \
   python ./scripts/post-compile.py
 
 
