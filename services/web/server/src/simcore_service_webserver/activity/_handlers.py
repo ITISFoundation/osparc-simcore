@@ -12,6 +12,7 @@ from yarl import URL
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
+from ..utils_aiohttp import envelope_json_response
 from ._api import (
     get_container_metric_for_labels,
     get_cpu_usage,
@@ -74,4 +75,4 @@ async def get_activity_status(request: aiohttp.web.Request):
         raise aiohttp.web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
     assert parse_obj_as(ActivityStatusDict, res) is not None  # nosec
-    return dict(res)
+    return envelope_json_response(dict(res))

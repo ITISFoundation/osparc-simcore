@@ -131,15 +131,17 @@ async def update_wallet_group(request: web.Request):
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
     body_params = await parse_request_body_as(_WalletsGroupsBodyParams, request)
 
-    return await _groups_api.update_wallet_group(
-        app=request.app,
-        user_id=req_ctx.user_id,
-        wallet_id=path_params.wallet_id,
-        group_id=path_params.group_id,
-        read=body_params.read,
-        write=body_params.write,
-        delete=body_params.delete,
-        product_name=req_ctx.product_name,
+    return envelope_json_response(
+        await _groups_api.update_wallet_group(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            wallet_id=path_params.wallet_id,
+            group_id=path_params.group_id,
+            read=body_params.read,
+            write=body_params.write,
+            delete=body_params.delete,
+            product_name=req_ctx.product_name,
+        )
     )
 
 

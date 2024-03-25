@@ -37,13 +37,12 @@ def _is_api_request(request: web.Request, api_version: str) -> bool:
 def _handle_http_error_and_reraise(request: web.BaseRequest, err: web.HTTPError):
     """Ensures response for a web.HTTPError is complete"""
     assert request  # nosec
-
-    # NOTE: 'reason' is always setup since there is a default in `set_status`` None provided
     assert err.reason  # nosec
 
     err.content_type = MIMETYPE_APPLICATION_JSON
-    if not err.text or not is_enveloped_from_text(err.text):
-        error = ResponseErrorBody(
+    if not err.empty_body and (not err.text or not is_enveloped_from_text(err.text)):
+        # Ensure json-body
+        error_body = ResponseErrorBody(
             errors=[
                 ErrorDetail.from_exception(err),
             ],
@@ -53,7 +52,7 @@ def _handle_http_error_and_reraise(request: web.BaseRequest, err: web.HTTPError)
             ],
             message=err.reason,
         )
-        err.text = EnvelopeFactory(error=error).as_text()
+        err.text = EnvelopeFactory(error=error_body).as_text()
 
     raise err
 

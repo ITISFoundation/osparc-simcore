@@ -119,6 +119,7 @@ async def notify_user_logout(
 def flash_response(
     message: str, level: str = "INFO", *, status: int = HTTP_200_OK
 ) -> web.Response:
+    # FIXME: move this to utils_aiohttp
     return envelope_response(
         data=asdict(LogMessage(message, level)),
         status=status,

@@ -15,7 +15,6 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_groups_extra_properties import (
@@ -250,10 +249,8 @@ async def get_computation(request: web.Request) -> web.Response:
             c.cluster_id == list_computation_tasks[0].cluster_id
             for c in list_computation_tasks
         )
-        return web.json_response(
-            data={"data": list_computation_tasks[0].dict(by_alias=True)},
-            dumps=json_dumps,
-        )
+        return envelope_json_response(list_computation_tasks[0].dict(by_alias=True))
+
     except DirectorServiceError as exc:
         return create_error_response(
             exc,
