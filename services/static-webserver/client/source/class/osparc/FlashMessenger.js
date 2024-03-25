@@ -28,7 +28,7 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   osparc.FlashMessenger.getInstance().log(log);
+ *   osparc.FlashMessenger.getInstance().logAs(log);
  * </pre>
  */
 
