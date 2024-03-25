@@ -17,37 +17,9 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.po.PreRegistration", {
-  extend: qx.ui.core.Widget,
-
-  construct: function() {
-    this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.VBox(10));
-
-    this.__buildLayout();
-  },
-
-  statics: {
-    createGroupBox: function(title) {
-      const box = new qx.ui.groupbox.GroupBox(title).set({
-        appearance: "settings-groupbox",
-        layout: new qx.ui.layout.VBox(5),
-        alignX: "center"
-      });
-      box.getChildControl("legend").set({
-        font: "text-14"
-      });
-      box.getChildControl("frame").set({
-        backgroundColor: "transparent"
-      });
-      return box;
-    },
-
-  },
+  extend: osparc.po.BaseView,
 
   members: {
-    __preRegistrationLayout: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -55,16 +27,28 @@ qx.Class.define("osparc.po.PreRegistration", {
           control = this.__searchPreRegistration();
           this._add(control);
           break;
+        case "finding-status":
+          control = new qx.ui.basic.Label();
+          this._add(control);
+          break;
+        case "pre-registration-container":
+          control = new qx.ui.container.Scroll();
+          this._add(control, {
+            flex: 1
+          });
+          break;
       }
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
-      this._createChildControlImpl("search-preregistration");
+    _buildLayout: function() {
+      this.getChildControl("search-preregistration");
+      this.getChildControl("finding-status");
+      this.getChildControl("pre-registration-container");
     },
 
     __searchPreRegistration: function() {
-      const groupBox = this.self().createGroupBox(this.tr("Pre-Registration"));
+      const groupBox = osparc.po.BaseView.createGroupBox(this.tr("Pre-Registration"));
       const form = this.__preRegistrationForm();
       const formRenderer = new qx.ui.form.renderer.Single(form);
       groupBox.add(formRenderer);
@@ -91,20 +75,23 @@ qx.Class.define("osparc.po.PreRegistration", {
           return;
         }
         if (form.validate()) {
-          if (this.__preRegistrationLayout) {
-            this._remove(this.__preRegistrationLayout);
-          }
-
+          submitBtn.setFetching(true);
+          const findingStatus = this.getChildControl("finding-status");
+          findingStatus.setValue(this.tr("Searching Pre-Registered users..."));
           const params = {
             data: JSON.parse(requestAccountData.getValue())
           };
-          submitBtn.setFetching(true);
           osparc.data.Resources.fetch("users", "preRegister", params)
             .then(data => {
-              const layout = this.__preRegistrationLayout = this.__createPreRegistrationLayout(data);
-              this._add(layout);
+              if (data.length) {
+                findingStatus.setValue(this.tr("Pre-Registered as:"));
+              } else {
+                findingStatus.setValue(this.tr("No Pre-Registered user found"));
+              }
+              this.__populatePreRegistrationLayout(data);
             })
             .catch(err => {
+              findingStatus.setValue(this.tr("Error searching Pre-Registered users"));
               console.error(err);
               osparc.FlashMessenger.logAs(err.message, "ERROR");
             })
@@ -116,23 +103,10 @@ qx.Class.define("osparc.po.PreRegistration", {
       return form;
     },
 
-    __createPreRegistrationLayout: function(respData) {
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
-
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignY: "middle"
-      }));
-      vBox.add(hBox);
-
-      const respLabel = new qx.ui.basic.Label(this.tr("Pre-Registered as:"));
-      vBox.add(respLabel);
-
+    __populatePreRegistrationLayout: function(respData) {
+      const preRegistrationContainer = this.getChildControl("pre-registration-container");
       const preregistrationRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "preregistration-data");
-      const container = new qx.ui.container.Scroll();
-      container.add(preregistrationRespViewer);
-      vBox.add(container);
-
-      return vBox;
+      preRegistrationContainer.add(preregistrationRespViewer);
     }
   }
 });
