@@ -14,7 +14,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl
+from pydantic import HttpUrl, parse_obj_as
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -234,7 +234,7 @@ async def _fake_get_payment_invoice_url(
     assert user_id  # nosec
     assert wallet_id  # nosec
 
-    return HttpUrl(f"https://fake-invoice.com/?id={payment_id}")
+    return parse_obj_as(HttpUrl, f"https://fake-invoice.com/?id={payment_id}")
 
 
 async def raise_for_wallet_payments_permissions(
@@ -455,13 +455,13 @@ async def get_payment_invoice_url(
 
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
-        payment_invoice_url = await _fake_get_payment_invoice_url(
+        payment_invoice_url: HttpUrl = await _fake_get_payment_invoice_url(
             app, user_id=user_id, wallet_id=wallet_id, payment_id=payment_id
         )
 
     else:
         assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
-        payment_invoice_url = await _rpc.get_payment_invoice_url(
+        payment_invoice_url: HttpUrl = await _rpc.get_payment_invoice_url(
             app, user_id=user_id, wallet_id=wallet_id, payment_id=payment_id
         )
 

@@ -40,7 +40,7 @@ def app_environment(
     )
 
 
-async def test_payment_gateway_responsiveness(
+async def test_stripe_responsiveness(
     app: FastAPI,
     mock_payments_stripe_api_base: MockRouter,
 ):
@@ -49,7 +49,11 @@ async def test_payment_gateway_responsiveness(
 
     mock_payments_stripe_api_base.get(
         path="/",
-        name="healthcheck",
+        name="ping healthcheck",
+    ).respond(status.HTTP_503_SERVICE_UNAVAILABLE)
+    mock_payments_stripe_api_base.get(
+        path="/v1/products",
+        name="healthy healthcheck",
     ).respond(status.HTTP_503_SERVICE_UNAVAILABLE)
 
     assert await stripe_api.ping()
@@ -57,7 +61,11 @@ async def test_payment_gateway_responsiveness(
 
     mock_payments_stripe_api_base.get(
         path="/",
-        name="healthcheck",
+        name="ping healthcheck",
+    ).respond(status.HTTP_200_OK)
+    mock_payments_stripe_api_base.get(
+        path="/v1/products",
+        name="healthy healthcheck",
     ).respond(status.HTTP_200_OK)
 
     assert await stripe_api.ping()
@@ -72,7 +80,7 @@ async def test_get_invoice(
     stripe_api: StripeApi = StripeApi.get_from_app_state(app)
     assert stripe_api
 
-    assert await stripe_api.http_check_connection()
+    assert await stripe_api.is_healthy()
 
     _invoice = await stripe_api.get_invoice(
         stripe_invoice_id=StripeInvoiceID(stripe_invoice_id)

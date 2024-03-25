@@ -420,6 +420,8 @@ def mock_payments_stripe_api_base(app: FastAPI) -> Iterator[MockRouter]:
 
 @pytest.fixture
 def mock_payments_stripe_routes(faker: Faker) -> Callable:
+    """Mocks https://docs.stripe.com/api. In the future https://github.com/stripe/stripe-mock might be used"""
+
     def _mock(mock_router: MockRouter):
         def _list_products(request: httpx.Request):
             assert "Bearer " in request.headers["authorization"]
@@ -442,7 +444,7 @@ def mock_payments_stripe_routes(faker: Faker) -> Callable:
         ).mock(side_effect=_list_products)
 
         mock_router.get(
-            path__regex=r"/v1/invoices/*",
+            path__regex=r"(^/v1/invoices/.*)$",
             name="get_invoice",
         ).mock(side_effect=_get_invoice)
 
@@ -461,6 +463,7 @@ def external_stripe_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
     envs = {}
     if envfile := request.config.getoption("--external-envfile"):
         assert isinstance(envfile, Path)
+        assert envfile.is_file()
         print("🚨 EXTERNAL: external envs detected. Loading", envfile, "...")
         envs = load_dotenv(envfile)
         assert "PAYMENTS_STRIPE_API_SECRET" in envs

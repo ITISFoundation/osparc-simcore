@@ -4,10 +4,14 @@
 
 """
 
+import contextlib
+import functools
 import logging
+from collections.abc import Callable
 
 import httpx
 from fastapi import FastAPI
+from httpx import HTTPStatusError
 from models_library.payments import StripeInvoiceID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import (
@@ -16,10 +20,30 @@ from servicelib.fastapi.http_client import (
     HealthMixinMixin,
 )
 
+from ..core.errors import StripeRuntimeError
 from ..core.settings import ApplicationSettings
 from ..models.stripe import InvoiceData
 
 _logger = logging.getLogger(__name__)
+
+
+@contextlib.contextmanager
+def _raise_as_stripe_error():
+    """https://docs.stripe.com/api/errors"""
+    try:
+        yield
+
+    except HTTPStatusError as err:
+        raise StripeRuntimeError from err
+
+
+def _handle_status_errors(coro: Callable):
+    @functools.wraps(coro)
+    async def _wrapper(self, *args, **kwargs):
+        with _raise_as_stripe_error():
+            return await coro(self, *args, **kwargs)
+
+    return _wrapper
 
 
 class _StripeBearerAuth(httpx.Auth):
@@ -34,20 +58,26 @@ class _StripeBearerAuth(httpx.Auth):
 class StripeApi(
     BaseHTTPApi, AttachLifespanMixin, HealthMixinMixin, SingletonInAppStateMixin
 ):
+    """https://docs.stripe.com/api"""
+
     app_state_name: str = "stripe_api"
 
-    async def http_check_connection(
+    async def is_healthy(
         self,
     ) -> bool:
-        response = await self.client.get("/v1/products")
-        response.raise_for_status()
+        try:
+            response = await self.client.get("/v1/products")
+            response.raise_for_status()
+            return True
+        except httpx.HTTPError:
+            return False
 
-        return True
-
+    @_handle_status_errors
     async def get_invoice(
         self,
         stripe_invoice_id: StripeInvoiceID,
     ) -> InvoiceData:
+
         response = await self.client.get(f"/v1/invoices/{stripe_invoice_id}")
         response.raise_for_status()
 
