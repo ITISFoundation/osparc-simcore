@@ -1,4 +1,5 @@
 arrow
+asyncpg
 black
 boto3
 # NOTE: these must be in sync with osparc
@@ -12,3 +13,4 @@ pydantic[email]
 pylint
 python-dotenv
 typer[all]
+sqlalchemy[asyncio]
