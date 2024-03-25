@@ -134,20 +134,22 @@ def main_changes_stats() -> None:
     # format
     print("###  Highlights on updated libraries (only updated libraries are included)")
     print()
-    print("- #packages before:", len(before))
-    print("- #packages after :", len(after))
+    print("- #packages before ~", len(before))
+    print("- #packages after ~", len(after))
     print("")
 
     COLUMNS = ["#", "name", "before", "after", "upgrade", "count", "packages"]
 
     with printing_table(COLUMNS):
-
-        for i, name in enumerate(sorted(before.keys()), start=1):
+        i = 1
+        for name in sorted(before.keys()):
             # TODO: where are these libraries?
             # TODO: are they first dependencies?
             # TODO: if major, get link to release notes
             from_versions = {str(v) for v in before[name]}
             to_versions = {str(v) for v in after[name]}
+            if from_versions == to_versions:
+                continue
 
             used_packages = []
             if req_paths := lib2reqs.get(name):
@@ -173,6 +175,7 @@ def main_changes_stats() -> None:
                 "</br>".join(sorted(used_packages)),
                 "|",
             )
+            i += 1
 
     print()
     print("*Legend*: ")

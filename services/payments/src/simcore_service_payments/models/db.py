@@ -4,6 +4,7 @@ from typing import Any, ClassVar
 
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.emails import LowerCaseEmailStr
+from models_library.payments import StripeInvoiceID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -23,6 +24,7 @@ _EXAMPLE_AFTER_INIT = {
     "wallet_id": 123,
     "comment": "This is a test comment.",
     "invoice_url": None,
+    "stripe_invoice_id": None,
     "initiated_at": "2023-09-27T10:00:00",
     "state": PaymentTransactionState.PENDING,
 }
@@ -38,6 +40,7 @@ class PaymentsTransactionsDB(BaseModel):
     wallet_id: WalletID
     comment: str | None
     invoice_url: HttpUrl | None
+    stripe_invoice_id: StripeInvoiceID | None
     initiated_at: datetime.datetime
     completed_at: datetime.datetime | None
     state: PaymentTransactionState

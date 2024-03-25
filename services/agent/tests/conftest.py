@@ -18,8 +18,6 @@ from pydantic import HttpUrl, parse_obj_as
 from settings_library.r_clone import S3Provider
 from simcore_service_agent.core.settings import ApplicationSettings
 
-pytestmark = pytest.mark.asyncio
-
 pytest_plugins = [
     "pytest_simcore.aws_server",
     "pytest_simcore.repository_paths",

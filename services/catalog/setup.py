@@ -31,35 +31,35 @@ PROD_REQUIREMENTS = tuple(
 TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 
-SETUP = dict(
-    name="simcore-service-catalog",
-    version=(CURRENT_DIR / "VERSION").read_text().strip(),
-    author=", ".join(
+SETUP = {
+    "name": "simcore-service-catalog",
+    "version": (CURRENT_DIR / "VERSION").read_text().strip(),
+    "author": ", ".join(
         (
             "Pedro Crespo-Valero (pcrespov)",
             "Sylvain Anderegg (sanderegg)",
         )
     ),
-    description="Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
-    long_description=(CURRENT_DIR / "README.md").read_text(),
-    license="MIT license",
-    python_requires="~=3.10",
-    packages=find_packages(where="src"),
-    package_dir={
+    "description": "Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
+    "long_description": (CURRENT_DIR / "README.md").read_text(),
+    "license": "MIT license",
+    "python_requires": "~=3.10",
+    "packages": find_packages(where="src"),
+    "package_dir": {
         "": "src",
     },
-    include_package_data=True,
-    install_requires=PROD_REQUIREMENTS,
-    test_suite="tests",
-    tests_require=TEST_REQUIREMENTS,
-    extras_require={"test": TEST_REQUIREMENTS},
-    entry_points={
+    "include_package_data": True,
+    "install_requires": PROD_REQUIREMENTS,
+    "test_suite": "tests",
+    "tests_require": TEST_REQUIREMENTS,
+    "extras_require": {"test": TEST_REQUIREMENTS},
+    "entry_points": {
         "console_scripts": [
             "simcore-service-catalog=simcore_service_catalog.cli:main",
             "simcore-service=simcore_service_catalog.cli:main",
         ],
     },
-)
+}
 
 if __name__ == "__main__":
     setup(**SETUP)

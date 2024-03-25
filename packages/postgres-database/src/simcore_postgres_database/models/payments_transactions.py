@@ -95,6 +95,12 @@ payments_transactions = sa.Table(
         nullable=True,
         doc="Link to invoice of this transaction. Available when completed",
     ),
+    sa.Column(
+        "stripe_invoice_id",
+        sa.String,
+        nullable=True,
+        doc="Invoice ID of invoice of this transaction. Available when completed",
+    ),
     #
     # States
     #

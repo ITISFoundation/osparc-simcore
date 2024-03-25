@@ -4,7 +4,7 @@
 
 pydantic
 pytest
-pytest-aiohttp
+pytest-asyncio
 pytest-instafail
 pytest-runner
 pytest-sugar
