@@ -423,7 +423,7 @@ qx.Class.define("osparc.Application", {
     */
     logout: function(forcedReason) {
       if (forcedReason) {
-        const msg = this.tr("You were logged out<br>") + forcedReason;
+        const msg = this.tr("You were logged out:") + "<br>" + forcedReason;
         osparc.FlashMessenger.getInstance().logAs(msg, "WARNING", 0);
       } else {
         osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"), "INFO");

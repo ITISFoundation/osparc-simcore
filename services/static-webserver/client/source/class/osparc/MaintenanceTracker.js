@@ -166,10 +166,8 @@ qx.Class.define("osparc.MaintenanceTracker", {
         end: null,
         reason: null
       });
-      let text = qx.locale.Manager.tr("We are under maintenance.");
-      text += "<br>";
-      text += qx.locale.Manager.tr("Please check back later");
-      qx.core.Init.getApplication().logout(text);
+      const reason = qx.locale.Manager.tr("We are under maintenance. Please check back later");
+      qx.core.Init.getApplication().logout(reason);
     },
 
     __scheduleLogout: function() {

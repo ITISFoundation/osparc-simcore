@@ -20,7 +20,7 @@ qx.Class.define("osparc.CookieExpirationTracker", {
   type: "singleton",
 
   statics: {
-    PERMANENT_WARN_IN_ADVANCE: 60*60, // Show Ribbon Permanent Message 1h in advance
+    PERMANENT_WARN_IN_ADVANCE: 60*60, // Show Permanent Flash Message 1h in advance
     LOG_OUT_BEFORE_EXPIRING: 60 // Log user out 1' in before expiring
   },
 
@@ -43,8 +43,8 @@ qx.Class.define("osparc.CookieExpirationTracker", {
     },
 
     __logoutUser: function() {
-      const text = qx.locale.Manager.tr("Session expired");
-      qx.core.Init.getApplication().logout(text);
+      const reason = qx.locale.Manager.tr("Session expired");
+      qx.core.Init.getApplication().logout(reason);
     }
   }
 });
