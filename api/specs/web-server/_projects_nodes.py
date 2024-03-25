@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGet,
     NodeGetIdle,
     NodeGetUnknown,
+    NodeOutputs,
     NodeRetrieve,
     NodeRetrieved,
     ServiceResourcesDict,
@@ -102,6 +103,16 @@ def stop_node(project_id: str, node_id: str):  # noqa: ARG001
 )
 def restart_node(project_id: str, node_id: str):  # noqa: ARG001
     """Note that it has only effect on nodes associated to dynamic services"""
+
+
+@router.patch(
+    "/projects/{project_id}/nodes/{node_id}/outputs",
+    response_model=None,
+)
+def update_node_outputs(
+    project_id: str, node_id: str, _new: NodeOutputs
+):  # noqa: ARG001
+    ...
 
 
 #
