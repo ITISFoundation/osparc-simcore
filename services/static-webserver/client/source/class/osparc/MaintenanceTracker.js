@@ -160,27 +160,28 @@ qx.Class.define("osparc.MaintenanceTracker", {
       }
     },
 
+    __logout: function() {
+      this.set({
+        start: null,
+        end: null,
+        reason: null
+      });
+      let text = qx.locale.Manager.tr("We are under maintenance.");
+      text += "<br>";
+      text += qx.locale.Manager.tr("Please check back later");
+      osparc.FlashMessenger.getInstance().logAs(text, "WARNING");
+      qx.core.Init.getApplication().logout();
+    },
+
     __scheduleLogout: function() {
       this.__removeScheduledLogout();
 
-      const logoutUser = () => {
-        this.set({
-          start: null,
-          end: null,
-          reason: null
-        });
-        let text = qx.locale.Manager.tr("We are under maintenance.");
-        text += "<br>";
-        text += qx.locale.Manager.tr("Please check back later");
-        osparc.FlashMessenger.getInstance().logAs(text, "WARNING");
-        qx.core.Init.getApplication().logout();
-      };
       const now = new Date();
       if (this.getStart().getTime() > now.getTime()) {
         const diff = this.getStart().getTime() - now.getTime();
-        this.__logoutTimer = setTimeout(() => logoutUser(), diff);
+        this.__logoutTimer = setTimeout(() => this.__logout(), diff);
       } else if (this.getStart().getTime() < now.getTime() && this.getEnd().getTime() > now.getTime()) {
-        logoutUser();
+        this.__logout();
       }
     },
 
