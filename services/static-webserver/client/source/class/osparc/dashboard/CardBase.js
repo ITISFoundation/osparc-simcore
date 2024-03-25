@@ -55,11 +55,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     MODE_APP: "@FontAwesome5Solid/desktop/13",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
-    STUDY_ICON: "resource/osparc/Thumbnail_Transparent.png",
-    TEMPLATE_ICON: "resource/osparc/Thumbnail_Transparent.png",
-    SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
-    COMP_SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
-    DYNAMIC_SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
+    // Get the default thumbnail for each product else add the image and extension osparc.product.Utils.getProductThumbUrl(Thumbnail-01.png)
+    STUDY_ICON: osparc.product.Utils.getProductThumbUrl(),
+    TEMPLATE_ICON: osparc.product.Utils.getProductThumbUrl(),
+    SERVICE_ICON: osparc.product.Utils.getProductThumbUrl(),
+    COMP_SERVICE_ICON: osparc.product.Utils.getProductThumbUrl(),
+    DYNAMIC_SERVICE_ICON: osparc.product.Utils.getProductThumbUrl(),
 
     CARD_PRIORITY: {
       NEW: 0,
