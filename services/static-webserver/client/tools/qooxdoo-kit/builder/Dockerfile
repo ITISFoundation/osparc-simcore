@@ -55,10 +55,11 @@ RUN \
 RUN \
   apt-get update \
   && apt-get install -y --no-install-recommends \
-  python
+  python \
+  && apt-get clean
 # ...and run post compilation step
 RUN \
-  --mount=type=bind,source=scripts,target=scripts \
+  --mount=type=bind,source=scripts,target=scripts && \
   python ./scripts/post-compile.py
 
 
