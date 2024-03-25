@@ -1,4 +1,5 @@
 arrow
+asyncpg
 black
 boto3
 # NOTE: these must be in sync with osparc

@@ -5,6 +5,7 @@ import contextlib
 import datetime
 import json
 import re
+import uuid
 from collections import defaultdict, namedtuple
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field, replace
@@ -17,6 +18,7 @@ import boto3
 import distributed
 import paramiko
 import parse
+import sqlalchemy as sa
 import typer
 from dotenv import dotenv_values
 from mypy_boto3_ec2 import EC2ServiceResource
@@ -51,6 +53,16 @@ class ComputationalInstance(AutoscaledInstance):
     wallet_id: int
     last_heartbeat: datetime.datetime | None
     dask_ip: str
+
+
+@dataclass(slots=True, kw_only=True, frozen=True)
+class ComputationalTask:
+    project_id: uuid.UUID
+    node_id: uuid.UUID
+    job_id: str | None
+    service_name: str
+    service_version: str
+    state: str
 
 
 @dataclass
@@ -134,6 +146,7 @@ class PostgresDB(BaseModel):
 
 @contextlib.asynccontextmanager
 async def db_engine() -> AsyncGenerator[AsyncEngine, Any]:
+    engine = None
     try:
         for env in [
             "POSTGRES_USER",
@@ -143,11 +156,11 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, Any]:
         ]:
             assert state.environment[env]
         postgres_db = PostgresDB(
-            dsn=f"postgresql+asyncpg://{state.environment['POSTGRES_USER']}:{state.environment['POSTGRESS_PASSWORD']}@{state.environment['POSTGRES_ENDPOINT']}/{state.environment['POSTGRES_DB']}"
+            dsn=f"postgresql+asyncpg://{state.environment['POSTGRES_USER']}:{state.environment['POSTGRES_PASSWORD']}@{state.environment['POSTGRES_ENDPOINT']}/{state.environment['POSTGRES_DB']}"
         )
 
         engine = create_async_engine(
-            f"{postgres_db.dsn}".replace("postgresql", "postgresql+asyncpg"),
+            f"{postgres_db.dsn}",
             connect_args={
                 "server_settings": {
                     "application_name": "osparc-clusters-monitoring-script"
@@ -156,7 +169,8 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, Any]:
         )
         yield engine
     finally:
-        await engine.dispose()
+        if engine:
+            await engine.dispose()
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -1022,14 +1036,104 @@ def summary(
     asyncio.run(_summary(user_id or None, wallet_id or None))
 
 
+async def _list_computational_tasks_from_db(user_id: int) -> list[ComputationalTask]:
+    async with contextlib.AsyncExitStack() as stack:
+        engine = await stack.enter_async_context(db_engine())
+        db_connection = await stack.enter_async_context(engine.begin())
+
+        # Get the list of running project UUIDs with a subquery
+        subquery = (
+            sa.select(sa.column("project_uuid"))
+            .select_from(sa.table("comp_runs"))
+            .where(
+                sa.and_(
+                    sa.column("user_id") == user_id,
+                    sa.cast(sa.column("result"), sa.VARCHAR) != "SUCCESS",
+                    sa.cast(sa.column("result"), sa.VARCHAR) != "FAILED",
+                    sa.cast(sa.column("result"), sa.VARCHAR) != "ABORTED",
+                )
+            )
+        )
+
+        # Now select comp_tasks rows where project_id is one of the project_uuids
+        query = (
+            sa.select("*")
+            .select_from(sa.table("comp_tasks"))
+            .where(sa.column("project_id").in_(subquery))
+        )
+
+        result = await db_connection.execute(query)
+        comp_tasks_list = result.fetchall()
+        return [
+            TypeAdapter(ComputationalTask).validate_python(
+                {
+                    "project_id": row.project_id,
+                    "node_id": row.node_id,
+                    "job_id": row.job_id,
+                    "service_name": row.image["name"].split("/")[-1],
+                    "service_version": row.image["tag"],
+                    "state": row.state,
+                }
+            )
+            for row in comp_tasks_list
+        ]
+    msg = "unable to access database!"
+    raise RuntimeError(msg)
+
+
+def _print_computational_tasks(
+    user_id: int, wallet_id: int, tasks: list[ComputationalTask]
+) -> None:
+    table = Table(
+        "ProjectID",
+        "NodeID",
+        "ServiceName",
+        "ServiceVersion",
+        "State",
+        title=f"{len(tasks)} Tasks running for {user_id=}/{wallet_id=}",
+        padding=(0, 0),
+        title_style=Style(color="red", encircle=True),
+    )
+    by_project_dict: dict[uuid.UUID, list[ComputationalTask]] = defaultdict(list)
+    for task in tasks:
+        by_project_dict[task.project_id].append(task)
+    for project_id, sorted_tasks in by_project_dict.items():
+        task = sorted_tasks[0]
+        table.add_row(
+            f"{project_id}",
+            f"{task.node_id}",
+            task.service_name,
+            task.service_version,
+            task.state,
+        )
+        for task in sorted_tasks[1:]:
+            table.add_row(
+                "",
+                f"{task.node_id}",
+                task.service_name,
+                task.service_version,
+                task.state,
+            )
+    print(table)
+
+
 async def _cancel_jobs(user_id: int, wallet_id: int) -> None:
+    computational_tasks = await _list_computational_tasks_from_db(user_id)
+    _print_computational_tasks(user_id, wallet_id, computational_tasks)
+
     assert state.ec2_resource_clusters_keeper
     computational_instances = await _list_computational_instances_from_ec2(
         user_id, wallet_id
     )
+    if not computational_instances:
+        print(f"no computational machines found for {user_id=}/{wallet_id=}")
+        raise typer.Exit
     computational_clusters = await _parse_computational_clusters(
         computational_instances, state.ssh_key_path, user_id, wallet_id
     )
+    if not computational_clusters:
+        print(f"no computational clusters found for {user_id=}/{wallet_id=}")
+        raise typer.Exit
     assert computational_clusters
     assert (
         len(computational_clusters) == 1
@@ -1042,11 +1146,17 @@ async def _cancel_jobs(user_id: int, wallet_id: int) -> None:
     )
 
     print("Please choose which jobs to cancel, write all to cancel all of them.")
-    the_cluster = computational_clusters[0]
-    async with _dask_client(
-        the_cluster.primary.ec2_instance.public_ip_address
-    ) as client:
-        published_datasets = await client.list_datasets()
+
+    async with contextlib.AsyncExitStack() as stack:
+
+        the_cluster = computational_clusters[0]
+        dask_client = await stack.enter_async_context(
+            _dask_client(the_cluster.primary.ec2_instance.public_ip_address)
+        )
+
+        published_datasets = await dask_client.list_datasets()
+        if not published_datasets:
+            print("no tasks running. nothing to cancel.")
         assert published_datasets
         assert isinstance(published_datasets, tuple)
         for index, dataset in enumerate(published_datasets):
@@ -1059,9 +1169,9 @@ async def _cancel_jobs(user_id: int, wallet_id: int) -> None:
                     task_future = distributed.Future(dataset)
                     cancel_event = distributed.Event(
                         name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
-                        client=client,
+                        client=dask_client,
                     )
-                    cancel_event.set()
+                    await cancel_event.set()
                     await task_future.cancel()
                 print("cancelled all tasks")
             else:
@@ -1069,9 +1179,9 @@ async def _cancel_jobs(user_id: int, wallet_id: int) -> None:
                 task_future = distributed.Future(published_datasets[selected_index])
                 cancel_event = distributed.Event(
                     name=TASK_CANCEL_EVENT_NAME_TEMPLATE.format(task_future.key),
-                    client=client,
+                    client=dask_client,
                 )
-                cancel_event.set()
+                await cancel_event.set()
                 await task_future.cancel()
                 print(f"cancelled {published_datasets[selected_index]}")
         else:
