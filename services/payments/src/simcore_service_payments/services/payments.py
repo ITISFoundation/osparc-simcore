@@ -46,6 +46,7 @@ from ..models.payments_gateway import (
     StripeTaxExempt,
 )
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
+from ..models.stripe import InvoiceData
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
 from ..services.stripe import StripeApi
 from .notifier import NotifierService
@@ -332,6 +333,6 @@ async def get_payment_invoice_url(
     )
     if payment is None or payment.stripe_invoice_id is None:
         raise PaymentNotFoundError(payment_id=payment_id)
-    invoice_data = await stripe_api.get_invoice(payment.stripe_invoice_id)
+    invoice_data: InvoiceData = await stripe_api.get_invoice(payment.stripe_invoice_id)
 
     return invoice_data.hosted_invoice_url

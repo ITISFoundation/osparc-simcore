@@ -453,15 +453,16 @@ async def get_payment_invoice_url(
     assert product_name  # nosec
     assert wallet_id  # nosec
 
+    payment_invoice_url: HttpUrl
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
-        payment_invoice_url: HttpUrl = await _fake_get_payment_invoice_url(
+        payment_invoice_url = await _fake_get_payment_invoice_url(
             app, user_id=user_id, wallet_id=wallet_id, payment_id=payment_id
         )
 
     else:
         assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
-        payment_invoice_url: HttpUrl = await _rpc.get_payment_invoice_url(
+        payment_invoice_url = await _rpc.get_payment_invoice_url(
             app, user_id=user_id, wallet_id=wallet_id, payment_id=payment_id
         )
 
