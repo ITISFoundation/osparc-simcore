@@ -15,12 +15,6 @@ from servicelib.fastapi.http_client import (
     BaseHTTPApi,
     HealthMixinMixin,
 )
-from tenacity import (
-    Retrying,
-    before_sleep_log,
-    stop_after_delay,
-    wait_random_exponential,
-)
 
 from ..core.settings import ApplicationSettings
 from ..models.stripe import InvoiceData
@@ -42,11 +36,10 @@ class StripeApi(
 ):
     app_state_name: str = "stripe_api"
 
-    async def test_connection(
+    async def http_check_connection(
         self,
     ) -> bool:
-        """Adds credits to wallet"""
-        response = await self.client.get(f"/v1/products")
+        response = await self.client.get("/v1/products")
         response.raise_for_status()
 
         return True
@@ -55,7 +48,6 @@ class StripeApi(
         self,
         stripe_invoice_id: StripeInvoiceID,
     ) -> InvoiceData:
-        """Adds credits to wallet"""
         response = await self.client.get(f"/v1/invoices/{stripe_invoice_id}")
         response.raise_for_status()
 
@@ -69,17 +61,6 @@ def setup_stripe(app: FastAPI):
         base_url=settings.PAYMENTS_STRIPE_URL,
         auth=_StripeBearerAuth(settings.PAYMENTS_STRIPE_API_SECRET.get_secret_value()),
     )
-
-    for attempt in Retrying(
-        reraise=True,
-        stop=stop_after_delay(120),
-        wait=wait_random_exponential(max=30),
-        before_sleep=before_sleep_log(_logger, logging.WARNING),
-    ):
-        with attempt:
-            connected = api.test_connection()
-            if not connected:
-                raise ValueError  # pragma: no cover
 
     api.set_to_app_state(app)
     api.attach_lifespan_to(app)
