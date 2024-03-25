@@ -421,10 +421,12 @@ qx.Class.define("osparc.Application", {
     /**
      * Resets session and restarts
     */
-    logout: function(reason) {
-      osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out", "WARNING"));
-      if (reason) {
-        osparc.FlashMessenger.getInstance().logAs(reason, "WARNING");
+    logout: function(forcedReason) {
+      if (forcedReason) {
+        const msg = this.tr("You were logged out<br>") + forcedReason;
+        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING", 10000);
+      } else {
+        osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"), "INFO");
       }
 
       osparc.data.PollTasks.getInstance().removeTasks();
