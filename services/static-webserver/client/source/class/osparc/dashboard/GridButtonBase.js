@@ -189,7 +189,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         }
         case "title-row":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
-            anonymous: true
+            anonymous: true,
+            maxWidth: this.self().ITEM_WIDTH - 20
           });
           layout = this.getChildControl("header");
           layout.addAt(control, 1, {

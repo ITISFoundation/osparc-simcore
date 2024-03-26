@@ -73,10 +73,6 @@ qx.Class.define("osparc.dashboard.ListButtonPlaceholder", {
       this.getChildControl("progress-bar").set({
         visibility: showProgressBar ? "visible" : "excluded"
       });
-
-      this._getChildren().forEach(item => {
-        item.setOpacity(0.4);
-      });
     },
 
     isLocked: function() {
