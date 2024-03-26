@@ -223,6 +223,40 @@ qx.Class.define("osparc.product.Utils", {
         return false;
       }
       return true;
+    },
+
+    getProductThumbUrl: function(asset = "Default.png") {
+      const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/project_thumbnails"
+      let url;
+      switch (osparc.product.Utils.getProductName()) {
+        case "osparc":
+          url = `${base}/oSparc/${asset}`;
+          break;
+        case "tis":
+          url = `${base}/TIP/${asset}`;
+          break;
+        default:
+          url = `${base}/S4L/${asset}`;
+          break;
+      }
+      return url;
+    },
+
+    getProductBackgroundUrl: function(asset = "Thumbnail-01.png") {
+      const base = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images"
+      let url;
+      switch (osparc.product.Utils.getProductName()) {
+        case "osparc":
+          url = `${base}/oSparc/${asset}`;
+          break;
+        case "tis":
+          url = `${base}/TIP/${asset}`;
+          break;
+        default:
+          url = `${base}/S4L/${asset}`;
+          break;
+      }
+      return url;
     }
   }
 });

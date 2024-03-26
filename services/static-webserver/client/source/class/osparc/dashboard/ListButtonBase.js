@@ -47,18 +47,19 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       THUMBNAIL: 0,
       LOCK_STATUS: 1,
       TITLE: 2,
-      DESCRIPTION: 3,
-      UPDATES: 4,
-      UI_MODE: 5,
-      TAGS: 6,
-      STATUS: 7,
-      PERMISSION: 8,
-      TSR: 9,
-      OWNER: 10,
-      SHARED: 11,
-      LAST_CHANGE: 12,
-      HITS: 13,
-      OPTIONS: 14
+      PROGRESS: 3,
+      DESCRIPTION: 4,
+      UPDATES: 5,
+      UI_MODE: 6,
+      TAGS: 7,
+      STATUS: 8,
+      PERMISSION: 9,
+      TSR: 10,
+      OWNER: 11,
+      SHARED: 12,
+      LAST_CHANGE: 13,
+      HITS: 14,
+      OPTIONS: 15
     }
   },
 
@@ -134,36 +135,15 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           });
           break;
         case "project-status":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
-            anonymous: true
-          });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.STATUS
-          });
-          break;
-        case "project-status-icon":
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
             textColor: "status_icon",
             height: 12,
-            width: 12,
-            padding: 1
+            width: 12
           });
-          titleRow = this.getChildControl("project-status");
-          titleRow.addAt(control, 0);
-          break;
-        case "project-status-label":
-          control = new qx.ui.basic.Label().set({
-            alignY: "middle",
-            rich: true,
-            anonymous: true,
-            font: "text-12",
-            allowGrowY: false
-          });
-          titleRow = this.getChildControl("project-status");
-          titleRow.addAt(control, 1, {
-            flex: 1
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.STATUS
           });
           break;
       }

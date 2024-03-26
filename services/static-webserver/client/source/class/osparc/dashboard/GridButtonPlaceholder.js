@@ -60,22 +60,39 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
   members: {
     _createChildControlImpl: function(id) {
       let control;
+      let layout;
       switch (id) {
-        case "state-label":
-          control = new qx.ui.basic.Label();
-          this._mainLayout.add(control, this.self().POS.STATE);
+        case "state-label": {
+          control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-dark",
+            allowGrowX: true,
+            allowShrinkX: true,
+            rich: true,
+            anonymous: true,
+            font: "text-12",
+            allowGrowY: true,
+            wrap: true
+          });
+          layout = this.getChildControl("body");
+          layout.addAt(control, 0);
           break;
-        case "progress-bar":
+        }
+        case "progress-bar": {
+          layout = this.getChildControl("title-row");
           control = new qx.ui.indicator.ProgressBar().set({
-            height: 10,
-            maxWidth: 150,
-            alignX: "center"
+            maxHeight: 6,
+            alignX: "center",
+            alignY: "middle",
+            allowGrowY: false,
+            allowGrowX: true,
+            margin: 0,
           });
           control.getChildControl("progress").set({
             backgroundColor: "strong-main"
           });
-          this._mainLayout.add(control, this.self().POS.PROGRESS);
+          layout.addAt(control, 1);
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -98,7 +115,7 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
         visibility: showProgressBar ? "visible" : "excluded"
       });
 
-      this._getChildren().forEach(item => item.setOpacity(0.4));
+      // this._getChildren().forEach(item => item.setOpacity(0.8));
     },
 
     isLocked: function() {

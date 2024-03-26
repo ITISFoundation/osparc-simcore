@@ -237,7 +237,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         padding: [20, 10],
         gap: 15,
         icon: "@FontAwesome5Solid/exclamation-triangle/16",
-        backgroundColor: "info-bg",
+        backgroundColor: "disclaimer-bg",
         textColor: "info",
         alignX: "center"
       });

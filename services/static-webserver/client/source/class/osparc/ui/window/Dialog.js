@@ -60,8 +60,10 @@ qx.Class.define("osparc.ui.window.Dialog", {
           break;
         case "cancel-button": {
           const btnsLayout = this.getChildControl("buttons-layout");
-          control = new qx.ui.form.Button(this.tr("Cancel"));
-          btnsLayout.add(control);
+          control = new qx.ui.form.Button(this.tr("Cancel")).set({
+            appearance: "form-button-text"
+          });
+          btnsLayout.addAt(control, 0);
           break;
         }
       }
@@ -105,10 +107,9 @@ qx.Class.define("osparc.ui.window.Dialog", {
     addButton: function(button) {
       const btnToolbar = this.getChildControl("buttons-layout");
       button.set({
-        appearance: "form-button",
-        font: "text-14"
+        appearance: "form-button"
       });
-      btnToolbar.add(button);
+      btnToolbar.addAt(button, 1);
     },
 
     /**
@@ -117,11 +118,9 @@ qx.Class.define("osparc.ui.window.Dialog", {
     addCancelButton: function() {
       const cancelButton = this.getChildControl("cancel-button");
       cancelButton.set({
-        appearance: "form-button-outlined",
         center: true,
         minWidth: 100
       });
-      cancelButton.addListener("mouseover", event => console.log(event), this);
       cancelButton.addListener("execute", () => this.close(), this);
       return cancelButton;
     }
