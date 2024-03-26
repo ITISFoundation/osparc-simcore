@@ -80,9 +80,12 @@ qx.Class.define("osparc.dashboard.GridButtonPlaceholder", {
         case "progress-bar": {
           layout = this.getChildControl("title-row");
           control = new qx.ui.indicator.ProgressBar().set({
-            height: 6,
+            maxHeight: 6,
             alignX: "center",
-            margin: 0
+            alignY: "middle",
+            allowGrowY: false,
+            allowGrowX: true,
+            margin: 0,
           });
           control.getChildControl("progress").set({
             backgroundColor: "strong-main"

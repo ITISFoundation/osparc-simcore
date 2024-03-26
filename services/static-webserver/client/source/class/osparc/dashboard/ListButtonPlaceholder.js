@@ -60,6 +60,7 @@ qx.Class.define("osparc.dashboard.ListButtonPlaceholder", {
           break
         case "state-label":
           control = new qx.ui.basic.Label().set({
+            alignX: "left",
             alignY: "middle",
             marginBottom: 5
           });
@@ -68,6 +69,7 @@ qx.Class.define("osparc.dashboard.ListButtonPlaceholder", {
         case "progress-bar":
           control = new qx.ui.indicator.ProgressBar().set({
             maxHeight: 6,
+            minWidth: 420,
             alignX: "center",
             alignY: "middle",
             allowGrowY: false,
