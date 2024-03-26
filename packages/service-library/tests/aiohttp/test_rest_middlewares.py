@@ -33,10 +33,10 @@ from servicelib.error_codes import parse_error_code
 from servicelib.json_serialization import json_dumps
 from servicelib.status_codes_utils import (
     get_http_status_codes,
-    is_client_error,
+    is_2xx_success,
+    is_4xx_client_error,
+    is_5xx_server_error,
     is_error,
-    is_server_error,
-    is_success,
 )
 
 
@@ -239,13 +239,14 @@ async def test_404_not_found_when_entrypoint_not_exposed(client: TestClient):
 
 
 def _is_server_error(code):
-    return code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS and is_server_error(
-        code
+    return (
+        code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS
+        and is_5xx_server_error(code)
     )
 
 
 @pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_server_error))
-async def test_fails_with_http_server_error(client: TestClient, status_code: int):
+async def test_fails_with_http_5xx_server_error(client: TestClient, status_code: int):
     response = await client.get("/v1/get_http_response", params={"code": status_code})
     assert response.status == status_code
 
@@ -258,13 +259,14 @@ async def test_fails_with_http_server_error(client: TestClient, status_code: int
 
 
 def _is_client_error(code):
-    return code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS and is_client_error(
-        code
+    return (
+        code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS
+        and is_4xx_client_error(code)
     )
 
 
 @pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_client_error))
-async def test_fails_with_http_client_error(client: TestClient, status_code: int):
+async def test_fails_with_http_4xx_client_error(client: TestClient, status_code: int):
     response = await client.get("/v1/get_http_response", params={"code": status_code})
     assert response.status == status_code
 
@@ -278,7 +280,9 @@ async def test_fails_with_http_client_error(client: TestClient, status_code: int
 
 
 def _is_success(code):
-    return code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS and is_success(code)
+    return code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS and is_2xx_success(
+        code
+    )
 
 
 @pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_success))

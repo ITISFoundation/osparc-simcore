@@ -11,12 +11,12 @@ from servicelib.status_codes_utils import (
     get_code_description,
     get_code_display_name,
     get_http_status_codes,
-    is_client_error,
+    is_1xx_informational,
+    is_2xx_success,
+    is_3xx_redirect,
+    is_4xx_client_error,
+    is_5xx_server_error,
     is_error,
-    is_informational,
-    is_redirect,
-    is_server_error,
-    is_success,
 )
 
 
@@ -36,12 +36,12 @@ def test_description():
 
 def test_status_codes_checks():
 
-    assert is_informational(status.HTTP_102_PROCESSING)
-    assert is_success(status.HTTP_202_ACCEPTED)
-    assert is_redirect(status.HTTP_301_MOVED_PERMANENTLY)
+    assert is_1xx_informational(status.HTTP_102_PROCESSING)
+    assert is_2xx_success(status.HTTP_202_ACCEPTED)
+    assert is_3xx_redirect(status.HTTP_301_MOVED_PERMANENTLY)
 
-    assert is_client_error(status.HTTP_401_UNAUTHORIZED)
-    assert is_server_error(status.HTTP_503_SERVICE_UNAVAILABLE)
+    assert is_4xx_client_error(status.HTTP_401_UNAUTHORIZED)
+    assert is_5xx_server_error(status.HTTP_503_SERVICE_UNAVAILABLE)
 
     assert is_error(status.HTTP_401_UNAUTHORIZED)
     assert is_error(status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -50,7 +50,7 @@ def test_status_codes_checks():
 def test_predicates_with_status():
 
     # in formational
-    assert get_http_status_codes(status, is_informational) == [
+    assert get_http_status_codes(status, is_1xx_informational) == [
         status.HTTP_100_CONTINUE,
         status.HTTP_101_SWITCHING_PROTOCOLS,
         status.HTTP_102_PROCESSING,
