@@ -16,7 +16,6 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.store.AppSummary", {
-  extend: qx.core.Object,
   type: "static",
 
   statics: {
