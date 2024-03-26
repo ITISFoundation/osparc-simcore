@@ -225,32 +225,6 @@ qx.Class.define("osparc.info.StudyUtils", {
       return tagsContainer;
     },
 
-    createExtraInfoVBox: function(extraInfos) {
-      const grid = new qx.ui.layout.Grid(10, 8);
-      grid.setColumnAlign(0, "right", "middle");
-      grid.setColumnAlign(1, "left", "middle");
-      const moreInfo = new qx.ui.container.Composite(grid);
-
-      Object.keys(extraInfos).forEach((key, idx) => {
-        const extraInfo = extraInfos[key];
-
-        const title = new qx.ui.basic.Label(extraInfo.label);
-        moreInfo.add(title, {
-          row: idx,
-          column: 0
-        });
-
-        if (extraInfo.view) {
-          moreInfo.add(extraInfo.view, {
-            row: idx,
-            column: 1
-          });
-        }
-      });
-
-      return moreInfo;
-    },
-
     __titleWithEditLayout: function(data) {
       const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const title = new qx.ui.basic.Label(data.label);
