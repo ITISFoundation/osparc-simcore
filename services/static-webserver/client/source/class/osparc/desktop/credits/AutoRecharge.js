@@ -305,12 +305,12 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
       });
       const successfulMsg = this.tr("Changes on the Auto recharge were successfully saved");
       saveAutoRechargeBtn.addListener("execute", () => this.__updateAutoRecharge(this.__enabledField.getValue(), saveAutoRechargeBtn, successfulMsg));
-      btnContainer.add(saveAutoRechargeBtn)
+      btnContainer.addAt(saveAutoRechargeBtn, 1)
       const cancelBtn = new qx.ui.form.Button("Cancel").set({
         appearance: "appmotion-button"
       });
       cancelBtn.addListener("execute", () => this.fireEvent("close"))
-      btnContainer.add(cancelBtn)
+      btnContainer.addAt(cancelBtn, 0)
       return btnContainer;
     }
   }

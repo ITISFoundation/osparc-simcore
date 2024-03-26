@@ -53,12 +53,9 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
     __setBackgroundImage: function() {
       let backgroundImage = "";
 
-      const defaultBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-default.png)," +
-        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/clouds_11.png)";
-      const liteBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-lite.png)," +
-        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/clouds_11.png)";
-      const academyBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-academy.png)," +
-        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/clouds_11.png)";
+      const defaultBG = `url(${osparc.product.Utils.getProductBackgroundUrl("Sim4Life-head-default.png")}), url(${osparc.product.Utils.getProductBackgroundUrl("clouds_11.png")})`;
+      const liteBG = `url(${osparc.product.Utils.getProductBackgroundUrl("Sim4Life-head-lite.png")}), url(${osparc.product.Utils.getProductBackgroundUrl("clouds_11.png")})`;
+      const academyBG = `url(${osparc.product.Utils.getProductBackgroundUrl("Sim4Life-head-academy.png")}), url(${osparc.product.Utils.getProductBackgroundUrl("clouds_11.png")})`;
 
       switch (osparc.product.Utils.getProductName()) {
         case "s4llite":

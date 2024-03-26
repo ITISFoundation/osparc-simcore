@@ -111,6 +111,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "empty-workbench":
           control = this._getEmptyWorkbenchIcon();
+          control.set({
+            alignY: "middle",
+            alignX: "center"
+          });
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.UPDATES
