@@ -159,6 +159,7 @@ services:
     image: prom/prometheus:v2.51.0@sha256:5ccad477d0057e62a7cd1981ffcc43785ac10c5a35522dc207466ff7e7ec845f
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.config.file=/etc/prometheus/web.yml"
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.size=1GB"
     ports:
@@ -166,6 +167,8 @@ services:
     configs:
       - source: prometheus-config
         target: /etc/prometheus/prometheus.yml
+      - source: prometheus-web-config
+        target: /etc/prometheus/web.yml
     volumes:
       - prometheus-data:/prometheus
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -187,6 +190,8 @@ networks:
 configs:
   prometheus-config:
     file: ./prometheus.yml
+  prometheus-web-config:
+    file: ./prometheus-web.yml
 
 volumes:
   computational_shared_data:
