@@ -29,9 +29,13 @@ qx.Class.define("osparc.NewUITracker", {
 
     startTracker: function() {
       const checkNewUI = async () => {
-        const lastUICommit = await osparc.store.AppSummary.getInstance().getLatestUIFromBE();
-        if (lastUICommit) {
-          console.log("lastUICommit", lastUICommit);
+        const newReleaseAvailable = await osparc.NewRelease.checkNewRelease();
+        if (newReleaseAvailable) {
+          let msg = "";
+          msg += this.tr("We are pleased to announce that some new features were deployed for you!");
+          msg += "<br>";
+          msg += this.tr("You might need to hard refresh the browser to get the latest version.");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
         }
       };
       checkNewUI();

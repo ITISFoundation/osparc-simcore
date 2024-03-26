@@ -221,11 +221,11 @@ qx.Class.define("osparc.Application", {
       link.href = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
     },
 
-    __startupChecks: function() {
+    __startupChecks: async function() {
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       if (platformName !== "masterREMOVEME") {
         // first, pop up new release window
-        this.__checkNewRelease();
+        await this.__checkNewRelease();
         // then, pop up cookies accepted window. It will go on top.
         this.__checkCookiesAccepted();
       }
