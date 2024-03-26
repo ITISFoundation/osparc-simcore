@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       const input = new qx.ui.form.TextField().set({
         appearance: "appmotion-buy-credits-input",
         textAlign: "center",
-        width: 80,
+        width: 90,
         ...inputProps
       });
       const label = new qx.ui.basic.Label(labelText);
@@ -96,7 +96,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
       }));
       const input = new qx.ui.form.Spinner().set({
         appearance: "appmotion-buy-credits-spinner",
-        width: 80,
+        width: 100,
         ...inputProps
       });
       input.getChildControl("textfield").set({
