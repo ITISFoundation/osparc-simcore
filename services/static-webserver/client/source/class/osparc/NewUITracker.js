@@ -29,7 +29,7 @@ qx.Class.define("osparc.NewUITracker", {
 
     startTracker: function() {
       const checkNewUI = async () => {
-        const lastUICommit = await osparc.store.AppSummary.getInstance().getLatestUICommit();
+        const lastUICommit = await osparc.store.AppSummary.getInstance().getLatestUIFromBE();
         if (lastUICommit) {
           console.log("lastUICommit", lastUICommit);
         }

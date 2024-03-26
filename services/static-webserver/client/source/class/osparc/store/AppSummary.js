@@ -20,14 +20,13 @@ qx.Class.define("osparc.store.AppSummary", {
   type: "singleton",
 
   members: {
-    getLatestUICommit: async function() {
+    getLatestUIFromBE: async function() {
       const params = {
         url: {
           productName: osparc.product.Utils.getProductName()
         }
       };
-      const useCache = false;
-      const appSummary = await osparc.data.Resources.get("appSummary", params, useCache);
+      const appSummary = await osparc.data.Resources.fetch("appSummary", "get", params);
       if (appSummary && "environment" in appSummary && "osparc.vcsRefClient" in appSummary["environment"]) {
         return appSummary["environment"]["osparc.vcsRefClient"];
       }
