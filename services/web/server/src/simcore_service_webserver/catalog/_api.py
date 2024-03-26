@@ -45,7 +45,7 @@ class CatalogRequestContext(BaseModel):
         with handle_validation_as_http_error(
             error_msg_template="Invalid request",
             resource_name=request.rel_url.path,
-            use_error_v1=True,
+            user_deprecated_model=True,
         ):
             assert request.app  # nosec
             return cls(

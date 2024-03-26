@@ -13,10 +13,11 @@ from contextlib import contextmanager
 from typing import TypeAlias, TypeVar, Union
 
 from aiohttp import web
-from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
+from pydantic import BaseModel, Extra, Field, ValidationError, parse_obj_as
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
+from . import status
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)
@@ -34,22 +35,31 @@ class StrictRequestParams(BaseModel):
         extra = Extra.forbid  # strict
 
 
+class OneError(BaseModel):
+    msg: str
+    type_: str | None = Field(None, alias="type")
+    loc: str | None = None
+
+
+class ManyErrors(BaseModel):
+    msg: str
+    details: list[OneError] = []
+
+
 @contextmanager
 def handle_validation_as_http_error(
-    *, error_msg_template: str, resource_name: str, use_error_v1: bool
+    *,
+    error_msg_template: str,
+    resource_name: str,
+    user_deprecated_model: bool,
+    loc_prefix: str | None = None,
 ) -> Iterator[None]:
     """Context manager to handle ValidationError and reraise them as HTTPUnprocessableEntity error
-
-    Arguments:
-        error_msg_template
-        resource_name
-        use_error_v1 -- If True, it uses new error response
 
     Raises:
         web.HTTPUnprocessableEntity: (422) raised from a ValidationError
 
     """
-
     try:
 
         yield
@@ -59,42 +69,64 @@ def handle_validation_as_http_error(
             {
                 "msg": e["msg"],
                 "type": e["type"],
-                "loc": e["loc"],  # e.g. ["x",0,"y"]
+                "loc": ".".join(
+                    map(str, (loc_prefix,) + e["loc"] if loc_prefix else e["loc"])
+                ),  # e.g. ["x",0,"y"] -> "x.0.y"
             }
             for e in err.errors()
         ]
         reason_msg = error_msg_template.format(
-            failed=", ".join(d["loc"] for d in details)
+            failed=", ".join(_["loc"] for _ in details)
         )
 
-        if use_error_v1:
+        if user_deprecated_model:
             # NOTE: keeps backwards compatibility until ligher error response is implemented in the entire API
             # Implements servicelib.aiohttp.rest_responses.ErrorItem
             errors = [
                 {
-                    "type": e["type"],
-                    "msg": e["msg"],
-                    "loc": e["loc"],
+                    "code": e["type"],
+                    "message": e["msg"],  # required
+                    "resource": resource_name,
+                    "field": e["loc"],
                 }
                 for e in details
             ]
-
-            error_str = json_dumps({"error": errors[0] if len(errors) == 1 else errors})
-        else:
-            # NEW proposed error for https://github.com/ITISFoundation/osparc-simcore/issues/443
-            error_str = json_dumps(
+            enveloped_error_json = json_dumps(
                 {
                     "error": {
-                        "msg": reason_msg,
-                        "resource": resource_name,  # optional
-                        "details": details,  # optional
+                        "status": status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        "errors": errors,
                     }
                 }
             )
+        else:
+            # NEW proposed error for https://github.com/ITISFoundation/osparc-simcore/issues/443
+            errors = [
+                {
+                    "type": e["type"],  # optional
+                    "msg": e["msg"],  # required
+                    "loc": e["loc"],  # optional
+                }
+                for e in details
+            ]
+            if len(errors) == 1:
+                # Error with a single occurrence
+                envelope = {"error": errors[0]}
+            else:
+                # Error with multiple occurence
+                envelope = {
+                    "error": {
+                        "msg": reason_msg,  # required
+                        "details": errors,
+                    }
+                }
 
+            assert parse_obj_as(OneError | ManyErrors, envelope["error"])  # nosec
+
+            enveloped_error_json = json_dumps(envelope)
         raise web.HTTPUnprocessableEntity(  # 422
             reason=reason_msg,
-            text=error_str,
+            text=enveloped_error_json,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
@@ -127,9 +159,10 @@ def parse_request_path_parameters_as(
     """
 
     with handle_validation_as_http_error(
-        error_msg_template="Invalid parameter/s '{failed}' in request path",
+        error_msg_template="Invalid parameter/s '{failed}' in request",
         resource_name=request.rel_url.path,
-        use_error_v1=use_enveloped_error_v1,
+        user_deprecated_model=use_enveloped_error_v1,
+        loc_prefix="path",
     ):
         data = dict(request.match_info)
         return parameters_schema_cls.parse_obj(data)
@@ -155,9 +188,10 @@ def parse_request_query_parameters_as(
     """
 
     with handle_validation_as_http_error(
-        error_msg_template="Invalid parameter/s '{failed}' in request query",
+        error_msg_template="Invalid parameter/s '{failed}' in request",
         resource_name=request.rel_url.path,
-        use_error_v1=use_enveloped_error_v1,
+        user_deprecated_model=use_enveloped_error_v1,
+        loc_prefix="query",
     ):
         data = dict(request.query)
         if hasattr(parameters_schema_cls, "parse_obj"):
@@ -185,9 +219,10 @@ async def parse_request_body_as(
         Validated model of request body
     """
     with handle_validation_as_http_error(
-        error_msg_template="Invalid field/s '{failed}' in request body",
+        error_msg_template="Invalid field/s '{failed}' in request",
         resource_name=request.rel_url.path,
-        use_error_v1=use_enveloped_error_v1,
+        user_deprecated_model=use_enveloped_error_v1,
+        loc_prefix="body",
     ):
         if not request.can_read_body:
             # requests w/o body e.g. when model-schema is fully optional
