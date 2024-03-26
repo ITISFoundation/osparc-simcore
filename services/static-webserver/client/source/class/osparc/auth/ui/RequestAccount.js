@@ -223,15 +223,17 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const submitBtn = this.__requestButton = new qx.ui.form.Button(this.tr("Request")).set({
         center: true,
-        appearance: "strong-button"
+        appearance: "form-button"
       });
       osparc.utils.Utils.setIdToWidget(submitBtn, "registrationSubmitBtn");
-      buttons.add(submitBtn, {
+      buttons.addAt(submitBtn, 1, {
         flex:1
       });
 
-      const cancelBtn = this.__cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
-      buttons.add(cancelBtn, {
+      const cancelBtn = this.__cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
+        appearance: "form-button-text"
+      });
+      buttons.addAt(cancelBtn, 0, {
         flex:1
       });
 

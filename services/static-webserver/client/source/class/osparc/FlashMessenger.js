@@ -28,7 +28,7 @@
  * Here is a little example of how to use the class.
  *
  * <pre class='javascript'>
- *   osparc.FlashMessenger.getInstance().log(log);
+ *   osparc.FlashMessenger.getInstance().logAs(log);
  * </pre>
  */
 
@@ -55,8 +55,8 @@ qx.Class.define("osparc.FlashMessenger", {
 
   statics: {
     MAX_DISPLAYED: 3,
-    logAs: function(message, level, logger, duration) {
-      return this.getInstance().logAs(message, level, logger, duration);
+    logAs: function(message, level, duration) {
+      return this.getInstance().logAs(message, level, duration);
     }
   },
 
@@ -70,27 +70,21 @@ qx.Class.define("osparc.FlashMessenger", {
      *
      * @param {String} message Message that the message will show.
      * @param {String="INFO","DEBUG","WARNING","ERROR"} level Level of the warning. The color of the badge will change accordingly.
-     * @param {*} logger IDK
      * @param {Number} duration
      */
-    logAs: function(message, level="INFO", logger=null, duration=null) {
+    logAs: function(message, level="INFO", duration=null) {
       return this.log({
         message,
         level: level.toUpperCase(),
-        logger,
         duration
       });
     },
 
     log: function(logMessage) {
-      // TODO: This doesn't look cool
-      let message = osparc.utils.Utils.isObject(logMessage.message) && "message" in logMessage.message ?
+      const message = osparc.utils.Utils.isObject(logMessage.message) && "message" in logMessage.message ?
         logMessage.message.message :
         logMessage.message;
-      let logger = logMessage.logger;
-      if (logger) {
-        message = logger + ": " + message;
-      }
+
       const level = logMessage.level.toUpperCase(); // "DEBUG", "INFO", "WARNING", "ERROR"
 
       const flashMessage = new osparc.ui.message.FlashMessage(message, level, logMessage.duration);
@@ -103,7 +97,7 @@ qx.Class.define("osparc.FlashMessenger", {
     /**
      * Private method to show a message to the user. It will stack it on the previous ones.
      *
-     * @param {osparc.ui.message.FlashMessage} flashMessage FlassMessage element to show.
+     * @param {osparc.ui.message.FlashMessage} flashMessage FlashMessage element to show.
      */
     __showMessage: function(flashMessage) {
       this.__messages.remove(flashMessage);
@@ -122,13 +116,15 @@ qx.Class.define("osparc.FlashMessenger", {
         const wordCount = flashMessage.getMessage() ? flashMessage.getMessage().split(" ").length : 20;
         duration = Math.max(5500, wordCount*500); // An average reader takes 300ms to read a word
       }
-      qx.event.Timer.once(() => this.removeMessage(flashMessage), this, duration);
+      if (duration !== 0) {
+        qx.event.Timer.once(() => this.removeMessage(flashMessage), this, duration);
+      }
     },
 
     /**
      * Private method to remove a message. If there are still messages in the queue, it will show the next available one.
      *
-     * @param {osparc.ui.message.FlashMessage} flashMessage FlassMessage element to remove.
+     * @param {osparc.ui.message.FlashMessage} flashMessage FlashMessage element to remove.
      */
     removeMessage: function(flashMessage) {
       if (this.__messageContainer.indexOf(flashMessage) > -1) {

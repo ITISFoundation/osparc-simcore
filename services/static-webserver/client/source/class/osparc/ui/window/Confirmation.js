@@ -23,8 +23,6 @@ qx.Class.define("osparc.ui.window.Confirmation", {
       this.setMessage(message);
     }
 
-    this.addCancelButton();
-
     const confirmButton = this.__confirmButton = new qx.ui.form.Button();
     confirmButton.set({
       center: true,
@@ -38,6 +36,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
     const command = new qx.ui.command.Command("Enter");
     confirmButton.setCommand(command);
     this.addButton(confirmButton);
+    this.addCancelButton();
   },
 
   properties: {

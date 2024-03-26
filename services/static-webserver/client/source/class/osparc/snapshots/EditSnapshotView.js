@@ -48,6 +48,7 @@ qx.Class.define("osparc.snapshots.EditSnapshotView", {
           break;
         case "cancel-button": {
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
+            appearance: "form-button-text",
             allowGrowX: false
           });
           const commandEsc = new qx.ui.command.Command("Enter");
@@ -57,6 +58,7 @@ qx.Class.define("osparc.snapshots.EditSnapshotView", {
         }
         case "ok-button": {
           control = new qx.ui.form.Button(this.tr("OK")).set({
+            appearance: "form-button",
             allowGrowX: false
           });
           const commandEnter = new qx.ui.command.Command("Enter");

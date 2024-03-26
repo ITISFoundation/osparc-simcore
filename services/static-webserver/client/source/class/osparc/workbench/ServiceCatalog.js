@@ -103,7 +103,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       });
 
       const filters = new osparc.filter.group.ServiceFilterGroup("serviceCatalog").set({
-        maxHeight: 25
+        maxHeight: 30
       });
       this.__textFilter = filters.getTextFilter().getChildControl("textfield", true);
       layout.add(filters);
@@ -175,12 +175,14 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         flex: 1
       });
 
-      const cancelBtn = new qx.ui.form.Button("Cancel");
+      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
+        appearance: "form-button-text",
+      });
       cancelBtn.addListener("execute", this.__onCancel, this);
       cancelBtn.setAllowGrowX(false);
       layout.add(cancelBtn);
-      const addBtn = this.__addBtn = new qx.ui.form.Button("Add").set({
-        appearance: "strong-button",
+      const addBtn = this.__addBtn = new qx.ui.form.Button(this.tr("Add")).set({
+        appearance: "form-button",
         enabled: false
       });
       addBtn.addListener("execute", () => this.__onAddService(), this);
