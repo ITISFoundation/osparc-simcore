@@ -37,7 +37,7 @@ qx.Class.define("osparc.NewRelease", {
 
       const detailsText = this.tr("What's new");
       // old commit link
-      let link = osparc.utils.LibVersions.getVcsRefUrl();
+      const link = osparc.utils.LibVersions.getVcsRefUrl();
       const linkLabel = new osparc.ui.basic.LinkLabel(detailsText, link);
       this._add(linkLabel);
       const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
