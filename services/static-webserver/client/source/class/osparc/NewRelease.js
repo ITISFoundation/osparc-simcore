@@ -45,7 +45,7 @@ qx.Class.define("osparc.NewRelease", {
      * Compare the latest version provided by the backend with the one loaded in the browser (might be an old cached one)
      */
     isMyFrontendOld: async function() {
-      const lastUICommit = await osparc.store.AppSummary.getInstance().getLatestUIFromBE();
+      const lastUICommit = await osparc.store.AppSummary.getLatestUIFromBE();
       const thisUICommit = osparc.utils.LibVersions.getVcsRefUI();
       if (lastUICommit && thisUICommit) {
         return lastUICommit !== thisUICommit;

@@ -17,9 +17,9 @@
 
 qx.Class.define("osparc.store.AppSummary", {
   extend: qx.core.Object,
-  type: "singleton",
+  type: "static",
 
-  members: {
+  statics: {
     getLatestUIFromBE: async function() {
       const params = {
         url: {
