@@ -1075,6 +1075,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         null,
         true
       );
+
+      if (this._resourcesContainer.getMode() === "list") {
+        const width = this._resourcesContainer.getBounds().width - 15;
+        duplicatingStudyCard.setWidth(width);
+      }
       return duplicatingStudyCard;
     },
 
