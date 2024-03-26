@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from pydantic import BaseModel, Field
+
 
 @dataclass
 class LogMessage:
@@ -29,3 +31,19 @@ class ResponseErrorBody:
     # Optional
     logs: list[LogMessage] = field(default_factory=list)
     errors: list[ErrorDetail] = field(default_factory=list)
+
+
+#
+# New
+#
+
+
+class OneError(BaseModel):
+    msg: str
+    type_: str | None = Field(None, alias="type")
+    loc: str | None = None
+
+
+class ManyErrors(BaseModel):
+    msg: str
+    details: list[OneError] = []
