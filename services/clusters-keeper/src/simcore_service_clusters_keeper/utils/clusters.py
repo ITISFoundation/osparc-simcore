@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from typing import Any, Final
 
+import yaml
 from aws_library.ec2.models import EC2InstanceBootSpecific, EC2InstanceData, EC2Tags
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_clusters_keeper.clusters import (
@@ -22,8 +23,10 @@ from .dask import get_scheduler_url
 
 _DOCKER_COMPOSE_FILE_NAME: Final[str] = "docker-compose.yml"
 _PROMETHEUS_FILE_NAME: Final[str] = "prometheus.yml"
+_PROMETHEUS_WEB_FILE_NAME: Final[str] = "prometheus-web.yml"
 _HOST_DOCKER_COMPOSE_PATH: Final[Path] = Path(f"/{_DOCKER_COMPOSE_FILE_NAME}")
 _HOST_PROMETHEUS_PATH: Final[Path] = Path(f"/{_PROMETHEUS_FILE_NAME}")
+_HOST_PROMETHEUS_WEB_PATH: Final[Path] = Path(f"/{_PROMETHEUS_WEB_FILE_NAME}")
 _HOST_CERTIFICATES_BASE_PATH: Final[Path] = Path("/.dask-sidecar-certificates")
 _HOST_TLS_CA_FILE_PATH: Final[Path] = _HOST_CERTIFICATES_BASE_PATH / "tls_dask_ca.pem"
 _HOST_TLS_CERT_FILE_PATH: Final[Path] = (
@@ -48,6 +51,16 @@ def _docker_compose_yml_base64_encoded() -> str:
 def _prometheus_yml_base64_encoded() -> str:
     file_path = PACKAGE_DATA_FOLDER / _PROMETHEUS_FILE_NAME
     return _base_64_encode(file_path)
+
+
+@functools.lru_cache
+def _prometheus_basic_auth_yml_base64_encoded(
+    prometheus_username: str, prometheus_password: str
+) -> str:
+    web_config = {"basic_auth_users": {prometheus_username: prometheus_password}}
+    yaml_content = yaml.safe_dump(web_config)
+    base64_bytes = base64.b64encode(yaml_content.encode("utf-8"))
+    return base64_bytes.decode("utf-8")
 
 
 def _prepare_environment_variables(
@@ -80,7 +93,7 @@ def _prepare_environment_variables(
         f"EC2_INSTANCES_NAME_PREFIX={cluster_machines_name_prefix}",
         f"LOG_LEVEL={app_settings.LOG_LEVEL}",
         f"WORKERS_EC2_INSTANCES_ALLOWED_TYPES={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_ALLOWED_TYPES)}",
-        f"WORKERS_EC2_INSTANCES_CUSTOM_TAGS={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_TAGS | additional_custom_tags)}",
+        f"WORKERS_EC2_INSTANCES_CUSTOM_TAGS={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_TAGS | additional_custom_tags)}",  # type: ignore
         f"WORKERS_EC2_INSTANCES_KEY_NAME={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME}",
         f"WORKERS_EC2_INSTANCES_MAX_INSTANCES={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_MAX_INSTANCES}",
         f"WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS={_convert_to_env_list(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS)}",
@@ -106,12 +119,12 @@ def create_startup_script(
     )
 
     startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
-
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     if isinstance(
         app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
         TLSAuthentication,
     ):
-        assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
+
         download_certificates_commands = [
             f"mkdir --parents {_HOST_CERTIFICATES_BASE_PATH}",
             f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_CA_FILE_PATH}',
@@ -126,6 +139,7 @@ def create_startup_script(
             "sysctl vm.overcommit_memory=1",
             f"echo '{_docker_compose_yml_base64_encoded()}' | base64 -d > {_HOST_DOCKER_COMPOSE_PATH}",
             f"echo '{_prometheus_yml_base64_encoded()}' | base64 -d > {_HOST_PROMETHEUS_PATH}",
+            f"echo '{_prometheus_basic_auth_yml_base64_encoded(app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME, app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD)}' | base64 -d > {_HOST_PROMETHEUS_WEB_PATH}"
             # NOTE: --default-addr-pool is necessary in order to prevent conflicts with AWS node IPs
             "docker swarm init --default-addr-pool 172.20.0.0/14",
             f"{' '.join(environment_variables)} docker stack deploy --with-registry-auth --compose-file={_HOST_DOCKER_COMPOSE_PATH} dask_stack",
