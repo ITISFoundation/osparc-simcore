@@ -35,7 +35,8 @@ qx.Class.define("osparc.NewUITracker", {
           msg += qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
           msg += "<br>";
           msg += qx.locale.Manager.tr("You might need to hard refresh the browser to get the latest version.");
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO", 0);
+          this.stopTracker();
         }
       };
       checkNewUI();
