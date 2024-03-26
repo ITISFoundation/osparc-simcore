@@ -79,15 +79,6 @@ qx.Class.define("osparc.NewRelease", {
           linkLabel.setUrl(releaseUrl);
         }
       }
-
-      const hardRefreshText = this.tr("You might need to hard refresh the browser to get the latest version.");
-      const hardRefreshLabel = new qx.ui.basic.Label(hardRefreshText).set({
-        rich: true,
-        wrap: true
-      });
-      this._add(hardRefreshLabel, {
-        flex: 1
-      });
     }
   }
 });
