@@ -148,8 +148,11 @@ qx.Class.define("osparc.auth.LoginPage", {
       this.getContentElement().setStyles({
         "background-image": backgroundImage,
         "background-repeat": "no-repeat",
-        "background-size": "65% auto, 80% auto", // auto width, 85% height
-        "background-position": "left bottom, left -440px bottom -230px" // left bottom
+        "background-size": "auto 500px, auto 500px, auto 500px", // auto width, 85% height
+        "background-position": "left -413px bottom -355px, left 30px bottom, left -230px bottom -125px",
+        "animation-name": "clouds-transition",
+        "animation-duration": "20s",
+        "animation-iteration-count": "1"
       });
     },
 

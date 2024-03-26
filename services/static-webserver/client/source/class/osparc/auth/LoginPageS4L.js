@@ -53,12 +53,17 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
     __setBackgroundImage: function() {
       let backgroundImage = "";
 
-      const defaultBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-default.png)," +
-        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/clouds_11.png)";
-      const liteBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-lite.png)," +
-        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/clouds_11.png)";
-      const academyBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-academy.png)," +
-        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/clouds_11.png)";
+      const defaultBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/test-images/front.png)," +
+        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/test-images/Speag_Sim4Life_Intro_Head_default.png)," +
+        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/test-images/back.png)";
+
+      const liteBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/test-images/front.png)," +
+        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/test-images/Speag_Sim4Life_Intro_Head_3.png)," +
+        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/test-images/back.png)";
+
+      const academyBG = "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/test-images/front.png)," +
+        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/test-images/Speag_Sim4Life_Intro_Head_1.png)," +
+        "url(https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/test-images/back.png)";
 
       switch (osparc.product.Utils.getProductName()) {
         case "s4llite":
