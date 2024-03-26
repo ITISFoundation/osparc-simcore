@@ -37,7 +37,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    const mainLayout = this.getChildControl("main-layout");
+    this.getChildControl("main-layout");
   },
 
   statics: {
