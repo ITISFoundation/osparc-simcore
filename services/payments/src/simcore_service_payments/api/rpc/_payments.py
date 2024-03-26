@@ -15,13 +15,14 @@ from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr
+from pydantic import EmailStr, HttpUrl
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services import payments
 from ...services.payments_gateway import PaymentsGatewayApi
+from ...services.stripe import StripeApi
 
 _logger = logging.getLogger(__name__)
 
@@ -111,4 +112,21 @@ async def get_payments_page(
         product_name=product_name,
         limit=limit,
         offset=offset,
+    )
+
+
+@router.expose(reraise_if_error_type=(PaymentsError, PaymentServiceUnavailableError))
+async def get_payment_invoice_url(
+    app: FastAPI,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    return await payments.get_payment_invoice_url(
+        repo=PaymentsTransactionsRepo(db_engine=app.state.engine),
+        stripe_api=StripeApi.get_from_app_state(app),
+        user_id=user_id,
+        wallet_id=wallet_id,
+        payment_id=payment_id,
     )

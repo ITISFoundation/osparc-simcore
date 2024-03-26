@@ -110,6 +110,13 @@ class ApplicationSettings(_BaseApplicationSettings):
         auto_default_from_env=True, description="settings for postgres service"
     )
 
+    PAYMENTS_STRIPE_URL: HttpUrl = Field(
+        ..., description="Base url to the payment Stripe"
+    )
+    PAYMENTS_STRIPE_API_SECRET: SecretStr = Field(
+        ..., description="Credentials for Stripe api"
+    )
+
     PAYMENTS_SWAGGER_API_DOC_ENABLED: bool = Field(
         default=True, description="If true, it displays swagger doc at /doc"
     )
