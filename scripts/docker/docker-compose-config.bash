@@ -17,15 +17,11 @@ show_error() {
 
 
 env_file=".env"
-project_directory=""
 # Parse command line arguments
-while getopts ":e:p:" opt; do
+while getopts ":e:" opt; do
   case $opt in
     e)
       env_file="$OPTARG"
-      ;;
-    p)
-      project_directory="$OPTARG"
       ;;
     \?)
       show_error "Invalid option: -$OPTARG"
