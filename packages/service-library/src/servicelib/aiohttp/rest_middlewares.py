@@ -11,8 +11,9 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
-from servicelib.error_codes import create_error_code
 
+from ..error_codes import create_error_code
+from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorDetail, LogMessage, ResponseErrorBody
 from .rest_responses import (
@@ -36,30 +37,48 @@ def _is_api_request(request: web.Request, api_version: str) -> bool:
     return bool(request.path.startswith(base_path))
 
 
-def _handle_http_error_and_reraise(request: web.BaseRequest, err: web.HTTPError):
-    """Ensures response for a web.HTTPError is complete"""
+async def _handle_http_error(
+    request: web.BaseRequest, err: web.HTTPError
+) -> web.Response:
+    """
+    Normalizes HTTPErrors used as `raise web.HTTPUnauthorized(reason=MSG_USER_EXPIRED)`
+    creating an enveloped json-response
+    """
     assert request  # nosec
     assert err.reason  # nosec
 
     err.content_type = MIMETYPE_APPLICATION_JSON
     if not err.empty_body and (not err.text or not is_enveloped_from_text(err.text)):
-        # Ensure json-body
         error_body = ResponseErrorBody(
-            errors=[
-                ErrorDetail.from_exception(err),
-            ],
-            status=err.status,
-            logs=[
-                LogMessage(message=err.reason, level="ERROR"),
-            ],
             message=err.reason,
+            # FIXME: these below are not really necessary!
+            status=err.status,
+            errors=[ErrorDetail.from_exception(err)],
+            logs=[LogMessage(message=err.reason, level="ERROR")],
         )
         err.text = EnvelopeFactory(error=error_body).as_text()
 
-    raise err
+    return err
 
 
-def _handle_unexpected_error_and_reraise(request: web.BaseRequest, err: Exception):
+async def _handle_http_successful(
+    request: web.BaseRequest, err: web.HTTPSuccessful
+) -> web.Response:
+    """
+    Normalizes HTTPErrors used as `raise web.HTTPOk(reason="I am happy")`
+    creating an enveloped json-response
+    """
+    assert request  # nosec
+    assert err.reason  # nosec
+    err.content_type = MIMETYPE_APPLICATION_JSON
+    if not err.empty_body and (not err.text or not is_enveloped_from_text(err.text)):
+        err.text = json_dumps({"data": err.reason})
+    return err
+
+
+async def _handle_unexpected_exception(
+    request: web.BaseRequest, err: Exception
+) -> web.Response:
     """
     This error handler is the last resource to catch unhandled exceptions. When
     an exception reaches this point, it is converted into a web.HTTPInternalServerError
@@ -84,7 +103,7 @@ def _handle_unexpected_error_and_reraise(request: web.BaseRequest, err: Exceptio
         f"\n {request.remote=}\n request.headers={dict(request.raw_headers)}",
         extra={"error_code": error_code},
     )
-    raise resp
+    return resp
 
 
 def error_middleware_factory(
@@ -99,31 +118,33 @@ def error_middleware_factory(
             return await handler(request)
 
         try:
-            return await handler(request)
+            try:
+                return await handler(request)
 
-        except web.HTTPError as err:
-            _handle_http_error_and_reraise(request, err)
+            # NOTE: return and do NOT raise while handling
+            except web.HTTPError as err_resp:
+                return await _handle_http_error(request, err_resp)
 
-        except (web.HTTPRedirection, web.HTTPSuccessful) as err:
-            _logger.debug("Gone through error middleware %s", err)
-            raise
+            except web.HTTPSuccessful as err_resp:
+                return await _handle_http_successful(request, err_resp)
 
-        except NotImplementedError as err:
-            http_error = create_http_error(
-                err,
-                http_error_cls=web.HTTPNotImplemented,
-            )
-            raise http_error from err
+            except web.HTTPRedirection as err_resp:
+                _logger.debug("Redirecting to '%s'", err_resp)
+                return err_resp
 
-        except asyncio.TimeoutError as err:
-            http_error = create_http_error(
-                err,
-                http_error_cls=web.HTTPGatewayTimeout,
-            )
-            raise http_error from err
+            except NotImplementedError as err:
+                return create_error_response(
+                    err,
+                    http_error_cls=web.HTTPNotImplemented,
+                )
 
+            except asyncio.TimeoutError as err:
+                return create_error_response(
+                    err,
+                    http_error_cls=web.HTTPGatewayTimeout,
+                )
         except Exception as err:  # pylint: disable=broad-except
-            _handle_unexpected_error_and_reraise(request, err)
+            return await _handle_unexpected_exception(request, err)
 
     # adds identifier (mostly for debugging)
     setattr(  # noqa: B010
