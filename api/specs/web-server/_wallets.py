@@ -105,6 +105,19 @@ async def list_all_payments(params: Annotated[PageQueryParameters, Depends()]):
     """Lists all user payments to his/her wallets (only the ones he/she created)"""
 
 
+@router.get(
+    "/wallets/{wallet_id}/payments/{payment_id}/invoice-link",
+    status_code=status.HTTP_302_FOUND,
+    responses={
+        status.HTTP_302_FOUND: {
+            "description": "redirection to invoice download link",
+        }
+    },
+)
+async def get_payment_invoice_link(wallet_id: WalletID, payment_id: PaymentID):
+    ...
+
+
 @router.post(
     "/wallets/{wallet_id}/payments/{payment_id}:cancel",
     response_description="Successfully cancelled",
