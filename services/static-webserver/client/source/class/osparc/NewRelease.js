@@ -51,12 +51,16 @@ qx.Class.define("osparc.NewRelease", {
         return lastUICommit !== thisUICommit;
       }
       return false;
+    },
+
+    getText: function() {
+      return qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
     }
   },
 
   members: {
     __buildLayout: function() {
-      const introText = this.tr("We are pleased to announce that some new features were deployed for you!");
+      const introText = this.self().getText();
       const introLabel = new qx.ui.basic.Label(introText).set({
         rich: true,
         wrap: true
