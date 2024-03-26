@@ -125,6 +125,8 @@ def app_environment(
             "PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY": faker.pystr(),
+            "PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME": faker.user_name(),
+            "PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD": faker.password(),
             "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
             "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
