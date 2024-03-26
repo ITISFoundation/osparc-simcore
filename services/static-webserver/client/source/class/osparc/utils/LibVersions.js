@@ -23,7 +23,7 @@ qx.Class.define("osparc.utils.LibVersions", {
       return qx.core.Environment.get("osparc.vcsRef");
     },
 
-    getVcsRefUI: function() {
+    __getVcsRefUI: function() {
       return qx.core.Environment.get("osparc.vcsRefClient");
     },
 
@@ -50,10 +50,10 @@ qx.Class.define("osparc.utils.LibVersions", {
       return url;
     },
 
-    getVcsRefUIUrl: function() {
+    __getVcsRefUIUrl: function() {
       const remoteUrl = this.__getRemoteUrl();
       let url = remoteUrl;
-      const commitId = this.getVcsRefUI();
+      const commitId = this.__getVcsRefUI();
       if (commitId) {
         url = remoteUrl + "/commits/" + String(commitId) + "/services/static-webserver/client/";
       }
@@ -74,8 +74,8 @@ qx.Class.define("osparc.utils.LibVersions", {
 
     getUIVersion: function() {
       let name = "osparc-simcore UI";
-      const commitId = this.getVcsRefUI();
-      const remoteUrl = this.getVcsRefUIUrl();
+      const commitId = this.__getVcsRefUI();
+      const remoteUrl = this.__getVcsRefUIUrl();
       let status = qx.core.Environment.get("osparc.vcsStatusClient");
       if (status) {
         name = name + " [" + status + "]";
