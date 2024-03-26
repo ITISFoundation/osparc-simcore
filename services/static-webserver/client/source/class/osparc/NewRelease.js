@@ -26,6 +26,17 @@ qx.Class.define("osparc.NewRelease", {
     this.__buildLayout();
   },
 
+  statics: {
+    checkNewRelease: async function() {
+      const lastUICommit = await osparc.store.AppSummary.getInstance().getLatestUIFromBE();
+      if (lastUICommit) {
+        qx.core.Environment.get("osparc.vcsRefClient");
+        console.log("lastUICommit", lastUICommit);
+      }
+      return false;
+    }
+  },
+
   members: {
     __buildLayout: function() {
       const introText = this.tr("We are pleased to announce that some new features were deployed for you!");
@@ -56,13 +67,6 @@ qx.Class.define("osparc.NewRelease", {
       this._add(hardRefreshLabel, {
         flex: 1
       });
-
-      this.__saveCommitVcsRef();
-    },
-
-    __saveCommitVcsRef: function() {
-      const thisCommit = osparc.utils.LibVersions.getVcsRef();
-      osparc.utils.Utils.localCache.setLastCommitVcsRefUI(thisCommit);
     }
   }
 });

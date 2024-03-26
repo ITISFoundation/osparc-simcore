@@ -38,13 +38,6 @@ qx.Class.define("osparc.utils.Utils", {
         return window.localStorage.getItem(name);
       },
 
-      getLastCommitVcsRefUI: function() {
-        return this.getLocalStorageItem("lastVcsRefUI");
-      },
-      setLastCommitVcsRefUI: function(vcsRef) {
-        this.setLocalStorageItem("lastVcsRefUI", vcsRef);
-      },
-
       getDontShowAnnouncements: function() {
         return this.getLocalStorageItem("dontShowAnnouncements") ? JSON.parse(this.getLocalStorageItem("dontShowAnnouncements")) : [];
       },
