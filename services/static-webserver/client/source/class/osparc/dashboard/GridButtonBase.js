@@ -38,13 +38,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     this._setLayout(new qx.ui.layout.Canvas());
 
     const mainLayout = this.getChildControl("main-layout");
-
-    this._add(mainLayout, {
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0
-    });
   },
 
   statics: {
@@ -146,6 +139,12 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control.add(header, this.self().POS.TITLE);
           control.add(body, this.self().POS.THUMBNAIL);
           control.add(footer, this.self().POS.FOOTER);
+          this._add(control, {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+          });
           break;
         }
         case "header":
