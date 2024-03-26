@@ -29,7 +29,7 @@ qx.Class.define("osparc.NewRelease", {
   statics: {
     checkNewRelease: async function() {
       const lastUICommit = await osparc.store.AppSummary.getInstance().getLatestUIFromBE();
-      const myUICommit = qx.core.Environment.get("osparc.vcsRefClient");
+      const myUICommit = osparc.utils.LibVersions.getVcsRefUI();
       if (lastUICommit && myUICommit) {
         return lastUICommit !== myUICommit;
       }
