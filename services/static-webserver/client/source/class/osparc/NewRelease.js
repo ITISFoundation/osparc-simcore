@@ -28,7 +28,7 @@ qx.Class.define("osparc.NewRelease", {
 
   statics: {
     /**
-     * Compare the version logged in the cache and the one being shown
+     * Compare the version logged in the cache with the one being shown
      */
     firstTimeISeeThisFrontend: function() {
       let isIt = false;
