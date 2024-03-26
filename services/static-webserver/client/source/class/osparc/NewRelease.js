@@ -33,7 +33,7 @@ qx.Class.define("osparc.NewRelease", {
         const myUICommit = qx.core.Environment.get("osparc.vcsRefClient");
         console.log("lastUICommit", lastUICommit);
         console.log("myUICommit", myUICommit);
-        return lastUICommit === myUICommit;
+        return lastUICommit !== myUICommit;
       }
       return false;
     }
