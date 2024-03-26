@@ -574,11 +574,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
         padding: 3
       });
 
-      projectStatusLabel.setVisibility(icn && toolTipText && bdr ? "visible" : "excluded");
-
-      projectStatusLabel.setSource(icn);
-      projectStatusLabel.setToolTipIcon(icn);
-      projectStatusLabel.setToolTipText(toolTipText);
+      projectStatusLabel.set({
+        visibility: icn && toolTipText && bdr ? "visible" : "excluded",
+        source: icn,
+        toolTipIcon: icn,
+        toolTipText
+      });
     },
 
     __showBlockedCardFromStatus: function(lockedStatus) {
