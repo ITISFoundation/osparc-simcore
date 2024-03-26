@@ -41,35 +41,35 @@ def get_display_name(status_code: int) -> str:
         return _INVALID_STATUS_CODE_MSG
 
 
-def is_informational(status_code: int) -> bool:
+def is_1xx_informational(status_code: int) -> bool:
     """
     Returns `True` for 1xx status codes, `False` otherwise.
     """
     return 100 <= status_code <= 199  # noqa: PLR2004
 
 
-def is_success(status_code: int) -> bool:
+def is_2xx_success(status_code: int) -> bool:
     """
     Returns `True` for 2xx status codes, `False` otherwise.
     """
     return 200 <= status_code <= 299  # noqa: PLR2004
 
 
-def is_redirect(status_code: int) -> bool:
+def is_3xx_redirect(status_code: int) -> bool:
     """
     Returns `True` for 3xx status codes, `False` otherwise.
     """
     return 300 <= status_code <= 399  # noqa: PLR2004
 
 
-def is_client_error(status_code: int) -> bool:
+def is_4xx_client_error(status_code: int) -> bool:
     """
     Returns `True` for 4xx status codes, `False` otherwise.
     """
     return 400 <= status_code <= 499  # noqa: PLR2004
 
 
-def is_server_error(status_code: int) -> bool:
+def is_5xx_server_error(status_code: int) -> bool:
     """
     Returns `True` for 5xx status codes, `False` otherwise.
     """
