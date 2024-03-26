@@ -55,6 +55,10 @@ qx.Class.define("osparc.store.Store", {
       check: "Object",
       init: {}
     },
+    appSummary: {
+      check: "Object",
+      init: {}
+    },
     currentStudy: {
       check: "osparc.data.model.Study",
       init: null,
