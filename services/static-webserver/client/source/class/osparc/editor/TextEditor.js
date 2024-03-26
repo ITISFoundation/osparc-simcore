@@ -102,8 +102,7 @@ qx.Class.define("osparc.editor.TextEditor", {
           break;
         case "cancel-button": {
           const buttons = this.getChildControl("buttons");
-          control = new qx.ui.form.Button(this.tr("Cancel"));
-          control.set({
+          control = new qx.ui.form.Button(this.tr("Cancel")).set({
             appearance: "form-button-text"
           });
           control.addListener("execute", () => {
@@ -114,8 +113,7 @@ qx.Class.define("osparc.editor.TextEditor", {
         }
         case "accept-button": {
           const buttons = this.getChildControl("buttons");
-          control = new qx.ui.form.Button(this.tr("Save"));
-          control.set({
+          control = new qx.ui.form.Button(this.tr("Save")).set({
             appearance: "form-button"
           });
           control.addListener("execute", () => {
