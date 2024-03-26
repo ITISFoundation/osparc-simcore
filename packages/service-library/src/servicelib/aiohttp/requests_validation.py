@@ -13,11 +13,12 @@ from contextlib import contextmanager
 from typing import TypeAlias, TypeVar, Union
 
 from aiohttp import web
-from pydantic import BaseModel, Extra, Field, ValidationError, parse_obj_as
+from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from . import status
+from .rest_models import ManyErrors, OneError
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)
@@ -33,17 +34,6 @@ class StrictRequestParams(BaseModel):
 
     class Config:
         extra = Extra.forbid  # strict
-
-
-class OneError(BaseModel):
-    msg: str
-    type_: str | None = Field(None, alias="type")
-    loc: str | None = None
-
-
-class ManyErrors(BaseModel):
-    msg: str
-    details: list[OneError] = []
 
 
 @contextmanager
@@ -71,7 +61,7 @@ def handle_validation_as_http_error(
                 "type": e["type"],
                 "loc": ".".join(
                     map(str, (loc_prefix,) + e["loc"] if loc_prefix else e["loc"])
-                ),  # e.g. ["x",0,"y"] -> "x.0.y"
+                ),  # e.g. ["body", "x",0,"y"] -> "body.x.0.y"
             }
             for e in err.errors()
         ]
