@@ -31,8 +31,9 @@ qx.Class.define("osparc.NewUITracker", {
       const checkNewUI = async () => {
         const newReleaseAvailable = await osparc.NewRelease.isMyFrontendOld();
         if (newReleaseAvailable) {
+          const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
           let msg = "";
-          msg += osparc.NewRelease.getText();
+          msg += qx.locale.Manager.tr(`A new ${displayName} version is now available.`);
           msg += "<br>";
           msg += qx.locale.Manager.tr("You might need to hard refresh the browser to get the latest version.");
           // permanent message
