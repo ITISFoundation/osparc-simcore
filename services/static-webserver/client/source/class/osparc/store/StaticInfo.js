@@ -87,6 +87,19 @@ qx.Class.define("osparc.store.StaticInfo", {
       const staticKey = "countries";
       const metadata = this.getValue(staticKey);
       return metadata ? metadata : [];
+    },
+
+    /**
+     * @returns {Number} Cookie expiration time in seconds
+     */
+    getCookieMaxAge: function() {
+      const staticKey = "webserverSession";
+      const wsStaticData = this.getValue(staticKey);
+      const key = "SESSION_COOKIE_MAX_AGE";
+      if (key in wsStaticData) {
+        return wsStaticData[key];
+      }
+      return null;
     }
   }
 });

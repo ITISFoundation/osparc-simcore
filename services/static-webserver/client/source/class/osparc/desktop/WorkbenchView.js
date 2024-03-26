@@ -763,7 +763,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const usedWallet = store.getWallets().find(wallet => wallet.getWalletId() === walletId);
           const walletName = usedWallet.getName();
           const text = `Wallet "${walletName}", running your service(s) has run out of credits. Stopping service(s) gracefully.`;
-          osparc.FlashMessenger.getInstance().logAs(this.tr(text), "ERROR", null, flashMessageDisplayDuration);
+          osparc.FlashMessenger.getInstance().logAs(this.tr(text), "ERROR", flashMessageDisplayDuration);
         }, this);
       }
     },
