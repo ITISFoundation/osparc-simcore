@@ -221,21 +221,21 @@ qx.Class.define("osparc.Application", {
       link.href = "/resource/osparc/favicon-"+qx.core.Environment.get("product.name")+".png";
     },
 
-    __startupChecks: async function() {
+    __startupChecks: function() {
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
-      if (platformName !== "masterREMOVEME") {
+      if (platformName !== "master") {
         // first, pop up new release window
-        await this.__checkNewRelease();
+        this.__checkNewRelease();
         // then, pop up cookies accepted window. It will go on top.
         this.__checkCookiesAccepted();
       }
     },
 
     __checkNewRelease: async function() {
-      if (await osparc.NewRelease.checkNewRelease()) {
+      if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
         const newRelease = new osparc.NewRelease();
         const title = this.tr("New Release");
-        const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 170).set({
+        const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 130).set({
           clickAwayClose: false,
           resizable: false,
           showClose: true

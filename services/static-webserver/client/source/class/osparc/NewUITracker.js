@@ -29,7 +29,7 @@ qx.Class.define("osparc.NewUITracker", {
 
     startTracker: function() {
       const checkNewUI = async () => {
-        const newReleaseAvailable = await osparc.NewRelease.checkNewRelease();
+        const newReleaseAvailable = await osparc.NewRelease.isMyFrontendOld();
         if (newReleaseAvailable) {
           let msg = "";
           msg += qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
