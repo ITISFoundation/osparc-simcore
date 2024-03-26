@@ -145,6 +145,15 @@ async def test_one_time_payment_worfklow(
         assert transaction.created_at < transaction.completed_at
         assert transaction.invoice_url is not None
 
+        # Get invoice link
+        response = await client.get(
+            f"/v0/wallets/{wallet.wallet_id}/payments/{payment.payment_id}/invoice-link"
+        )
+        if response.status == status.HTTP_200_OK:
+            # checks is a redirection
+            assert len(response.history) == 1
+            assert response.history[0].status == status.HTTP_302_FOUND
+
 
 async def test_multiple_payments(
     latest_osparc_price: Decimal,

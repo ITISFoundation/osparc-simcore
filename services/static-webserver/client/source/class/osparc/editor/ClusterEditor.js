@@ -177,7 +177,9 @@ qx.Class.define("osparc.editor.ClusterEditor", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
             alignX: "right"
           }));
-          const cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
+          const cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
+            appearance: "form-button-text"
+          });
           cancelButton.addListener("execute", () => this.fireEvent("cancel"), this);
           control.add(cancelButton);
           this._add(control);
@@ -186,7 +188,7 @@ qx.Class.define("osparc.editor.ClusterEditor", {
         case "create": {
           const buttons = this.getChildControl("buttonsLayout");
           control = new osparc.ui.form.FetchButton(this.tr("Create")).set({
-            appearance: "strong-button"
+            appearance: "form-button"
           });
           control.addListener("execute", () => {
             if (this.__validator.validate()) {
@@ -200,7 +202,7 @@ qx.Class.define("osparc.editor.ClusterEditor", {
         case "save": {
           const buttons = this.getChildControl("buttonsLayout");
           control = new osparc.ui.form.FetchButton(this.tr("Save")).set({
-            appearance: "strong-button"
+            appearance: "form-button"
           });
           control.addListener("execute", () => {
             if (this.__validator.validate()) {

@@ -111,8 +111,7 @@ qx.Class.define("osparc.editor.ThumbnailEditor", {
           break;
         case "cancel-btn": {
           const buttons = this.getChildControl("buttons-layout");
-          control = new qx.ui.form.Button(this.tr("Cancel"));
-          control.set({
+          control = new qx.ui.form.Button(this.tr("Cancel")).set({
             appearance: "form-button-text"
           });
           control.addListener("execute", () => this.fireEvent("cancel"), this);
@@ -121,8 +120,7 @@ qx.Class.define("osparc.editor.ThumbnailEditor", {
         }
         case "save-btn": {
           const buttons = this.getChildControl("buttons-layout");
-          control = new qx.ui.form.Button(this.tr("Save"));
-          control.set({
+          control = new qx.ui.form.Button(this.tr("Save")).set({
             appearance: "form-button"
           });
           control.addListener("execute", () => {

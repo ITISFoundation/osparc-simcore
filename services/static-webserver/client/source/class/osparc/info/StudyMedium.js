@@ -150,8 +150,7 @@ qx.Class.define("osparc.info.StudyMedium", {
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.StudyUtils.createExtraInfoVBox(extraInfo);
-
+      const moreInfo = osparc.info.Utils.extraInfosToGrid(extraInfo);
       return moreInfo;
     },
 

@@ -78,6 +78,7 @@ async def create_cluster(
             additional_custom_tags={
                 AWSTagKey("user_id"): AWSTagValue(f"{user_id}"),
                 AWSTagKey("wallet_id"): AWSTagValue(f"{wallet_id}"),
+                AWSTagKey("role"): AWSTagValue("worker"),
             },
         ),
         ami_id=ec2_instance_boot_specs.ami_id,

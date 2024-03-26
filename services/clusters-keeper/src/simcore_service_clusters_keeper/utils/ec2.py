@@ -52,6 +52,7 @@ def creation_ec2_tags(
             ),
             AWSTagKey("user_id"): AWSTagValue(f"{user_id}"),
             AWSTagKey("wallet_id"): AWSTagValue(f"{wallet_id}"),
+            AWSTagKey("role"): AWSTagValue("manager"),
         }
         | app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_CUSTOM_TAGS
     )
