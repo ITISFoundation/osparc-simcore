@@ -94,6 +94,21 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
+       * APP SUMMARY
+       *  Gets the json file built by the qx compiler with some extra env variables
+       * added by oSPARC as compilation vars
+       */
+      "appSummary": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: "/{productName}/app-summary.json",
+            isJsonFile: true
+          }
+        }
+      },
+
+      /*
        * STUDIES
        */
       "studies": {
