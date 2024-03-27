@@ -4,6 +4,7 @@
 """
 
 import asyncio
+import json
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any, Union
@@ -71,8 +72,15 @@ async def _handle_http_successful(
     assert request  # nosec
     assert err.reason  # nosec
     err.content_type = MIMETYPE_APPLICATION_JSON
-    if not err.empty_body and (not err.text or not is_enveloped_from_text(err.text)):
-        err.text = json_dumps({"data": err.reason})
+    if not err.empty_body:
+        # NOTE: These are scenarios created by a lack of
+        # consistency on how we respond in the request handlers.
+        # This overhead can be avoided by having a more strict
+        # response policy.
+        if not err.text and err.reason:
+            err.text = json_dumps({"data": err.reason})
+        elif err.text and not is_enveloped_from_text(err.text):
+            err.text = json_dumps({"data": json.loads(err.text)})
     return err
 
 
