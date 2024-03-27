@@ -10,7 +10,7 @@ but adapted to parse&validate path, query and body of an aiohttp's request
 import json.decoder
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TypeAlias, TypeVar, Union
+from typing import Any, TypeAlias, TypeVar, Union
 
 from aiohttp import web
 from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
@@ -99,6 +99,7 @@ def handle_validation_as_http_error(
                 }
                 for e in details
             ]
+            envelope: dict[str, Any]
             if len(errors) == 1:
                 # Error with a single occurrence
                 envelope = {"error": errors[0]}
@@ -111,7 +112,7 @@ def handle_validation_as_http_error(
                     }
                 }
 
-            assert parse_obj_as(OneError | ManyErrors, envelope["error"])  # nosec
+            assert parse_obj_as(OneError | ManyErrors, envelope["error"])  # type: ignore[arg-type] # nosec
 
             enveloped_error_json = json_dumps(envelope)
         raise web.HTTPUnprocessableEntity(  # 422

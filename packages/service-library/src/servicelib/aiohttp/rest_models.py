@@ -35,7 +35,7 @@ class ResponseErrorBody:
 
 
 #
-# New
+# NOTE: These are the new models that should replace the ones above
 #
 
 
