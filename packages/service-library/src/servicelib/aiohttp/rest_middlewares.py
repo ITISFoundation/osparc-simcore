@@ -123,12 +123,16 @@ async def _handle_unexpected_exception(
 def error_middleware_factory(
     api_version: str,
 ) -> Middleware:
+    # pylint:disable=too-many-return-statements
+
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler: Handler):
+    async def _middleware_handler(  # noqa: PLR0911
+        request: web.Request, handler: Handler
+    ):
         """
         Ensure all error raised are properly enveloped and json responses
         """
-        # pylint: ignore=too-many-return-statements
+
         if not _is_api_request(request, api_version):
             return await handler(request)
 
