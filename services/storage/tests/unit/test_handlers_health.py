@@ -27,7 +27,7 @@ async def test_health_check(client: TestClient):
 
     app_health = HealthCheck.parse_obj(data)
     assert app_health.name == simcore_service_storage._meta.PROJECT_NAME
-    assert app_health.version == simcore_service_storage._meta.VERSION
+    assert app_health.version == str(simcore_service_storage._meta.VERSION)
 
 
 async def test_health_status(client: TestClient):
@@ -40,7 +40,7 @@ async def test_health_status(client: TestClient):
 
     app_status_check = AppStatusCheck.parse_obj(data)
     assert app_status_check.app_name == simcore_service_storage._meta.PROJECT_NAME
-    assert app_status_check.version == simcore_service_storage._meta.VERSION
+    assert app_status_check.version == str(simcore_service_storage._meta.VERSION)
     assert len(app_status_check.services) == 2
     assert "postgres" in app_status_check.services
     assert "healthy" in app_status_check.services["postgres"]

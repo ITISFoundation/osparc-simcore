@@ -1,8 +1,3 @@
-""" Current version of the simcore_service_storage application and its API
-
-"""
-
-
 from typing import Final
 
 from packaging.version import Version
