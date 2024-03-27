@@ -23,7 +23,7 @@ from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 from . import sts
-from ._meta import api_vtag
+from ._meta import API_VTAG
 from .models import (
     DeleteFolderQueryParams,
     FileMetaData,
@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 routes = RouteTableDef()
 
 
-@routes.post(f"/{api_vtag}/simcore-s3:access", name="get_or_create_temporary_s3_access")
+@routes.post(f"/{API_VTAG}/simcore-s3:access", name="get_or_create_temporary_s3_access")
 async def get_or_create_temporary_s3_access(request: web.Request) -> web.Response:
     # NOTE: the name of the method is not accurate, these are not temporary at all
     # it returns the credentials of the s3 backend!
@@ -76,7 +76,7 @@ async def _copy_folders_from_project(
     )
 
 
-@routes.post(f"/{api_vtag}/simcore-s3/folders", name="copy_folders_from_project")
+@routes.post(f"/{API_VTAG}/simcore-s3/folders", name="copy_folders_from_project")
 async def copy_folders_from_project(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     body = await parse_request_body_as(FoldersBody, request)
@@ -95,7 +95,7 @@ async def copy_folders_from_project(request: web.Request) -> web.Response:
 
 
 @routes.delete(
-    f"/{api_vtag}/simcore-s3/folders/{{folder_id}}", name="delete_folders_of_project"
+    f"/{API_VTAG}/simcore-s3/folders/{{folder_id}}", name="delete_folders_of_project"
 )
 async def delete_folders_of_project(request: web.Request) -> NoReturn:
     query_params = parse_request_query_parameters_as(DeleteFolderQueryParams, request)
@@ -118,7 +118,7 @@ async def delete_folders_of_project(request: web.Request) -> NoReturn:
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
-@routes.post(f"/{api_vtag}/simcore-s3/files/metadata:search", name="search_files")
+@routes.post(f"/{API_VTAG}/simcore-s3/files/metadata:search", name="search_files")
 async def search_files(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(SearchFilesQueryParams, request)
     log.debug(

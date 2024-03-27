@@ -26,7 +26,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import status
-from simcore_service_storage._meta import api_vtag
+from simcore_service_storage._meta import API_VTAG
 from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName
 from simcore_service_storage.resources import storage_resources
@@ -40,7 +40,7 @@ from yarl import URL
 
 @pytest.fixture(scope="module")
 def openapi_specs() -> openapi_core.Spec:
-    spec_path: Path = storage_resources.get_path(f"api/{api_vtag}/openapi.yaml")
+    spec_path: Path = storage_resources.get_path(f"api/{API_VTAG}/openapi.yaml")
     return openapi_core.Spec.from_path(spec_path)
 
 

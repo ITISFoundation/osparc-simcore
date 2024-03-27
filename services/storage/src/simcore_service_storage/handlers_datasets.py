@@ -11,7 +11,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.json_serialization import json_dumps
 
 # Exclusive for simcore-s3 storage -----------------------
-from ._meta import api_vtag
+from ._meta import API_VTAG
 from .dsm import get_dsm_provider
 from .models import (
     FileMetaData,
@@ -29,7 +29,7 @@ UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
 
 
 @routes.get(
-    f"/{api_vtag}/locations/{{location_id}}/datasets", name="get_datasets_metadata"
+    f"/{API_VTAG}/locations/{{location_id}}/datasets", name="get_datasets_metadata"
 )
 async def get_datasets_metadata(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
@@ -46,7 +46,7 @@ async def get_datasets_metadata(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    f"/{api_vtag}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata",
+    f"/{API_VTAG}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata",
     name="get_files_metadata_dataset",
 )
 async def get_files_metadata_dataset(request: web.Request) -> web.Response:
