@@ -13,13 +13,13 @@ do
     if grep -n -P '\$\{[^}]*\$\{[^}]*\}[^}]*\}' "$file"; then
       echo "Error: $file contains a line with more than one dollar sign."
       exit 1
-    elif
-      grep -n -P '\$\{[^}]*:-[^}]*\}' "$file"; then
-      echo "Error: $file contains at least one line with an environment variable with a default value."
+    elif grep -n -P '\$[a-zA-Z_][a-zA-Z0-9_]*' "$file"; then
+      echo "Error: $file contains a line with an environment variable not wrapped in curly braces."
       exit 1
     fi
   fi
 done
+
 
 # If no errors were found, allow the commit
 exit 0

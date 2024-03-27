@@ -481,7 +481,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_legacy_services_catchall.loadbalancer.healthcheck.interval=500s
         - traefik.http.services.${SWARM_STACK_NAME}_legacy_services_catchall.loadbalancer.healthcheck.timeout=1ms
         # see [#2718](https://github.com/ITISFoundation/osparc-simcore/issues/2718)
-        # catchall for dy-sidecar powered-services (this happens if a backend disappears and a frontend tries to reconnect, the right return value is a 503)
+        # catchall for dynamic-sidecar powered-services (this happens if a backend disappears and a frontend tries to reconnect, the right return value is a 503)
         - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.service=${SWARM_STACK_NAME}_modern_services_catchall
         # the priority is a bit higher than webserver, the webserver is the fallback to everything and has prio 2
         - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.priority=3
