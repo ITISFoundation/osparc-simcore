@@ -153,7 +153,6 @@ rpds-py==0.18.0
     #   referencing
 s3transfer==0.10.1
     # via boto3
-semantic-version==2.10.0
 six==1.16.0
     # via
     #   isodate
