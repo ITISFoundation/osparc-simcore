@@ -491,6 +491,7 @@ qx.Class.define("osparc.data.Resources", {
       },
       /*
        * SCHEDULED MAINTENANCE
+       * Example: {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
        */
       "maintenance": {
         endpoints: {
