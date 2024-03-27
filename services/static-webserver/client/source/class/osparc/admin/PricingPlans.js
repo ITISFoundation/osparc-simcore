@@ -21,7 +21,36 @@ qx.Class.define("osparc.admin.PricingPlans", {
   members: {
     __messageTemplates: null,
 
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "pricing-plans-filter":
+          control = new osparc.filter.TextFilter("text", "pricingPlansList").set({
+            allowStretchX: true,
+            margin: [0, 10, 5, 10]
+          });
+          this._add(control);
+          break;
+        case "pricing-plans-container":
+          control = new qx.ui.container.Scroll();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "pricing-plans-list":
+          control = new qx.ui.form.List().set({
+            decorator: "no-border",
+            spacing: 3
+          });
+          control.addListener("changeSelection", e => console.log(e.getData()), this);
+          this.getChildControl("pricing-plans-container").add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
+
     _buildLayout: function() {
+      this.getChildControl("pricing-plans-filter");
       const params = {
         url: {
           productName: osparc.product.Utils.getProductName()
