@@ -23,12 +23,10 @@ qx.Class.define("osparc.admin.PricingPlanListItem", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(10, 2);
-    layout.setColumnWidth(0, 40);
-    layout.setColumnWidth(0, 40);
+    const layout = new qx.ui.layout.Grid(20, 5);
     layout.setColumnFlex(2, 1);
     this._setLayout(layout);
-    this.setPadding(5);
+    this.setPadding(10);
 
     this._createChildControlImpl("title");
     this._createChildControlImpl("description");
