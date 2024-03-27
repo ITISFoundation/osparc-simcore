@@ -38,8 +38,8 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
 
   properties: {
     ppKey: {
-      check: "Number",
-      init: 0,
+      check: "String",
+      init: "",
       nullable: false,
       event: "changePpKey"
     },
@@ -91,7 +91,7 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
             font: "text-14",
             placeholder: this.tr("Name")
           });
-          this.bind("name", control, "name");
+          this.bind("name", control, "value");
           control.bind("value", this, "name");
           this._add(control);
           break;
