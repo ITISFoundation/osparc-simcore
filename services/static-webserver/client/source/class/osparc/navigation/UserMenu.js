@@ -49,6 +49,11 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.desktop.credits.MyAccountWindow.openWindow(), this);
           this.add(control);
           break;
+        case "admin-center":
+          control = new qx.ui.menu.Button(this.tr("Admin Center"));
+          control.addListener("execute", () => osparc.admin.AdminCenterWindow.openWindow(), this);
+          this.add(control);
+          break;
         case "po-center":
           control = new qx.ui.menu.Button(this.tr("PO Center"));
           control.addListener("execute", () => osparc.po.POCenterWindow.openWindow(), this);
@@ -131,6 +136,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
         this.getChildControl("log-in");
       } else {
         this.getChildControl("user-center");
+        if (osparc.data.Permissions.getInstance().isAdmin()) {
+          this.getChildControl("admin-center");
+        }
         if (osparc.data.Permissions.getInstance().isProductOwner()) {
           this.getChildControl("po-center");
         }
