@@ -19,7 +19,7 @@ qx.Class.define("osparc.admin.AdminCenterWindow", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, "po-center", this.tr("PO Center"));
+    this.base(arguments, "admin-center", this.tr("Admin Center"));
 
     const viewWidth = 800;
     const viewHeight = 600;
@@ -35,8 +35,8 @@ qx.Class.define("osparc.admin.AdminCenterWindow", {
       appearance: "service-window"
     });
 
-    const poCenter = new osparc.admin.AdminCenter();
-    this.add(poCenter);
+    const adminCenter = new osparc.admin.AdminCenter();
+    this.add(adminCenter);
   },
 
   statics: {

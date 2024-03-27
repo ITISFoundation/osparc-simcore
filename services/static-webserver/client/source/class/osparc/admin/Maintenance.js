@@ -35,7 +35,13 @@ qx.Class.define("osparc.admin.Maintenance", {
 
     _buildLayout: function() {
       osparc.data.Resources.get("maintenance")
-        .then(scheduledMaintenance => this.__populateMaintenanceLayout(JSON.parse(scheduledMaintenance)))
+        .then(scheduledMaintenance => {
+          if (scheduledMaintenance) {
+            this.__populateMaintenanceLayout(JSON.parse(scheduledMaintenance))
+          } else {
+            this.__populateMaintenanceLayout(null)
+          }
+        })
         .catch(err => console.error(err));
     },
 

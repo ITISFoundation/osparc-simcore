@@ -60,18 +60,18 @@ qx.Class.define("osparc.admin.AdminCenter", {
     },
 
     __getPricingPlansPage: function() {
-      const title = this.tr("Users");
+      const title = this.tr("PricingPlans");
       const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
       const users = new osparc.admin.PricingPlans();
-      const page = this.__widgetToPage(title, iconSrc, users)
+      const page = this.__widgetToPage(title, iconSrc, users);
       return page;
     },
 
     __getMaintenancePage: function() {
-      const title = this.tr("PreRegistration");
+      const title = this.tr("Maintenance");
       const iconSrc = "@FontAwesome5Solid/wrench/22";
       const users = new osparc.admin.Maintenance();
-      const page = this.__widgetToPage(title, iconSrc, users)
+      const page = this.__widgetToPage(title, iconSrc, users);
       return page;
     }
   }
