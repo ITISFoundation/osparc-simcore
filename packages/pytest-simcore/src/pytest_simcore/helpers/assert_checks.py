@@ -81,13 +81,13 @@ def _do_assert_error(
 
     assert is_error(expected_status_code)
 
-    assert len(error["errors"]) == 1
+    assert error.get("message")  # required & non-nullable
 
-    err = error["errors"][0]
     if expected_msg:
-        assert expected_msg in err["message"]
+        assert expected_msg in error["message"]
+        assert expected_msg in error["errors"][0]["message"]
 
     if expected_error_code:
-        assert expected_error_code == err["code"]
+        assert expected_error_code == error["errors"][0]["code"]
 
     return data, error
