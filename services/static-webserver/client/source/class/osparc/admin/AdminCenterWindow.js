@@ -35,13 +35,13 @@ qx.Class.define("osparc.admin.AdminCenterWindow", {
       appearance: "service-window"
     });
 
-    const poCenter = new osparc.po.POCenter();
+    const poCenter = new osparc.admin.AdminCenter();
     this.add(poCenter);
   },
 
   statics: {
     openWindow: function() {
-      const accountWindow = new osparc.po.POCenterWindow();
+      const accountWindow = new osparc.admin.AdminCenterWindow();
       accountWindow.center();
       accountWindow.open();
       return accountWindow;
