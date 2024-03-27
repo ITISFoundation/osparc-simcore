@@ -520,7 +520,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         classifiers = new osparc.metadata.ClassifiersViewer(resourceData);
       }
 
-      const page = this.__permissionsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      const page = this.__classifiersPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
       page.addToContent(classifiers);
       return page;
