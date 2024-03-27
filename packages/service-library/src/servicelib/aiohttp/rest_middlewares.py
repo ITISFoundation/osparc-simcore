@@ -3,7 +3,6 @@
     SEE  https://gist.github.com/amitripshtos/854da3f4217e3441e8fceea85b0cbd91
 """
 import asyncio
-import json
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any, Union
@@ -45,17 +44,21 @@ async def _handle_http_error(
     """
     assert request  # nosec
     assert err.reason  # nosec
+    assert str(err) == err.reason  # nosec
 
-    err.content_type = MIMETYPE_APPLICATION_JSON
-    if not err.empty_body and (not err.text or not is_enveloped_from_text(err.text)):
-        error_body = ResponseErrorBody(
-            message=err.reason,
-            # FIXME: these below are not really necessary!
-            status=err.status,
-            errors=[ErrorDetail.from_exception(err)],
-            logs=[LogMessage(message=err.reason, level="ERROR")],
-        )
-        err.text = EnvelopeFactory(error=error_body).as_text()
+    if not err.empty_body:
+        # By default exists if class method empty_body==False
+        assert err.text  # nosec
+
+        if err.text and not is_enveloped_from_text(err.text):
+            error_body = ResponseErrorBody(
+                message=err.reason,  # we do not like default text=`{status}: {reason}`
+                status=err.status,
+                errors=[ErrorDetail.from_exception(err)],
+                logs=[LogMessage(message=err.reason, level="ERROR")],
+            )
+            err.text = EnvelopeFactory(error=error_body).as_text()
+        err.content_type = MIMETYPE_APPLICATION_JSON
 
     return err
 
@@ -69,16 +72,25 @@ async def _handle_http_successful(
     """
     assert request  # nosec
     assert err.reason  # nosec
-    err.content_type = MIMETYPE_APPLICATION_JSON
+    assert str(err) == err.reason  # nosec
+
     if not err.empty_body:
-        # NOTE: These are scenarios created by a lack of
-        # consistency on how we respond in the request handlers.
-        # This overhead can be avoided by having a more strict
-        # response policy.
-        if not err.text and err.reason:
+        # By default exists if class method empty_body==False
+        assert err.text  # nosec
+
+        if err.text and not is_enveloped_from_text(err.text):
+            # NOTE:
+            # - aiohttp defaults `text={status}: {reason}` if not explictly defined and reason defaults
+            #   in http.HTTPStatus().phrase if not explicitly defined
+            # - These are scenarios created by a lack of
+            #   consistency on how we respond in the request handlers.
+            #   This overhead can be avoided by having a more strict
+            #   response policy.
+            # - Moreover there is an *concerning* asymmetry on how these responses are handled
+            #   depending whether the are returned or raised!!!!
             err.text = json_dumps({"data": err.reason})
-        elif err.text and not is_enveloped_from_text(err.text):
-            err.text = json_dumps({"data": json.loads(err.text)})
+        err.content_type = MIMETYPE_APPLICATION_JSON
+
     return err
 
 
