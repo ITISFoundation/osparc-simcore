@@ -2,23 +2,25 @@
 
 """
 
-from importlib.metadata import version
 
-from semantic_version import Version
+from typing import Final
 
-__version__: str = version("simcore-service-storage")
+from packaging.version import Version
+from servicelib.utils_meta import PackageInfo
 
-version_info = Version(__version__)
-assert version_info.major is not None  # nosec
-api_version_prefix: str = f"v{version_info.major}"
+info: Final = PackageInfo(package_name="simcore-service-storage")
+__version__: Final[str] = info.__version__
 
-app_name: str = __name__.split(".")[0]
-api_version: str = __version__
-api_vtag: str = f"v{version_info.major}"
+
+PROJECT_NAME: Final[str] = info.project_name
+VERSION: Final[Version] = info.version
+API_VERSION: Final[str] = info.__version__
+API_VTAG: Final[str] = info.api_prefix_path_tag
+SUMMARY: Final[str] = info.get_summary()
 
 
 ## https://patorjk.com/software/taag/#p=display&f=Standard&t=Storage
-WELCOME_MSG = r"""
+APP_STARTED_BANNER_MSG = r"""
   ____  _
  / ___|| |_ ___  _ __ __ _  __ _  ___
  \___ \| __/ _ \| '__/ _` |/ _` |/ _ \
