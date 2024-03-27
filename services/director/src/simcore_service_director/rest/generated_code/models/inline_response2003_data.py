@@ -1,7 +1,12 @@
-import re
+# coding: utf-8
 
-from .. import util
+from datetime import date, datetime
+
+from typing import List, Dict, Type
+
 from .base_model_ import Model
+import re
+from .. import util
 
 
 class InlineResponse2003Data(Model):
@@ -338,7 +343,7 @@ class InlineResponse2003Data(Model):
         ]
         if service_state not in allowed_values:
             raise ValueError(
-                "Invalid value for `service_state` ({}), must be one of {}".format(
+                "Invalid value for `service_state` ({0}), must be one of {1}".format(
                     service_state, allowed_values
                 )
             )

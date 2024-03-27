@@ -1,5 +1,11 @@
-from .. import util
+# coding: utf-8
+
+from datetime import date, datetime
+
+from typing import List, Dict, Type
+
 from .base_model_ import Model
+from .. import util
 
 
 class InlineResponseDefaultError(Model):
@@ -8,21 +14,23 @@ class InlineResponseDefaultError(Model):
     Do not edit the class manually.
     """
 
-    def __init__(
-        self, message: str = None, errors: list[object] = None, status: int = None
-    ):
+    def __init__(self, message: str=None, errors: List[object]=None, status: int=None):
         """InlineResponseDefaultError - a model defined in OpenAPI
 
         :param message: The message of this InlineResponseDefaultError.
         :param errors: The errors of this InlineResponseDefaultError.
         :param status: The status of this InlineResponseDefaultError.
         """
-        self.openapi_types = {"message": str, "errors": list[object], "status": int}
+        self.openapi_types = {
+            'message': str,
+            'errors': List[object],
+            'status': int
+        }
 
         self.attribute_map = {
-            "message": "message",
-            "errors": "errors",
-            "status": "status",
+            'message': 'message',
+            'errors': 'errors',
+            'status': 'status'
         }
 
         self._message = message
@@ -30,7 +38,7 @@ class InlineResponseDefaultError(Model):
         self._status = status
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> "InlineResponseDefaultError":
+    def from_dict(cls, dikt: dict) -> 'InlineResponseDefaultError':
         """Returns the dict as a model
 
         :param dikt: A dict.

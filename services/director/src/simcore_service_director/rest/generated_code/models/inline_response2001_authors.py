@@ -1,5 +1,11 @@
-from .. import util
+# coding: utf-8
+
+from datetime import date, datetime
+
+from typing import List, Dict, Type
+
 from .base_model_ import Model
+from .. import util
 
 
 class InlineResponse2001Authors(Model):
@@ -8,19 +14,23 @@ class InlineResponse2001Authors(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, name: str = None, email: str = None, affiliation: str = None):
+    def __init__(self, name: str=None, email: str=None, affiliation: str=None):
         """InlineResponse2001Authors - a model defined in OpenAPI
 
         :param name: The name of this InlineResponse2001Authors.
         :param email: The email of this InlineResponse2001Authors.
         :param affiliation: The affiliation of this InlineResponse2001Authors.
         """
-        self.openapi_types = {"name": str, "email": str, "affiliation": str}
+        self.openapi_types = {
+            'name': str,
+            'email': str,
+            'affiliation': str
+        }
 
         self.attribute_map = {
-            "name": "name",
-            "email": "email",
-            "affiliation": "affiliation",
+            'name': 'name',
+            'email': 'email',
+            'affiliation': 'affiliation'
         }
 
         self._name = name
@@ -28,7 +38,7 @@ class InlineResponse2001Authors(Model):
         self._affiliation = affiliation
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> "InlineResponse2001Authors":
+    def from_dict(cls, dikt: dict) -> 'InlineResponse2001Authors':
         """Returns the dict as a model
 
         :param dikt: A dict.

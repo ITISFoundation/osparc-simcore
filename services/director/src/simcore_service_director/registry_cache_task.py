@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from collections.abc import AsyncIterator
+from typing import AsyncIterator
 
 from aiohttp import web
 from servicelib.utils import logged_gather

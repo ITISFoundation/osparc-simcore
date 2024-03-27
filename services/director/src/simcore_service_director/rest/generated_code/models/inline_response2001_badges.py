@@ -1,5 +1,11 @@
-from .. import util
+# coding: utf-8
+
+from datetime import date, datetime
+
+from typing import List, Dict, Type
+
 from .base_model_ import Model
+from .. import util
 
 
 class InlineResponse2001Badges(Model):
@@ -8,23 +14,31 @@ class InlineResponse2001Badges(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, name: str = None, image: str = None, url: str = None):
+    def __init__(self, name: str=None, image: str=None, url: str=None):
         """InlineResponse2001Badges - a model defined in OpenAPI
 
         :param name: The name of this InlineResponse2001Badges.
         :param image: The image of this InlineResponse2001Badges.
         :param url: The url of this InlineResponse2001Badges.
         """
-        self.openapi_types = {"name": str, "image": str, "url": str}
+        self.openapi_types = {
+            'name': str,
+            'image': str,
+            'url': str
+        }
 
-        self.attribute_map = {"name": "name", "image": "image", "url": "url"}
+        self.attribute_map = {
+            'name': 'name',
+            'image': 'image',
+            'url': 'url'
+        }
 
         self._name = name
         self._image = image
         self._url = url
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> "InlineResponse2001Badges":
+    def from_dict(cls, dikt: dict) -> 'InlineResponse2001Badges':
         """Returns the dict as a model
 
         :param dikt: A dict.

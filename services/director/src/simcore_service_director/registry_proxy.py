@@ -4,10 +4,9 @@ import enum
 import json
 import logging
 import re
-from collections.abc import AsyncIterator
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any
+from typing import Any, AsyncIterator, Dict, List, Tuple
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions, web
 from aiohttp.client import ClientTimeout
@@ -41,7 +40,7 @@ class ServiceType(enum.Enum):
 
 async def _basic_auth_registry_request(
     app: web.Application, path: str, method: str, **session_kwargs
-) -> tuple[dict, dict]:
+) -> Tuple[Dict, Dict]:
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
 
@@ -50,8 +49,8 @@ async def _basic_auth_registry_request(
     )
     logger.debug("Requesting registry using %s", url)
     # try the registry with basic authentication first, spare 1 call
-    resp_data: dict = {}
-    resp_headers: dict = {}
+    resp_data: Dict = {}
+    resp_headers: Dict = {}
     auth = (
         BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
         if config.REGISTRY_AUTH and config.REGISTRY_USER and config.REGISTRY_PW
@@ -94,15 +93,15 @@ async def _basic_auth_registry_request(
 
 
 async def _auth_registry_request(
-    url: URL, method: str, auth_headers: dict, session: ClientSession, **kwargs
-) -> tuple[dict, dict]:
+    url: URL, method: str, auth_headers: Dict, session: ClientSession, **kwargs
+) -> Tuple[Dict, Dict]:
     if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
         raise exceptions.RegistryConnectionError(
             "Wrong configuration: Authentication to registry is needed!"
         )
     # auth issue let's try some authentication get the auth type
     auth_type = None
-    auth_details: dict[str, str] = {}
+    auth_details: Dict[str, str] = {}
     for key in auth_headers:
         if str(key).lower() == "www-authenticate":
             auth_type, auth_value = str(auth_headers[key]).split(" ", 1)
@@ -131,7 +130,7 @@ async def _auth_registry_request(
                     )
                 )
             bearer_code = (await token_resp.json())["token"]
-            headers = {"Authorization": f"Bearer {bearer_code}"}
+            headers = {"Authorization": "Bearer {}".format(bearer_code)}
             async with getattr(session, method.lower())(
                 url, headers=headers, **kwargs
             ) as resp_wtoken:
@@ -175,7 +174,7 @@ async def registry_request(
     method: str = "GET",
     no_cache: bool = False,
     **session_kwargs,
-) -> tuple[dict, dict]:
+) -> Tuple[Dict, Dict]:
     logger.debug(
         "Request to registry: path=%s, method=%s. no_cache=%s", path, method, no_cache
     )
@@ -213,11 +212,11 @@ async def setup_registry(app: web.Application) -> AsyncIterator[None]:
     yield
 
 
-async def _list_repositories(app: web.Application) -> list[str]:
+async def _list_repositories(app: web.Application) -> List[str]:
     logger.debug("listing repositories")
     # if there are more repos, the Link will be available in the response headers until none available
     path = f"/v2/_catalog?n={NUMBER_OF_RETRIEVED_REPOS}"
-    repos_list: list = []
+    repos_list: List = []
     while True:
         result, headers = await registry_request(app, path)
         if result["repositories"]:
@@ -229,9 +228,9 @@ async def _list_repositories(app: web.Application) -> list[str]:
     return repos_list
 
 
-async def list_image_tags(app: web.Application, image_key: str) -> list[str]:
+async def list_image_tags(app: web.Application, image_key: str) -> List[str]:
     logger.debug("listing image tags in %s", image_key)
-    image_tags: list = []
+    image_tags: List = []
     # get list of image tags
     path = f"/v2/{image_key}/tags/list?n={NUMBER_OF_RETRIEVED_TAGS}"
     while True:
@@ -245,7 +244,7 @@ async def list_image_tags(app: web.Application, image_key: str) -> list[str]:
     return image_tags
 
 
-async def get_image_labels(app: web.Application, image: str, tag: str) -> dict:
+async def get_image_labels(app: web.Application, image: str, tag: str) -> Dict:
     logger.debug("getting image labels of %s:%s", image, tag)
     path = f"/v2/{image}/manifests/{tag}"
     request_result, _ = await registry_request(app, path)
@@ -260,8 +259,8 @@ async def get_image_labels(app: web.Application, image: str, tag: str) -> dict:
 
 async def get_image_details(
     app: web.Application, image_key: str, image_tag: str
-) -> dict:
-    image_tags: dict = {}
+) -> Dict:
+    image_tags: Dict = {}
     labels = await get_image_labels(app, image_key, image_tag)
     if not labels:
         return image_tags
@@ -284,7 +283,7 @@ async def get_image_details(
     return image_tags
 
 
-async def get_repo_details(app: web.Application, image_key: str) -> list[dict]:
+async def get_repo_details(app: web.Application, image_key: str) -> List[Dict]:
     repo_details = []
     image_tags = await list_image_tags(app, image_key)
     tasks = [get_image_details(app, image_key, tag) for tag in image_tags]
@@ -295,7 +294,7 @@ async def get_repo_details(app: web.Application, image_key: str) -> list[dict]:
     return repo_details
 
 
-async def list_services(app: web.Application, service_type: ServiceType) -> list[dict]:
+async def list_services(app: web.Application, service_type: ServiceType) -> List[Dict]:
     logger.debug("getting list of services")
     repos = await _list_repositories(app)
     # get the services repos
@@ -321,7 +320,7 @@ async def list_services(app: web.Application, service_type: ServiceType) -> list
 
 async def list_interactive_service_dependencies(
     app: web.Application, service_key: str, service_tag: str
-) -> list[dict]:
+) -> List[Dict]:
     image_labels = await get_image_labels(app, service_key, service_tag)
     dependency_keys = []
     if DEPENDENCIES_LABEL_KEY in image_labels:
@@ -341,7 +340,7 @@ async def list_interactive_service_dependencies(
 
 
 def _get_prefix(service_type: ServiceType) -> str:
-    return f"{config.SIMCORE_SERVICES_PREFIX}/{service_type.value}/"
+    return "{}/{}/".format(config.SIMCORE_SERVICES_PREFIX, service_type.value)
 
 
 def get_service_first_name(image_key: str) -> str:
@@ -380,7 +379,7 @@ CONTAINER_SPEC_ENTRY_NAME = "ContainerSpec".lower()
 RESOURCES_ENTRY_NAME = "Resources".lower()
 
 
-def _validate_kind(entry_to_validate: dict[str, Any], kind_name: str):
+def _validate_kind(entry_to_validate: Dict[str, Any], kind_name: str):
     for element in (
         entry_to_validate.get("value", {})
         .get("Reservations", {})
@@ -393,7 +392,7 @@ def _validate_kind(entry_to_validate: dict[str, Any], kind_name: str):
 
 async def get_service_extras(
     app: web.Application, image_key: str, image_tag: str
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     # check physical node requirements
     # all nodes require "CPU"
     result = {

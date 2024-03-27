@@ -1,7 +1,12 @@
-import re
+# coding: utf-8
 
-from .. import util
+from datetime import date, datetime
+
+from typing import List, Dict, Type
+
 from .base_model_ import Model
+import re
+from .. import util
 
 
 class InlineResponse2001Data(Model):
@@ -10,19 +15,7 @@ class InlineResponse2001Data(Model):
     Do not edit the class manually.
     """
 
-    def __init__(
-        self,
-        entry_point: str = None,
-        published_port: int = None,
-        service_basepath: str = "",
-        service_host: str = None,
-        service_key: str = None,
-        service_message: str = None,
-        service_port: int = None,
-        service_state: str = None,
-        service_uuid: str = None,
-        service_version: str = None,
-    ):
+    def __init__(self, entry_point: str=None, published_port: int=None, service_basepath: str='', service_host: str=None, service_key: str=None, service_message: str=None, service_port: int=None, service_state: str=None, service_uuid: str=None, service_version: str=None):
         """InlineResponse2001Data - a model defined in OpenAPI
 
         :param entry_point: The entry_point of this InlineResponse2001Data.
@@ -37,29 +30,29 @@ class InlineResponse2001Data(Model):
         :param service_version: The service_version of this InlineResponse2001Data.
         """
         self.openapi_types = {
-            "entry_point": str,
-            "published_port": int,
-            "service_basepath": str,
-            "service_host": str,
-            "service_key": str,
-            "service_message": str,
-            "service_port": int,
-            "service_state": str,
-            "service_uuid": str,
-            "service_version": str,
+            'entry_point': str,
+            'published_port': int,
+            'service_basepath': str,
+            'service_host': str,
+            'service_key': str,
+            'service_message': str,
+            'service_port': int,
+            'service_state': str,
+            'service_uuid': str,
+            'service_version': str
         }
 
         self.attribute_map = {
-            "entry_point": "entry_point",
-            "published_port": "published_port",
-            "service_basepath": "service_basepath",
-            "service_host": "service_host",
-            "service_key": "service_key",
-            "service_message": "service_message",
-            "service_port": "service_port",
-            "service_state": "service_state",
-            "service_uuid": "service_uuid",
-            "service_version": "service_version",
+            'entry_point': 'entry_point',
+            'published_port': 'published_port',
+            'service_basepath': 'service_basepath',
+            'service_host': 'service_host',
+            'service_key': 'service_key',
+            'service_message': 'service_message',
+            'service_port': 'service_port',
+            'service_state': 'service_state',
+            'service_uuid': 'service_uuid',
+            'service_version': 'service_version'
         }
 
         self._entry_point = entry_point
@@ -74,7 +67,7 @@ class InlineResponse2001Data(Model):
         self._service_version = service_version
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> "InlineResponse2001Data":
+    def from_dict(cls, dikt: dict) -> 'InlineResponse2001Data':
         """Returns the dict as a model
 
         :param dikt: A dict.
@@ -128,9 +121,7 @@ class InlineResponse2001Data(Model):
         if published_port is None:
             raise ValueError("Invalid value for `published_port`, must not be `None`")
         if published_port is not None and published_port < 1:
-            raise ValueError(
-                "Invalid value for `published_port`, must be a value greater than or equal to `1`"
-            )
+            raise ValueError("Invalid value for `published_port`, must be a value greater than or equal to `1`")
 
         self._published_port = published_port
 
@@ -204,12 +195,8 @@ class InlineResponse2001Data(Model):
         """
         if service_key is None:
             raise ValueError("Invalid value for `service_key`, must not be `None`")
-        if service_key is not None and not re.search(
-            r"^(simcore)\/(services)\/(comp|dynamic)(\/[^\s\/]+)+$", service_key
-        ):
-            raise ValueError(
-                r"Invalid value for `service_key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\s\/]+)+$/`"
-            )
+        if service_key is not None and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[^\s\/]+)+$', service_key):
+            raise ValueError("Invalid value for `service_key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\s\/]+)+$/`")
 
         self._service_key = service_key
 
@@ -259,9 +246,7 @@ class InlineResponse2001Data(Model):
         if service_port is None:
             raise ValueError("Invalid value for `service_port`, must not be `None`")
         if service_port is not None and service_port < 1:
-            raise ValueError(
-                "Invalid value for `service_port`, must be a value greater than or equal to `1`"
-            )
+            raise ValueError("Invalid value for `service_port`, must be a value greater than or equal to `1`")
 
         self._service_port = service_port
 
@@ -269,7 +254,7 @@ class InlineResponse2001Data(Model):
     def service_state(self):
         """Gets the service_state of this InlineResponse2001Data.
 
-        the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start
+        the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start 
 
         :return: The service_state of this InlineResponse2001Data.
         :rtype: str
@@ -280,24 +265,16 @@ class InlineResponse2001Data(Model):
     def service_state(self, service_state):
         """Sets the service_state of this InlineResponse2001Data.
 
-        the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start
+        the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start 
 
         :param service_state: The service_state of this InlineResponse2001Data.
         :type service_state: str
         """
-        allowed_values = [
-            "pending",
-            "pulling",
-            "starting",
-            "running",
-            "complete",
-            "failed",
-        ]
+        allowed_values = ["pending", "pulling", "starting", "running", "complete", "failed"]
         if service_state not in allowed_values:
             raise ValueError(
-                "Invalid value for `service_state` ({}), must be one of {}".format(
-                    service_state, allowed_values
-                )
+                "Invalid value for `service_state` ({0}), must be one of {1}"
+                .format(service_state, allowed_values)
             )
 
         self._service_state = service_state
@@ -349,12 +326,7 @@ class InlineResponse2001Data(Model):
         """
         if service_version is None:
             raise ValueError("Invalid value for `service_version`, must not be `None`")
-        if service_version is not None and not re.search(
-            r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$",
-            service_version,
-        ):
-            raise ValueError(
-                r"Invalid value for `service_version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`"
-            )
+        if service_version is not None and not re.search(r'^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$', service_version):
+            raise ValueError("Invalid value for `service_version`, must be a follow pattern or equal to `/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$/`")
 
         self._service_version = service_version

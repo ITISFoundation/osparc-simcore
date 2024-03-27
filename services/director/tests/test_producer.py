@@ -6,8 +6,8 @@
 
 import json
 import uuid
-from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Callable
 
 import docker
 import pytest

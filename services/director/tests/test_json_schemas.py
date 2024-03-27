@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 from jsonschema import SchemaError, ValidationError, validate
+
 from simcore_service_director import resources
 
 API_VERSIONS = resources.listdir(resources.RESOURCE_OPENAPI_ROOT)

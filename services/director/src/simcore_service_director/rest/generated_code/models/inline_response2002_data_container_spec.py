@@ -1,5 +1,11 @@
-from .. import util
+# coding: utf-8
+
+from datetime import date, datetime
+
+from typing import List, Dict, Type
+
 from .base_model_ import Model
+from .. import util
 
 
 class InlineResponse2002DataContainerSpec(Model):
@@ -8,19 +14,23 @@ class InlineResponse2002DataContainerSpec(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, command: list[str] = None):
+    def __init__(self, command: List[str]=None):
         """InlineResponse2002DataContainerSpec - a model defined in OpenAPI
 
         :param command: The command of this InlineResponse2002DataContainerSpec.
         """
-        self.openapi_types = {"command": list[str]}
+        self.openapi_types = {
+            'command': List[str]
+        }
 
-        self.attribute_map = {"command": "command"}
+        self.attribute_map = {
+            'command': 'command'
+        }
 
         self._command = command
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> "InlineResponse2002DataContainerSpec":
+    def from_dict(cls, dikt: dict) -> 'InlineResponse2002DataContainerSpec':
         """Returns the dict as a model
 
         :param dikt: A dict.

@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from typing import Optional
 
 log = logging.getLogger(__name__)
 
@@ -7,7 +8,7 @@ DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 _MAXLEN = len("2020-10-09T12:28:14.7710")
 
 
-def parse_as_datetime(timestr: str, *, default: datetime | None = None) -> datetime:
+def parse_as_datetime(timestr: str, *, default: Optional[datetime] = None) -> datetime:
     """
     default: if parsing is not possible, it returs default
 

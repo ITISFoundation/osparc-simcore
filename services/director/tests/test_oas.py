@@ -4,6 +4,7 @@ import pytest
 import yaml
 from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPIValidationError
+
 from simcore_service_director import resources
 
 

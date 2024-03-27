@@ -1,6 +1,12 @@
-from .. import util
+# coding: utf-8
+
+from datetime import date, datetime
+
+from typing import List, Dict, Type
+
 from .base_model_ import Model
 from .inline_response200_data import InlineResponse200Data
+from .. import util
 
 
 class InlineResponse200(Model):
@@ -9,21 +15,27 @@ class InlineResponse200(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: InlineResponse200Data = None, error: object = None):
+    def __init__(self, data: InlineResponse200Data=None, error: object=None):
         """InlineResponse200 - a model defined in OpenAPI
 
         :param data: The data of this InlineResponse200.
         :param error: The error of this InlineResponse200.
         """
-        self.openapi_types = {"data": InlineResponse200Data, "error": object}
+        self.openapi_types = {
+            'data': InlineResponse200Data,
+            'error': object
+        }
 
-        self.attribute_map = {"data": "data", "error": "error"}
+        self.attribute_map = {
+            'data': 'data',
+            'error': 'error'
+        }
 
         self._data = data
         self._error = error
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> "InlineResponse200":
+    def from_dict(cls, dikt: dict) -> 'InlineResponse200':
         """Returns the dict as a model
 
         :param dikt: A dict.
