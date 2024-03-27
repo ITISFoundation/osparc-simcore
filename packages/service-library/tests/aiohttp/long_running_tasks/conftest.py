@@ -33,7 +33,8 @@ async def _string_list_task(
         await asyncio.sleep(sleep_time)
         task_progress.update(message="generated item", percent=index / num_strings)
         if fail:
-            raise RuntimeError("We were asked to fail!!")
+            msg = "We were asked to fail!!"
+            raise RuntimeError(msg)
 
     # NOTE: this code is used just for the sake of not returning the default 200
     return web.json_response(
