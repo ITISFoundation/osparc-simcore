@@ -779,6 +779,10 @@ qx.Class.define("osparc.data.Resources", {
           payWithPaymentMethod: {
             method: "POST",
             url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}:pay"
+          },
+          invoiceLink: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/payments/{paymentId}/invoice-link"
           }
         }
       },
