@@ -148,7 +148,7 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
       return `<font color=${this.__getLevelColor(status)}>${osparc.utils.Utils.onlyFirstsUp(status)}</font>`;
     },
 
-    __createPdfIconWithLink: function(link, walletId, paymentId) {
+    __createPdfIconWithLink: function(walletId, paymentId) {
       const urlParams = {
         walletId,
         paymentId
