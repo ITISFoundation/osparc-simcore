@@ -31,9 +31,10 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
     const manager = this.__validator = new qx.ui.form.validation.Manager();
     ppKey.setRequired(true);
     name.setRequired(true);
+    manager.add(ppKey);
     manager.add(name);
 
-    pricingPlan ? this.getChildControl("create") : this.getChildControl("save");
+    pricingPlan ? this.getChildControl("save") : this.getChildControl("create");
   },
 
   properties: {
