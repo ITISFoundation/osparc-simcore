@@ -223,6 +223,7 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
     __updatePricingPlan: function() {
       this.__pricingPlan["displayName"] = this.getName();
       this.__pricingPlan["description"] = this.getDescription();
+      this.__pricingPlan["isActive"] = this.getIsActive();
       const params = {
         url: {
           "pricingPlanId": this.__pricingPlan["pricingPlanId"]
