@@ -89,8 +89,12 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
                 credits: rawRow.osparcCredits ? rawRow.osparcCredits.toFixed(2) * 1 : 0,
                 status: this.__addColorTag(rawRow.completedStatus),
                 comment: rawRow.comment,
-                invoice: Boolean(rawRow.invoiceUrl)
+                invoice: rawRow.invoiceUrl ? this.__createPdfIconWithLink(rawRow.invoiceUrl) : ""
+                // invoice: rawRow.invoiceUrl ? this.__createInvoiceRequester(rawRow.paymentId) : null
               })
+              if (rawRow.invoiceUrl) {
+                this.__createInvoiceRequester(rawRow.paymentId);
+              }
             })
             return data
           })
@@ -147,6 +151,13 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
 
     __addColorTag: function(status) {
       return `<font color=${this.__getLevelColor(status)}>${osparc.utils.Utils.onlyFirstsUp(status)}</font>`;
+    },
+
+    __createInvoiceRequester: function(paymentId) {
+      const walletId = this.getWalletId();
+      console.log(walletId);
+      console.log(paymentId);
+      return `<a href='${link}' target='_blank'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png' alt='Invoice' width='16' height='20'></a>`;
     },
 
     __createPdfIconWithLink: function(link) {

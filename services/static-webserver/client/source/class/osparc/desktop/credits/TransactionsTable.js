@@ -38,7 +38,8 @@ qx.Class.define("osparc.desktop.credits.TransactionsTable", {
     columnModel.setDataCellRenderer(2, new qx.ui.table.cellrenderer.Number());
     columnModel.setDataCellRenderer(3, new qx.ui.table.cellrenderer.Html());
     columnModel.setDataCellRenderer(4, new osparc.ui.table.cellrenderer.StringWithTooltip());
-    columnModel.setDataCellRenderer(5, new qx.ui.table.cellrenderer.Image());
+    columnModel.setDataCellRenderer(5, new qx.ui.table.cellrenderer.Html());
+    // columnModel.setDataCellRenderer(5, new qx.ui.table.cellrenderer.Image());
 
     this.setHeaderCellHeight(26);
     this.setRowHeight(26);
