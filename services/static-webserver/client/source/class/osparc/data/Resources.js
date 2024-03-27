@@ -1082,6 +1082,14 @@ qx.Class.define("osparc.data.Resources", {
 
   members: {
     /**
+     * @param {String} resource Name of the resource as defined in the static property 'resources'.
+     */
+    createRequest: function(resource) {
+      const resourceDefinition = this.self().resources[resource];
+      return new osparc.io.rest.Resource(resourceDefinition.endpoints);
+    },
+
+    /**
      * Method to fetch resources from the server. If configured properly, the resources in the response will be cached in {osparc.store.Store}.
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
@@ -1096,7 +1104,7 @@ qx.Class.define("osparc.data.Resources", {
         }
 
         const resourceDefinition = this.self().resources[resource];
-        const res = new osparc.io.rest.Resource(resourceDefinition.endpoints);
+        const res = this.createRequest(resource);
 
         if (!res.includesRoute(endpoint)) {
           reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
