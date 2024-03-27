@@ -12,14 +12,10 @@ from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 
 from ..error_codes import create_error_code
-from ..json_serialization import json_dumps
+from ..json_serialization import json_dumps, safe_json_loads
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorDetail, LogMessage, ResponseErrorBody
-from .rest_responses import (
-    create_enveloped_response,
-    create_error_response,
-    is_enveloped_from_text,
-)
+from .rest_responses import create_enveloped_response, create_error_response
 from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
@@ -33,34 +29,6 @@ _logger = logging.getLogger(__name__)
 def _is_api_request(request: web.Request, api_version: str) -> bool:
     base_path = "/" + api_version.lstrip("/")
     return bool(request.path.startswith(base_path))
-
-
-async def _handle_http_error(
-    request: web.BaseRequest, err: web.HTTPError
-) -> web.Response:
-    """
-    Normalizes HTTPErrors used as `raise web.HTTPUnauthorized(reason=MSG_USER_EXPIRED)`
-    creating an enveloped json-response
-    """
-    assert request  # nosec
-    assert err.reason  # nosec
-    assert str(err) == err.reason  # nosec
-
-    if not err.empty_body:
-        # By default exists if class method empty_body==False
-        assert err.text  # nosec
-
-        if err.text and not is_enveloped_from_text(err.text):
-            error_body = ResponseErrorBody(
-                message=err.reason,  # we do not like default text=`{status}: {reason}`
-                status=err.status,
-                errors=[ErrorDetail.from_exception(err)],
-                logs=[LogMessage(message=err.reason, level="ERROR")],
-            )
-            err.text = EnvelopeFactory(error=error_body).as_text()
-        err.content_type = MIMETYPE_APPLICATION_JSON
-
-    return err
 
 
 async def _handle_http_successful(
@@ -78,7 +46,7 @@ async def _handle_http_successful(
         # By default exists if class method empty_body==False
         assert err.text  # nosec
 
-        if err.text and not is_enveloped_from_text(err.text):
+        if err.text and not safe_json_loads(err.text):
             # NOTE:
             # - aiohttp defaults `text={status}: {reason}` if not explictly defined and reason defaults
             #   in http.HTTPStatus().phrase if not explicitly defined
@@ -89,6 +57,34 @@ async def _handle_http_successful(
             # - Moreover there is an *concerning* asymmetry on how these responses are handled
             #   depending whether the are returned or raised!!!!
             err.text = json_dumps({"data": err.reason})
+        err.content_type = MIMETYPE_APPLICATION_JSON
+
+    return err
+
+
+async def _handle_http_error(
+    request: web.BaseRequest, err: web.HTTPError
+) -> web.Response:
+    """
+    Normalizes HTTPErrors used as `raise web.HTTPUnauthorized(reason=MSG_USER_EXPIRED)`
+    creating an enveloped json-response
+    """
+    assert request  # nosec
+    assert err.reason  # nosec
+    assert str(err) == err.reason  # nosec
+
+    if not err.empty_body:
+        # By default exists if class method empty_body==False
+        assert err.text  # nosec
+
+        if err.text and not safe_json_loads(err.text):
+            error_body = ResponseErrorBody(
+                message=err.reason,  # we do not like default text=`{status}: {reason}`
+                status=err.status,
+                errors=[ErrorDetail.from_exception(err)],
+                logs=[LogMessage(message=err.reason, level="ERROR")],
+            )
+            err.text = EnvelopeFactory(error=error_body).as_text()
         err.content_type = MIMETYPE_APPLICATION_JSON
 
     return err
@@ -142,15 +138,15 @@ def error_middleware_factory(
                 return await handler(request)
 
             # NOTE: RETURN  and do NOT RAISE a response in exception handlers
-            except web.HTTPError as err_resp:
-                return await _handle_http_error(request, err_resp)
-
-            except web.HTTPSuccessful as err_resp:
+            except web.HTTPSuccessful as err_resp:  # 2XX
                 return await _handle_http_successful(request, err_resp)
 
-            except web.HTTPRedirection as err_resp:
+            except web.HTTPRedirection as err_resp:  # 3XX
                 _logger.debug("Redirecting to '%s'", err_resp)
                 return err_resp
+
+            except web.HTTPError as err_resp:  # 5XX
+                return await _handle_http_error(request, err_resp)
 
             except NotImplementedError as err:
                 return create_error_response(
