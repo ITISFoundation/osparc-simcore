@@ -11,7 +11,7 @@ from models_library.app_diagnostics import AppStatusCheck
 from servicelib.json_serialization import json_dumps
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from ._meta import API_VTAG, PROJECT_NAME, VERSION
+from ._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
 from .constants import APP_CONFIG_KEY
 from .db import get_engine_state
 from .db import is_service_responsive as is_pg_responsive
@@ -25,14 +25,15 @@ routes = web.RouteTableDef()
 
 
 @routes.get(f"/{API_VTAG}/", name="health_check")
-async def get_health(_request: web.Request) -> web.Response:
+async def get_health(request: web.Request) -> web.Response:
+    assert request  # nosec
     return web.json_response(
         {
             "data": HealthCheck.parse_obj(
                 {
                     "name": PROJECT_NAME,
-                    "version": VERSION,
-                    "api_version": VERSION,
+                    "version": f"{VERSION}",
+                    "api_version": API_VERSION,
                 }
             ).dict(**RESPONSE_MODEL_POLICY)
         },
@@ -66,7 +67,7 @@ async def get_status(request: web.Request) -> web.Response:
     status = AppStatusCheck.parse_obj(
         {
             "app_name": PROJECT_NAME,
-            "version": VERSION,
+            "version": f"{VERSION}",
             "services": {
                 "postgres": {
                     "healthy": postgres_state,
