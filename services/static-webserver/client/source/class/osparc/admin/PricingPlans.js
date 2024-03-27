@@ -27,7 +27,7 @@ qx.Class.define("osparc.admin.PricingPlans", {
         case "pricing-plans-filter":
           control = new osparc.filter.TextFilter("text", "pricingPlansList").set({
             allowStretchX: true,
-            margin: [0, 10, 5, 10]
+            margin: 0
           });
           this._addAt(control, 0);
           break;
@@ -61,16 +61,12 @@ qx.Class.define("osparc.admin.PricingPlans", {
 
     _buildLayout: function() {
       this.getChildControl("pricing-plans-filter");
-      osparc.data.Resources.fetch("pricingPlans", "get")
-        .then(data => this.__populateList(data));
+      this.__createList();
+      this.__fetchPlans();
       this.getChildControl("create-pricing-plan");
     },
 
-    __populateList: function(pricingPlans) {
-      if (pricingPlans.length === 0) {
-        return;
-      }
-
+    __createList: function() {
       const list = this.getChildControl("pricing-plans-list");
 
       const model = this.__model = new qx.data.Array();
@@ -89,8 +85,16 @@ qx.Class.define("osparc.admin.PricingPlans", {
           item.subscribeToFilterGroup("pricingPlansList");
         }
       });
+    },
 
-      pricingPlans.forEach(pricingPlan => model.append(qx.data.marshal.Json.createModel(pricingPlan)));
+    __fetchPlans: function() {
+      osparc.data.Resources.fetch("pricingPlans", "get")
+        .then(data => this.__populateList(data));
+    },
+
+    __populateList: function(pricingPlans) {
+      this.__model.removeAll();
+      pricingPlans.forEach(pricingPlan => this.__model.append(qx.data.marshal.Json.createModel(pricingPlan)));
     },
 
     __openCreatePricingPlan: function() {
@@ -99,6 +103,7 @@ qx.Class.define("osparc.admin.PricingPlans", {
       const win = osparc.ui.window.Window.popUpInWindow(ppCreator, title, 400, 250);
       ppCreator.addListener("done", () => {
         win.close();
+        this.__fetchPlans();
       });
       ppCreator.addListener("cancel", () => win.close());
     },
@@ -109,6 +114,7 @@ qx.Class.define("osparc.admin.PricingPlans", {
       const win = osparc.ui.window.Window.popUpInWindow(ppEditor, title, 400, 250);
       ppEditor.addListener("done", () => {
         win.close();
+        this.__fetchPlans();
       });
       ppEditor.addListener("cancel", () => win.close());
     }
