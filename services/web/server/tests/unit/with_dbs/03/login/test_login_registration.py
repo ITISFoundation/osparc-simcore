@@ -95,16 +95,16 @@ async def test_register_body_validation(
         "status": 422,
         "errors": [
             {
-                "code": "body.value_error.email",
+                "code": "value_error.email",
                 "message": "value is not a valid email address",
                 "resource": "/v0/auth/register",
-                "field": "email",
+                "field": "body.email",
             },
             {
-                "code": "body.value_error",
+                "code": "value_error",
                 "message": MSG_PASSWORD_MISMATCH,
                 "resource": "/v0/auth/register",
-                "field": "confirm",
+                "field": "body.confirm",
             },
         ],
     }
