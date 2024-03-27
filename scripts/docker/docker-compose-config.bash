@@ -17,11 +17,15 @@ show_error() {
 
 
 env_file=".env"
+project_directory=""
 # Parse command line arguments
-while getopts ":e:" opt; do
+while getopts ":e:p:" opt; do
   case $opt in
     e)
       env_file="$OPTARG"
+      ;;
+    p)
+      project_directory="$OPTARG"
       ;;
     \?)
       show_error "Invalid option: -$OPTARG"
@@ -67,8 +71,9 @@ docker stack config"
   do
     docker_command+=" --compose-file ${compose_file_path}"
   done
-
-  #docker_command+=" --skip-interpolation"
+  # WE CANNOT DO THIS:
+  # docker_command+=" --skip-interpolation"
+  # because docker stack compose will *validate* that e.g. `replicas: ${SIMCORE_SERVICES_POSTGRES_REPLICAS}` is a valid number, which it is not if it is read as a literal string.
 
   docker_command+=" \
 | sed '/published:/s/\"//g' \
