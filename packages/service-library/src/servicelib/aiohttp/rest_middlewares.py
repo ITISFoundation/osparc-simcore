@@ -31,13 +31,7 @@ def _is_api_request(request: web.Request, api_version: str) -> bool:
     return bool(request.path.startswith(base_path))
 
 
-async def _handle_http_successful(
-    request: web.BaseRequest, err: web.HTTPSuccessful
-) -> web.Response:
-    """
-    Normalizes HTTPErrors used as `raise web.HTTPOk(reason="I am happy")`
-    creating an enveloped json-response
-    """
+def _has_body(request: web.BaseRequest, err: web.HTTPException) -> bool:
     assert request  # nosec
     assert err.reason  # nosec
     assert str(err) == err.reason  # nosec
@@ -45,19 +39,33 @@ async def _handle_http_successful(
     if not err.empty_body:
         # By default exists if class method empty_body==False
         assert err.text  # nosec
-
         if err.text and not safe_json_loads(err.text):
-            # NOTE:
-            # - aiohttp defaults `text={status}: {reason}` if not explictly defined and reason defaults
-            #   in http.HTTPStatus().phrase if not explicitly defined
-            # - These are scenarios created by a lack of
-            #   consistency on how we respond in the request handlers.
-            #   This overhead can be avoided by having a more strict
-            #   response policy.
-            # - Moreover there is an *concerning* asymmetry on how these responses are handled
-            #   depending whether the are returned or raised!!!!
-            err.text = json_dumps({"data": err.reason})
-        err.content_type = MIMETYPE_APPLICATION_JSON
+            return False
+
+    return True
+
+
+async def _handle_http_successful(
+    request: web.BaseRequest, err: web.HTTPSuccessful
+) -> web.Response:
+    """
+    Normalizes HTTPErrors used as `raise web.HTTPOk(reason="I am happy")`
+    creating an enveloped json-response
+    """
+    # NOTE: `await resp.json()` raises if wrong content-type even for NoContent!
+    err.content_type = MIMETYPE_APPLICATION_JSON
+
+    if not _has_body(request, err):
+        # NOTE:
+        # - aiohttp defaults `text={status}: {reason}` if not explictly defined and reason defaults
+        #   in http.HTTPStatus().phrase if not explicitly defined
+        # - These are scenarios created by a lack of
+        #   consistency on how we respond in the request handlers.
+        #   This overhead can be avoided by having a more strict
+        #   response policy.
+        # - Moreover there is an *concerning* asymmetry on how these responses are handled
+        #   depending whether the are returned or raised!!!!
+        err.text = json_dumps({"data": err.reason})
 
     return err
 
@@ -69,23 +77,17 @@ async def _handle_http_error(
     Normalizes HTTPErrors used as `raise web.HTTPUnauthorized(reason=MSG_USER_EXPIRED)`
     creating an enveloped json-response
     """
-    assert request  # nosec
-    assert err.reason  # nosec
-    assert str(err) == err.reason  # nosec
+    # NOTE: `await resp.json()` raises if wrong content-type even for NoContent!
+    err.content_type = MIMETYPE_APPLICATION_JSON
 
-    if not err.empty_body:
-        # By default exists if class method empty_body==False
-        assert err.text  # nosec
-
-        if err.text and not safe_json_loads(err.text):
-            error_body = ResponseErrorBody(
-                message=err.reason,  # we do not like default text=`{status}: {reason}`
-                status=err.status,
-                errors=[ErrorDetail.from_exception(err)],
-                logs=[LogMessage(message=err.reason, level="ERROR")],
-            )
-            err.text = EnvelopeFactory(error=error_body).as_text()
-        err.content_type = MIMETYPE_APPLICATION_JSON
+    if not _has_body(request, err):
+        error_body = ResponseErrorBody(
+            message=err.reason,  # we do not like default text=`{status}: {reason}`
+            status=err.status,
+            errors=[ErrorDetail.from_exception(err)],
+            logs=[LogMessage(message=err.reason, level="ERROR")],
+        )
+        err.text = EnvelopeFactory(error=error_body).as_text()
 
     return err
 
