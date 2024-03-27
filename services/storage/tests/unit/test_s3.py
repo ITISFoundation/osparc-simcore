@@ -1,4 +1,6 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -32,7 +34,7 @@ async def test_s3_client(enable_s3: bool, app_settings: Settings, client: TestCl
         s3_client = get_s3_client(client.app)
         assert s3_client
 
-        response = await s3_client.client.list_buckets()
+        response = await s3_client._client.list_buckets()
         assert response
         assert "Buckets" in response
         assert len(response["Buckets"]) == 1

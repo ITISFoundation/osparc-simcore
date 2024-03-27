@@ -20,6 +20,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from settings_library.s3 import S3Settings
 from simcore_service_storage.dsm import get_dsm_provider
+from simcore_service_storage.exceptions import S3ReadTimeoutError
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 from . import sts
@@ -32,7 +33,7 @@ from .models import (
     StorageQueryParamsBase,
 )
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 routes = RouteTableDef()
 
@@ -42,7 +43,7 @@ async def get_or_create_temporary_s3_access(request: web.Request) -> web.Respons
     # NOTE: the name of the method is not accurate, these are not temporary at all
     # it returns the credentials of the s3 backend!
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
-    log.debug(
+    _logger.debug(
         "received call to get_or_create_temporary_s3_access with %s",
         f"{query_params=}",
     )
@@ -63,24 +64,30 @@ async def _copy_folders_from_project(
         SimcoreS3DataManager,
         get_dsm_provider(app).get(SimcoreS3DataManager.get_location_id()),
     )
-    await dsm.deep_copy_project_simcore_s3(
-        query_params.user_id,
-        body.source,
-        body.destination,
-        body.nodes_map,
-        task_progress=task_progress,
-    )
+    try:
+        await dsm.deep_copy_project_simcore_s3(
+            query_params.user_id,
+            body.source,
+            body.destination,
+            body.nodes_map,
+            task_progress=task_progress,
+        )
 
-    raise web.HTTPCreated(
-        text=json.dumps(body.destination), content_type=MIMETYPE_APPLICATION_JSON
-    )
+        raise web.HTTPCreated(
+            text=json.dumps(body.destination), content_type=MIMETYPE_APPLICATION_JSON
+        )
+
+    except S3ReadTimeoutError as err:
+        msg = f"Copy {body.source} -> {body.destination} timeout"
+        _logger.warning(msg, exc_info=err)
+        raise web.HTTPGatewayTimeout(reason=msg) from err
 
 
 @routes.post(f"/{api_vtag}/simcore-s3/folders", name="copy_folders_from_project")
 async def copy_folders_from_project(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     body = await parse_request_body_as(FoldersBody, request)
-    log.debug(
+    _logger.debug(
         "received call to create_folders_from_project with %s",
         f"{body=}, {query_params=}",
     )
@@ -100,7 +107,7 @@ async def copy_folders_from_project(request: web.Request) -> web.Response:
 async def delete_folders_of_project(request: web.Request) -> NoReturn:
     query_params = parse_request_query_parameters_as(DeleteFolderQueryParams, request)
     path_params = parse_request_path_parameters_as(SimcoreS3FoldersParams, request)
-    log.debug(
+    _logger.debug(
         "received call to delete_folders_of_project with %s",
         f"{path_params=}, {query_params=}",
     )
@@ -121,7 +128,7 @@ async def delete_folders_of_project(request: web.Request) -> NoReturn:
 @routes.post(f"/{api_vtag}/simcore-s3/files/metadata:search", name="search_files")
 async def search_files(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(SearchFilesQueryParams, request)
-    log.debug(
+    _logger.debug(
         "received call to search_files with %s",
         f"{query_params=}",
     )
@@ -145,7 +152,7 @@ async def search_files(request: web.Request) -> web.Response:
         )
     else:
         raise ValueError(f"The query param {query_params.access_right=} is unexpected")
-    log.debug(
+    _logger.debug(
         "Found %d files starting with '%s'",
         len(data),
         f"{query_params.startswith=}, {query_params.sha256_checksum=}",
