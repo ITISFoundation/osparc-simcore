@@ -42,7 +42,10 @@ qx.Class.define("osparc.admin.PricingPlans", {
             decorator: "no-border",
             spacing: 3
           });
-          control.addListener("changeSelection", e => console.log(e.getData()), this);
+          control.addListener("changeSelection", e => {
+            const ppSelected = e.getData()[0].getModel();
+            console.log(ppSelected);
+          }, this);
           this.getChildControl("pricing-plans-container").add(control);
           break;
         case "create-pricing-plan":

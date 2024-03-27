@@ -50,7 +50,7 @@ qx.Class.define("osparc.admin.Maintenance", {
       vBox.removeAll();
 
       if (data) {
-        const respLabel = new qx.ui.basic.Label(this.tr("Start and End dates go UTC time zone"));
+        const respLabel = new qx.ui.basic.Label(this.tr("Start and End dates go in UTC time zone"));
         vBox.add(respLabel);
 
         const invitationRespViewer = new osparc.ui.basic.JsonTreeWidget(data, "maintenance-data");
