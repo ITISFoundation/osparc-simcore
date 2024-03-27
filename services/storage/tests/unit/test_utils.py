@@ -7,8 +7,8 @@
 
 import datetime
 import random
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 from uuid import uuid4
 
 import pytest

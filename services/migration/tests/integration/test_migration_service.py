@@ -8,5 +8,4 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-def test_migration_service_runs_correctly(docker_stack: dict):
-    ...
+def test_migration_service_runs_correctly(docker_stack: dict): ...

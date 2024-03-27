@@ -43,7 +43,6 @@ Taken from https://medium.com/polarsquad/how-should-i-answer-a-health-check-aa1f
 Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
 """
 
-
 import asyncio
 import inspect
 from collections.abc import Awaitable, Callable

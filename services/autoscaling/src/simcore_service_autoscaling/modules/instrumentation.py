@@ -127,8 +127,7 @@ def setup(app: FastAPI) -> None:
             registry=instrumentator.registry, subsystem=metrics_subsystem
         )
 
-    async def on_shutdown() -> None:
-        ...
+    async def on_shutdown() -> None: ...
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)

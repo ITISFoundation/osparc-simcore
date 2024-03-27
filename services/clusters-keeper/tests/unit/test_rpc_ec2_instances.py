@@ -25,8 +25,7 @@ def _base_configuration(
     mocked_redis_server: None,
     mocked_ec2_server_envs: EnvVarsDict,
     initialized_app: FastAPI,
-) -> None:
-    ...
+) -> None: ...
 
 
 async def test_get_instance_type_details_all_options(

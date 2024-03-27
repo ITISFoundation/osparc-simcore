@@ -567,9 +567,11 @@ def respx_mock_from_capture() -> (
             side_effects.append(
                 CaptureSideEffect(
                     capture=capture,
-                    side_effect=side_effects_callbacks[ii]
-                    if len(side_effects_callbacks)
-                    else None,
+                    side_effect=(
+                        side_effects_callbacks[ii]
+                        if len(side_effects_callbacks)
+                        else None
+                    ),
                 )
             )
             for param in url_path.path_parameters:

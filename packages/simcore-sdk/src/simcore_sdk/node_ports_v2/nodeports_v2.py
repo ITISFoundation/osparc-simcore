@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from models_library.api_schemas_storage import LinkType
 from models_library.projects import ProjectIDStr

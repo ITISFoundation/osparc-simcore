@@ -10,8 +10,7 @@ from .models.user_preferences import (
 )
 
 
-class CouldNotCreateOrUpdateUserPreferenceError(Exception):
-    ...
+class CouldNotCreateOrUpdateUserPreferenceError(Exception): ...
 
 
 class BasePreferencesRepo:

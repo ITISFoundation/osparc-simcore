@@ -76,8 +76,7 @@ def minimal_configuration(
     disabled_rabbitmq: None,
     disable_dynamic_service_background_task: None,
     mocked_redis_server: None,
-) -> None:
-    ...
+) -> None: ...
 
 
 @pytest.fixture
@@ -486,11 +485,11 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         available=with_drain_nodes_labelled,
     )
     # update our fake node
-    fake_attached_node.Spec.Labels[
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = mock_docker_tag_node.call_args_list[0][1]["tags"][
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ]
+    fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+        mock_docker_tag_node.call_args_list[0][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    )
     # check the activate time is later than attach time
     assert arrow.get(
         mock_docker_tag_node.call_args_list[1][1]["tags"][
@@ -515,11 +514,11 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         available=True,
     )
     # update our fake node
-    fake_attached_node.Spec.Labels[
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = mock_docker_tag_node.call_args_list[1][1]["tags"][
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ]
+    fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+        mock_docker_tag_node.call_args_list[1][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    )
     mock_docker_tag_node.reset_mock()
     mock_docker_set_node_availability.assert_not_called()
     mock_rabbitmq_post_message.assert_called_once()
@@ -623,9 +622,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # we artifically set the node to drain
     fake_attached_node.Spec.Availability = Availability.drain
     fake_attached_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
-    fake_attached_node.Spec.Labels[
-        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+        datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    )
 
     # the node will be not be terminated before the timeout triggers
     assert app_settings.AUTOSCALING_EC2_INSTANCES

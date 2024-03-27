@@ -1,6 +1,6 @@
 import logging
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable
 
 from fastapi import APIRouter, Depends
 from models_library.app_diagnostics import AppStatusCheck

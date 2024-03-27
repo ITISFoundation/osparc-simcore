@@ -1,4 +1,5 @@
 """Defines the different exceptions that may arise in the catalog subpackage"""
+
 from ..errors import WebServerBaseError
 
 

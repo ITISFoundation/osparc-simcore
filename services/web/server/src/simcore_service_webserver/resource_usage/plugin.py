@@ -1,6 +1,7 @@
 """ Resource tracking service
 
 """
+
 import logging
 
 from aiohttp import web

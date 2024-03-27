@@ -1,5 +1,6 @@
 """ resource_tracker_service_runs table
 """
+
 import enum
 
 import sqlalchemy as sa

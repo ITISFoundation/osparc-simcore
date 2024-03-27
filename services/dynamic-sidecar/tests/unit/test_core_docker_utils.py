@@ -97,10 +97,10 @@ async def test__get_containers_inspect_from_names(
     started_services: None, container_names: list[str], faker: Faker
 ):
     MISSING_CONTAINER_NAME = f"missing-container-{faker.uuid4()}"
-    container_details: dict[
-        str, DockerContainer | None
-    ] = await _get_containers_inspect_from_names(
-        [*container_names, MISSING_CONTAINER_NAME]
+    container_details: dict[str, DockerContainer | None] = (
+        await _get_containers_inspect_from_names(
+            [*container_names, MISSING_CONTAINER_NAME]
+        )
     )
     # containers which do not exist always return None
     assert MISSING_CONTAINER_NAME in container_details

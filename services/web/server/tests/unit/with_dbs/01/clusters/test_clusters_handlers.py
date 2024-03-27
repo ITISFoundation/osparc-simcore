@@ -124,9 +124,9 @@ async def test_create_cluster(
     )
     data, error = await assert_status(
         rsp,
-        expected.forbidden
-        if user_role == UserRole.USER
-        else expected.created,  # only accessible for TESTER
+        (
+            expected.forbidden if user_role == UserRole.USER else expected.created
+        ),  # only accessible for TESTER
     )
     if error:
         # we are done here

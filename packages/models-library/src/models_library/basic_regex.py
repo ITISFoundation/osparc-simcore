@@ -4,6 +4,7 @@
 
     SEE tests_basic_regex.py for examples
 """
+
 # TODO: for every pattern we should have a formatter function
 # NOTE: some sites to manualy check ideas
 #   https://regex101.com/

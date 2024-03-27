@@ -1,6 +1,7 @@
 """ Access to data resources installed with this package
 
 """
+
 from servicelib.resources import DataResourcesFacade
 
 storage_resources = DataResourcesFacade(

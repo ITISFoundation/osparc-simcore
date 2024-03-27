@@ -1,4 +1,5 @@
 import datetime
+from collections.abc import Callable
 
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
@@ -6,7 +7,7 @@ import datetime
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 from uuid import UUID
 
 import httpx

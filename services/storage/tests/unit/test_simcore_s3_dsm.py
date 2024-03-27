@@ -29,8 +29,7 @@ def file_size() -> ByteSize:
 
 @pytest.fixture
 def mock_copy_transfer_cb() -> Callable[[int], None]:
-    def copy_transfer_cb(copied_bytes: int) -> None:
-        ...
+    def copy_transfer_cb(copied_bytes: int) -> None: ...
 
     return copy_transfer_cb
 

@@ -8,7 +8,6 @@ At every request to this service API, a middleware discovers which product is th
 
 """
 
-
 import logging
 
 from aiohttp import web

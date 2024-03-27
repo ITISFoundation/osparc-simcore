@@ -1,6 +1,7 @@
 """
     api app module
 """
+
 from botocore.exceptions import ClientError
 from fastapi import APIRouter, FastAPI
 from fastapi.exceptions import HTTPException, RequestValidationError

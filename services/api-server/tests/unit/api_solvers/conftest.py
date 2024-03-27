@@ -3,10 +3,10 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import Callable
+from collections.abc import AsyncIterable, Callable
 from copy import deepcopy
 from datetime import datetime, timedelta
-from typing import Any, AsyncIterable, Final
+from typing import Any, Final
 
 import httpx
 import pytest

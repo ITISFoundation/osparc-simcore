@@ -50,9 +50,11 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
             interval=app_settings.AUTOSCALING_POLL_INTERVAL,
             task_name=_TASK_NAME,
             app=app,
-            auto_scaling_mode=DynamicAutoscaling()
-            if app_settings.AUTOSCALING_NODES_MONITORING is not None
-            else ComputationalAutoscaling(),
+            auto_scaling_mode=(
+                DynamicAutoscaling()
+                if app_settings.AUTOSCALING_NODES_MONITORING is not None
+                else ComputationalAutoscaling()
+            ),
         )
 
     return _startup

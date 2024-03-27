@@ -1,7 +1,6 @@
 import tempfile
 import threading
 from pathlib import Path
-from typing import Optional
 
 from models_library.projects_nodes_io import SimcoreS3FileID
 
@@ -11,7 +10,7 @@ def create_simcore_file_id(
     project_id: str,
     node_id: str,
     *,
-    file_base_path: Optional[Path] = None,
+    file_base_path: Path | None = None,
 ) -> SimcoreS3FileID:
     s3_file_name = file_path.name
     if file_base_path:

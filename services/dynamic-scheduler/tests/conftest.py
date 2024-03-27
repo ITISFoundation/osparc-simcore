@@ -2,8 +2,8 @@
 # pylint:disable=unused-argument
 
 import re
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
 
 import pytest
 import simcore_service_dynamic_scheduler

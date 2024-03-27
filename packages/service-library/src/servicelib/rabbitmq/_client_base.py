@@ -70,5 +70,4 @@ class RabbitMQClientBase:
         return False
 
     @abstractmethod
-    async def close(self) -> None:
-        ...
+    async def close(self) -> None: ...

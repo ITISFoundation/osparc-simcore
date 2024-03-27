@@ -37,8 +37,7 @@ router = APIRouter(
     response_model=Envelope[PricingUnitGet | None],
     summary="Get currently connected pricing unit to the project node.",
 )
-async def get_project_node_pricing_unit(project_id: ProjectID, node_id: NodeID):
-    ...
+async def get_project_node_pricing_unit(project_id: ProjectID, node_id: NodeID): ...
 
 
 assert_handler_signature_against_model(get_project_node_pricing_unit, NodePathParams)
@@ -54,8 +53,7 @@ async def connect_pricing_unit_to_project_node(
     node_id: NodeID,
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(

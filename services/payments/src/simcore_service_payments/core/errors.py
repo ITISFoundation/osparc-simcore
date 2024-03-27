@@ -13,8 +13,7 @@ class _BaseAppError(PydanticErrorMixin, ValueError):
 #
 
 
-class PaymentsGatewayError(_BaseAppError):
-    ...
+class PaymentsGatewayError(_BaseAppError): ...
 
 
 class PaymentsGatewayNotReadyError(PaymentsGatewayError):

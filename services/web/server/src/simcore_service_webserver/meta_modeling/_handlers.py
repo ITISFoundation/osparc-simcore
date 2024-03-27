@@ -1,6 +1,7 @@
 """ web-api handler functions added by the meta app's module
 
 """
+
 import logging
 from collections.abc import Callable
 from typing import NamedTuple

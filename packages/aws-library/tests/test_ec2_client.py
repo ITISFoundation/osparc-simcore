@@ -49,8 +49,7 @@ async def simcore_ec2_api(
     await ec2.close()
 
 
-async def test_ec2_client_lifespan(simcore_ec2_api: SimcoreEC2API):
-    ...
+async def test_ec2_client_lifespan(simcore_ec2_api: SimcoreEC2API): ...
 
 
 async def test_aiobotocore_ec2_client_when_ec2_server_goes_up_and_down(
@@ -104,12 +103,12 @@ async def test_get_ec2_instance_capabilities(
     simcore_ec2_api: SimcoreEC2API,
     ec2_allowed_instances: list[InstanceTypeType],
 ):
-    instance_types: list[
-        EC2InstanceType
-    ] = await simcore_ec2_api.get_ec2_instance_capabilities(
-        cast(
-            set[InstanceTypeType],
-            set(ec2_allowed_instances),
+    instance_types: list[EC2InstanceType] = (
+        await simcore_ec2_api.get_ec2_instance_capabilities(
+            cast(
+                set[InstanceTypeType],
+                set(ec2_allowed_instances),
+            )
         )
     )
     assert instance_types
@@ -144,9 +143,9 @@ async def fake_ec2_instance_type(
     request: pytest.FixtureRequest,
 ) -> EC2InstanceType:
     instance_type_name: InstanceTypeType = request.param
-    instance_types: list[
-        EC2InstanceType
-    ] = await simcore_ec2_api.get_ec2_instance_capabilities({instance_type_name})
+    instance_types: list[EC2InstanceType] = (
+        await simcore_ec2_api.get_ec2_instance_capabilities({instance_type_name})
+    )
 
     assert len(instance_types) == 1
     return instance_types[0]

@@ -53,9 +53,9 @@ def _create_fake_outputs(
             a_file.write_text(faker.text(max_nb_chars=450))
             assert a_file.exists()
         else:
-            jsonable_data[
-                key
-            ] = "some value just for testing, does not represent any kind of type"
+            jsonable_data[key] = (
+                "some value just for testing, does not represent any kind of type"
+            )
     if jsonable_data:
         output_file = output_folder / faker.file_name()
         with output_file.open("wt") as fp:

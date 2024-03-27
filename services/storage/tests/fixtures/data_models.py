@@ -3,8 +3,9 @@
 # pylint:disable=redefined-outer-name
 
 
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import pytest
 import sqlalchemy as sa

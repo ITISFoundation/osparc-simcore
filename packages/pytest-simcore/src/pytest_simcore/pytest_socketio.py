@@ -20,9 +20,9 @@ from yarl import URL
 
 
 @pytest.fixture
-async def socketio_server_factory() -> Callable[
-    [RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]
-]:
+async def socketio_server_factory() -> (
+    Callable[[RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]]
+):
     @asynccontextmanager
     async def _(rabbit_settings: RabbitSettings) -> AsyncIterator[AsyncServer]:
         # Same configuration as simcore_service_webserver/socketio/server.py

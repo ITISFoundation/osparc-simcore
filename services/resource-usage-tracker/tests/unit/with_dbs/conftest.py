@@ -3,10 +3,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import AsyncIterable, Callable
+from collections.abc import AsyncIterable, Awaitable, Callable
 from datetime import datetime, timezone
 from random import choice
-from typing import Any, Awaitable
+from typing import Any
 
 import httpx
 import pytest

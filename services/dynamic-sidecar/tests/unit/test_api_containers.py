@@ -6,10 +6,10 @@
 import asyncio
 import json
 import random
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, AsyncIterator
 from inspect import signature
 from pathlib import Path
-from typing import Any, AsyncIterator, Final
+from typing import Any, Final
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
@@ -736,9 +736,9 @@ def define_inactivity_command(
 @pytest.fixture
 def mock_shared_store(app: FastAPI) -> None:
     shared_store: SharedStore = app.state.shared_store
-    shared_store.original_to_container_names[
+    shared_store.original_to_container_names["mock_container_name"] = (
         "mock_container_name"
-    ] = "mock_container_name"
+    )
 
 
 async def test_containers_activity_command_failed(

@@ -8,7 +8,7 @@ import random
 from collections import deque
 from dataclasses import dataclass
 from time import time
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -201,7 +201,7 @@ async def test_nested_object_attribute(
 
     @run_sequentially_in_context(target_args=["object_with_props.attr1"])
     async def test_attribute(
-        object_with_props: ObjectWithPropos, other_attr: Optional[int] = None
+        object_with_props: ObjectWithPropos, other_attr: int | None = None
     ) -> str:
         return object_with_props.attr1
 

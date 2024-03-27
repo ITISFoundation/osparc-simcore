@@ -3,6 +3,7 @@
     - Collects all table's schemas
     - Metadata object needed to explicitly define table schemas
 """
+
 import sqlalchemy.orm
 
 #  DO NOT inheriting from _base. Use instead explicit table definitions

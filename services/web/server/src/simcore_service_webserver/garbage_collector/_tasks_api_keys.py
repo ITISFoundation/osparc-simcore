@@ -2,6 +2,7 @@
     Scheduled task that periodically runs prune in the garbage collector service
 
 """
+
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Callable

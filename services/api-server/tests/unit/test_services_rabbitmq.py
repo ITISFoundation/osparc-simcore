@@ -7,10 +7,10 @@
 import asyncio
 import logging
 import random
-from collections.abc import AsyncIterable, Callable
+from collections.abc import AsyncIterable, Callable, Iterable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import Final, Iterable
+from typing import Final
 from unittest.mock import AsyncMock
 
 import httpx

@@ -2,7 +2,8 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from typing import AsyncIterable, Final
+from collections.abc import AsyncIterable
+from typing import Final
 
 import pytest
 from asgi_lifespan import LifespanManager

@@ -3,8 +3,9 @@
 # pylint:disable=redefined-outer-name
 
 import json
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable
+from typing import Any
 from uuid import uuid4
 
 import faker

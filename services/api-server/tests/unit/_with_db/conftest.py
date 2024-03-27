@@ -8,9 +8,8 @@ import os
 import shutil
 import subprocess
 import sys
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from pathlib import Path
-from typing import AsyncGenerator
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine

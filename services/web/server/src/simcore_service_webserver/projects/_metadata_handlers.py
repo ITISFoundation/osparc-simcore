@@ -10,7 +10,6 @@ Design rationale:
 	- Get and Update methods only
 """
 
-
 import functools
 
 from aiohttp import web

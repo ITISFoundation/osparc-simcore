@@ -101,9 +101,9 @@ def start_long_running_task() -> Callable[[FastAPI, AsyncClient], Awaitable[Task
 
 
 @pytest.fixture
-def wait_for_task() -> Callable[
-    [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
-]:
+def wait_for_task() -> (
+    Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]]
+):
     async def _waiter(
         app: FastAPI,
         client: AsyncClient,

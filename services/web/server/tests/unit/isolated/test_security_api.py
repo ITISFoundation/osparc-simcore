@@ -69,9 +69,9 @@ async def _forget_product_name(request: web.Request) -> ProductName | None:
 
 
 @pytest.fixture
-def set_products_in_app_state() -> Callable[
-    [web.Application, OrderedDict[str, Product]], None
-]:
+def set_products_in_app_state() -> (
+    Callable[[web.Application, OrderedDict[str, Product]], None]
+):
     """
     Add products in app's state to avoid setting up a full database in tests
 

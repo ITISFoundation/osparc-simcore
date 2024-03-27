@@ -2,6 +2,7 @@
 
 
 """
+
 from enum import Enum, auto
 
 from pydantic import parse_obj_as

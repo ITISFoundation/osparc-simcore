@@ -273,9 +273,11 @@ async def test_group_creation_workflow(
     resp = await client.get(f"{url}")
     data, error = await assert_status(
         resp,
-        expected.not_found
-        if user_role != UserRole.GUEST
-        else status.HTTP_404_NOT_FOUND,
+        (
+            expected.not_found
+            if user_role != UserRole.GUEST
+            else status.HTTP_404_NOT_FOUND
+        ),
     )
 
 

@@ -5,7 +5,6 @@ For twilio SMS services:
     SEE https://support.twilio.com/hc/en-us/articles/223136027-Auth-Tokens-and-How-to-Change-Them
 """
 
-
 import re
 from re import Pattern
 

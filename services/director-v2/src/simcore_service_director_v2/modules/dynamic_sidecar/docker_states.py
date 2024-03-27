@@ -1,6 +1,7 @@
 """
 States from Docker Tasks and docker Containers are mapped to ServiceState.
 """
+
 import logging
 
 from models_library.generated_models.docker_rest_api import ContainerState

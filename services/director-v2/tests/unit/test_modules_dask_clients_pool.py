@@ -3,8 +3,9 @@
 # pylint:disable=redefined-outer-name
 
 
+from collections.abc import AsyncIterator, Callable
 from random import choice
-from typing import Any, AsyncIterator, Callable, get_args
+from typing import Any, get_args
 from unittest import mock
 
 import pytest

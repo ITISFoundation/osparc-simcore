@@ -5,6 +5,7 @@
     - Activates middlewares
 
 """
+
 import logging
 
 from aiohttp import web

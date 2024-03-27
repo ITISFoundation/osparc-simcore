@@ -13,14 +13,12 @@ _FINAL_VALUE: Final[float] = 1.0
 
 @runtime_checkable
 class AsyncReportCB(Protocol):
-    async def __call__(self, progress_value: float) -> None:
-        ...
+    async def __call__(self, progress_value: float) -> None: ...
 
 
 @runtime_checkable
 class ReportCB(Protocol):
-    def __call__(self, progress_value: float) -> None:
-        ...
+    def __call__(self, progress_value: float) -> None: ...
 
 
 def _normalize_weights(steps: int, weights: list[float]) -> list[float]:

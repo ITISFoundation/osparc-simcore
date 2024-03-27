@@ -213,14 +213,14 @@ async def sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     ec2_client = get_ec2_client(app)
 
     # some instances might be able to run several tasks
-    allowed_instance_types: list[
-        EC2InstanceType
-    ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(  # type: ignore
-            set[InstanceTypeType],
-            set(
-                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
-            ),
+    allowed_instance_types: list[EC2InstanceType] = (
+        await ec2_client.get_ec2_instance_capabilities(
+            cast(  # type: ignore
+                set[InstanceTypeType],
+                set(
+                    app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
+                ),
+            )
         )
     )
 

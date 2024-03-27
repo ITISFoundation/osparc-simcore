@@ -93,8 +93,7 @@ def minimal_configuration(
     dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
     simcore_services_ready: None,
     ensure_swarm_and_networks: None,
-):
-    ...
+): ...
 
 
 @pytest.fixture

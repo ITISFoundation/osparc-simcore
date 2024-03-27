@@ -209,9 +209,9 @@ class ClustersRepository(BaseRepository):
                         updated_cluster.owner: CLUSTER_ADMIN_RIGHTS
                     }
                 else:
-                    updated_cluster.access_rights[
-                        updated_cluster.owner
-                    ] = CLUSTER_ADMIN_RIGHTS
+                    updated_cluster.access_rights[updated_cluster.owner] = (
+                        CLUSTER_ADMIN_RIGHTS
+                    )
 
             # resolve access rights changes
             resolved_access_rights = the_cluster.access_rights

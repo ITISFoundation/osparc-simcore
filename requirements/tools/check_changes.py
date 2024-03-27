@@ -166,9 +166,11 @@ def main_changes_stats() -> None:
                 f'{",".join(to_versions) if to_versions else "🗑️ removed":10s}',
                 "|",
                 # how big the version change is
-                f"{tag_upgrade(sorted(set(before[name]))[-1], sorted(set(after[name]))[-1]):10s}"
-                if to_versions
-                else "",
+                (
+                    f"{tag_upgrade(sorted(set(before[name]))[-1], sorted(set(after[name]))[-1]):10s}"
+                    if to_versions
+                    else ""
+                ),
                 "|",
                 counts[name],
                 "|",

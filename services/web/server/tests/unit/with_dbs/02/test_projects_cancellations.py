@@ -4,7 +4,8 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -49,8 +50,7 @@ async def slow_storage_subsystem_mock(
     async def _very_slow_copy_of_data(*args):
         await asyncio.sleep(30)
 
-        async def _mock_result():
-            ...
+        async def _mock_result(): ...
 
         yield LRTask(progress=TaskProgress(), _result=_mock_result())
 

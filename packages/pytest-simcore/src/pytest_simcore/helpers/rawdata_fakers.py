@@ -10,7 +10,6 @@
     required fields in postgres_database.models tables or pydantic models.
 """
 
-
 import itertools
 import json
 import random

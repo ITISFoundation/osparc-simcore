@@ -1,7 +1,8 @@
 import inspect
+from collections.abc import Awaitable, Callable
 from functools import wraps
 from types import ModuleType
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from aiohttp import web
 from socketio import AsyncServer

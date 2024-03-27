@@ -2,8 +2,9 @@
 # pylint: disable=redefined-outer-name
 
 import asyncio
+from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import aiodocker
 import pytest

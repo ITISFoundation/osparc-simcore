@@ -37,9 +37,9 @@ _DEFAULT_RESOURCES: Final[ResourcesDict] = parse_obj_as(
     },
 )
 
-_DEFAULT_SERVICE_SPECIFICATIONS: Final[
-    ServiceSpecifications
-] = ServiceSpecifications.parse_obj({})
+_DEFAULT_SERVICE_SPECIFICATIONS: Final[ServiceSpecifications] = (
+    ServiceSpecifications.parse_obj({})
+)
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):

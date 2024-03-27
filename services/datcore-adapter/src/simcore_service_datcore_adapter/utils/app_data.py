@@ -1,6 +1,7 @@
 """
     AppData refers to instances of dataclasses stored in the FastApi application
 """
+
 from dataclasses import dataclass
 from typing import ClassVar
 

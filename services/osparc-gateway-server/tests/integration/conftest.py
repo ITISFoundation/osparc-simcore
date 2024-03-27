@@ -4,7 +4,8 @@
 
 import asyncio
 import json
-from typing import Any, AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import aiodocker
 import dask_gateway

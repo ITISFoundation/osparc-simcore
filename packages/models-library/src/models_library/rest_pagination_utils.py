@@ -16,16 +16,14 @@ from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
 @runtime_checkable
 class _YarlURL(Protocol):
-    def update_query(self, query) -> "_YarlURL":
-        ...
+    def update_query(self, query) -> "_YarlURL": ...
 
 
 class _StarletteURL(Protocol):
     # SEE starlette.data_structures.URL
     #  in https://github.com/encode/starlette/blob/master/starlette/datastructures.py#L130
 
-    def replace_query_params(self, **kwargs: Any) -> "_StarletteURL":
-        ...
+    def replace_query_params(self, **kwargs: Any) -> "_StarletteURL": ...
 
 
 _URLType = Union[_YarlURL, _StarletteURL]
@@ -80,23 +78,30 @@ def paginate_data(
             first=parse_obj_as(
                 AnyHttpUrl, _replace_query(request_url, {"offset": 0, "limit": limit})
             ),
-            prev=parse_obj_as(
-                AnyHttpUrl,
-                _replace_query(
-                    request_url, {"offset": max(offset - limit, 0), "limit": limit}
-                ),
-            )
-            if offset > 0
-            else None,
-            next=parse_obj_as(
-                AnyHttpUrl,
-                _replace_query(
-                    request_url,
-                    {"offset": min(offset + limit, last_page * limit), "limit": limit},
-                ),
-            )
-            if offset < (last_page * limit)
-            else None,
+            prev=(
+                parse_obj_as(
+                    AnyHttpUrl,
+                    _replace_query(
+                        request_url, {"offset": max(offset - limit, 0), "limit": limit}
+                    ),
+                )
+                if offset > 0
+                else None
+            ),
+            next=(
+                parse_obj_as(
+                    AnyHttpUrl,
+                    _replace_query(
+                        request_url,
+                        {
+                            "offset": min(offset + limit, last_page * limit),
+                            "limit": limit,
+                        },
+                    ),
+                )
+                if offset < (last_page * limit)
+                else None
+            ),
             last=parse_obj_as(
                 AnyHttpUrl,
                 _replace_query(

@@ -3,6 +3,7 @@
     - httpx-based clients are used to communicate with other backend services
     - any exception raised by a httpx client will be handled here.
 """
+
 import logging
 from typing import Any
 

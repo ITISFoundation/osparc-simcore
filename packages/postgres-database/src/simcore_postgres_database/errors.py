@@ -17,6 +17,7 @@
         SEE http://initd.org/psycopg/docs/module.html#dbapi-exceptions
         SEE https://www.postgresql.org/docs/current/errcodes-appendix.html
 """
+
 # NOTE: psycopg2.errors are created dynamically
 # pylint: disable=no-name-in-module
 from psycopg2 import DatabaseError, DataError

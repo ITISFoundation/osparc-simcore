@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from models_library.projects_nodes import UnitStr
 from models_library.utils.json_schema import (
@@ -11,7 +11,7 @@ from models_library.utils.json_schema import (
 from pint import PintError, UnitRegistry
 from pydantic.errors import PydanticValueError
 
-JsonSchemaDict = Dict[str, Any]
+JsonSchemaDict = dict[str, Any]
 
 log = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ def _validate_port_value(value, content_schema: JsonSchemaDict):
 
 def _validate_port_unit(
     value, unit, content_schema: JsonSchemaDict, *, ureg: UnitRegistry
-) -> Tuple[Any, Optional[UnitStr]]:
+) -> tuple[Any, UnitStr | None]:
     """
     - Checks valid 'value' against content_schema
     - Converts 'value' with 'unit' to unit expected in content_schema
@@ -101,7 +101,7 @@ def _validate_port_unit(
 def validate_port_content(
     port_key,
     value: Any,
-    unit: Optional[UnitStr],
+    unit: UnitStr | None,
     content_schema: JsonSchemaDict,
 ):
     """A port content is all datasets injected to a given port. Currently only

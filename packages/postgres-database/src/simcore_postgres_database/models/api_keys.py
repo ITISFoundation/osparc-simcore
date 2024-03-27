@@ -10,6 +10,7 @@ These keys grant the client authorization to the API resources
  +--------+                                +---------------+
 
 """
+
 import sqlalchemy as sa
 from sqlalchemy.sql import func
 

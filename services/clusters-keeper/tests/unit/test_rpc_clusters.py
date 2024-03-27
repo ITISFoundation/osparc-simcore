@@ -50,8 +50,7 @@ def _base_configuration(
     mocked_primary_ec2_instances_envs: EnvVarsDict,
     initialized_app: FastAPI,
     ensure_run_in_sequence_context_is_empty: None,
-) -> None:
-    ...
+) -> None: ...
 
 
 async def _assert_cluster_instance_created(ec2_client: EC2Client) -> None:

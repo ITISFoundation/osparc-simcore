@@ -2,7 +2,8 @@
 # pylint: disable=redefined-outer-name
 
 import asyncio
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import pytest
 from _dask_helpers import DaskGatewayServer

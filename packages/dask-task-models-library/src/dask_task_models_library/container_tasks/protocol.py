@@ -104,5 +104,4 @@ class ContainerRemoteFct(Protocol):
         docker_auth: DockerBasicAuth,
         log_file_url: LogFileUploadURL,
         s3_settings: S3Settings | None,
-    ) -> TaskOutputData:
-        ...
+    ) -> TaskOutputData: ...

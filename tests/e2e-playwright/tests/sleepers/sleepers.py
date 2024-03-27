@@ -31,9 +31,9 @@ _WAITING_FOR_PIPELINE_TO_CHANGE_STATE: Final[int] = 1 * MINUTE
 _WAITING_FOR_CLUSTER_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_STARTED_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER: Final[int] = 1 * MINUTE
-_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[
-    datetime.timedelta
-] = datetime.timedelta(seconds=30)
+_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[datetime.timedelta] = (
+    datetime.timedelta(seconds=30)
+)
 _WAITING_FOR_FILE_NAMES_WAIT_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
     seconds=1
 )

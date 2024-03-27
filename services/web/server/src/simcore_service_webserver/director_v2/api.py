@@ -3,7 +3,6 @@
 PLEASE avoid importing from any other module to access this plugin's functionality
 """
 
-
 from ._abc import (
     AbstractProjectRunPolicy,
     get_project_run_policy,

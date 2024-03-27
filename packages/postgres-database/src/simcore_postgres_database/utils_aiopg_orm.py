@@ -6,6 +6,7 @@
         - the new async sqlalchemy ORM https://docs.sqlalchemy.org/en/14/orm/
         - https://piccolo-orm.readthedocs.io/en/latest/index.html
 """
+
 # pylint: disable=no-value-for-parameter
 
 import functools

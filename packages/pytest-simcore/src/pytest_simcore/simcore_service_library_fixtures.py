@@ -1,4 +1,4 @@
-from typing import AsyncIterable
+from collections.abc import AsyncIterable
 
 import pytest
 from servicelib.async_utils import cancel_sequential_workers

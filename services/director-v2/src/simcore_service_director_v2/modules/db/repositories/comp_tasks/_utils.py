@@ -134,12 +134,12 @@ async def _get_node_infos(
             None,
         )
 
-    result: tuple[
-        ServiceDockerData, ServiceExtras, SimcoreServiceLabels
-    ] = await asyncio.gather(
-        _get_service_details(catalog_client, user_id, product_name, node),
-        director_client.get_service_extras(node.key, node.version),
-        director_client.get_service_labels(node),
+    result: tuple[ServiceDockerData, ServiceExtras, SimcoreServiceLabels] = (
+        await asyncio.gather(
+            _get_service_details(catalog_client, user_id, product_name, node),
+            director_client.get_service_extras(node.key, node.version),
+            director_client.get_service_labels(node),
+        )
     )
     return result
 
@@ -231,9 +231,9 @@ async def _get_pricing_and_hardware_infos(
     return pricing_info, hardware_info
 
 
-_RAM_SAFE_MARGIN_RATIO: Final[
-    float
-] = 0.1  # NOTE: machines always have less available RAM than advertised
+_RAM_SAFE_MARGIN_RATIO: Final[float] = (
+    0.1  # NOTE: machines always have less available RAM than advertised
+)
 _CPUS_SAFE_MARGIN: Final[float] = 0.1
 
 
@@ -251,11 +251,11 @@ async def _update_project_node_resources_from_hardware_info(
     if not hardware_info.aws_ec2_instances:
         return
     try:
-        unordered_list_ec2_instance_types: list[
-            EC2InstanceTypeGet
-        ] = await get_instance_type_details(
-            rabbitmq_rpc_client,
-            instance_type_names=set(hardware_info.aws_ec2_instances),
+        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = (
+            await get_instance_type_details(
+                rabbitmq_rpc_client,
+                instance_type_names=set(hardware_info.aws_ec2_instances),
+            )
         )
 
         assert unordered_list_ec2_instance_types  # nosec

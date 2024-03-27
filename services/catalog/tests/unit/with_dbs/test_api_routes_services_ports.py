@@ -4,7 +4,8 @@
 # pylint: disable=too-many-arguments
 
 import urllib.parse
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from pytest_mock.plugin import MockerFixture

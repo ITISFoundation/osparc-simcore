@@ -3,9 +3,11 @@ def create_service_out(**overrides):
 
     obj = {
         "name": "Fast Counter",
-        "key": "simcore/service/dynanic/itis/sim4life"
-        if overrides.get("type") == "dynamic"
-        else "simcore/services/comp/itis/sleeper",
+        "key": (
+            "simcore/service/dynanic/itis/sim4life"
+            if overrides.get("type") == "dynamic"
+            else "simcore/services/comp/itis/sleeper"
+        ),
         "version": "1.0.0",
         "integration-version": "1.0.0",
         "type": "computational",

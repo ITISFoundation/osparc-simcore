@@ -1,6 +1,5 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 import httpx
 from fastapi import FastAPI
@@ -64,7 +63,7 @@ def setup_client_instance(
         )
 
     async def _cleanup_instance() -> None:
-        api_obj: Optional[BaseServiceClientApi] = api_cls.pop_instance(app)
+        api_obj: BaseServiceClientApi | None = api_cls.pop_instance(app)
         if api_obj:
             await api_obj.client.aclose()
 

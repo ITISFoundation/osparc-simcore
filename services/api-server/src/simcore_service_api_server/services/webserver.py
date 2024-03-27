@@ -2,9 +2,10 @@
 
 import logging
 import urllib.parse
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Mapping
+from typing import Any
 from uuid import UUID
 
 from cryptography import fernet
@@ -58,8 +59,7 @@ from .service_exception_handling import (
 _logger = logging.getLogger(__name__)
 
 
-class WebServerValueError(PydanticErrorMixin, ValueError):
-    ...
+class WebServerValueError(PydanticErrorMixin, ValueError): ...
 
 
 class ProjectNotFoundError(WebServerValueError):

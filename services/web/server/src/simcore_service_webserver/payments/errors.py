@@ -19,8 +19,7 @@ __all__ = (
 )
 
 
-class PaymentsPluginError(WebServerBaseError, ValueError):
-    ...
+class PaymentsPluginError(WebServerBaseError, ValueError): ...
 
 
 class PaymentCompletedError(PaymentsPluginError):

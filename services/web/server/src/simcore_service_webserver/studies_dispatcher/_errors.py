@@ -1,8 +1,7 @@
 from ..errors import WebServerBaseError
 
 
-class StudyDispatcherError(WebServerBaseError, ValueError):
-    ...
+class StudyDispatcherError(WebServerBaseError, ValueError): ...
 
 
 class IncompatibleService(StudyDispatcherError):

@@ -1,6 +1,7 @@
 """ Current version of the simcore_service_webserver application and its API
 
 """
+
 from typing import Final
 
 from packaging.version import Version

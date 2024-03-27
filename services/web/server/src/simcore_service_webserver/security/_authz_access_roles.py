@@ -4,7 +4,6 @@
     The access model is created upon setting up of the security subsystem
 """
 
-
 from typing import TypedDict
 
 from simcore_postgres_database.models.users import UserRole

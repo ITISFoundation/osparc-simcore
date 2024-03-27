@@ -5,8 +5,8 @@
 
 
 import logging
+from collections.abc import Iterable
 from contextlib import suppress
-from typing import Iterable
 
 import aiohttp.test_utils
 import docker

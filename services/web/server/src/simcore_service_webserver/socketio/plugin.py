@@ -3,6 +3,7 @@
 
     SEE https://github.com/miguelgrinberg/python-socketio
 """
+
 import logging
 
 from aiohttp import web

@@ -1,8 +1,7 @@
 from ..errors import WebServerBaseError
 
 
-class WalletsValueError(WebServerBaseError, ValueError):
-    ...
+class WalletsValueError(WebServerBaseError, ValueError): ...
 
 
 class WalletNotFoundError(WalletsValueError):

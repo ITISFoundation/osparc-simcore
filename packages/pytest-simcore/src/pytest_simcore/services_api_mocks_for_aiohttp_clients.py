@@ -407,10 +407,8 @@ async def storage_v0_service_mock(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$"
     )
 
-    get_upload_link_pattern = (
-        get_download_link_pattern
-    ) = delete_file_pattern = re.compile(
-        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$"
+    get_upload_link_pattern = get_download_link_pattern = delete_file_pattern = (
+        re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$")
     )
 
     get_locations_link_pattern = re.compile(

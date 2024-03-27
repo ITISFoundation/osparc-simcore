@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from ipaddress import IPv4Address
-from typing import Any, Mapping, Union
+from typing import Any, Union
 
 from pydantic import BaseModel, ByteSize, Field, PositiveFloat, parse_obj_as
 

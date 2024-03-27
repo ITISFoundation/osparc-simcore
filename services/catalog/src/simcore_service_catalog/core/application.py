@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError

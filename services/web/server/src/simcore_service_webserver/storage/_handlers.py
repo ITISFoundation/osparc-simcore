@@ -2,6 +2,7 @@
 
     Mostly resolves and redirect to storage API
 """
+
 import logging
 from typing import Any, Final, NamedTuple
 

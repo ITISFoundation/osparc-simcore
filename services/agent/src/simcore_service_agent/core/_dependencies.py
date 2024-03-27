@@ -1,7 +1,6 @@
 """ Free functions to inject dependencies in routes handlers
 """
 
-
 from fastapi import Depends, FastAPI, Request
 
 from ..modules.task_monitor import TaskMonitor

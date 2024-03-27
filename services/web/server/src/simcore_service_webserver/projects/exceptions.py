@@ -1,4 +1,5 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
+
 from typing import Any
 
 import redis.exceptions
@@ -21,8 +22,7 @@ class BaseProjectError(WebServerBaseError):
         return f"{self.code}: {self}"
 
 
-class ProjectInvalidUsageError(BaseProjectError):
-    ...
+class ProjectInvalidUsageError(BaseProjectError): ...
 
 
 class ProjectInvalidRightsError(BaseProjectError):
@@ -98,20 +98,16 @@ class ProjectTooManyProjectOpenedError(BaseProjectError):
         self.max_num_projects = max_num_projects
 
 
-class PermalinkNotAllowedError(BaseProjectError):
-    ...
+class PermalinkNotAllowedError(BaseProjectError): ...
 
 
-class PermalinkFactoryError(BaseProjectError):
-    ...
+class PermalinkFactoryError(BaseProjectError): ...
 
 
-class ProjectNodeResourcesInvalidError(BaseProjectError):
-    ...
+class ProjectNodeResourcesInvalidError(BaseProjectError): ...
 
 
-class ProjectNodeResourcesInsufficientRightsError(BaseProjectError):
-    ...
+class ProjectNodeResourcesInsufficientRightsError(BaseProjectError): ...
 
 
 class DefaultPricingUnitNotFoundError(BaseProjectError):

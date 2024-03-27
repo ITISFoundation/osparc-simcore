@@ -2,6 +2,7 @@
 First a procedure is registered in postgres that gets triggered whenever the outputs
 of a record in comp_task table is changed.
 """
+
 import asyncio
 import json
 import logging

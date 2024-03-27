@@ -10,6 +10,7 @@
     SEE for underlying psycopg: http://initd.org/psycopg/docs/module.html
     SEE for extra keywords: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 """
+
 # TODO: Towards implementing https://github.com/ITISFoundation/osparc-simcore/issues/1195
 # TODO: deprecate this module. Move utils into retry_policies, simcore_postgres_database.utils_aiopg
 

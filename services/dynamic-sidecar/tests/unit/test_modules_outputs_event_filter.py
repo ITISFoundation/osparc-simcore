@@ -2,8 +2,8 @@
 # pylint:disable=unused-argument
 
 import asyncio
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
-from typing import AsyncIterator, Iterator
 from unittest.mock import AsyncMock
 
 import pytest

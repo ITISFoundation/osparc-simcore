@@ -43,8 +43,7 @@ class RemoveProjectServicesCallable(Protocol):
         *,
         notify_users: bool = True,
         user_name: FullNameDict | None = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 async def mark_project_as_deleted(

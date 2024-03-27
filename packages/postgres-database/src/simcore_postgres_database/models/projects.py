@@ -1,6 +1,7 @@
 """ Projects table
 
 """
+
 import enum
 
 import sqlalchemy as sa

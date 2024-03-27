@@ -1,6 +1,7 @@
 """ Subsystem to communicate with catalog service
 
 """
+
 import logging
 
 from aiohttp import web

@@ -1,6 +1,7 @@
 """ Utils that extends on security_api plugin
 
 """
+
 import logging
 from typing import Any
 

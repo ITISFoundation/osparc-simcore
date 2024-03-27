@@ -1,12 +1,10 @@
-from typing import Optional
-
 from pydantic import BaseModel, BaseSettings, Field, SecretStr
 
 
 class Registry(BaseModel):
     url_or_prefix: str
-    user: Optional[str] = None
-    password: Optional[SecretStr] = None
+    user: str | None = None
+    password: SecretStr | None = None
 
 
 # NOTE: image names w/o a prefix default in dockerhub registry

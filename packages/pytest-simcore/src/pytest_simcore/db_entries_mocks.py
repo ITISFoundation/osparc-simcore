@@ -3,7 +3,8 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-value-for-parameter
 
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any
 from uuid import uuid4
 
 import aiopg.sa

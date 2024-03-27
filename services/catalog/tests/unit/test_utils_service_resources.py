@@ -100,9 +100,7 @@ def test_parse_generic_resources(
             ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
             ResourcesDict(
                 {
-                    "CPU": ResourceValue(
-                        limit=350 / 10**9, reservation=350 / 10**9
-                    ),
+                    "CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9),
                     "RAM": ResourceValue(limit=123, reservation=123),
                 }
             ),
@@ -113,9 +111,7 @@ def test_parse_generic_resources(
             ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=350, MemoryBytes=123, Pids=43)))),  # type: ignore
             ResourcesDict(
                 {
-                    "CPU": ResourceValue(
-                        limit=350 / 10**9, reservation=350 / 10**9
-                    ),
+                    "CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9),
                     "RAM": ResourceValue(limit=123, reservation=123),
                 }
             ),
@@ -134,9 +130,7 @@ def test_parse_generic_resources(
             ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
             ResourcesDict(
                 {
-                    "CPU": ResourceValue(
-                        limit=350 / 10**9, reservation=350 / 10**9
-                    ),
+                    "CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9),
                     "RAM": ResourceValue(limit=123, reservation=123),
                 }
             ),
@@ -147,9 +141,7 @@ def test_parse_generic_resources(
             ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=150, MemoryBytes=23), Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
             ResourcesDict(
                 {
-                    "CPU": ResourceValue(
-                        limit=150 / 10**9, reservation=150 / 10**9
-                    ),
+                    "CPU": ResourceValue(limit=150 / 10**9, reservation=150 / 10**9),
                     "RAM": ResourceValue(limit=23, reservation=23),
                 }
             ),
@@ -160,9 +152,7 @@ def test_parse_generic_resources(
             ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=650, MemoryBytes=623), Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
             ResourcesDict(
                 {
-                    "CPU": ResourceValue(
-                        limit=650 / 10**9, reservation=350 / 10**9
-                    ),
+                    "CPU": ResourceValue(limit=650 / 10**9, reservation=350 / 10**9),
                     "RAM": ResourceValue(limit=623, reservation=123),
                 }
             ),

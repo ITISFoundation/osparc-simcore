@@ -158,9 +158,11 @@ class DaskScheduler(BaseCompScheduler):
             for dask_task_state, task in zip(tasks_statuses, tasks, strict=True):
                 if dask_task_state is DaskClientTaskState.PENDING_OR_STARTED:
                     running_states += [
-                        RunningState.STARTED
-                        if task.progress is not None
-                        else RunningState.PENDING
+                        (
+                            RunningState.STARTED
+                            if task.progress is not None
+                            else RunningState.PENDING
+                        )
                     ]
                 else:
                     running_states += [

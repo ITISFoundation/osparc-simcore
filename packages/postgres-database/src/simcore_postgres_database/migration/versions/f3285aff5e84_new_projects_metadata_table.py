@@ -5,6 +5,7 @@ Revises: 58b24613c3f7
 Create Date: 2023-07-05 15:06:56.003418+00:00
 
 """
+
 from typing import Final
 
 import sqlalchemy as sa
@@ -22,9 +23,9 @@ depends_on = None
 # TRIGGERS ------------------------
 _TABLE_NAME: Final[str] = "projects_metadata"
 _TRIGGER_NAME: Final[str] = "trigger_auto_update"  # NOTE: scoped on table
-_PROCEDURE_NAME: Final[
-    str
-] = f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
+_PROCEDURE_NAME: Final[str] = (
+    f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
+)
 modified_timestamp_trigger = sa.DDL(
     f"""
 DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {_TABLE_NAME};

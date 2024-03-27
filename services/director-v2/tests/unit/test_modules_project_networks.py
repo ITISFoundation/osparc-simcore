@@ -2,8 +2,9 @@
 # pylint: disable=unused-argument
 
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 from unittest.mock import AsyncMock, call
 from uuid import UUID, uuid4
 

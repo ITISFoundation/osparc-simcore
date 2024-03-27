@@ -145,16 +145,16 @@ class SimcoreS3DataManager(BaseDataManager):
         accessible_projects_ids = []
         async with self.engine.acquire() as conn, conn.begin():
             accessible_projects_ids = await get_readable_project_ids(conn, user_id)
-            file_and_directory_meta_data: list[
-                FileMetaDataAtDB
-            ] = await db_file_meta_data.list_filter_with_partial_file_id(
-                conn,
-                user_id=user_id,
-                project_ids=accessible_projects_ids,
-                file_id_prefix=None,
-                partial_file_id=uuid_filter,
-                only_files=False,
-                sha256_checksum=None,
+            file_and_directory_meta_data: list[FileMetaDataAtDB] = (
+                await db_file_meta_data.list_filter_with_partial_file_id(
+                    conn,
+                    user_id=user_id,
+                    project_ids=accessible_projects_ids,
+                    file_id_prefix=None,
+                    partial_file_id=uuid_filter,
+                    only_files=False,
+                    sha256_checksum=None,
+                )
             )
 
             # add all the entries from file_meta_data without
@@ -275,12 +275,14 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn,
                 user_id,
                 file_id,
-                upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
-                if (
-                    get_s3_client(self.app).is_multipart(file_size_bytes)
-                    or link_type == LinkType.S3
-                )
-                else None,
+                upload_id=(
+                    S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
+                    if (
+                        get_s3_client(self.app).is_multipart(file_size_bytes)
+                        or link_type == LinkType.S3
+                    )
+                    else None
+                ),
                 is_directory=is_directory,
                 sha256_checksum=sha256_checksum,
             )
@@ -596,9 +598,9 @@ class SimcoreS3DataManager(BaseDataManager):
             task_progress, f"Collecting files of '{src_project['name']}'..."
         )
         async with self.engine.acquire() as conn:
-            src_project_files: list[
-                FileMetaDataAtDB
-            ] = await db_file_meta_data.list_fmds(conn, project_ids=[src_project_uuid])
+            src_project_files: list[FileMetaDataAtDB] = (
+                await db_file_meta_data.list_fmds(conn, project_ids=[src_project_uuid])
+            )
 
         with log_context(
             _logger,
@@ -743,16 +745,16 @@ class SimcoreS3DataManager(BaseDataManager):
         # name/node name which filters out this files
         # TODO: unify, or use a query parameter?
         async with self.engine.acquire() as conn:
-            file_metadatas: list[
-                FileMetaDataAtDB
-            ] = await db_file_meta_data.list_filter_with_partial_file_id(
-                conn,
-                user_id=user_id,
-                project_ids=project_ids,
-                file_id_prefix=file_id_prefix,
-                partial_file_id=None,
-                only_files=True,
-                sha256_checksum=sha256_checksum,
+            file_metadatas: list[FileMetaDataAtDB] = (
+                await db_file_meta_data.list_filter_with_partial_file_id(
+                    conn,
+                    user_id=user_id,
+                    project_ids=project_ids,
+                    file_id_prefix=file_id_prefix,
+                    partial_file_id=None,
+                    only_files=True,
+                    sha256_checksum=sha256_checksum,
+                )
             )
             resolved_fmds = []
             for fmd in file_metadatas:
@@ -918,10 +920,10 @@ class SimcoreS3DataManager(BaseDataManager):
             or no entry at all in the database
 
         """
-        current_multipart_uploads: list[
-            tuple[UploadID, SimcoreS3FileID]
-        ] = await get_s3_client(self.app).list_ongoing_multipart_uploads(
-            self.simcore_bucket_name
+        current_multipart_uploads: list[tuple[UploadID, SimcoreS3FileID]] = (
+            await get_s3_client(self.app).list_ongoing_multipart_uploads(
+                self.simcore_bucket_name
+            )
         )
         if not current_multipart_uploads:
             return
@@ -943,10 +945,10 @@ class SimcoreS3DataManager(BaseDataManager):
                 SimcoreS3FileID(get_simcore_directory(file_id)) for file_id in file_ids
             ]
 
-            list_of_known_metadata_entries: list[
-                FileMetaDataAtDB
-            ] = await db_file_meta_data.list_fmds(
-                conn, file_ids=list(set(directory_and_file_ids))
+            list_of_known_metadata_entries: list[FileMetaDataAtDB] = (
+                await db_file_meta_data.list_fmds(
+                    conn, file_ids=list(set(directory_and_file_ids))
+                )
             )
             _logger.debug("metadata entries %s", f"{list_of_known_metadata_entries=}")
 

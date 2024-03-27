@@ -3,8 +3,8 @@
 # pylint: disable=unused-variable
 
 import uuid
+from collections.abc import AsyncIterator
 from functools import lru_cache
-from typing import AsyncIterator
 
 import pytest
 from aiopg.sa.engine import Engine

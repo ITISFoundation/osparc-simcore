@@ -17,13 +17,12 @@ from pydantic.typing import is_literal_type
 
 _logger = logging.getLogger(__name__)
 
-_DEFAULTS_TO_NONE_MSG: Final[
-    str
-] = "%s auto_default_from_env unresolved, defaulting to None"
+_DEFAULTS_TO_NONE_MSG: Final[str] = (
+    "%s auto_default_from_env unresolved, defaulting to None"
+)
 
 
-class DefaultFromEnvFactoryError(ValidationError):
-    ...
+class DefaultFromEnvFactoryError(ValidationError): ...
 
 
 def create_settings_from_env(field: ModelField):

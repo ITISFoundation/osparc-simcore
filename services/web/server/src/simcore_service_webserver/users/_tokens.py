@@ -2,6 +2,7 @@
 
     Implemented as a stand-alone API but currently only exposed to the handlers
 """
+
 import sqlalchemy as sa
 from aiohttp import web
 from models_library.users import UserID

@@ -110,10 +110,10 @@ async def list_connected_services_to_pricing_plan(
     app: web.Application, product_name: ProductName, pricing_plan_id: PricingPlanId
 ) -> list[PricingPlanToServiceGet]:
     rpc_client = get_rabbitmq_rpc_client(app)
-    output: list[
-        PricingPlanToServiceGet
-    ] = await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
-        rpc_client, product_name=product_name, pricing_plan_id=pricing_plan_id
+    output: list[PricingPlanToServiceGet] = (
+        await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+            rpc_client, product_name=product_name, pricing_plan_id=pricing_plan_id
+        )
     )
     return output
 

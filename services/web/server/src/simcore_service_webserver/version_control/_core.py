@@ -8,6 +8,7 @@
     (*) This is a concept introduced for the front-end to avoid using
     more fine grained concepts as tags and commits directly
 """
+
 import logging
 from uuid import UUID
 

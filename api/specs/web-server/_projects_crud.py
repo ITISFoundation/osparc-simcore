@@ -50,8 +50,7 @@ router = APIRouter(
 async def create_project(
     _params: Annotated[ProjectCreateParams, Depends()],
     _create: ProjectCreateNew | ProjectCopyOverride,
-):
-    ...
+): ...
 
 
 @router.get(
@@ -67,24 +66,21 @@ async def list_projects(
             example='{"field": "last_change_date", "direction": "desc"}',
         ),
     ] = '{"field": "last_change_date", "direction": "desc"}',
-):
-    ...
+): ...
 
 
 @router.get(
     "/projects/active",
     response_model=Envelope[ProjectGet],
 )
-async def get_active_project(client_session_id: str):
-    ...
+async def get_active_project(client_session_id: str): ...
 
 
 @router.get(
     "/projects/{project_id}",
     response_model=Envelope[ProjectGet],
 )
-async def get_project(project_id: ProjectID):
-    ...
+async def get_project(project_id: ProjectID): ...
 
 
 @router.put(
@@ -107,8 +103,7 @@ async def update_project(project_id: ProjectID, update: ProjectUpdate):
     "/projects/{project_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_project(project_id: ProjectID):
-    ...
+async def delete_project(project_id: ProjectID): ...
 
 
 @router.post(
@@ -118,8 +113,7 @@ async def delete_project(project_id: ProjectID):
 )
 async def clone_project(
     _params: Annotated[ProjectPathParams, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -129,5 +123,4 @@ async def clone_project(
 )
 async def get_project_inactivity(
     _params: Annotated[ProjectPathParams, Depends()],
-):
-    ...
+): ...

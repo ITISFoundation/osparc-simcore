@@ -88,9 +88,9 @@ class StorageApi(BaseServiceClientApi):
         params: dict = {
             "user_id": f"{user_id}",
             "startswith": None if file_id is None else f"api/{file_id}",
-            "sha256_checksum": None
-            if sha256_checksum is None
-            else f"{sha256_checksum}",
+            "sha256_checksum": (
+                None if sha256_checksum is None else f"{sha256_checksum}"
+            ),
             "access_right": access_right,
         }
 

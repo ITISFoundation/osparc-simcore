@@ -3,6 +3,7 @@
     Manages version control of studies, both the project document and the associated data
 
 """
+
 import logging
 
 from aiohttp import web

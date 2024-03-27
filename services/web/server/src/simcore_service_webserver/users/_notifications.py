@@ -37,8 +37,7 @@ class BaseUserNotification(BaseModel):
         return value.upper()
 
 
-class UserNotificationCreate(BaseUserNotification):
-    ...
+class UserNotificationCreate(BaseUserNotification): ...
 
 
 class UserNotificationPatch(BaseModel):

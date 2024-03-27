@@ -1,6 +1,7 @@
 from collections import deque
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
+from typing import Any
 
 from aiodocker import Docker
 from aiodocker.utils import clean_filters

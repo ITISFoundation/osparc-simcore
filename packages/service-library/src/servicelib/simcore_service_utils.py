@@ -1,7 +1,6 @@
 # FIXME: move to settings-library or refactor
 
 import logging
-from typing import Optional
 
 from tenacity import before_sleep_log, stop_after_attempt, wait_fixed
 
@@ -14,7 +13,7 @@ class SimcoreRetryPolicyUponInitialization:
     WAIT_SECS = 5
     ATTEMPTS_COUNT = 12
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         logger = logger or log
 
         self.kwargs = dict(

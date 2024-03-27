@@ -66,7 +66,10 @@ async def test_to_curl_command(client: AsyncClient):
     )
 
     cmd_long = to_curl_command(response.request, use_short_options=False)
-    assert cmd_long == cmd_short.replace("-X", "--request",).replace(
+    assert cmd_long == cmd_short.replace(
+        "-X",
+        "--request",
+    ).replace(
         "-H",
         "--header",
     ).replace(

@@ -274,9 +274,11 @@ async def _process_stop_event(
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
             service_run_id=msg.service_run_id,
             osparc_credits=make_negative(computed_credits),
-            transaction_status=CreditTransactionStatus.BILLED
-            if msg.simcore_platform_status == SimcorePlatformStatus.OK
-            else CreditTransactionStatus.NOT_BILLED,
+            transaction_status=(
+                CreditTransactionStatus.BILLED
+                if msg.simcore_platform_status == SimcorePlatformStatus.OK
+                else CreditTransactionStatus.NOT_BILLED
+            ),
         )
         await resource_tracker_repo.update_credit_transaction_credits_and_status(
             update_credit_transaction

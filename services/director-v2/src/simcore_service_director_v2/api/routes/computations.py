@@ -11,6 +11,7 @@ Therefore,
  - the task ID is the same as the associated node uuid
 
 """
+
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
 
@@ -358,12 +359,14 @@ async def create_computation(  # noqa: PLR0913
                 AnyHttpUrl,
                 f"{request.url}/{computation.project_id}?user_id={computation.user_id}",
             ),
-            stop_url=parse_obj_as(
-                AnyHttpUrl,
-                f"{request.url}/{computation.project_id}:stop?user_id={computation.user_id}",
-            )
-            if computation.start_pipeline
-            else None,
+            stop_url=(
+                parse_obj_as(
+                    AnyHttpUrl,
+                    f"{request.url}/{computation.project_id}:stop?user_id={computation.user_id}",
+                )
+                if computation.start_pipeline
+                else None
+            ),
             iteration=last_run.iteration if last_run else None,
             cluster_id=last_run.cluster_id if last_run else None,
             result=None,
@@ -456,9 +459,11 @@ async def get_computation(
         state=pipeline_state,
         pipeline_details=pipeline_details,
         url=parse_obj_as(AnyHttpUrl, f"{request.url}"),
-        stop_url=parse_obj_as(AnyHttpUrl, f"{self_url}:stop?user_id={user_id}")
-        if pipeline_state.is_running()
-        else None,
+        stop_url=(
+            parse_obj_as(AnyHttpUrl, f"{self_url}:stop?user_id={user_id}")
+            if pipeline_state.is_running()
+            else None
+        ),
         iteration=last_run.iteration if last_run else None,
         cluster_id=last_run.cluster_id if last_run else None,
         result=None,
@@ -604,9 +609,9 @@ async def delete_computation(
                 before_sleep=before_sleep_log(_logger, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: list[
-                    CompTaskAtDB
-                ] = await comp_tasks_repo.list_computational_tasks(project_id)
+                comp_tasks: list[CompTaskAtDB] = (
+                    await comp_tasks_repo.list_computational_tasks(project_id)
+                )
                 pipeline_state = get_pipeline_state_from_task_states(
                     comp_tasks,
                 )

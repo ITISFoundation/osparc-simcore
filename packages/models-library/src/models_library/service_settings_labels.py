@@ -314,12 +314,12 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    containers_allowed_outgoing_permit_list: None | (
-        Json[dict[str, list[NATRule]]]
-    ) = Field(
-        None,
-        alias="simcore.service.containers-allowed-outgoing-permit-list",
-        description="allow internet access to certain domain names and ports per container",
+    containers_allowed_outgoing_permit_list: None | (Json[dict[str, list[NATRule]]]) = (
+        Field(
+            None,
+            alias="simcore.service.containers-allowed-outgoing-permit-list",
+            description="allow internet access to certain domain names and ports per container",
+        )
     )
 
     containers_allowed_outgoing_internet: Json[set[str]] | None = Field(
@@ -483,8 +483,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
         return values
 
-    class Config(_BaseConfig):
-        ...
+    class Config(_BaseConfig): ...
 
 
 class SimcoreServiceLabels(DynamicSidecarServiceLabels):

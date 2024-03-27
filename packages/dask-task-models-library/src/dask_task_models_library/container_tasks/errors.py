@@ -1,6 +1,7 @@
 """ Dask task exceptions
 
 """
+
 from pydantic.errors import PydanticErrorMixin
 
 

@@ -1,6 +1,7 @@
 """ Wallets credit transaction
     - Basically this table is balance sheet of each wallet.
 """
+
 import enum
 
 import sqlalchemy as sa

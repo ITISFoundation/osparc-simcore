@@ -5,8 +5,9 @@
 
 
 import asyncio
+from collections.abc import AsyncIterator, Awaitable, Callable
 from random import choice, randint
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 import pytest
 import respx

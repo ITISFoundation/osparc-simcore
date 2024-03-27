@@ -551,10 +551,10 @@ class DaskClient:
 
         with log_catch(_logger, reraise=False):
             # NOTE: this runs directly on the dask-scheduler and may rise exceptions
-            used_resources_per_worker: dict[
-                str, dict[str, Any]
-            ] = await dask_utils.wrap_client_async_routine(
-                self.backend.client.run_on_scheduler(_get_worker_used_resources)
+            used_resources_per_worker: dict[str, dict[str, Any]] = (
+                await dask_utils.wrap_client_async_routine(
+                    self.backend.client.run_on_scheduler(_get_worker_used_resources)
+                )
             )
 
             # let's update the scheduler info, with default to 0s since sometimes

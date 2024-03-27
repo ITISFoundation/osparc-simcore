@@ -4,9 +4,10 @@
 
 import asyncio
 import socket
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 from unittest import mock
 
 import aiodocker
@@ -210,9 +211,9 @@ async def test_create_service_config(
     for s in secrets:
         fake_env_key = faker.pystr()
         service_env[fake_env_key] = s.secret_file_name
-        expected_service_env[
-            fake_env_key
-        ] = f"{_DASK_KEY_CERT_PATH_IN_SIDECAR / Path(s.secret_file_name).name}"
+        expected_service_env[fake_env_key] = (
+            f"{_DASK_KEY_CERT_PATH_IN_SIDECAR / Path(s.secret_file_name).name}"
+        )
 
     service_parameters = create_service_config(
         settings=settings,

@@ -116,9 +116,11 @@ class ComputationalSidecar:
             output_data = TaskOutputData.from_task_output(
                 self.task_parameters.output_data_keys,
                 task_volumes.outputs_folder,
-                "outputs.json"
-                if integration_version > LEGACY_INTEGRATION_VERSION
-                else "output.json",
+                (
+                    "outputs.json"
+                    if integration_version > LEGACY_INTEGRATION_VERSION
+                    else "output.json"
+                ),
             )
 
             upload_tasks = []

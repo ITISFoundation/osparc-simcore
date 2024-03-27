@@ -2,7 +2,8 @@ import asyncio
 import functools
 import logging
 import warnings
-from typing import Any, Awaitable, Callable, Final
+from collections.abc import Awaitable, Callable
+from typing import Any, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError

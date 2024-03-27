@@ -1,6 +1,7 @@
 """ Utils to check, convert and compose server responses for the RESTApi
 
 """
+
 import inspect
 import json
 from collections.abc import Mapping

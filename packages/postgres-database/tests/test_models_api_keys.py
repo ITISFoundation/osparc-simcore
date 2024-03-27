@@ -84,7 +84,10 @@ async def test_get_session_identity_for_api_server(
     # authorize a session
     #
     result = await connection.execute(
-        sa.select(api_keys.c.user_id, api_keys.c.product_name,).where(
+        sa.select(
+            api_keys.c.user_id,
+            api_keys.c.product_name,
+        ).where(
             (api_keys.c.api_key == session_auth.api_key)
             & (api_keys.c.api_secret == session_auth.api_secret),
         )

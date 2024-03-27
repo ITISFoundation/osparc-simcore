@@ -4,8 +4,8 @@
 # pylint:disable=too-many-arguments
 
 import re
-from collections.abc import AsyncIterator
-from typing import Final, Iterable
+from collections.abc import AsyncIterator, Iterable
+from typing import Final
 from uuid import uuid4
 
 import aiohttp

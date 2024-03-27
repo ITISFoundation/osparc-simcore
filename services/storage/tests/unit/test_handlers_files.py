@@ -82,9 +82,9 @@ async def assert_multipart_uploads_in_progress(
     expected_upload_ids: list[str] | None,
 ):
     """if None is passed, then it checks that no uploads are in progress"""
-    list_uploads: list[
-        tuple[UploadID, SimcoreS3FileID]
-    ] = await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
+    list_uploads: list[tuple[UploadID, SimcoreS3FileID]] = (
+        await storage_s3_client.list_ongoing_multipart_uploads(bucket=storage_s3_bucket)
+    )
     if expected_upload_ids is None:
         assert (
             not list_uploads

@@ -4,9 +4,10 @@ import logging
 import mimetypes
 import time
 import zipfile
+from collections.abc import Awaitable, Callable
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Final, TypedDict, cast
+from typing import Any, Final, TypedDict, cast
 
 import aiofiles
 import aiofiles.tempfile
@@ -95,7 +96,10 @@ async def _copy_file(
         total_data_written = 0
         t = time.process_time()
         while data_read:
-            (data_read, data_written,) = await asyncio.get_event_loop().run_in_executor(
+            (
+                data_read,
+                data_written,
+            ) = await asyncio.get_event_loop().run_in_executor(
                 None, _file_chunk_streamer, src_fp, dst_fp
             )
             elapsed_time = time.process_time() - t

@@ -108,9 +108,9 @@ class SpecsSubstitutionsResolver:
                 )
             # NOTE: default is used only if not found in the provided substitutions
             elif env_var_data.default_value is not None:
-                resolved_identifiers[
-                    env_var_data.substitution_identifier
-                ] = env_var_data.default_value
+                resolved_identifiers[env_var_data.substitution_identifier] = (
+                    env_var_data.default_value
+                )
 
         # picks only needed for substitution
         self._substitutions = SubstitutionsDict(resolved_identifiers)

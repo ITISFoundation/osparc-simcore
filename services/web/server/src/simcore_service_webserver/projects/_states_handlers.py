@@ -1,6 +1,7 @@
 """ handlers for project states
 
 """
+
 import contextlib
 import functools
 import json
@@ -109,9 +110,9 @@ async def open_project(request: web.Request) -> web.Response:
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_state=True,
-            check_permissions="read|write"
-            if project_type is ProjectType.TEMPLATE
-            else "read",
+            check_permissions=(
+                "read|write" if project_type is ProjectType.TEMPLATE else "read"
+            ),
         )
 
         product: Product = get_current_product(request)

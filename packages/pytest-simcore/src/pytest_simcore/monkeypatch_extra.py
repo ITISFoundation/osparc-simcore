@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import warnings
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 

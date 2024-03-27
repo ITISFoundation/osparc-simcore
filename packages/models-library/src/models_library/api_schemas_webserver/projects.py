@@ -79,8 +79,7 @@ class ProjectGet(OutputSchema):
 TaskProjectGet: TypeAlias = TaskGet
 
 
-class ProjectListItem(ProjectGet):
-    ...
+class ProjectListItem(ProjectGet): ...
 
 
 class ProjectReplace(InputSchema):

@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Optional
+from typing import Any
 
 from toolz.dicttoolz import get_in, update_in
 
@@ -64,7 +64,7 @@ def get_leaf_key_paths(data: dict[str, Any]) -> tuple[list[str], ...]:
     """
 
     def _get_parent_keys(
-        dict_data: dict[str, Any], parents: Optional[list[str]]
+        dict_data: dict[str, Any], parents: list[str] | None
     ) -> list[list[str]]:
         root_parents: list[str] = parents or []
 

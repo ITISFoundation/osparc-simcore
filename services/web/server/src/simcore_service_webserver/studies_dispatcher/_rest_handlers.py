@@ -1,6 +1,7 @@
 """ Handles requests to the Rest API
 
 """
+
 import logging
 from dataclasses import asdict
 from typing import Any, ClassVar

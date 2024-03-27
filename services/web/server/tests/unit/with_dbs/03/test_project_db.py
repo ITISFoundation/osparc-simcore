@@ -517,18 +517,18 @@ async def test_patch_user_project_workbench_concurrently(
     for n in range(_NUMBER_OF_NODES):
         expected_project["workbench"][node_uuids[n]].update(randomly_created_outputs[n])
 
-    patched_projects: list[
-        tuple[dict[str, Any], dict[str, Any]]
-    ] = await asyncio.gather(
-        *[
-            db_api._update_project_workbench(  # noqa: SLF001
-                {NodeIDStr(node_uuids[n]): randomly_created_outputs[n]},
-                user_id=logged_user["id"],
-                project_uuid=new_project["uuid"],
-                allow_workbench_changes=False,
-            )
-            for n in range(_NUMBER_OF_NODES)
-        ]
+    patched_projects: list[tuple[dict[str, Any], dict[str, Any]]] = (
+        await asyncio.gather(
+            *[
+                db_api._update_project_workbench(  # noqa: SLF001
+                    {NodeIDStr(node_uuids[n]): randomly_created_outputs[n]},
+                    user_id=logged_user["id"],
+                    project_uuid=new_project["uuid"],
+                    allow_workbench_changes=False,
+                )
+                for n in range(_NUMBER_OF_NODES)
+            ]
+        )
     )
     # NOTE: each returned project contains the project with some updated workbenches
     # the ordering is uncontrolled.
@@ -753,9 +753,9 @@ async def test_replace_user_project(
         },
         "output_2": 5,
     }
-    node_data[
-        "runHash"
-    ] = "5b0583fa546ac82f0e41cef9705175b7187ce3928ba42892e842add912c16676"
+    node_data["runHash"] = (
+        "5b0583fa546ac82f0e41cef9705175b7187ce3928ba42892e842add912c16676"
+    )
     # replacing with the new entries shall return the very same data
     replaced_project = await db_api.replace_project(
         working_project,

@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name)
 
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 import aiodocker
 import pytest

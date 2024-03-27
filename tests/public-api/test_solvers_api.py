@@ -38,9 +38,9 @@ def sleeper_key_and_version(
 
 
 def test_get_latest_solver(solvers_api: osparc.SolversApi):
-    solvers: list[
-        osparc.Solver
-    ] = solvers_api.list_solvers()  # latest versions of all solvers
+    solvers: list[osparc.Solver] = (
+        solvers_api.list_solvers()
+    )  # latest versions of all solvers
 
     solver_names = []
     for latest in solvers:
@@ -54,16 +54,16 @@ def test_get_latest_solver(solvers_api: osparc.SolversApi):
 
 def test_get_all_releases(solvers_api: osparc.SolversApi):
 
-    all_releases: list[
-        osparc.Solver
-    ] = solvers_api.list_solvers_releases()  # all release of all solvers
+    all_releases: list[osparc.Solver] = (
+        solvers_api.list_solvers_releases()
+    )  # all release of all solvers
 
     assert all_releases
 
     one_solver = random.choice(all_releases)
-    all_releases_of_given_solver: list[
-        osparc.Solver
-    ] = solvers_api.list_solver_releases(one_solver.id)
+    all_releases_of_given_solver: list[osparc.Solver] = (
+        solvers_api.list_solver_releases(one_solver.id)
+    )
 
     latest: osparc.Solver | None = None
     for solver in all_releases_of_given_solver:

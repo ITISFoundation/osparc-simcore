@@ -7,8 +7,7 @@ from .database import get_repository
 
 
 async def list_user_groups(
-    user_id: UserID
-    | None = Query(
+    user_id: UserID | None = Query(
         default=None,
         description="if passed, and that user has custom resources, "
         "they will be merged with default resources and returned.",

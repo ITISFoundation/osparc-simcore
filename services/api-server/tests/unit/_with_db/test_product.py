@@ -5,8 +5,8 @@
 # pylint: disable=unused-variable
 
 import datetime
+from collections.abc import AsyncGenerator, Callable
 from decimal import Decimal
-from typing import AsyncGenerator, Callable
 
 import httpx
 import respx

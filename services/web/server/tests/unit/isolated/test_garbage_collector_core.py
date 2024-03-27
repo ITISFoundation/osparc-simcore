@@ -17,9 +17,9 @@ from simcore_service_webserver.garbage_collector._core_orphans import (
 )
 from yarl import URL
 
-MODULE_GC_CORE_ORPHANS: Final[
-    str
-] = "simcore_service_webserver.garbage_collector._core_orphans"
+MODULE_GC_CORE_ORPHANS: Final[str] = (
+    "simcore_service_webserver.garbage_collector._core_orphans"
+)
 
 
 @pytest.fixture

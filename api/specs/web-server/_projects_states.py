@@ -70,20 +70,17 @@ def open_project(
     client_session_id: Annotated[str, Body(...)],
     _path_params: Annotated[ProjectPathParams, Depends()],
     _query_params: Annotated[_OpenProjectQuery, Depends()],
-):
-    ...
+): ...
 
 
 @router.post("/projects/{project_id}:close", status_code=status.HTTP_204_NO_CONTENT)
 def close_project(
     _path_params: Annotated[ProjectPathParams, Depends()],
     client_session_id: Annotated[str, Body(...)],
-):
-    ...
+): ...
 
 
 @router.get("/projects/{project_id}/state", response_model=Envelope[ProjectState])
 def get_project_state(
     _path_params: Annotated[ProjectPathParams, Depends()],
-):
-    ...
+): ...

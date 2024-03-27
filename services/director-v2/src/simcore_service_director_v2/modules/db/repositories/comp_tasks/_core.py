@@ -97,19 +97,19 @@ class CompTasksRepository(BaseRepository):
     ) -> list[CompTaskAtDB]:
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         async with self.db_engine.acquire() as conn:
-            list_of_comp_tasks_in_project: list[
-                CompTaskAtDB
-            ] = await _utils.generate_tasks_list_from_project(
-                project=project,
-                catalog_client=catalog_client,
-                director_client=director_client,
-                published_nodes=published_nodes,
-                user_id=user_id,
-                product_name=product_name,
-                connection=conn,
-                rut_client=rut_client,
-                is_wallet=is_wallet,
-                rabbitmq_rpc_client=rabbitmq_rpc_client,
+            list_of_comp_tasks_in_project: list[CompTaskAtDB] = (
+                await _utils.generate_tasks_list_from_project(
+                    project=project,
+                    catalog_client=catalog_client,
+                    director_client=director_client,
+                    published_nodes=published_nodes,
+                    user_id=user_id,
+                    product_name=product_name,
+                    connection=conn,
+                    rut_client=rut_client,
+                    is_wallet=is_wallet,
+                    rabbitmq_rpc_client=rabbitmq_rpc_client,
+                )
             )
             # get current tasks
             result = await conn.execute(

@@ -4,6 +4,7 @@
     id which uniquely defines the prices at this point of the time. We always store whole
     history and do not update the rows of this table.
 """
+
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 

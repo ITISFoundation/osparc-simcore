@@ -642,9 +642,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     async def _return_1st_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.PENDING_OR_STARTED
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.PENDING_OR_STARTED
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 
@@ -746,9 +748,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     # 4. the "worker" completed the task successfully
     async def _return_1st_task_success(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.SUCCESS
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.SUCCESS
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 
@@ -835,9 +839,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     async def _return_2nd_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.PENDING_OR_STARTED
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.PENDING_OR_STARTED
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 
@@ -883,9 +889,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     # 7. the task fails
     async def _return_2nd_task_failed(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.ERRED
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.ERRED
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 
@@ -926,9 +934,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     async def _return_3rd_task_success(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.SUCCESS
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.SUCCESS
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 
@@ -1296,9 +1306,11 @@ async def test_running_pipeline_triggers_heartbeat(
 
     async def _return_1st_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.PENDING_OR_STARTED
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.PENDING_OR_STARTED
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 

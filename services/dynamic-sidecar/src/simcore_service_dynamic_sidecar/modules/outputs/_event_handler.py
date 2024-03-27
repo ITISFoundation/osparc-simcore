@@ -133,9 +133,9 @@ class _EventHandlerProcess:
 
         # Propagate `outputs_port_keys` changes to the `_PortKeysEventHandler`.
         while True:
-            message: dict[
-                str, Any
-            ] | None = self.outputs_context.file_system_event_handler_queue.get()
+            message: dict[str, Any] | None = (
+                self.outputs_context.file_system_event_handler_queue.get()
+            )
             _logger.debug("received message %s", message)
 
             # no more messages quitting

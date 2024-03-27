@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import pytest
 from aiopg.sa.engine import Engine

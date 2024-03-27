@@ -29,11 +29,13 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
             "port": app_settings.WEBSERVER_PORT,
             "log_level": f"{app_settings.WEBSERVER_LOGLEVEL}",
             "testing": False,  # TODO: deprecate!
-            "studies_access_enabled": int(
-                app_settings.WEBSERVER_STUDIES_DISPATCHER.STUDIES_ACCESS_ANONYMOUS_ALLOWED
-            )
-            if app_settings.WEBSERVER_STUDIES_DISPATCHER
-            else 0,
+            "studies_access_enabled": (
+                int(
+                    app_settings.WEBSERVER_STUDIES_DISPATCHER.STUDIES_ACCESS_ANONYMOUS_ALLOWED
+                )
+                if app_settings.WEBSERVER_STUDIES_DISPATCHER
+                else 0
+            ),
         },
         "tracing": {
             "enabled": 1 if app_settings.WEBSERVER_TRACING is not None else 0,
@@ -83,23 +85,31 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         # -----------------------------
         "login": {
             "enabled": app_settings.WEBSERVER_LOGIN is not None,
-            "registration_invitation_required": 1
-            if getattr(
-                app_settings.WEBSERVER_LOGIN,
-                "LOGIN_REGISTRATION_INVITATION_REQUIRED",
-                None,
-            )
-            else 0,
-            "registration_confirmation_required": 1
-            if getattr(
-                app_settings.WEBSERVER_LOGIN,
-                "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
-                None,
-            )
-            else 0,
-            "password_min_length": 12
-            if getattr(app_settings.WEBSERVER_LOGIN, "LOGIN_PASSWORD_MIN_LENGTH", None)
-            else 0,
+            "registration_invitation_required": (
+                1
+                if getattr(
+                    app_settings.WEBSERVER_LOGIN,
+                    "LOGIN_REGISTRATION_INVITATION_REQUIRED",
+                    None,
+                )
+                else 0
+            ),
+            "registration_confirmation_required": (
+                1
+                if getattr(
+                    app_settings.WEBSERVER_LOGIN,
+                    "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
+                    None,
+                )
+                else 0
+            ),
+            "password_min_length": (
+                12
+                if getattr(
+                    app_settings.WEBSERVER_LOGIN, "LOGIN_PASSWORD_MIN_LENGTH", None
+                )
+                else 0
+            ),
         },
         "smtp": {
             "host": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_HOST", None),

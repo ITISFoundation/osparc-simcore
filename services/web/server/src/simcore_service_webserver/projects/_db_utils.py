@@ -338,9 +338,11 @@ class BaseProjectDB:
         # NOTE: ChatGPT helped in producing this entry
         conditions = sa.and_(
             projects.c.uuid == f"{project_uuid}",
-            projects.c.type == f"{ProjectType.TEMPLATE.value}"
-            if only_templates
-            else True,
+            (
+                projects.c.type == f"{ProjectType.TEMPLATE.value}"
+                if only_templates
+                else True
+            ),
             sa.or_(
                 projects.c.prj_owner == user_id,
                 sa.text(

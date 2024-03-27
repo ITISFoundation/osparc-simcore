@@ -160,11 +160,15 @@ def update_service_params_from_settings(
     container_spec = create_service_params["task_template"]["ContainerSpec"]
     # set labels for CPU and Memory limits, for both service and container labels
     # NOTE: cpu-limit is a float not NanoCPUs!!
-    container_spec["Labels"][
-        f"{to_simcore_runtime_docker_label_key('cpu-limit')}"
-    ] = str(
-        float(create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
-        / (1 * 10**9)
+    container_spec["Labels"][f"{to_simcore_runtime_docker_label_key('cpu-limit')}"] = (
+        str(
+            float(
+                create_service_params["task_template"]["Resources"]["Limits"][
+                    "NanoCPUs"
+                ]
+            )
+            / (1 * 10**9)
+        )
     )
     create_service_params["labels"][
         f"{to_simcore_runtime_docker_label_key('cpu-limit')}"
@@ -451,13 +455,13 @@ async def get_labels_for_involved_services(
     # paths_mapping express how to map dynamic-sidecar paths to the compose-spec volumes
     # where the service expects to find its certain folders
 
-    labels_for_involved_services: dict[
-        str, SimcoreServiceLabels
-    ] = await _extract_osparc_involved_service_labels(
-        director_v0_client=director_v0_client,
-        service_key=service_key,
-        service_tag=service_tag,
-        service_labels=simcore_service_labels,
+    labels_for_involved_services: dict[str, SimcoreServiceLabels] = (
+        await _extract_osparc_involved_service_labels(
+            director_v0_client=director_v0_client,
+            service_key=service_key,
+            service_tag=service_tag,
+            service_labels=simcore_service_labels,
+        )
     )
     logging.info("labels_for_involved_services=%s", labels_for_involved_services)
     return labels_for_involved_services

@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import FastAPI
 from models_library.groups import GroupAtDB

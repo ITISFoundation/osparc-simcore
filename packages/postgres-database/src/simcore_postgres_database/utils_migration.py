@@ -1,6 +1,7 @@
 """
     NOTE: this was decoupled from utils_cli.py in order to reduce requirements
 """
+
 import sys
 from pathlib import Path
 from typing import Final

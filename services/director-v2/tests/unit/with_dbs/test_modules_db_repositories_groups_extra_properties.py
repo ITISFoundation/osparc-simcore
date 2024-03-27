@@ -1,7 +1,8 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from typing import Any, Callable, Iterator, cast
+from collections.abc import Callable, Iterator
+from typing import Any, cast
 
 import pytest
 import sqlalchemy as sa

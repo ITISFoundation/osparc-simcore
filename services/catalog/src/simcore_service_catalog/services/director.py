@@ -1,7 +1,8 @@
 import asyncio
 import functools
 import logging
-from typing import Any, Awaitable, Callable, Optional, Union
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -56,7 +57,7 @@ async def setup_director(app: FastAPI) -> None:
 
 
 async def close_director(app: FastAPI) -> None:
-    client: Optional[DirectorApi]
+    client: DirectorApi | None
     if client := app.state.director_api:
         await client.close()
 
@@ -68,7 +69,7 @@ async def close_director(app: FastAPI) -> None:
 
 def safe_request(
     request_func: Callable[..., Awaitable[httpx.Response]]
-) -> Callable[..., Awaitable[Union[list[Any], dict[str, Any]]]]:
+) -> Callable[..., Awaitable[list[Any] | dict[str, Any]]]:
     """
     Creates a context for safe inter-process communication (IPC)
     """
@@ -76,7 +77,7 @@ def safe_request(
 
     def _unenvelope_or_raise_error(
         resp: httpx.Response,
-    ) -> Union[list[Any], dict[str, Any]]:
+    ) -> list[Any] | dict[str, Any]:
         """
         Director responses are enveloped
         If successful response, we un-envelop it and return data as a dict
@@ -109,7 +110,7 @@ def safe_request(
     @functools.wraps(request_func)
     async def request_wrapper(
         zelf: "DirectorApi", path: str, *args, **kwargs
-    ) -> Union[list[Any], dict[str, Any]]:
+    ) -> list[Any] | dict[str, Any]:
         normalized_path = path.lstrip("/")
         try:
             resp = await request_func(zelf, path=normalized_path, *args, **kwargs)

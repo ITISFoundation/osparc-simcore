@@ -5,10 +5,11 @@ import shutil
 import sys
 import time
 from collections import deque
+from collections.abc import Coroutine
 from contextlib import AsyncExitStack
 from enum import Enum
 from pathlib import Path
-from typing import Coroutine, Optional, cast
+from typing import Optional, cast
 
 import aiofiles.os
 import magic

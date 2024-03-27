@@ -279,10 +279,10 @@ def task_owner(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
-        parent_project_id=None
-        if request.param == "no_parent_node"
-        else faker.uuid4(cast_to=None),
-        parent_node_id=None
-        if request.param == "no_parent_node"
-        else faker.uuid4(cast_to=None),
+        parent_project_id=(
+            None if request.param == "no_parent_node" else faker.uuid4(cast_to=None)
+        ),
+        parent_node_id=(
+            None if request.param == "no_parent_node" else faker.uuid4(cast_to=None)
+        ),
     )

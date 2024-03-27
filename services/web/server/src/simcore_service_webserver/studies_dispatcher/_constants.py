@@ -27,6 +27,6 @@ MSG_TOO_MANY_GUESTS: Final[str] = (
     "Please try later or login with a registered account."
 )
 
-MSG_UNEXPECTED_ERROR: Final[
-    str
-] = "Opps this is embarrasing! Something went really wrong {hint}"
+MSG_UNEXPECTED_ERROR: Final[str] = (
+    "Opps this is embarrasing! Something went really wrong {hint}"
+)

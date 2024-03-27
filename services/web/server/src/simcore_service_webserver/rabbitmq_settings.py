@@ -4,7 +4,6 @@
     - settings
 """
 
-
 from aiohttp.web import Application
 from settings_library.rabbit import RabbitSettings
 

@@ -5,6 +5,7 @@ Revises: 7777d181dc1f
 Create Date: 2023-10-17 05:15:29.780925+00:00
 
 """
+
 from alembic import op
 from simcore_postgres_database.models.resource_tracker_pricing_units import (
     resource_tracker_pricing_units,

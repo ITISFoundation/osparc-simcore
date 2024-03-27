@@ -76,8 +76,7 @@ async def list_resource_usage_services(
     wallet_id: Annotated[WalletID | None, Query] = None,
     limit: int = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     offset: NonNegativeInt = 0,
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -112,8 +111,7 @@ async def export_resource_usage_services(
         ),
     ] = None,
     wallet_id: Annotated[WalletID | None, Query] = None,
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -129,8 +127,7 @@ assert_handler_signature_against_model(
 )
 async def get_pricing_plan_unit(
     pricing_plan_id: PricingPlanId, pricing_unit_id: PricingUnitId
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -148,8 +145,7 @@ assert_handler_signature_against_model(
     tags=["admin"],
     description="To keep the listing lightweight, the pricingUnits field is None.",
 )
-async def list_pricing_plans():
-    ...
+async def list_pricing_plans(): ...
 
 
 @router.get(
@@ -160,8 +156,7 @@ async def list_pricing_plans():
 )
 async def get_pricing_plan(
     pricing_plan_id: PricingPlanId,
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(get_pricing_plan, _GetPricingPlanPathParams)
@@ -173,8 +168,7 @@ assert_handler_signature_against_model(get_pricing_plan, _GetPricingPlanPathPara
     summary="Create pricing plan",
     tags=["admin"],
 )
-async def create_pricing_plan(body: CreatePricingPlanBodyParams):
-    ...
+async def create_pricing_plan(body: CreatePricingPlanBodyParams): ...
 
 
 @router.put(
@@ -185,8 +179,7 @@ async def create_pricing_plan(body: CreatePricingPlanBodyParams):
 )
 async def update_pricing_plan(
     pricing_plan_id: PricingPlanId, body: UpdatePricingPlanBodyParams
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(update_pricing_plan, _GetPricingPlanPathParams)
@@ -203,8 +196,7 @@ assert_handler_signature_against_model(update_pricing_plan, _GetPricingPlanPathP
 )
 async def get_pricing_unit(
     pricing_plan_id: PricingPlanId, pricing_unit_id: PricingUnitId
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(get_pricing_unit, _GetPricingUnitPathParams)
@@ -218,8 +210,7 @@ assert_handler_signature_against_model(get_pricing_unit, _GetPricingUnitPathPara
 )
 async def create_pricing_unit(
     pricing_plan_id: PricingPlanId, body: CreatePricingUnitBodyParams
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(create_pricing_unit, _GetPricingPlanPathParams)
@@ -235,8 +226,7 @@ async def update_pricing_unit(
     pricing_plan_id: PricingPlanId,
     pricing_unit_id: PricingUnitId,
     body: UpdatePricingUnitBodyParams,
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(update_pricing_unit, _GetPricingUnitPathParams)
@@ -253,8 +243,7 @@ assert_handler_signature_against_model(update_pricing_unit, _GetPricingUnitPathP
 )
 async def list_connected_services_to_pricing_plan(
     pricing_plan_id: PricingPlanId,
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(update_pricing_unit, _GetPricingPlanPathParams)
@@ -269,8 +258,7 @@ assert_handler_signature_against_model(update_pricing_unit, _GetPricingPlanPathP
 async def connect_service_to_pricing_plan(
     pricing_plan_id: PricingPlanId,
     body: ConnectServiceToPricingPlanBodyParams,
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(update_pricing_unit, _GetPricingPlanPathParams)

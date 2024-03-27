@@ -64,8 +64,7 @@ def empty_configuration_file() -> Path:
 @pytest.fixture
 def node_ports_config(
     postgres_host_config: PostgresTestConfig, minio_s3_settings_envs: EnvVarsDict
-) -> None:
-    ...
+) -> None: ...
 
 
 @pytest.fixture

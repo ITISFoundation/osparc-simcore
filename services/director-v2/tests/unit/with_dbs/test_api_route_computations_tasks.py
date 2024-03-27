@@ -3,7 +3,8 @@
 # pylint: disable=unused-variable
 
 
-from typing import Any, Awaitable, Callable, NamedTuple
+from collections.abc import Awaitable, Callable
+from typing import Any, NamedTuple
 from unittest import mock
 
 import httpx

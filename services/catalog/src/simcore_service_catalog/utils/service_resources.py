@@ -71,12 +71,13 @@ def merge_service_resources_with_user_specs(
                     res_value * _DOCKER_TO_OSPARC_RESOURCE_CONVERTER[res_name],
                 )
             else:
-                merged_resources[
-                    _DOCKER_TO_OSPARC_RESOURCE_MAP[res_name]
-                ] = ResourceValue(
-                    limit=res_value * _DOCKER_TO_OSPARC_RESOURCE_CONVERTER[res_name],
-                    reservation=res_value
-                    * _DOCKER_TO_OSPARC_RESOURCE_CONVERTER[res_name],
+                merged_resources[_DOCKER_TO_OSPARC_RESOURCE_MAP[res_name]] = (
+                    ResourceValue(
+                        limit=res_value
+                        * _DOCKER_TO_OSPARC_RESOURCE_CONVERTER[res_name],
+                        reservation=res_value
+                        * _DOCKER_TO_OSPARC_RESOURCE_CONVERTER[res_name],
+                    )
                 )
 
     return merged_resources

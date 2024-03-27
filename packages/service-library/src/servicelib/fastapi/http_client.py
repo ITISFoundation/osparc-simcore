@@ -14,18 +14,15 @@ _logger = logging.getLogger(__name__)
 class HasClientInterface(ABC):
     @property
     @abstractmethod
-    def client(self) -> httpx.AsyncClient:
-        ...
+    def client(self) -> httpx.AsyncClient: ...
 
 
 class HasClientSetupInterface(ABC):
     @abstractmethod
-    async def setup_client(self) -> None:
-        ...
+    async def setup_client(self) -> None: ...
 
     @abstractmethod
-    async def teardown_client(self) -> None:
-        ...
+    async def teardown_client(self) -> None: ...
 
 
 class BaseHTTPApi(HasClientSetupInterface):

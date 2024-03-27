@@ -33,17 +33,14 @@ class AbstractProjectRunPolicy(ABC):
         self,
         request: web.Request,
         project_uuid: ProjectID,
-    ) -> list[ProjectID]:
-        ...
+    ) -> list[ProjectID]: ...
 
     @abstractmethod
     async def get_or_create_runnable_projects(
         self,
         request: web.Request,
         project_uuid: ProjectID,
-    ) -> tuple[list[ProjectID], list[CommitID]]:
-
-        ...
+    ) -> tuple[list[ProjectID], list[CommitID]]: ...
 
 
 def get_project_run_policy(app: web.Application) -> AbstractProjectRunPolicy | None:

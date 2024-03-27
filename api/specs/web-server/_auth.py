@@ -49,8 +49,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["auth"])
     operation_id="request_product_account",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def request_product_account(_body: AccountRequestInfo):
-    ...
+async def request_product_account(_body: AccountRequestInfo): ...
 
 
 @router.post(
@@ -77,8 +76,7 @@ async def register(_body: RegisterBody):
     status_code=status.HTTP_200_OK,
     responses={status.HTTP_409_CONFLICT: {"model": Envelope[Error]}},
 )
-async def unregister_account(_body: UnregisterCheck):
-    ...
+async def unregister_account(_body: UnregisterCheck): ...
 
 
 @router.post(

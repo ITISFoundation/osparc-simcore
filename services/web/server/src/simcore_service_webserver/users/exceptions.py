@@ -3,8 +3,7 @@ from typing import Any
 from ..errors import WebServerBaseError
 
 
-class UsersBaseError(WebServerBaseError):
-    ...
+class UsersBaseError(WebServerBaseError): ...
 
 
 class UserNotFoundError(UsersBaseError):

@@ -9,8 +9,7 @@ _logger = logging.getLogger(__name__)
 
 class BaseRCloneLogParser:
     @abstractmethod
-    async def __call__(self, logs: str) -> None:
-        ...
+    async def __call__(self, logs: str) -> None: ...
 
 
 class SyncProgressLogParser(BaseRCloneLogParser):

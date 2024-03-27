@@ -139,8 +139,7 @@ class ProgressData:
 
 @runtime_checkable
 class LogRedirectCB(Protocol):
-    async def __call__(self, logs: str) -> None:
-        ...
+    async def __call__(self, logs: str) -> None: ...
 
 
 async def _file_chunk_writer(
@@ -204,9 +203,11 @@ async def download_link_to_file(
                             **(
                                 _TQDM_FILE_OPTIONS
                                 | {
-                                    "miniters": _compute_tqdm_miniters(file_size)
-                                    if file_size
-                                    else 1
+                                    "miniters": (
+                                        _compute_tqdm_miniters(file_size)
+                                        if file_size
+                                        else 1
+                                    )
                                 }
                             ),
                         )

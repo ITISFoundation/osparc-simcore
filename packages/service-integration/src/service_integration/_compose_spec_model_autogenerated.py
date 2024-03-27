@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConstrainedInt, Extra, Field, conint, constr
 # UserWarning: format of 'duration' not understood for 'string' - using default
 # UserWarning: format of 'subnet_ip_address' not understood for 'string' - using default
 
+
 # port number range
 class PortInt(ConstrainedInt):
     gt = 0
@@ -295,7 +296,7 @@ class ListOfStrings(BaseModel):
 
 
 class ListOrDict(BaseModel):
-    __root__: (dict[constr(regex=r".+"), str | float | bool | None] | list[str])
+    __root__: dict[constr(regex=r".+"), str | float | bool | None] | list[str]
 
 
 class BlkioLimit(BaseModel):

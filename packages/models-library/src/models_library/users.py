@@ -11,8 +11,7 @@ class FirstNameStr(ConstrainedStr):
     max_length = 255
 
 
-class LastNameStr(FirstNameStr):
-    ...
+class LastNameStr(FirstNameStr): ...
 
 
 class UserBillingDetails(BaseModel):

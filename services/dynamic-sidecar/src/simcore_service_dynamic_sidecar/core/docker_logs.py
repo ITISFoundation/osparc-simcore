@@ -5,11 +5,11 @@
         posts it as a message to rabbit's log channel (logger)
 """
 
-
 import logging
 from asyncio import CancelledError, Task, create_task
+from collections.abc import AsyncGenerator, Callable, Coroutine
 from contextlib import suppress
-from typing import Any, AsyncGenerator, Callable, Coroutine, cast
+from typing import Any, cast
 
 from aiodocker import DockerError
 from fastapi import FastAPI

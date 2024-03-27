@@ -22,7 +22,7 @@ def handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
         session: ClientSession = get_client_session(app)
 
         yield session
-    except (ClientResponseError) as err:
+    except ClientResponseError as err:
         if err.status == status.HTTP_404_NOT_FOUND:
             raise web.HTTPNotFound(reason=MSG_RESOURCE_USAGE_TRACKER_NOT_FOUND)
         raise web.HTTPServiceUnavailable(

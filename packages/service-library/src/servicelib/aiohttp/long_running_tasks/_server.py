@@ -1,7 +1,8 @@
 import asyncio
 import logging
+from collections.abc import AsyncGenerator, Callable
 from functools import wraps
-from typing import Any, AsyncGenerator, Callable
+from typing import Any
 
 from aiohttp import web
 from pydantic import PositiveFloat
@@ -126,11 +127,11 @@ def setup(
 
     async def on_cleanup_ctx(app: web.Application) -> AsyncGenerator[None, None]:
         # add components to state
-        app[
-            APP_LONG_RUNNING_TASKS_MANAGER_KEY
-        ] = long_running_task_manager = TasksManager(
-            stale_task_check_interval_s=stale_task_check_interval_s,
-            stale_task_detect_timeout_s=stale_task_detect_timeout_s,
+        app[APP_LONG_RUNNING_TASKS_MANAGER_KEY] = long_running_task_manager = (
+            TasksManager(
+                stale_task_check_interval_s=stale_task_check_interval_s,
+                stale_task_detect_timeout_s=stale_task_detect_timeout_s,
+            )
         )
 
         # add error handlers

@@ -140,8 +140,7 @@ def minimal_configuration(
     disabled_ec2: None,
     disable_dynamic_service_background_task: None,
     mocked_redis_server: None,
-) -> None:
-    ...
+) -> None: ...
 
 
 @pytest.fixture

@@ -249,10 +249,10 @@ async def test_users_sessions_resources_registry(
 
                 # resource key shall be filled
                 assert await rt.find(res_key) == [res_value]
-                list_of_same_resource_users: list[
-                    UserSessionID
-                ] = await rt.find_users_of_resource(
-                    redis_enabled_app, res_key, res_value
+                list_of_same_resource_users: list[UserSessionID] = (
+                    await rt.find_users_of_resource(
+                        redis_enabled_app, res_key, res_value
+                    )
                 )
                 assert list_user_ids[: (list_user_ids.index(user_id) + 1)] == sorted(
                     {

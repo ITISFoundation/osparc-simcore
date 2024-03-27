@@ -45,8 +45,7 @@ router = APIRouter(
 )
 async def create_project_comment(
     project_uuid: ProjectID, body: _ProjectCommentsBodyParams
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -61,8 +60,7 @@ assert_handler_signature_against_model(
 )
 async def list_project_comments(
     project_uuid: ProjectID, limit: int = 20, offset: NonNegativeInt = 0
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -79,8 +77,7 @@ async def update_project_comment(
     project_uuid: ProjectID,
     comment_id: CommentID,
     body: _ProjectCommentsBodyParams,
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -93,8 +90,7 @@ assert_handler_signature_against_model(
     summary="Delete a specific comment associated with a project.",
     status_code=204,
 )
-async def delete_project_comment(project_uuid: ProjectID, comment_id: CommentID):
-    ...
+async def delete_project_comment(project_uuid: ProjectID, comment_id: CommentID): ...
 
 
 assert_handler_signature_against_model(
@@ -107,8 +103,7 @@ assert_handler_signature_against_model(
     response_model=Envelope[ProjectsCommentsAPI],
     summary="Retrieve a specific comment by its ID within a project.",
 )
-async def get_project_comment(project_uuid: ProjectID, comment_id: CommentID):
-    ...
+async def get_project_comment(project_uuid: ProjectID, comment_id: CommentID): ...
 
 
 assert_handler_signature_against_model(

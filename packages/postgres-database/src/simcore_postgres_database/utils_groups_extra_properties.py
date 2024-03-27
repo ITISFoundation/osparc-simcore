@@ -14,12 +14,10 @@ from .utils_models import FromRowMixin
 _logger = logging.getLogger(__name__)
 
 
-class GroupExtraPropertiesError(Exception):
-    ...
+class GroupExtraPropertiesError(Exception): ...
 
 
-class GroupExtraPropertiesNotFoundError(GroupExtraPropertiesError):
-    ...
+class GroupExtraPropertiesNotFoundError(GroupExtraPropertiesError): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

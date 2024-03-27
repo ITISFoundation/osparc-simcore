@@ -41,8 +41,7 @@ class AssociatedInstance(_BaseInstance):
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class NonAssociatedInstance(_BaseInstance):
-    ...
+class NonAssociatedInstance(_BaseInstance): ...
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

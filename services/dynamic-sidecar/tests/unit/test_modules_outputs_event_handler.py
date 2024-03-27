@@ -2,8 +2,8 @@
 # pylint: disable=protected-access
 
 import asyncio
+from collections.abc import AsyncIterable
 from pathlib import Path
-from typing import AsyncIterable
 from unittest.mock import Mock
 
 import aioprocessing
