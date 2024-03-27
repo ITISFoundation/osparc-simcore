@@ -23,9 +23,10 @@ qx.Class.define("osparc.admin.PricingPlanListItem", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.Grid(8, 1);
-    layout.setColumnWidth(0, 32);
-    layout.setColumnFlex(1, 1);
+    const layout = new qx.ui.layout.Grid(10, 2);
+    layout.setColumnWidth(0, 40);
+    layout.setColumnWidth(0, 40);
+    layout.setColumnFlex(2, 1);
     this._setLayout(layout);
     this.setPadding(5);
 
@@ -109,7 +110,8 @@ qx.Class.define("osparc.admin.PricingPlanListItem", {
       switch (id) {
         case "pp-id":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            alignY: "middle"
           });
           this._add(control, {
             row: 0,
@@ -119,7 +121,8 @@ qx.Class.define("osparc.admin.PricingPlanListItem", {
           break;
         case "pp-key":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            alignY: "middle"
           });
           this._add(control, {
             row: 0,
