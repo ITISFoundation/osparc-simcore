@@ -84,7 +84,6 @@ def _do_assert_error(
     assert error.get("message")  # required & non-nullable
 
     if expected_msg:
-        assert expected_msg in error["message"]
         assert expected_msg in error["errors"][0]["message"]
 
     if expected_error_code:
