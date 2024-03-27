@@ -29,11 +29,11 @@ qx.Class.define("osparc.admin.PricingPlans", {
             allowStretchX: true,
             margin: [0, 10, 5, 10]
           });
-          this._add(control);
+          this._addAt(control, 0);
           break;
         case "pricing-plans-container":
           control = new qx.ui.container.Scroll();
-          this._add(control, {
+          this._addAt(control, 1, {
             flex: 1
           });
           break;
@@ -45,6 +45,16 @@ qx.Class.define("osparc.admin.PricingPlans", {
           control.addListener("changeSelection", e => console.log(e.getData()), this);
           this.getChildControl("pricing-plans-container").add(control);
           break;
+        case "create-pricing-plan":
+          control = new qx.ui.form.Button().set({
+            appearance: "form-button",
+            label: this.tr("New Pricing Plan"),
+            alignX: "center",
+            icon: "@FontAwesome5Solid/plus/14",
+            allowGrowX: false
+          });
+          control.addListener("execute", () => this.__createPricingPlan());
+          this._addAt(control, 2);
       }
       return control || this.base(arguments, id);
     },
@@ -53,6 +63,7 @@ qx.Class.define("osparc.admin.PricingPlans", {
       this.getChildControl("pricing-plans-filter");
       osparc.data.Resources.fetch("pricingPlans", "get")
         .then(data => this.__populateList(data));
+      this.getChildControl("create-pricing-plan");
     },
 
     __populateList: function(pricingPlans) {
@@ -80,6 +91,26 @@ qx.Class.define("osparc.admin.PricingPlans", {
       });
 
       pricingPlans.forEach(pricingPlan => model.append(qx.data.marshal.Json.createModel(pricingPlan)));
+    },
+
+    __createPricingPlan: function() {
+      const ppCreator = new osparc.admin.PricingPlanEditor();
+      const title = this.tr("Pricing Plan Creator");
+      const win = osparc.ui.window.Window.popUpInWindow(ppCreator, title, 400, 250);
+      ppCreator.addListener("createPricingPlan", () => {
+        console.log(ppCreator);
+      });
+      ppCreator.addListener("cancel", () => win.close());
+    },
+
+    __updatePricingPlan: function(pricingPlan) {
+      const ppEditor = new osparc.admin.PricingPlanEditor(pricingPlan);
+      const title = this.tr("Pricing Plan Editor");
+      const win = osparc.ui.window.Window.popUpInWindow(ppEditor, title, 400, 250);
+      ppEditor.addListener("updatePricingPlan", () => {
+        console.log(ppEditor);
+      });
+      ppEditor.addListener("cancel", () => win.close());
     }
   }
 });
