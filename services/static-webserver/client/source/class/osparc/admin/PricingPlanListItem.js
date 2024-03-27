@@ -30,6 +30,7 @@ qx.Class.define("osparc.admin.PricingPlanListItem", {
 
     this._createChildControlImpl("title");
     this._createChildControlImpl("description");
+    this._createChildControlImpl("edit-button");
 
     this.addListener("pointerover", this._onPointerOver, this);
     this.addListener("pointerout", this._onPointerOut, this);
@@ -37,7 +38,8 @@ qx.Class.define("osparc.admin.PricingPlanListItem", {
 
   events: {
     /** (Fired by {@link qx.ui.form.List}) */
-    "action" : "qx.event.type.Event"
+    "action": "qx.event.type.Event",
+    "editPricingPlan": "qx.event.type.Event"
   },
 
   properties: {
@@ -159,8 +161,20 @@ qx.Class.define("osparc.admin.PricingPlanListItem", {
             rowSpan: 2
           });
           break;
+        case "edit-button":
+          control = new qx.ui.form.Button(this.tr("Edit")).set({
+            alignY: "middle",
+            allowGrowY: false
+          });
+          control.addListener("tap", () => this.fireEvent("editPricingPlan"));
+          this._add(control, {
+            row: 0,
+            column: 4,
+            rowSpan: 2
+          });
+          break;
       }
-      if (control) {
+      if (control && id !== "edit-button") {
         control.set({
           anonymous: true
         });

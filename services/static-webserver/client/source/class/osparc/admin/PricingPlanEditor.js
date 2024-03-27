@@ -34,7 +34,18 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
     manager.add(ppKey);
     manager.add(name);
 
-    pricingPlan ? this.getChildControl("save") : this.getChildControl("create");
+    if (pricingPlan) {
+      this.__pricingPlan = osparc.utils.Utils.deepCloneObject(pricingPlan);
+      this.getChildControl("save");
+      this.set({
+        ppKey: pricingPlan.pricingPlanKey,
+        name: pricingPlan.displayName,
+        description: pricingPlan.description,
+        classification: pricingPlan.classification
+      });
+    } else {
+      this.getChildControl("create");
+    }
   },
 
   properties: {
@@ -73,6 +84,7 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
   },
 
   members: {
+    __pricingPlan: null,
     __validator: null,
 
     _createChildControlImpl: function(id) {
@@ -189,20 +201,14 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
     },
 
     __updatePricingPlan: function() {
-      const ppKey = this.getPpKey();
-      const name = this.getName();
-      const description = this.getDescription();
-      const classification = this.getClassification();
+      this.__pricingPlan["pricingPlanKey"] = this.getPpKey();
+      this.__pricingPlan["displayName"] = this.getName();
+      this.__pricingPlan["description"] = this.getDescription();
       const params = {
         url: {
-          "pricingPlanId": 2
+          "pricingPlanId": this.__pricingPlan["pricingPlanId"]
         },
-        data: {
-          "pricingPlanKey": ppKey,
-          "displayName": name,
-          "description": description,
-          "classification": classification
-        }
+        data: this.__pricingPlan
       };
       osparc.data.Resources.fetch("pricingPlans", "update", params)
         .then(() => {

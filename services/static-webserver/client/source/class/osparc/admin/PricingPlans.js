@@ -83,6 +83,7 @@ qx.Class.define("osparc.admin.PricingPlans", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("pricingPlansList");
+          item.addListener("editPricingPlan", () => this.__updatePricingPlan(item.getModel()));
         }
       });
     },
@@ -108,15 +109,23 @@ qx.Class.define("osparc.admin.PricingPlans", {
       ppCreator.addListener("cancel", () => win.close());
     },
 
-    __updatePricingPlan: function(pricingPlan) {
-      const ppEditor = new osparc.admin.PricingPlanEditor(pricingPlan);
-      const title = this.tr("Pricing Plan Editor");
-      const win = osparc.ui.window.Window.popUpInWindow(ppEditor, title, 400, 250);
-      ppEditor.addListener("done", () => {
-        win.close();
-        this.__fetchPlans();
-      });
-      ppEditor.addListener("cancel", () => win.close());
+    __updatePricingPlan: function(pricingPlanId) {
+      const params = {
+        url: {
+          pricingPlanId
+        }
+      }
+      osparc.data.Resources.fetch("pricingPlans", "getOne", params)
+        .then(pricingPlan => {
+          const ppEditor = new osparc.admin.PricingPlanEditor(pricingPlan);
+          const title = this.tr("Pricing Plan Editor");
+          const win = osparc.ui.window.Window.popUpInWindow(ppEditor, title, 400, 250);
+          ppEditor.addListener("done", () => {
+            win.close();
+            this.__fetchPlans();
+          });
+          ppEditor.addListener("cancel", () => win.close());
+        });
     }
   }
 });
