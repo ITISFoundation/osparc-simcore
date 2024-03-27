@@ -82,8 +82,10 @@ def handle_validation_as_http_error(
                 for e in details
             ]
             enveloped_error_json = json_dumps(
+                # NOTE: this has to be like ResponseErrorBody
                 {
                     "error": {
+                        "message": reason_msg,
                         "status": status.HTTP_422_UNPROCESSABLE_ENTITY,
                         "errors": errors,
                     }
