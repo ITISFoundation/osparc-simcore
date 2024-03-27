@@ -89,7 +89,7 @@ async def _handle_unexpected_exception(
     """
     error_code = create_error_code(err)
     resp = create_error_response(
-        errors=[],  # avoid details
+        errors=None,  # avoid details
         message=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(error_code),
         http_error_cls=web.HTTPInternalServerError,
     )
@@ -112,14 +112,16 @@ def error_middleware_factory(
         """
         Ensure all error raised are properly enveloped and json responses
         """
+        # pylint: ignore=too-many-return-statements
         if not _is_api_request(request, api_version):
             return await handler(request)
 
         try:
+
             try:
                 return await handler(request)
 
-            # NOTE: return and do NOT raise while handling
+            # NOTE: RETURN  and do NOT RAISE a response in exception handlers
             except web.HTTPError as err_resp:
                 return await _handle_http_error(request, err_resp)
 
@@ -141,6 +143,7 @@ def error_middleware_factory(
                     err,
                     http_error_cls=web.HTTPGatewayTimeout,
                 )
+
         except Exception as err:  # pylint: disable=broad-except
             return await _handle_unexpected_exception(request, err)
 
