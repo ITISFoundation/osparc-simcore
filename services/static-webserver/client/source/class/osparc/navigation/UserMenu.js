@@ -113,7 +113,10 @@ qx.Class.define("osparc.navigation.UserMenu", {
         case "log-out": {
           const authData = osparc.auth.Data.getInstance();
           control = new qx.ui.menu.Button(authData.isGuest() ? this.tr("Exit") : this.tr("Log out"));
-          control.addListener("execute", () => qx.core.Init.getApplication().logout());
+          control.addListener("execute", () => {
+            this.exclude();
+            qx.core.Init.getApplication().logout();
+          });
           osparc.utils.Utils.setIdToWidget(control, "userMenuLogoutBtn");
           this.add(control);
           break;
