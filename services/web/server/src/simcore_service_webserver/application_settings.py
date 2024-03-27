@@ -81,7 +81,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # Release information: Passed by the osparc-ops-autodeployer
     SIMCORE_VCS_RELEASE_TAG: str | None = Field(
         default=None,
-        description="Name of the tag that makrs this release or None if undefined",
+        description="Name of the tag that marks this release, or None if undefined",
         example="ResistanceIsFutile10",
     )
 
