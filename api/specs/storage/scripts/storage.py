@@ -30,7 +30,7 @@ from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from servicelib.long_running_tasks._models import TaskGet, TaskId, TaskStatus
 from settings_library.s3 import S3Settings
-from simcore_service_storage._meta import api_vtag
+from simcore_service_storage._meta import API_VTAG
 from simcore_service_storage.models import DatasetMetaData, FileMetaData
 
 TAGS_DATASETS: list[str | Enum] = ["datasets"]
@@ -83,7 +83,7 @@ app = FastAPI(
 
 
 @app.get(
-    f"/{api_vtag}/locations/{{location_id}}/datasets",
+    f"/{API_VTAG}/locations/{{location_id}}/datasets",
     response_model=Envelope[list[DatasetMetaData]],
     tags=TAGS_DATASETS,
     operation_id="get_datasets_metadata",
@@ -97,7 +97,7 @@ async def get_datasets_metadata(location_id: LocationID, user_id: UserID):
 
 
 @app.get(
-    f"/{api_vtag}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata",
+    f"/{API_VTAG}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata",
     response_model=Envelope[list[FileMetaDataGet]],
     tags=TAGS_DATASETS,
     operation_id="get_files_metadata_dataset",
@@ -118,7 +118,7 @@ async def get_files_metadata_dataset(
 
 
 @app.get(
-    f"/{api_vtag}/locations",
+    f"/{API_VTAG}/locations",
     response_model=list[DatasetMetaData],
     tags=TAGS_LOCATIONS,
     operation_id="get_storage_locations",
@@ -129,7 +129,7 @@ async def get_storage_locations(user_id: UserID):
 
 
 @app.post(
-    f"/{api_vtag}/locations/{{location_id}}:sync",
+    f"/{API_VTAG}/locations/{{location_id}}:sync",
     response_model=Envelope[TableSynchronisation],
     tags=TAGS_LOCATIONS,
     operation_id="synchronise_meta_data_table",
@@ -142,7 +142,7 @@ async def synchronise_meta_data_table(
 
 
 @app.get(
-    f"/{api_vtag}/locations/{{location_id}}/files/metadata",
+    f"/{API_VTAG}/locations/{{location_id}}/files/metadata",
     response_model=Envelope[list[DatasetMetaData]],
     tags=TAGS_FILES,
     operation_id="get_files_metadata",
@@ -162,7 +162,7 @@ async def get_files_metadata(
 
 
 @app.get(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}/metadata",
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}/metadata",
     response_model=FileMetaData | Envelope[FileMetaDataGet],
     tags=TAGS_FILES,
     summary="Get File Metadata",
@@ -175,7 +175,7 @@ async def get_file_metadata(
 
 
 @app.get(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}",
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}",
     response_model=Envelope[PresignedLink],
     tags=TAGS_FILES,
     operation_id="download_file",
@@ -191,7 +191,7 @@ async def download_file(
 
 
 @app.put(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}",
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}",
     response_model=Envelope[FileUploadSchema] | Envelope[AnyUrl],
     tags=TAGS_FILES,
     operation_id="upload_file",
@@ -208,7 +208,7 @@ async def upload_file(
 
 
 @app.post(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:abort",
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}:abort",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=TAGS_FILES,
     operation_id="abort_upload_file",
@@ -221,7 +221,7 @@ async def abort_upload_file(
 
 
 @app.post(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:complete",
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}:complete",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=Envelope[FileUploadCompleteResponse],
     tags=TAGS_FILES,
@@ -237,7 +237,7 @@ async def complete_upload_file(
 
 
 @app.post(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:complete/futures/{{future_id}}",
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}:complete/futures/{{future_id}}",
     response_model=Envelope[FileUploadCompleteFutureResponse],
     tags=TAGS_FILES,
     summary="Check for upload completion",
@@ -253,7 +253,7 @@ async def is_completed_upload_file(
 
 
 @app.get(
-    f"/{api_vtag}/",
+    f"/{API_VTAG}/",
     response_model=Envelope[HealthCheck],
     tags=TAGS_HEALTH,
     summary="health check endpoint",
@@ -264,7 +264,7 @@ async def get_health():
 
 
 @app.get(
-    f"/{api_vtag}/status",
+    f"/{API_VTAG}/status",
     response_model=Envelope[AppStatusCheck],
     tags=TAGS_HEALTH,
     summary="returns the status of the services inside",
@@ -278,7 +278,7 @@ async def get_status():
 
 
 @app.delete(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}",
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=TAGS_FILES,
     operation_id="delete_file",
@@ -289,7 +289,7 @@ async def delete_file(location_id: LocationID, file_id: StorageFileID, user_id: 
 
 
 @app.post(
-    f"/{api_vtag}/files/{{file_id}}:soft-copy",
+    f"/{API_VTAG}/files/{{file_id}}:soft-copy",
     response_model=FileMetaDataGet,
     tags=TAGS_FILES,
     summary="copy file as soft link",
@@ -305,7 +305,7 @@ async def copy_as_soft_link(
 
 
 @app.post(
-    f"/{api_vtag}/simcore-s3:access",
+    f"/{API_VTAG}/simcore-s3:access",
     response_model=Envelope[S3Settings],
     tags=TAGS_SIMCORE_S3,
     summary="gets or creates the a temporary access",
@@ -316,7 +316,7 @@ async def get_or_create_temporary_s3_access(user_id: UserID):
 
 
 @app.post(
-    f"/{api_vtag}/simcore-s3/folders",
+    f"/{API_VTAG}/simcore-s3/folders",
     response_model=Envelope[TaskGet],
     tags=TAGS_SIMCORE_S3,
     summary="copies folders from project",
@@ -327,7 +327,7 @@ async def copy_folders_from_project(body_item: FoldersBody, user_id: UserID):
 
 
 @app.delete(
-    f"/{api_vtag}/simcore-s3/folders/{{folder_id}}",
+    f"/{API_VTAG}/simcore-s3/folders/{{folder_id}}",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=TAGS_SIMCORE_S3,
     summary="delete folders from project",
@@ -340,7 +340,7 @@ async def delete_folders_of_project(
 
 
 @app.post(
-    f"/{api_vtag}/simcore-s3/files/metadata:search",
+    f"/{API_VTAG}/simcore-s3/files/metadata:search",
     response_model=Envelope[FileMetaDataGet],
     tags=TAGS_SIMCORE_S3,
     summary="search for files starting with",
@@ -359,7 +359,7 @@ async def search_files(
 
 
 @app.get(
-    f"/{api_vtag}/futures",
+    f"/{API_VTAG}/futures",
     response_model=Envelope[TaskGet],
     tags=TAGS_TASKS,
     summary="list current long running tasks",
@@ -370,7 +370,7 @@ async def list_tasks():
 
 
 @app.get(
-    f"/{api_vtag}/futures/{{task_id}}",
+    f"/{API_VTAG}/futures/{{task_id}}",
     response_model=Envelope[TaskStatus],
     tags=TAGS_TASKS,
     summary="gets the status of the task",
@@ -381,7 +381,7 @@ async def get_task_status(task_id: TaskId):
 
 
 @app.get(
-    f"/{api_vtag}/futures/{{task_id}}/result",
+    f"/{API_VTAG}/futures/{{task_id}}/result",
     response_model=Any,
     tags=TAGS_TASKS,
     summary="get result of the task",
@@ -392,7 +392,7 @@ async def get_task_result(task_id: TaskId):
 
 
 @app.delete(
-    f"/{api_vtag}/futures/{{task_id}}",
+    f"/{API_VTAG}/futures/{{task_id}}",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=TAGS_TASKS,
     summary="cancels and removes the task",

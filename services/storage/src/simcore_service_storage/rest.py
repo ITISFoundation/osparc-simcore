@@ -19,7 +19,7 @@ from . import (
     handlers_locations,
     handlers_simcore_s3,
 )
-from ._meta import api_vtag
+from ._meta import API_VTAG
 from .handlers_files import UPLOAD_TASKS_KEY
 from .resources import storage_resources
 
@@ -58,7 +58,7 @@ def setup_rest(app: web.Application):
     app[UPLOAD_TASKS_KEY] = {}
 
     # Enable error, validation and envelop middleware on API routes
-    append_rest_middlewares(app, api_version=f"/{api_vtag}")
+    append_rest_middlewares(app, api_version=f"/{API_VTAG}")
 
     # Adds swagger doc UI
     setup_swagger(
