@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
                 credits: rawRow.osparcCredits ? rawRow.osparcCredits.toFixed(2) * 1 : 0,
                 status: this.__addColorTag(rawRow.completedStatus),
                 comment: rawRow.comment,
-                invoice: rawRow.invoiceUrl ? this.__createPdfIconWithLink(rawRow.invoiceUrl, rawRow.walletId, rawRow.paymentId) : ""
+                invoice: rawRow.invoiceUrl ? this.__createPdfIconWithLink(rawRow.walletId, rawRow.paymentId) : ""
               })
             })
             return data
