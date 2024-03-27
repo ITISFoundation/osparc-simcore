@@ -7,11 +7,12 @@
 
 import sys
 from collections import deque
+from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
 from random import randint
 from secrets import choice
-from typing import Any, Awaitable, Callable, Literal
+from typing import Any, Literal
 
 import pytest
 import sqlalchemy as sa
