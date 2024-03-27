@@ -1,7 +1,6 @@
 """ Utils to check, convert and compose server responses for the RESTApi
 
 """
-import json
 from collections.abc import Mapping
 from dataclasses import asdict
 from http import HTTPStatus
@@ -11,7 +10,7 @@ from aiohttp import web
 from aiohttp.web_exceptions import HTTPError
 from servicelib.aiohttp.status import HTTP_200_OK
 
-from ..json_serialization import json_dumps
+from ..json_serialization import json_dumps, safe_json_loads
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorDetail, ResponseErrorBody
 
@@ -24,11 +23,9 @@ def is_enveloped_from_map(payload: Mapping) -> bool:
 
 
 def is_enveloped_from_text(text: str) -> bool:
-    try:
-        payload = json.loads(text)
+    if payload := safe_json_loads(text):
         return is_enveloped_from_map(payload)
-    except json.decoder.JSONDecodeError:
-        return False
+    return False
 
 
 def is_enveloped(payload: Mapping | str) -> bool:
