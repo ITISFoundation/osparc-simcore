@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
                 credits: rawRow.osparcCredits ? rawRow.osparcCredits.toFixed(2) * 1 : 0,
                 status: this.__addColorTag(rawRow.completedStatus),
                 comment: rawRow.comment,
-                invoice: rawRow.invoiceUrl ? this.__createPdfIconWithLink(rawRow.invoiceUrl) : ""
+                invoice: rawRow.invoiceUrl ? this.__createPdfIconWithLink(rawRow.walletId, rawRow.paymentId) : ""
               })
             })
             return data
@@ -147,8 +147,14 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
     __addColorTag: function(status) {
       return `<font color=${this.__getLevelColor(status)}>${osparc.utils.Utils.onlyFirstsUp(status)}</font>`;
     },
-    __createPdfIconWithLink: function(link) {
-      return `<a href='${link}' target='_blank'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png' alt='Invoice' width='16' height='20'></a>`;
+
+    __createPdfIconWithLink: function(walletId, paymentId) {
+      const urlParams = {
+        walletId,
+        paymentId
+      };
+      const req = osparc.data.Resources.getInstance().replaceUrlParams("payments", "invoiceLink", urlParams);
+      return `<a href='${req.url}' target='_blank'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png' alt='Invoice' width='16' height='20'></a>`;
     }
   }
 })
