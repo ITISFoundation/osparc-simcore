@@ -144,7 +144,6 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
       }
       return colorManager.resolve(`logger-${logLevel}-message`);
     },
-
     __addColorTag: function(status) {
       return `<font color=${this.__getLevelColor(status)}>${osparc.utils.Utils.onlyFirstsUp(status)}</font>`;
     },
