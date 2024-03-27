@@ -149,14 +149,12 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
     },
 
     __createPdfIconWithLink: function(link, walletId, paymentId) {
-      const params = {
-        url: {
-          walletId,
-          paymentId
-        }
+      const urlParams = {
+        walletId,
+        paymentId
       };
-      const req = osparc.data.Resources.getInstance().createRequest("payments", "invoiceLink");
-      return `<a href='${getReqConfig.url}' target='_blank'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png' alt='Invoice' width='16' height='20'></a>`;
+      const req = osparc.data.Resources.getInstance().replaceUrlParams("payments", "invoiceLink", urlParams);
+      return `<a href='${req.url}' target='_blank'><img src='https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/PDF_file_icon.svg/833px-PDF_file_icon.svg.png' alt='Invoice' width='16' height='20'></a>`;
     }
   }
 })
