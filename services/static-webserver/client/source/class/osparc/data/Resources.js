@@ -1083,10 +1083,16 @@ qx.Class.define("osparc.data.Resources", {
   members: {
     /**
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
+     * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
+     * @param {Object} urlParams Object containing only the parameters for the url of the request.
      */
-    createRequest: function(resource) {
+    replaceUrlParams: function(resource, endpoint, urlParams) {
       const resourceDefinition = this.self().resources[resource];
-      return new osparc.io.rest.Resource(resourceDefinition.endpoints);
+      const res = new osparc.io.rest.Resource(resourceDefinition.endpoints);
+      // Use qooxdoo's Get request configuration
+      // eslint-disable-next-line no-underscore-dangle
+      const getReqConfig = res._resource._getRequestConfig(endpoint, urlParams);
+      return getReqConfig;
     },
 
     /**
@@ -1104,7 +1110,7 @@ qx.Class.define("osparc.data.Resources", {
         }
 
         const resourceDefinition = this.self().resources[resource];
-        const res = this.createRequest(resource);
+        const res = new osparc.io.rest.Resource(resourceDefinition.endpoints);
 
         if (!res.includesRoute(endpoint)) {
           reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
