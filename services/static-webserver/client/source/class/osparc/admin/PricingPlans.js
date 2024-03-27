@@ -19,7 +19,7 @@ qx.Class.define("osparc.admin.PricingPlans", {
   extend: osparc.po.BaseView,
 
   members: {
-    __messageTemplates: null,
+    __model: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -51,78 +51,35 @@ qx.Class.define("osparc.admin.PricingPlans", {
 
     _buildLayout: function() {
       this.getChildControl("pricing-plans-filter");
-      const params = {
-        url: {
-          productName: osparc.product.Utils.getProductName()
-        }
-      };
-      osparc.data.Resources.fetch("productMetadata", "get", params)
-        .then(respData => {
-          this.__messageTemplates = respData["templates"];
-          this.__buildLayout();
-        });
+      osparc.data.Resources.fetch("pricingPlans", "get")
+        .then(data => this.__populateList(data));
     },
 
-    __buildLayout: function() {
-      this._removeAll();
-
-      const templatesSB = new qx.ui.form.SelectBox().set({
-        allowGrowX: false
-      });
-      this._add(templatesSB);
-
-      const htmlViewer = this.__htmlViewer = new osparc.editor.HtmlEditor().set({
-        minHeight: 400
-      });
-      htmlViewer.getChildControl("cancel-button").exclude();
-      const container = new qx.ui.container.Scroll();
-      container.add(htmlViewer, {
-        flex: 1
-      });
-      this._add(container, {
-        flex: 1
-      });
-
-      templatesSB.addListener("changeSelection", e => {
-        const templateId = e.getData()[0].getModel();
-        this.__populateMessage(templateId);
-      }, this);
-      this.__messageTemplates.forEach(template => {
-        const lItem = new qx.ui.form.ListItem(template.id, null, template.id);
-        templatesSB.add(lItem);
-      });
-      htmlViewer.addListener("textChanged", e => {
-        const newTemplate = e.getData();
-        const templateId = templatesSB.getSelection()[0].getModel();
-        this.__saveTemplate(templateId, newTemplate);
-      });
-    },
-
-    __populateMessage: function(templateId) {
-      const found = this.__messageTemplates.find(template => template.id === templateId);
-      if (found) {
-        this.__htmlViewer.setText(found.content);
+    __populateList: function(pricingPlans) {
+      if (pricingPlans.length === 0) {
+        return;
       }
-    },
 
-    __saveTemplate: function(templateId, newTemplate) {
-      const productName = osparc.product.Utils.getProductName();
-      const params = {
-        url: {
-          productName,
-          templateId
+      const list = this.getChildControl("pricing-plans-list");
+
+      const model = this.__model = new qx.data.Array();
+      const orgsCtrl = new qx.data.controller.List(model, list, "label");
+      orgsCtrl.setDelegate({
+        createItem: () => new osparc.admin.PricingPlanListItem(),
+        bindItem: (ctrl, item, id) => {
+          ctrl.bindProperty("pricingPlanId", "model", null, item, id);
+          ctrl.bindProperty("pricingPlanId", "ppId", null, item, id);
+          ctrl.bindProperty("pricingPlanKey", "ppKey", null, item, id);
+          ctrl.bindProperty("displayName", "title", null, item, id);
+          ctrl.bindProperty("description", "description", null, item, id);
+          ctrl.bindProperty("isActive", "isActive", null, item, id);
         },
-        data: {
-          content: newTemplate
+        configureItem: item => {
+          item.subscribeToFilterGroup("pricingPlansList");
         }
-      };
-      osparc.data.Resources.fetch("productMetadata", "updateEmailTemplate", params)
-        .then(() => osparc.FlashMessenger.logAs(this.tr("Template updated"), "INFO"))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        })
-        .finally(() => this._buildLayout());
+      });
+
+      pricingPlans.forEach(pricingPlan => model.append(qx.data.marshal.Json.createModel(pricingPlan)));
     }
   }
 });
