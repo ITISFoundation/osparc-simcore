@@ -6,6 +6,7 @@
 import asyncio
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Any
@@ -31,6 +32,7 @@ from servicelib.aiohttp.web_exceptions_extension import (
 )
 from servicelib.error_codes import parse_error_code
 from servicelib.json_serialization import json_dumps
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.status_codes_utils import (
     get_http_status_codes,
     is_2xx_success,
@@ -157,9 +159,33 @@ class Handlers:
             case _:  # unexpected
                 raise SomeUnexpectedError(cls.EXPECTED_RAISE_UNEXPECTED_REASON)
 
+    @staticmethod
+    async def raise_error(request: web.Request):
+        raise web.HTTPNotFound
+
+    @staticmethod
+    async def raise_error_with_reason(request: web.Request):
+        raise web.HTTPNotFound(reason="I did not find it")
+
+    @staticmethod
+    async def raise_success(request: web.Request):
+        raise web.HTTPOk
+
+    @staticmethod
+    async def raise_success_with_reason(request: web.Request):
+        raise web.HTTPOk(reason="I'm ok")
+
+    @staticmethod
+    async def raise_success_with_text(request: web.Request):
+        # NOTE: explicitly NOT enveloped!
+        raise web.HTTPOk(reason="I'm ok", text=json.dumps({"ok": True}))
+
 
 @pytest.fixture
-def client(event_loop, aiohttp_client):
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+):
     app = web.Application()
 
     # routes
@@ -176,7 +202,13 @@ def client(event_loop, aiohttp_client):
                 ("/v1/number", Handlers.get_number),
                 ("/v1/mixed", Handlers.get_mixed),
                 ("/v1/get_http_response", Handlers.get_http_response),
+                # custom use cases
                 ("/v1/raise_exception", Handlers.raise_exception),
+                ("/v1/raise_error", Handlers.raise_error),
+                ("/v1/raise_error_with_reason", Handlers.raise_error_with_reason),
+                ("/v1/raise_success", Handlers.raise_success),
+                ("/v1/raise_success_with_reason", Handlers.raise_success_with_reason),
+                ("/v1/raise_success_with_text", Handlers.raise_success_with_text),
             ]
         ]
     )
@@ -292,13 +324,14 @@ async def test_fails_with_http_successful(client: TestClient, status_code: int):
     assert response.reason == Handlers.EXPECTED_HTTP_RESPONSE_REASON.format(status_code)
 
     # NOTE: non-json response are sometimes necessary mostly on redirects
-    # NOTE: this is how aiohptt defaults text using status and reason when empty_body is not expected
+    # NOTE: this is how aiohttp defaults text using status and reason when empty_body is not expected
     expected = (
         ""
         if all_aiohttp_http_exceptions[status_code].empty_body
         else f"{response.status}: {response.reason}"
     )
     assert await response.text() == expected
+    # NOTE there is an concerning asymmetry between returning and raising web.HTTPSuccessful!!!
 
 
 @pytest.mark.parametrize(
@@ -408,3 +441,55 @@ async def test_aiohttp_exceptions_construction_policies(client: TestClient):
     text = await response.text()
     assert err.text == f"{err.status}: {err.reason}"
     print(text)
+
+
+async def test_raise_error(client: TestClient):
+    # w/o reason
+    resp1 = await client.get("/v1/raise_error")
+    assert resp1.status == status.HTTP_404_NOT_FOUND
+    assert resp1.content_type == MIMETYPE_APPLICATION_JSON
+    assert resp1.reason == HTTPStatus(resp1.status).phrase
+
+    body = await resp1.json()
+    assert body["error"]["message"] == resp1.reason
+
+    # without
+    resp2 = await client.get("/v1/raise_error_with_reason")
+    assert resp2.status == resp1.status
+    assert resp2.content_type == resp1.content_type
+    assert resp2.reason != resp1.reason
+
+    body = await resp2.json()
+    assert body["error"]["message"] == resp2.reason
+
+
+async def test_raise_success(client: TestClient):
+    # w/o reason
+    resp_default = await client.get("/v1/raise_success")
+    assert resp_default.status == status.HTTP_200_OK
+    assert resp_default.content_type == MIMETYPE_APPLICATION_JSON
+    assert resp_default.reason == HTTPStatus(resp_default.status).phrase
+
+    body = await resp_default.json()
+    assert body["data"] == resp_default.reason
+
+    # without
+    resp2 = await client.get("/v1/raise_success_with_reason")
+    assert resp2.status == resp_default.status
+    assert resp2.content_type == resp_default.content_type
+    assert resp2.reason != resp_default.reason
+
+    body = await resp2.json()
+    assert body["data"] == resp2.reason
+
+    # with text
+    # NOTE: in this case, when we enforce text, then `reason` does not reach front-end anymore!
+    resp3 = await client.get("/v1/raise_success_with_text")
+    assert resp3.status == resp_default.status
+    assert resp3.content_type == resp_default.content_type
+    assert resp3.reason != resp_default.reason
+
+    body = await resp3.json()
+    # explicitly NOT enveloped
+    assert "data" not in body
+    assert body == {"ok": True}
