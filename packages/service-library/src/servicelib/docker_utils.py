@@ -198,9 +198,9 @@ async def pull_image(
                     assert parsed_progress.id  # nosec
                     assert parsed_progress.progress_detail  # nosec
                     assert parsed_progress.progress_detail.current  # nosec
-                    layer_id_to_size[
-                        parsed_progress.id
-                    ].downloaded = parsed_progress.progress_detail.current
+                    layer_id_to_size[parsed_progress.id].downloaded = (
+                        parsed_progress.progress_detail.current
+                    )
                 case "verifying checksum" | "download complete":
                     assert parsed_progress.id  # nosec
                     layer_id_to_size[parsed_progress.id].downloaded = layer_id_to_size[
@@ -210,9 +210,9 @@ async def pull_image(
                     assert parsed_progress.id  # nosec
                     assert parsed_progress.progress_detail  # nosec
                     assert parsed_progress.progress_detail.current  # nosec
-                    layer_id_to_size[
-                        parsed_progress.id
-                    ].extracted = parsed_progress.progress_detail.current
+                    layer_id_to_size[parsed_progress.id].extracted = (
+                        parsed_progress.progress_detail.current
+                    )
                 case "pull complete":
                     assert parsed_progress.id  # nosec
                     layer_id_to_size[parsed_progress.id].extracted = layer_id_to_size[

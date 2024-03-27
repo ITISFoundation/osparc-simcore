@@ -32,4 +32,3 @@ make cfg.json
 ```
 make migrate
 ```
-

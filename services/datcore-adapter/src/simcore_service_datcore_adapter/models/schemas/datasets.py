@@ -52,7 +52,9 @@ class FileMetaData(BaseModel):
             size=file_size,
             created_at=package["content"]["createdAt"],
             last_modified_at=package["content"]["updatedAt"],
-            data_type=DataType.FOLDER
-            if package["content"]["packageType"] == "Collection"
-            else DataType.FILE,
+            data_type=(
+                DataType.FOLDER
+                if package["content"]["packageType"] == "Collection"
+                else DataType.FILE
+            ),
         )

@@ -1,9 +1,10 @@
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import wraps
 from math import ceil
-from typing import Callable, NamedTuple
+from typing import NamedTuple
 
 from aiohttp.web_exceptions import HTTPTooManyRequests
 

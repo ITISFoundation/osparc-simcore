@@ -1,14 +1,15 @@
 import datetime
-
 import typing
-from typing import Union
+
 from . import typing_utils
 
-T = typing.TypeVar('T')
-Class = typing.Type[T]
+T = typing.TypeVar("T")
+Class = type[T]
 
 
-def _deserialize(data: Union[dict, list, str], klass: Union[Class, str]) -> Union[dict, list, Class, int, float, str, bool, datetime.date, datetime.datetime]:
+def _deserialize(
+    data: dict | list | str, klass: Class | str
+) -> dict | list | Class | int | float | str | bool | datetime.date | datetime.datetime:
     """Deserializes dict, list, str into an object.
 
     :param data: dict, list or str.
@@ -36,7 +37,7 @@ def _deserialize(data: Union[dict, list, str], klass: Union[Class, str]) -> Unio
         return deserialize_model(data, klass)
 
 
-def _deserialize_primitive(data, klass: Class) -> Union[Class, int, float, str, bool]:
+def _deserialize_primitive(data, klass: Class) -> Class | int | float | str | bool:
     """Deserializes to primitive type.
 
     :param data: data to deserialize.
@@ -67,6 +68,7 @@ def deserialize_date(string: str) -> datetime.date:
     """
     try:
         from dateutil.parser import parse
+
         return parse(string).date()
     except ImportError:
         return string
@@ -82,12 +84,13 @@ def deserialize_datetime(string: str) -> datetime.datetime:
     """
     try:
         from dateutil.parser import parse
+
         return parse(string)
     except ImportError:
         return string
 
 
-def deserialize_model(data: Union[dict, list], klass: T) -> T:
+def deserialize_model(data: dict | list, klass: T) -> T:
     """Deserializes list or dict to model.
 
     :param data: dict, list.

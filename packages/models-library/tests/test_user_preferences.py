@@ -131,12 +131,10 @@ def test__user_service__user_preference(
 def test_redefine_class_with_same_name_is_not_allowed(unregister_defined_classes: None):
     # pylint: disable=unused-variable
     def def_class_1():
-        class APreference(_BaseUserPreferenceModel):
-            ...
+        class APreference(_BaseUserPreferenceModel): ...
 
     def def_class_2():
-        class APreference(_BaseUserPreferenceModel):
-            ...
+        class APreference(_BaseUserPreferenceModel): ...
 
     def_class_1()
     with pytest.raises(TypeError, match="was already defined"):

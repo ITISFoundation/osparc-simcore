@@ -1,7 +1,8 @@
 import asyncio
 import logging
 from asyncio import Queue
-from typing import AsyncIterable, Awaitable, Callable, Final
+from collections.abc import AsyncIterable, Awaitable, Callable
+from typing import Final
 
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID

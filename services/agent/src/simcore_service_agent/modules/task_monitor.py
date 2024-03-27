@@ -1,10 +1,11 @@
 import asyncio
 import logging
 from collections import deque
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
 from time import time
-from typing import Any, Awaitable, Callable, Final, Optional
+from typing import Any, Final
 
 from fastapi import FastAPI
 from pydantic import PositiveFloat, PositiveInt
@@ -22,8 +23,8 @@ DEFAULT_TASK_WAIT_ON_ERROR: Final[PositiveInt] = 10
 class _TaskData:
     target: Callable
     args: Any
-    repeat_interval_s: Optional[PositiveFloat]
-    _start_time: Optional[PositiveFloat] = None
+    repeat_interval_s: PositiveFloat | None
+    _start_time: PositiveFloat | None = None
 
     @property
     def name(self) -> str:
@@ -99,7 +100,7 @@ class TaskMonitor:
         self,
         target: Callable,
         *args: Any,
-        repeat_interval_s: Optional[PositiveFloat] = None,
+        repeat_interval_s: PositiveFloat | None = None,
     ) -> None:
         if self._was_started:
             raise RuntimeError(

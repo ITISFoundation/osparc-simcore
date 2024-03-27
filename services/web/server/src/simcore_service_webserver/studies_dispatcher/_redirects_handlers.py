@@ -1,6 +1,7 @@
 """ Handles request to the viewers redirection entrypoints
 
 """
+
 import functools
 import logging
 import urllib.parse

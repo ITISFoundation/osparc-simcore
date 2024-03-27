@@ -174,9 +174,11 @@ async def test_get_solver_job_pricing_unit(
     respx_mock = respx_mock_from_capture(
         [mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / capture_file,
-        [_get_job_side_effect, _get_pricing_unit_side_effect]
-        if capture_file == "get_job_pricing_unit_success.json"
-        else [_get_job_side_effect],
+        (
+            [_get_job_side_effect, _get_pricing_unit_side_effect]
+            if capture_file == "get_job_pricing_unit_success.json"
+            else [_get_job_side_effect]
+        ),
     )
 
     response = await client.get(

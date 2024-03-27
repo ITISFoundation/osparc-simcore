@@ -33,10 +33,12 @@ async def get_service_access_rights(
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     x_simcore_products_name: str = Header(...),
 ):
-    service_access_rights: list[
-        ServiceAccessRightsAtDB
-    ] = await services_repo.get_service_access_rights(
-        key=service_key, version=service_version, product_name=x_simcore_products_name
+    service_access_rights: list[ServiceAccessRightsAtDB] = (
+        await services_repo.get_service_access_rights(
+            key=service_key,
+            version=service_version,
+            product_name=x_simcore_products_name,
+        )
     )
 
     gids_with_access_rights = {}

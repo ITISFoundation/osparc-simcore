@@ -123,9 +123,9 @@ def _update_paths_mappings(
         )
         env_vars["DY_SIDECAR_PATH_INPUTS"] = f"{path_mappings.inputs_path}"
         env_vars["DY_SIDECAR_PATH_OUTPUTS"] = f"{path_mappings.outputs_path}"
-        env_vars[
-            "DY_SIDECAR_STATE_PATHS"
-        ] = f"{json_dumps( { f'{p}' for p in path_mappings.state_paths } )}"
+        env_vars["DY_SIDECAR_STATE_PATHS"] = (
+            f"{json_dumps( { f'{p}' for p in path_mappings.state_paths } )}"
+        )
 
         service_content["environment"] = _EnvironmentSection.export_as_list(env_vars)
 
@@ -282,9 +282,9 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
     the dynamic-sidecar to start the service
     """
 
-    docker_registry_settings: (
-        RegistrySettings
-    ) = app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
+    docker_registry_settings: RegistrySettings = (
+        app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
+    )
 
     docker_compose_version = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION

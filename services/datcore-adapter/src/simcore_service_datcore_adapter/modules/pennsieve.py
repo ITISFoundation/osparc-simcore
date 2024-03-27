@@ -46,9 +46,9 @@ class PennsieveAuthorizationHeaders(TypedDict):
     Authorization: str
 
 
-_TTL_CACHE_AUTHORIZATION_HEADERS_SECONDS: Final[
-    int
-] = 3530  # NOTE: observed while developing this code, pennsieve authorizes 3600 seconds, so we cache a bit less
+_TTL_CACHE_AUTHORIZATION_HEADERS_SECONDS: Final[int] = (
+    3530  # NOTE: observed while developing this code, pennsieve authorizes 3600 seconds, so we cache a bit less
+)
 
 ExpirationTimeSecs = int
 
@@ -304,9 +304,11 @@ class PennsieveApiClient(BaseServiceClientApi):
             [
                 FileMetaData.from_pennsieve_package(
                     pck,
-                    package_files[pck["content"]["id"]]
-                    if pck["content"]["packageType"] != "Collection"
-                    else [],
+                    (
+                        package_files[pck["content"]["id"]]
+                        if pck["content"]["packageType"] != "Collection"
+                        else []
+                    ),
                     base_path=Path(dataset_pck["content"]["name"]),
                 )
                 for pck in islice(dataset_pck["children"], offset, offset + limit)
@@ -353,9 +355,11 @@ class PennsieveApiClient(BaseServiceClientApi):
             [
                 FileMetaData.from_pennsieve_package(
                     pck,
-                    package_files[pck["content"]["id"]]
-                    if pck["content"]["packageType"] != "Collection"
-                    else [],
+                    (
+                        package_files[pck["content"]["id"]]
+                        if pck["content"]["packageType"] != "Collection"
+                        else []
+                    ),
                     base_path=base_path,
                 )
                 for pck in islice(collection_pck["children"], offset, offset + limit)

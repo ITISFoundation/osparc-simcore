@@ -1,6 +1,7 @@
 """
     Models a study's project document
 """
+
 import re
 from copy import deepcopy
 from datetime import datetime

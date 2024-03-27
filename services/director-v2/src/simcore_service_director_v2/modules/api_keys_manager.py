@@ -63,7 +63,9 @@ class APIKeysManager(
 
     async def is_used(self, identifier: str, cleanup_context: CleanupContext) -> bool:
         _ = identifier
-        scheduler: "DynamicSidecarsScheduler" = (  # type:ignore [name-defined] # noqa: F821
+        scheduler: (
+            "DynamicSidecarsScheduler"
+        ) = (  # type:ignore [name-defined] # noqa: F821
             self.app.state.dynamic_sidecar_scheduler
         )
         return bool(scheduler.is_service_tracked(cleanup_context.node_id))

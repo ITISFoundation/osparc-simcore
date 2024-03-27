@@ -2,8 +2,8 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from collections.abc import Callable
-from typing import Any, AsyncIterable
+from collections.abc import AsyncIterable, Callable
+from typing import Any
 
 import pytest
 from fastapi import FastAPI, status

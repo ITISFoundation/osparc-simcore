@@ -3,6 +3,7 @@
     Adds version control to projects
 
 """
+
 import logging
 
 from aiohttp import web

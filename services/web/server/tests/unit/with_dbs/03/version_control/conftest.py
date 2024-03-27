@@ -3,9 +3,10 @@
 # pylint: disable=unused-variable
 
 import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 from unittest import mock
 from uuid import UUID
 
@@ -245,9 +246,11 @@ async def request_delete_project(
         "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
         autospec=True,
     )
-    dynamic_scheduler_api_stop_dynamic_services_in_project: mock.AsyncMock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.dynamic_scheduler_api.stop_dynamic_services_in_project",
-        autospec=True,
+    dynamic_scheduler_api_stop_dynamic_services_in_project: mock.AsyncMock = (
+        mocker.patch(
+            "simcore_service_webserver.projects.projects_api.dynamic_scheduler_api.stop_dynamic_services_in_project",
+            autospec=True,
+        )
     )
     fire_and_forget_call_to_storage: mock.Mock = mocker.patch(
         "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",

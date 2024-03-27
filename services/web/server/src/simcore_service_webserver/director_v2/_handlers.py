@@ -108,9 +108,9 @@ async def start_computation(request: web.Request) -> web.Response:
             "start_pipeline": True,
             "subgraph": list(subgraph),  # sets are not natively json serializable
             "force_restart": force_restart,
-            "cluster_id": None
-            if group_properties.use_on_demand_clusters
-            else cluster_id,
+            "cluster_id": (
+                None if group_properties.use_on_demand_clusters else cluster_id
+            ),
             "simcore_user_agent": simcore_user_agent,
             "use_on_demand_clusters": group_properties.use_on_demand_clusters,
             "wallet_info": wallet_info,

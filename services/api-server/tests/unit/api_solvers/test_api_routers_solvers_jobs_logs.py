@@ -7,8 +7,9 @@
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable, Iterable
 from pprint import pprint
-from typing import Awaitable, Callable, Final, Iterable
+from typing import Final
 
 import httpx
 import pytest

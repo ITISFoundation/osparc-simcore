@@ -84,22 +84,30 @@ def tasks(
                 "project_id": f"{project.uuid}",
                 "node_id": f"{node_id}",
                 "schema": {"inputs": {}, "outputs": {}},
-                "inputs": {
-                    key: json.loads(value.json(by_alias=True, exclude_unset=True))
-                    if isinstance(value, BaseModel)
-                    else value
-                    for key, value in node_data.inputs.items()
-                }
-                if node_data.inputs
-                else {},
-                "outputs": {
-                    key: json.loads(value.json(by_alias=True, exclude_unset=True))
-                    if isinstance(value, BaseModel)
-                    else value
-                    for key, value in node_data.outputs.items()
-                }
-                if node_data.outputs
-                else {},
+                "inputs": (
+                    {
+                        key: (
+                            json.loads(value.json(by_alias=True, exclude_unset=True))
+                            if isinstance(value, BaseModel)
+                            else value
+                        )
+                        for key, value in node_data.inputs.items()
+                    }
+                    if node_data.inputs
+                    else {}
+                ),
+                "outputs": (
+                    {
+                        key: (
+                            json.loads(value.json(by_alias=True, exclude_unset=True))
+                            if isinstance(value, BaseModel)
+                            else value
+                        )
+                        for key, value in node_data.outputs.items()
+                    }
+                    if node_data.outputs
+                    else {}
+                ),
                 "image": Image(name=node_data.key, tag=node_data.version).dict(  # type: ignore
                     by_alias=True, exclude_unset=True
                 ),  # type: ignore

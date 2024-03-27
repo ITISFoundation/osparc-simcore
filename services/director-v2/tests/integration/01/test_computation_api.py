@@ -88,8 +88,7 @@ def minimal_configuration(
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
-) -> None:
-    ...
+) -> None: ...
 
 
 @pytest.fixture(scope="session")

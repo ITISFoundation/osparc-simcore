@@ -8,6 +8,7 @@ All keys are constants with a unique name convention:
 
  See https://aiohttp.readthedocs.io/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
 """
+
 from typing import Final
 
 # REQUIREMENTS:

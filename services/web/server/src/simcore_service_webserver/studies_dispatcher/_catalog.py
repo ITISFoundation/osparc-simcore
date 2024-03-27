@@ -1,7 +1,7 @@
 import logging
+from collections.abc import AsyncIterator
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import AsyncIterator
 
 import sqlalchemy as sa
 from aiohttp import web

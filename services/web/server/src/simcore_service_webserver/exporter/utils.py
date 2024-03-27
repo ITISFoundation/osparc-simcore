@@ -1,6 +1,7 @@
 import asyncio
+from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from aiohttp.abc import AbstractStreamWriter
 from aiohttp.typedefs import LooseHeaders

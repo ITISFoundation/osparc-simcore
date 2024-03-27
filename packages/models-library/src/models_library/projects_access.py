@@ -11,8 +11,7 @@ from pydantic import BaseModel, Extra, Field
 from pydantic.types import PositiveInt
 
 
-class GroupIDStr(IDStr):
-    ...
+class GroupIDStr(IDStr): ...
 
 
 class AccessEnum(str, Enum):

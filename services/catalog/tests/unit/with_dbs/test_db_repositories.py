@@ -2,8 +2,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable
 
 import pytest
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
@@ -231,19 +231,19 @@ async def test_list_service_releases_version_filtered(
     assert latest
     assert latest.version == fake_catalog_with_jupyterlab.expected_latest
 
-    releases_1_1_x: list[
-        ServiceMetaDataAtDB
-    ] = await services_repo.list_service_releases(
-        "simcore/services/dynamic/jupyterlab", major=1, minor=1
+    releases_1_1_x: list[ServiceMetaDataAtDB] = (
+        await services_repo.list_service_releases(
+            "simcore/services/dynamic/jupyterlab", major=1, minor=1
+        )
     )
     assert [
         s.version for s in releases_1_1_x
     ] == fake_catalog_with_jupyterlab.expected_1_1_x
 
-    expected_0_x_x: list[
-        ServiceMetaDataAtDB
-    ] = await services_repo.list_service_releases(
-        "simcore/services/dynamic/jupyterlab", major=0
+    expected_0_x_x: list[ServiceMetaDataAtDB] = (
+        await services_repo.list_service_releases(
+            "simcore/services/dynamic/jupyterlab", major=0
+        )
     )
     assert [
         s.version for s in expected_0_x_x

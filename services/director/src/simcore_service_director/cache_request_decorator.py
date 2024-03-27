@@ -1,5 +1,5 @@
+from collections.abc import Coroutine
 from functools import wraps
-from typing import Coroutine, Dict, Tuple
 
 from aiohttp import web
 from simcore_service_director import config
@@ -9,7 +9,7 @@ def cache_requests(func: Coroutine, no_cache: bool = False):
     @wraps(func)
     async def wrapped(
         app: web.Application, url: str, method: str, *args, **kwargs
-    ) -> Tuple[Dict, Dict]:
+    ) -> tuple[dict, dict]:
         is_cache_enabled = config.DIRECTOR_REGISTRY_CACHING and method == "GET"
         cache_key = f"{url}:{method}"
         if is_cache_enabled and not no_cache:

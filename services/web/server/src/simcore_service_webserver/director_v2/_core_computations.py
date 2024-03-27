@@ -3,6 +3,7 @@
 Wraps interactions to the director-v2 service
 
 """
+
 import json
 import logging
 from typing import Any

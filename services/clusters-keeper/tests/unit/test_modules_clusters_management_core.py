@@ -62,8 +62,7 @@ def _base_configuration(
     mocked_redis_server: None,
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_primary_ec2_instances_envs: EnvVarsDict,
-) -> None:
-    ...
+) -> None: ...
 
 
 async def _assert_cluster_exist_and_state(

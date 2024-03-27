@@ -37,8 +37,7 @@ UNDEFINED_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, -1)
 UploadID = str
 
 
-class DatasetMetaData(DatasetMetaDataGet):
-    ...
+class DatasetMetaData(DatasetMetaDataGet): ...
 
 
 def is_uuid(value: str) -> bool:
@@ -107,9 +106,9 @@ class FileMetaData(FileMetaDataGet):
             "object_name": file_id,
             "file_name": parts[-1],
             "user_id": user_id,
-            "project_id": parse_obj_as(ProjectID, parts[0])
-            if is_uuid(parts[0])
-            else None,
+            "project_id": (
+                parse_obj_as(ProjectID, parts[0]) if is_uuid(parts[0]) else None
+            ),
             "node_id": parse_obj_as(NodeID, parts[1]) if is_uuid(parts[1]) else None,
             "file_id": file_id,
             "created_at": now,

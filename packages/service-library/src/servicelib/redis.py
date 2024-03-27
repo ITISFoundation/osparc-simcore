@@ -28,8 +28,7 @@ _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
 logger = logging.getLogger(__name__)
 
 
-class BaseRedisError(PydanticErrorMixin, RuntimeError):
-    ...
+class BaseRedisError(PydanticErrorMixin, RuntimeError): ...
 
 
 class CouldNotAcquireLockError(BaseRedisError):

@@ -3,8 +3,8 @@
 # pylint: disable=unused-variable
 import os
 import shutil
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import pytest
 import yaml

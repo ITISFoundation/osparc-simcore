@@ -126,5 +126,4 @@ class NodeRetrieve(InputSchemaWithoutCameCase):
 
 
 class NodeRetrieved(RetrieveDataOut):
-    class Config(OutputSchema.Config):
-        ...
+    class Config(OutputSchema.Config): ...

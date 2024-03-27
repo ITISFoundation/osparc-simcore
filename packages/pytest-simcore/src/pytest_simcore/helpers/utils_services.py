@@ -1,6 +1,7 @@
 """
     NOTE: avoid creating dependencies
 """
+
 from typing import Any
 
 FAKE_FILE_CONSUMER_SERVICES = [

@@ -56,7 +56,7 @@ def test_load_from_labels(
         config_path = (
             tmp_path / f"{model.__class__.__name__.lower()}-{labels_fixture_name}.yml"
         )
-        with open(config_path, "wt") as fh:
+        with open(config_path, "w") as fh:
             data = json.loads(
                 model.json(exclude_unset=True, by_alias=True, exclude_none=True)
             )

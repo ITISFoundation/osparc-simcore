@@ -17,5 +17,4 @@ class ServiceSpecifications(BaseModel):
         pass
 
 
-class ServiceSpecificationsGet(ServiceSpecifications):
-    ...
+class ServiceSpecificationsGet(ServiceSpecifications): ...

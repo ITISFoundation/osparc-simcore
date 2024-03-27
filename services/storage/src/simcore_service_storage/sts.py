@@ -3,7 +3,6 @@ STS stands for Security Token Service. This is where temporary S3 token may be g
 https://docs.aws.amazon.com/STS/latest/APIReference/welcome.html
 """
 
-
 from aiohttp import web
 from models_library.users import UserID
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY

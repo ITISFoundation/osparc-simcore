@@ -1,5 +1,6 @@
 """ User Tokens table
 """
+
 import sqlalchemy as sa
 
 from .base import metadata

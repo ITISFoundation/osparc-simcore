@@ -102,9 +102,9 @@ class CompRunsRepository(BaseRepository):
                     .values(
                         user_id=user_id,
                         project_uuid=f"{project_id}",
-                        cluster_id=cluster_id
-                        if cluster_id != DEFAULT_CLUSTER_ID
-                        else None,
+                        cluster_id=(
+                            cluster_id if cluster_id != DEFAULT_CLUSTER_ID else None
+                        ),
                         iteration=iteration,
                         result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                         started=datetime.datetime.now(tz=datetime.timezone.utc),

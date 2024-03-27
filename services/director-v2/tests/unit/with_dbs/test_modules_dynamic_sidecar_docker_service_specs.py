@@ -559,12 +559,12 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     assert dynamic_sidecar_spec_dict == expected_dynamic_sidecar_spec_dict
 
     catalog_client = CatalogClient.instance(minimal_app)
-    user_service_specs: dict[
-        str, Any
-    ] = await catalog_client.get_service_specifications(
-        scheduler_data.user_id,
-        mock_service_key_version.key,
-        mock_service_key_version.version,
+    user_service_specs: dict[str, Any] = (
+        await catalog_client.get_service_specifications(
+            scheduler_data.user_id,
+            mock_service_key_version.key,
+            mock_service_key_version.version,
+        )
     )
     assert user_service_specs
     assert "sidecar" in user_service_specs

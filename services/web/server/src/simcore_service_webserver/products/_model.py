@@ -1,6 +1,7 @@
 import logging
 import string
-from typing import Any, ClassVar, Pattern  # noqa: UP035
+from re import Pattern
+from typing import Any, ClassVar  # noqa: UP035
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,

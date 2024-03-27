@@ -93,9 +93,9 @@ class ProgressType(StrAutoEnum):
 
 
 class ProgressMessageMixin(RabbitMessageBase):
-    channel_name: Literal[
+    channel_name: Literal["simcore.services.progress.v2"] = (
         "simcore.services.progress.v2"
-    ] = "simcore.services.progress.v2"
+    )
     progress_type: ProgressType = (
         ProgressType.COMPUTATION_RUNNING
     )  # NOTE: backwards compatible
@@ -116,9 +116,9 @@ class ProgressRabbitMessageProject(ProgressMessageMixin, ProjectMessageBase):
 
 
 class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
-    channel_name: Literal[
+    channel_name: Literal["simcore.services.instrumentation"] = (
         "simcore.services.instrumentation"
-    ] = "simcore.services.instrumentation"
+    )
     metrics: str
     service_uuid: NodeID
     service_type: str

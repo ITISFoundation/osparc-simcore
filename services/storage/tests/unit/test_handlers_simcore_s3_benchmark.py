@@ -301,10 +301,10 @@ def __get_grouping_map(metrics_results: list[MetricsResult]) -> list[GroupMap]:
 def _group_by_session_id_and_description(
     metrics_results: list[MetricsResult],
 ) -> dict[tuple[SessionId, Reason], list[MetricsResult]]:
-    grouped_results: dict[
-        tuple[SessionId, Reason], list[MetricsResult]
-    ] = __group_by_keys(
-        __get_grouping_map(metrics_results), group_keys=("session_id", "reason")
+    grouped_results: dict[tuple[SessionId, Reason], list[MetricsResult]] = (
+        __group_by_keys(
+            __get_grouping_map(metrics_results), group_keys=("session_id", "reason")
+        )
     )
     return grouped_results
 
@@ -312,9 +312,9 @@ def _group_by_session_id_and_description(
 def _group_by_from_to_key(
     metrics_results: list[MetricsResult],
 ) -> dict[tuple[FromTo], list[MetricsResult]]:
-    grouped_results: dict[
-        tuple[SessionId, Reason], list[MetricsResult]
-    ] = __group_by_keys(__get_grouping_map(metrics_results), group_keys=("from_to",))
+    grouped_results: dict[tuple[SessionId, Reason], list[MetricsResult]] = (
+        __group_by_keys(__get_grouping_map(metrics_results), group_keys=("from_to",))
+    )
     return grouped_results
 
 

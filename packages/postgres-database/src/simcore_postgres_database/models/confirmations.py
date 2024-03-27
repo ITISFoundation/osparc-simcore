@@ -5,6 +5,7 @@
     - These tokens have an expiration date defined by configuration
 
 """
+
 import enum
 
 import sqlalchemy as sa

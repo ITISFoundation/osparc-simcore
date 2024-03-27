@@ -10,6 +10,7 @@ Once the scheduler determines a task shall run, its state is set to PENDING, so 
 The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 
 """
+
 import asyncio
 import datetime
 import logging
@@ -174,12 +175,12 @@ class BaseCompScheduler(ABC):
             metadata=run_metadata,
             use_on_demand_clusters=use_on_demand_clusters,
         )
-        self.scheduled_pipelines[
-            (user_id, project_id, new_run.iteration)
-        ] = ScheduledPipelineParams(
-            cluster_id=cluster_id,
-            run_metadata=new_run.metadata,
-            use_on_demand_clusters=use_on_demand_clusters,
+        self.scheduled_pipelines[(user_id, project_id, new_run.iteration)] = (
+            ScheduledPipelineParams(
+                cluster_id=cluster_id,
+                run_metadata=new_run.metadata,
+                use_on_demand_clusters=use_on_demand_clusters,
+            )
         )
         await publish_project_log(
             self.rabbitmq_client,
@@ -413,15 +414,21 @@ class BaseCompScheduler(ABC):
                     ),
                     wallet_id=run_metadata.get("wallet_id"),
                     wallet_name=run_metadata.get("wallet_name"),
-                    pricing_plan_id=t.pricing_info.get("pricing_plan_id")
-                    if t.pricing_info
-                    else None,
-                    pricing_unit_id=t.pricing_info.get("pricing_unit_id")
-                    if t.pricing_info
-                    else None,
-                    pricing_unit_cost_id=t.pricing_info.get("pricing_unit_cost_id")
-                    if t.pricing_info
-                    else None,
+                    pricing_plan_id=(
+                        t.pricing_info.get("pricing_plan_id")
+                        if t.pricing_info
+                        else None
+                    ),
+                    pricing_unit_id=(
+                        t.pricing_info.get("pricing_unit_id")
+                        if t.pricing_info
+                        else None
+                    ),
+                    pricing_unit_cost_id=(
+                        t.pricing_info.get("pricing_unit_cost_id")
+                        if t.pricing_info
+                        else None
+                    ),
                     product_name=run_metadata.get(
                         "product_name", UNDEFINED_STR_METADATA
                     ),
@@ -550,8 +557,7 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @abstractmethod
     async def _get_tasks_status(
@@ -559,8 +565,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         tasks: list[CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
-    ) -> list[RunningState]:
-        ...
+    ) -> list[RunningState]: ...
 
     @abstractmethod
     async def _stop_tasks(
@@ -568,8 +573,7 @@ class BaseCompScheduler(ABC):
         user_id: UserID,
         tasks: list[CompTaskAtDB],
         pipeline_params: ScheduledPipelineParams,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @abstractmethod
     async def _process_completed_tasks(
@@ -578,8 +582,7 @@ class BaseCompScheduler(ABC):
         tasks: list[CompTaskAtDB],
         iteration: Iteration,
         pipeline_params: ScheduledPipelineParams,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     async def _schedule_pipeline(
         self,
@@ -752,9 +755,9 @@ class BaseCompScheduler(ABC):
                 RunningState.WAITING_FOR_CLUSTER,
             )
             for task in tasks_ready_to_start:
-                comp_tasks[
-                    NodeIDStr(f"{task}")
-                ].state = RunningState.WAITING_FOR_CLUSTER
+                comp_tasks[NodeIDStr(f"{task}")].state = (
+                    RunningState.WAITING_FOR_CLUSTER
+                )
 
         except ComputationalBackendOnDemandNotReadyError as exc:
             _logger.info(
@@ -776,9 +779,9 @@ class BaseCompScheduler(ABC):
                 RunningState.WAITING_FOR_CLUSTER,
             )
             for task in tasks_ready_to_start:
-                comp_tasks[
-                    NodeIDStr(f"{task}")
-                ].state = RunningState.WAITING_FOR_CLUSTER
+                comp_tasks[NodeIDStr(f"{task}")].state = (
+                    RunningState.WAITING_FOR_CLUSTER
+                )
         except ClustersKeeperNotAvailableError:
             _logger.exception("Unexpected error while starting tasks:")
             await publish_project_log(

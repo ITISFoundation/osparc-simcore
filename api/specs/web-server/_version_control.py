@@ -29,8 +29,7 @@ router = APIRouter(
 
 
 @router.get("/repos/projects", response_model=Page[RepoApiModel])
-def list_repos(_query_params: Annotated[PageQueryParameters, Depends()]):
-    ...
+def list_repos(_query_params: Annotated[PageQueryParameters, Depends()]): ...
 
 
 @router.get(
@@ -39,24 +38,21 @@ def list_repos(_query_params: Annotated[PageQueryParameters, Depends()]):
 )
 def list_checkpoints(
     project_uuid: ProjectID, _query_params: Annotated[PageQueryParameters, Depends()]
-):
-    ...
+): ...
 
 
 @router.post(
     "/repos/projects/{project_uuid}/checkpoints",
     response_model=Envelope[CheckpointApiModel],
 )
-def create_checkpoint(project_uuid: ProjectID, _new: CheckpointNew):
-    ...
+def create_checkpoint(project_uuid: ProjectID, _new: CheckpointNew): ...
 
 
 @router.get(
     "/repos/projects/{project_uuid}/checkpoints/{ref_id}",
     response_model=Envelope[CheckpointApiModel],
 )
-def get_checkpoint(ref_id: RefID | Literal["HEAD"], project_uuid: ProjectID):
-    ...
+def get_checkpoint(ref_id: RefID | Literal["HEAD"], project_uuid: ProjectID): ...
 
 
 @router.patch(
@@ -77,13 +73,11 @@ def update_checkpoint(
     "/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view",
     response_model=Envelope[WorkbenchViewApiModel],
 )
-def view_project_workbench(ref_id: RefID, project_uuid: ProjectID):
-    ...
+def view_project_workbench(ref_id: RefID, project_uuid: ProjectID): ...
 
 
 @router.post(
     "/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout",
     response_model=Envelope[CheckpointApiModel],
 )
-def checkout(ref_id: RefID, project_uuid: ProjectID):
-    ...
+def checkout(ref_id: RefID, project_uuid: ProjectID): ...

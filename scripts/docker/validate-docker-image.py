@@ -10,7 +10,6 @@ from pathlib import Path
 import docker
 from jsonschema import SchemaError, ValidationError, validate
 
-
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
@@ -20,6 +19,7 @@ def get_docker_image_labels(dockerimage: str):
 
     image = client.images.get(dockerimage)
     return image.labels
+
 
 def validate_docker_image(dockerimage: str, schema: Path):
     docker_labels = get_docker_image_labels(dockerimage)
@@ -46,20 +46,27 @@ def validate_docker_image(dockerimage: str, schema: Path):
                 log.info("Loaded schema specifications, validating...")
                 try:
                     validate(image_tags, schema_specs)
-                    log.info("%s is valid against %s! Congratulations!!", dockerimage, str(schema))
+                    log.info(
+                        "%s is valid against %s! Congratulations!!",
+                        dockerimage,
+                        str(schema),
+                    )
                 except SchemaError:
                     log.exception("Invalid schema!")
                 except ValidationError:
                     log.exception("Invalid image!")
-                    
-                
 
 
-parser = argparse.ArgumentParser(description="Validate docker labels of an oSparc service using a jsonschema as parameter.")
+parser = argparse.ArgumentParser(
+    description="Validate docker labels of an oSparc service using a jsonschema as parameter."
+)
 parser.add_argument("dockerimage", help="The docker image full key:tag", type=str)
-parser.add_argument("jsonschema", help="The path to the corresponding jsonschema file to validate with", type=Path)
+parser.add_argument(
+    "jsonschema",
+    help="The path to the corresponding jsonschema file to validate with",
+    type=Path,
+)
 args = sys.argv[1:]
 options = parser.parse_args(args)
 
-validate_docker_image(options.dockerimage, 
-                    options.jsonschema)
+validate_docker_image(options.dockerimage, options.jsonschema)

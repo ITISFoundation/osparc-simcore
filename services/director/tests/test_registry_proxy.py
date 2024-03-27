@@ -5,7 +5,6 @@ import json
 import time
 
 import pytest
-
 from simcore_service_director import config, registry_proxy
 
 
@@ -133,10 +132,12 @@ async def test_list_interactive_service_dependencies(
             docker_dependencies = json.loads(
                 docker_labels["simcore.service.dependencies"]
             )
-            image_dependencies = await registry_proxy.list_interactive_service_dependencies(
-                aiohttp_mock_app,
-                service_description["key"],
-                service_description["version"],
+            image_dependencies = (
+                await registry_proxy.list_interactive_service_dependencies(
+                    aiohttp_mock_app,
+                    service_description["key"],
+                    service_description["version"],
+                )
             )
             assert isinstance(image_dependencies, list)
             assert len(image_dependencies) == len(docker_dependencies)

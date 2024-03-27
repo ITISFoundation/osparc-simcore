@@ -1,8 +1,7 @@
 from pydantic.errors import PydanticErrorMixin
 
 
-class BaseDynamicSchedulerRPCError(PydanticErrorMixin, Exception):
-    ...
+class BaseDynamicSchedulerRPCError(PydanticErrorMixin, Exception): ...
 
 
 class ServiceWaitingForManualInterventionError(BaseDynamicSchedulerRPCError):

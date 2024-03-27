@@ -1,8 +1,8 @@
 # pylint:disable=redefined-outer-name
 
 import tempfile
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 import pytest
 from faker import Faker

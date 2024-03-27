@@ -7,7 +7,6 @@
 SEE test_error_codes for some use cases
 """
 
-
 import re
 from typing import TYPE_CHECKING
 

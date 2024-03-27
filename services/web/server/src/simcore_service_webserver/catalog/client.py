@@ -1,6 +1,7 @@
 """ Requests to catalog service API
 
 """
+
 import asyncio
 import logging
 import urllib.parse

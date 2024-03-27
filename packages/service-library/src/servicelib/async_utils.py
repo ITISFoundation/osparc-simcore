@@ -1,10 +1,11 @@
 import asyncio
 import logging
 from collections import deque
+from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Deque
+from typing import TYPE_CHECKING, Any, Deque
 
 logger = logging.getLogger(__name__)
 

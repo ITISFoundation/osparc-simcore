@@ -34,8 +34,7 @@ PreferenceName: TypeAlias = str
 PreferenceIdentifier: TypeAlias = str
 
 
-class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta):
-    ...
+class _ExtendedBaseModel(BaseModel, metaclass=_AutoRegisterMeta): ...
 
 
 class PreferenceType(StrAutoEnum):
@@ -60,9 +59,9 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
     def get_preference_class_from_name(
         cls, preference_name: PreferenceName
     ) -> type["_BaseUserPreferenceModel"]:
-        preference_class: type[
-            "_BaseUserPreferenceModel"
-        ] | None = cls.registered_user_preference_classes.get(preference_name, None)
+        preference_class: type["_BaseUserPreferenceModel"] | None = (
+            cls.registered_user_preference_classes.get(preference_name, None)
+        )
         if preference_class is None:
             raise NoPreferenceFoundError(preference_name)
         return preference_class

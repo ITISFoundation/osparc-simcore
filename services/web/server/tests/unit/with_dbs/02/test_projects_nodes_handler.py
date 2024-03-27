@@ -388,12 +388,12 @@ async def test_create_and_delete_many_nodes_in_parallel(
     # let's count the started services
     running_services = _RunningServices()
     assert running_services.running_services_uuids == []
-    mocked_director_v2_api[
-        "director_v2.api.list_dynamic_services"
-    ].side_effect = running_services.num_services
-    mocked_director_v2_api[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].side_effect = running_services.inc_running_services
+    mocked_director_v2_api["director_v2.api.list_dynamic_services"].side_effect = (
+        running_services.num_services
+    )
+    mocked_director_v2_api["dynamic_scheduler.api.run_dynamic_service"].side_effect = (
+        running_services.inc_running_services
+    )
 
     # let's create many nodes
     num_services_in_project = len(user_project["workbench"])
@@ -511,12 +511,12 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     # let's count the started services
     running_services = _RunninServices()
     assert running_services.running_services_uuids == []
-    mocked_director_v2_api[
-        "director_v2.api.list_dynamic_services"
-    ].side_effect = running_services.num_services
-    mocked_director_v2_api[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].side_effect = running_services.inc_running_services
+    mocked_director_v2_api["director_v2.api.list_dynamic_services"].side_effect = (
+        running_services.num_services
+    )
+    mocked_director_v2_api["dynamic_scheduler.api.run_dynamic_service"].side_effect = (
+        running_services.inc_running_services
+    )
 
     # let's create more than the allowed max amount in parallel
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
@@ -714,9 +714,11 @@ async def test_start_node(
     response = await client.post(f"{url}")
     data, error = await assert_status(
         response,
-        status.HTTP_204_NO_CONTENT
-        if user_role == UserRole.GUEST
-        else expected.no_content,
+        (
+            status.HTTP_204_NO_CONTENT
+            if user_role == UserRole.GUEST
+            else expected.no_content
+        ),
     )
     if error is None:
         mocked_director_v2_api[

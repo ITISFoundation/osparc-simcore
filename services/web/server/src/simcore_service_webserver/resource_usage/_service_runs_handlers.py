@@ -69,9 +69,10 @@ class _ListServicesResourceUsagesQueryParams(BaseModel):
         description=ORDER_BY_DESCRIPTION,
         example='{"field": "started_at", "direction": "desc"}',
     )
-    filters: Json[  # pylint: disable=unsubscriptable-object
-        ServiceResourceUsagesFilters
-    ] | None = Field(
+    filters: (
+        Json[ServiceResourceUsagesFilters]  # pylint: disable=unsubscriptable-object
+        | None
+    ) = Field(
         default=None,
         description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is inclusive.",
         example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',

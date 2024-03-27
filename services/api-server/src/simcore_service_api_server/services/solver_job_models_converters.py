@@ -2,6 +2,7 @@
     Helper functions to convert models used in
     services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
+
 import urllib.parse
 import uuid
 from collections.abc import Callable

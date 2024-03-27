@@ -4,6 +4,7 @@
 
  See https://docs.sqlalchemy.org/en/latest/orm/mapping_styles.html#classical-mappings
  """
+
 import glob
 from os.path import basename, dirname, isfile, join
 

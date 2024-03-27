@@ -1,5 +1,5 @@
 import re
-from typing import ItemsView, Iterator, KeysView, ValuesView
+from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 
 from models_library.services import PROPERTY_KEY_RE
 from pydantic import BaseModel, ConstrainedStr

@@ -380,18 +380,18 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
         dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings
     )
 
-    standard_simcore_docker_labels: dict[
-        DockerLabelKey, str
-    ] = StandardSimcoreDockerLabels(
-        user_id=scheduler_data.user_id,
-        project_id=scheduler_data.project_id,
-        node_id=scheduler_data.node_uuid,
-        product_name=scheduler_data.product_name,
-        simcore_user_agent=scheduler_data.request_simcore_user_agent,
-        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-        memory_limit=ByteSize(0),  # this should get overwritten
-        cpu_limit=0,  # this should get overwritten
-    ).to_simcore_runtime_docker_labels()
+    standard_simcore_docker_labels: dict[DockerLabelKey, str] = (
+        StandardSimcoreDockerLabels(
+            user_id=scheduler_data.user_id,
+            project_id=scheduler_data.project_id,
+            node_id=scheduler_data.node_uuid,
+            product_name=scheduler_data.product_name,
+            simcore_user_agent=scheduler_data.request_simcore_user_agent,
+            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+            memory_limit=ByteSize(0),  # this should get overwritten
+            cpu_limit=0,  # this should get overwritten
+        ).to_simcore_runtime_docker_labels()
+    )
 
     service_labels: dict[str, str] = (
         {
@@ -424,9 +424,7 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
             )
         )
 
-    placement_substitutions: dict[
-        str, DockerPlacementConstraint
-    ] = (
+    placement_substitutions: dict[str, DockerPlacementConstraint] = (
         placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     )
     for image_resources in scheduler_data.service_resources.values():
@@ -461,25 +459,27 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
                 "Init": True,
                 "Labels": standard_simcore_docker_labels,
                 "Mounts": mounts,
-                "Secrets": [
-                    {
-                        "SecretID": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID,
-                        "SecretName": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME,
-                        "File": {
-                            "Name": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
-                            "Mode": 444,
-                            "UID": "0",
-                            "GID": "0",
-                        },
-                    }
-                ]
-                if (
-                    app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME
-                    and app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID
-                    and app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME
-                    and app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
-                )
-                else None,
+                "Secrets": (
+                    [
+                        {
+                            "SecretID": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID,
+                            "SecretName": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME,
+                            "File": {
+                                "Name": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
+                                "Mode": 444,
+                                "UID": "0",
+                                "GID": "0",
+                            },
+                        }
+                    ]
+                    if (
+                        app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME
+                        and app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID
+                        and app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME
+                        and app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+                    )
+                    else None
+                ),
             },
             "Placement": {"Constraints": placement_constraints},
             "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,

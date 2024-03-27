@@ -15,6 +15,7 @@ This resource can also be read or deleted using
 - delete_payment_method
 
 """
+
 import logging
 
 import arrow
@@ -149,9 +150,11 @@ async def insert_payment_method(
         payment_method_id=payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
-        completion_state=InitPromptAckFlowState.SUCCESS
-        if ack.success
-        else InitPromptAckFlowState.FAILED,
+        completion_state=(
+            InitPromptAckFlowState.SUCCESS
+            if ack.success
+            else InitPromptAckFlowState.FAILED
+        ),
         state_message=ack.message,
     )
 

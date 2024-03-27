@@ -4,10 +4,11 @@ import functools
 import logging
 import types
 import zipfile
+from collections.abc import Awaitable, Callable, Iterator
 from contextlib import AsyncExitStack, contextmanager
 from functools import partial
 from pathlib import Path
-from typing import Awaitable, Callable, Final, Iterator
+from typing import Final
 
 import tqdm
 from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect

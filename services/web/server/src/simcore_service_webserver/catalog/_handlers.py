@@ -4,6 +4,7 @@
 should live in the catalog service in his final version
 
 """
+
 import asyncio
 import logging
 import urllib.parse

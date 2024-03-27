@@ -4,6 +4,7 @@
     - Shall be used as entry point for all the queries to the database regarding projects
 
 """
+
 import logging
 from contextlib import AsyncExitStack
 from typing import Any
@@ -242,9 +243,11 @@ class ProjectDBAPI(BaseProjectDB):
         insert_values = convert_to_db_names(project)
         insert_values.update(
             {
-                "type": ProjectType.TEMPLATE.value
-                if (force_as_template or user_id is None)
-                else ProjectType.STANDARD.value,
+                "type": (
+                    ProjectType.TEMPLATE.value
+                    if (force_as_template or user_id is None)
+                    else ProjectType.STANDARD.value
+                ),
                 "prj_owner": user_id if user_id else None,
                 "hidden": hidden,
                 # NOTE: this is very bad and leads to very weird conversions.

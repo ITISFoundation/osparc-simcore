@@ -24,8 +24,7 @@ router = APIRouter(
     "/tasks",
     response_model=Envelope[list[TaskGet]],
 )
-def list_tasks():
-    ...
+def list_tasks(): ...
 
 
 @router.get(
@@ -34,8 +33,7 @@ def list_tasks():
 )
 def get_task_status(
     _path_params: Annotated[_PathParam, Depends()],
-):
-    ...
+): ...
 
 
 @router.delete(
@@ -44,12 +42,10 @@ def get_task_status(
 )
 def cancel_and_delete_task(
     _path_params: Annotated[_PathParam, Depends()],
-):
-    ...
+): ...
 
 
 @router.get("/tasks/{task_id}/result")
 def get_task_result(
     _path_params: Annotated[_PathParam, Depends()],
-):
-    ...
+): ...

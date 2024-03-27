@@ -42,24 +42,26 @@ async def list_service_runs(
 
     # Situation when we want to see all usage of a specific user
     if wallet_id is None and access_all_wallet_usage is False:
-        total_service_runs: PositiveInt = await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(
-            product_name,
-            user_id=user_id,
-            wallet_id=None,
-            started_from=started_from,
-            started_until=started_until,
+        total_service_runs: PositiveInt = (
+            await resource_tracker_repo.total_service_runs_by_product_and_user_and_wallet(
+                product_name,
+                user_id=user_id,
+                wallet_id=None,
+                started_from=started_from,
+                started_until=started_until,
+            )
         )
-        service_runs_db_model: list[
-            ServiceRunWithCreditsDB
-        ] = await resource_tracker_repo.list_service_runs_by_product_and_user_and_wallet(
-            product_name,
-            user_id=user_id,
-            wallet_id=None,
-            offset=offset,
-            limit=limit,
-            started_from=started_from,
-            started_until=started_until,
-            order_by=order_by,
+        service_runs_db_model: list[ServiceRunWithCreditsDB] = (
+            await resource_tracker_repo.list_service_runs_by_product_and_user_and_wallet(
+                product_name,
+                user_id=user_id,
+                wallet_id=None,
+                offset=offset,
+                limit=limit,
+                started_from=started_from,
+                started_until=started_until,
+                order_by=order_by,
+            )
         )
     # Situation when accountant user can see all users usage of the wallet
     elif wallet_id and access_all_wallet_usage is True:

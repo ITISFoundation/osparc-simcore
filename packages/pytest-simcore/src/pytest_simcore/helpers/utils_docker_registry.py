@@ -4,13 +4,13 @@
 NOTE: this could be used as draft for https://github.com/ITISFoundation/osparc-simcore/issues/2165
 """
 
-
 import json
 import os
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import httpx
 

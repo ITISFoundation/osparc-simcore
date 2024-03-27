@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from aiohttp import ClientResponseError, web

@@ -1,12 +1,6 @@
-# coding: utf-8
-
-from datetime import date, datetime
-
-from typing import List, Dict, Type
-
+from .. import util
 from .base_model_ import Model
 from .inline_response_default_error import InlineResponseDefaultError
-from .. import util
 
 
 class ErrorEnveloped(Model):
@@ -15,27 +9,21 @@ class ErrorEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: object=None, error: InlineResponseDefaultError=None):
+    def __init__(self, data: object = None, error: InlineResponseDefaultError = None):
         """ErrorEnveloped - a model defined in OpenAPI
 
         :param data: The data of this ErrorEnveloped.
         :param error: The error of this ErrorEnveloped.
         """
-        self.openapi_types = {
-            'data': object,
-            'error': InlineResponseDefaultError
-        }
+        self.openapi_types = {"data": object, "error": InlineResponseDefaultError}
 
-        self.attribute_map = {
-            'data': 'data',
-            'error': 'error'
-        }
+        self.attribute_map = {"data": "data", "error": "error"}
 
         self._data = data
         self._error = error
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> 'ErrorEnveloped':
+    def from_dict(cls, dikt: dict) -> "ErrorEnveloped":
         """Returns the dict as a model
 
         :param dikt: A dict.

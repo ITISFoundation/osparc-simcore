@@ -1,6 +1,7 @@
 """ Computational Tasks Table
 
 """
+
 import enum
 
 import sqlalchemy as sa

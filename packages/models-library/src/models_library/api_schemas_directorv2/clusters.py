@@ -107,8 +107,7 @@ class ClusterGet(Cluster):
         return values
 
 
-class ClusterDetailsGet(ClusterDetails):
-    ...
+class ClusterDetailsGet(ClusterDetails): ...
 
 
 class ClusterCreate(BaseCluster):

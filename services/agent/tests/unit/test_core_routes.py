@@ -2,8 +2,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=protected-access
 
+from collections.abc import AsyncIterator
 from time import time
-from typing import AsyncIterator
 
 import pytest
 from fastapi import FastAPI, status

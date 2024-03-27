@@ -3,7 +3,6 @@
 """
 
 from collections import defaultdict
-from typing import List
 from uuid import UUID
 
 import httpx
@@ -24,7 +23,7 @@ from osparc_webapi import (
 
 def print_checkpoints(client: httpx.Client):
 
-    repos: List[ProjectRepo] = list(iter_repos(client))
+    repos: list[ProjectRepo] = list(iter_repos(client))
     project_id = repos[0].project_uuid
 
     for checkpoint in iter_checkpoints(client, project_id):

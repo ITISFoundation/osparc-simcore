@@ -72,9 +72,9 @@ async def list_wallet_groups_by_user_and_wallet(
             reason=f"User does not have read access to wallet {wallet_id}"
         )
 
-    wallet_groups_db: list[
-        WalletGroupGetDB
-    ] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
+    wallet_groups_db: list[WalletGroupGetDB] = (
+        await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
+    )
 
     wallet_groups_api: list[WalletGroupGet] = [
         parse_obj_as(WalletGroupGet, group) for group in wallet_groups_db
@@ -88,9 +88,9 @@ async def list_wallet_groups_with_read_access_by_wallet(
     *,
     wallet_id: WalletID,
 ) -> list[WalletGroupGet]:
-    wallet_groups_db: list[
-        WalletGroupGetDB
-    ] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
+    wallet_groups_db: list[WalletGroupGetDB] = (
+        await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
+    )
 
     wallet_groups_api: list[WalletGroupGet] = [
         parse_obj_as(WalletGroupGet, group)

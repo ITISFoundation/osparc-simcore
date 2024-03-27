@@ -1,11 +1,5 @@
-# coding: utf-8
-
-from datetime import date, datetime
-
-from typing import List, Dict, Type
-
-from .base_model_ import Model
 from .. import util
+from .base_model_ import Model
 
 
 class InlineResponse2002DataServiceBuildDetails(Model):
@@ -14,23 +8,21 @@ class InlineResponse2002DataServiceBuildDetails(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, build_date: str=None, vcs_ref: str=None, vcs_url: str=None):
+    def __init__(
+        self, build_date: str = None, vcs_ref: str = None, vcs_url: str = None
+    ):
         """InlineResponse2002DataServiceBuildDetails - a model defined in OpenAPI
 
         :param build_date: The build_date of this InlineResponse2002DataServiceBuildDetails.
         :param vcs_ref: The vcs_ref of this InlineResponse2002DataServiceBuildDetails.
         :param vcs_url: The vcs_url of this InlineResponse2002DataServiceBuildDetails.
         """
-        self.openapi_types = {
-            'build_date': str,
-            'vcs_ref': str,
-            'vcs_url': str
-        }
+        self.openapi_types = {"build_date": str, "vcs_ref": str, "vcs_url": str}
 
         self.attribute_map = {
-            'build_date': 'build_date',
-            'vcs_ref': 'vcs_ref',
-            'vcs_url': 'vcs_url'
+            "build_date": "build_date",
+            "vcs_ref": "vcs_ref",
+            "vcs_url": "vcs_url",
         }
 
         self._build_date = build_date
@@ -38,7 +30,7 @@ class InlineResponse2002DataServiceBuildDetails(Model):
         self._vcs_url = vcs_url
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> 'InlineResponse2002DataServiceBuildDetails':
+    def from_dict(cls, dikt: dict) -> "InlineResponse2002DataServiceBuildDetails":
         """Returns the dict as a model
 
         :param dikt: A dict.

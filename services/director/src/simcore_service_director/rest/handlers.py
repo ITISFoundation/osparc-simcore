@@ -1,7 +1,6 @@
 # pylint:disable=too-many-arguments
 
 import logging
-from typing import Optional
 
 import pkg_resources
 import yaml
@@ -29,7 +28,7 @@ async def root_get(
 
 
 async def services_get(
-    request: web.Request, service_type: Optional[str] = None
+    request: web.Request, service_type: str | None = None
 ) -> web.Response:
     log.debug(
         "Client does services_get request %s with service_type %s",
@@ -209,7 +208,7 @@ async def running_interactive_services_get(
 
 
 async def running_interactive_services_delete(
-    request: web.Request, service_uuid: str, save_state: Optional[bool] = True
+    request: web.Request, service_uuid: str, save_state: bool | None = True
 ) -> web.Response:
     log.debug(
         "Client does running_interactive_services_delete request %s with service_uuid %s",

@@ -1,6 +1,7 @@
 """ Computational Pipeline Table
 
 """
+
 import enum
 import uuid
 

@@ -1,14 +1,9 @@
-# coding: utf-8
+import re
 
-from datetime import date, datetime
-
-from typing import List, Dict, Type
-
+from .. import util
 from .base_model_ import Model
 from .inline_response2001_authors import InlineResponse2001Authors
 from .inline_response2001_badges import InlineResponse2001Badges
-import re
-from .. import util
 
 
 class SimcoreNode(Model):
@@ -25,13 +20,13 @@ class SimcoreNode(Model):
         type: str = None,
         name: str = None,
         thumbnail: str = None,
-        badges: List[InlineResponse2001Badges] = None,
+        badges: list[InlineResponse2001Badges] = None,
         description: str = None,
-        authors: List[InlineResponse2001Authors] = None,
+        authors: list[InlineResponse2001Authors] = None,
         contact: str = None,
-        inputs: Dict[str, object] = None,
-        outputs: Dict[str, object] = None,
-        boot_options: Dict[str, object] = None,
+        inputs: dict[str, object] = None,
+        outputs: dict[str, object] = None,
+        boot_options: dict[str, object] = None,
     ):
         """SimcoreNode - a model defined in OpenAPI
 
@@ -56,13 +51,13 @@ class SimcoreNode(Model):
             "type": str,
             "name": str,
             "thumbnail": str,
-            "badges": List[InlineResponse2001Badges],
+            "badges": list[InlineResponse2001Badges],
             "description": str,
-            "authors": List[InlineResponse2001Authors],
+            "authors": list[InlineResponse2001Authors],
             "contact": str,
-            "inputs": Dict[str, object],
-            "outputs": Dict[str, object],
-            "boot_options": Dict[str, object],
+            "inputs": dict[str, object],
+            "outputs": dict[str, object],
+            "boot_options": dict[str, object],
         }
 
         self.attribute_map = {
@@ -224,7 +219,7 @@ class SimcoreNode(Model):
         allowed_values = ["frontend", "computational", "dynamic"]
         if type not in allowed_values:
             raise ValueError(
-                "Invalid value for `type` ({0}), must be one of {1}".format(
+                "Invalid value for `type` ({}), must be one of {}".format(
                     type, allowed_values
                 )
             )

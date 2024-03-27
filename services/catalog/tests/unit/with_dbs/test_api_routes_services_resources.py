@@ -3,10 +3,11 @@
 # pylint: disable=unused-variable
 
 import urllib.parse
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from random import choice, randint
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 import pytest

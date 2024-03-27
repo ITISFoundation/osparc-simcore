@@ -5,8 +5,8 @@
 # pylint:disable=no-name-in-module
 
 
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Awaitable, Callable
 
 import pytest
 from aiohttp.test_utils import TestClient

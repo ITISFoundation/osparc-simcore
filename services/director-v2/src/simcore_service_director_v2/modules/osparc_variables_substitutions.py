@@ -1,6 +1,7 @@
 """ Substitution of osparc variables and secrets
 
 """
+
 import logging
 from copy import deepcopy
 from typing import Any

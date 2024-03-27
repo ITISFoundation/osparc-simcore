@@ -29,8 +29,7 @@ from .exceptions import ProjectNotFoundError
 _logger = logging.getLogger(__name__)
 
 
-class PricingUnitError(PydanticErrorMixin, ValueError):
-    ...
+class PricingUnitError(PydanticErrorMixin, ValueError): ...
 
 
 class PricingUnitNotFoundError(PricingUnitError):

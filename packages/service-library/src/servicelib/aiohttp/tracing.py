@@ -1,8 +1,9 @@
 """ Adds aiohttp middleware for tracing using zipkin server instrumentation.
 
 """
+
 import logging
-from typing import Iterable, Optional, Union
+from collections.abc import Iterable
 
 import aiozipkin as az
 from aiohttp import web
@@ -23,8 +24,8 @@ def setup_tracing(
     service_name: str,
     host: str,
     port: int,
-    jaeger_base_url: Union[URL, str],
-    skip_routes: Optional[Iterable[AbstractRoute]] = None,
+    jaeger_base_url: URL | str,
+    skip_routes: Iterable[AbstractRoute] | None = None,
 ) -> bool:
     """
     Sets up this service for a distributed tracing system

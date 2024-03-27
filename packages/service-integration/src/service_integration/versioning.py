@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Pattern
+from re import Pattern
 
 from models_library.basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from packaging.version import Version

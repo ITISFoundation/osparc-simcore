@@ -10,7 +10,7 @@ HealthCheckEnveloped:
       type: object
       nullable: true
       default: null
-      
+
 HealthCheckType:
   type: object
   properties:

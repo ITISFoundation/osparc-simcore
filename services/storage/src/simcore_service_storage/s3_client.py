@@ -59,9 +59,11 @@ class S3MetaData:
             file_id=SimcoreS3FileID(obj["Key"]),
             last_modified=obj["LastModified"],
             e_tag=json.loads(obj["ETag"]),
-            sha256_checksum=SHA256Str(obj.get("ChecksumSHA256"))
-            if obj.get("ChecksumSHA256")
-            else None,
+            sha256_checksum=(
+                SHA256Str(obj.get("ChecksumSHA256"))
+                if obj.get("ChecksumSHA256")
+                else None
+            ),
             size=obj["Size"],
         )
 

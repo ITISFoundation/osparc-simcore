@@ -11,10 +11,10 @@ import random
 import secrets
 import string
 import tempfile
+from collections.abc import Callable, Iterable, Iterator
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Iterable, Iterator, Optional
 
 import pytest
 from faker import Faker
@@ -174,7 +174,7 @@ def _escape_undecodable_path(path: Path) -> Path:
 async def assert_same_directory_content(
     dir_to_compress: Path,
     output_dir: Path,
-    inject_relative_path: Optional[Path] = None,
+    inject_relative_path: Path | None = None,
     unsupported_replace: bool = False,
 ) -> None:
     def _relative_path(input_path: Path) -> Path:

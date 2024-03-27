@@ -6,6 +6,7 @@
         - generated data
 
 """
+
 import logging
 
 from aiohttp import web

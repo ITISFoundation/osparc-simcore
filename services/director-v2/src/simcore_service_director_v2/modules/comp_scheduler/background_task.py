@@ -1,8 +1,9 @@
 import asyncio
 import logging
 from asyncio import CancelledError
+from collections.abc import Callable, Coroutine
 from contextlib import suppress
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 from fastapi import FastAPI
 

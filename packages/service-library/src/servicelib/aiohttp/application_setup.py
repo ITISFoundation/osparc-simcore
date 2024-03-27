@@ -20,13 +20,11 @@ APP_SETUP_COMPLETED_KEY = f"{__name__ }.setup"
 class _SetupFunc(Protocol):
     __name__: str
 
-    def __call__(self, app: web.Application, *args: Any, **kwds: Any) -> bool:
-        ...
+    def __call__(self, app: web.Application, *args: Any, **kwds: Any) -> bool: ...
 
 
 class _ApplicationSettings(Protocol):
-    def is_enabled(self, field_name: str) -> bool:
-        ...
+    def is_enabled(self, field_name: str) -> bool: ...
 
 
 class ModuleCategory(Enum):
@@ -43,12 +41,10 @@ class SkipModuleSetupError(Exception):
         super().__init__(reason)
 
 
-class ApplicationSetupError(Exception):
-    ...
+class ApplicationSetupError(Exception): ...
 
 
-class DependencyError(ApplicationSetupError):
-    ...
+class DependencyError(ApplicationSetupError): ...
 
 
 class SetupMetadataDict(TypedDict):

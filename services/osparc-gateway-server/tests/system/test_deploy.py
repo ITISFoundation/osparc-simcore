@@ -4,9 +4,9 @@
 
 import asyncio
 import json
+from collections.abc import AsyncIterator
 from copy import deepcopy
 from pathlib import Path
-from typing import AsyncIterator
 
 import aiohttp
 import dask_gateway

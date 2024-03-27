@@ -4,6 +4,7 @@
     the  sidecar service
 
 """
+
 from .models.comp_pipeline import StateType, comp_pipeline
 from .models.comp_tasks import comp_tasks
 

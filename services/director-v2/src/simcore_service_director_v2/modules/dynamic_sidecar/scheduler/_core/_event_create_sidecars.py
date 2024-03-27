@@ -85,14 +85,14 @@ async def _create_proxy_service(
         app.state.settings.DYNAMIC_SERVICES
     )
 
-    dynamic_sidecar_proxy_create_service_params: dict[
-        str, Any
-    ] = get_dynamic_proxy_spec(
-        scheduler_data=scheduler_data,
-        dynamic_services_settings=dynamic_services_settings,
-        dynamic_sidecar_network_id=dynamic_sidecar_network_id,
-        swarm_network_id=swarm_network_id,
-        swarm_network_name=swarm_network_name,
+    dynamic_sidecar_proxy_create_service_params: dict[str, Any] = (
+        get_dynamic_proxy_spec(
+            scheduler_data=scheduler_data,
+            dynamic_services_settings=dynamic_services_settings,
+            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
+            swarm_network_id=swarm_network_id,
+            swarm_network_name=swarm_network_name,
+        )
     )
     _logger.debug(
         "dynamic-sidecar-proxy create_service_params %s",
@@ -223,18 +223,20 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
-        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = get_dynamic_sidecar_spec(
-            scheduler_data=scheduler_data,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
-            swarm_network_id=swarm_network_id,
-            settings=settings,
-            app_settings=app.state.settings,
-            hardware_info=scheduler_data.hardware_info,
-            has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
-            allow_internet_access=allow_internet_access,
-            metrics_collection_allowed=metrics_collection_allowed,
-            telemetry_enabled=is_telemetry_enabled,
+        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = (
+            get_dynamic_sidecar_spec(
+                scheduler_data=scheduler_data,
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
+                dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
+                swarm_network_id=swarm_network_id,
+                settings=settings,
+                app_settings=app.state.settings,
+                hardware_info=scheduler_data.hardware_info,
+                has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
+                allow_internet_access=allow_internet_access,
+                metrics_collection_allowed=metrics_collection_allowed,
+                telemetry_enabled=is_telemetry_enabled,
+            )
         )
 
         catalog_client = CatalogClient.instance(app)

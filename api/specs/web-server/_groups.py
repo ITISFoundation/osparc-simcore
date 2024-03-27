@@ -30,8 +30,7 @@ router = APIRouter(
     "/groups",
     response_model=Envelope[AllUsersGroups],
 )
-async def list_groups():
-    ...
+async def list_groups(): ...
 
 
 @router.post(
@@ -39,40 +38,35 @@ async def list_groups():
     response_model=Envelope[UsersGroup],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_group():
-    ...
+async def create_group(): ...
 
 
 @router.get(
     "/groups/{gid}",
     response_model=Envelope[UsersGroup],
 )
-async def get_group(gid: GroupID):
-    ...
+async def get_group(gid: GroupID): ...
 
 
 @router.patch(
     "/groups/{gid}",
     response_model=Envelope[UsersGroup],
 )
-async def update_group(gid: GroupID, _update: UsersGroup):
-    ...
+async def update_group(gid: GroupID, _update: UsersGroup): ...
 
 
 @router.delete(
     "/groups/{gid}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_group(gid: GroupID):
-    ...
+async def delete_group(gid: GroupID): ...
 
 
 @router.get(
     "/groups/{gid}/users",
     response_model=Envelope[list[GroupUserGet]],
 )
-async def get_group_users(gid: GroupID):
-    ...
+async def get_group_users(gid: GroupID): ...
 
 
 @router.post(
@@ -82,8 +76,7 @@ async def get_group_users(gid: GroupID):
 async def add_group_user(
     gid: GroupID,
     _new: GroupUserGet,
-):
-    ...
+): ...
 
 
 @router.get(
@@ -93,8 +86,7 @@ async def add_group_user(
 async def get_group_user(
     gid: GroupID,
     uid: UserID,
-):
-    ...
+): ...
 
 
 @router.patch(
@@ -117,8 +109,7 @@ async def update_group_user(
 async def delete_group_user(
     gid: GroupID,
     uid: UserID,
-):
-    ...
+): ...
 
 
 @router.get(
@@ -128,29 +119,25 @@ async def delete_group_user(
 async def get_group_classifiers(
     gid: GroupID,
     _query: Annotated[_ClassifiersQuery, Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
     "/groups/sparc/classifiers/scicrunch-resources/{rrid}",
     response_model=Envelope[ResearchResource],
 )
-async def get_scicrunch_resource(rrid: str):
-    ...
+async def get_scicrunch_resource(rrid: str): ...
 
 
 @router.post(
     "/groups/sparc/classifiers/scicrunch-resources/{rrid}",
     response_model=Envelope[ResearchResource],
 )
-async def add_scicrunch_resource(rrid: str):
-    ...
+async def add_scicrunch_resource(rrid: str): ...
 
 
 @router.get(
     "/groups/sparc/classifiers/scicrunch-resources:search",
     response_model=Envelope[list[ResourceHit]],
 )
-async def search_scicrunch_resources(guess_name: str):
-    ...
+async def search_scicrunch_resources(guess_name: str): ...

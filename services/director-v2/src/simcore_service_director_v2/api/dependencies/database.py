@@ -1,5 +1,6 @@
 import logging
-from typing import AsyncGenerator, Callable, TypeVar
+from collections.abc import AsyncGenerator, Callable
+from typing import TypeVar
 
 from aiopg.sa import Engine
 from fastapi import Depends

@@ -6,7 +6,8 @@
 
 import json
 import logging
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any
 from unittest import mock
 
 import aiopg.sa

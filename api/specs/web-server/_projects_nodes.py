@@ -74,8 +74,7 @@ def delete_node(project_id: str, node_id: str):  # noqa: ARG001
 )
 def retrieve_node(
     project_id: str, node_id: str, _retrieve: NodeRetrieve  # noqa: ARG001
-):
-    ...
+): ...
 
 
 @router.post(
@@ -123,8 +122,7 @@ def get_node_resources(project_id: str, node_id: str):  # noqa: ARG001
 )
 def replace_node_resources(
     project_id: str, node_id: str, _new: ServiceResourcesDict  # noqa: ARG001
-):
-    ...
+): ...
 
 
 #
@@ -139,8 +137,7 @@ def replace_node_resources(
 )
 async def get_project_services_access_for_gid(
     project_id: ProjectID, for_gid: GroupID  # noqa: ARG001
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(
@@ -173,8 +170,7 @@ assert_handler_signature_against_model(list_project_nodes_previews, ProjectPathP
 )
 async def get_project_node_preview(
     project_id: ProjectID, node_id: NodeID  # noqa: ARG001
-):
-    ...
+): ...
 
 
 assert_handler_signature_against_model(get_project_node_preview, NodePathParams)

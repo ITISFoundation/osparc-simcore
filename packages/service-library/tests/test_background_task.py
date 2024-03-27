@@ -6,7 +6,7 @@
 
 import asyncio
 import datetime
-from typing import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from unittest import mock
 
 import pytest

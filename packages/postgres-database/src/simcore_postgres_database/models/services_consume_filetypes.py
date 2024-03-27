@@ -5,6 +5,7 @@
     - a service could handle one or more filetypes and
     - one filetype could be handled by one or more services
 """
+
 import sqlalchemy as sa
 
 from .base import metadata

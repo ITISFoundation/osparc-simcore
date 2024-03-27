@@ -39,7 +39,9 @@ def test_all_services_run_on_manager_but_dask_sidecar(
         assert "placement" in service_config["deploy"]
         assert "constraints" in service_config["deploy"]["placement"]
         assert service_config["deploy"]["placement"]["constraints"] == [
-            "node.role==worker"
-            if service_name == "dask-sidecar"
-            else "node.role==manager"
+            (
+                "node.role==worker"
+                if service_name == "dask-sidecar"
+                else "node.role==manager"
+            )
         ]

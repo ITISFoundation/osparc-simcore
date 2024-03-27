@@ -1,8 +1,7 @@
 from pydantic.errors import PydanticErrorMixin
 
 
-class StorageRuntimeError(PydanticErrorMixin, RuntimeError):
-    ...
+class StorageRuntimeError(PydanticErrorMixin, RuntimeError): ...
 
 
 class DatabaseAccessError(StorageRuntimeError):

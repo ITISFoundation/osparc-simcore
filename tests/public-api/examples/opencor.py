@@ -7,11 +7,11 @@
 
 Based on example https://github.com/nih-sparc/sparc-api/blob/v1.5.0/app/osparc.py
 """
+
 import json
 import os
 from pathlib import Path
 from time import sleep
-from typing import Optional
 
 import osparc
 from dotenv import load_dotenv
@@ -96,7 +96,7 @@ with osparc.ApiClient(cfg) as api_client:
 
     print("---------------------------------------")
 
-    results: Optional[File] = outputs.results["output_1"]
+    results: File | None = outputs.results["output_1"]
 
     if results is None:
         print(

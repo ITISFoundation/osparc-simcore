@@ -1,6 +1,6 @@
+from collections.abc import Iterator
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Iterator
 
 # only gets created on use and is guaranteed to be the s
 # ame for the entire lifetime of the application

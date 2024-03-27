@@ -99,8 +99,7 @@ async def mock_rpc_server(
     @router.expose()
     async def delete_api_keys(
         product_name: ProductName, user_id: UserID, name: str
-    ) -> None:
-        ...
+    ) -> None: ...
 
     await rpc_server.register_router(router, namespace=WEBSERVER_RPC_NAMESPACE)
 

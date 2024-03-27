@@ -10,7 +10,7 @@
 
 import functools
 import logging
-from typing import Callable, Coroutine
+from collections.abc import Callable, Coroutine
 
 import httpx
 from fastapi import HTTPException

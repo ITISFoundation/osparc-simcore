@@ -17,7 +17,9 @@ _DEFAULT_TIMEOUT_INTERVAL: Final[timedelta] = timedelta(seconds=30)
 
 
 class CouldNotReachServiceError(PydanticErrorMixin, Exception):
-    msg_template: str = "Could not contact service '{service_name}' at '{endpoint}'. Look above for details."
+    msg_template: str = (
+        "Could not contact service '{service_name}' at '{endpoint}'. Look above for details."
+    )
 
 
 def _before_sleep_log(

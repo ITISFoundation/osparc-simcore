@@ -5,10 +5,11 @@
 
 import itertools
 import random
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import datetime
 from random import randint
-from typing import Any, AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any
 
 import pytest
 import respx

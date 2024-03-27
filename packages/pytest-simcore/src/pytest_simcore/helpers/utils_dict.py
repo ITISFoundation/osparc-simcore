@@ -1,7 +1,8 @@
 """ Utils to operate with dicts """
 
+from collections.abc import Mapping
 from copy import deepcopy
-from typing import Any, Mapping, Optional, Union
+from typing import Any
 
 ConfigDict = dict[str, Any]
 
@@ -20,10 +21,7 @@ def copy_from_dict_ex(data: dict[str, Any], exclude: set[str]) -> dict[str, Any]
 
 
 def copy_from_dict(
-    data: dict[str, Any],
-    *,
-    include: Optional[Union[set, dict]] = None,
-    deep: bool = False
+    data: dict[str, Any], *, include: set | dict | None = None, deep: bool = False
 ):
     #
     # Analogous to advanced includes from pydantic exports

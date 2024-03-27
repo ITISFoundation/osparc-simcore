@@ -2,6 +2,7 @@
 
     Typically dumped in statics.json
 """
+
 from typing import Any, TypedDict
 
 import pycountry

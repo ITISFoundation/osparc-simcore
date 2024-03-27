@@ -12,6 +12,7 @@
 NOTE: Some of the code below is duplicated in the studies_dispatcher!
 SEE refactoring plan in https://github.com/ITISFoundation/osparc-simcore/issues/3977
 """
+
 import functools
 import logging
 from functools import lru_cache

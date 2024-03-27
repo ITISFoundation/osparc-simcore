@@ -1,13 +1,12 @@
 import pprint
-
 import typing
 
 from .. import util
 
-T = typing.TypeVar('T')
+T = typing.TypeVar("T")
 
 
-class Model(object):
+class Model:
     # openapiTypes: The key is attribute name and the
     # value is attribute type.
     openapi_types = {}
@@ -22,8 +21,7 @@ class Model(object):
         return util.deserialize_model(dikt, cls)
 
     def to_dict(self) -> dict:
-        """Returns the model properties as a dict
-        """
+        """Returns the model properties as a dict"""
         result = {}
 
         for attr_key, json_key in self.attribute_map.items():
@@ -31,26 +29,29 @@ class Model(object):
             if value is None:
                 continue
             if isinstance(value, list):
-                result[json_key] = list(map(
-                    lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
-                    value
-                ))
+                result[json_key] = list(
+                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                )
             elif hasattr(value, "to_dict"):
                 result[json_key] = value.to_dict()
             elif isinstance(value, dict):
-                result[json_key] = dict(map(
-                    lambda item: (item[0], item[1].to_dict())
-                    if hasattr(item[1], "to_dict") else item,
-                    value.items()
-                ))
+                result[json_key] = dict(
+                    map(
+                        lambda item: (
+                            (item[0], item[1].to_dict())
+                            if hasattr(item[1], "to_dict")
+                            else item
+                        ),
+                        value.items(),
+                    )
+                )
             else:
                 result[json_key] = value
 
         return result
 
     def to_str(self) -> str:
-        """Returns the string representation of the model
-        """
+        """Returns the string representation of the model"""
         return pprint.pformat(self.to_dict())
 
     def __repr__(self):

@@ -250,8 +250,7 @@ class UploadedFile:
 
 
 @dataclass
-class UploadedFolder:
-    ...
+class UploadedFolder: ...
 
 
 async def _generate_checksum(

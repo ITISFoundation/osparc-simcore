@@ -2,7 +2,6 @@
 
 """
 
-
 from service_integration.compose_spec_model import (
     BuildItem,
     ComposeSpecification,

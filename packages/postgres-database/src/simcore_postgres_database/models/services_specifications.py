@@ -5,6 +5,7 @@
     for example that should run on a specific machine.
 
 """
+
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 

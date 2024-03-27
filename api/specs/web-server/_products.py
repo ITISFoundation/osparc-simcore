@@ -34,8 +34,7 @@ router = APIRouter(
     "/credits-price",
     response_model=Envelope[GetCreditPrice],
 )
-async def get_current_product_price():
-    ...
+async def get_current_product_price(): ...
 
 
 @router.get(
@@ -45,8 +44,7 @@ async def get_current_product_price():
         "po",
     ],
 )
-async def get_product(_params: Annotated[_ProductsRequestParams, Depends()]):
-    ...
+async def get_product(_params: Annotated[_ProductsRequestParams, Depends()]): ...
 
 
 @router.put(
@@ -58,8 +56,7 @@ async def get_product(_params: Annotated[_ProductsRequestParams, Depends()]):
 )
 async def update_product_template(
     _params: Annotated[_ProductTemplateParams, Depends()], _body: UpdateProductTemplate
-):
-    ...
+): ...
 
 
 @router.post(
@@ -69,5 +66,4 @@ async def update_product_template(
         "po",
     ],
 )
-async def generate_invitation(_body: GenerateInvitation):
-    ...
+async def generate_invitation(_body: GenerateInvitation): ...

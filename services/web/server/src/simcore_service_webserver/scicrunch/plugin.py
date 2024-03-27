@@ -1,6 +1,7 @@
 """
     Notice that this is used as a submodule of groups'a app module
 """
+
 import logging
 
 from aiohttp import web

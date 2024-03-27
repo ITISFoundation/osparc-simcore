@@ -29,5 +29,4 @@ class PostgresRetryPolicyUponInitialization:
         )
 
 
-class RedisRetryPolicyUponInitialization(PostgresRetryPolicyUponInitialization):
-    ...
+class RedisRetryPolicyUponInitialization(PostgresRetryPolicyUponInitialization): ...

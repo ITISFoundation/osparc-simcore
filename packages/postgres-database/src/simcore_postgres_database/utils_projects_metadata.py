@@ -18,8 +18,7 @@ from .utils_models import FromRowMixin
 #
 
 
-class DBProjectNotFoundError(Exception):
-    ...
+class DBProjectNotFoundError(Exception): ...
 
 
 #

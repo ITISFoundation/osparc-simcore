@@ -448,9 +448,9 @@ async def test_update_own_cluster(
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
     returned_cluster = ClusterGet.parse_obj(response.json())
     expected_modified_cluster.owner = user_2["primary_gid"]
-    expected_modified_cluster.access_rights[
-        user_2["primary_gid"]
-    ] = CLUSTER_ADMIN_RIGHTS
+    expected_modified_cluster.access_rights[user_2["primary_gid"]] = (
+        CLUSTER_ADMIN_RIGHTS
+    )
     assert returned_cluster.dict(
         exclude={"authentication": {"password"}}
     ) == expected_modified_cluster.dict(exclude={"authentication": {"password"}})

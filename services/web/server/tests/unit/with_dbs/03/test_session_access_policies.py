@@ -5,7 +5,8 @@
 
 
 from asyncio import AbstractEventLoop
-from typing import Callable, Protocol
+from collections.abc import Callable
+from typing import Protocol
 
 import pytest
 from aiohttp import ClientResponse, web
@@ -120,8 +121,7 @@ def client(
 class ClientRequestCallable(Protocol):
     async def __call__(
         self, client: TestClient, name: str, return_status: int | None = None
-    ) -> ClientResponse:
-        ...
+    ) -> ClientResponse: ...
 
 
 @pytest.fixture

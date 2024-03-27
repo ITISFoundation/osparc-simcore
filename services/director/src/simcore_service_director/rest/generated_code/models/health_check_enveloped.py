@@ -1,12 +1,6 @@
-# coding: utf-8
-
-from datetime import date, datetime
-
-from typing import List, Dict, Type
-
+from .. import util
 from .base_model_ import Model
 from .inline_response200_data import InlineResponse200Data
-from .. import util
 
 
 class HealthCheckEnveloped(Model):
@@ -15,27 +9,21 @@ class HealthCheckEnveloped(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, data: InlineResponse200Data=None, error: object=None):
+    def __init__(self, data: InlineResponse200Data = None, error: object = None):
         """HealthCheckEnveloped - a model defined in OpenAPI
 
         :param data: The data of this HealthCheckEnveloped.
         :param error: The error of this HealthCheckEnveloped.
         """
-        self.openapi_types = {
-            'data': InlineResponse200Data,
-            'error': object
-        }
+        self.openapi_types = {"data": InlineResponse200Data, "error": object}
 
-        self.attribute_map = {
-            'data': 'data',
-            'error': 'error'
-        }
+        self.attribute_map = {"data": "data", "error": "error"}
 
         self._data = data
         self._error = error
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> 'HealthCheckEnveloped':
+    def from_dict(cls, dikt: dict) -> "HealthCheckEnveloped":
         """Returns the dict as a model
 
         :param dikt: A dict.

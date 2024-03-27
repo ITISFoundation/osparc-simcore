@@ -183,7 +183,7 @@ class SimCoreFileLink(BaseFileLink):
 
     dataset: str | None = Field(
         default=None,
-        deprecated=True
+        deprecated=True,
         # TODO: Remove with storage refactoring
     )
 

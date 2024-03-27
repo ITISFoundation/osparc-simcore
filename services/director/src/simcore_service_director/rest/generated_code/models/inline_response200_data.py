@@ -1,11 +1,5 @@
-# coding: utf-8
-
-from datetime import date, datetime
-
-from typing import List, Dict, Type
-
-from .base_model_ import Model
 from .. import util
+from .base_model_ import Model
 
 
 class InlineResponse200Data(Model):
@@ -14,7 +8,13 @@ class InlineResponse200Data(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, name: str=None, status: str=None, api_version: str=None, version: str=None):
+    def __init__(
+        self,
+        name: str = None,
+        status: str = None,
+        api_version: str = None,
+        version: str = None,
+    ):
         """InlineResponse200Data - a model defined in OpenAPI
 
         :param name: The name of this InlineResponse200Data.
@@ -23,17 +23,17 @@ class InlineResponse200Data(Model):
         :param version: The version of this InlineResponse200Data.
         """
         self.openapi_types = {
-            'name': str,
-            'status': str,
-            'api_version': str,
-            'version': str
+            "name": str,
+            "status": str,
+            "api_version": str,
+            "version": str,
         }
 
         self.attribute_map = {
-            'name': 'name',
-            'status': 'status',
-            'api_version': 'api_version',
-            'version': 'version'
+            "name": "name",
+            "status": "status",
+            "api_version": "api_version",
+            "version": "version",
         }
 
         self._name = name
@@ -42,7 +42,7 @@ class InlineResponse200Data(Model):
         self._version = version
 
     @classmethod
-    def from_dict(cls, dikt: dict) -> 'InlineResponse200Data':
+    def from_dict(cls, dikt: dict) -> "InlineResponse200Data":
         """Returns the dict as a model
 
         :param dikt: A dict.

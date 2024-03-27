@@ -91,10 +91,10 @@ async def list_connected_services_to_pricing_plan_by_pricing_plan(
         ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
     ],
 ):
-    output_list: list[
-        PricingPlanToServiceDB
-    ] = await resource_tracker_repo.list_connected_services_to_pricing_plan_by_pricing_plan(
-        product_name=product_name, pricing_plan_id=pricing_plan_id
+    output_list: list[PricingPlanToServiceDB] = (
+        await resource_tracker_repo.list_connected_services_to_pricing_plan_by_pricing_plan(
+            product_name=product_name, pricing_plan_id=pricing_plan_id
+        )
     )
     return [PricingPlanToServiceGet.parse_obj(item) for item in output_list]
 
@@ -125,10 +125,10 @@ async def list_pricing_plans_by_product(
         ResourceTrackerRepository, Depends(get_repository(ResourceTrackerRepository))
     ],
 ) -> list[PricingPlanGet]:
-    pricing_plans_list_db: list[
-        PricingPlansDB
-    ] = await resource_tracker_repo.list_pricing_plans_by_product(
-        product_name=product_name
+    pricing_plans_list_db: list[PricingPlansDB] = (
+        await resource_tracker_repo.list_pricing_plans_by_product(
+            product_name=product_name
+        )
     )
     return [
         PricingPlanGet(

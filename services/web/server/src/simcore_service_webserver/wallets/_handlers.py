@@ -127,10 +127,10 @@ async def create_wallet(request: web.Request):
 async def list_wallets(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
 
-    wallets: list[
-        WalletGetWithAvailableCredits
-    ] = await _api.list_wallets_with_available_credits_for_user(
-        app=request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
+    wallets: list[WalletGetWithAvailableCredits] = (
+        await _api.list_wallets_with_available_credits_for_user(
+            app=request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
+        )
     )
 
     return envelope_json_response(wallets)

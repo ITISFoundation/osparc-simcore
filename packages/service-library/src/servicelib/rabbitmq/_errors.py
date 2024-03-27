@@ -5,8 +5,7 @@ from pydantic.errors import PydanticErrorMixin
 _ERROR_PREFIX: Final[str] = "rabbitmq_error"
 
 
-class BaseRPCError(PydanticErrorMixin, RuntimeError):
-    ...
+class BaseRPCError(PydanticErrorMixin, RuntimeError): ...
 
 
 class RPCNotInitializedError(BaseRPCError):

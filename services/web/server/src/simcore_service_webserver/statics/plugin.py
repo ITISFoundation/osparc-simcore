@@ -6,6 +6,7 @@
     - The client application is under ``services/static-webserver/client`` and the ``webclient`` service
     is used to build it.
 """
+
 import logging
 
 from aiohttp import web

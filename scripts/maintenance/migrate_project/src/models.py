@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -32,7 +31,7 @@ class SourceConfig(BaseModel):
     db: DBConfig
     s3: S3Config
     project_uuid: UUID = Field(..., description="project to be moved from the source")
-    hidden_projects_for_user: Optional[int] = Field(
+    hidden_projects_for_user: int | None = Field(
         None,
         description="by default nothing is moved, must provide an user ID for which to move the hidden projects",
     )

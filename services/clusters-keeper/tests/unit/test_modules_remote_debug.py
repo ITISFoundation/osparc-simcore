@@ -25,5 +25,4 @@ def test_application_with_debug_enabled(
     disabled_ec2: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
-):
-    ...
+): ...

@@ -16,16 +16,14 @@ class NotificationProvider(ABC):
         self,
         user_id: UserID,
         payment: PaymentTransaction,
-    ):
-        ...
+    ): ...
 
     @abstractmethod
     async def notify_payment_method_acked(
         self,
         user_id: UserID,
         payment_method: PaymentMethodTransaction,
-    ):
-        ...
+    ): ...
 
     @classmethod
     def get_name(cls):

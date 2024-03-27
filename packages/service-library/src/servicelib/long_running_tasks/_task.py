@@ -350,12 +350,10 @@ class TasksManager:
 
 class TaskProtocol(Protocol):
     # NOTE: when using **kwargs pyright complains. this might be a bug that should be fixed soon
-    async def __call__(self, task_progress: TaskProgress, *task_kwargs: Any) -> Any:
-        ...
+    async def __call__(self, task_progress: TaskProgress, *task_kwargs: Any) -> Any: ...
 
     @property
-    def __name__(self) -> str:
-        ...
+    def __name__(self) -> str: ...
 
 
 def start_task(

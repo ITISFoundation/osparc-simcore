@@ -11,6 +11,7 @@ Example of usage in pydantic:
         json_dumps = json_dumps
 
 """
+
 # Partially taken from  https://github.com/autoferrit/python-change-case/blob/master/change_case/change_case.py#L131
 import re
 from typing import Final

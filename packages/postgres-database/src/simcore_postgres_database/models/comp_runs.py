@@ -1,6 +1,7 @@
 """ Computational Runs Table
 
 """
+
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func

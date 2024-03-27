@@ -2,7 +2,6 @@
     i.e. models.users main table and all its relations
 """
 
-
 import re
 import secrets
 import string

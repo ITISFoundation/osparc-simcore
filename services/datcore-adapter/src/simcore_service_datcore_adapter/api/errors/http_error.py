@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -16,7 +16,7 @@ def make_http_error_handler_for_exception(
     status_code: int,
     exception_cls: type[BaseException],
     *,
-    override_detail_message: Optional[str] = None,
+    override_detail_message: str | None = None,
 ) -> Callable:
     """
     Produces a handler for BaseException-type exceptions which converts them

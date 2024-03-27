@@ -1,10 +1,12 @@
 """ Services Access Rights policies
 
 """
+
 import logging
 import operator
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, cast
 from urllib.parse import quote_plus
 
 from fastapi import FastAPI
@@ -48,7 +50,7 @@ async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
 
 async def evaluate_default_policy(
     app: FastAPI, service: ServiceDockerData
-) -> tuple[Optional[PositiveInt], list[ServiceAccessRightsAtDB]]:
+) -> tuple[PositiveInt | None, list[ServiceAccessRightsAtDB]]:
     """Given a service, it returns the owner's group-id (gid) and a list of access rights following
     default access-rights policies
 
@@ -158,7 +160,7 @@ def reduce_access_rights(
     # TODO: probably a lot of room to optimize
     # helper functions to simplify operation of access rights
 
-    def get_target(access: ServiceAccessRightsAtDB) -> tuple[Union[str, int], ...]:
+    def get_target(access: ServiceAccessRightsAtDB) -> tuple[str | int, ...]:
         """Hashable identifier of the resource the access rights apply to"""
         return tuple([access.key, access.version, access.gid, access.product_name])
 
@@ -167,7 +169,7 @@ def reduce_access_rights(
         flags = access.dict(include={"execute_access", "write_access"})
         return cast(dict[str, bool], flags)
 
-    access_flags_map: dict[tuple[Union[str, int], ...], dict[str, bool]] = {}
+    access_flags_map: dict[tuple[str | int, ...], dict[str, bool]] = {}
     for access in access_rights:
         target = get_target(access)
         access_flags = access_flags_map.get(target)

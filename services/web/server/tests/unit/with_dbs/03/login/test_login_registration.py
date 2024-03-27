@@ -403,9 +403,9 @@ async def test_registration_with_invitation(
                 "email": fake_user_email,
                 "password": fake_user_password,
                 "confirm": fake_user_password,
-                "invitation": confirmation["code"]
-                if has_valid_invitation
-                else "WRONG_CODE",
+                "invitation": (
+                    confirmation["code"] if has_valid_invitation else "WRONG_CODE"
+                ),
             },
         )
         await assert_status(response, expected_response)

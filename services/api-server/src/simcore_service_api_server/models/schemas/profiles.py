@@ -14,8 +14,7 @@ class ProfileCommon(BaseModel):
     last_name: LastNameStr | None = Field(None, example="Maxwell")
 
 
-class ProfileUpdate(ProfileCommon):
-    ...
+class ProfileUpdate(ProfileCommon): ...
 
 
 class UserRoleEnum(StrAutoEnum):

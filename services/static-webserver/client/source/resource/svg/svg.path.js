@@ -160,7 +160,7 @@
 			options.duration = options.duration || '1000';
 			options.easing = options.easing || '<>';
 			options.delay = options.delay || 0;
-			
+
 			var length = this.length();
 
 			this.stroke({
@@ -174,7 +174,7 @@
 			fx.stroke({
 				dashoffset: 0
 			});
-			
+
 			return this;
 		},
 		update: function(redraw){
@@ -210,7 +210,7 @@
 				lastSegment = segment[i].type;
 			}
 
-			this._lastSegment = lastSegment;	
+			this._lastSegment = lastSegment;
 
 			return this.attr('d', (this.attr('d') || '') + str);
 		}

@@ -1,8 +1,8 @@
 # pylint: disable=redefined-outer-name
 
 import contextlib
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
 
 import pytest
 from aiodocker import Docker, DockerError

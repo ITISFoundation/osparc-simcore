@@ -43,9 +43,9 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         db_engine=db_engine,
         scheduled_pipelines={
             (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
-                cluster_id=r.cluster_id
-                if r.cluster_id is not None
-                else DEFAULT_CLUSTER_ID,
+                cluster_id=(
+                    r.cluster_id if r.cluster_id is not None else DEFAULT_CLUSTER_ID
+                ),
                 run_metadata=r.metadata,
                 mark_for_cancellation=False,
                 use_on_demand_clusters=r.use_on_demand_clusters,

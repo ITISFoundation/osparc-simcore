@@ -119,9 +119,11 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         make_http_error_handler_for_exception(
             Exception,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
-            override_detail_message="Internal error"
-            if settings.SC_BOOT_MODE == BootModeEnum.DEBUG
-            else None,
+            override_detail_message=(
+                "Internal error"
+                if settings.SC_BOOT_MODE == BootModeEnum.DEBUG
+                else None
+            ),
         ),
     )
     if settings.API_SERVER_DEV_FEATURES_ENABLED:

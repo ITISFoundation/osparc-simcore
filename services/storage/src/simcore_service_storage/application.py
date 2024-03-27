@@ -22,9 +22,9 @@ from .s3 import setup_s3
 from .settings import Settings
 from .utils_handlers import dsm_exception_handler
 
-_ACCESS_LOG_FORMAT: Final[
-    str
-] = '%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
+_ACCESS_LOG_FORMAT: Final[str] = (
+    '%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
+)
 
 _LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 _NOISY_LOGGERS = (

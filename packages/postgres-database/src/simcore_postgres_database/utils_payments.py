@@ -29,16 +29,13 @@ class PaymentFailure:
         return False
 
 
-class PaymentAlreadyExists(PaymentFailure):
-    ...
+class PaymentAlreadyExists(PaymentFailure): ...
 
 
-class PaymentNotFound(PaymentFailure):
-    ...
+class PaymentNotFound(PaymentFailure): ...
 
 
-class PaymentAlreadyAcked(PaymentFailure):
-    ...
+class PaymentAlreadyAcked(PaymentFailure): ...
 
 
 async def insert_init_payment_transaction(

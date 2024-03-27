@@ -19,15 +19,13 @@ translate into something like
 }
 """
 
-from typing import Optional
-
 from aiodocker.exceptions import DockerError
 
 
 class DirectorException(Exception):
     """Basic exception"""
 
-    def __init__(self, msg: Optional[str] = None):
+    def __init__(self, msg: str | None = None):
         super().__init__(msg or "Unexpected error was triggered")
 
 
@@ -42,7 +40,7 @@ class GenericDockerError(DirectorException):
 class ServiceNotAvailableError(DirectorException):
     """Service not found"""
 
-    def __init__(self, service_name: str, service_tag: Optional[str] = None):
+    def __init__(self, service_name: str, service_tag: str | None = None):
         service_tag = service_tag or "UNDEFINED"
         super().__init__(f"The service {service_name}:{service_tag} does not exist")
         self.service_name = service_name

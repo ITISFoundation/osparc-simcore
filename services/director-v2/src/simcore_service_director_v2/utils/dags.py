@@ -257,9 +257,11 @@ async def compute_pipeline_details(
                 modified=node_data.get(kNODE_MODIFIED_STATE, False),
                 dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE, set()),
                 currentStatus=node_id_to_comp_task[node_id].state,
-                progress=node_id_to_comp_task[node_id].progress
-                if node_id_to_comp_task[node_id].progress is not None
-                else None,
+                progress=(
+                    node_id_to_comp_task[node_id].progress
+                    if node_id_to_comp_task[node_id].progress is not None
+                    else None
+                ),
             )
             for node_id, node_data in complete_dag.nodes.data()
             if node_data["node_class"] is NodeClass.COMPUTATIONAL

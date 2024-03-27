@@ -21,21 +21,18 @@ router = APIRouter(
     "/computations/{project_id}",
     response_model=Envelope[ComputationTaskGet],
 )
-async def get_computation(project_id: ProjectID):
-    ...
+async def get_computation(project_id: ProjectID): ...
 
 
 @router.post(
     "/computations/{project_id}:start",
     response_model=Envelope[_ComputationStarted],
 )
-async def start_computation(project_id: ProjectID, _start: ComputationStart):
-    ...
+async def start_computation(project_id: ProjectID, _start: ComputationStart): ...
 
 
 @router.post(
     "/computations/{project_id}:stop",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def stop_computation(project_id: ProjectID):
-    ...
+async def stop_computation(project_id: ProjectID): ...

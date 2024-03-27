@@ -7,7 +7,6 @@
 
 import json
 import uuid
-from typing import Optional
 from urllib.parse import quote
 
 import pytest
@@ -138,9 +137,9 @@ async def test_services_by_key_version_get(
     for created_service in created_services:
         service_description = created_service["service_description"]
         # note that it is very important to remove the safe="/" from quote!!!!
-        key, version = [
+        key, version = (
             quote(service_description[key], safe="") for key in ("key", "version")
-        ]
+        )
         url = f"/{api_version_prefix}/services/{key}/{version}"
         web_response = await client.get(url)
 
@@ -165,9 +164,9 @@ async def test_get_service_labels(
     for service in created_services:
         service_description = service["service_description"]
         # note that it is very important to remove the safe="/" from quote!!!!
-        key, version = [
+        key, version = (
             quote(service_description[key], safe="") for key in ("key", "version")
-        ]
+        )
         url = f"/{api_version_prefix}/services/{key}/{version}/labels"
         web_response = await client.get(url)
         assert web_response.status == 200, await web_response.text()
@@ -200,9 +199,9 @@ async def test_services_extras_by_key_version_get(
     for created_service in created_services:
         service_description = created_service["service_description"]
         # note that it is very important to remove the safe="/" from quote!!!!
-        key, version = [
+        key, version = (
             quote(service_description[key], safe="") for key in ("key", "version")
-        ]
+        )
         url = f"/{api_version_prefix}/service_extras/{key}/{version}"
         web_response = await client.get(url)
 
@@ -223,7 +222,7 @@ async def _start_get_stop_services(
     user_id,
     project_id,
     api_version_prefix: str,
-    save_state: Optional[bool],
+    save_state: bool | None,
     expected_save_state_call: bool,
     mocker,
 ):
@@ -413,7 +412,7 @@ async def test_running_services_post_and_delete(
     user_id,
     project_id,
     api_version_prefix,
-    save_state: Optional[bool],
+    save_state: bool | None,
     expected_save_state_call: bool,
     mocker,
 ):

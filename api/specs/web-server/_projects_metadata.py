@@ -33,8 +33,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["projects", "metadata"])
     response_model=Envelope[ProjectMetadataGet],
     status_code=status.HTTP_200_OK,
 )
-async def get_project_metadata(_params: Annotated[ProjectPathParams, Depends()]):
-    ...
+async def get_project_metadata(_params: Annotated[ProjectPathParams, Depends()]): ...
 
 
 @router.patch(
@@ -44,5 +43,4 @@ async def get_project_metadata(_params: Annotated[ProjectPathParams, Depends()])
 )
 async def update_project_metadata(
     _params: Annotated[ProjectPathParams, Depends()], _body: ProjectMetadataUpdate
-):
-    ...
+): ...

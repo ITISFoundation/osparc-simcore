@@ -8,6 +8,7 @@
   NOTE: services/web/server/tests/conftest.py is pre-loaded
 
 """
+
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -137,9 +138,9 @@ def _default_app_config_for_integration_tests(
     # for the moment using web-server as an all-in-one service.
     # TODO: create integration tests using different configs
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2896
-    test_environ[
-        "WEBSERVER_GARBAGE_COLLECTOR"
-    ] = "{}"  # by default it is disabled. This enables it with default or env variables
+    test_environ["WEBSERVER_GARBAGE_COLLECTOR"] = (
+        "{}"  # by default it is disabled. This enables it with default or env variables
+    )
     test_environ["GARBAGE_COLLECTOR_INTERVAL_S"] = "30"
 
     # recreate config-file

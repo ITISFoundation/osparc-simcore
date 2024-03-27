@@ -3,8 +3,8 @@
 # pylint: disable=redefined-outer-name
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Awaitable, Callable, Optional
 
 import pytest
 from faker import Faker
@@ -25,7 +25,7 @@ async def dsm_mockup_complete_db(
     simcore_s3_dsm: SimcoreS3DataManager,
     user_id: UserID,
     upload_file: Callable[
-        [ByteSize, str, Optional[SimcoreS3FileID]],
+        [ByteSize, str, SimcoreS3FileID | None],
         Awaitable[tuple[Path, SimcoreS3FileID]],
     ],
     cleanup_user_projects_file_metadata: None,

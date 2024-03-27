@@ -40,15 +40,17 @@ async def get_status(app: Annotated[FastAPI, Depends(get_app)]) -> _StatusGet:
     return _StatusGet(
         rabbitmq=_ComponentStatus(
             is_enabled=is_rabbitmq_enabled(app),
-            is_responsive=await get_rabbitmq_client(app).ping()
-            if is_rabbitmq_enabled(app)
-            else False,
+            is_responsive=(
+                await get_rabbitmq_client(app).ping()
+                if is_rabbitmq_enabled(app)
+                else False
+            ),
         ),
         ec2=_ComponentStatus(
             is_enabled=bool(app.state.ec2_client),
-            is_responsive=await app.state.ec2_client.ping()
-            if app.state.ec2_client
-            else False,
+            is_responsive=(
+                await app.state.ec2_client.ping() if app.state.ec2_client else False
+            ),
         ),
         redis_client_sdk=_ComponentStatus(
             is_enabled=bool(app.state.redis_client_sdk),

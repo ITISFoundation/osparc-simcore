@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 # MODELS ---------------------------
 
+
 # This is a partial model from the resolver response
 # that extracts the information we are interested
 # NOTE: this model was deduced by trial-and-error

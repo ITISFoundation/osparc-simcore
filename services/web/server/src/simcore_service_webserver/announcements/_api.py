@@ -1,5 +1,6 @@
 """ Service layer with announcement plugin business logic
 """
+
 from aiohttp import web
 
 from . import _redis

@@ -18,8 +18,7 @@ class GroupNotFoundError(GroupsError):
         self.gid = gid
 
 
-class UserInsufficientRightsError(GroupsError):
-    ...
+class UserInsufficientRightsError(GroupsError): ...
 
 
 class UserInGroupNotFoundError(GroupsError):

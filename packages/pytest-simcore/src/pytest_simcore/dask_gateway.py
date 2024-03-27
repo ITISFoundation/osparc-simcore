@@ -1,8 +1,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
-from collections.abc import Callable
-from typing import AsyncIterator, NamedTuple
+from collections.abc import AsyncIterator, Callable
+from typing import NamedTuple
 
 import pytest
 import traitlets.config

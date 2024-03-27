@@ -126,13 +126,13 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
 
     Notice that a services here refers to a 2-tuple (key, version)
     """
-    services_in_registry: dict[
-        tuple[ServiceKey, ServiceVersion], ServiceDockerData
-    ] = await _list_services_in_registry(app)
+    services_in_registry: dict[tuple[ServiceKey, ServiceVersion], ServiceDockerData] = (
+        await _list_services_in_registry(app)
+    )
 
-    services_in_db: set[
-        tuple[ServiceKey, ServiceVersion]
-    ] = await _list_services_in_database(app.state.engine)
+    services_in_db: set[tuple[ServiceKey, ServiceVersion]] = (
+        await _list_services_in_database(app.state.engine)
+    )
 
     # check that the db has all the services at least once
     missing_services_in_db = set(services_in_registry.keys()) - services_in_db

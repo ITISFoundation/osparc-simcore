@@ -52,13 +52,17 @@ def _make_list_services_query(
             .select_from(services_meta_data.join(services_access_rights))
             .where(
                 and_(
-                    or_(*[services_access_rights.c.gid == gid for gid in gids])
-                    if gids
-                    else True,
+                    (
+                        or_(*[services_access_rights.c.gid == gid for gid in gids])
+                        if gids
+                        else True
+                    ),
                     access_query_part,
-                    (services_access_rights.c.product_name == product_name)
-                    if product_name
-                    else True,
+                    (
+                        (services_access_rights.c.product_name == product_name)
+                        if product_name
+                        else True
+                    ),
                 )
             )
             .order_by(services_meta_data.c.key, services_meta_data.c.version)
@@ -187,16 +191,22 @@ class ServicesRepository(BaseRepository):
                     and_(
                         (services_meta_data.c.key == key),
                         (services_meta_data.c.version == version),
-                        or_(*[services_access_rights.c.gid == gid for gid in gids])
-                        if gids
-                        else True,
-                        services_access_rights.c.execute_access
-                        if execute_access
-                        else True,
+                        (
+                            or_(*[services_access_rights.c.gid == gid for gid in gids])
+                            if gids
+                            else True
+                        ),
+                        (
+                            services_access_rights.c.execute_access
+                            if execute_access
+                            else True
+                        ),
                         services_access_rights.c.write_access if write_access else True,
-                        (services_access_rights.c.product_name == product_name)
-                        if product_name
-                        else True,
+                        (
+                            (services_access_rights.c.product_name == product_name)
+                            if product_name
+                            else True
+                        ),
                     )
                 )
             )

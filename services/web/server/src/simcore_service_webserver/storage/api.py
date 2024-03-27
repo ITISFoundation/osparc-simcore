@@ -1,6 +1,7 @@
 """ Storage subsystem's API: responsible of communication with storage service
 
 """
+
 import asyncio
 import logging
 import urllib.parse

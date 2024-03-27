@@ -19,7 +19,6 @@ translate into something like
 }
 """
 
-
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID

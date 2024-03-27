@@ -110,22 +110,19 @@ class _ProjectIOBase(BaseModel):
 
 
 class ProjectInputUpdate(_ProjectIOBase):
-    class Config(_InputSchemaConfig):
-        ...
+    class Config(_InputSchemaConfig): ...
 
 
 class ProjectInputGet(_OutputSchemaConfig, _ProjectIOBase):
     label: str
 
-    class Config(_InputSchemaConfig):
-        ...
+    class Config(_InputSchemaConfig): ...
 
 
 class ProjectOutputGet(_ProjectIOBase):
     label: str
 
-    class Config(_OutputSchemaConfig):
-        ...
+    class Config(_OutputSchemaConfig): ...
 
 
 @routes.get(f"/{VTAG}/projects/{{project_id}}/inputs", name="get_project_inputs")

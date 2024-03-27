@@ -1,13 +1,15 @@
 """ Simple client SDK for osparc web API (prototype concept)
 
 """
+
 import getpass
 import logging
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Generic, Iterator, Optional, Type, TypeVar
+from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 import httpx
@@ -46,8 +48,8 @@ class Meta(BaseModel):
 class PageLinks(BaseModel):
     self: AnyHttpUrl
     first: AnyHttpUrl
-    prev: Optional[AnyHttpUrl]
-    next: Optional[AnyHttpUrl]
+    prev: AnyHttpUrl | None
+    next: AnyHttpUrl | None
     last: AnyHttpUrl
 
 
@@ -58,8 +60,8 @@ class Page(GenericModel, Generic[ItemT]):
 
 
 class Envelope(GenericModel, Generic[DataT]):
-    data: Optional[DataT]
-    error: Optional[Any]
+    data: DataT | None
+    error: Any | None
 
     @classmethod
     def parse_data(cls, obj):
@@ -69,9 +71,9 @@ class Envelope(GenericModel, Generic[DataT]):
 class CheckPoint(BaseModel):
     id: NonNegativeInt
     checksum: str
-    tag: Optional[str] = None
-    message: Optional[str] = None
-    parent: Optional[NonNegativeInt] = None
+    tag: str | None = None
+    message: str | None = None
+    parent: NonNegativeInt | None = None
     created_at: datetime
 
 
@@ -145,14 +147,14 @@ def get_profile(client: httpx.Client):
 
 
 def iter_items(
-    client: httpx.Client, url_path: str, item_cls: Type[ItemT]
+    client: httpx.Client, url_path: str, item_cls: type[ItemT]
 ) -> Iterator[ItemT]:
     """iterates items returned by a List std-method
 
     SEE https://google.aip.dev/132
     """
 
-    def _relative_url_path(page_link: Optional[AnyHttpUrl]) -> Optional[str]:
+    def _relative_url_path(page_link: AnyHttpUrl | None) -> str | None:
         if page_link:
             return f"{page_link.path}".replace(client.base_url.path, "")
         return None
@@ -166,8 +168,7 @@ def iter_items(
         r.raise_for_status()
 
         page = Page[item_cls].parse_raw(r.text)
-        for item in page.data:
-            yield item
+        yield from page.data
 
         next_url = _relative_url_path(page.links.next)
         last_url = _relative_url_path(page.links.last)
@@ -198,7 +199,9 @@ def iter_project_iteration(
 # SETUP ------------------------------------------
 class ClientSettings(BaseSettings):
 
-    OSPARC_API_URL: AnyUrl = Field(default="http://127.0.0.1.nip.io:9081/v0") #  NOSONAR
+    OSPARC_API_URL: AnyUrl = Field(
+        default="http://127.0.0.1.nip.io:9081/v0"
+    )  #  NOSONAR
     OSPARC_USER_EMAIL: EmailStr
     OSPARC_USER_PASSWORD: SecretStr
 
@@ -215,7 +218,7 @@ def init():
         input("OSPARC_USER_EMAIL: ") or getpass.getuser() + "@itis.swiss"
     )
     kwargs["OSPARC_USER_PASSWORD"] = getpass.getpass()
-    with open(env_file, "wt") as fh:
+    with open(env_file, "w") as fh:
         for key, value in kwargs.items():
             print(key, value)
             if value is not None:

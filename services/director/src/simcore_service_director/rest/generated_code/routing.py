@@ -6,7 +6,6 @@ use create_web_app to initialise the web application using the specification fil
 The base folder is the root of the package.
 """
 
-
 import logging
 from pathlib import Path
 
@@ -22,10 +21,13 @@ from .models.base_model_ import Model
 
 log = logging.getLogger(__name__)
 
+
 @web.middleware
 async def __handle_errors(request, handler):
     try:
-        log.debug("error middleware handling request %s to handler %s", request, handler)
+        log.debug(
+            "error middleware handling request %s to handler %s", request, handler
+        )
         response = await handler(request)
         return response
     except ValidationError as ex:
@@ -41,14 +43,14 @@ async def __handle_errors(request, handler):
         return web.json_response(error_enveloped, status=ex.status)
 
 
-def create_web_app(base_folder, spec_file, additional_middlewares = None):
+def create_web_app(base_folder, spec_file, additional_middlewares=None):
     # create the default mapping of the operationId to the implementation code in handlers
     opmap = __create_default_operation_mapping(Path(base_folder / spec_file))
 
     # generate a version 3 of the API documentation
     router = SwaggerRouter(
-        swagger_ui='/apidoc/',
-        version_ui=3, # forces the use of version 3 by default
+        swagger_ui="/apidoc/",
+        version_ui=3,  # forces the use of version 3 by default
         search_dirs=[base_folder],
         default_validate=True,
     )
@@ -65,30 +67,37 @@ def create_web_app(base_folder, spec_file, additional_middlewares = None):
         router=router,
         middlewares=middlewares,
     )
-    router.set_cors(app, domains='*', headers=(
-        (hdrs.ACCESS_CONTROL_EXPOSE_HEADERS, hdrs.AUTHORIZATION),
-    ))
+    router.set_cors(
+        app,
+        domains="*",
+        headers=((hdrs.ACCESS_CONTROL_EXPOSE_HEADERS, hdrs.AUTHORIZATION),),
+    )
 
     # Include our specifications in a router,
     # is now available in the swagger-ui to the address http://localhost:8080/swagger/?spec=v1
     router.include(
         spec=Path(base_folder / spec_file),
         operationId_mapping=opmap,
-        name='v0',  # name to access in swagger-ui,
-        basePath="/v0" # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
+        name="v0",  # name to access in swagger-ui,
+        basePath="/v0",  # BUG: in apiset with openapi 3.0.0 [Github bug entry](https://github.com/aamalev/aiohttp_apiset/issues/45)
     )
 
     return app
 
+
 def __create_default_operation_mapping(specs_file):
     operation_mapping = {}
     yaml_specs = ExtendedSchemaFile(specs_file)
-    paths = yaml_specs['paths']
+    paths = yaml_specs["paths"]
     for path in paths.items():
-        for method in path[1].items(): # can be get, post, patch, put, delete...
+        for method in path[1].items():  # can be get, post, patch, put, delete...
             op_str = "operationId"
             if op_str not in method[1]:
-                raise Exception("The API %s does not contain the operationId tag for route %s %s" % (specs_file, path[0], method[0]))
+                raise Exception(
+                    "The API {} does not contain the operationId tag for route {} {}".format(
+                        specs_file, path[0], method[0]
+                    )
+                )
             operation_id = method[1][op_str]
             operation_mapping[operation_id] = getattr(handlers, operation_id)
     return OperationIdMapping(**operation_mapping)

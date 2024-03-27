@@ -1,8 +1,7 @@
 from pydantic.errors import PydanticErrorMixin
 
 
-class ComputationalSidecarRuntimeError(PydanticErrorMixin, RuntimeError):
-    ...
+class ComputationalSidecarRuntimeError(PydanticErrorMixin, RuntimeError): ...
 
 
 class ServiceBadFormattedOutputError(ComputationalSidecarRuntimeError):

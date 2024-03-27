@@ -232,6 +232,7 @@ class Node(BaseModel):
 
     class Config:
         extra = Extra.forbid
+
         # NOTE: exporting without this trick does not make runHash as nullable.
         # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
         @staticmethod

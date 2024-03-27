@@ -2,6 +2,7 @@
 
 
 """
+
 import logging
 import urllib.parse
 from dataclasses import dataclass

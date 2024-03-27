@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 import asyncio
-from typing import Any, Optional
+from typing import Any
 
 import typer
 from httpx import URL, AsyncClient, HTTPStatusError, Timeout, codes
@@ -20,7 +20,7 @@ async def login_user(client: AsyncClient, email: EmailStr, password: SecretStr):
 
 async def get_project_for_user(
     client: AsyncClient, project_id: str
-) -> Optional[dict[str, Any]]:
+) -> dict[str, Any] | None:
     path = f"/projects/{project_id}"
     r = await client.get(path, params={"type": "user"})
     if r.status_code == 200:
@@ -30,7 +30,7 @@ async def get_project_for_user(
 
 
 async def get_all_projects_for_user(
-    client: AsyncClient, next_link: Optional[str] = None
+    client: AsyncClient, next_link: str | None = None
 ) -> list[dict[str, Any]]:
     path = next_link if next_link else "/projects"
     r = await client.get(path, params={"type": "user"})
@@ -56,7 +56,7 @@ async def delete_project(client: AsyncClient, project_id: str, progressbar):
 
 
 async def clean(
-    endpoint: URL, username: EmailStr, password: SecretStr, project_id: Optional[str]
+    endpoint: URL, username: EmailStr, password: SecretStr, project_id: str | None
 ) -> int:
     try:
         async with AsyncClient(
@@ -108,7 +108,7 @@ async def clean(
 
 
 def main(
-    endpoint: str, username: str, password: str, project_id: Optional[str] = None
+    endpoint: str, username: str, password: str, project_id: str | None = None
 ) -> int:
     return asyncio.get_event_loop().run_until_complete(
         clean(URL(endpoint), EmailStr(username), SecretStr(password), project_id)

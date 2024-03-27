@@ -1,7 +1,7 @@
 import functools
 import logging
 from dataclasses import dataclass
-from typing import Final, Optional
+from typing import Final
 
 from botocore import exceptions as botocore_exc
 from pydantic import ByteSize, parse_obj_as
@@ -87,9 +87,9 @@ def s3_exception_handler(log: logging.Logger):
 
 
 def update_task_progress(
-    task_progress: Optional[TaskProgress],
-    message: Optional[ProgressMessage] = None,
-    progress: Optional[ProgressPercent] = None,
+    task_progress: TaskProgress | None,
+    message: ProgressMessage | None = None,
+    progress: ProgressPercent | None = None,
 ) -> None:
     logger.debug("%s [%s]", message or "", progress or "n/a")
     if task_progress:
@@ -98,7 +98,7 @@ def update_task_progress(
 
 @dataclass
 class S3TransferDataCB:
-    task_progress: Optional[TaskProgress]
+    task_progress: TaskProgress | None
     total_bytes_to_transfer: ByteSize
     task_progress_message_prefix: str = ""
     _total_bytes_copied: int = 0

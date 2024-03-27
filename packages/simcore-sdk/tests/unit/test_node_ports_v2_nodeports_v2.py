@@ -3,8 +3,9 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
+from collections.abc import AsyncIterable, Callable
 from pathlib import Path
-from typing import Any, AsyncIterable, Callable
+from typing import Any
 
 import pytest
 from pytest_mock import MockFixture

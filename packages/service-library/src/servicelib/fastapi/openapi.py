@@ -64,7 +64,7 @@ _SKIP = (
     "examples",
     # SEE openapi-standard: https://swagger.io/docs/specification/adding-examples/
     # - exampleS are Dicts and not Lists
-    "patternProperties"
+    "patternProperties",
     # SEE Unsupported openapi-standard: https://swagger.io/docs/specification/data-models/keywords/?sbsearch=patternProperties
     # SEE https://github.com/OAI/OpenAPI-Specification/issues/687
     # SEE https://json-schema.org/understanding-json-schema/reference/object.html#pattern-properties

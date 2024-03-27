@@ -28,13 +28,11 @@ router = APIRouter(
     "/projects/{project_uuid}/checkpoint/{ref_id}/iterations",
     response_model=Page[ProjectIterationItem],
 )
-def list_project_iterations(_params: Annotated[ParametersModel, Depends()]):
-    ...
+def list_project_iterations(_params: Annotated[ParametersModel, Depends()]): ...
 
 
 @router.get(
     "/projects/{project_uuid}/checkpoint/{ref_id}/iterations/-/results",
     response_model=Page[ProjectIterationResultItem],
 )
-def list_project_iterations_results(_params: Annotated[ParametersModel, Depends()]):
-    ...
+def list_project_iterations_results(_params: Annotated[ParametersModel, Depends()]): ...

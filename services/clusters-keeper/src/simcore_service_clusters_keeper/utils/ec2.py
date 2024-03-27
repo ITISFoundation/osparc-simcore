@@ -30,7 +30,14 @@ def get_cluster_name(
 
 def _minimal_identification_tag(app_settings: ApplicationSettings) -> EC2Tags:
     return {
-        AWSTagKey(".".join([_APPLICATION_TAG_KEY, "deploy",])): AWSTagValue(
+        AWSTagKey(
+            ".".join(
+                [
+                    _APPLICATION_TAG_KEY,
+                    "deploy",
+                ]
+            )
+        ): AWSTagValue(
             f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{app_settings.SWARM_STACK_NAME}"
         )
     }

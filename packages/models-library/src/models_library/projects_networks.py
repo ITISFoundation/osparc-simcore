@@ -20,8 +20,7 @@ class DockerNetworkAlias(ConstrainedStr):
     regex = SERVICE_NETWORK_RE
 
 
-class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]):
-    ...
+class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]): ...
 
 
 class NetworksWithAliases(DictModel[DockerNetworkName, ContainerAliases]):

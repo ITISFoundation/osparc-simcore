@@ -9,8 +9,8 @@ import json
 import logging
 import os
 import time
+from collections.abc import Callable, Iterable, Iterator
 from pprint import pformat
-from typing import Callable, Iterable, Iterator
 
 import httpx
 import osparc

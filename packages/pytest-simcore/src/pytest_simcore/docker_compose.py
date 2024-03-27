@@ -60,12 +60,12 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
         "SWARM_STACK_NAME_NO_HYPHEN", env_devel["SWARM_STACK_NAME"].replace("-", "_")
     )
 
-    env_devel[
-        "AIOCACHE_DISABLE"
-    ] = "1"  # ensure that aio-caches are disabled for testing [https://aiocache.readthedocs.io/en/latest/testing.html]
-    env_devel[
-        "CATALOG_BACKGROUND_TASK_REST_TIME"
-    ] = "1"  # ensure catalog refreshes services access rights fast
+    env_devel["AIOCACHE_DISABLE"] = (
+        "1"  # ensure that aio-caches are disabled for testing [https://aiocache.readthedocs.io/en/latest/testing.html]
+    )
+    env_devel["CATALOG_BACKGROUND_TASK_REST_TIME"] = (
+        "1"  # ensure catalog refreshes services access rights fast
+    )
 
     env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
     env_devel.setdefault("DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS", "")

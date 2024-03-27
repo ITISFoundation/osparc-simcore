@@ -1,6 +1,7 @@
 """ Application's metadata
 
 """
+
 from typing import Final
 
 from packaging.version import Version

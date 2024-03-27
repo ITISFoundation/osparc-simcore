@@ -312,9 +312,9 @@ async def test_share_project(
         resp = await _delete_project(client, new_project)
         await assert_status(
             resp,
-            expected_status_code=expected.no_content
-            if share_rights["delete"]
-            else expected.forbidden,
+            expected_status_code=(
+                expected.no_content if share_rights["delete"] else expected.forbidden
+            ),
         )
 
 
@@ -999,13 +999,13 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
 
     node_sample = deepcopy(NodeGet.Config.schema_extra["example"])
-    mocked_director_v2_api[
-        "dynamic_scheduler.api.get_dynamic_service"
-    ].return_value = NodeGet.parse_obj(
-        {
-            **node_sample,
-            "service_state": "running",
-        }
+    mocked_director_v2_api["dynamic_scheduler.api.get_dynamic_service"].return_value = (
+        NodeGet.parse_obj(
+            {
+                **node_sample,
+                "service_state": "running",
+            }
+        )
     )
     resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_get)
@@ -1019,13 +1019,13 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
     )
-    mocked_director_v2_api[
-        "dynamic_scheduler.api.get_dynamic_service"
-    ].return_value = NodeGetIdle.parse_obj(
-        {
-            "service_uuid": node_sample["service_uuid"],
-            "service_state": "idle",
-        }
+    mocked_director_v2_api["dynamic_scheduler.api.get_dynamic_service"].return_value = (
+        NodeGetIdle.parse_obj(
+            {
+                "service_uuid": node_sample["service_uuid"],
+                "service_state": "idle",
+            }
+        )
     )
     resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_get)
@@ -1358,9 +1358,11 @@ async def test_open_shared_project_at_same_time(
             shared_project,
             [
                 expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
-                expected.locked
-                if user_role != UserRole.GUEST
-                else status.HTTP_423_LOCKED,
+                (
+                    expected.locked
+                    if user_role != UserRole.GUEST
+                    else status.HTTP_423_LOCKED
+                ),
             ],
         )
         for c in clients

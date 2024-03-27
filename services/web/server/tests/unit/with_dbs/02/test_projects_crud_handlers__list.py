@@ -189,9 +189,9 @@ async def test_list_projects_with_pagination(
             data, meta, links = await _list_projects(
                 client,
                 expected.ok,
-                query_parameters=next_link.query
-                if next_link
-                else default_query_parameter,
+                query_parameters=(
+                    next_link.query if next_link else default_query_parameter
+                ),
             )
             print("...received [", meta, "]")
             assert len(data) == meta["count"]

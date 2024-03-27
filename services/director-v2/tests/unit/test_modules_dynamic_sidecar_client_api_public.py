@@ -1,8 +1,9 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from collections.abc import AsyncIterable, Callable, Iterator
 from contextlib import contextmanager
-from typing import Any, AsyncIterable, Callable, Iterator
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest

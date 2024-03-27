@@ -17,8 +17,7 @@ log = logging.getLogger(__name__)
 _APP_OBSERVER_EVENTS_REGISTRY_KEY = "{__name__}.event_registry"
 
 
-class ObserverRegistryNotFoundError(RuntimeError):
-    ...
+class ObserverRegistryNotFoundError(RuntimeError): ...
 
 
 def setup_observer_registry(app: web.Application):

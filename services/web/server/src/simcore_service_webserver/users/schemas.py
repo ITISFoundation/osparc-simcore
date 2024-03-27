@@ -37,8 +37,7 @@ class ThirdPartyToken(BaseModel):
         }
 
 
-class TokenCreate(ThirdPartyToken):
-    ...
+class TokenCreate(ThirdPartyToken): ...
 
 
 #
@@ -126,5 +125,4 @@ class Permission(BaseModel):
     allowed: bool
 
 
-class PermissionGet(Permission, OutputSchema):
-    ...
+class PermissionGet(Permission, OutputSchema): ...

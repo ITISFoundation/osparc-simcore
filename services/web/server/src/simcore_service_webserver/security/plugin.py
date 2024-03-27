@@ -6,6 +6,7 @@
     See login/decorators.py
     Based on https://aiohttp-security.readthedocs.io/en/latest/
 """
+
 import logging
 
 import aiohttp_security

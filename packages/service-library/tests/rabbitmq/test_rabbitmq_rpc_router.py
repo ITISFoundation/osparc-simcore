@@ -21,12 +21,10 @@ pytest_simcore_core_services_selection = [
 router = RPCRouter()
 
 
-class MyBaseError(Exception):
-    ...
+class MyBaseError(Exception): ...
 
 
-class MyExpectedError(MyBaseError):
-    ...
+class MyExpectedError(MyBaseError): ...
 
 
 @router.expose()

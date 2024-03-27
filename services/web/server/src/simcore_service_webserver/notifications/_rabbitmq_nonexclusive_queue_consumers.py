@@ -43,7 +43,12 @@ async def _instrumentation_message_parser(app: web.Application, data: bytes) -> 
     return True
 
 
-_EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...,]] = (
+_EXCHANGE_TO_PARSER_CONFIG: Final[
+    tuple[
+        SubcribeArgumentsTuple,
+        ...,
+    ]
+] = (
     SubcribeArgumentsTuple(
         InstrumentationRabbitMessage.get_channel_name(),
         _instrumentation_message_parser,

@@ -8,12 +8,12 @@ Rabbit Soltis-Saucerman model with full b-AR signalling (Rabbit SS 1D cardiac)
 
 SEE https://sparc.science/datasets/4?type=dataset
 """
+
 import os
 import sys
 import time
 from pathlib import Path
 from time import sleep
-from typing import Optional
 
 import osparc
 from dotenv import load_dotenv
@@ -106,7 +106,7 @@ with osparc.ApiClient(cfg) as api_client:
     # Retrieve our simulation results.
 
     print("---------------------------------------")
-    result: Optional[File]
+    result: File | None
 
     for output_name, result in outputs.results.items():
         if result is None:

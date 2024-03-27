@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import json
-from typing import Callable
+from collections.abc import Callable
 from uuid import UUID
 
 import pytest

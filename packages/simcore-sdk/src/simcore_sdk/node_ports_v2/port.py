@@ -1,9 +1,10 @@
 import logging
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Callable
+from typing import Any
 
 from models_library.api_schemas_storage import LinkType
 from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
@@ -181,26 +182,26 @@ class Port(BaseServiceIOModel):
         async def _evaluate() -> ItemValue | None:
             if isinstance(self.value, PortLink):
                 # this is a link to another node's port
-                other_port_itemvalue: None | (
-                    ItemValue
-                ) = await port_utils.get_value_link_from_port_link(
-                    self.value,
-                    # pylint: disable=protected-access
-                    self._node_ports._node_ports_creator_cb,
-                    file_link_type=file_link_type,
+                other_port_itemvalue: None | (ItemValue) = (
+                    await port_utils.get_value_link_from_port_link(
+                        self.value,
+                        # pylint: disable=protected-access
+                        self._node_ports._node_ports_creator_cb,
+                        file_link_type=file_link_type,
+                    )
                 )
 
                 return other_port_itemvalue
 
             if isinstance(self.value, FileLink):
                 # let's get the download/upload link from storage
-                url_itemvalue: None | (
-                    AnyUrl
-                ) = await port_utils.get_download_link_from_storage(
-                    # pylint: disable=protected-access
-                    user_id=self._node_ports.user_id,
-                    value=self.value,
-                    link_type=file_link_type,
+                url_itemvalue: None | (AnyUrl) = (
+                    await port_utils.get_download_link_from_storage(
+                        # pylint: disable=protected-access
+                        user_id=self._node_ports.user_id,
+                        value=self.value,
+                        link_type=file_link_type,
+                    )
                 )
                 return url_itemvalue
 
@@ -239,15 +240,15 @@ class Port(BaseServiceIOModel):
 
             if isinstance(self.value, PortLink):
                 # this is a link to another node
-                other_port_concretevalue: None | (
-                    ItemConcreteValue
-                ) = await port_utils.get_value_from_link(
-                    # pylint: disable=protected-access
-                    key=self.key,
-                    value=self.value,
-                    file_to_key_map=self.file_to_key_map,
-                    node_port_creator=self._node_ports._node_ports_creator_cb,
-                    progress_bar=progress_bar,
+                other_port_concretevalue: None | (ItemConcreteValue) = (
+                    await port_utils.get_value_from_link(
+                        # pylint: disable=protected-access
+                        key=self.key,
+                        value=self.value,
+                        file_to_key_map=self.file_to_key_map,
+                        node_port_creator=self._node_ports._node_ports_creator_cb,
+                        progress_bar=progress_bar,
+                    )
                 )
                 value = other_port_concretevalue
 

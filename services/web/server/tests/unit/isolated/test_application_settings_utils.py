@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from pytest_simcore.helpers.utils_dict import ConfigDict

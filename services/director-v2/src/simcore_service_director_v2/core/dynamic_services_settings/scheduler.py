@@ -61,7 +61,9 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         description="Prometheus will scrape service placed on these networks",
     )
 
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: bool = Field(
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: (
+        bool
+    ) = Field(
         default=True,
         description=(
             "when the message indicating there are no more credits left in a wallet "

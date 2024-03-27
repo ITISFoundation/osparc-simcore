@@ -2,9 +2,10 @@ import asyncio
 import json
 import logging
 from collections import deque
+from collections.abc import AsyncGenerator, Mapping
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncGenerator, Final, Mapping, NamedTuple, cast
+from typing import Any, Final, NamedTuple, cast
 
 import aiodocker
 from aiodocker import Docker
@@ -93,9 +94,9 @@ def create_service_config(
         env_updates = {}
         for env_name, env_value in env.items():
             if env_value == s.secret_file_name:
-                env_updates[
-                    env_name
-                ] = f"{_DASK_KEY_CERT_PATH_IN_SIDECAR / Path(s.secret_file_name).name}"
+                env_updates[env_name] = (
+                    f"{_DASK_KEY_CERT_PATH_IN_SIDECAR / Path(s.secret_file_name).name}"
+                )
         env.update(env_updates)
     mounts = [
         # docker socket needed to use the docker api

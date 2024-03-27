@@ -185,9 +185,11 @@ class RabbitMQClient(RabbitMQClientBase):
 
             exchange = await channel.declare_exchange(
                 exchange_name,
-                aio_pika.ExchangeType.FANOUT
-                if topics is None
-                else aio_pika.ExchangeType.TOPIC,
+                (
+                    aio_pika.ExchangeType.FANOUT
+                    if topics is None
+                    else aio_pika.ExchangeType.TOPIC
+                ),
                 durable=True,
                 timeout=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S,
             )
@@ -311,9 +313,11 @@ class RabbitMQClient(RabbitMQClientBase):
         async with self._channel_pool.acquire() as channel:
             exchange = await channel.declare_exchange(
                 exchange_name,
-                aio_pika.ExchangeType.FANOUT
-                if topic is None
-                else aio_pika.ExchangeType.TOPIC,
+                (
+                    aio_pika.ExchangeType.FANOUT
+                    if topic is None
+                    else aio_pika.ExchangeType.TOPIC
+                ),
                 durable=True,
                 timeout=_DEFAULT_RABBITMQ_EXECUTION_TIMEOUT_S,
             )

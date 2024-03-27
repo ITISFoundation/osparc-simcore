@@ -1,6 +1,7 @@
 """Main application to be deployed by uvicorn (or equivalent) server
 
 """
+
 import logging
 
 from fastapi import FastAPI
