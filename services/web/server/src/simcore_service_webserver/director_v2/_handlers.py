@@ -9,12 +9,12 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
-from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
+from servicelib.aiohttp.rest_responses import create_error_response
+from servicelib.aiohttp.web_exceptions_extension import get_http_error_class_or_none
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_groups_extra_properties import (
@@ -164,8 +164,9 @@ async def start_computation(request: web.Request) -> web.Response:
     except DirectorServiceError as exc:
         return create_error_response(
             exc,
-            reason=exc.reason,
-            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+            message=exc.reason,
+            http_error_cls=get_http_error_class_or_none(exc.status)
+            or web.HTTPServiceUnavailable,
         )
     except UserDefaultWalletNotFoundError as exc:
         return create_error_response(exc, http_error_cls=web.HTTPNotFound)
@@ -205,8 +206,9 @@ async def stop_computation(request: web.Request) -> web.Response:
     except DirectorServiceError as exc:
         return create_error_response(
             exc,
-            reason=exc.reason,
-            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+            message=exc.reason,
+            http_error_cls=get_http_error_class_or_none(exc.status)
+            or web.HTTPServiceUnavailable,
         )
 
 
@@ -247,15 +249,14 @@ async def get_computation(request: web.Request) -> web.Response:
             c.cluster_id == list_computation_tasks[0].cluster_id
             for c in list_computation_tasks
         )
-        return web.json_response(
-            data={"data": list_computation_tasks[0].dict(by_alias=True)},
-            dumps=json_dumps,
-        )
+        return envelope_json_response(list_computation_tasks[0].dict(by_alias=True))
+
     except DirectorServiceError as exc:
         return create_error_response(
             exc,
-            reason=exc.reason,
-            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+            message=exc.reason,
+            http_error_cls=get_http_error_class_or_none(exc.status)
+            or web.HTTPServiceUnavailable,
         )
     except ValidationError as exc:
         return create_error_response(exc, http_error_cls=web.HTTPInternalServerError)

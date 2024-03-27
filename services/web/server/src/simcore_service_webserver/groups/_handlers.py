@@ -1,5 +1,4 @@
 import functools
-import json
 import logging
 from contextlib import suppress
 from typing import Literal
@@ -18,7 +17,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 from .._constants import RQT_USERID_KEY
@@ -82,7 +80,7 @@ async def list_groups(request: web.Request):
         request.app, user_id
     )
 
-    result = {
+    data = {
         "me": primary_group,
         "organizations": user_groups,
         "all": all_group,
@@ -91,14 +89,14 @@ async def list_groups(request: web.Request):
 
     if product.group_id:
         with suppress(GroupNotFoundError):
-            result["product"] = await api.get_product_group_for_user(
+            data["product"] = await api.get_product_group_for_user(
                 app=request.app,
                 user_id=user_id,
                 product_gid=product.group_id,
             )
 
-    assert parse_obj_as(AllUsersGroups, result) is not None  # nosec
-    return result
+    assert parse_obj_as(AllUsersGroups, data) is not None  # nosec
+    return envelope_json_response(data)
 
 
 @routes.get(f"/{API_VTAG}/groups/{{gid}}", name="get_group")
@@ -112,7 +110,7 @@ async def get_group(request: web.Request):
 
     group = await api.get_user_group(request.app, user_id, gid)
     assert parse_obj_as(UsersGroup, group) is not None  # nosec
-    return group
+    return envelope_json_response(group)
 
 
 @routes.post(f"/{API_VTAG}/groups", name="create_group")
@@ -126,9 +124,7 @@ async def create_group(request: web.Request):
 
     created_group = await api.create_user_group(request.app, user_id, new_group)
     assert parse_obj_as(UsersGroup, created_group) is not None  # nosec
-    raise web.HTTPCreated(
-        text=json.dumps({"data": created_group}), content_type=MIMETYPE_APPLICATION_JSON
-    )
+    return envelope_json_response(created_group, status_cls=web.HTTPCreated)
 
 
 @routes.patch(f"/{API_VTAG}/groups/{{gid}}", name="update_group")
@@ -277,7 +273,8 @@ async def get_group_classifiers(request: web.Request):
 
         repo = GroupClassifierRepository(request.app)
         if not await repo.group_uses_scicrunch(path_params.gid):
-            return await repo.get_classifiers_from_bundle(path_params.gid)
+            bundle = await repo.get_classifiers_from_bundle(path_params.gid)
+            return envelope_json_response(bundle)
 
         # otherwise, build dynamic tree with RRIDs
         view = await build_rrids_tree_view(

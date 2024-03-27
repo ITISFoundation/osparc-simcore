@@ -1,11 +1,9 @@
-import io
 import logging
 from collections.abc import Callable
 from typing import Any, Generic, Literal, TypeAlias, TypeVar
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
-from aiohttp.web_routedef import RouteDef, RouteTableDef
 from models_library.generics import Envelope
 from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
@@ -18,20 +16,6 @@ from yarl import URL
 from ._constants import INDEX_RESOURCE_NAME
 
 _logger = logging.getLogger(__name__)
-
-
-def rename_routes_as_handler_function(routes: RouteTableDef, *, prefix: str):
-    route: RouteDef
-    for route in routes:
-        route.kwargs["name"] = f"{prefix}.{route.handler.__name__}"
-
-
-def get_routes_view(routes: RouteTableDef) -> str:
-    fh = io.StringIO()
-    print(routes, file=fh)
-    for r in routes:
-        print(" ", r, file=fh)
-    return fh.getvalue()
 
 
 def create_url_for_function(request: web.Request) -> Callable:
