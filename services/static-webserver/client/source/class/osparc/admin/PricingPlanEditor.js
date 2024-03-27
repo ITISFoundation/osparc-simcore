@@ -27,6 +27,7 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
     const name = this.getChildControl("name");
     this.getChildControl("description");
     this.getChildControl("classification");
+    const isActive = this.getChildControl("is-active");
 
     const manager = this.__validator = new qx.ui.form.validation.Manager();
     ppKey.setRequired(true);
@@ -36,14 +37,17 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
 
     if (pricingPlan) {
       this.__pricingPlan = osparc.utils.Utils.deepCloneObject(pricingPlan);
-      this.getChildControl("save");
       this.set({
         ppKey: pricingPlan.pricingPlanKey,
         name: pricingPlan.displayName,
         description: pricingPlan.description,
-        classification: pricingPlan.classification
+        classification: pricingPlan.classification,
+        isActive: pricingPlan.isActive
       });
+      ppKey.setEnabled(false);
+      this.getChildControl("save");
     } else {
+      isActive.setEnabled(false);
       this.getChildControl("create");
     }
   },
@@ -75,6 +79,13 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
       init: "TIER",
       nullable: false,
       event: "changeClassification"
+    },
+
+    isActive: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeIsActive"
     }
   },
 
@@ -123,10 +134,19 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
         case "classification": {
           control = new qx.ui.form.TextField().set({
             font: "text-14",
-            readOnly: true
+            enabled: false
           });
           this.bind("classification", control, "value");
           control.bind("value", this, "classification");
+          this._add(control);
+          break;
+        }
+        case "is-active": {
+          control = new qx.ui.form.CheckBox().set({
+            value: true
+          });
+          this.bind("isActive", control, "value");
+          control.bind("value", this, "isActive");
           this._add(control);
           break;
         }
@@ -201,7 +221,6 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
     },
 
     __updatePricingPlan: function() {
-      this.__pricingPlan["pricingPlanKey"] = this.getPpKey();
       this.__pricingPlan["displayName"] = this.getName();
       this.__pricingPlan["description"] = this.getDescription();
       const params = {
@@ -212,11 +231,11 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
       };
       osparc.data.Resources.fetch("pricingPlans", "update", params)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully updated"));
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Successfully updated"));
           this.fireEvent("done");
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating ") + name, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
           console.error(err);
         })
         .finally(() => this.getChildControl("save").setFetching(false));
