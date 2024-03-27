@@ -68,12 +68,13 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
   },
 
   events: {
-    "createPricingPlan": "qx.event.type.Event",
-    "updatePricingPlan": "qx.event.type.Event",
+    "done": "qx.event.type.Event",
     "cancel": "qx.event.type.Event"
   },
 
   members: {
+    __validator: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -137,7 +138,7 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
           control.addListener("execute", () => {
             if (this.__validator.validate()) {
               control.setFetching(true);
-              this.fireEvent("createPricingPlan");
+              this.__createPricingPlan();
             }
           }, this);
           buttons.addAt(control, 1);
@@ -151,7 +152,7 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
           control.addListener("execute", () => {
             if (this.__validator.validate()) {
               control.setFetching(true);
-              this.fireEvent("updatePricingPlan");
+              this.__updatePricingPlan();
             }
           }, this);
           buttons.addAt(control, 1);
@@ -160,6 +161,59 @@ qx.Class.define("osparc.admin.PricingPlanEditor", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __createPricingPlan: function() {
+      const ppKey = this.getPpKey();
+      const name = this.getName();
+      const description = this.getDescription();
+      const classification = this.getClassification();
+      const params = {
+        data: {
+          "pricingPlanKey": ppKey,
+          "displayName": name,
+          "description": description,
+          "classification": classification
+        }
+      };
+      osparc.data.Resources.fetch("pricingPlans", "post", params)
+        .then(() => {
+          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
+          this.fireEvent("done");
+        })
+        .catch(err => {
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
+          console.error(err);
+        })
+        .finally(() => this.getChildControl("create").setFetching(false));
+    },
+
+    __updatePricingPlan: function() {
+      const ppKey = this.getPpKey();
+      const name = this.getName();
+      const description = this.getDescription();
+      const classification = this.getClassification();
+      const params = {
+        url: {
+          "pricingPlanId": 2
+        },
+        data: {
+          "pricingPlanKey": ppKey,
+          "displayName": name,
+          "description": description,
+          "classification": classification
+        }
+      };
+      osparc.data.Resources.fetch("pricingPlans", "update", params)
+        .then(() => {
+          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully updated"));
+          this.fireEvent("done");
+        })
+        .catch(err => {
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating ") + name, "ERROR");
+          console.error(err);
+        })
+        .finally(() => this.getChildControl("save").setFetching(false));
     }
   }
 });

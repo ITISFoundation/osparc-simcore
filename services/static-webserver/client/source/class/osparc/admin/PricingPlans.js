@@ -97,9 +97,8 @@ qx.Class.define("osparc.admin.PricingPlans", {
       const ppCreator = new osparc.admin.PricingPlanEditor();
       const title = this.tr("Pricing Plan Creator");
       const win = osparc.ui.window.Window.popUpInWindow(ppCreator, title, 400, 250);
-      ppCreator.addListener("createPricingPlan", () => {
-        this.__createPricingPlan(win, ppCreator.getChildControl("create"), ppCreator)
-        console.log(ppCreator);
+      ppCreator.addListener("done", () => {
+        win.close();
       });
       ppCreator.addListener("cancel", () => win.close());
     },
@@ -108,36 +107,10 @@ qx.Class.define("osparc.admin.PricingPlans", {
       const ppEditor = new osparc.admin.PricingPlanEditor(pricingPlan);
       const title = this.tr("Pricing Plan Editor");
       const win = osparc.ui.window.Window.popUpInWindow(ppEditor, title, 400, 250);
-      ppEditor.addListener("updatePricingPlan", () => {
-        console.log(ppEditor);
+      ppEditor.addListener("done", () => {
+        win.close();
       });
       ppEditor.addListener("cancel", () => win.close());
-    },
-
-    __createPricingPlan: function(win, button, ppCreator) {
-      const ppKey = ppCreator.getPpKey();
-      const name = ppCreator.getName();
-      const description = ppCreator.getDescription();
-      const classification = ppCreator.getClassification();
-      const params = {
-        data: {
-          "pricingPlanKey": ppKey,
-          "displayName": name,
-          "description": description,
-          "classification": classification
-        }
-      };
-      osparc.data.Resources.fetch("pricingPlans", "post", params)
-        .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
-          button.setFetching(false);
-        })
-        .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
-          button.setFetching(false);
-          console.error(err);
-        })
-        .finally(() => win.close());
-    },
+    }
   }
 });
