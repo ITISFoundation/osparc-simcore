@@ -11,6 +11,7 @@ from typing import Any, Final, TypeAlias, cast
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
 from aws_library.s3.client import SimcoreS3API
+from aws_library.s3.errors import s3_exception_handler
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from models_library.api_schemas_storage import UploadedPart
@@ -31,7 +32,7 @@ from types_aiobotocore_s3.type_defs import (
 
 from .constants import EXPAND_DIR_MAX_ITEM_COUNT, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
-from .s3_utils import compute_num_file_chunks, s3_exception_handler
+from .s3_utils import compute_num_file_chunks
 
 _logger = logging.getLogger(__name__)
 

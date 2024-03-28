@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import cast
 
 import aioboto3
-import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from botocore.client import Config
 from models_library.api_schemas_storage import S3BucketName
@@ -12,7 +11,7 @@ from pydantic import AnyUrl, parse_obj_as
 from settings_library.s3 import S3Settings
 from types_aiobotocore_s3 import S3Client
 
-from .errors import S3RuntimeError
+from .errors import s3_exception_handler
 
 _logger = logging.getLogger(__name__)
 
@@ -56,21 +55,19 @@ class SimcoreS3API:
         except Exception:  # pylint: disable=broad-except
             return False
 
-    async def create_presigned_download_link(
+    @s3_exception_handler(_logger)
+    async def create_single_presigned_download_link(
         self,
         bucket_name: S3BucketName,
         object_key: str,
         expiration_secs: int,
     ) -> AnyUrl:
-        try:
-            # NOTE: ensure the bucket/object exists, this will raise if not
-            await self.client.head_bucket(Bucket=bucket_name)
-            generated_link = await self.client.generate_presigned_url(
-                "get_object",
-                Params={"Bucket": bucket_name, "Key": object_key},
-                ExpiresIn=expiration_secs,
-            )
-            url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
-            return url
-        except botocore.exceptions.ClientError as exc:
-            raise S3RuntimeError from exc  # pragma: no cover
+        # NOTE: ensure the bucket/object exists, this will raise if not
+        await self.client.head_bucket(Bucket=bucket_name)
+        generated_link = await self.client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket_name, "Key": object_key},
+            ExpiresIn=expiration_secs,
+        )
+        url: AnyUrl = parse_obj_as(AnyUrl, generated_link)
+        return url

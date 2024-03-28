@@ -56,7 +56,7 @@ def mock_config(
 
 async def test_storage_storage_s3_client_creation(
     app_settings: Settings,
-):  # mocked_aws_server: ThreadedMotoServer
+):
     assert app_settings.STORAGE_S3
     storage_s3_client = await StorageS3Client.create(
         app_settings.STORAGE_S3,
