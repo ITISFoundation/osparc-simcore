@@ -15,12 +15,8 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.admin.PricingPlans", {
+qx.Class.define("osparc.admin.PricingPlanDetails", {
   extend: qx.ui.core.Widget,
-
-  events: {
-    "pricingPlanSelected": "qx.event.type.Data"
-  },
 
   members: {
     __model: null,
@@ -48,7 +44,7 @@ qx.Class.define("osparc.admin.PricingPlans", {
           });
           control.addListener("changeSelection", e => {
             const ppSelected = e.getData()[0].getModel();
-            this.fireDataEvent("pricingPlanSelected", ppSelected);
+            console.log(ppSelected);
           }, this);
           this.getChildControl("pricing-plans-container").add(control);
           break;
