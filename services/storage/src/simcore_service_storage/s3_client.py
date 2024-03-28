@@ -61,9 +61,11 @@ class S3MetaData:
             file_id=SimcoreS3FileID(obj["Key"]),
             last_modified=obj["LastModified"],
             e_tag=json.loads(obj["ETag"]),
-            sha256_checksum=SHA256Str(obj.get("ChecksumSHA256"))
-            if obj.get("ChecksumSHA256")
-            else None,
+            sha256_checksum=(
+                SHA256Str(obj.get("ChecksumSHA256"))
+                if obj.get("ChecksumSHA256")
+                else None
+            ),
             size=obj["Size"],
         )
 
@@ -111,7 +113,12 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
         # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
         await client.list_buckets()
 
-        return cls(client, session, exit_stack, s3_max_concurrency)
+        return cls(
+            client,
+            session=session,
+            exit_stack=exit_stack,
+            transfer_max_concurrency=s3_max_concurrency,
+        )
 
     @s3_exception_handler(_logger)
     async def create_bucket(self, bucket: S3BucketName) -> None:
@@ -135,7 +142,7 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
         await self.client.head_bucket(Bucket=bucket)
 
     @s3_exception_handler(_logger)
-    async def create_single_presigned_download_link(  # pylint: disable=arguments-renamed
+    async def create_single_presigned_download_link(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID, expiration_secs: int
     ) -> AnyUrl:
         # NOTE: ensure the bucket/object exists, this will raise if not
