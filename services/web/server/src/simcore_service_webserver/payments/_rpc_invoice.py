@@ -39,7 +39,7 @@ async def get_invoice_data(
         stripe_price_id=product_stripe_info_get.stripe_price_id,
         stripe_tax_rate_id=product_stripe_info_get.stripe_tax_rate_id,
         user_invoice_address=user_invoice_address,
-        user_name=user_info.full_name,
+        user_display_name=user_info.full_name,
         user_email=LowerCaseEmailStr(user_info.email),
     )
 
