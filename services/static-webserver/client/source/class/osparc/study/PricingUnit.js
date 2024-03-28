@@ -44,16 +44,16 @@ qx.Class.define("osparc.study.PricingUnit", {
 
     advanced: {
       check: "Boolean",
-      init: false,
-      nullable: false,
+      init: null,
+      nullable: true,
       event: "changeAdvanced",
       apply: "__buildLayout"
     },
 
     showSpecificInfo: {
       check: "Boolean",
-      init: false,
-      nullable: false,
+      init: null,
+      nullable: true,
       event: "changeAdvanced",
       apply: "__buildLayout"
     },
