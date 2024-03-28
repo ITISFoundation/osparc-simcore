@@ -66,6 +66,8 @@ def populate_payment_transaction_db(
     postgres_db: sa.engine.Engine,
     wallet_id: int,
     user_id: UserID,
+    invoice_url: str,
+    stripe_invoice_id: str | None,
 ) -> Iterator[PaymentID]:
     with postgres_db.connect() as con:
         result = con.execute(
@@ -78,7 +80,8 @@ def populate_payment_transaction_db(
                     state=PaymentTransactionState.SUCCESS,
                     completed_at=datetime.now(tz=timezone.utc),
                     initiated_at=datetime.now(tz=timezone.utc) - timedelta(seconds=10),
-                    stripe_invoice_id="in_12345",
+                    invoice_url=invoice_url,
+                    stripe_invoice_id=stripe_invoice_id,
                 )
             )
             .returning(payments_transactions.c.payment_id)
@@ -90,6 +93,14 @@ def populate_payment_transaction_db(
         con.execute(payments_transactions.delete())
 
 
+@pytest.mark.parametrize(
+    "invoice_url,stripe_invoice_id",
+    [
+        ("https://my-fake-pdf-link.com", None),
+        ("https://my-fake-pdf-link.com", "in_12345"),
+    ],
+    indirect=True,
+)
 async def test_get_payment_invoice_url(
     app: FastAPI,
     populate_payment_transaction_db: PaymentID,
