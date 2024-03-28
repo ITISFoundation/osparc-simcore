@@ -113,11 +113,8 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
         # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
         await client.list_buckets()
 
-        return cls(
-            client,
-            session=session,
-            exit_stack=exit_stack,
-            transfer_max_concurrency=s3_max_concurrency,
+        return cls(  # pylint: disable=too-many-function-args
+            client, session, exit_stack, s3_max_concurrency
         )
 
     @s3_exception_handler(_logger)
