@@ -190,6 +190,9 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getLatest: function(services, key) {
+      if (services === null) {
+        services = osparc.service.Utils.servicesCached;
+      }
       if (key in services) {
         const versions = this.getVersions(services, key, false);
         return services[key][versions[versions.length - 1]];

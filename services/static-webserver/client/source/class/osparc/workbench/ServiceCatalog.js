@@ -93,7 +93,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
     __contextRightNodeId: null,
     __versionsBox: null,
     __infoBtn: null,
-    __serviceBrowser: null,
+    __serviceList: null,
     __addBtn: null,
     __sortBy: null,
 
@@ -133,16 +133,16 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       this.__allServicesList = [];
       this.__filteredServicesObj = {};
 
-      const services = this.__serviceBrowser = new osparc.service.ServiceList("serviceCatalog").set({
+      const serviceList = this.__serviceList = new osparc.service.ServiceList("serviceCatalog").set({
         width: 568,
         backgroundColor: "background-main"
       });
       const scrolledServices = new qx.ui.container.Scroll().set({
         height: 260
       });
-      scrolledServices.add(services);
+      scrolledServices.add(serviceList);
 
-      this.__serviceBrowser.addListener("changeValue", e => {
+      this.__serviceList.addListener("changeValue", e => {
         if (e.getData() && e.getData().getServiceModel()) {
           const selectedService = e.getData().getServiceModel();
           this.__changedSelection(selectedService.getKey());
@@ -192,7 +192,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
     },
 
     __createEvents: function() {
-      this.__serviceBrowser.addListener("serviceAdd", e => {
+      this.__serviceList.addListener("serviceAdd", e => {
         this.__onAddService(e.getData());
       }, this);
     },
@@ -244,7 +244,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
         groupedServicesList.push(qx.data.marshal.Json.createModel(service));
       }
 
-      this.__serviceBrowser.setModel(new qx.data.Array(groupedServicesList));
+      this.__serviceList.setModel(new qx.data.Array(groupedServicesList));
     },
 
     __changedSelection: function(key) {
@@ -273,7 +273,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
     },
 
     __onAddService: function(model) {
-      if (model == null && this.__serviceBrowser.isSelectionEmpty()) {
+      if (model == null && this.__serviceList.isSelectionEmpty()) {
         return;
       }
 
@@ -296,7 +296,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
     },
 
     __getSelectedService: function() {
-      const selected = this.__serviceBrowser.getSelected();
+      const selected = this.__serviceList.getSelected();
       const key = selected.getKey();
       let version = this.__versionsBox.getSelection()[0].getLabel().toString();
       if (version == this.self(arguments).LATEST.toString()) {
@@ -324,8 +324,8 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       }, this);
       this.__textFilter.addListener("keypress", e => {
         if (e.getKeyIdentifier() === "Enter") {
-          this.__serviceBrowser.selectFirstVisible();
-          const selected = this.__serviceBrowser.getSelected();
+          this.__serviceList.selectFirstVisible();
+          const selected = this.__serviceList.getSelected();
           if (selected !== null) {
             this.__onAddService(selected);
           }

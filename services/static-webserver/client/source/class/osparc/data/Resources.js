@@ -449,6 +449,70 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+
+      /*
+       * PRICING PLANS
+       */
+      "pricingPlans": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/admin/pricing-plans"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}"
+          },
+          update: {
+            method: "PUT",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/admin/pricing-plans"
+          },
+        }
+      },
+
+      /*
+       * PRICING UNITS
+       */
+      "pricingUnits": {
+        useCache: true,
+        endpoints: {
+          getOne: {
+            method: "GET",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/pricing-units/{pricingUnitId}"
+          },
+          update: {
+            method: "PUT",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/pricing-units/{pricingUnitId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/pricing-units"
+          },
+        }
+      },
+
+      /*
+       * BILLABLE SERVICES
+       */
+      "billableServices": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/billable-services"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/billable-services"
+          },
+        }
+      },
+
       /*
        * PORT COMPATIBILITY
        */
@@ -491,6 +555,7 @@ qx.Class.define("osparc.data.Resources", {
       },
       /*
        * SCHEDULED MAINTENANCE
+       * Example: {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
        */
       "maintenance": {
         endpoints: {
