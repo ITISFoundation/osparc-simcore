@@ -81,8 +81,8 @@ qx.Class.define("osparc.admin.PricingPlans", {
       const list = this.getChildControl("pricing-plans-list");
 
       const model = this.__model = new qx.data.Array();
-      const orgsCtrl = new qx.data.controller.List(model, list, "label");
-      orgsCtrl.setDelegate({
+      const ppsCtrl = new qx.data.controller.List(model, list, "label");
+      ppsCtrl.setDelegate({
         createItem: () => new osparc.admin.PricingPlanListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("pricingPlanId", "model", null, item, id);
