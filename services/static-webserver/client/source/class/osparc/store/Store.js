@@ -193,6 +193,10 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    billableServices: {
+      check: "Array",
+      init: []
+    },
     portsCompatibility: {
       check: "Object",
       init: {}

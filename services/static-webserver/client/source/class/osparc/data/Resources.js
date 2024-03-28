@@ -497,6 +497,23 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
+       * BILLABLE SERVICES
+       */
+      "billableServices": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/billable-services"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/billable-services"
+          },
+        }
+      },
+
+      /*
        * PORT COMPATIBILITY
        */
       "portsCompatibility": {
