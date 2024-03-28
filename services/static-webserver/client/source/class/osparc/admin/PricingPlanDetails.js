@@ -26,6 +26,7 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
     this.getChildControl("back-to-pp-button");
     this.getChildControl("pricing-plan-details");
     this.getChildControl("pricing-units");
+    this.getChildControl("service-list");
   },
 
   events: {
@@ -33,8 +34,6 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
   },
 
   members: {
-    __pricingPlanModel: null,
-    __pricingPlanListItem: null,
     __pricingUnitsList: null,
     __servicesList: null,
 
@@ -60,7 +59,7 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
             flex: 1
           });
           break;
-        case "tab-view":
+        case "tabs-view":
           control = new qx.ui.tabview.TabView().set({
             contentPadding: 10
           });
@@ -69,12 +68,22 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
           });
           break;
         case "pricing-units": {
-          control = this.__createTabPage(this.tr("Pricing Units"), "@FontAwesome5Solid/users/14");
+          control = this.__createTabPage(this.tr("Pricing Units"));
           const pricingUnitsList = this.__pricingUnitsList = new osparc.admin.PricingUnitsList();
           control.add(pricingUnitsList, {
             flex: 1
           });
-          this.getChildControl("tab-view").add(control);
+          this.getChildControl("tabs-view").add(control);
+          break;
+        }
+        case "service-list": {
+          control = this.__createTabPage(this.tr("Services"));
+          const servicesList = this.__servicesList = new osparc.admin.ServicesList();
+          control.add(servicesList, {
+            flex: 1
+          });
+          this.getChildControl("tabs-view").add(control);
+          break;
         }
       }
       return control || this.base(arguments, id);
@@ -84,7 +93,6 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
       if (pricingPlanModel === null) {
         return;
       }
-      this.__pricingPlanModel = pricingPlanModel;
 
       const pricingPlanListItem = this.getChildControl("pricing-plan-details");
       pricingPlanModel.bind("model", pricingPlanListItem, "model");
@@ -96,7 +104,7 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
 
       // set PricingPlanId to the tab views
       this.__pricingUnitsList.setPricingPlanId(pricingPlanModel.getModel());
-      // this.__servicesList.setPricingPlanId(pricingPlanModel.getModel());
+      this.__servicesList.setPricingPlanId(pricingPlanModel.getModel());
     },
 
     __createTabPage: function(label, icon) {
@@ -113,25 +121,6 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
         font: "text-13"
       });
       return tabPage;
-    },
-
-    __getTabs: function() {
-      const tabView = new qx.ui.tabview.TabView().set({
-        contentPadding: 10
-      });
-      tabView.getChildControl("pane");
-
-
-      /*
-      const servicesListPage = this.__createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
-      const servicesList = this.__servicesList = new osparc.desktop.organizations.ServicesList();
-      servicesListPage.add(servicesList, {
-        flex: 1
-      });
-      tabView.add(servicesListPage);
-      */
-
-      return tabView;
     }
   }
 });

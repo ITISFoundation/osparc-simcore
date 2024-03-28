@@ -44,7 +44,7 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
       switch (id) {
         case "pricing-units-container":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-          this._addAt(control, 1, {
+          this._addAt(control, 0, {
             flex: 1
           });
           break;
@@ -57,7 +57,7 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
             allowGrowX: false
           });
           control.addListener("execute", () => this.__openCreatePricingUnit());
-          this._addAt(control, 2);
+          this._addAt(control, 1);
       }
       return control || this.base(arguments, id);
     },
