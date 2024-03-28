@@ -52,3 +52,10 @@ repos:
       language: script
       types: [file, python]
       entry: scripts/precommit/pytest-testit.bash
+  - repo: local
+    hooks:
+    - id: validate-docker-compose
+      name: validate-docker-compose
+      language: script
+      types: [file]
+      entry: scripts/precommit/validate-docker-compose.bash
