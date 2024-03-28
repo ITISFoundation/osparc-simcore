@@ -21,20 +21,21 @@ qx.Class.define("osparc.admin.PricingPlanManager", {
   members: {
     _buildLayout: function() {
       const stack = new qx.ui.container.Stack();
-      this.add(stack, {
+      this._add(stack, {
         flex: 1
       });
 
       const pricingPlans = new osparc.admin.PricingPlans();
       stack.add(pricingPlans);
 
-      const pricingPlanDetails = new osparc.admin.osparc.admin.PricingPlanDetails();
+      const pricingPlanDetails = new osparc.admin.PricingPlanDetails();
       stack.add(pricingPlanDetails);
 
       stack.setSelection([pricingPlans]);
       pricingPlans.addListener("pricingPlanSelected", e => {
-        console.log("pricingPlanSelected", e.getData());
+        const pricingPlanModel = e.getData();
         stack.setSelection([pricingPlanDetails]);
+        pricingPlanDetails.setCurrentPricingPlan(pricingPlanModel);
       });
 
       pricingPlanDetails.addListener("backToPricingPlans", () => {

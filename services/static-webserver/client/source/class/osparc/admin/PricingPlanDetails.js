@@ -47,16 +47,18 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
           break;
         case "back-to-pp-button":
           control = new qx.ui.form.Button().set({
-            toolTipText: this.tr("Back to Organizations list"),
+            toolTipText: this.tr("Back to Pricing Plans"),
             icon: "@FontAwesome5Solid/arrow-left/20",
             backgroundColor: "transparent"
           });
-          control.addListener("execute", () => this.fireEvent("backToOrganizations"));
+          control.addListener("execute", () => this.fireEvent("backToPricingPlans"));
           this.getChildControl("title-layout").add(control);
           break;
         case "pricing-plan-details":
           control = new osparc.admin.PricingPlanListItem();
-          this.getChildControl("title-layout").add(control);
+          this.getChildControl("title-layout").add(control, {
+            flex: 1
+          });
           break;
         case "tab-view":
           control = new qx.ui.tabview.TabView().set({
@@ -77,18 +79,16 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
       this.__pricingPlanModel = pricingPlanModel;
 
       const pricingPlanListItem = this.getChildControl("pricing-plan-details");
-      pricingPlanModel.bind("gid", pricingPlanListItem, "key");
-      pricingPlanModel.bind("gid", pricingPlanListItem, "model");
-      pricingPlanModel.bind("thumbnail", pricingPlanListItem, "thumbnail");
-      pricingPlanModel.bind("label", pricingPlanListItem, "title");
-      pricingPlanModel.bind("description", pricingPlanListItem, "subtitle");
-      pricingPlanModel.bind("nMembers", pricingPlanListItem, "contact");
-      pricingPlanModel.bind("accessRights", pricingPlanListItem, "accessRights");
+      pricingPlanModel.bind("model", pricingPlanListItem, "model");
+      pricingPlanModel.bind("ppId", pricingPlanListItem, "ppId");
+      pricingPlanModel.bind("ppKey", pricingPlanListItem, "ppKey");
+      pricingPlanModel.bind("title", pricingPlanListItem, "title");
+      pricingPlanModel.bind("description", pricingPlanListItem, "description");
+      pricingPlanModel.bind("isActive", pricingPlanListItem, "isActive");
 
       // set orgModel to the tab views
-      this.__pricingUnitsList.setCurrentOrg(pricingPlanModel);
-      this.__templatesList.setCurrentOrg(pricingPlanModel);
-      this.__servicesList.setCurrentOrg(pricingPlanModel);
+      // this.__pricingUnitsList.setCurrentOrg(pricingPlanModel);
+      // this.__servicesList.setCurrentOrg(pricingPlanModel);
     },
 
     __addOrganizationListItem: function() {
@@ -186,17 +186,6 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
         flex: 1
       });
       tabView.add(membersListPage);
-
-      const templatesText = osparc.product.Utils.getTemplateAlias({
-        plural: true,
-        firstUpperCase: true
-      });
-      const templatesListPage = this.__createTabPage(templatesText, "@FontAwesome5Solid/copy/14");
-      const templatesList = this.__templatesList = new osparc.desktop.organizations.TemplatesList();
-      templatesListPage.add(templatesList, {
-        flex: 1
-      });
-      tabView.add(templatesListPage);
 
       const servicesListPage = this.__createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
       const servicesList = this.__servicesList = new osparc.desktop.organizations.ServicesList();

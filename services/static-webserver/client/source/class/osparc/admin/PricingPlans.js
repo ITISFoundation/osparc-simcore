@@ -18,6 +18,17 @@
 qx.Class.define("osparc.admin.PricingPlans", {
   extend: qx.ui.core.Widget,
 
+  construct: function() {
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(5));
+
+    this.getChildControl("pricing-plans-filter");
+    this.__createList();
+    this.__fetchPlans();
+    this.getChildControl("create-pricing-plan");
+  },
+
   events: {
     "pricingPlanSelected": "qx.event.type.Data"
   },
@@ -47,7 +58,7 @@ qx.Class.define("osparc.admin.PricingPlans", {
             spacing: 3
           });
           control.addListener("changeSelection", e => {
-            const ppSelected = e.getData()[0].getModel();
+            const ppSelected = e.getData()[0];
             this.fireDataEvent("pricingPlanSelected", ppSelected);
           }, this);
           this.getChildControl("pricing-plans-container").add(control);
@@ -64,13 +75,6 @@ qx.Class.define("osparc.admin.PricingPlans", {
           this._addAt(control, 2);
       }
       return control || this.base(arguments, id);
-    },
-
-    _buildLayout: function() {
-      this.getChildControl("pricing-plans-filter");
-      this.__createList();
-      this.__fetchPlans();
-      this.getChildControl("create-pricing-plan");
     },
 
     __createList: function() {
