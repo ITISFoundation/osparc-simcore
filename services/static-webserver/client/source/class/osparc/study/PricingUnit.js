@@ -85,7 +85,7 @@ qx.Class.define("osparc.study.PricingUnit", {
           if ("specificInfo" in pricingUnit) {
             Object.values(pricingUnit.specificInfo).forEach(value => {
               this._add(new qx.ui.basic.Label().set({
-                value: "" + value,
+                value: "EC2: " + value,
                 font: "text-14"
               }));
             });
