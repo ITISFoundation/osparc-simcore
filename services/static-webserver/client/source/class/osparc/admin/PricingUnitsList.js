@@ -44,7 +44,7 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
       let control;
       switch (id) {
         case "pricing-units-container":
-          control = new qx.ui.container.HBox(5);
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._addAt(control, 1, {
             flex: 1
           });
@@ -76,9 +76,15 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
     __populateList: function(pricingUnits) {
       this.getChildControl("pricing-units-container").removeAll();
 
+      if (pricingUnits === null) {
+        return;
+      }
+
       pricingUnits.forEach(pricingUnit => {
         const pUnit = new osparc.study.PricingUnit(pricingUnit).set({
-          advanced: true
+          advanced: true,
+          showSpecificInfo: true,
+          allowGrowY: false
         });
         this.getChildControl("pricing-units-container").add(pUnit);
       });

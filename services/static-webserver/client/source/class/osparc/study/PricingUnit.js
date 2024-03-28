@@ -44,11 +44,19 @@ qx.Class.define("osparc.study.PricingUnit", {
 
     advanced: {
       check: "Boolean",
-      init: null,
-      nullable: true,
+      init: false,
+      nullable: false,
       event: "changeAdvanced",
       apply: "__buildLayout"
-    }
+    },
+
+    showSpecificInfo: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeAdvanced",
+      apply: "__buildLayout"
+    },
   },
 
   members: {
@@ -65,11 +73,25 @@ qx.Class.define("osparc.study.PricingUnit", {
           value: pricingUnit.unitName,
           font: "text-16"
         }));
+
         // add price info
         this._add(new qx.ui.basic.Label().set({
           value: qx.locale.Manager.tr("Credits/h") + ": " + pricingUnit.currentCostPerUnit,
           font: "text-14"
         }));
+
+        // add aws specific info
+        if (this.isShowSpecificInfo()) {
+          if ("specificInfo" in pricingUnit) {
+            Object.values(pricingUnit.specificInfo).forEach(value => {
+              this._add(new qx.ui.basic.Label().set({
+                value,
+                font: "text-14"
+              }));
+            });
+          }
+        }
+
         // add pricing unit extra info
         if ("unitExtraInfo" in pricingUnit) {
           Object.entries(pricingUnit.unitExtraInfo).forEach(([key, value]) => {

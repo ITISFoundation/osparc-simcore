@@ -77,7 +77,8 @@ qx.Class.define("osparc.admin.PricingPlanListItem", {
     isActive: {
       check : "Boolean",
       apply : "__applyIsActive",
-      nullable : true
+      nullable : true,
+      event: "changeIsActive"
     }
   },
 
