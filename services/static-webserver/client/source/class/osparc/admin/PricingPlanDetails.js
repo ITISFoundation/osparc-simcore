@@ -25,7 +25,7 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
 
     this.getChildControl("back-to-pp-button");
     this.getChildControl("pricing-plan-details");
-    this.getChildControl("tab-view");
+    this.getChildControl("pricing-units");
   },
 
   events: {
@@ -68,6 +68,14 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
             flex: 1
           });
           break;
+        case "pricing-units": {
+          control = this.__createTabPage(this.tr("Pricing Units"), "@FontAwesome5Solid/users/14");
+          const pricingUnitsList = this.__pricingUnitsList = new osparc.admin.PricingUnitsList();
+          control.add(pricingUnitsList, {
+            flex: 1
+          });
+          this.getChildControl("tab-view").add(control);
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -86,76 +94,9 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
       pricingPlanModel.bind("description", pricingPlanListItem, "description");
       pricingPlanModel.bind("isActive", pricingPlanListItem, "isActive");
 
-      // set orgModel to the tab views
-      // this.__pricingUnitsList.setCurrentOrg(pricingPlanModel);
-      // this.__servicesList.setCurrentOrg(pricingPlanModel);
-    },
-
-    __addOrganizationListItem: function() {
-      if (this.__pricingPlanListItem) {
-        this.__titleLayout.remove(this.__pricingPlanListItem);
-      }
-      const organizationListItem = this.__pricingPlanListItem = new osparc.ui.list.OrganizationListItem();
-      organizationListItem.getChildControl("options").exclude();
-      organizationListItem.setShowDeleteButton(false);
-      organizationListItem.addListener("openEditOrganization", () => this.__openEditOrganization());
-      this.__titleLayout.add(organizationListItem, {
-        flex: 1
-      });
-      return organizationListItem;
-    },
-
-    __openEditOrganization: function() {
-      const org = this.__pricingPlanModel;
-
-      const newOrg = false;
-      const orgEditor = new osparc.editor.OrganizationEditor(newOrg);
-      org.bind("gid", orgEditor, "gid");
-      org.bind("label", orgEditor, "label");
-      org.bind("description", orgEditor, "description");
-      org.bind("thumbnail", orgEditor, "thumbnail", {
-        converter: val => val ? val : ""
-      });
-      const title = this.tr("Organization Details Editor");
-      const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
-      orgEditor.addListener("updateOrg", () => {
-        this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
-      });
-      orgEditor.addListener("cancel", () => win.close());
-    },
-
-    __updateOrganization: function(win, button, orgEditor) {
-      const orgKey = orgEditor.getGid();
-      const name = orgEditor.getLabel();
-      const description = orgEditor.getDescription();
-      const thumbnail = orgEditor.getThumbnail();
-      const params = {
-        url: {
-          "gid": orgKey
-        },
-        data: {
-          "label": name,
-          "description": description,
-          "thumbnail": thumbnail || null
-        }
-      };
-      osparc.data.Resources.fetch("organizations", "patch", params)
-        .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully edited"));
-          button.setFetching(false);
-          win.close();
-          osparc.store.Store.getInstance().reset("organizations");
-          this.__pricingPlanModel.set({
-            label: name,
-            description: description,
-            thumbnail: thumbnail || null
-          });
-        })
-        .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing ") + name, "ERROR");
-          button.setFetching(false);
-          console.error(err);
-        });
+      // set PricingPlanId to the tab views
+      this.__pricingUnitsList.setPricingPlanId(pricingPlanModel.getModel());
+      // this.__servicesList.setPricingPlanId(pricingPlanModel.getModel());
     },
 
     __createTabPage: function(label, icon) {
@@ -180,19 +121,15 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
       });
       tabView.getChildControl("pane");
 
-      const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
-      const membersList = this.__pricingUnitsList = new osparc.desktop.organizations.MembersList();
-      membersListPage.add(membersList, {
-        flex: 1
-      });
-      tabView.add(membersListPage);
 
+      /*
       const servicesListPage = this.__createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
       const servicesList = this.__servicesList = new osparc.desktop.organizations.ServicesList();
       servicesListPage.add(servicesList, {
         flex: 1
       });
       tabView.add(servicesListPage);
+      */
 
       return tabView;
     }

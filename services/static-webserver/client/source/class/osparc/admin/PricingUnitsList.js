@@ -23,9 +23,18 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.__createList();
-    this.__fetchPricingUnits();
+    this.getChildControl("pricing-units-container");
     this.getChildControl("create-pricing-unit");
+  },
+
+  properties: {
+    pricingPlanId: {
+      check: "Number",
+      init: null,
+      nullable: false,
+      apply: "__fetchUnits",
+      event: "changeFetching"
+    }
   },
 
   members: {
@@ -35,17 +44,10 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
       let control;
       switch (id) {
         case "pricing-units-container":
-          control = new qx.ui.container.Scroll();
+          control = new qx.ui.container.HBox(5);
           this._addAt(control, 1, {
             flex: 1
           });
-          break;
-        case "pricing-units-list":
-          control = new qx.ui.form.List().set({
-            decorator: "no-border",
-            spacing: 3
-          });
-          this.getChildControl("pricing-units-container").add(control);
           break;
         case "create-pricing-unit":
           control = new qx.ui.form.Button().set({
@@ -61,40 +63,25 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
       return control || this.base(arguments, id);
     },
 
-    __createList: function() {
-      const list = this.getChildControl("pricing-units-list");
-
-      const model = this.__model = new qx.data.Array();
-      const orgsCtrl = new qx.data.controller.List(model, list, "label");
-      orgsCtrl.setDelegate({
-        createItem: () => new osparc.admin.PricingUnitListItem(),
-        bindItem: (ctrl, item, id) => {
-          ctrl.bindProperty("pricingUnitId", "model", null, item, id);
-          ctrl.bindProperty("pricingUnitId", "ppId", null, item, id);
-          ctrl.bindProperty("pricingUnitKey", "ppKey", null, item, id);
-          ctrl.bindProperty("displayName", "title", null, item, id);
-          ctrl.bindProperty("description", "description", null, item, id);
-          ctrl.bindProperty("isActive", "isActive", null, item, id);
-        },
-        configureItem: item => {
-          item.addListener("editPricingUnit", () => this.__updatePricingUnit(item.getModel()));
-        }
-      });
-    },
-
     __fetchUnits: function() {
       const params = {
         url: {
-          pricingPlan: 1
+          pricingPlanId: this.getPricingPlanId()
         }
-      }
-      osparc.data.Resources.fetch("pricingUnits", "get", params)
-        .then(data => this.__populateList(data));
+      };
+      osparc.data.Resources.fetch("pricingPlans", "getOne", params)
+        .then(data => this.__populateList(data["pricingUnits"]));
     },
 
     __populateList: function(pricingUnits) {
-      this.__model.removeAll();
-      pricingUnits.forEach(pricingUnit => this.__model.append(qx.data.marshal.Json.createModel(pricingUnit)));
+      this.getChildControl("pricing-units-container").removeAll();
+
+      pricingUnits.forEach(pricingUnit => {
+        const pUnit = new osparc.study.PricingUnit(pricingUnit).set({
+          advanced: true
+        });
+        this.getChildControl("pricing-units-container").add(pUnit);
+      });
     },
 
     __openCreatePricingUnit: function() {
