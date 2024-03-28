@@ -32,8 +32,7 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
       check: "Number",
       init: null,
       nullable: false,
-      apply: "__fetchUnits",
-      event: "changeFetching"
+      apply: "__fetchUnits"
     }
   },
 
