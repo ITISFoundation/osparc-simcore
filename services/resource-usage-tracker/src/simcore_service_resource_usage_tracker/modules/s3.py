@@ -36,7 +36,7 @@ def setup(app: FastAPI) -> None:
             before_sleep=before_sleep_log(_logger, logging.WARNING),
         ):
             with attempt:
-                connected = await client.is_connected(
+                connected = await client.http_check_bucket_connected(
                     bucket=S3BucketName(settings.S3_BUCKET_NAME)
                 )
                 if not connected:

@@ -69,11 +69,20 @@ async def test_http_check_bucket_connected(
     simcore_s3_api: SimcoreS3API,
     create_s3_bucket: S3BucketName,
 ):
-    assert await simcore_s3_api.is_connected(bucket=create_s3_bucket) is True
+    assert (
+        await simcore_s3_api.http_check_bucket_connected(bucket=create_s3_bucket)
+        is True
+    )
     mocked_aws_server.stop()
-    assert await simcore_s3_api.is_connected(bucket=create_s3_bucket) is False
+    assert (
+        await simcore_s3_api.http_check_bucket_connected(bucket=create_s3_bucket)
+        is False
+    )
     mocked_aws_server.start()
-    assert await simcore_s3_api.is_connected(bucket=create_s3_bucket) is True
+    assert (
+        await simcore_s3_api.http_check_bucket_connected(bucket=create_s3_bucket)
+        is True
+    )
 
 
 @pytest.fixture

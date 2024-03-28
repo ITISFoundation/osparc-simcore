@@ -47,7 +47,7 @@ class SimcoreS3API:
     async def close(self) -> None:
         await self.exit_stack.aclose()
 
-    async def is_connected(self, bucket: S3BucketName) -> bool:
+    async def http_check_bucket_connected(self, bucket: S3BucketName) -> bool:
         try:
             _logger.debug("Head bucket: %s", bucket)
             await self.client.head_bucket(Bucket=bucket)
