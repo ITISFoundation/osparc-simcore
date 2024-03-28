@@ -12,8 +12,8 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
     WalletTotalCredits,
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    PricingPlanGet,
     PricingUnitGet,
-    ServicePricingPlanGet,
 )
 from models_library.products import ProductName
 from models_library.resource_tracker import (
@@ -80,7 +80,7 @@ class ResourceUsageTrackerClient:
         product_name: ProductName,
         service_key: ServiceKey,
         service_version: ServiceVersion,
-    ) -> ServicePricingPlanGet:
+    ) -> PricingPlanGet:
         response = await self.client.get(
             f"/services/{service_key}/{service_version}/pricing-plan",
             params={
@@ -92,7 +92,7 @@ class ResourceUsageTrackerClient:
             raise PricingPlanUnitNotFoundError(msg)
 
         response.raise_for_status()
-        return parse_obj_as(ServicePricingPlanGet, response.json())
+        return parse_obj_as(PricingPlanGet, response.json())
 
     async def get_default_pricing_and_hardware_info(
         self,

@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import json
-import shutil
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -11,7 +10,6 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
-from aiohttp_jinja2 import render_string
 from faker import Faker
 from json2html import json2html
 from pytest_mock import MockerFixture
@@ -24,7 +22,6 @@ from simcore_service_webserver.login.utils_email import (
     AttachmentTuple,
     get_template_path,
     send_email_from_template,
-    themed,
 )
 from simcore_service_webserver.statics._constants import FRONTEND_APPS_AVAILABLE
 
@@ -92,7 +89,9 @@ async def test_render_and_send_mail_for_registration(
             "host": http_request.host,
             "link": link,
             "name": destination_email.split("@")[0],
-            "product": SimpleNamespace(display_name=product_name),
+            "product": SimpleNamespace(
+                display_name=product_name.capitalize(), name=product_name
+            ),
         },
     )
 
@@ -122,7 +121,9 @@ async def test_render_and_send_mail_for_password(
         context={
             "host": http_request.host,
             "reason": faker.text(),
-            "product": SimpleNamespace(display_name=product_name, name=product_name),
+            "product": SimpleNamespace(
+                display_name=product_name.capitalize(), name=product_name
+            ),
         },
     )
 
@@ -134,7 +135,9 @@ async def test_render_and_send_mail_for_password(
         context={
             "host": http_request.host,
             "link": link,
-            "product": SimpleNamespace(display_name=product_name, name=product_name),
+            "product": SimpleNamespace(
+                display_name=product_name.capitalize(), name=product_name
+            ),
         },
     )
 
@@ -157,7 +160,9 @@ async def test_render_and_send_mail_to_change_email(
         context={
             "host": http_request.host,
             "link": link,
-            "product": SimpleNamespace(display_name=product_name, name=product_name),
+            "product": SimpleNamespace(
+                display_name=product_name.capitalize(), name=product_name
+            ),
         },
     )
 
@@ -194,34 +199,3 @@ async def test_render_and_send_mail_for_submission(
             )
         ],
     )
-
-
-@pytest.mark.skip(reason="DEV")
-def test_render_string_from_tmp_file(
-    tmp_path: Path, faker: Faker, app: web.Application
-):
-    http_request = make_mocked_request("GET", "/fake", app=app)
-
-    template_path = themed("templates/osparc.io", "registration_email.jinja2")
-    copy_path = tmp_path / template_path.name
-    shutil.copy2(template_path, copy_path)
-
-    context = {
-        "host": http_request.host,
-        "link": faker.url(),
-        "name": faker.first_name(),
-        "product": SimpleNamespace(name="foobar", display_name="Foo Bar"),
-    }
-
-    expected_page = render_string(
-        template_name=f"{template_path}",
-        request=http_request,
-        context=context,
-    )
-    got_page = render_string(
-        template_name=f"{copy_path}",
-        request=http_request,
-        context=context,
-    )
-
-    assert expected_page == got_page

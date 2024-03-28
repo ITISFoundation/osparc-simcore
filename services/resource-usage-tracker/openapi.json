@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.2",
+  "openapi": "3.1.0",
   "info": {
     "title": "simcore-service-resource-usage-tracker web API",
     "description": "Service that collects and stores computational resources usage used in osparc-simcore",
@@ -45,104 +45,6 @@
         }
       }
     },
-    "/v1/services/-/usages": {
-      "get": {
-        "tags": [
-          "usages"
-        ],
-        "summary": "List Usage Services",
-        "description": "Returns a list of tracked containers for a given user and product",
-        "operationId": "list_usage_services",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "User Id",
-              "exclusiveMinimum": true,
-              "type": "integer",
-              "minimum": 0
-            },
-            "name": "user_id",
-            "in": "query"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Product Name",
-              "type": "string"
-            },
-            "name": "product_name",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "title": "Wallet Id",
-              "exclusiveMinimum": true,
-              "type": "integer",
-              "minimum": 0
-            },
-            "name": "wallet_id",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "title": "Access All Wallet Usage",
-              "type": "boolean",
-              "default": false
-            },
-            "name": "access_all_wallet_usage",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "title": "Limit",
-              "maximum": 50,
-              "minimum": 1,
-              "type": "integer",
-              "default": 20
-            },
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "title": "Offset",
-              "minimum": 0,
-              "type": "integer",
-              "default": 0
-            },
-            "name": "offset",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LimitOffsetPage_ServiceRunGet_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/credit-transactions/credits:sum": {
       "post": {
         "tags": [
@@ -154,8 +56,8 @@
           {
             "required": true,
             "schema": {
-              "title": "Product Name",
-              "type": "string"
+              "type": "string",
+              "title": "Product Name"
             },
             "name": "product_name",
             "in": "query"
@@ -163,9 +65,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Wallet Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "Wallet Id",
               "minimum": 0
             },
             "name": "wallet_id",
@@ -249,9 +151,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Service Key",
+              "type": "string",
               "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-              "type": "string"
+              "title": "Service Key"
             },
             "name": "service_key",
             "in": "path"
@@ -259,9 +161,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Service Version",
+              "type": "string",
               "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string"
+              "title": "Service Version"
             },
             "name": "service_version",
             "in": "path"
@@ -269,8 +171,8 @@
           {
             "required": true,
             "schema": {
-              "title": "Product Name",
-              "type": "string"
+              "type": "string",
+              "title": "Product Name"
             },
             "name": "product_name",
             "in": "query"
@@ -282,7 +184,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServicePricingPlanGet"
+                  "$ref": "#/components/schemas/PricingPlanGet"
                 }
               }
             }
@@ -312,9 +214,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Pricing Plan Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "Pricing Plan Id",
               "minimum": 0
             },
             "name": "pricing_plan_id",
@@ -323,9 +225,9 @@
           {
             "required": true,
             "schema": {
-              "title": "Pricing Unit Id",
-              "exclusiveMinimum": true,
               "type": "integer",
+              "exclusiveMinimum": true,
+              "title": "Pricing Unit Id",
               "minimum": 0
             },
             "name": "pricing_unit_id",
@@ -334,8 +236,8 @@
           {
             "required": true,
             "schema": {
-              "title": "Product Name",
-              "type": "string"
+              "type": "string",
+              "title": "Product Name"
             },
             "name": "product_name",
             "in": "query"
@@ -369,7 +271,46 @@
   "components": {
     "schemas": {
       "CreditTransactionCreateBody": {
-        "title": "CreditTransactionCreateBody",
+        "properties": {
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "wallet_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Wallet Id",
+            "minimum": 0
+          },
+          "wallet_name": {
+            "type": "string",
+            "title": "Wallet Name"
+          },
+          "user_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
+            "minimum": 0
+          },
+          "user_email": {
+            "type": "string",
+            "title": "User Email"
+          },
+          "osparc_credits": {
+            "type": "number",
+            "title": "Osparc Credits"
+          },
+          "payment_transaction_id": {
+            "type": "string",
+            "title": "Payment Transaction Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
         "required": [
           "product_name",
           "wallet_id",
@@ -380,180 +321,148 @@
           "payment_transaction_id",
           "created_at"
         ],
-        "type": "object",
-        "properties": {
-          "product_name": {
-            "title": "Product Name",
-            "type": "string"
-          },
-          "wallet_id": {
-            "title": "Wallet Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "wallet_name": {
-            "title": "Wallet Name",
-            "type": "string"
-          },
-          "user_id": {
-            "title": "User Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "user_email": {
-            "title": "User Email",
-            "type": "string"
-          },
-          "osparc_credits": {
-            "title": "Osparc Credits",
-            "type": "number"
-          },
-          "payment_transaction_id": {
-            "title": "Payment Transaction Id",
-            "type": "string"
-          },
-          "created_at": {
-            "title": "Created At",
-            "type": "string",
-            "format": "date-time"
-          }
-        }
+        "title": "CreditTransactionCreateBody"
       },
       "CreditTransactionCreated": {
-        "title": "CreditTransactionCreated",
-        "required": [
-          "credit_transaction_id"
-        ],
-        "type": "object",
         "properties": {
           "credit_transaction_id": {
-            "title": "Credit Transaction Id",
-            "exclusiveMinimum": true,
             "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Credit Transaction Id",
             "minimum": 0
           }
         },
+        "type": "object",
+        "required": [
+          "credit_transaction_id"
+        ],
+        "title": "CreditTransactionCreated",
         "description": "Response Create Credit Transaction V1 Credit Transactions Post"
       },
-      "CreditTransactionStatus": {
-        "title": "CreditTransactionStatus",
-        "enum": [
-          "PENDING",
-          "BILLED",
-          "NOT_BILLED",
-          "REQUIRES_MANUAL_REVIEW"
-        ],
-        "type": "string",
-        "description": "An enumeration."
-      },
       "HTTPValidationError": {
-        "title": "HTTPValidationError",
-        "type": "object",
         "properties": {
           "detail": {
-            "title": "Detail",
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationError"
-            }
+            },
+            "type": "array",
+            "title": "Detail"
           }
-        }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
       },
       "HardwareInfo": {
-        "title": "HardwareInfo",
+        "properties": {
+          "aws_ec2_instances": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Aws Ec2 Instances"
+          }
+        },
+        "type": "object",
         "required": [
           "aws_ec2_instances"
         ],
-        "type": "object",
-        "properties": {
-          "aws_ec2_instances": {
-            "title": "Aws Ec2 Instances",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "LimitOffsetPage_ServiceRunGet_": {
-        "title": "LimitOffsetPage[ServiceRunGet]",
-        "required": [
-          "items",
-          "total",
-          "links"
-        ],
-        "type": "object",
-        "properties": {
-          "items": {
-            "title": "Items",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ServiceRunGet"
-            }
-          },
-          "total": {
-            "title": "Total",
-            "minimum": 0,
-            "type": "integer"
-          },
-          "limit": {
-            "title": "Limit",
-            "minimum": 1,
-            "type": "integer"
-          },
-          "offset": {
-            "title": "Offset",
-            "minimum": 0,
-            "type": "integer"
-          },
-          "links": {
-            "$ref": "#/components/schemas/Links"
-          }
-        }
-      },
-      "Links": {
-        "title": "Links",
-        "type": "object",
-        "properties": {
-          "first": {
-            "title": "First",
-            "type": "string",
-            "example": "/api/v1/users?limit=1&offset1"
-          },
-          "last": {
-            "title": "Last",
-            "type": "string",
-            "example": "/api/v1/users?limit=1&offset1"
-          },
-          "self": {
-            "title": "Self",
-            "type": "string",
-            "example": "/api/v1/users?limit=1&offset1"
-          },
-          "next": {
-            "title": "Next",
-            "type": "string",
-            "example": "/api/v1/users?limit=1&offset1"
-          },
-          "prev": {
-            "title": "Prev",
-            "type": "string",
-            "example": "/api/v1/users?limit=1&offset1"
-          }
-        }
+        "title": "HardwareInfo"
       },
       "PricingPlanClassification": {
-        "title": "PricingPlanClassification",
+        "type": "string",
         "enum": [
           "TIER"
         ],
-        "type": "string",
+        "title": "PricingPlanClassification",
         "description": "An enumeration."
       },
+      "PricingPlanGet": {
+        "properties": {
+          "pricing_plan_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricing Plan Id",
+            "minimum": 0
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "classification": {
+            "$ref": "#/components/schemas/PricingPlanClassification"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "pricing_plan_key": {
+            "type": "string",
+            "title": "Pricing Plan Key"
+          },
+          "pricing_units": {
+            "items": {
+              "$ref": "#/components/schemas/PricingUnitGet"
+            },
+            "type": "array",
+            "title": "Pricing Units"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricing_plan_id",
+          "display_name",
+          "description",
+          "classification",
+          "created_at",
+          "pricing_plan_key",
+          "is_active"
+        ],
+        "title": "PricingPlanGet"
+      },
       "PricingUnitGet": {
-        "title": "PricingUnitGet",
+        "properties": {
+          "pricing_unit_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricing Unit Id",
+            "minimum": 0
+          },
+          "unit_name": {
+            "type": "string",
+            "title": "Unit Name"
+          },
+          "unit_extra_info": {
+            "type": "object",
+            "title": "Unit Extra Info"
+          },
+          "current_cost_per_unit": {
+            "type": "number",
+            "title": "Current Cost Per Unit"
+          },
+          "current_cost_per_unit_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Current Cost Per Unit Id",
+            "minimum": 0
+          },
+          "default": {
+            "type": "boolean",
+            "title": "Default"
+          },
+          "specific_info": {
+            "$ref": "#/components/schemas/HardwareInfo"
+          }
+        },
+        "type": "object",
         "required": [
           "pricing_unit_id",
           "unit_name",
@@ -563,212 +472,11 @@
           "default",
           "specific_info"
         ],
-        "type": "object",
-        "properties": {
-          "pricing_unit_id": {
-            "title": "Pricing Unit Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "unit_name": {
-            "title": "Unit Name",
-            "type": "string"
-          },
-          "unit_extra_info": {
-            "title": "Unit Extra Info",
-            "type": "object"
-          },
-          "current_cost_per_unit": {
-            "title": "Current Cost Per Unit",
-            "type": "number"
-          },
-          "current_cost_per_unit_id": {
-            "title": "Current Cost Per Unit Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "default": {
-            "title": "Default",
-            "type": "boolean"
-          },
-          "specific_info": {
-            "$ref": "#/components/schemas/HardwareInfo"
-          }
-        }
-      },
-      "ServicePricingPlanGet": {
-        "title": "ServicePricingPlanGet",
-        "required": [
-          "pricing_plan_id",
-          "display_name",
-          "description",
-          "classification",
-          "created_at",
-          "pricing_plan_key",
-          "pricing_units"
-        ],
-        "type": "object",
-        "properties": {
-          "pricing_plan_id": {
-            "title": "Pricing Plan Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "display_name": {
-            "title": "Display Name",
-            "type": "string"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "classification": {
-            "$ref": "#/components/schemas/PricingPlanClassification"
-          },
-          "created_at": {
-            "title": "Created At",
-            "type": "string",
-            "format": "date-time"
-          },
-          "pricing_plan_key": {
-            "title": "Pricing Plan Key",
-            "type": "string"
-          },
-          "pricing_units": {
-            "title": "Pricing Units",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PricingUnitGet"
-            }
-          }
-        }
-      },
-      "ServiceRunGet": {
-        "title": "ServiceRunGet",
-        "required": [
-          "service_run_id",
-          "user_id",
-          "user_email",
-          "project_id",
-          "project_name",
-          "node_id",
-          "node_name",
-          "service_key",
-          "service_version",
-          "service_type",
-          "service_resources",
-          "started_at",
-          "service_run_status"
-        ],
-        "type": "object",
-        "properties": {
-          "service_run_id": {
-            "title": "Service Run Id",
-            "type": "string"
-          },
-          "wallet_id": {
-            "title": "Wallet Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "wallet_name": {
-            "title": "Wallet Name",
-            "type": "string"
-          },
-          "user_id": {
-            "title": "User Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "user_email": {
-            "title": "User Email",
-            "type": "string"
-          },
-          "project_id": {
-            "title": "Project Id",
-            "type": "string",
-            "format": "uuid"
-          },
-          "project_name": {
-            "title": "Project Name",
-            "type": "string"
-          },
-          "node_id": {
-            "title": "Node Id",
-            "type": "string",
-            "format": "uuid"
-          },
-          "node_name": {
-            "title": "Node Name",
-            "type": "string"
-          },
-          "service_key": {
-            "title": "Service Key",
-            "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
-            "type": "string"
-          },
-          "service_version": {
-            "title": "Service Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string"
-          },
-          "service_type": {
-            "title": "Service Type",
-            "type": "string"
-          },
-          "service_resources": {
-            "title": "Service Resources",
-            "type": "object"
-          },
-          "started_at": {
-            "title": "Started At",
-            "type": "string",
-            "format": "date-time"
-          },
-          "stopped_at": {
-            "title": "Stopped At",
-            "type": "string",
-            "format": "date-time"
-          },
-          "service_run_status": {
-            "$ref": "#/components/schemas/ServiceRunStatus"
-          },
-          "credit_cost": {
-            "title": "Credit Cost",
-            "type": "number"
-          },
-          "transaction_status": {
-            "$ref": "#/components/schemas/CreditTransactionStatus"
-          }
-        }
-      },
-      "ServiceRunStatus": {
-        "title": "ServiceRunStatus",
-        "enum": [
-          "RUNNING",
-          "SUCCESS",
-          "ERROR"
-        ],
-        "type": "string",
-        "description": "An enumeration."
+        "title": "PricingUnitGet"
       },
       "ValidationError": {
-        "title": "ValidationError",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "type": "object",
         "properties": {
           "loc": {
-            "title": "Location",
-            "type": "array",
             "items": {
               "anyOf": [
                 {
@@ -778,63 +486,72 @@
                   "type": "integer"
                 }
               ]
-            }
+            },
+            "type": "array",
+            "title": "Location"
           },
           "msg": {
-            "title": "Message",
-            "type": "string"
+            "type": "string",
+            "title": "Message"
           },
           "type": {
-            "title": "Error Type",
-            "type": "string"
+            "type": "string",
+            "title": "Error Type"
           }
-        }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       },
       "WalletTotalCredits": {
-        "title": "WalletTotalCredits",
+        "properties": {
+          "wallet_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Wallet Id",
+            "minimum": 0
+          },
+          "available_osparc_credits": {
+            "type": "number",
+            "title": "Available Osparc Credits"
+          }
+        },
+        "type": "object",
         "required": [
           "wallet_id",
           "available_osparc_credits"
         ],
-        "type": "object",
-        "properties": {
-          "wallet_id": {
-            "title": "Wallet Id",
-            "exclusiveMinimum": true,
-            "type": "integer",
-            "minimum": 0
-          },
-          "available_osparc_credits": {
-            "title": "Available Osparc Credits",
-            "type": "number"
-          }
-        }
+        "title": "WalletTotalCredits"
       },
       "_Meta": {
-        "title": "_Meta",
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "docs_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Docs Url"
+          }
+        },
+        "type": "object",
         "required": [
           "name",
           "version",
           "docs_url"
         ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "version": {
-            "title": "Version",
-            "type": "string"
-          },
-          "docs_url": {
-            "title": "Docs Url",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "format": "uri"
-          }
-        }
+        "title": "_Meta"
       }
     }
   }

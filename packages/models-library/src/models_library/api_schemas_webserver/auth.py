@@ -29,9 +29,13 @@ class AccountRequestInfo(InputSchema):
                     "application": "Antenna_Design",
                     "description": "Description of something",
                     "hear": "Search_Engine",
+                    "privacyPolicy": True,
+                    "eula": True,
                 }
             }
         }
+        anystr_strip_whitespace = True
+        max_anystr_length = 200
 
 
 class UnregisterCheck(InputSchema):

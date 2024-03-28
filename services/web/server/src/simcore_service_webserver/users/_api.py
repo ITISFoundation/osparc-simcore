@@ -62,23 +62,44 @@ async def set_user_as_deleted(app: web.Application, user_id: UserID) -> None:
     )
 
 
-async def search_users(app: web.Application, email: str) -> list[_schemas.UserProfile]:
+def _glob_to_sql_like(glob_pattern: str) -> str:
+    # Escape SQL LIKE special characters in the glob pattern
+    sql_like_pattern = glob_pattern.replace("%", r"\%").replace("_", r"\_")
+    # Convert glob wildcards to SQL LIKE wildcards
+    return sql_like_pattern.replace("*", "%").replace("?", "_")
+
+
+async def search_users(
+    app: web.Application, email_glob: str, *, include_products: bool = False
+) -> list[_schemas.UserProfile]:
     # NOTE: this search is deploy-wide i.e. independent of the product!
     rows = await _db.search_users_and_get_profile(
-        get_database_engine(app), email_like=email
+        get_database_engine(app), email_like=_glob_to_sql_like(email_glob)
     )
+
+    async def _list_products_or_none(user_id):
+        if user_id is not None and include_products:
+            products = await _db.get_user_products(
+                get_database_engine(app), user_id=user_id
+            )
+            return [_.product_name for _ in products]
+        return None
+
     return [
         _schemas.UserProfile(
             first_name=r.first_name or r.pre_first_name,
             last_name=r.last_name or r.pre_last_name,
             email=r.email or r.pre_email,
-            company_name=r.company_name,
+            institution=r.institution,
             phone=r.phone or r.pre_phone,
             address=r.address,
             city=r.city,
             state=r.state,
             postal_code=r.postal_code,
             country=r.country,
+            extras=r.extras or {},
+            invited_by=r.invited_by,
+            products=await _list_products_or_none(r.user_id),
             # NOTE: old users will not have extra details
             registered=r.user_id is not None if r.pre_email else r.status is not None,
             status=r.status,
@@ -91,7 +112,7 @@ async def pre_register_user(
     app: web.Application, profile: _schemas.PreUserProfile, creator_user_id: UserID
 ) -> _schemas.UserProfile:
 
-    found = await search_users(app, email=profile.email)
+    found = await search_users(app, email_glob=profile.email, include_products=False)
     if found:
         raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
 
@@ -100,12 +121,13 @@ async def pre_register_user(
             "first_name",
             "last_name",
             "phone",
-            "company_name",
+            "institution",
             "address",
             "city",
             "state",
             "country",
             "postal_code",
+            "extras",
         },
         exclude_none=True,
     )
@@ -121,7 +143,7 @@ async def pre_register_user(
         **details,
     )
 
-    found = await search_users(app, email=profile.email)
+    found = await search_users(app, email_glob=profile.email, include_products=False)
 
     assert len(found) == 1  # nosec
     return found[0]

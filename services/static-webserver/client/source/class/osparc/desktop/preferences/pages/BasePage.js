@@ -37,6 +37,8 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
       paddingTop: 5,
       paddingLeft: 15
     });
+
+    this.showLabelOnTab()
   },
 
   members: {

@@ -28,7 +28,10 @@ from simcore_service_webserver.login._2fa import (
     get_redis_validation_code_client,
     send_email_code,
 )
-from simcore_service_webserver.login._constants import MSG_2FA_UNAVAILABLE_OEC
+from simcore_service_webserver.login._constants import (
+    CODE_2FA_CODE_REQUIRED,
+    MSG_2FA_UNAVAILABLE_OEC,
+)
 from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.products.api import Product, get_current_product
 from twilio.base.exceptions import TwilioRestException
@@ -240,15 +243,17 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["status"] == UserStatus.ACTIVE.value
 
 
-async def test_register_phone_fails_with_used_number(
+async def test_can_register_same_phone_in_different_accounts(
     client: TestClient,
     fake_user_email: str,
     fake_user_password: str,
     fake_user_phone_number: str,
+    mocked_twilio_service: dict[str, Mock],
     cleanup_db_tables: None,
 ):
     """
-    Tests https://github.com/ITISFoundation/osparc-simcore/issues/3304
+    - Changed policy about user phone constraint in  https://github.com/ITISFoundation/osparc-simcore/pull/5460
+    - Tests https://github.com/ITISFoundation/osparc-simcore/issues/3304
     """
     assert client.app
 
@@ -290,8 +295,11 @@ async def test_register_phone_fails_with_used_number(
                 "phone": fake_user_phone_number,
             },
         )
-        _, error = await assert_status(response, status.HTTP_401_UNAUTHORIZED)
-        assert "phone" in error["message"]
+        data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
+        assert data
+        assert "Code" in data["message"]
+        assert data["name"] == CODE_2FA_CODE_REQUIRED
+        assert not error
 
 
 async def test_send_email_code(

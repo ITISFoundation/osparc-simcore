@@ -31,6 +31,10 @@ qx.Class.define("osparc.product.quickStart.Utils", {
       "s4l": {
         localStorageStr: "s4lDontShowQuickStart",
         tutorial: () => new osparc.product.quickStart.s4l.Welcome()
+      },
+      "s4lacad": {
+        localStorageStr: "s4lacadDontShowQuickStart",
+        tutorial: () => new osparc.product.quickStart.s4lacad.Welcome()
       }
     },
 

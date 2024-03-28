@@ -22,10 +22,10 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentInitiated,
 )
 from models_library.payments import UserInvoiceAddress
-from models_library.products import StripePriceID, StripeTaxRateID
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, PositiveInt
+from pydantic import EmailStr, HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -36,7 +36,6 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 
 from .._constants import RUT
-from ..core.settings import ApplicationSettings
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo
 from ..models.db import PaymentsTransactionsDB
 from ..models.db_to_api import to_payments_api_model
@@ -47,7 +46,9 @@ from ..models.payments_gateway import (
     StripeTaxExempt,
 )
 from ..models.schemas.acknowledgements import AckPayment, AckPaymentWithPaymentMethod
+from ..models.stripe import InvoiceData
 from ..services.resource_usage_tracker import ResourceUsageTrackerApi
+from ..services.stripe import StripeApi
 from .notifier import NotifierService
 from .notifier_ws import WebSocketProvider
 from .payments_gateway import PaymentsGatewayApi
@@ -58,7 +59,6 @@ _logger = logging.getLogger()
 async def init_one_time_payment(
     gateway: PaymentsGatewayApi,
     repo: PaymentsTransactionsRepo,
-    settings: ApplicationSettings,
     *,
     amount_dollars: Decimal,
     target_credits: Decimal,
@@ -91,7 +91,6 @@ async def init_one_time_payment(
                 else StripeTaxExempt.reverse
             ),
         ),
-        payment_gateway_tax_feature_enabled=settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED,
     )
 
     submission_link = gateway.get_form_payment_url(init.payment_id)
@@ -146,6 +145,7 @@ async def cancel_one_time_payment(
         completion_state=PaymentTransactionState.CANCELED,
         state_message=payment_cancelled.message,
         invoice_url=None,
+        stripe_invoice_id=None,
     )
 
 
@@ -164,6 +164,7 @@ async def acknowledge_one_time_payment(
         ),
         state_message=ack.message,
         invoice_url=ack.invoice_url,
+        stripe_invoice_id=ack.stripe_invoice_id,
     )
 
 
@@ -217,7 +218,6 @@ async def pay_with_payment_method(  # noqa: PLR0913
     repo_transactions: PaymentsTransactionsRepo,
     repo_methods: PaymentsMethodsRepo,
     notifier: NotifierService,
-    settings: ApplicationSettings,
     *,
     payment_method_id: PaymentMethodID,
     amount_dollars: Decimal,
@@ -256,7 +256,6 @@ async def pay_with_payment_method(  # noqa: PLR0913
                 else StripeTaxExempt.reverse
             ),
         ),
-        payment_gateway_tax_feature_enabled=settings.PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED,
     )
 
     payment_id = ack.payment_id
@@ -290,6 +289,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
         ),
         state_message=ack.message,
         invoice_url=ack.invoice_url,
+        stripe_invoice_id=ack.stripe_invoice_id,
     )
 
     # NOTE: notifications here are done as background-task after responding `POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay`
@@ -304,13 +304,35 @@ async def get_payments_page(
     repo: PaymentsTransactionsRepo,
     *,
     user_id: UserID,
+    product_name: ProductName,
     limit: PositiveInt | None = None,
     offset: PositiveInt | None = None,
 ) -> tuple[int, list[PaymentTransaction]]:
     """All payments associated to a user (i.e. including all the owned wallets)"""
 
     total_number_of_items, page = await repo.list_user_payment_transactions(
-        user_id=user_id, offset=offset, limit=limit
+        user_id=user_id, product_name=product_name, offset=offset, limit=limit
     )
 
     return total_number_of_items, [to_payments_api_model(t) for t in page]
+
+
+async def get_payment_invoice_url(
+    repo: PaymentsTransactionsRepo,
+    stripe_api: StripeApi,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    """Get invoice data from Stripe. As invoice url expires after some time, Stripe always generates a new
+    invoice url with 10 day validity."""
+
+    payment: PaymentsTransactionsDB | None = await repo.get_payment_transaction(
+        payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
+    )
+    if payment is None or payment.stripe_invoice_id is None:
+        raise PaymentNotFoundError(payment_id=payment_id)
+    invoice_data: InvoiceData = await stripe_api.get_invoice(payment.stripe_invoice_id)
+
+    return invoice_data.hosted_invoice_url

@@ -43,20 +43,24 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     // overridden
     _createChildControlImpl: function(id) {
       let control;
+      let layout;
       switch (id) {
         case "tsr-rating":
           control = osparc.dashboard.CardBase.createTSRLayout();
-          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.TSR);
+          layout = this.getChildControl("footer");
+          layout.add(control, osparc.dashboard.GridButtonBase.FPOS.TSR);
           break;
         case "workbench-mode":
           control = new qx.ui.basic.Image().set({
             alignY: "middle"
           });
-          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.VIEWER_MODE);
+          layout = this.getChildControl("main-layout");
+          layout.add(control, osparc.dashboard.GridButtonBase.POS.VIEWER_MODE);
           break;
         case "empty-workbench": {
           control = this._getEmptyWorkbenchIcon();
-          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.UPDATES);
+          layout = this.getChildControl("footer");
+          layout.add(control, osparc.dashboard.GridButtonBase.FPOS.UPDATES);
           break;
         }
         case "update-study":
@@ -67,14 +71,16 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             alignX: "center"
           });
           osparc.utils.Utils.setIdToWidget(control, "updateStudyBtn");
-          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.UPDATES);
+          layout = this.getChildControl("footer");
+          layout.add(control, osparc.dashboard.GridButtonBase.FPOS.UPDATES);
           break;
         case "hits-service":
           control = new qx.ui.basic.Label().set({
             toolTipText: this.tr("Number of times you instantiated it"),
             alignY: "middle"
           });
-          this._footerLayout.add(control, osparc.dashboard.GridButtonBase.FPOS.HITS);
+          layout = this.getChildControl("footer");
+          layout.add(control, osparc.dashboard.GridButtonBase.FPOS.HITS);
           break;
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
@@ -83,7 +89,8 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             paddingRight: osparc.dashboard.GridButtonBase.PADDING,
             paddingBottom: osparc.dashboard.GridButtonBase.PADDING / 2
           });
-          this._mainLayout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
+          layout = this.getChildControl("main-layout");
+          layout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
         case "menu-button":
           this.getChildControl("title").set({
@@ -215,9 +222,9 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     },
 
     createOwner: function(label) {
-      const resourceType = this.getResourceType() === "study" ? "project" : this.getResourceType();
       if (label === osparc.auth.Data.getInstance().getEmail()) {
-        return qx.locale.Manager.tr(`My ${resourceType}`);
+        const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(this.getResourceType());
+        return qx.locale.Manager.tr(`My ${resourceAlias}`);
       }
       return osparc.utils.Utils.getNameFromEmail(label);
     },

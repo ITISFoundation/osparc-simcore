@@ -41,6 +41,10 @@ pydantic<2.0
 sqlalchemy<2.0
 
 
+# SEE https://github.com/pytest-dev/pytest-asyncio/issues/706
+# Many tests fail with `RuntimeError: There is no current event loop in thread 'MainThread'`
+pytest-asyncio<0.22
+
 #
 # Bugs
 #
@@ -82,3 +86,6 @@ aiofile>=999999999
 # directly use http calls.
 # SEE https://github.com/Pennsieve/pennsieve-python/issues/17
 pennsieve>=999999999
+
+# User alternative e.g. parametrized fixture or request.getfixturevalue(.)
+pytest-lazy-fixture>=999999999

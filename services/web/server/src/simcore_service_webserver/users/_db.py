@@ -6,6 +6,8 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.users import GroupID, UserBillingDetails, UserID
+from simcore_postgres_database.models.groups import groups, user_to_groups
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserStatus, users
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
@@ -105,6 +107,15 @@ async def update_user_status(
 async def search_users_and_get_profile(
     engine: Engine, *, email_like: str
 ) -> list[RowProxy]:
+
+    users_alias = sa.alias(users, name="users_alias")
+
+    invited_by = (
+        sa.select(users_alias.c.name)
+        .where(users_pre_registration_details.c.created_by == users_alias.c.id)
+        .label("invited_by")
+    )
+
     async with engine.acquire() as conn:
         columns = (
             users.c.first_name,
@@ -114,7 +125,7 @@ async def search_users_and_get_profile(
             users_pre_registration_details.c.pre_email,
             users_pre_registration_details.c.pre_first_name,
             users_pre_registration_details.c.pre_last_name,
-            users_pre_registration_details.c.company_name,
+            users_pre_registration_details.c.institution,
             users_pre_registration_details.c.pre_phone,
             users_pre_registration_details.c.address,
             users_pre_registration_details.c.city,
@@ -122,7 +133,9 @@ async def search_users_and_get_profile(
             users_pre_registration_details.c.postal_code,
             users_pre_registration_details.c.country,
             users_pre_registration_details.c.user_id,
+            users_pre_registration_details.c.extras,
             users.c.status,
+            invited_by,
         )
 
         left_outer_join = (
@@ -146,6 +159,33 @@ async def search_users_and_get_profile(
         )
 
         result = await conn.execute(sa.union(left_outer_join, right_outer_join))
+        return await result.fetchall() or []
+
+
+async def get_user_products(engine: Engine, user_id: UserID) -> list[RowProxy]:
+    async with engine.acquire() as conn:
+        product_name_subq = (
+            sa.select(products.c.name)
+            .where(products.c.group_id == groups.c.gid)
+            .label("product_name")
+        )
+        products_gis_subq = sa.select(products.c.group_id).distinct().subquery()
+        query = (
+            sa.select(
+                groups.c.gid,
+                product_name_subq,
+            )
+            .select_from(
+                users.join(user_to_groups, user_to_groups.c.uid == users.c.id).join(
+                    groups,
+                    (groups.c.gid == user_to_groups.c.gid)
+                    & groups.c.gid.in_(products_gis_subq),
+                )
+            )
+            .where(users.c.id == user_id)
+            .order_by(groups.c.gid)
+        )
+        result = await conn.execute(query)
         return await result.fetchall() or []
 
 

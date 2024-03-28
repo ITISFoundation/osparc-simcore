@@ -72,7 +72,9 @@ qx.Class.define("osparc.desktop.credits.Utils", {
     createWalletSelector: function(accessRight = "read") {
       const store = osparc.store.Store.getInstance();
 
-      const walletSelector = new qx.ui.form.SelectBox();
+      const walletSelector = new qx.ui.form.SelectBox().set({
+        minWidth: 220
+      });
 
       const populateSelectBox = selectBox => {
         selectBox.removeAll();
@@ -81,7 +83,7 @@ qx.Class.define("osparc.desktop.credits.Utils", {
         wallets.forEach(wallet => {
           const found = wallet.getMyAccessRights();
           if (found && found[accessRight]) {
-            const sbItem = new qx.ui.form.ListItem(wallet.getName());
+            const sbItem = new qx.ui.form.ListItem(`${wallet.getName()} (${wallet.getCreditsAvailable()} credits)`);
             sbItem.walletId = wallet.getWalletId();
             selectBox.add(sbItem);
           }
@@ -92,24 +94,6 @@ qx.Class.define("osparc.desktop.credits.Utils", {
       store.addListener("changeWallets", () => populateSelectBox(walletSelector));
 
       return walletSelector;
-    },
-
-    createWalletSelectorLayout: function(accessRight = "read") {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-
-      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Select Credit Account"));
-      layout.add(label);
-
-      const walletSelector = osparc.desktop.credits.Utils.createWalletSelector(accessRight);
-      layout.add(walletSelector);
-
-      if (osparc.desktop.credits.Utils.areWalletsEnabled() && walletSelector.getSelectables().length > 1) {
-        layout.show();
-      } else {
-        layout.exclude();
-      }
-
-      return layout;
     },
 
     autoSelectActiveWallet: function(walletSelector) {

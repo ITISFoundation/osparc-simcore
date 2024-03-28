@@ -25,10 +25,10 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.basic_types import IDStr
 from models_library.payments import UserInvoiceAddress
-from models_library.products import StripePriceID, StripeTaxRateID
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr
+from pydantic import EmailStr, HttpUrl
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
@@ -47,6 +47,7 @@ from simcore_service_webserver.payments._methods_api import (
 )
 from simcore_service_webserver.payments._onetime_api import (
     _fake_cancel_payment,
+    _fake_get_payment_invoice_url,
     _fake_get_payments_page,
     _fake_init_payment,
     _fake_pay_with_payment_method,
@@ -145,11 +146,13 @@ def mock_rpc_payments_service_api(
         app: web.Application,
         *,
         user_id: UserID,
+        product_name: ProductName,
         limit: int | None,
         offset: int | None,
     ):
         assert limit is not None
         assert offset is not None
+        assert product_name is not None
         return await _fake_get_payments_page(app, user_id, limit, offset)
 
     #  payment-methods  ----
@@ -249,6 +252,17 @@ def mock_rpc_payments_service_api(
             comment,
         )
 
+    async def _get_invoice_url(
+        app: web.Application,
+        *,
+        payment_method_id: PaymentMethodID,
+        user_id: UserID,
+        wallet_id: WalletID,
+    ) -> HttpUrl:
+        return await _fake_get_payment_invoice_url(
+            app, user_id, wallet_id, payment_method_id
+        )
+
     return {
         "init_payment": mocker.patch(
             "simcore_service_webserver.payments._onetime_api._rpc.init_payment",
@@ -295,10 +309,15 @@ def mock_rpc_payments_service_api(
             autospec=True,
             side_effect=_pay,
         ),
+        "get_payment_invoice_url": mocker.patch(
+            "simcore_service_webserver.payments._onetime_api._rpc.get_payment_invoice_url",
+            autospec=True,
+            side_effect=_get_invoice_url,
+        ),
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def setup_user_pre_registration_details_db(
     postgres_db: sa.engine.Engine, logged_user: UserInfoDict, faker: Faker
 ) -> Iterator[int]:
@@ -311,7 +330,7 @@ def setup_user_pre_registration_details_db(
                 pre_first_name=faker.first_name(),
                 pre_last_name=faker.last_name(),
                 pre_phone=faker.phone_number(),
-                company_name=faker.company(),
+                institution=faker.company(),
                 address=faker.address().replace("\n", ", "),
                 city=faker.city(),
                 state=faker.state(),
@@ -322,5 +341,6 @@ def setup_user_pre_registration_details_db(
             .returning(sa.literal_column("*"))
         )
         row = result.fetchone()
+        assert row
         yield cast(int, row[0])
         con.execute(users_pre_registration_details.delete())

@@ -111,6 +111,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "empty-workbench":
           control = this._getEmptyWorkbenchIcon();
+          control.set({
+            alignY: "middle",
+            alignX: "center"
+          });
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.UPDATES
@@ -210,7 +214,8 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
     createOwner: function(label) {
       if (label === osparc.auth.Data.getInstance().getEmail()) {
-        return qx.locale.Manager.tr("My project");
+        const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(this.getResourceType());
+        return qx.locale.Manager.tr(`My ${resourceAlias}`);
       }
       return osparc.utils.Utils.getNameFromEmail(label);
     },

@@ -87,6 +87,12 @@ def echo_dotenv(
                 ),
             ),
         ),
+        PAYMENTS_STRIPE_URL=os.environ.get(
+            "PAYMENTS_STRIPE_URL", "https://api.stripe.com"
+        ),
+        PAYMENTS_STRIPE_API_SECRET=os.environ.get(
+            "PAYMENTS_STRIPE_API_SECRET", "replace-with-api-secret"
+        ),
     )
 
     print_as_envfile(

@@ -269,6 +269,21 @@ qx.Class.define("osparc.utils.Utils", {
       return (["dev", "master"].includes(platformName));
     },
 
+    resourceTypeToAlias: function(resourceType) {
+      switch (resourceType) {
+        case "study":
+          resourceType = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+          break;
+        case "template":
+          resourceType = osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
+          break;
+        case "service":
+          resourceType = qx.locale.Manager.tr("Service");
+          break;
+      }
+      return resourceType;
+    },
+
     getEditButton: function(isVisible = true) {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
         appearance: "form-button-outlined",
@@ -415,7 +430,7 @@ qx.Class.define("osparc.utils.Utils", {
       return email.split("@")[0];
     },
 
-    uuidv4: function() {
+    uuidV4: function() {
       return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
@@ -749,10 +764,13 @@ qx.Class.define("osparc.utils.Utils", {
 
     cookie: {
       setCookie: (cname, cvalue, exdays) => {
-        var d = new Date();
-        d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-        var expires = "expires="+d.toUTCString();
-        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        if (exdays) {
+          const d = new Date();
+          d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+          document.cookie = cname + "=" + cvalue + ";Expires=" + d.toUTCString() + ";path=/";
+        } else {
+          document.cookie = cname + "=" + cvalue + ";path=/";
+        }
       },
 
       getCookie: cname => {
@@ -830,7 +848,7 @@ qx.Class.define("osparc.utils.Utils", {
 
     getClientSessionID: function() {
       // https://stackoverflow.com/questions/11896160/any-way-to-identify-browser-tab-in-javascript
-      const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidv4();
+      const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidV4();
       sessionStorage.setItem("clientsessionid", clientSessionID);
       return clientSessionID;
     },
@@ -910,6 +928,13 @@ qx.Class.define("osparc.utils.Utils", {
           child.close();
         }
       });
+    },
+
+    removeAllChildren: function(container) {
+      const nChildren = container.getChildren().length;
+      for (let i=nChildren-1; i>=0; i--) {
+        container.remove(container.getChildren()[i]);
+      }
     }
   }
 });

@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_webserver.auth import (
@@ -15,7 +16,7 @@ from servicelib.utils import fire_and_forget_task
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
-from ..products.api import get_current_product
+from ..products.api import Product, get_current_product
 from ..security.api import check_password, forget_identity
 from ..security.decorators import permission_required
 from ..users.api import get_user_credentials, set_user_as_deleted
@@ -27,12 +28,28 @@ from ._registration_api import (
     send_close_account_email,
 )
 from .decorators import login_required
+from .settings import LoginSettingsForProduct, get_plugin_settings
 from .utils import flash_response, notify_user_logout
 
 _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
+
+
+def _get_ipinfo(request: web.Request) -> dict[str, Any]:
+    # NOTE:  Traefik is also configured to transmit the original IP.
+    x_real_ip = request.headers.get("X-Real-IP", None)
+    # SEE https://docs.aiohttp.org/en/stable/web_reference.html#aiohttp.web.BaseRequest.transport
+    peername: tuple | None = (
+        request.transport.get_extra_info("peername") if request.transport else None
+    )
+    return {
+        "x-real-ip": x_real_ip,
+        "x-forwarded-for": request.headers.get("X-Forwarded-For", None),
+        "peername": peername,
+        "test_url": f"https://ipinfo.io/{x_real_ip}/json",
+    }
 
 
 @routes.post(
@@ -45,24 +62,13 @@ async def request_product_account(request: web.Request):
     body = await parse_request_body_as(AccountRequestInfo, request)
     assert body.form  # nosec
 
-    ipinfo = {
-        # NOTE:  Traefik is also configured to transmit the original IP.
-        "x-real-ip": request.headers.get("X-Real-IP", None),
-        "x-forwarded-for": request.headers.get("X-Forwarded-For", None),
-        "peername": (
-            request.transport.get_extra_info("peername", default=None)
-            if request.transport
-            else None
-        ),
-    }
-
     # send email to fogbugz or user itself
     fire_and_forget_task(
         send_account_request_email_to_support(
             request,
             product=product,
             request_form=body.form,
-            ipinfo=ipinfo,
+            ipinfo=_get_ipinfo(request),
         ),
         task_suffix_name=f"{__name__}.request_product_account.send_account_request_email_to_support",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
@@ -81,6 +87,11 @@ class _AuthenticatedContext(BaseModel):
 async def unregister_account(request: web.Request):
     req_ctx = _AuthenticatedContext.parse_obj(request)
     body = await parse_request_body_as(UnregisterCheck, request)
+
+    product: Product = get_current_product(request)
+    settings: LoginSettingsForProduct = get_plugin_settings(
+        request.app, product_name=product.name
+    )
 
     # checks before deleting
     credentials = await get_user_credentials(request.app, user_id=req_ctx.user_id)
@@ -113,8 +124,8 @@ async def unregister_account(request: web.Request):
             send_close_account_email(
                 request,
                 user_email=credentials.email,
-                user_name=credentials.display_name,
-                retention_days=30,
+                user_first_name=credentials.display_name,
+                retention_days=settings.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS,
             ),
             task_suffix_name=f"{__name__}.unregister_account.send_close_account_email",
             fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],

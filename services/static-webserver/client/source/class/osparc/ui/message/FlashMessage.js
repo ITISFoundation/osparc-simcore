@@ -56,7 +56,8 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
       this.setMessage(message);
     }
 
-    if (duration) {
+    // also support duration 0: the message won't be automatically removed
+    if (duration != null) {
       this.setDuration(duration);
     }
 

@@ -13,7 +13,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/tags/24";
-    const title = this.tr("Tags");
+    const title = this.tr("Create/Edit Tags");
     this.base(arguments, title, iconSrc);
 
     const studiesLabel = osparc.product.Utils.getStudyAlias({plural: true});

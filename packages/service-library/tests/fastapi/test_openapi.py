@@ -8,8 +8,8 @@ import pytest
 import starlette.routing
 from fastapi.applications import FastAPI
 from fastapi.routing import APIRouter
-from openapi_spec_validator import validate_spec
 from openapi_spec_validator.exceptions import OpenAPISpecValidatorError
+from openapi_spec_validator.shortcuts import get_validator_cls
 from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
     set_operation_id_as_handler_function_name,
@@ -37,7 +37,9 @@ def test_exclusive_min_openapi_issue(app: FastAPI):
     # NOTE: With the latest update of openapi_spec_validator, now passes validation 3.1 but
     # does not seem resolved. It was moved to https://github.com/tiangolo/fastapi/discussions/9140
     with pytest.raises(OpenAPISpecValidatorError):
-        validate_spec(app.openapi())
+        specs = app.openapi()
+        openapi_validator_cls = get_validator_cls(specs)
+        openapi_validator_cls(specs)
 
 
 def test_overriding_openapi_method(app: FastAPI):
@@ -54,7 +56,8 @@ def test_overriding_openapi_method(app: FastAPI):
     assert openapi
     assert isinstance(openapi, dict)
 
-    validate_spec(openapi)
+    openapi_validator_cls = get_validator_cls(openapi)
+    openapi_validator_cls(openapi)
 
     # NOTE: https://github.com/tiangolo/fastapi/issues/240 now passes validation 3.1 but
     # does not seem resolved. It was moved to https://github.com/tiangolo/fastapi/discussions/9140

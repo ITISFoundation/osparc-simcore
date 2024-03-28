@@ -67,7 +67,7 @@ qx.Class.define("osparc.utils.LibVersions", {
 
       return {
         name: name,
-        version: commitId ? commitId.substring(0, 7) : "",
+        version: commitId ? commitId : "",
         url: remoteUrl
       };
     },

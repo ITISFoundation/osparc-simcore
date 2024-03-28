@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %} {% include 'on_change_email.email.subject.txt' %} {% endblock %}
+{% block content %}
+<p>Dear {{ user.first_name }},</p>
+<p>
+  You have requested to change the email address linked to your {{ product.display_name }} account.
+  Please follow the on-screen information in the link below:
+</p>
+
+<p>
+  <a href="{{ link }}">{{ link }}</a>
+</p>
+
+<p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
+</p>
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>
+{% endblock %}

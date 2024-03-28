@@ -1,6 +1,6 @@
 import logging
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 import arrow
@@ -14,7 +14,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl
+from pydantic import HttpUrl, parse_obj_as
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -223,6 +223,22 @@ async def _fake_get_payments_page(
     return total_number_of_items, [_to_api_model(t) for t in transactions]
 
 
+@log_decorator(_logger, level=logging.INFO)
+async def _fake_get_payment_invoice_url(
+    app: web.Application,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    assert app  ## nosec
+    assert user_id  # nosec
+    assert wallet_id  # nosec
+
+    return cast(
+        HttpUrl, parse_obj_as(HttpUrl, f"https://fake-invoice.com/?id={payment_id}")
+    )
+
+
 async def raise_for_wallet_payments_permissions(
     app: web.Application,
     *,
@@ -422,7 +438,34 @@ async def list_user_payments_page(
     else:
         assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
         total_number_of_items, payments = await _rpc.get_payments_page(
-            app, user_id=user_id, offset=offset, limit=limit
+            app, user_id=user_id, product_name=product_name, offset=offset, limit=limit
         )
 
     return payments, total_number_of_items
+
+
+async def get_payment_invoice_url(
+    app: web.Application,
+    product_name: str,
+    user_id: UserID,
+    *,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    assert product_name  # nosec
+    assert wallet_id  # nosec
+
+    payment_invoice_url: HttpUrl
+    settings: PaymentsSettings = get_plugin_settings(app)
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        payment_invoice_url = await _fake_get_payment_invoice_url(
+            app, user_id=user_id, wallet_id=wallet_id, payment_id=payment_id
+        )
+
+    else:
+        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+        payment_invoice_url = await _rpc.get_payment_invoice_url(
+            app, user_id=user_id, wallet_id=wallet_id, payment_id=payment_id
+        )
+
+    return payment_invoice_url

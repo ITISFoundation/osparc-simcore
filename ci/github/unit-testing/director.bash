@@ -25,7 +25,6 @@ install() {
   pushd services/director
   pip3 install -r requirements/ci.txt
   popd
-  uv pip list
 }
 
 test() {

@@ -14,7 +14,7 @@ from pydantic.types import SecretStr
 from servicelib.aiohttp.typing_extension import Handler
 
 from ._constants import MSG_UNDER_DEVELOPMENT
-from .application_settings import ApplicationSettings, get_settings
+from .application_settings import ApplicationSettings, get_application_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -326,7 +326,7 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
 def requires_dev_feature_enabled(handler: Handler):
     @functools.wraps(handler)
     async def _handler_under_dev(request: web.Request):
-        app_settings = get_settings(request.app)
+        app_settings = get_application_settings(request.app)
         if not app_settings.WEBSERVER_DEV_FEATURES_ENABLED:
             raise NotImplementedError(MSG_UNDER_DEVELOPMENT)
         return await handler(request)

@@ -6,6 +6,8 @@
 
 
 import functools
+import sys
+from copy import deepcopy
 from http import HTTPStatus
 from typing import Any
 from unittest.mock import MagicMock, Mock
@@ -15,9 +17,13 @@ import simcore_service_webserver.login._auth_api
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from faker import Faker
+from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from models_library.generics import Envelope
 from psycopg2 import OperationalError
-from pytest_simcore.helpers.rawdata_fakers import DEFAULT_TEST_PASSWORD
+from pytest_simcore.helpers.rawdata_fakers import (
+    DEFAULT_TEST_PASSWORD,
+    random_pre_registration_details,
+)
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict
@@ -26,6 +32,11 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_service_webserver.users._preferences_api import (
     get_frontend_user_preferences_aggregation,
+)
+from simcore_service_webserver.users._schemas import (
+    MAX_BYTES_SIZE_EXTRAS,
+    PreUserProfile,
+    UserProfile,
 )
 from simcore_service_webserver.users.schemas import ProfileGet, ProfileUpdate
 
@@ -200,7 +211,7 @@ async def test_get_profile_with_failing_db_connection(
         (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
     ],
 )
-async def test_users_api_only_accessed_by_po(
+async def test_only_product_owners_can_access_users_api(
     client: TestClient,
     logged_user: UserInfoDict,
     expected: HTTPStatus,
@@ -214,6 +225,33 @@ async def test_users_api_only_accessed_by_po(
     await assert_status(resp, expected)
 
 
+@pytest.fixture
+def account_request_form(faker: Faker) -> dict[str, Any]:
+    # This is AccountRequestInfo.form
+    form = {
+        "firstName": faker.first_name(),
+        "lastName": faker.last_name(),
+        "email": faker.email(),
+        "phone": faker.phone_number(),
+        "company": faker.company(),
+        # billing info
+        "address": faker.address().replace("\n", ", "),
+        "city": faker.city(),
+        "postalCode": faker.postcode(),
+        "country": faker.country(),
+        # extras
+        "application": faker.word(),
+        "description": faker.sentence(),
+        "hear": faker.word(),
+        "privacyPolicy": True,
+        "eula": True,
+    }
+
+    # keeps in sync fields from example and this fixture
+    assert set(form) == set(AccountRequestInfo.Config.schema_extra["example"]["form"])
+    return form
+
+
 @pytest.mark.acceptance_test(
     "pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
 )
@@ -224,60 +262,50 @@ async def test_users_api_only_accessed_by_po(
     ],
 )
 async def test_search_and_pre_registration(
-    client: TestClient, logged_user: UserInfoDict, faker: Faker
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
 ):
     assert client.app
 
     # ONLY in `users` and NOT `users_pre_registration_details`
-
     resp = await client.get("/v0/users:search", params={"email": logged_user["email"]})
     assert resp.status == status.HTTP_200_OK
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    assert found[0] == {
-        "firstName": logged_user.get("first_name"),
-        "lastName": logged_user.get("last_name"),
+    got = UserProfile(**found[0])
+    expected = {
+        "first_name": logged_user.get("first_name"),
+        "last_name": logged_user.get("last_name"),
         "email": logged_user["email"],
-        "companyName": None,
+        "institution": None,
         "phone": logged_user.get("phone"),
         "address": None,
         "city": None,
         "state": None,
-        "postalCode": None,
+        "postal_code": None,
         "country": None,
+        "extras": {},
         "registered": True,
-        "status": "ACTIVE",
+        "status": UserStatus.ACTIVE,
     }
+    assert got.dict(include=set(expected)) == expected
 
     # NOT in `users` and ONLY `users_pre_registration_details`
 
     # create pre-registration
-    requester_info = {
-        "firstName": faker.first_name(),
-        "lastName": faker.last_name(),
-        "email": faker.email(),
-        "companyName": faker.company(),
-        "phone": faker.phone_number(),
-        # billing info
-        "address": faker.address().replace("\n", ", "),
-        "city": faker.city(),
-        "state": faker.state(),
-        "postalCode": faker.postcode(),
-        "country": faker.country(),
-    }
-
-    resp = await client.post("/v0/users:pre-register", json=requester_info)
+    resp = await client.post("/v0/users:pre-register", json=account_request_form)
     assert resp.status == status.HTTP_200_OK
 
     resp = await client.get(
-        "/v0/users:search", params={"email": requester_info["email"]}
+        "/v0/users:search", params={"email": account_request_form["email"]}
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
+    got = UserProfile(**found[0])
 
-    assert found[0] == {
-        **requester_info,
+    assert got.dict(include={"registered", "status"}) == {
         "registered": False,
         "status": None,
     }
@@ -286,7 +314,7 @@ async def test_search_and_pre_registration(
     new_user = (
         await simcore_service_webserver.login._auth_api.create_user(  # noqa: SLF001
             client.app,
-            email=requester_info["email"],
+            email=account_request_form["email"],
             password=DEFAULT_TEST_PASSWORD,
             status_upon_creation=UserStatus.ACTIVE,
             expires_at=None,
@@ -294,13 +322,83 @@ async def test_search_and_pre_registration(
     )
 
     resp = await client.get(
-        "/v0/users:search", params={"email": requester_info["email"]}
+        "/v0/users:search", params={"email": account_request_form["email"]}
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-
-    assert found[0] == {
-        **requester_info,
+    got = UserProfile(**found[0])
+    assert got.dict(include={"registered", "status"}) == {
         "registered": True,
         "status": new_user["status"].name,
     }
+
+
+@pytest.mark.parametrize(
+    "institution_key",
+    [
+        "institution",
+        "companyName",
+        "company",
+        "university",
+        "universityName",
+    ],
+)
+def test_preuserprofile_parse_model_from_request_form_data(
+    account_request_form: dict[str, Any],
+    institution_key: str,
+):
+    data = deepcopy(account_request_form)
+    data[institution_key] = data.pop("company")
+    data["comment"] = "extra comment"
+
+    # pre-processors
+    pre_user_profile = PreUserProfile(**data)
+
+    print(pre_user_profile.json(indent=1))
+
+    # institution aliases
+    assert pre_user_profile.institution == account_request_form["company"]
+
+    # extras
+    assert {
+        "application",
+        "description",
+        "hear",
+        "privacyPolicy",
+        "eula",
+        "comment",
+    } == set(pre_user_profile.extras)
+    assert pre_user_profile.extras["comment"] == "extra comment"
+
+
+def test_preuserprofile_parse_model_without_extras(
+    account_request_form: dict[str, Any]
+):
+    required = {
+        f.alias or f.name for f in PreUserProfile.__fields__.values() if f.required
+    }
+    data = {k: account_request_form[k] for k in required}
+    assert not PreUserProfile(**data).extras
+
+
+def test_preuserprofile_max_bytes_size_extras_limits(faker: Faker):
+    data = random_pre_registration_details(faker)
+    data_size = sys.getsizeof(data["extras"])
+
+    assert data_size < MAX_BYTES_SIZE_EXTRAS
+
+
+@pytest.mark.parametrize(
+    "given_name", ["PEDrO-luis", "pedro luis", "   pedro  LUiS   ", "pedro  lUiS   "]
+)
+def test_preuserprofile_pre_given_names(
+    given_name: str,
+    account_request_form: dict[str, Any],
+):
+    account_request_form["firstName"] = given_name
+    account_request_form["lastName"] = given_name
+
+    pre_user_profile = PreUserProfile(**account_request_form)
+    print(pre_user_profile.json(indent=1))
+    assert pre_user_profile.first_name in ["Pedro-Luis", "Pedro Luis"]
+    assert pre_user_profile.first_name == pre_user_profile.last_name

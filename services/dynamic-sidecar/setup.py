@@ -34,32 +34,32 @@ PROD_REQUIREMENTS = tuple(
 TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 
-SETUP = dict(
-    name="simcore-service-dynamic-sidecar",
-    version=(CURRENT_DIR / "VERSION").read_text().strip(),
-    author=", ".join(
+SETUP = {
+    "name": "simcore-service-dynamic-sidecar",
+    "version": (CURRENT_DIR / "VERSION").read_text().strip(),
+    "author": ", ".join(
         (
             "Andrei Neagu (GitHK)",
             "Sylvain Anderegg (sanderegg)",
         )
     ),
-    description="Implements a sidecar service to manage user's dynamic/interactive services",
-    packages=find_packages(where="src"),
-    package_dir={
+    "description": "Implements a sidecar service to manage user's dynamic/interactive services",
+    "packages": find_packages(where="src"),
+    "package_dir": {
         "": "src",
     },
-    include_package_data=True,
-    python_requires="~=3.10",
-    PROD_REQUIREMENTS=PROD_REQUIREMENTS,
-    TEST_REQUIREMENTS=TEST_REQUIREMENTS,
-    setup_requires=["setuptools_scm"],
-    entry_points={
+    "include_package_data": True,
+    "python_requires": "~=3.10",
+    "PROD_REQUIREMENTS": PROD_REQUIREMENTS,
+    "TEST_REQUIREMENTS": TEST_REQUIREMENTS,
+    "setup_requires": ["setuptools_scm"],
+    "entry_points": {
         "console_scripts": [
             "simcore-service-dynamic-sidecar=simcore_service_dynamic_sidecar.cli:main",
             "simcore-service=simcore_service_dynamic_sidecar.cli:main",
         ],
     },
-)
+}
 
 
 if __name__ == "__main__":

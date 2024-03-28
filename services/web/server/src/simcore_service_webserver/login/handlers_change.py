@@ -136,9 +136,8 @@ class ChangeEmailBody(InputSchema):
     email: LowerCaseEmailStr
 
 
-@routes.post(f"/{API_VTAG}/auth/change-email", name="auth_change_email")
-@login_required
 async def submit_request_to_change_email(request: web.Request):
+    # NOTE: This code have been intentially disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
 

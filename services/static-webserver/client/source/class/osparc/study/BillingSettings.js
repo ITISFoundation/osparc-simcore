@@ -49,9 +49,7 @@ qx.Class.define("osparc.study.BillingSettings", {
           alignY: "middle"
         });
 
-        const walletSelector = osparc.desktop.credits.Utils.createWalletSelector("read").set({
-          minWidth: 180
-        });
+        const walletSelector = osparc.desktop.credits.Utils.createWalletSelector("read");
         hBox.add(walletSelector);
 
         pricingUnitsLayout.add(hBox);

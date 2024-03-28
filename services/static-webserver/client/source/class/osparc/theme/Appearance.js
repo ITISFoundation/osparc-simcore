@@ -384,7 +384,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         return {
           decorator: "progressbar",
           padding: 1,
-          backgroundColor: "fab-background",
+          backgroundColor: "progressbar-runner",
           margin: [7, 10],
           width: 200,
           height: 20
@@ -395,7 +395,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     "progressbar/progress": {
       style: function(states) {
         return {
-          backgroundColor: states.disabled ? "background-disabled-checked" : "success"
+          backgroundColor: states.disabled ? "progressbar-disabled" : "progressbar"
         };
       }
     },
@@ -655,6 +655,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       style: function(states) {
         const style = {
           decorator: "form-button-text",
+          center: true,
           cursor: "pointer",
           textColor: "link",
           padding: 5,
@@ -667,9 +668,6 @@ qx.Theme.define("osparc.theme.Appearance", {
         }
         if (states.focused) {
           style.textColor = "default-button-focus";
-        }
-        if (states.active) {
-          style.textColor = "default-button-active";
         }
         if (states.disabled) {
           style.cursor = "not-allowed";
@@ -1102,6 +1100,18 @@ qx.Theme.define("osparc.theme.Appearance", {
         paddingLeft: 3,
         minWidth: 80,
         backgroundColor: "transparent"
+      })
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Tooltip
+    ---------------------------------------------------------------------------
+    */
+    "tooltip": {
+      style: state => ({
+        decorator: "tooltip",
+        padding: [5, 10]
       })
     },
 

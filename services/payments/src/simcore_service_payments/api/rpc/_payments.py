@@ -12,17 +12,17 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentInitiated,
 )
 from models_library.payments import UserInvoiceAddress
-from models_library.products import StripePriceID, StripeTaxRateID
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr
+from pydantic import EmailStr, HttpUrl
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 
-from ...core.settings import ApplicationSettings
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services import payments
 from ...services.payments_gateway import PaymentsGatewayApi
+from ...services.stripe import StripeApi
 
 _logger = logging.getLogger(__name__)
 
@@ -47,9 +47,6 @@ async def init_payment(  # pylint: disable=too-many-arguments
     stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
-
-    settings: ApplicationSettings = app.state.settings
-
     with log_context(
         _logger,
         logging.INFO,
@@ -60,7 +57,6 @@ async def init_payment(  # pylint: disable=too-many-arguments
         return await payments.init_one_time_payment(
             gateway=PaymentsGatewayApi.get_from_app_state(app),
             repo=PaymentsTransactionsRepo(db_engine=app.state.engine),
-            settings=settings,
             amount_dollars=amount_dollars,
             target_credits=target_credits,
             product_name=product_name,
@@ -106,12 +102,31 @@ async def get_payments_page(
     app: FastAPI,
     *,
     user_id: UserID,
+    product_name: ProductName,
     limit: int | None = None,
     offset: int | None = None,
 ) -> tuple[int, list[PaymentTransaction]]:
     return await payments.get_payments_page(
         repo=PaymentsTransactionsRepo(db_engine=app.state.engine),
         user_id=user_id,
+        product_name=product_name,
         limit=limit,
         offset=offset,
+    )
+
+
+@router.expose(reraise_if_error_type=(PaymentsError, PaymentServiceUnavailableError))
+async def get_payment_invoice_url(
+    app: FastAPI,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    return await payments.get_payment_invoice_url(
+        repo=PaymentsTransactionsRepo(db_engine=app.state.engine),
+        stripe_api=StripeApi.get_from_app_state(app),
+        user_id=user_id,
+        wallet_id=wallet_id,
+        payment_id=payment_id,
     )

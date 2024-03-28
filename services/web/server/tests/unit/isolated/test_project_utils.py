@@ -234,8 +234,8 @@ def test_find_changed_node_keys_file_picker_case(
                 "outputs": {
                     "outFile": {
                         "store": "0",
-                        "path": "6b96a29a-d73c-11ec-943f-02420a000008/2b5cc601-95dd-4c67-b6b9-c4cf3adcd4d1/test_local2.log",
-                        "label": "test_local2.log",
+                        "path": "6b96a29a-d73c-11ec-943f-02420a000008/2b5cc601-95dd-4c67-b6b9-c4cf3adcd4d1/renamed_test_local2.log",  # <--- different
+                        "label": "renamed_test_local2.log",  # <--- different
                         "dataset": "6b96a29a-d73c-11ec-943f-02420a000008",
                     }
                 },

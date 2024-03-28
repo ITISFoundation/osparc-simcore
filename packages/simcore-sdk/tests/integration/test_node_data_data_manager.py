@@ -1,8 +1,9 @@
-# pylint:disable=protected-access
-# pylint:disable=redefined-outer-name
-# pylint:disable=too-many-arguments
-# pylint:disable=unused-argument
-# pylint:disable=unused-variable
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 
 import hashlib
 import shutil
@@ -15,6 +16,7 @@ import pytest
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
+from models_library.users import UserID
 from pydantic import parse_obj_as
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
@@ -29,7 +31,10 @@ pytest_simcore_core_services_selection = [
     "storage",
 ]
 
-pytest_simcore_ops_services_selection = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = [
+    "minio",
+    "adminer",
+]
 
 
 # UTILS
@@ -119,16 +124,6 @@ def random_tmp_dir_generator(temp_dir: Path) -> Callable[[bool], Path]:
 
 
 @pytest.fixture
-def dir_content_one_file_path(temp_dir: Path) -> Path:
-    return _make_dir_with_files(temp_dir, file_count=1)
-
-
-@pytest.fixture
-def dir_content_multiple_files_path(temp_dir: Path) -> Path:
-    return _make_dir_with_files(temp_dir, file_count=2)
-
-
-@pytest.fixture
 def project_id(project_id: str) -> ProjectID:
     return ProjectID(project_id)
 
@@ -138,18 +133,21 @@ def node_uuid(faker: Faker) -> NodeID:
     return NodeID(faker.uuid4())
 
 
-@pytest.mark.parametrize(
-    "content_path",
-    [
-        # pylint: disable=no-member
-        pytest.lazy_fixture("dir_content_one_file_path"),
-        pytest.lazy_fixture("dir_content_multiple_files_path"),
-    ],
-)
+@pytest.fixture(params=["dir_content_one_file_path", "dir_content_multiple_files_path"])
+def content_path(request: pytest.FixtureRequest, temp_dir: Path) -> Path:
+    match request.param:
+        case "dir_content_one_file_path":
+            return _make_dir_with_files(temp_dir, file_count=1)
+        case "dir_content_multiple_files_path":
+            return _make_dir_with_files(temp_dir, file_count=2)
+        case _:
+            pytest.fail("Undefined content_param")
+
+
 async def test_valid_upload_download(
-    node_ports_config,
+    node_ports_config: None,
     content_path: Path,
-    user_id: int,
+    user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
     r_clone_settings: RCloneSettings,
@@ -165,7 +163,6 @@ async def test_valid_upload_download(
             progress_bar=progress_bar,
             r_clone_settings=r_clone_settings,
         )
-        # pylint: disable=protected-access
         assert progress_bar._current_steps == pytest.approx(1.0)  # noqa: SLF001
 
         uploaded_hashes = _get_file_hashes_in_path(content_path)
@@ -188,18 +185,10 @@ async def test_valid_upload_download(
     assert uploaded_hashes == downloaded_hashes
 
 
-@pytest.mark.parametrize(
-    "content_path",
-    [
-        # pylint: disable=no-member
-        pytest.lazy_fixture("dir_content_one_file_path"),
-        pytest.lazy_fixture("dir_content_multiple_files_path"),
-    ],
-)
 async def test_valid_upload_download_saved_to(
     node_ports_config,
     content_path: Path,
-    user_id: int,
+    user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
     random_tmp_dir_generator: Callable,
@@ -242,18 +231,10 @@ async def test_valid_upload_download_saved_to(
     assert uploaded_hashes == downloaded_hashes
 
 
-@pytest.mark.parametrize(
-    "content_path",
-    [
-        # pylint: disable=no-member
-        pytest.lazy_fixture("dir_content_one_file_path"),
-        pytest.lazy_fixture("dir_content_multiple_files_path"),
-    ],
-)
 async def test_delete_legacy_archive(
     node_ports_config,
     content_path: Path,
-    user_id: int,
+    user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
     r_clone_settings: RCloneSettings,

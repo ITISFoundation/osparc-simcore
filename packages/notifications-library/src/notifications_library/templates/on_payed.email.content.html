@@ -1,14 +1,15 @@
 {% extends 'base.html' %}
 
-{% block title %}Payment Confirmation{% endblock %}
+{% block title %} {% include 'on_payed.email.subject.txt' %} {% endblock %}
 
 {% block content %}
-<div class="container">
-    <p>Dear {{ user.first_name }},</p>
-    <p>We are delighted to confirm the successful processing of your payment of <strong>{{ payment.price_dollars }}</strong> <em>USD</em> for the purchase of <strong>{{ payment.osparc_credits }}</strong> <em>credits</em>. The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.</p>
-    <p>For more details you can view or download your <a href="{{ payment.invoice_url }}">receipt</a></p>
-    <p>Should you have any questions or require further assistance, please do not hesitate to reach out to our <a href="mailto:{{ product.support_email }}">customer support team</a>.</p>
-    <p>Best Regards,</p>
-    <p>{{ product.display_name }} support team<br>{{ product.vendor_display_inline }}</p>
-</div>
+
+<p>Dear {{ user.first_name }},</p>
+<p>We are delighted to confirm the successful processing of your payment of <strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong> for the purchase of <strong>{{ payment.osparc_credits }}</strong> <strong><em>credits</em></strong>.
+  The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.</p>
+<p>For more details you can view or download your <a href="{{ payment.invoice_url }}">receipt</a>.</p>
+<p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>
+
 {% endblock %}

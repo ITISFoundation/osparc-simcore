@@ -122,6 +122,7 @@ async def test_successful_one_time_payment_workflow(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "get_payments_page"),
         user_id=user_id,
+        product_name="osparc",
         timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 

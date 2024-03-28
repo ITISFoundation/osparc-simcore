@@ -39,10 +39,11 @@ qx.Class.define("osparc.desktop.credits.DeleteAccount", {
       switch (id) {
         case "intro-text": {
           const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+          const retentionDays = osparc.store.StaticInfo.getInstance().getAccountDeletionRetentionDays();
           const text = this.tr(`\
-            This account will be deleted in 14 days.<br>\
+            This account will be <strong>deleted in ${retentionDays} days</strong>.<br>\
             During this period, if you want to recover it or delete your\
-            data right away, please send us an email to ${supportEmail}.\
+            data right away, please send us an email to <a href="mailto:${supportEmail}">${supportEmail}</a>.\
             `);
           control = new qx.ui.basic.Label().set({
             value: text,
@@ -82,7 +83,9 @@ qx.Class.define("osparc.desktop.credits.DeleteAccount", {
       });
       form.add(password, "Password", null, "password");
 
-      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
+      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
+        appearance: "form-button-text"
+      });
       cancelBtn.addListener("execute", () => this.fireEvent("cancel"), this);
       form.addButton(cancelBtn);
 
@@ -108,9 +111,11 @@ qx.Class.define("osparc.desktop.credits.DeleteAccount", {
           password: form.getItem("password").getValue()
         }
       };
+      const retentionDays = osparc.store.StaticInfo.getInstance().getAccountDeletionRetentionDays();
+
       osparc.data.Resources.fetch("auth", "unregister", params)
         .then(() => {
-          const msg = this.tr("You account will be deleted in 14 days");
+          const msg = this.tr(`You account will be deleted in ${retentionDays} days`);
           osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
           this.fireEvent("deleted");
         })

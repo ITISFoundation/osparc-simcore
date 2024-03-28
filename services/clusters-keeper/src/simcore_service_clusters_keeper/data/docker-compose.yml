@@ -2,43 +2,52 @@ version: "3.8"
 services:
   dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
-    dns: 8.8.8.8 # needed to access internet from AWS
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    networks:
+      - cluster
     environment:
       DASK_TLS_CA_FILE: ${DASK_TLS_CA_FILE}
       DASK_TLS_CERT: ${DASK_TLS_CERT}
       DASK_TLS_KEY: ${DASK_TLS_KEY}
       DASK_SCHEDULER_URL: tls://dask-scheduler:8786
       DASK_START_AS_SCHEDULER: 1
+      DASK_WORKER_SATURATION: ${DASK_WORKER_SATURATION}
       LOG_LEVEL: ${LOG_LEVEL}
     ports:
       - 8786:8786 # dask-scheduler access
       - 8787:8787 # dashboard
     deploy:
+      labels:
+        prometheus-job: scheduler
+        prometheus-port: 8787
       placement:
         constraints:
           - "node.role==manager"
+      resources:
+        limits:
+          memory: 2048M
     secrets:
       - source: dask_tls_ca
         target: ${DASK_TLS_CA_FILE}
-        mode: 0444
+        mode: 444
       - source: dask_tls_key
         target: ${DASK_TLS_KEY}
-        mode: 0444
+        mode: 444
       - source: dask_tls_cert
         target: ${DASK_TLS_CERT}
-        mode: 0444
+        mode: 444
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG}
-    dns: 8.8.8.8 # needed to access internet from AWS
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     volumes:
       - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
+    networks:
+      - cluster
     environment:
       DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: 1
       DASK_NPROCS: 1
@@ -49,28 +58,31 @@ services:
       DASK_TLS_CA_FILE: ${DASK_TLS_CA_FILE}
       DASK_TLS_CERT: ${DASK_TLS_CERT}
       DASK_TLS_KEY: ${DASK_TLS_KEY}
+      DASK_WORKER_SATURATION: ${DASK_WORKER_SATURATION}
       LOG_LEVEL: ${LOG_LEVEL}
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: /home/scu/computational_shared_data
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: computational_shared_data
     deploy:
       mode: global
+      labels:
+        prometheus-job: sidecars
+        prometheus-port: 8787
       placement:
         constraints:
           - "node.role==worker"
     secrets:
       - source: dask_tls_ca
         target: ${DASK_TLS_CA_FILE}
-        mode: 0444
+        mode: 444
       - source: dask_tls_key
         target: ${DASK_TLS_KEY}
-        mode: 0444
+        mode: 444
       - source: dask_tls_cert
         target: ${DASK_TLS_CERT}
-        mode: 0444
+        mode: 444
 
   autoscaling:
     image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG}
-    dns: 8.8.8.8 # needed to access internet from AWS
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
@@ -96,26 +108,33 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - cluster
     deploy:
+      labels:
+        prometheus-job: autoscaling
+        prometheus-port: 8000
       placement:
         constraints:
           - "node.role==manager"
+      resources:
+        limits:
+          memory: 512M
     secrets:
       - source: dask_tls_ca
         target: ${DASK_TLS_CA_FILE}
-        mode: 0444
+        mode: 444
       - source: dask_tls_key
         target: ${DASK_TLS_KEY}
-        mode: 0444
+        mode: 444
       - source: dask_tls_cert
         target: ${DASK_TLS_CERT}
-        mode: 0444
+        mode: 444
 
   redis:
     # NOTE: currently autoscaling requires redis to run
     image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
-    dns: 8.8.8.8 # needed to access internet from AWS
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     healthcheck:
@@ -125,15 +144,55 @@ services:
       retries: 50
     volumes:
       - redis-data:/data
+    networks:
+      - cluster
     deploy:
       placement:
         constraints:
           - "node.role==manager"
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  prometheus:
+    image: prom/prometheus:v2.51.0@sha256:5ccad477d0057e62a7cd1981ffcc43785ac10c5a35522dc207466ff7e7ec845f
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.size=1GB"
+    ports:
+      - 9090:9090
+    configs:
+      - source: prometheus-config
+        target: /etc/prometheus/prometheus.yml
+    volumes:
+      - prometheus-data:/prometheus
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    user: root # because of docker
+    networks:
+      - cluster
+    deploy:
+      placement:
+        constraints:
+          - "node.role==manager"
+      resources:
+        limits:
+          memory: 1024M
+          cpus: "1.0"
+
+networks:
+  cluster:
+
+configs:
+  prometheus-config:
+    file: ./prometheus.yml
 
 volumes:
   computational_shared_data:
     name: computational_shared_data
   redis-data:
+  prometheus-data:
 
 secrets:
   dask_tls_ca:

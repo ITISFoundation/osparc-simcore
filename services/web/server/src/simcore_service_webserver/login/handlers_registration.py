@@ -259,7 +259,7 @@ async def register(request: web.Request):
                 context={
                     "host": request.host,
                     "link": email_confirmation_url,  # SEE email_confirmation handler (action=REGISTRATION)
-                    "name": user["name"],
+                    "name": user.get("first_name") or user["name"],
                     "support_email": product.support_email,
                     "product": product,
                 },
@@ -348,7 +348,6 @@ async def register_phone(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
-    db: AsyncpgStorage = get_plugin_storage(request.app)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
@@ -365,12 +364,6 @@ async def register_phone(request: web.Request):
             msg = f"Messaging SID is not configured in {product}. Update product's twilio_messaging_sid in database."
             raise ValueError(msg)
 
-        if await db.get_user({"phone": registration.phone}):
-            raise web.HTTPUnauthorized(  # noqa: TRY301
-                reason="Cannot register this phone number because it is already assigned to an active user",
-                content_type=MIMETYPE_APPLICATION_JSON,
-            )
-
         code = await create_2fa_code(
             app=request.app,
             user_email=registration.email,
@@ -385,10 +378,6 @@ async def register_phone(request: web.Request):
             first_name=get_user_name_from_email(registration.email),
         )
 
-        message = MSG_2FA_CODE_SENT.format(
-            phone_number=mask_phone_number(registration.phone)
-        )
-
         return envelope_response(
             # RegisterPhoneNextPage
             data={
@@ -396,7 +385,9 @@ async def register_phone(request: web.Request):
                 "parameters": {
                     "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
-                "message": message,
+                "message": MSG_2FA_CODE_SENT.format(
+                    phone_number=mask_phone_number(registration.phone)
+                ),
                 "level": "INFO",
                 "logger": "user",
             },
