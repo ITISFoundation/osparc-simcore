@@ -503,14 +503,14 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
         service_access_rights = service.gids_with_access_rights
 
         # Find common groups between service access rights and groups to compare
-        _group_intersection = set(service_access_rights.keys()).intersection(
+        _groups_intersection = set(service_access_rights.keys()).intersection(
             groups_to_compare
         )
 
         _is_service_accessible = False
 
         # Iterate through common groups
-        for group in _group_intersection:
+        for group in _groups_intersection:
             service_access_rights_for_gid = service_access_rights.get(group)
             assert service_access_rights_for_gid is not None  # nosec
             # Check if execute access is granted for the group
