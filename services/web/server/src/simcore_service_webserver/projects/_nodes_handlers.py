@@ -50,6 +50,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWasNotFoundError,
 )
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.groups.exceptions import GroupNotFoundError
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
@@ -89,6 +90,7 @@ def _handle_project_nodes_exceptions(handler: Handler):
             NodeNotFoundError,
             UserDefaultWalletNotFoundError,
             DefaultPricingUnitNotFoundError,
+            GroupNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except WalletNotEnoughCreditsError as exc:
@@ -480,8 +482,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
 
     # Check if the group exists
     if _sharing_with_group is None:
-        msg = f"Group ID does not exist: {query_params.for_gid}"
-        raise ValueError(msg)
+        raise GroupNotFoundError(gid=query_params.for_gid)
 
     # Update groups to compare based on the type of sharing group
     if _sharing_with_group.group_type == GroupTypeInModel.PRIMARY:
