@@ -95,13 +95,14 @@ def mock_catalog_api_get_service_access_rights_response(mocker: MockerFixture):
 async def test_user_role_access(
     client: TestClient,
     user_project: ProjectDict,
+    logged_user: dict,
     expected: HTTPStatus,
     mock_catalog_api_get_service_access_rights_response,
 ):
     assert client.app
 
     project_id = user_project["uuid"]
-    for_gid = 3
+    for_gid = logged_user["primary_gid"]
 
     expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
         project_id=project_id
@@ -119,7 +120,10 @@ async def test_user_role_access(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_accessible_thanks_to_everyone_group_id(
-    client: TestClient, user_project: ProjectDict, mocker: MockerFixture
+    client: TestClient,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    logged_user: dict,
 ):
     mocker.patch(
         "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
@@ -152,7 +156,7 @@ async def test_accessible_thanks_to_everyone_group_id(
     assert client.app
 
     project_id = user_project["uuid"]
-    for_gid = 3
+    for_gid = logged_user["primary_gid"]
 
     expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
         project_id=project_id
@@ -169,8 +173,13 @@ async def test_accessible_thanks_to_everyone_group_id(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_accessible_thanks_to_concrete_group_id(
-    client: TestClient, user_project: ProjectDict, mocker: MockerFixture
+    client: TestClient,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    logged_user: dict,
 ):
+    for_gid = logged_user["primary_gid"]
+
     mocker.patch(
         "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
         spec=True,
@@ -179,7 +188,7 @@ async def test_accessible_thanks_to_concrete_group_id(
                 service_key="simcore/services/comp/itis/sleeper",
                 service_version="2.1.4",
                 gids_with_access_rights={
-                    3: {"execute_access": True},
+                    for_gid: {"execute_access": True},
                     5: {"execute_access": True},
                 },
             ),
@@ -193,7 +202,7 @@ async def test_accessible_thanks_to_concrete_group_id(
             ServiceAccessRightsGet(
                 service_key="simcore/services/comp/itis/sleeper",
                 service_version="2.1.5",
-                gids_with_access_rights={3: {"execute_access": True}},
+                gids_with_access_rights={for_gid: {"execute_access": True}},
             ),
         ],
     )
@@ -201,7 +210,6 @@ async def test_accessible_thanks_to_concrete_group_id(
     assert client.app
 
     project_id = user_project["uuid"]
-    for_gid = 3
 
     expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
         project_id=project_id
@@ -218,8 +226,13 @@ async def test_accessible_thanks_to_concrete_group_id(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_not_accessible_for_one_service(
-    client: TestClient, user_project: ProjectDict, mocker: MockerFixture
+    client: TestClient,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    logged_user: dict,
 ):
+    for_gid = logged_user["primary_gid"]
+
     mocker.patch(
         "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
         spec=True,
@@ -236,14 +249,14 @@ async def test_not_accessible_for_one_service(
                 service_key="simcore/services/frontend/parameter/integer",
                 service_version="1.0.0",
                 gids_with_access_rights={
-                    3: {"execute_access": True},
+                    for_gid: {"execute_access": True},
                     2: {"execute_access": True},
                 },
             ),
             ServiceAccessRightsGet(
                 service_key="simcore/services/comp/itis/sleeper",
                 service_version="2.1.5",
-                gids_with_access_rights={3: {"execute_access": True}},
+                gids_with_access_rights={for_gid: {"execute_access": True}},
             ),
         ],
     )
@@ -251,7 +264,6 @@ async def test_not_accessible_for_one_service(
     assert client.app
 
     project_id = user_project["uuid"]
-    for_gid = 3
 
     expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
         project_id=project_id
@@ -274,7 +286,10 @@ async def test_not_accessible_for_one_service(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_not_accessible_for_more_services(
-    client: TestClient, user_project: ProjectDict, mocker: MockerFixture
+    client: TestClient,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    logged_user: dict,
 ):
     mocker.patch(
         "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
@@ -310,7 +325,7 @@ async def test_not_accessible_for_more_services(
     assert client.app
 
     project_id = user_project["uuid"]
-    for_gid = 3
+    for_gid = logged_user["primary_gid"]
 
     expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
         project_id=project_id
@@ -335,8 +350,13 @@ async def test_not_accessible_for_more_services(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_not_accessible_for_service_because_of_execute_access_false(
-    client: TestClient, user_project: ProjectDict, mocker: MockerFixture
+    client: TestClient,
+    user_project: ProjectDict,
+    mocker: MockerFixture,
+    logged_user: dict,
 ):
+    for_gid = logged_user["primary_gid"]
+
     mocker.patch(
         "simcore_service_webserver.projects._nodes_handlers.catalog_client.get_service_access_rights",
         spec=True,
@@ -344,17 +364,19 @@ async def test_not_accessible_for_service_because_of_execute_access_false(
             ServiceAccessRightsGet(
                 service_key="simcore/services/comp/itis/sleeper",
                 service_version="2.1.4",
-                gids_with_access_rights={3: {"execute_access": False}},  # <-- FALSE
+                gids_with_access_rights={
+                    for_gid: {"execute_access": False}
+                },  # <-- FALSE
             ),
             ServiceAccessRightsGet(
                 service_key="simcore/services/frontend/parameter/integer",
                 service_version="1.0.0",
-                gids_with_access_rights={3: {"execute_access": True}},
+                gids_with_access_rights={for_gid: {"execute_access": True}},
             ),
             ServiceAccessRightsGet(
                 service_key="simcore/services/comp/itis/sleeper",
                 service_version="2.1.5",
-                gids_with_access_rights={3: {"execute_access": True}},
+                gids_with_access_rights={for_gid: {"execute_access": True}},
             ),
         ],
     )
@@ -362,7 +384,6 @@ async def test_not_accessible_for_service_because_of_execute_access_false(
     assert client.app
 
     project_id = user_project["uuid"]
-    for_gid = 3
 
     expected_url = client.app.router["get_project_services_access_for_gid"].url_for(
         project_id=project_id
