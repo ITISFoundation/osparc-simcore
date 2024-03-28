@@ -1,4 +1,4 @@
-from fastapi import Request
+from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
@@ -14,4 +14,7 @@ def http404_error_handler(
     request: Request,  # pylint: disable=unused-argument
     error: CustomResourceUsageTrackerError,
 ) -> JSONResponse:
-    return JSONResponse(status_code=404, content={"message": f"{error.msg_template}"})
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"message": f"{error.msg_template}"},
+    )

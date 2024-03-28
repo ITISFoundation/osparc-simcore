@@ -21,7 +21,7 @@ def ignore_limits(request: pytest.FixtureRequest) -> bool:
 @pytest.fixture
 async def mock_app(ignore_limits: bool) -> FastAPI:
     mock = AsyncMock()
-    mock.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_IGNORE_SERVICES_SHUTDOWN_WHEN_CREDITS_LIMIT_REACHED = (
+    mock.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED = (
         ignore_limits
     )
     mock.state.dynamic_sidecar_scheduler = AsyncMock()

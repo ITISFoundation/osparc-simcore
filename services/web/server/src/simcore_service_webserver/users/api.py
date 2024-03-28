@@ -23,7 +23,7 @@ from ..groups.models import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
 from . import _db
-from ._api import get_user_credentials, set_user_as_deleted
+from ._api import get_user_credentials, get_user_invoice_address, set_user_as_deleted
 from ._preferences_api import get_frontend_user_preferences_aggregation
 from .exceptions import UserNotFoundError
 from .schemas import ProfileGet, ProfileUpdate
@@ -75,9 +75,9 @@ async def get_user_profile(
                     "last_name": row.users_last_name,
                     "login": row.users_email,
                     "role": row.users_role,
-                    "expiration_date": row.users_expires_at.date()
-                    if row.users_expires_at
-                    else None,
+                    "expiration_date": (
+                        row.users_expires_at.date() if row.users_expires_at else None
+                    ),
                 }
                 assert user_profile["id"] == user_id  # nosec
 
@@ -127,26 +127,36 @@ async def get_user_profile(
             "all": all_group,
         },
         preferences=preferences,
-        **optional
+        **optional,
     )
 
 
 async def update_user_profile(
-    app: web.Application, user_id: UserID, profile_update: ProfileUpdate
+    app: web.Application,
+    user_id: UserID,
+    update: ProfileUpdate,
+    *,
+    as_patch: bool = True,
 ) -> None:
     """
-    :raises UserNotFoundError:
+    Keyword Arguments:
+        as_patch -- set False if PUT and True if PATCH (default: {True})
+
+    Raises:
+        UserNotFoundError
     """
     user_id = _parse_as_user(user_id)
 
     async with get_database_engine(app).acquire() as conn:
-        first_name = profile_update.first_name
-        last_name = profile_update.last_name
-
+        to_update = update.dict(
+            include={
+                "first_name",
+                "last_name",
+            },
+            exclude_unset=as_patch,
+        )
         resp = await conn.execute(
-            users.update()
-            .where(users.c.id == user_id)
-            .values(first_name=first_name, last_name=last_name)
+            users.update().where(users.c.id == user_id).values(**to_update)
         )
         assert resp.rowcount == 1  # nosec
 
@@ -167,14 +177,14 @@ async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
         return UserRole(user_role)
 
 
-class UserNameAndEmailTuple(NamedTuple):
+class UserIdNamesTuple(NamedTuple):
     name: str
     email: str
 
 
 async def get_user_name_and_email(
     app: web.Application, *, user_id: UserID
-) -> UserNameAndEmailTuple:
+) -> UserIdNamesTuple:
     """
     Raises:
         UserNotFoundError
@@ -187,7 +197,38 @@ async def get_user_name_and_email(
         user_id=_parse_as_user(user_id),
         return_column_names=["name", "email"],
     )
-    return UserNameAndEmailTuple(name=row.name, email=row.email)
+    return UserIdNamesTuple(name=row.name, email=row.email)
+
+
+class UserDisplayAndIdNamesTuple(NamedTuple):
+    name: str
+    email: str
+    first_name: str
+    last_name: str
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+
+async def get_user_display_and_id_names(
+    app: web.Application, *, user_id: UserID
+) -> UserDisplayAndIdNamesTuple:
+    """
+    Raises:
+        UserNotFoundError
+    """
+    row = await _db.get_user_or_raise(
+        get_database_engine(app),
+        user_id=_parse_as_user(user_id),
+        return_column_names=["name", "email", "first_name", "last_name"],
+    )
+    return UserDisplayAndIdNamesTuple(
+        name=row.name,
+        email=row.email,
+        first_name=row.first_name or row.name.capitalize(),
+        last_name=row.last_name or "",
+    )
 
 
 async def get_guest_user_ids_and_names(app: web.Application) -> list[tuple[int, str]]:
@@ -279,8 +320,10 @@ async def update_expired_users(engine: Engine) -> list[UserID]:
 
 assert set_user_as_deleted  # nosec
 assert get_user_credentials  # nosec
+assert get_user_invoice_address  # nosec
 
 __all__: tuple[str, ...] = (
     "get_user_credentials",
     "set_user_as_deleted",
+    "get_user_invoice_address",
 )

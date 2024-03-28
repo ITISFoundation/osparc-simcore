@@ -3,10 +3,9 @@
 # pylint: disable=unused-variable
 
 from collections.abc import Awaitable, Callable
-from http import HTTPStatus
 
 import pytest
-from aiohttp import ClientResponse, web
+from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects import Project
@@ -21,6 +20,7 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
     REPLACE_PROJECT_ON_MODIFIED,
     RUN_PROJECT,
 )
+from servicelib.aiohttp import status
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
@@ -115,8 +115,8 @@ async def test_iterators_workflow(
     # ----
     project_data = await request_create_project(
         client,
-        web.HTTPAccepted,
-        web.HTTPCreated,
+        status.HTTP_202_ACCEPTED,
+        status.HTTP_201_CREATED,
         logged_user,
         primary_group,
         project=NEW_PROJECT.request_payload,
@@ -140,7 +140,7 @@ async def test_iterators_workflow(
                 "service_id": f"{node_id}",
             },
         )
-        assert response.status == HTTPStatus.CREATED
+        assert response.status == status.HTTP_201_CREATED
     project_data.update({key: modifications[key] for key in ("workbench", "ui")})
     project_data["ui"].setdefault("currentNodeId", project_uuid)
 
@@ -168,7 +168,7 @@ async def test_iterators_workflow(
         f"/v0/computations/{project_uuid}:start",
         json=RUN_PROJECT.request_payload,
     )
-    data, _ = await assert_status(response, web.HTTPCreated)
+    data, _ = await assert_status(response, status.HTTP_201_CREATED)
     assert project_uuid == data["pipeline_id"]
     ref_ids = data["ref_ids"]
     assert len(ref_ids) == 3
@@ -209,7 +209,7 @@ async def test_iterators_workflow(
     for i, prj_iter in enumerate(first_iterlist):
         assert prj_iter.workcopy_project_url.path
         response = await client.get(prj_iter.workcopy_project_url.path)
-        assert response.status == HTTPStatus.OK
+        assert response.status == status.HTTP_200_OK
 
         body = await response.json()
         project_iter0 = body["data"]
@@ -229,7 +229,7 @@ async def test_iterators_workflow(
     response = await client.get(
         f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations/-/results"
     )
-    assert response.status == HTTPStatus.OK, await response.text()
+    assert response.status == status.HTTP_200_OK, await response.text()
     body = await response.json()
 
     assert Page[ProjectIterationResultItem].parse_obj(body).data is not None
@@ -237,7 +237,7 @@ async def test_iterators_workflow(
     # GET project and MODIFY iterator values----------------------------------------------
     #  - Change iterations from 0:4 -> HEAD+1
     response = await client.get(f"/v0/projects/{project_uuid}")
-    assert response.status == HTTPStatus.OK, await response.text()
+    assert response.status == status.HTTP_200_OK, await response.text()
     body = await response.json()
 
     # NOTE: updating a project fields can be daunting because
@@ -265,14 +265,14 @@ async def test_iterators_workflow(
         f"/v0/projects/{project_uuid}",
         data=json_dumps(new_project.dict(**REQUEST_MODEL_POLICY)),
     )
-    assert response.status == HTTPStatus.OK, await response.text()
+    assert response.status == status.HTTP_200_OK, await response.text()
 
     # RUN again them ---------------------------------------------------------------------------
     response = await client.post(
         f"/v0/computations/{project_uuid}:start",
         json=RUN_PROJECT.request_payload,
     )
-    data, _ = await assert_status(response, web.HTTPCreated)
+    data, _ = await assert_status(response, status.HTTP_201_CREATED)
     assert project_uuid == data["pipeline_id"]
     ref_ids = data["ref_ids"]
     assert len(ref_ids) == 4
@@ -290,7 +290,7 @@ async def test_iterators_workflow(
         f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations?offset=0"
     )
     body = await response.json()
-    assert response.status == HTTPStatus.OK, f"{body=}"  # nosec
+    assert response.status == status.HTTP_200_OK, f"{body=}"  # nosec
     second_iterlist = Page[ProjectIterationItem].parse_obj(body).data
 
     assert len(second_iterlist) == 4

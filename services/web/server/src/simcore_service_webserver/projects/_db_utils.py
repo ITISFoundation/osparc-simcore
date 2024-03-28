@@ -1,6 +1,3 @@
-""" Database utils
-
-"""
 import asyncio
 import logging
 from collections.abc import Mapping
@@ -76,7 +73,9 @@ def check_project_permissions(
         filter(lambda x: x.get("type") == GroupType.EVERYONE, user_groups), None
     )
     if all_group is None:
-        raise ProjectInvalidRightsError(user_id, project.get("uuid"))
+        raise ProjectInvalidRightsError(
+            user_id=user_id, project_uuid=project.get("uuid")
+        )
 
     everyone_gid = str(all_group["gid"])
 
@@ -90,7 +89,9 @@ def check_project_permissions(
         )
         if primary_group is None:
             # the user groups is missing entries
-            raise ProjectInvalidRightsError(user_id, project.get("uuid"))
+            raise ProjectInvalidRightsError(
+                user_id=user_id, project_uuid=project.get("uuid")
+            )
 
         standard_groups = filter(
             lambda x: x.get("type") == GroupType.STANDARD, user_groups
@@ -126,7 +127,9 @@ def check_project_permissions(
         user_can[operation] = user_can[operation] or primary_access_right[operation]
 
     if any(not user_can[operation] for operation in operations_on_project):
-        raise ProjectInvalidRightsError(user_id, project.get("uuid"))
+        raise ProjectInvalidRightsError(
+            user_id=user_id, project_uuid=project.get("uuid")
+        )
 
 
 def create_project_access_rights(
@@ -447,7 +450,9 @@ def patch_workbench(
                 patched_project["workbench"][node_key] = new_node_data
                 changed_entries.update({node_key: new_node_data})
             except ValidationError as err:
-                raise NodeNotFoundError(patched_project["uuid"], node_key) from err
+                raise NodeNotFoundError(
+                    project_uuid=patched_project["uuid"], node_uuid=node_key
+                ) from err
         elif new_node_data is None:
             if not allow_workbench_changes:
                 raise ProjectInvalidUsageError

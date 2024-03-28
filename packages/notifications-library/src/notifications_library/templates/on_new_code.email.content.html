@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %} {% include 'on_new_code.email.subject.txt' %} {% endblock %}
+{% block content %}
+<p>Dear {{ user.first_name }},</p>
+<p>Please find below the Two-factor Authentication sign-in code for your {{ host }} account.</p>
+
+<p>
+  Your code is: <b> {{ code }} </b>
+</p>
+
+<p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>
+{% endblock %}

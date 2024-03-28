@@ -89,7 +89,7 @@ def dynamic_sidecar_settings(mock_env: dict[str, str]) -> DynamicSidecarSettings
 
 @pytest.fixture
 def dynamic_services_scheduler_settings(
-    mock_env: dict[str, str]
+    mock_env: dict[str, str],
 ) -> DynamicServicesSchedulerSettings:
     return DynamicServicesSchedulerSettings.create_from_envs()
 
@@ -267,7 +267,10 @@ def expected_dynamic_sidecar_spec(
                     "SC_BOOT_MODE": "production",
                     "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "SSL_CERT_FILE": "",
+                    "STORAGE_USERNAME": "null",
                     "STORAGE_HOST": "storage",
+                    "STORAGE_PASSWORD": "null",
+                    "STORAGE_SECURE": "0",
                     "STORAGE_PORT": "8080",
                 },
                 "CapabilityAdd": None,

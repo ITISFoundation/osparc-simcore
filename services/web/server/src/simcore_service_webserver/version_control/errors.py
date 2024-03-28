@@ -1,14 +1,11 @@
-""" Version Control exceptions
-
-"""
-from pydantic.errors import PydanticErrorMixin
+from ..errors import WebServerBaseError
 
 
-class VersionControlValueError(PydanticErrorMixin, ValueError):
+class VersionControlValueError(WebServerBaseError, ValueError):
     pass
 
 
-class VersionControlRuntimeError(PydanticErrorMixin, RuntimeError):
+class VersionControlRuntimeError(WebServerBaseError, RuntimeError):
     pass
 
 

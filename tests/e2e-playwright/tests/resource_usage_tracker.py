@@ -1,9 +1,10 @@
+# pylint: disable=logging-fstring-interpolation
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
 # pylint: disable=unnecessary-lambda
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import os
 from collections.abc import Iterator
@@ -13,6 +14,7 @@ from http import HTTPStatus
 import pytest
 from playwright.sync_api import APIRequestContext
 from pydantic import AnyUrl
+from pytest_simcore.logging_utils import test_logger
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -47,7 +49,7 @@ def test_resource_usage_tracker(
     service_run_ids_before = set()
     for service_run in service_runs_before:
         service_run_ids_before.add(service_run["service_run_id"])
-    print(f"Service runs before: {service_run_ids_before}")
+    test_logger.info(f"Service runs before: {service_run_ids_before}")
 
     # 2. Start computations
     data = {"subgraph": [], "force_restart": True}
@@ -64,7 +66,7 @@ def test_resource_usage_tracker(
         reraise=True,
     ):
         with attempt:
-            print(
+            test_logger.info(
                 f"====================={datetime.now(tz=timezone.utc)}============================="
             )
             output = api_request_context.get(f"{product_url}v0/projects/{STUDY_ID}")
@@ -75,7 +77,7 @@ def test_resource_usage_tracker(
             for node in list(workbench.keys()):
                 node_label = workbench[node]["label"]
                 node_current_status = workbench[node]["state"]["currentStatus"]
-                print((node_label, node_current_status, node))
+                test_logger.info("%s", (node_label, node_current_status, node))
                 status_check.add(node_current_status)
 
             assert len(status_check.union({"SUCCESS", "FAILED"})) == 2
@@ -89,7 +91,7 @@ def test_resource_usage_tracker(
     service_run_ids_after = set()
     for service_run in service_runs_after:
         service_run_ids_after.add(service_run["service_run_id"])
-    print(f"Service runs after: {service_run_ids_after}")
+    test_logger.info(f"Service runs after: {service_run_ids_after}")
 
     # If there is an intersection with old service run id, that means that
     # RUT didn't created a new service run id

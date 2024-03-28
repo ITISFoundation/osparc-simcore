@@ -45,24 +45,95 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   statics: {
     PAGINATED_STUDIES: 10,
 
-    sortStudyList: function(studyList) {
+    checkLoggedIn: function() {
+      const isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
+      if (!isLogged) {
+        const msg = qx.locale.Manager.tr("You need to be logged in to create a study");
+        osparc.FlashMessenger.getInstance().logAs(msg);
+      }
+      return isLogged;
+    },
+
+    startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
+      if (!osparc.dashboard.ResourceBrowserBase.checkLoggedIn()) {
+        return;
+      }
+
+      const openStudy = () => {
+        if (openCB) {
+          openCB();
+        }
+        osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
+      };
+
+      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+      if (walletsEnabled) {
+        const params = {
+          url: {
+            studyId
+          }
+        };
+        osparc.data.Resources.fetch("studies", "getWallet", params)
+          .then(wallet => {
+            if (isStudyCreation || wallet === null || osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null) {
+              // pop up study options if the study was just created or if it has no wallet assigned or user has no access to it
+              const resourceSelector = new osparc.study.StudyOptions(studyId);
+              const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
+              win.moveItUp();
+              resourceSelector.addListener("startStudy", () => {
+                win.close();
+                openStudy();
+              });
+              win.addListener("cancel", () => {
+                if (cancelCB) {
+                  cancelCB();
+                }
+              });
+              resourceSelector.addListener("cancel", () => {
+                win.close();
+                if (cancelCB) {
+                  cancelCB();
+                }
+              });
+              // listen to "tap" instead of "execute": the "execute" is not propagated
+              win.getChildControl("close-button").addListener("tap", () => {
+                if (cancelCB) {
+                  cancelCB();
+                }
+              });
+            } else {
+              openStudy();
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
+          });
+      } else {
+        openStudy();
+      }
+    },
+
+    sortStudyList: function(studyList, sortValue) {
       const sortByProperty = function(prop) {
         return function(a, b) {
+          const x = a.toString().toLowerCase();
+          const y = b.toString().toLowerCase();
           if (prop === "lastChangeDate") {
-            return new Date(b[prop]) - new Date(a[prop]);
+            return new Date(y[prop]) - new Date(x[prop]);
           }
-          if (typeof a[prop] == "number") {
-            return a[prop] - b[prop];
+          if (typeof x[prop] == "number") {
+            return x[prop] - y[prop];
           }
-          if (a[prop] < b[prop]) {
+          if (x[prop] < y[prop]) {
             return -1;
-          } else if (a[prop] > b[prop]) {
+          } else if (x[prop] > y[prop]) {
             return 1;
           }
           return 0;
         };
       };
-      studyList.sort(sortByProperty("lastChangeDate"));
+      studyList.sort(sortByProperty(sortValue || "name"));
     },
 
     isCardNewItem: function(card) {
@@ -310,55 +381,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
-      if (!this._checkLoggedIn()) {
-        return;
-      }
-
-      const openStudy = () => {
-        if (openCB) {
-          openCB();
-        }
-        osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
-      };
-
-      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-      if (walletsEnabled) {
-        const params = {
-          url: {
-            studyId
-          }
-        };
-        osparc.data.Resources.fetch("studies", "getWallet", params)
-          .then(wallet => {
-            if (isStudyCreation || wallet === null || osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null) {
-              // pop up study options if the study was just created or if it has no wallet assigned or user has no access to it
-              const resourceSelector = new osparc.study.StudyOptions(studyId);
-              const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
-              resourceSelector.addListener("startStudy", () => {
-                win.close();
-                openStudy();
-              });
-              resourceSelector.addListener("cancel", () => {
-                win.close();
-                if (cancelCB) {
-                  cancelCB();
-                }
-              });
-              // listen to "tap" instead of "execute": the "execute" is not propagated
-              win.getChildControl("close-button").addListener("tap", () => {
-                cancelCB();
-              });
-            } else {
-              openStudy();
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            osparc.FlashMessenger.logAs(err.message, "ERROR");
-          });
-      } else {
-        openStudy();
-      }
+      this.self().startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
     _createStudyFromTemplate: function() {

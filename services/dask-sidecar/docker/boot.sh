@@ -28,7 +28,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   pip install --no-cache-dir -r requirements/dev.txt
   cd - || exit 1
   print_info "PIP :"
-  pip list | sed 's/^/    /'
+  uv pip list | sed 's/^/    /'
 fi
 
 # RUNNING application ----------------------------------------
@@ -43,11 +43,19 @@ logging:
   distributed.scheduler: ${LOG_LEVEL:-warning}
 EOF
 
-# Check if DASK_TLS_CA_FILE is present
+# Define the base configuration for distributed
+# the worker-saturation defines how the scheduler loads
+# the workers, see https://github.com/dask/distributed/blob/91350ab15c79de973597e319bd36cc8d56e9f999/distributed/scheduler.py
+cat >/home/scu/.config/dask/distributed.yaml <<EOF
+distributed:
+  scheduler:
+    worker-saturation: ${DASK_WORKER_SATURATION:-inf}
+EOF
+
+# Check if DASK_TLS_CA_FILE is present and add the necesary configs
 if [ -n "${DASK_TLS_CA_FILE:-}" ]; then
   print_info "TLS authentication enabled"
   cat >>/home/scu/.config/dask/distributed.yaml <<EOF
-distributed:
   comm:
     default-scheme: tls
     require-encryption: true
@@ -68,7 +76,7 @@ fi
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   scheduler_version=$(dask scheduler --version)
   print_info "Starting as dask scheduler:${scheduler_version}..."
-  if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
+  if [ "${SC_BOOT_MODE}" = "debug" ]; then
     exec watchmedo auto-restart \
       --recursive \
       --pattern="*.py;*/src/*" \
@@ -156,7 +164,7 @@ else
   # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
   print_info "Starting as a dask worker "${DASK_WORKER_VERSION}" -> "${DASK_SCHEDULER_URL}" ..."
   print_info "Worker resources set as: "$resources""
-  if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
+  if [ "${SC_BOOT_MODE}" = "debug" ]; then
     exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
       dask worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \

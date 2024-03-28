@@ -9,19 +9,22 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from .service_client import SciCrunch
 from .settings import get_plugin_settings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+
+async def _on_startup(app: web.Application):
+    settings = get_plugin_settings(app)
+    api = SciCrunch.acquire_instance(app, settings)
+    assert api == SciCrunch.get_instance(app)  # nosec
 
 
 @app_module_setup(
     "simcore_service_webserver.scicrunch",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_SCICRUNCH",
-    # TODO: check if depends=["simcore_service_webserver.groups"],
-    logger=logger,
+    logger=_logger,
 )
 def setup_scicrunch(app: web.Application):
-    settings = get_plugin_settings(app)
+    assert get_plugin_settings(app)  # nosec
 
-    # init client and injects in app
-    api = SciCrunch.acquire_instance(app, settings)
-    assert api == SciCrunch.get_instance(app)  # nosec
+    app.on_startup.append(_on_startup)

@@ -13,6 +13,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
+from settings_library.node_ports import NodePortsSettings
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.utils_aiopg import (
@@ -22,7 +23,6 @@ from simcore_postgres_database.utils_aiopg import (
 from sqlalchemy import and_
 
 from .exceptions import NodeNotFound, ProjectNotFoundError
-from .settings import NodePortsSettings
 
 log = logging.getLogger(__name__)
 

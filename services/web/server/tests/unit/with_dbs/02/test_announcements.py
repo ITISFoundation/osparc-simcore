@@ -14,7 +14,6 @@ import arrow
 import pytest
 import redis.asyncio as aioredis
 import simcore_service_webserver.announcements._models
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pydantic import BaseModel, ValidationError
@@ -22,6 +21,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
+from servicelib.aiohttp import status
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_webserver.announcements._redis import (
     _PUBLIC_ANNOUNCEMENTS_REDIS_KEY,
@@ -72,7 +72,7 @@ async def test_list_empty_announcements(client: TestClient):
 
     # check no announcements
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert error is None
     assert data == []
 
@@ -103,7 +103,7 @@ async def test_list_announcements(
 
     # check no announcements
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert error is None
     assert data == expected
 
@@ -166,7 +166,7 @@ async def test_list_announcements_filtered(
 
     # check no announcements
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert error is None
     assert data == expected
 

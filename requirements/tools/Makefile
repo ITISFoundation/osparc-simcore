@@ -89,7 +89,7 @@ reqs-services: guard-UPGRADE_OPTION ## updates a give package on a service (e.g.
 reqs-ci: ## upgrades requirements for pylint recipe in CI
 	cd $(REPODIR)/ci/helpers \
 	&& rm requirements.txt \
-	&& pip-compile --resolver=backtracking --strip-extras requirements.in
+	&& uv pip compile --resolver=backtracking --strip-extras requirements.in
 
 IMAGE_NAME:=local/python-devkit:${PYTHON_VERSION}
 

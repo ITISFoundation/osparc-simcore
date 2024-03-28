@@ -1,7 +1,8 @@
+from datetime import timedelta
 from typing import Final
 
 from models_library.projects_networks import DockerNetworkName
-from pydantic import Field, NonNegativeInt, PositiveFloat, PositiveInt
+from pydantic import Field, NonNegativeInt, PositiveFloat
 from settings_library.base import BaseCustomSettings
 
 _MINUTE: Final[NonNegativeInt] = 60
@@ -10,8 +11,9 @@ _MINUTE: Final[NonNegativeInt] = 60
 class DynamicServicesSchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED: bool = True
 
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS: PositiveFloat = Field(
-        5.0, description="interval at which the scheduler cycle is repeated"
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL: timedelta = Field(
+        timedelta(seconds=5),
+        description="interval at which the scheduler cycle is repeated",
     )
 
     DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S: PositiveFloat = (
@@ -57,6 +59,14 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS: list[str] = Field(
         default_factory=list,
         description="Prometheus will scrape service placed on these networks",
+    )
+
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: bool = Field(
+        default=True,
+        description=(
+            "when the message indicating there are no more credits left in a wallet "
+            "the director-v2 will shutdown the services via the help of the frontend"
+        ),
     )
 
     #
@@ -138,20 +148,4 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
             "issues. To avoid the sidecar being marked as failed, "
             "allow for some time to pass before declaring it failed."
         ),
-    )
-
-    #
-    # DEVELOPMENT ONLY config
-    #
-
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_IGNORE_SERVICES_SHUTDOWN_WHEN_CREDITS_LIMIT_REACHED: bool = Field(
-        default=True,
-        description=(
-            "when the message indicating there are no more credits left in a wallet "
-            "the director-v2 will shutdown services if True"
-        ),
-    )
-
-    DYNAMIC_SIDECAR_DOCKER_NODE_CONCURRENT_RESOURCE_SLOTS: PositiveInt = Field(
-        2, description="Amount of slots per resource on a node"
     )

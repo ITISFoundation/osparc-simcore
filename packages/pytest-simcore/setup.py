@@ -5,21 +5,21 @@ from setuptools import find_packages, setup
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-SETUP = dict(
-    name="pytest-simcore",
-    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
-    author=", ".join(
+SETUP = {
+    "name": "pytest-simcore",
+    "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
+    "author": ", ".join(
         (
             "Pedro Crespo-Valero (pcrespov)",
             "Sylvain Anderegg (sanderegg)",
         )
     ),
-    description="pytest plugin with fixtures and test helpers for osparc-simcore repo modules",
-    py_modules=["pytest_simcore"],
+    "description": "pytest plugin with fixtures and test helpers for osparc-simcore repo modules",
+    "py_modules": ["pytest_simcore"],
     # WARNING: this is used in frozen services as well !!!!
-    python_requires=">=3.6",
-    install_requires=["pytest>=3.5.0"],
-    extras_require={
+    "python_requires": ">=3.6",
+    "install_requires": ["pytest>=3.5.0"],
+    "extras_require": {
         "all": [
             "aio-pika",
             "aiohttp",
@@ -33,9 +33,9 @@ SETUP = dict(
             "yarl",
         ],
     },
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
-    classifiers=[
+    "packages": find_packages(where="src"),
+    "package_dir": {"": "src"},
+    "classifiers": [
         "Development Status :: 4 - Beta",
         "Framework :: Pytest",
         "Intended Audience :: Developers",
@@ -43,8 +43,8 @@ SETUP = dict(
         "Operating System :: OS Independent",
         "License :: OSI Approved :: MIT License",
     ],
-    entry_points={"pytest11": ["simcore = pytest_simcore"]},
-)
+    "entry_points": {"pytest11": ["simcore = pytest_simcore"]},
+}
 
 
 if __name__ == "__main__":

@@ -10,9 +10,9 @@
 --requirement _test.txt
 
 # installs this repo's packages
-../../packages/models-library/
-../../packages/postgres-database/[migration]
-../../packages/pytest-simcore/
-../../packages/service-library/
-../../packages/settings-library/
-../../packages/simcore-sdk/
+simcore-models-library @ ../../packages/models-library/
+simcore-postgres-database[migration] @ ../../packages/postgres-database/
+pytest-simcore @ ../../packages/pytest-simcore/
+simcore-service-library @ ../../packages/service-library/
+simcore-settings-library @ ../../packages/settings-library/
+simcore-sdk @ ../../packages/simcore-sdk/

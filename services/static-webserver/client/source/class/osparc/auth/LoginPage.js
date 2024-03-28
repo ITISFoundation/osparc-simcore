@@ -53,7 +53,9 @@ qx.Class.define("osparc.auth.LoginPage", {
           break;
         }
         case "top-spacer":
-          control = new qx.ui.core.Spacer();
+          control = new qx.ui.core.Spacer().set({
+            minHeight: 50
+          });
           this.getChildControl("main-layout").add(control, {
             flex: 1
           });
@@ -67,16 +69,29 @@ qx.Class.define("osparc.auth.LoginPage", {
           control.setFont("text-18");
           this.getChildControl("main-layout").add(control);
           break;
-        case "pages-stack":
-          control = new qx.ui.container.Stack().set({
-            allowGrowX: false,
-            allowGrowY: false,
-            alignX: "center"
+        case "science-text-image":
+          control = new qx.ui.basic.Image("osparc/Sim4Life_science_Subline.svg").set({
+            width: 300,
+            height: 24,
+            scale: true,
+            alignX: "center",
+            marginTop: -25
           });
           this.getChildControl("main-layout").add(control);
           break;
+        case "pages-stack":
+          control = new qx.ui.container.Stack().set({
+            allowGrowX: false,
+            alignX: "center"
+          });
+          this.getChildControl("main-layout").add(control, {
+            flex: 1
+          });
+          break;
         case "bottom-spacer":
-          control = new qx.ui.core.Spacer();
+          control = new qx.ui.core.Spacer().set({
+            minHeight: 50
+          });
           this.getChildControl("main-layout").add(control, {
             flex: 1
           });
@@ -133,8 +148,8 @@ qx.Class.define("osparc.auth.LoginPage", {
       this.getContentElement().setStyles({
         "background-image": backgroundImage,
         "background-repeat": "no-repeat",
-        "background-size": "contain", // auto width, 85% height
-        "background-position": "0% 100%" // left bottom
+        "background-size": "65% auto, 80% auto", // auto width, 85% height
+        "background-position": "left bottom, left -440px bottom -230px" // left bottom
       });
     },
 
@@ -148,6 +163,9 @@ qx.Class.define("osparc.auth.LoginPage", {
       const mainLayout = this.getChildControl("main-layout");
       this.getChildControl("top-spacer");
       this.getChildControl("logo-w-platform");
+      if (osparc.product.Utils.isProduct("s4lacad")) {
+        this.getChildControl("science-text-image");
+      }
       this.__getLoginStack();
       this.getChildControl("bottom-spacer");
       this.getChildControl("footer");
@@ -327,7 +345,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         textColor: "text-darker"
       });
       const vendor = osparc.store.VendorInfo.getInstance().getVendor();
-      if (vendor) {
+      if (vendor && "url" in vendor && "copyright" in vendor) {
         organizationLink.set({
           value: vendor.copyright,
           url: vendor.url

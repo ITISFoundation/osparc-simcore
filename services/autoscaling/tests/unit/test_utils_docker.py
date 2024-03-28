@@ -12,24 +12,35 @@ from typing import Any
 
 import aiodocker
 import pytest
-from aws_library.ec2.models import Resources
+from aws_library.ec2.models import EC2InstanceData, Resources
 from deepdiff import DeepDiff
 from faker import Faker
-from models_library.docker import DockerGenericTag, DockerLabelKey
+from models_library.docker import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    DockerGenericTag,
+    DockerLabelKey,
+)
 from models_library.generated_models.docker_rest_api import (
     Availability,
     NodeDescription,
+    NodeSpec,
     NodeState,
+    NodeStatus,
     Service,
     Task,
 )
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
+from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.utils.utils_docker import (
+    _OSPARC_SERVICE_READY_LABEL_KEY,
+    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
     Node,
     _by_created_dt,
+    attach_node,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
     compute_node_used_resources,
@@ -40,10 +51,15 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
     get_monitored_nodes,
+    get_new_node_docker_tags,
     get_node_total_resources,
     get_worker_nodes,
+    is_node_osparc_ready,
+    is_node_ready_and_available,
     pending_service_tasks_with_insufficient_resources,
     remove_nodes,
+    set_node_availability,
+    set_node_osparc_ready,
     tag_node,
 )
 
@@ -118,7 +134,13 @@ async def test_get_monitored_nodes_with_valid_label(
     create_node_labels: Callable[[list[str]], Awaitable[None]],
 ):
     labels = faker.pylist(allowed_types=(str,))
-    await create_node_labels(labels)
+    await create_node_labels(
+        [
+            *labels,
+            _OSPARC_SERVICE_READY_LABEL_KEY,
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
+        ]
+    )
     monitored_nodes = await get_monitored_nodes(autoscaling_docker, node_labels=labels)
     assert len(monitored_nodes) == 1
 
@@ -334,7 +356,7 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
 
     # start a service with a part of the labels, we should not find it
     partial_service_labels = dict(itertools.islice(service_labels.items(), 2))
-    _service_with_partial_labels = await create_service(
+    await create_service(
         task_template_with_too_many_resource, partial_service_labels, "pending"
     )
 
@@ -890,6 +912,52 @@ async def test_tag_node_out_of_sequence_error(
     assert updated_node2.Version.Index > updated_node.Version.Index
 
 
+async def test_set_node_availability(
+    autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker
+):
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
+    updated_node = await set_node_availability(
+        autoscaling_docker, host_node, available=False
+    )
+    assert is_node_ready_and_available(updated_node, availability=Availability.drain)
+    updated_node = await set_node_availability(
+        autoscaling_docker, host_node, available=True
+    )
+    assert is_node_ready_and_available(updated_node, availability=Availability.active)
+
+
+def test_get_new_node_docker_tags(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_dynamic_service_background_task: None,
+    app_settings: ApplicationSettings,
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+):
+    ec2_instance_data = fake_ec2_instance_data()
+    node_docker_tags = get_new_node_docker_tags(app_settings, ec2_instance_data)
+    assert node_docker_tags
+    assert DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY in node_docker_tags
+    assert app_settings.AUTOSCALING_NODES_MONITORING
+    for (
+        tag_key
+    ) in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS:
+        assert tag_key in node_docker_tags
+    for (
+        tag_key
+    ) in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS:
+        assert tag_key in node_docker_tags
+
+    all_keys = [
+        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+        *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
+        *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+    ]
+    for tag_key in node_docker_tags:
+        assert tag_key in all_keys
+
+
 @pytest.mark.parametrize(
     "images, expected_cmd",
     [
@@ -943,3 +1011,125 @@ def test_get_docker_pull_images_crontab(
     interval: datetime.timedelta, expected_cmd: str
 ):
     assert get_docker_pull_images_crontab(interval) == expected_cmd
+
+
+def test_is_node_ready_and_available(create_fake_node: Callable[..., Node]):
+    # check not ready state return false
+    for node_status in [
+        NodeStatus(State=s, Message=None, Addr=None)
+        for s in NodeState
+        if s is not NodeState.ready
+    ]:
+        fake_node = create_fake_node(Status=node_status)
+        assert not is_node_ready_and_available(
+            fake_node, availability=Availability.drain
+        )
+
+    node_ready_status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
+    fake_drained_node = create_fake_node(
+        Status=node_ready_status,
+        Spec=NodeSpec(
+            Name=None,
+            Labels=None,
+            Role=None,
+            Availability=Availability.drain,
+        ),
+    )
+    assert is_node_ready_and_available(
+        fake_drained_node, availability=Availability.drain
+    )
+    assert not is_node_ready_and_available(
+        fake_drained_node, availability=Availability.active
+    )
+    assert not is_node_ready_and_available(
+        fake_drained_node, availability=Availability.pause
+    )
+
+
+def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Faker):
+    fake_node = create_fake_node()
+    assert fake_node.Spec
+    assert fake_node.Spec.Availability is Availability.drain
+    # no labels, not ready and drained
+    assert not is_node_osparc_ready(fake_node)
+    # no labels, not ready, but active
+    fake_node.Spec.Availability = Availability.active
+    assert not is_node_osparc_ready(fake_node)
+    # no labels, ready and active
+    fake_node.Status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
+    assert not is_node_osparc_ready(fake_node)
+    # add some random labels
+    assert fake_node.Spec
+    fake_node.Spec.Labels = faker.pydict(allowed_types=(str,))
+    assert not is_node_osparc_ready(fake_node)
+    # add the expected label
+    fake_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
+    assert not is_node_osparc_ready(fake_node)
+    # make it ready
+    fake_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
+    assert is_node_osparc_ready(fake_node)
+
+
+async def test_set_node_osparc_ready(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_dynamic_service_background_task: None,
+    app_settings: ApplicationSettings,
+    autoscaling_docker: AutoscalingDocker,
+    host_node: Node,
+):
+    # initial state
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
+    # set the node to drain
+    updated_node = await set_node_availability(
+        autoscaling_docker, host_node, available=False
+    )
+    assert is_node_ready_and_available(updated_node, availability=Availability.drain)
+    # the node is also not osparc ready
+    assert not is_node_osparc_ready(updated_node)
+
+    # this implicitely make the node active as well
+    updated_node = await set_node_osparc_ready(
+        app_settings, autoscaling_docker, host_node, ready=True
+    )
+    assert is_node_ready_and_available(updated_node, availability=Availability.active)
+    assert is_node_osparc_ready(updated_node)
+    # make it not osparc ready
+    updated_node = await set_node_osparc_ready(
+        app_settings, autoscaling_docker, host_node, ready=False
+    )
+    assert not is_node_osparc_ready(updated_node)
+    assert is_node_ready_and_available(updated_node, availability=Availability.drain)
+
+
+async def test_attach_node(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_dynamic_service_background_task: None,
+    app_settings: ApplicationSettings,
+    autoscaling_docker: AutoscalingDocker,
+    host_node: Node,
+    faker: Faker,
+):
+    # initial state
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
+    # set the node to drain
+    updated_node = await set_node_availability(
+        autoscaling_docker, host_node, available=False
+    )
+    assert is_node_ready_and_available(updated_node, availability=Availability.drain)
+    # now attach the node
+    updated_node = await attach_node(
+        app_settings,
+        autoscaling_docker,
+        updated_node,
+        tags=faker.pydict(allowed_types=(str,)),
+    )
+    # expected the node to be active
+    assert is_node_ready_and_available(host_node, availability=Availability.active)
+    # but not osparc ready
+    assert not is_node_osparc_ready(updated_node)

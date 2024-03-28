@@ -1,6 +1,7 @@
+from collections.abc import Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, NonNegativeInt, SecretStr, parse_obj_as
@@ -110,9 +111,6 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    # DEBUGGING
-    API_SERVER_REMOTE_DEBUG_PORT: int = 3000
-
     @validator("LOG_LEVEL", pre=True)
     @classmethod
     def _validate_loglevel(cls, value) -> str:
@@ -137,7 +135,7 @@ class ApplicationSettings(BasicSettings):
     API_SERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
         auto_default_from_env=True
     )
-    API_SERVER_MAX_LOG_CHECK_SECONDS: NonNegativeInt = 30
+    API_SERVER_LOG_CHECK_TIMEOUT_SECONDS: NonNegativeInt = 3 * 60
     API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     # DEV-TOOLS
     API_SERVER_DEV_HTTP_CALLS_LOGS_PATH: Path | None = Field(
@@ -164,11 +162,12 @@ class ApplicationSettings(BasicSettings):
             if (
                 values
                 and (boot_mode := values.get("SC_BOOT_MODE"))
-                and boot_mode.is_devel_mode()
+                and not boot_mode.is_devel_mode()
             ):
-                raise ValueError(
+                error_message = (
                     "API_SERVER_DEV_HTTP_CALLS_LOGS_PATH only allowed in devel mode"
                 )
+                raise ValueError(error_message)
 
         return v
 

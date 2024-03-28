@@ -16,6 +16,7 @@ def test_mixing_service_settings_usage(monkeypatch):
         MY_HOST: str = "example.com"
         MY_PORT: PortInt = 8000
         MY_VTAG: VersionTag | None = None
+        MY_SECURE: bool = False
 
         # optional
         MY_USER: str | None
@@ -59,3 +60,12 @@ def test_mixing_service_settings_usage(monkeypatch):
     assert settings.api_base_url == "http://me:secret@example.com:8000/v9"
     assert settings.base_url == "http://me:secret@example.com:8000"
     assert settings.origin_url == "http://example.com"
+
+    # -----------
+
+    monkeypatch.setenv("MY_SECURE", "1")
+    settings = MySettings.create_from_envs()
+
+    assert settings.api_base_url == "https://me:secret@example.com:8000/v9"
+    assert settings.base_url == "https://me:secret@example.com:8000"
+    assert settings.origin_url == "https://example.com"

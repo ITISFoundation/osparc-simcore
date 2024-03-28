@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "simcore-service-payments web API",
-    "description": " Service that manages creation and validation of registration payments",
+    "description": "Service that manages creation and validation of registration payments",
     "version": "1.4.0"
   },
   "paths": {
@@ -234,6 +234,28 @@
             "format": "uri",
             "title": "Invoice Url",
             "description": "Link to invoice is required when success=true"
+          },
+          "invoice_pdf": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Invoice Pdf",
+            "description": "Link to invoice PDF"
+          },
+          "stripe_invoice_id": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Stripe Invoice Id",
+            "description": "Stripe invoice ID"
+          },
+          "stripe_customer_id": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Stripe Customer Id",
+            "description": "Stripe customer ID"
           },
           "saved": {
             "allOf": [

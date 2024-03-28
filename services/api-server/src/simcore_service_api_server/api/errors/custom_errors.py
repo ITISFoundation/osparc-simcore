@@ -1,7 +1,6 @@
 import logging
-from urllib.request import Request
 
-from fastapi import status
+from fastapi import Request, status
 from servicelib.error_codes import create_error_code
 from starlette.responses import JSONResponse
 

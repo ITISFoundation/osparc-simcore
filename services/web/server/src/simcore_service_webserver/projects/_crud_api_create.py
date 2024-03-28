@@ -23,7 +23,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from ..application_settings import get_settings
+from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api
 from ..storage.api import (
@@ -67,7 +67,7 @@ async def _prepare_project_copy(
         project_uuid=f"{src_project_uuid}",
         user_id=user_id,
     )
-    settings = get_settings(app).WEBSERVER_PROJECTS
+    settings = get_application_settings(app).WEBSERVER_PROJECTS
     assert settings  # nosec
     if max_bytes := settings.PROJECTS_MAX_COPY_SIZE_BYTES:
         # get project total data size
@@ -283,6 +283,9 @@ async def create_project(
             hidden=copy_data,
             project_nodes=project_nodes,
         )
+        task_progress.update(
+            message=f"inserted project {new_project['uuid']=} into the db"
+        )
 
         # 4. deep copy source project's files
         if copy_file_coro:
@@ -297,6 +300,7 @@ async def create_project(
         await api.update_dynamic_service_networks_in_project(
             request.app, ProjectID(new_project["uuid"])
         )
+        task_progress.update(message="updated network information in directorv2")
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await api.create_or_update_pipeline(
@@ -313,6 +317,7 @@ async def create_project(
             is_template=as_template,
             app=request.app,
         )
+        task_progress.update(message=f"appended state to {new_project['uuid']}")
 
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)

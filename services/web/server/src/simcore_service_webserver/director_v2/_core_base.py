@@ -14,6 +14,7 @@ from typing import Any, Union
 
 import aiohttp
 from aiohttp import ClientSession, ClientTimeout, web
+from servicelib.aiohttp import status
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -106,14 +107,14 @@ async def request_director_v2(
 
     except asyncio.TimeoutError as err:
         raise DirectorServiceError(
-            status=web.HTTPServiceUnavailable.status_code,
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
             reason=f"request to director-v2 timed-out: {err}",
             url=url,
         ) from err
 
     except aiohttp.ClientError as err:
         raise DirectorServiceError(
-            status=web.HTTPServiceUnavailable.status_code,
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
             reason=f"request to director-v2 service unexpected error {err}",
             url=url,
         ) from err

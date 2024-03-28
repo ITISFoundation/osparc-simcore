@@ -1,29 +1,19 @@
 import asyncio
-import base64
-import json
 import logging
 import os
 import signal
 import time
 from asyncio.subprocess import Process
-from pathlib import Path
 from typing import NamedTuple
 
-import httpx
 import psutil
 from servicelib.error_codes import create_error_code
-from settings_library.docker_registry import RegistrySettings
-from starlette import status
-from tenacity import retry
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from ..modules.mounted_fs import MountedVolumes
 
 HIDDEN_FILE_NAME = ".hidden_do_not_remove"
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class CommandResult(NamedTuple):
@@ -36,68 +26,6 @@ class CommandResult(NamedTuple):
         return (
             f"'{self.command}' finished_ok='{self.success}' "
             f"elapsed='{self.elapsed}'\n{self.message}"
-        )
-
-
-class _RegistryNotReachableError(Exception):
-    pass
-
-
-@retry(
-    wait=wait_fixed(1),
-    stop=stop_after_delay(10),
-    before_sleep=before_sleep_log(logger, logging.INFO),
-    reraise=True,
-)
-async def _is_registry_reachable(registry_settings: RegistrySettings) -> None:
-    async with httpx.AsyncClient() as client:
-        params = {}
-        if registry_settings.REGISTRY_AUTH:
-            params["auth"] = (
-                registry_settings.REGISTRY_USER,
-                registry_settings.REGISTRY_PW.get_secret_value(),
-            )
-
-        protocol = "https" if registry_settings.REGISTRY_SSL else "http"
-        url = f"{protocol}://{registry_settings.api_url}/"
-
-        logging.info("Registry test url ='%s'", url)
-        response = await client.get(url, **params)
-        reachable = response.status_code == status.HTTP_200_OK and response.json() == {}
-        if not reachable:
-            logger.error("Response: %s", response)
-            error_message = (
-                f"Could not reach registry {registry_settings.api_url} "
-                f"auth={registry_settings.REGISTRY_AUTH}"
-            )
-            raise _RegistryNotReachableError(error_message)
-
-
-async def login_registry(registry_settings: RegistrySettings) -> None:
-    """
-    Creates ~/.docker/config.json and adds docker registry credentials
-    """
-    await _is_registry_reachable(registry_settings)
-
-    def create_docker_config_file(registry_settings: RegistrySettings) -> None:
-        user = registry_settings.REGISTRY_USER
-        password = registry_settings.REGISTRY_PW.get_secret_value()
-        docker_config = {
-            "auths": {
-                f"{registry_settings.resolved_registry_url}": {
-                    "auth": base64.b64encode(f"{user}:{password}".encode()).decode(
-                        "utf-8"
-                    )
-                }
-            }
-        }
-        conf_file = Path.home() / ".docker" / "config.json"
-        conf_file.parent.mkdir(exist_ok=True, parents=True)
-        conf_file.write_text(json.dumps(docker_config))
-
-    if registry_settings.REGISTRY_AUTH:
-        await asyncio.get_event_loop().run_in_executor(
-            None, create_docker_config_file, registry_settings
         )
 
 
@@ -164,7 +92,7 @@ async def async_command(
         assert await proc.wait() == -signal.SIGTERM  # nosec
         assert not psutil.pid_exists(proc.pid)  # nosec
 
-        logger.warning(
+        _logger.warning(
             "Process %s timed out after %ss",
             f"{command=!r}",
             f"{timeout=}",
@@ -178,7 +106,7 @@ async def async_command(
 
     except Exception as err:  # pylint: disable=broad-except
         error_code = create_error_code(err)
-        logger.exception(
+        _logger.exception(
             "Process with %s failed unexpectedly [%s]",
             f"{command=!r}",
             f"{error_code}",

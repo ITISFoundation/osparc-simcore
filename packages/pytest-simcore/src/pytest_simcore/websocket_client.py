@@ -8,9 +8,9 @@ from uuid import uuid4
 
 import pytest
 import socketio
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from yarl import URL
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ async def security_cookie_factory(
     async def _create(client_override: TestClient | None = None) -> str:
         # get the cookie by calling the root entrypoint
         resp = await (client_override or client).get("/v0/")
-        data, error = await assert_status(resp, web.HTTPOk)
+        data, error = await assert_status(resp, status.HTTP_200_OK)
         assert data
         assert not error
 
@@ -99,5 +99,5 @@ async def socketio_client_factory(
             await sio.disconnect()
             await sio.wait()
             print(f"... disconnection from {sio} done.")
-
+            assert not sio.connected
         assert not sio.sid

@@ -194,7 +194,9 @@ async def test_start_aws_instance(
 
     # let's create a first reservation and check that it is correctly created in EC2
     await simcore_ec2_api.start_aws_instance(
-        ec2_instance_config, number_of_instances=number_of_instances
+        ec2_instance_config,
+        min_number_of_instances=number_of_instances,
+        number_of_instances=number_of_instances,
     )
     await _assert_instances_in_ec2(
         ec2_client,
@@ -207,7 +209,9 @@ async def test_start_aws_instance(
 
     # create a second reservation
     await simcore_ec2_api.start_aws_instance(
-        ec2_instance_config, number_of_instances=number_of_instances
+        ec2_instance_config,
+        min_number_of_instances=number_of_instances,
+        number_of_instances=number_of_instances,
     )
     await _assert_instances_in_ec2(
         ec2_client,
@@ -232,8 +236,9 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     with pytest.raises(EC2TooManyInstancesError):
         await simcore_ec2_api.start_aws_instance(
             ec2_instance_config,
+            min_number_of_instances=max_num_instances + 1,
             number_of_instances=max_num_instances + 1,
-            max_number_of_instances=max_num_instances,
+            max_total_number_of_instances=max_num_instances,
         )
     await _assert_no_instances_in_ec2(ec2_client)
 
@@ -241,8 +246,9 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     for _ in range(max_num_instances):
         await simcore_ec2_api.start_aws_instance(
             ec2_instance_config,
+            min_number_of_instances=1,
             number_of_instances=1,
-            max_number_of_instances=max_num_instances,
+            max_total_number_of_instances=max_num_instances,
         )
     await _assert_instances_in_ec2(
         ec2_client,
@@ -257,8 +263,9 @@ async def test_start_aws_instance_is_limited_in_number_of_instances(
     with pytest.raises(EC2TooManyInstancesError):
         await simcore_ec2_api.start_aws_instance(
             ec2_instance_config,
+            min_number_of_instances=1,
             number_of_instances=1,
-            max_number_of_instances=max_num_instances,
+            max_total_number_of_instances=max_num_instances,
         )
     await _assert_instances_in_ec2(
         ec2_client,
@@ -289,7 +296,9 @@ async def test_get_instances(
     _MAX_NUM_INSTANCES = 10
     num_instances = faker.pyint(min_value=1, max_value=_MAX_NUM_INSTANCES)
     created_instances = await simcore_ec2_api.start_aws_instance(
-        ec2_instance_config, number_of_instances=num_instances
+        ec2_instance_config,
+        min_number_of_instances=num_instances,
+        number_of_instances=num_instances,
     )
     await _assert_instances_in_ec2(
         ec2_client,
@@ -344,7 +353,9 @@ async def test_terminate_instance(
     _NUM_INSTANCES = 10
     num_instances = faker.pyint(min_value=1, max_value=_NUM_INSTANCES)
     created_instances = await simcore_ec2_api.start_aws_instance(
-        ec2_instance_config, number_of_instances=num_instances
+        ec2_instance_config,
+        min_number_of_instances=num_instances,
+        number_of_instances=num_instances,
     )
     await _assert_instances_in_ec2(
         ec2_client,
@@ -398,7 +409,9 @@ async def test_set_instance_tags(
     _MAX_NUM_INSTANCES = 10
     num_instances = faker.pyint(min_value=1, max_value=_MAX_NUM_INSTANCES)
     created_instances = await simcore_ec2_api.start_aws_instance(
-        ec2_instance_config, number_of_instances=num_instances
+        ec2_instance_config,
+        min_number_of_instances=num_instances,
+        number_of_instances=num_instances,
     )
     await _assert_instances_in_ec2(
         ec2_client,

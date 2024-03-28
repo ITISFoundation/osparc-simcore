@@ -5,7 +5,6 @@
 
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContent,
@@ -16,6 +15,7 @@ from pydantic import HttpUrl
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.invitations.api import generate_invitation
 from simcore_service_webserver.login.handlers_registration import (
@@ -50,7 +50,7 @@ async def test_check_registration_invitation_when_not_required(
         "/v0/auth/register/invitations:check",
         json=InvitationCheck(invitation="*" * 100).dict(),
     )
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
 
     invitation = InvitationInfo.parse_obj(data)
     assert invitation.email is None
@@ -72,7 +72,7 @@ async def test_check_registration_invitations_with_old_code(
         "/v0/auth/register/invitations:check",
         json=InvitationCheck(invitation="short-code").dict(),
     )
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
 
     invitation = InvitationInfo.parse_obj(data)
     assert invitation.email is None
@@ -98,7 +98,7 @@ async def test_check_registration_invitation_and_get_email(
         "/v0/auth/register/invitations:check",
         json=InvitationCheck(invitation="*" * 105).dict(),
     )
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
 
     invitation = InvitationInfo.parse_obj(data)
     assert invitation.email == fake_osparc_invitation.guest
@@ -162,16 +162,16 @@ async def test_registration_to_different_product(
 
     # CAN register for product A in deploy of product A
     response = await _register_account(invitation_product_a.invitation_url, product_a)
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
 
     # CANNOT register in product B in deploy of product A
     response = await _register_account(invitation_product_b.invitation_url, product_a)
-    await assert_status(response, web.HTTPConflict)
+    await assert_status(response, status.HTTP_409_CONFLICT)
 
     # CAN register for product B in deploy of product B
     response = await _register_account(invitation_product_b.invitation_url, product_b)
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
 
     # CANNOT re-register in product
     response = await _register_account(invitation_product_b.invitation_url, product_b)
-    await assert_status(response, web.HTTPConflict)
+    await assert_status(response, status.HTTP_409_CONFLICT)

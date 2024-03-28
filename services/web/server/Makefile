@@ -6,7 +6,7 @@ include ../../../scripts/common-service.Makefile
 
 # overrides since it does not has same directory name
 APP_NAME := webserver
-
+PY_PACKAGE_NAME := simcore_service_webserver
 
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)

@@ -2,7 +2,9 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+
 from collections.abc import AsyncIterator
+from http import HTTPStatus
 from typing import Any
 
 import pytest
@@ -14,6 +16,7 @@ from models_library.users import UserID
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, UserInfoDict
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_service_webserver.users._preferences_models import ALL_FRONTEND_PREFERENCES
 
@@ -55,16 +58,16 @@ async def _request_set_frontend_preference(
 @pytest.mark.parametrize(
     "user_role, expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPNoContent),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_204_NO_CONTENT),
+        (UserRole.USER, status.HTTP_204_NO_CONTENT),
+        (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
     ],
 )
 async def test_set_frontend_preference_expected_access_rights_response(
     logged_user: UserInfoDict,
     client: TestClient,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     user_role: UserRole,
     drop_all_preferences: None,
 ):
@@ -95,7 +98,7 @@ async def test_set_frontend_preference(
         frontend_preference.preference_identifier,
         frontend_preference.get_default_value(),
     )
-    data, error = await assert_status(resp, web.HTTPNoContent)
+    data, error = await assert_status(resp, status.HTTP_204_NO_CONTENT)
     assert data is None
     assert error is None
 
@@ -110,5 +113,5 @@ async def test_set_frontend_preference_not_found(
     resp = await _request_set_frontend_preference(
         client, "__undefined_preference_identifier__", None
     )
-    _, error = await assert_status(resp, web.HTTPNotFound)
+    _, error = await assert_status(resp, status.HTTP_404_NOT_FOUND)
     assert "not found" in error["message"]

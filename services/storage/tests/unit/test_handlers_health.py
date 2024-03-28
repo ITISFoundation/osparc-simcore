@@ -4,12 +4,12 @@
 
 
 import simcore_service_storage._meta
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_storage import S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from moto.server import ThreadedMotoServer
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from simcore_service_storage.handlers_health import HealthCheck
 from simcore_service_storage.s3_client import StorageS3Client
 
@@ -21,7 +21,7 @@ async def test_health_check(client: TestClient):
     assert client.app
     url = client.app.router["health_check"].url_for()
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
 
@@ -34,7 +34,7 @@ async def test_health_status(client: TestClient):
     assert client.app
     url = client.app.router["get_status"].url_for()
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
 
@@ -58,7 +58,7 @@ async def test_bad_health_status_if_bucket_missing(
     assert client.app
     url = client.app.router["get_status"].url_for()
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
     app_status_check = AppStatusCheck.parse_obj(data)
@@ -67,7 +67,7 @@ async def test_bad_health_status_if_bucket_missing(
     await storage_s3_client.client.delete_bucket(Bucket=storage_s3_bucket)
     # check again the health
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
     app_status_check = AppStatusCheck.parse_obj(data)
@@ -80,7 +80,7 @@ async def test_bad_health_status_if_s3_server_missing(
     assert client.app
     url = client.app.router["get_status"].url_for()
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
     app_status_check = AppStatusCheck.parse_obj(data)
@@ -89,7 +89,7 @@ async def test_bad_health_status_if_s3_server_missing(
     mocked_aws_server.stop()
     # check again the health
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
     app_status_check = AppStatusCheck.parse_obj(data)
@@ -98,7 +98,7 @@ async def test_bad_health_status_if_s3_server_missing(
     mocked_aws_server.start()
     # should be good again
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert data
     assert not error
     app_status_check = AppStatusCheck.parse_obj(data)

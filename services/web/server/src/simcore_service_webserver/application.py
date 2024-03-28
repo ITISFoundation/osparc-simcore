@@ -12,7 +12,7 @@ from ._meta import WELCOME_DB_LISTENER_MSG, WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
 from .announcements.plugin import setup_announcements
 from .api_keys.plugin import setup_api_keys
-from .application_settings import get_settings, setup_settings
+from .application_settings import get_application_settings, setup_settings
 from .catalog.plugin import setup_catalog
 from .clusters.plugin import setup_clusters
 from .db.plugin import setup_db
@@ -35,7 +35,6 @@ from .projects.plugin import setup_projects
 from .publications.plugin import setup_publications
 from .rabbitmq import setup_rabbitmq
 from .redis import setup_redis
-from .remote_debug import setup_remote_debugging
 from .resource_manager.plugin import setup_resource_manager
 from .resource_usage.plugin import setup_resource_tracker
 from .rest.plugin import setup_rest
@@ -56,7 +55,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _welcome_banner(app: web.Application):
-    settings = get_settings(app)
+    settings = get_application_settings(app)
     print(WELCOME_MSG, flush=True)  # noqa: T201
     if settings.WEBSERVER_GARBAGE_COLLECTOR:
         print("with", WELCOME_GC_MSG, flush=True)  # noqa: T201
@@ -78,8 +77,6 @@ def create_application() -> web.Application:
 
     # WARNING: setup order matters
     # NOTE: compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
-
-    setup_remote_debugging(app)
 
     # core modules
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware

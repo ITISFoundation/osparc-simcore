@@ -18,4 +18,4 @@
 --editable ../pytest-simcore/
 
 # current module
---editable ."[fastapi]"
+--editable .[fastapi]

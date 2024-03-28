@@ -6,6 +6,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
 from pydantic import Field
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -125,7 +126,7 @@ async def resend_2fa_code(request: web.Request):
                         phone_number=mask_phone_number(user["phone"])
                     ),
                 },
-                status=web.HTTPOk.status_code,
+                status=status.HTTP_200_OK,
             )
 
         # sends via Email
@@ -137,13 +138,14 @@ async def resend_2fa_code(request: web.Request):
                 support_email=product.support_email,
                 code=code,
                 first_name=user["first_name"] or user["name"],
+                product=product,
             )
 
             response = envelope_response(
                 {
                     "reason": MSG_EMAIL_SENT.format(email=user["email"]),
                 },
-                status=web.HTTPOk.status_code,
+                status=status.HTTP_200_OK,
             )
 
         return response

@@ -14,12 +14,11 @@
 # make install-dev
 # make python-client
 #
---editable ../../services/api-server/client
-
 
 # installs base + tests requirements
+--requirement _base.txt
 --requirement _test.txt
 --requirement _tools.txt
 
-# installs this repo's packages
+--editable ../../packages/settings-library/
 --editable ../../packages/pytest-simcore/

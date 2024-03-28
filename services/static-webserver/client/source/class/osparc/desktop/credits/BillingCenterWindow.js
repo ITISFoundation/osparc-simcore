@@ -22,7 +22,7 @@ qx.Class.define("osparc.desktop.credits.BillingCenterWindow", {
     const caption = this.tr("Billing Center");
     this.base(arguments, "credits", caption);
 
-    const viewWidth = 1000;
+    const viewWidth = 1035;
     const viewHeight = 700;
 
     this.set({

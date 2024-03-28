@@ -1,8 +1,6 @@
 from collections.abc import Iterator
 from datetime import datetime, timedelta, timezone
-from unittest import mock
 
-import httpx
 import pytest
 import sqlalchemy as sa
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
@@ -25,8 +23,6 @@ from simcore_postgres_database.models.resource_tracker_credit_transactions impor
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
-from starlette import status
-from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -99,26 +95,6 @@ def resource_tracker_setup_db(
 
         con.execute(resource_tracker_credit_transactions.delete())
         con.execute(resource_tracker_service_runs.delete())
-
-
-async def test_list_service_runs_which_was_billed(
-    mocked_redis_server: None,
-    mocked_setup_rabbitmq: mock.Mock,
-    postgres_db: sa.engine.Engine,
-    resource_tracker_setup_db: dict,
-    async_client: httpx.AsyncClient,
-):
-    url = URL("/v1/services/-/usages")
-    response = await async_client.get(
-        f'{url.with_query({"product_name": "osparc", "user_id": _USER_ID})}'
-    )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert len(data["items"]) == 2
-    assert data["total"] == 2
-
-    assert data["items"][0]["credit_cost"] < 0
-    assert data["items"][0]["transaction_status"] in list(CreditTransactionStatus)
 
 
 @pytest.mark.rpc_test()

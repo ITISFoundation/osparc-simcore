@@ -11,6 +11,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Extra, ValidationError, validator
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
@@ -94,7 +95,7 @@ def _handle_errors_with_error_page(handler: Handler):
             raise _create_redirect_response_to_error_page(
                 request.app,
                 message=f"Sorry, we cannot dispatch your study: {err}",
-                status_code=web.HTTPUnprocessableEntity.status_code,  # 422
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,  # 422
             ) from err
 
         except web.HTTPUnauthorized as err:
@@ -108,7 +109,7 @@ def _handle_errors_with_error_page(handler: Handler):
             raise _create_redirect_response_to_error_page(
                 request.app,
                 message=f"Invalid parameters in link: {err.reason}",
-                status_code=web.HTTPUnprocessableEntity.status_code,  # 422
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,  # 422
             ) from err
 
         except web.HTTPClientError as err:
@@ -131,7 +132,7 @@ def _handle_errors_with_error_page(handler: Handler):
                 message=compose_support_error_msg(
                     msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
                 ),
-                status_code=500,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) from err
 
     return wrapper

@@ -26,6 +26,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.utils import logged_gather
 from settings_library.rabbit import RabbitSettings
+from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     DiskUsageMonitor,
@@ -46,21 +47,36 @@ pytest_simcore_core_services_selection = [
 @pytest.fixture
 def mock_environment(
     monkeypatch: pytest.MonkeyPatch,
-    mock_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
+    mock_environment: EnvVarsDict,
 ) -> EnvVarsDict:
-    setenvs_from_dict(
-        monkeypatch, {"DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": "true"}
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": "true",
+            "RABBIT_HOST": rabbit_service.RABBIT_HOST,
+            "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
+            "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
+            "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
+            "RABBIT_USER": rabbit_service.RABBIT_USER,
+        },
     )
-    return mock_environment
 
 
 @pytest.fixture
-async def app(mocker: MockerFixture, app: FastAPI) -> AsyncIterable[FastAPI]:
+async def app(
+    mock_environment: EnvVarsDict,
+    mock_registry_service: AsyncMock,
+    mock_storage_check: None,
+    mock_postgres_check: None,
+    mocker: MockerFixture,
+) -> AsyncIterable[FastAPI]:
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage._get_monitored_paths",
         return_value=[],
     )
+
+    app: FastAPI = create_app()
     async with LifespanManager(app):
         yield app
 

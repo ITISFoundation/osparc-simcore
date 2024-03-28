@@ -1,6 +1,7 @@
 import logging
 import re
 import urllib.parse
+from functools import partial
 from mimetypes import guess_type
 from typing import Literal
 from uuid import UUID
@@ -17,9 +18,11 @@ from starlette.datastructures import URL
 from ..core.settings import StorageSettings
 from ..models.schemas.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+from .service_exception_handling import service_exception_mapper
 
 _logger = logging.getLogger(__name__)
 
+_exception_mapper = partial(service_exception_mapper, "Storage")
 
 _FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 AccessRight = Literal["read", "write"]
@@ -49,6 +52,7 @@ class StorageApi(BaseServiceClientApi):
     #
     SIMCORE_S3_ID = 0
 
+    @_exception_mapper({})
     async def list_files(self, user_id: int) -> list[StorageFileMetaData]:
         """Lists metadata of all s3 objects name as api/* from a given user"""
 
@@ -63,10 +67,13 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        files_metadata = FileMetaDataArray(__root__=response.json()["data"] or [])
-        files: list[StorageFileMetaData] = files_metadata.__root__
+        files_metadata = Envelope[FileMetaDataArray].parse_raw(response.text).data
+        files: list[StorageFileMetaData] = (
+            [] if files_metadata is None else files_metadata.__root__
+        )
         return files
 
+    @_exception_mapper({})
     async def search_files(
         self,
         *,
@@ -91,11 +98,15 @@ class StorageApi(BaseServiceClientApi):
             "/simcore-s3/files/metadata:search",
             params={k: v for k, v in params.items() if v is not None},
         )
+        response.raise_for_status()
 
-        files_metadata = FileMetaDataArray(__root__=response.json()["data"] or [])
-        files: list[StorageFileMetaData] = files_metadata.__root__
+        files_metadata = Envelope[FileMetaDataArray].parse_raw(response.text).data
+        files: list[StorageFileMetaData] = (
+            [] if files_metadata is None else files_metadata.__root__
+        )
         return files
 
+    @_exception_mapper({})
     async def get_download_link(
         self, user_id: int, file_id: UUID, file_name: str
     ) -> AnyUrl:
@@ -105,11 +116,16 @@ class StorageApi(BaseServiceClientApi):
             f"/locations/{self.SIMCORE_S3_ID}/files/{object_path}",
             params={"user_id": str(user_id)},
         )
+        response.raise_for_status()
 
-        presigned_link: PresignedLink = PresignedLink.parse_obj(response.json()["data"])
+        presigned_link: PresignedLink | None = (
+            Envelope[PresignedLink].parse_raw(response.text).data
+        )
+        assert presigned_link is not None
         link: AnyUrl = presigned_link.link
         return link
 
+    @_exception_mapper({})
     async def delete_file(self, user_id: int, quoted_storage_file_id: str) -> None:
         response = await self.client.delete(
             f"/locations/{self.SIMCORE_S3_ID}/files/{quoted_storage_file_id}",
@@ -117,6 +133,7 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
+    @_exception_mapper({})
     async def get_upload_links(
         self, user_id: int, file_id: UUID, file_name: str
     ) -> FileUploadSchema:
@@ -129,7 +146,7 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        enveloped_data = Envelope[FileUploadSchema].parse_obj(response.json())
+        enveloped_data = Envelope[FileUploadSchema].parse_raw(response.text)
         assert enveloped_data.data  # nosec
         return enveloped_data.data
 
@@ -153,6 +170,7 @@ class StorageApi(BaseServiceClientApi):
             url = url.include_query_params(**query)
         return url
 
+    @_exception_mapper({})
     async def create_soft_link(
         self, user_id: int, target_s3_path: str, as_file_id: UUID
     ) -> File:
@@ -174,7 +192,8 @@ class StorageApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        stored_file_meta = StorageFileMetaData.parse_obj(response.json()["data"])
+        stored_file_meta = Envelope[StorageFileMetaData].parse_raw(response.text).data
+        assert stored_file_meta is not None
         file_meta: File = to_file_api_model(stored_file_meta)
         return file_meta
 

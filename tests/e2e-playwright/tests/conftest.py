@@ -5,6 +5,7 @@
 # pylint: disable=too-many-statements
 # pylint: disable=no-name-in-module
 
+import logging
 import os
 import random
 import re
@@ -14,6 +15,7 @@ import pytest
 from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from pydantic import AnyUrl, TypeAdapter
+from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import (
     AutoRegisteredUser,
     SocketIOEvent,
@@ -151,24 +153,25 @@ def register(
     user_password: str,
 ) -> Callable[[], AutoRegisteredUser]:
     def _do() -> AutoRegisteredUser:
-        print(
-            f"------> Registering in {product_url=} using {user_name=}/{user_password=}"
-        )
-        response = page.goto(f"{product_url}")
-        assert response
-        assert response.ok, response.body()
-        page.get_by_test_id("loginCreateAccountBtn").click()
-        user_email_box = page.get_by_test_id("registrationEmailFld")
-        user_email_box.click()
-        user_email_box.fill(user_name)
-        for pass_id in ["registrationPass1Fld", "registrationPass2Fld"]:
-            user_password_box = page.get_by_test_id(pass_id)
-            user_password_box.click()
-            user_password_box.fill(user_password)
-        with page.expect_response(re.compile(r"/auth/register")) as response_info:
-            page.get_by_test_id("registrationSubmitBtn").click()
-        assert response_info.value.ok, response_info.value.json()
-        return AutoRegisteredUser(user_email=user_name, password=user_password)
+        with log_context(
+            logging.INFO,
+            f"------> Registering in {product_url=} using {user_name=}/{user_password=}",
+        ):
+            response = page.goto(f"{product_url}")
+            assert response
+            assert response.ok, response.body()
+            page.get_by_test_id("loginCreateAccountBtn").click()
+            user_email_box = page.get_by_test_id("registrationEmailFld")
+            user_email_box.click()
+            user_email_box.fill(user_name)
+            for pass_id in ["registrationPass1Fld", "registrationPass2Fld"]:
+                user_password_box = page.get_by_test_id(pass_id)
+                user_password_box.click()
+                user_password_box.fill(user_password)
+            with page.expect_response(re.compile(r"/auth/register")) as response_info:
+                page.get_by_test_id("registrationSubmitBtn").click()
+            assert response_info.value.ok, response_info.value.json()
+            return AutoRegisteredUser(user_email=user_name, password=user_password)
 
     return _do
 
@@ -182,13 +185,16 @@ def log_in_and_out(
     auto_register: bool,
     register: Callable[[], AutoRegisteredUser],
 ) -> Iterator[WebSocket]:
-    print(
-        f"------> Opening {product_url=} using {user_name=}/{user_password=}/{auto_register=}"
-    )
-    response = page.goto(f"{product_url}")
-    assert response
-    assert response.ok, response.body()
-    print(f"-----> Opened {product_url=} successfully")
+    with log_context(
+        logging.INFO,
+        (
+            f"------> Opening {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
+            f"-----> Opened {product_url=} successfully",
+        ),
+    ):
+        response = page.goto(f"{product_url}")
+        assert response
+        assert response.ok, response.body()
 
     # In case the accept cookies or new release window shows up, we accept
     page.wait_for_timeout(2000)
@@ -204,18 +210,20 @@ def log_in_and_out(
         if auto_register:
             register()
         else:
-            print(
-                f"------> Logging in {product_url=} using {user_name=}/{user_password=}"
-            )
-            _user_email_box = page.get_by_test_id("loginUserEmailFld")
-            _user_email_box.click()
-            _user_email_box.fill(user_name)
-            _user_password_box = page.get_by_test_id("loginPasswordFld")
-            _user_password_box.click()
-            _user_password_box.fill(user_password)
-            with page.expect_response(re.compile(r"/login")) as response_info:
-                page.get_by_test_id("loginSubmitBtn").click()
-            assert response_info.value.ok, f"{response_info.value.json()}"
+            with log_context(
+                logging.INFO,
+                f"------> Logging in {product_url=} using {user_name=}/{user_password=}",
+            ):
+                _user_email_box = page.get_by_test_id("loginUserEmailFld")
+                _user_email_box.click()
+                _user_email_box.fill(user_name)
+                _user_password_box = page.get_by_test_id("loginPasswordFld")
+                _user_password_box.click()
+                _user_password_box.fill(user_password)
+                with page.expect_response(re.compile(r"/login")) as response_info:
+                    page.get_by_test_id("loginSubmitBtn").click()
+                assert response_info.value.ok, f"{response_info.value.json()}"
+
     ws = ws_info.value
     assert not ws.is_closed()
 
@@ -236,19 +244,25 @@ def log_in_and_out(
 
     yield ws
 
-    print(f"<------ Logging out of {product_url=} using {user_name=}/{user_password=}")
-    # click anywher to remove modal windows
-    page.click(
-        "body",
-        position={"x": 0, "y": 0},
-    )
-    page.get_by_test_id("userMenuBtn").click()
-    with page.expect_response(re.compile(r"/auth/logout")) as response_info:
-        page.get_by_test_id("userMenuLogoutBtn").click()
-    assert response_info.value.ok, f"{response_info.value.json()}"
-    # so we see the logout page
-    page.wait_for_timeout(500)
-    print(f"<------ Logged out of {product_url=} using {user_name=}/{user_password=}")
+    with log_context(
+        logging.INFO,
+        (
+            "<------ Logging out of %s",
+            "<------ Logged out of %s",
+        ),
+        f"{product_url=} using {user_name=}/{user_password=}",
+    ):
+        # click anywher to remove modal windows
+        page.click(
+            "body",
+            position={"x": 0, "y": 0},
+        )
+        page.get_by_test_id("userMenuBtn").click()
+        with page.expect_response(re.compile(r"/auth/logout")) as response_info:
+            page.get_by_test_id("userMenuLogoutBtn").click()
+        assert response_info.value.ok, f"{response_info.value.json()}"
+        # so we see the logout page
+        page.wait_for_timeout(500)
 
 
 @pytest.fixture
@@ -263,35 +277,45 @@ def create_new_project_and_delete(
     created_project_uuids = []
 
     def _do(auto_delete: bool) -> None:
-        print(f"------> Opening project in {product_url=} as {product_billable=}")
-        waiter = SocketIOProjectStateUpdatedWaiter(expected_states=("NOT_STARTED",))
-        with log_in_and_out.expect_event("framereceived", waiter), page.expect_response(
-            re.compile(r"/projects/[^:]+:open")
-        ) as response_info:
-            # Project detail view pop-ups shows
-            page.get_by_test_id("openResource").click()
-            if product_billable:
-                # Open project with default resources
-                page.get_by_test_id("openWithResources").click()
-        project_data = response_info.value.json()
-        assert project_data
-        project_uuid = project_data["data"]["uuid"]
-        print(
-            f"------> Opened project with {project_uuid=} in {product_url=} as {product_billable=}"
-        )
-        if auto_delete:
-            created_project_uuids.append(project_uuid)
+
+        with log_context(
+            logging.INFO,
+            f"------> Opening project in {product_url=} as {product_billable=}",
+        ) as ctx:
+            waiter = SocketIOProjectStateUpdatedWaiter(expected_states=("NOT_STARTED",))
+            with log_in_and_out.expect_event(
+                "framereceived", waiter
+            ), page.expect_response(
+                re.compile(r"/projects/[^:]+:open")
+            ) as response_info:
+                # Project detail view pop-ups shows
+                page.get_by_test_id("openResource").click()
+                if product_billable:
+                    # Open project with default resources
+                    page.get_by_test_id("openWithResources").click()
+            project_data = response_info.value.json()
+            assert project_data
+            project_uuid = project_data["data"]["uuid"]
+
+            ctx.messages.done = (
+                f"------> Opened project with {project_uuid=} in {product_url=} as {product_billable=}",
+            )
+            if auto_delete:
+                created_project_uuids.append(project_uuid)
 
     yield _do
 
     for project_uuid in created_project_uuids:
-        print(
-            f"<------ Deleting project with {project_uuid=} in {product_url=} as {product_billable=}"
-        )
-        api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
-        print(
-            f"<------ Deleted project with {project_uuid=} in {product_url=} as {product_billable=}"
-        )
+        with log_context(
+            logging.INFO,
+            (
+                "<------ Deleting project with %s",
+                "<------ Deleted project with %s",
+            ),
+            f"{project_uuid=} in {product_url=} as {product_billable=}",
+        ):
+
+            api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
 
 
 @pytest.fixture
@@ -304,38 +328,52 @@ def start_and_stop_pipeline(
     started_pipeline_ids = []
 
     def _do() -> SocketIOEvent:
-        print(f"------> Starting computation in {product_url=}...")
-        waiter = SocketIOProjectStateUpdatedWaiter(
-            expected_states=(
-                "PUBLISHED",
-                "PENDING",
-                "WAITING_FOR_CLUSTER",
-                "WAITING_FOR_RESOURCES",
-                "STARTED",
+        with log_context(
+            logging.INFO,
+            f"------> Starting computation in {product_url=}...",
+        ) as ctx:
+            waiter = SocketIOProjectStateUpdatedWaiter(
+                expected_states=(
+                    "PUBLISHED",
+                    "PENDING",
+                    "WAITING_FOR_CLUSTER",
+                    "WAITING_FOR_RESOURCES",
+                    "STARTED",
+                )
             )
-        )
-        with page.expect_request(
-            lambda request: re.search(r"/computations", request.url)
-            and request.method.upper() == "POST"  # type: ignore
-        ) as request_info, log_in_and_out.expect_event(
-            "framereceived", waiter
-        ) as event:
-            page.get_by_test_id("runStudyBtn").click()
-        response = request_info.value.response()
-        assert response
-        assert response.ok, f"{response.json()}"
-        response_body = response.json()
-        assert "data" in response_body
-        assert "pipeline_id" in response_body["data"]
-        pipeline_id = response_body["data"]["pipeline_id"]
-        started_pipeline_ids.append(pipeline_id)
-        print(f"------> Started computation with {pipeline_id=} in {product_url=}...")
-        return decode_socketio_42_message(event.value)
+            with page.expect_request(
+                lambda request: re.search(r"/computations", request.url)
+                and request.method.upper() == "POST"  # type: ignore
+            ) as request_info, log_in_and_out.expect_event(
+                "framereceived", waiter
+            ) as event:
+                page.get_by_test_id("runStudyBtn").click()
+            response = request_info.value.response()
+            assert response
+            assert response.ok, f"{response.json()}"
+            response_body = response.json()
+            assert "data" in response_body
+            assert "pipeline_id" in response_body["data"]
+
+            pipeline_id = response_body["data"]["pipeline_id"]
+            started_pipeline_ids.append(pipeline_id)
+
+            ctx.messages.done = (
+                f"------> Started computation with {pipeline_id=} in {product_url=}..."
+            )
+
+            return decode_socketio_42_message(event.value)
 
     yield _do
 
     # ensure all the pipelines are stopped properly
     for pipeline_id in started_pipeline_ids:
-        print(f"------> Stopping computation with {pipeline_id=} in {product_url=}...")
-        api_request_context.post(f"{product_url}v0/computations/{pipeline_id}:stop")
-        print(f"------> Stopped computation with {pipeline_id=} in {product_url=}...")
+        with log_context(
+            logging.INFO,
+            (
+                "<------ Stopping computation with %s",
+                "<------ Stopped computation with %s",
+            ),
+            f"{pipeline_id=} in {product_url=}...",
+        ):
+            api_request_context.post(f"{product_url}v0/computations/{pipeline_id}:stop")

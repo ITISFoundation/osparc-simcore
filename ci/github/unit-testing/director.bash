@@ -25,7 +25,6 @@ install() {
   pushd services/director
   pip3 install -r requirements/ci.txt
   popd
-  .venv/bin/pip list --verbose
 }
 
 test() {
@@ -33,17 +32,17 @@ test() {
   source .venv/bin/activate
   pushd services/director
   pytest \
-		--color=yes \
-		--cov-append \
-		--cov-config=.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=simcore_service_director \
-		--durations=10 \
-		--keep-docker-up \
-		--log-date-format="%Y-%m-%d %H:%M:%S" \
+    --color=yes \
+    --cov-append \
+    --cov-config=.coveragerc \
+    --cov-report=term-missing \
+    --cov-report=xml \
+    --cov=simcore_service_director \
+    --durations=10 \
+    --keep-docker-up \
+    --log-date-format="%Y-%m-%d %H:%M:%S" \
     --log-format="%(asctime)s %(levelname)s %(message)s" \
-		--verbose \
+    --verbose \
     tests/
   popd
 }

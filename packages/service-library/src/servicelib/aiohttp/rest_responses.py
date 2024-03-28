@@ -9,6 +9,7 @@ from typing import Any
 
 from aiohttp import web, web_exceptions
 from aiohttp.web_exceptions import HTTPError, HTTPException
+from servicelib.aiohttp.status import HTTP_200_OK
 
 from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -56,7 +57,7 @@ def unwrap_envelope(payload: dict[str, Any]) -> tuple:
 
 
 def create_data_response(
-    data: Any, *, skip_internal_error_details=False, status=web.HTTPOk.status_code
+    data: Any, *, skip_internal_error_details=False, status=HTTP_200_OK
 ) -> web.Response:
     response = None
     try:

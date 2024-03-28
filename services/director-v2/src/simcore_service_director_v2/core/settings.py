@@ -24,6 +24,10 @@ from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
+from settings_library.node_ports import (
+    NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE,
+    StorageAuthSettings,
+)
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -33,9 +37,6 @@ from settings_library.resource_usage_tracker import (
 )
 from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
-from simcore_sdk.node_ports_common.settings import (
-    NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE,
-)
 from simcore_sdk.node_ports_v2 import FileLinkType
 
 from .dynamic_services_settings import DynamicServicesSettings
@@ -154,6 +155,8 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
+    DIRECTOR_V2_REMOTE_DEBUGGING_PORT: PortInt | None
+
     # extras
     SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
     SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
@@ -176,13 +179,14 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="forwarded to sidecars which use nodeports",
     )
 
-    # ptvsd settings
-    DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = PortInt(3000)
-
+    # debug settings
     CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
 
     # App modules settings ---------------------
     DIRECTOR_V2_STORAGE: StorageSettings = Field(auto_default_from_env=True)
+    DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH: StorageAuthSettings | None = Field(
+        auto_default_from_env=True
+    )
 
     DIRECTOR_V2_CATALOG: CatalogSettings | None = Field(auto_default_from_env=True)
 

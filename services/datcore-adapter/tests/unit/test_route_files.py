@@ -38,3 +38,20 @@ async def test_delete_file_entrypoint(
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert response.num_bytes_downloaded == 0
+
+
+async def test_package_file_entrypoint(
+    async_client: httpx.AsyncClient,
+    pennsieve_subsystem_mock: Mock,
+    pennsieve_api_headers: dict[str, str],
+    pennsieve_file_id: str,
+):
+    response = await async_client.get(
+        f"v0/packages/{pennsieve_file_id}/files",
+        headers=pennsieve_api_headers,
+        params={"limit": 1, "offset": 0},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data
+    assert len(data) == 1

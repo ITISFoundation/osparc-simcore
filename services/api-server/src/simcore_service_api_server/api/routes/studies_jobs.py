@@ -14,7 +14,7 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.studies import StudyID
-from ._common import API_SERVER_DEV_FEATURES_ENABLED, job_output_logfile_responses
+from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -30,6 +30,8 @@ router = APIRouter()
     "/{study_id:uuid}/jobs",
     response_model=Page[Job],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def list_study_jobs(
     study_id: StudyID,
@@ -42,8 +44,9 @@ async def list_study_jobs(
 @router.post(
     "/{study_id:uuid}/jobs",
     response_model=Job,
-    status_code=status.HTTP_201_CREATED,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def create_study_job(study_id: StudyID):
     msg = f"create study job study_id={study_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
@@ -54,6 +57,8 @@ async def create_study_job(study_id: StudyID):
     "/{study_id:uuid}/jobs/{job_id:uuid}",
     response_model=Job,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def get_study_job(
     study_id: StudyID,
@@ -65,8 +70,9 @@ async def get_study_job(
 
 @router.delete(
     "/{study_id:uuid}/jobs/{job_id:uuid}",
-    status_code=status.HTTP_204_NO_CONTENT,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def delete_study_job(study_id: StudyID, job_id: JobID):
     msg = f"delete study job study_id={study_id!r} job_id={job_id!r}.  SEE https://github.com/ITISFoundation/osparc-simcore/issues/4111"
@@ -77,6 +83,8 @@ async def delete_study_job(study_id: StudyID, job_id: JobID):
     "/{study_id:uuid}/jobs/{job_id:uuid}:start",
     response_model=JobStatus,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def start_study_job(
     study_id: StudyID,
@@ -90,6 +98,8 @@ async def start_study_job(
     "/{study_id:uuid}/jobs/{job_id:uuid}:stop",
     response_model=Job,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def stop_study_job(
     study_id: StudyID,
@@ -103,6 +113,8 @@ async def stop_study_job(
     "/{study_id}/jobs/{job_id}:inspect",
     response_model=JobStatus,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def inspect_study_job(
     study_id: StudyID,
@@ -116,6 +128,8 @@ async def inspect_study_job(
     "/{study_id}/jobs/{job_id}/outputs",
     response_model=JobOutputs,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def get_study_job_outputs(
     study_id: StudyID,
@@ -129,7 +143,8 @@ async def get_study_job_outputs(
     "/{study_id}/jobs/{job_id}/outputs/logfile",
     response_class=RedirectResponse,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    responses=job_output_logfile_responses,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
     msg = f"get study job output logfile study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
@@ -140,6 +155,8 @@ async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
     "/{study_id}/jobs/{job_id}/metadata",
     response_model=JobMetadata,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def get_study_job_custom_metadata(
     study_id: StudyID,
@@ -153,6 +170,8 @@ async def get_study_job_custom_metadata(
 @router.put(
     "/{study_id}/jobs/{job_id}/metadata",
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def replace_study_job_custom_metadata(
     study_id: StudyID, job_id: JobID, replace: JobMetadataUpdate

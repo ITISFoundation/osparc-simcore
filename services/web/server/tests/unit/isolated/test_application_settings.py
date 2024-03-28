@@ -7,6 +7,7 @@ import os
 
 import pytest
 from aiohttp import web
+from pydantic import HttpUrl, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
 from servicelib.json_serialization import json_dumps
@@ -60,7 +61,7 @@ def mock_env_makefile(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 
 
 @pytest.fixture
-def mock_env_Dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
+def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     #
     # docker run -it --hostname "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}" local/webserver:production printenv
     #
@@ -100,8 +101,8 @@ def mock_webserver_service_environment(
     monkeypatch: pytest.MonkeyPatch,
     mock_env_makefile: EnvVarsDict,
     mock_env_devel_environment: EnvVarsDict,
-    mock_env_Dockerfile_build: EnvVarsDict,
-    mock_env_auto_deployer_agent: EnvVarsDict,
+    mock_env_dockerfile_build: EnvVarsDict,
+    mock_env_deployer_pipeline: EnvVarsDict,
 ) -> EnvVarsDict:
     """
     Mocks environment produce in the docker compose config with a .env (.env-devel)
@@ -144,14 +145,15 @@ def mock_webserver_service_environment(
             "STORAGE_PORT": os.environ.get("STORAGE_PORT", "8080"),
             "SWARM_STACK_NAME": os.environ.get("SWARM_STACK_NAME", "simcore"),
             "WEBSERVER_LOGLEVEL": os.environ.get("LOG_LEVEL", "WARNING"),
+            "SESSION_COOKIE_MAX_AGE": str(7 * 24 * 60 * 60),
         },
     )
 
     return (
         mock_env_makefile
         | mock_env_devel_environment
-        | mock_env_Dockerfile_build
-        | mock_env_auto_deployer_agent
+        | mock_env_dockerfile_build
+        | mock_env_deployer_pipeline
         | mock_envs_docker_compose_environment
     )
 
@@ -195,7 +197,7 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
     # all key in camelcase
     assert all(
         key[0] == key[0].lower() and "_" not in key and key.lower() != key
-        for key in statics.keys()
+        for key in statics
     ), f"Got {list(statics.keys())}"
 
     # special alias
@@ -218,12 +220,26 @@ def test_settings_to_client_statics_plugins(
 
     print("STATICS:\n", json_dumps(statics, indent=1))
 
+    assert settings.WEBSERVER_LOGIN
+
+    assert (
+        statics["webserverLogin"]["LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"]
+        == settings.WEBSERVER_LOGIN.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS
+    )
+    assert (
+        statics["webserverSession"].get("SESSION_COOKIE_MAX_AGE")
+        == settings.WEBSERVER_SESSION.SESSION_COOKIE_MAX_AGE
+    )
+
+    assert statics["vcsReleaseTag"]
+    assert parse_obj_as(HttpUrl, statics["vcsReleaseUrl"])
+
     assert set(statics["pluginsDisabled"]) == (disable_plugins | {"WEBSERVER_CLUSTERS"})
 
 
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
     # avoids display of sensitive info
-    assert not any("pass" in key for key in app_settings.public_dict().keys())
-    assert not any("token" in key for key in app_settings.public_dict().keys())
-    assert not any("secret" in key for key in app_settings.public_dict().keys())
-    assert not any("private" in key for key in app_settings.public_dict().keys())
+    assert not any("pass" in key for key in app_settings.public_dict())
+    assert not any("token" in key for key in app_settings.public_dict())
+    assert not any("secret" in key for key in app_settings.public_dict())
+    assert not any("private" in key for key in app_settings.public_dict())

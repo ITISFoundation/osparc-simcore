@@ -111,7 +111,7 @@ async def observing_single_service(
                 # docker swarm engine API.
                 _trigger_every_30_seconds(
                     scheduler._observation_counter,  # pylint:disable=protected-access  # noqa: SLF001
-                    dynamic_scheduler.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS,
+                    dynamic_scheduler.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL.total_seconds(),
                 )
                 and await is_dynamic_sidecar_stack_missing(
                     scheduler_data.node_uuid, dynamic_scheduler.SWARM_STACK_NAME

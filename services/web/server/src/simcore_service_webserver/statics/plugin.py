@@ -13,7 +13,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..products.plugin import setup_products
-from ._events import create_cached_indexes, create_statics_json
+from ._events import create_and_cache_statics_json, create_cached_indexes
 from ._handlers import get_cached_frontend_index, get_statics_json
 from .settings import StaticWebserverModuleSettings, get_plugin_settings
 
@@ -41,7 +41,7 @@ def setup_statics(app: web.Application) -> None:
     )
 
     # compute statics.json content
-    app.on_startup.append(create_statics_json)
+    app.on_startup.append(create_and_cache_statics_json)
 
     # fetch all index.html for various frontends
     app.on_startup.append(create_cached_indexes)

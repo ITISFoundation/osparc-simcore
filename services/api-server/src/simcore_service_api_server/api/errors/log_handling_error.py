@@ -14,7 +14,7 @@ async def log_handling_error_handler(
     _: Request, exc: LogDistributionBaseException
 ) -> JSONResponse:
     msg = f"{exc}"
-    status_code: int = 500
+    status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
     if isinstance(exc, LogStreamerNotRegistered):
         status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     elif isinstance(exc, LogStreamerRegistionConflict):

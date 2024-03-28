@@ -5,6 +5,7 @@ from typing import Any, TypedDict
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.users import UserID
+from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole, UserStatus
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.login._constants import MSG_LOGGED_IN
@@ -35,6 +36,7 @@ class UserInfoDict(_UserInfoDictRequired, total=False):
     password_hash: str
     first_name: str
     last_name: str
+    phone: str
 
 
 TEST_MARKS = re.compile(r"TEST (\w+):(.*)")
@@ -90,6 +92,7 @@ async def _create_user(app: web.Application, data=None) -> UserInfoDict:
                 "password_hash",
                 "first_name",
                 "last_name",
+                "phone",
             ]
         },
         **extras,
@@ -137,7 +140,7 @@ async def log_client_in(
     )
 
     if enable_check:
-        await assert_status(reponse, web.HTTPOk, MSG_LOGGED_IN)
+        await assert_status(reponse, status.HTTP_200_OK, MSG_LOGGED_IN)
 
     return user
 
@@ -145,17 +148,17 @@ async def log_client_in(
 class NewUser:
     def __init__(
         self,
-        params: dict[str, Any] | None = None,
+        user_data: dict[str, Any] | None = None,
         app: web.Application | None = None,
     ):
-        self.params = params
+        self.user_data = user_data
         self.user = None
         assert app
         self.db = get_plugin_storage(app)
         self.app = app
 
     async def __aenter__(self) -> UserInfoDict:
-        self.user = await _create_account(self.app, self.params)
+        self.user = await _create_account(self.app, self.user_data)
         return self.user
 
     async def __aexit__(self, *args):
@@ -163,15 +166,15 @@ class NewUser:
 
 
 class LoggedUser(NewUser):
-    def __init__(self, client: TestClient, params=None, *, check_if_succeeds=True):
-        super().__init__(params, client.app)
+    def __init__(self, client: TestClient, user_data=None, *, check_if_succeeds=True):
+        super().__init__(user_data, client.app)
         self.client = client
         self.enable_check = check_if_succeeds
         assert self.client.app
 
     async def __aenter__(self) -> UserInfoDict:
         self.user = await log_client_in(
-            self.client, self.params, enable_check=self.enable_check
+            self.client, self.user_data, enable_check=self.enable_check
         )
         return self.user
 
@@ -193,7 +196,7 @@ class NewInvitation(NewUser):
         extra_credits_in_usd: int | None = None,
     ):
         assert client.app
-        super().__init__(params=host, app=client.app)
+        super().__init__(user_data=host, app=client.app)
         self.client = client
         self.tag = f"Created by {guest_email or DEFAULT_FAKER.email()}"
         self.confirmation = None
@@ -203,7 +206,7 @@ class NewInvitation(NewUser):
     async def __aenter__(self) -> "NewInvitation":
         # creates host user
         assert self.client.app
-        self.user = await _create_user(self.client.app, self.params)
+        self.user = await _create_user(self.client.app, self.user_data)
 
         self.confirmation = await create_invitation_token(
             self.db,

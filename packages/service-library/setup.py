@@ -29,25 +29,25 @@ FASTAPI_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_fastapi.in")
 TEST_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
 
 
-SETUP = dict(
-    name="simcore-service-library",
-    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
-    author="Pedro Crespo-Valero (pcrespov)",
-    description="Core service library for simcore (or servicelib)",
-    license="MIT license",
-    python_requires="~=3.10",
-    install_requires=tuple(PROD_REQUIREMENTS),
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
-    test_suite="tests",
-    tests_require=tuple(TEST_REQUIREMENTS),
-    extras_require={
-        "test": tuple(TEST_REQUIREMENTS),
+SETUP = {
+    "name": "simcore-service-library",
+    "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
+    "author": "Pedro Crespo-Valero (pcrespov)",
+    "description": "Core service library for simcore (or servicelib)",
+    "license": "MIT license",
+    "python_requires": "~=3.10",
+    "install_requires": tuple(PROD_REQUIREMENTS),
+    "packages": find_packages(where="src"),
+    "package_dir": {"": "src"},
+    "test_suite": "tests",
+    "tests_require": tuple(TEST_REQUIREMENTS),
+    "extras_require": {
         "aiohttp": tuple(AIOHTTP_REQUIREMENTS),
         "fastapi": tuple(FASTAPI_REQUIREMENTS),
         "all": tuple(AIOHTTP_REQUIREMENTS | FASTAPI_REQUIREMENTS),
+        "test": tuple(TEST_REQUIREMENTS),
     },
-)
+}
 
 
 if __name__ == "__main__":

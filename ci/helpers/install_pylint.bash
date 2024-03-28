@@ -13,9 +13,9 @@ CURDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 REQUIREMENTS=packages/service-library/requirements/_tools.txt
 PYLINT_VERSION="$(grep pylint== $REQUIREMENTS | awk '{print $1}')"
-pip3 install "$PYLINT_VERSION"
+uv pip install "$PYLINT_VERSION"
 
 # Minimal packages to pass linter
-pip install -r "$CURDIR/requirements.txt"
+uv pip install -r "$CURDIR/requirements.txt"
 
 echo "INFO:" "$(pylint --version)" "@" "$(command -v pylint)"

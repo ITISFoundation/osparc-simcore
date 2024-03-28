@@ -9,13 +9,13 @@ from unittest.mock import Mock
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
+from servicelib.aiohttp import status
 from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
@@ -28,9 +28,12 @@ from simcore_service_webserver.login._2fa import (
     get_redis_validation_code_client,
     send_email_code,
 )
-from simcore_service_webserver.login._constants import MSG_2FA_UNAVAILABLE_OEC
+from simcore_service_webserver.login._constants import (
+    CODE_2FA_CODE_REQUIRED,
+    MSG_2FA_UNAVAILABLE_OEC,
+)
 from simcore_service_webserver.login.storage import AsyncpgStorage
-from simcore_service_webserver.products.api import get_current_product
+from simcore_service_webserver.products.api import Product, get_current_product
 from twilio.base.exceptions import TwilioRestException
 
 
@@ -130,7 +133,7 @@ async def test_workflow_register_and_login_with_2fa(
             "confirm": fake_user_password,
         },
     )
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
 
     # check email was sent
     def _get_confirmation_link_from_email():
@@ -143,7 +146,7 @@ async def test_workflow_register_and_login_with_2fa(
 
     # 2. confirmation
     response = await client.get(url)
-    assert response.status == web.HTTPOk.status_code
+    assert response.status == status.HTTP_200_OK
 
     # check email+password registered
     user = await db.get_user({"email": fake_user_email})
@@ -159,7 +162,7 @@ async def test_workflow_register_and_login_with_2fa(
             "password": fake_user_password,
         },
     )
-    data, _ = await assert_status(response, web.HTTPAccepted)
+    data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
 
     # register phone --------------------------------------------------
     # 1. submit
@@ -171,7 +174,7 @@ async def test_workflow_register_and_login_with_2fa(
             "phone": fake_user_phone_number,
         },
     )
-    await assert_status(response, web.HTTPAccepted)
+    await assert_status(response, status.HTTP_202_ACCEPTED)
 
     # check code generated and SMS sent
     assert mocked_twilio_service["send_sms_code_for_registration"].called
@@ -194,7 +197,7 @@ async def test_workflow_register_and_login_with_2fa(
             "code": received_code,
         },
     )
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
     # check user has phone confirmed
     user = await db.get_user({"email": fake_user_email})
     assert user["status"] == UserStatus.ACTIVE.name
@@ -211,7 +214,7 @@ async def test_workflow_register_and_login_with_2fa(
             "password": fake_user_password,
         },
     )
-    data, _ = await assert_status(response, web.HTTPAccepted)
+    data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
 
     assert data["code"] == "SMS_CODE_REQUIRED"
 
@@ -231,7 +234,7 @@ async def test_workflow_register_and_login_with_2fa(
     )
     # WARNING: while debugging, breakpoints can add too much delay
     # and make 2fa TTL expire resulting in this validation fail
-    await assert_status(response, web.HTTPOk)
+    await assert_status(response, status.HTTP_200_OK)
 
     # assert users is successfully registered
     user = await db.get_user({"email": fake_user_email})
@@ -240,28 +243,30 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["status"] == UserStatus.ACTIVE.value
 
 
-async def test_register_phone_fails_with_used_number(
+async def test_can_register_same_phone_in_different_accounts(
     client: TestClient,
     fake_user_email: str,
     fake_user_password: str,
     fake_user_phone_number: str,
+    mocked_twilio_service: dict[str, Mock],
     cleanup_db_tables: None,
 ):
     """
-    Tests https://github.com/ITISFoundation/osparc-simcore/issues/3304
+    - Changed policy about user phone constraint in  https://github.com/ITISFoundation/osparc-simcore/pull/5460
+    - Tests https://github.com/ITISFoundation/osparc-simcore/issues/3304
     """
     assert client.app
 
     async with AsyncExitStack() as users_stack:
         # some user ALREADY registered with the same phone
         await users_stack.enter_async_context(
-            NewUser(params={"phone": fake_user_phone_number}, app=client.app)
+            NewUser(user_data={"phone": fake_user_phone_number}, app=client.app)
         )
 
         # some registered user w/o phone
         await users_stack.enter_async_context(
             NewUser(
-                params={
+                user_data={
                     "email": fake_user_email,
                     "password": fake_user_password,
                     "phone": None,
@@ -279,7 +284,7 @@ async def test_register_phone_fails_with_used_number(
                 "password": fake_user_password,
             },
         )
-        await assert_status(response, web.HTTPAccepted)
+        await assert_status(response, status.HTTP_202_ACCEPTED)
 
         # 2. register existing phone
         url = client.app.router["auth_register_phone"].url_for()
@@ -290,8 +295,11 @@ async def test_register_phone_fails_with_used_number(
                 "phone": fake_user_phone_number,
             },
         )
-        _, error = await assert_status(response, web.HTTPUnauthorized)
-        assert "phone" in error["message"]
+        data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
+        assert data
+        assert "Code" in data["message"]
+        assert data["name"] == CODE_2FA_CODE_REQUIRED
+        assert not error
 
 
 async def test_send_email_code(
@@ -317,6 +325,19 @@ async def test_send_email_code(
         support_email=support_email,
         code=code,
         first_name=first_name,
+        product=Product(
+            name="osparc",
+            display_name="The Foo Product",
+            host_regex=r".+",
+            vendor={},
+            short_name="foo",
+            support_email=support_email,
+            support=None,
+            login_settings=ProductLoginSettingsDict(
+                LOGIN_2FA_REQUIRED=True,
+            ),
+            registration_email_template=None,
+        ),
     )
 
     out, _ = capsys.readouterr()
@@ -350,7 +371,7 @@ async def test_2fa_sms_failure_during_login(
 
     # A registered user ...
     async with NewUser(
-        params={
+        user_data={
             "email": fake_user_email,
             "password": fake_user_password,
             "phone": fake_user_phone_number,
@@ -370,7 +391,9 @@ async def test_2fa_sms_failure_during_login(
 
             # Expects failure:
             #    HTTPServiceUnavailable: Currently we cannot use 2FA, please try again later (OEC:140558738809344)
-            data, error = await assert_status(response, web.HTTPServiceUnavailable)
+            data, error = await assert_status(
+                response, status.HTTP_503_SERVICE_UNAVAILABLE
+            )
             assert not data
             assert error["errors"][0]["message"].startswith(
                 MSG_2FA_UNAVAILABLE_OEC[:10]

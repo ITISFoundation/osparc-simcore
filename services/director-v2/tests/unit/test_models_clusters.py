@@ -12,7 +12,9 @@ from models_library.api_schemas_directorv2.clusters import (
     Worker,
     WorkerMetrics,
 )
+from models_library.clusters import ClusterTypeInModel
 from pydantic import BaseModel, parse_obj_as
+from simcore_postgres_database.models.clusters import ClusterType
 
 
 @pytest.mark.parametrize(
@@ -76,3 +78,23 @@ def test_worker_constructor_corrects_negative_used_resources(faker: Faker):
     )
     assert worker
     assert worker.used_resources["CPU"] == 0
+
+
+def test_cluster_type_in_model_includes_postgres_database_model():
+    models_library_cluster_types_names: set[str] = {
+        t.name for t in set(ClusterTypeInModel)
+    }
+    postgres_library_cluster_types_names: set[str] = {t.name for t in set(ClusterType)}
+    assert postgres_library_cluster_types_names.issubset(
+        models_library_cluster_types_names
+    )
+
+    models_library_cluster_types_values: set[str] = {
+        t.value for t in set(ClusterTypeInModel)
+    }  # type: ignore
+    postgres_library_cluster_types_values: set[str] = {
+        t.value for t in set(ClusterType)
+    }
+    assert postgres_library_cluster_types_values.issubset(
+        models_library_cluster_types_values
+    )

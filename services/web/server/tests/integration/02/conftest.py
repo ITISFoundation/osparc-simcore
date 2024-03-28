@@ -3,8 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import json
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
 from uuid import uuid4
 
 import pytest

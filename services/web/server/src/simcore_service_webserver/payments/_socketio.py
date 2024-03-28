@@ -11,7 +11,7 @@ from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
-from ..socketio.messages import send_messages
+from ..socketio.messages import send_message_to_user
 
 
 async def notify_payment_completed(
@@ -22,13 +22,15 @@ async def notify_payment_completed(
 ):
     assert payment.completed_at is not None  # nosec
 
-    messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_PAYMENT_COMPLETED_EVENT,
-            "data": jsonable_encoder(payment, by_alias=True),
-        }
-    ]
-    await send_messages(app, user_id, messages)
+    await send_message_to_user(
+        app,
+        user_id,
+        message=SocketMessageDict(
+            event_type=SOCKET_IO_PAYMENT_COMPLETED_EVENT,
+            data=jsonable_encoder(payment, by_alias=True),
+        ),
+        ignore_queue=True,
+    )
 
 
 async def notify_payment_method_acked(
@@ -37,10 +39,12 @@ async def notify_payment_method_acked(
     user_id: UserID,
     payment_method_transaction: PaymentMethodTransaction,
 ):
-    messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT,
-            "data": jsonable_encoder(payment_method_transaction, by_alias=True),
-        }
-    ]
-    await send_messages(app, user_id, messages)
+    await send_message_to_user(
+        app,
+        user_id,
+        message=SocketMessageDict(
+            event_type=SOCKET_IO_PAYMENT_METHOD_ACKED_EVENT,
+            data=jsonable_encoder(payment_method_transaction, by_alias=True),
+        ),
+        ignore_queue=True,
+    )

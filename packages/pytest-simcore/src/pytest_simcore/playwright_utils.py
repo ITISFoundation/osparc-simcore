@@ -1,9 +1,12 @@
 import json
+import logging
+from contextlib import ExitStack
 from dataclasses import dataclass
 from enum import Enum, unique
 from typing import Any, Final
 
 from playwright.sync_api import WebSocket
+from pytest_simcore.logging_utils import log_context
 
 SECOND: Final[int] = 1000
 MINUTE: Final[int] = 60 * SECOND
@@ -53,7 +56,7 @@ class SocketIOEvent:
 
 def decode_socketio_42_message(message: str) -> SocketIOEvent:
     data = json.loads(message.removeprefix("42"))
-    return SocketIOEvent(name=data[0], obj=json.loads(data[1]))
+    return SocketIOEvent(name=data[0], obj=data[1])
 
 
 def retrieve_project_state_from_decoded_message(event: SocketIOEvent) -> RunningState:
@@ -69,18 +72,18 @@ class SocketIOProjectStateUpdatedWaiter:
     expected_states: tuple[RunningState, ...]
 
     def __call__(self, message: str) -> bool:
-        # print(f"<---- received websocket {message=}")
-        # socket.io encodes messages like so
-        # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-        if message.startswith("42"):
-            decoded_message = decode_socketio_42_message(message)
-            if decoded_message.name == "projectStateUpdated":
-                return (
-                    retrieve_project_state_from_decoded_message(decoded_message)
-                    in self.expected_states
-                )
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+            # socket.io encodes messages like so
+            # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
+            if message.startswith("42"):
+                decoded_message = decode_socketio_42_message(message)
+                if decoded_message.name == "projectStateUpdated":
+                    return (
+                        retrieve_project_state_from_decoded_message(decoded_message)
+                        in self.expected_states
+                    )
 
-        return False
+            return False
 
 
 def wait_for_pipeline_state(
@@ -92,13 +95,42 @@ def wait_for_pipeline_state(
     timeout_ms: int,
 ) -> RunningState:
     if current_state in if_in_states:
-        waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
-        print(f"--> pipeline is in {current_state=}, waiting for {expected_states=}")
-        with websocket.expect_event(
-            "framereceived", waiter, timeout=timeout_ms
-        ) as event:
-            current_state = retrieve_project_state_from_decoded_message(
-                decode_socketio_42_message(event.value)
-            )
-        print(f"<-- pipeline is in {current_state=}")
+        with log_context(
+            logging.INFO,
+            msg=(
+                f"pipeline is in {current_state=}, waiting for one of {expected_states=}",
+                f"pipeline is now in {current_state=}",
+            ),
+        ):
+            waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
+            with websocket.expect_event(
+                "framereceived", waiter, timeout=timeout_ms
+            ) as event:
+                current_state = retrieve_project_state_from_decoded_message(
+                    decode_socketio_42_message(event.value)
+                )
     return current_state
+
+
+def on_web_socket_default_handler(ws) -> None:
+    """Usage
+
+    from pytest_simcore.playwright_utils import on_web_socket_default_handler
+
+    page.on("websocket", on_web_socket_default_handler)
+
+    """
+    stack = ExitStack()
+    ctx = stack.enter_context(
+        log_context(
+            logging.INFO,
+            (
+                f"WebSocket opened: {ws.url}",
+                "WebSocket closed",
+            ),
+        )
+    )
+
+    ws.on("framesent", lambda payload: ctx.logger.info("⬇️ %s", payload))
+    ws.on("framereceived", lambda payload: ctx.logger.info("⬆️ %s", payload))
+    ws.on("close", lambda payload: stack.close())

@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import functools
 import json
 import logging
 import os
@@ -38,6 +39,7 @@ pytest_plugins = [
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.pytest_socketio",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
@@ -237,7 +239,7 @@ def fake_workbench_as_dict(fake_workbench_file: Path) -> dict[str, Any]:
 
 @pytest.fixture
 def fake_workbench_without_outputs(
-    fake_workbench_as_dict: dict[str, Any]
+    fake_workbench_as_dict: dict[str, Any],
 ) -> dict[str, Any]:
     workbench = deepcopy(fake_workbench_as_dict)
     # remove all the outputs from the workbench
@@ -290,3 +292,42 @@ def mocked_service_awaits_manual_interventions(mocker: MockerFixture) -> None:
         autospec=True,
         return_value=False,
     )
+
+
+@pytest.fixture
+def mock_redis(mocker: MockerFixture) -> None:
+    def _mock_setup(app: FastAPI) -> None:
+        def _mock_client(*args, **kwargs) -> AsyncMock:
+            return AsyncMock()
+
+        mock = AsyncMock()
+        mock.client = _mock_client
+
+        async def on_startup() -> None:
+            app.state.redis_clients_manager = mock
+
+        app.add_event_handler("startup", on_startup)
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.redis.setup", side_effect=_mock_setup
+    )
+
+
+@pytest.fixture
+def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
+    def _mock_exclusive(
+        _: Any, *, lock_key: str, lock_value: bytes | str | None = None
+    ):
+        def decorator(func):
+            @functools.wraps(func)
+            async def wrapper(*args, **kwargs):
+                return await func(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
+    module_base = (
+        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler"
+    )
+    mocker.patch(f"{module_base}.exclusive", side_effect=_mock_exclusive)

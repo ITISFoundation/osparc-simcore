@@ -4,8 +4,9 @@ from typing import Callable
 import httpx
 import pytest
 import respx
+from fastapi import status
 from httpx import AsyncClient
-from models_library.api_schemas_webserver.resource_usage import ServicePricingPlanGet
+from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from pydantic import parse_obj_as
 from simcore_service_api_server._meta import API_VTAG
 from unit.conftest import SideEffectCallback
@@ -14,8 +15,11 @@ from unit.conftest import SideEffectCallback
 @pytest.mark.parametrize(
     "capture,expected_status_code",
     [
-        ("get_solver_pricing_plan_invalid_solver.json", 503),
-        ("get_solver_pricing_plan_success.json", 200),
+        (
+            "get_solver_pricing_plan_invalid_solver.json",
+            status.HTTP_502_BAD_GATEWAY,
+        ),
+        ("get_solver_pricing_plan_success.json", status.HTTP_200_OK),
     ],
 )
 async def test_get_solver_pricing_plan(
@@ -43,5 +47,5 @@ async def test_get_solver_pricing_plan(
         auth=auth,
     )
     assert expected_status_code == response.status_code
-    if response.status_code == 200:
+    if response.status_code == status.HTTP_200_OK:
         _ = parse_obj_as(ServicePricingPlanGet, response.json())

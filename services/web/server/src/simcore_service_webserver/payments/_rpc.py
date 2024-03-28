@@ -16,10 +16,12 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentInitiated,
 )
 from models_library.basic_types import IDStr
+from models_library.payments import UserInvoiceAddress
+from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr, HttpUrl, parse_obj_as
 from servicelib.logging_utils import log_decorator
 
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -28,7 +30,7 @@ _logger = logging.getLogger(__name__)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def init_payment(
+async def init_payment(  # pylint: disable=too-many-arguments
     app: web.Application,
     *,
     amount_dollars: Decimal,
@@ -39,6 +41,9 @@ async def init_payment(
     user_id: UserID,
     user_name: str,
     user_email: str,
+    user_address: UserInvoiceAddress,
+    stripe_price_id: StripePriceID,
+    stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> WalletPaymentInitiated:
     rpc_client = get_rabbitmq_rpc_client(app)
@@ -55,6 +60,9 @@ async def init_payment(
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
+        user_address=user_address,
+        stripe_price_id=stripe_price_id,
+        stripe_tax_rate_id=stripe_tax_rate_id,
         comment=comment,
     )
     assert isinstance(result, WalletPaymentInitiated)  # nosec
@@ -85,6 +93,7 @@ async def get_payments_page(
     app: web.Application,
     *,
     user_id: UserID,
+    product_name: ProductName,
     limit: int | None,
     offset: int | None,
 ) -> tuple[int, list[PaymentTransaction]]:
@@ -94,11 +103,32 @@ async def get_payments_page(
         PAYMENTS_RPC_NAMESPACE,
         parse_obj_as(RPCMethodName, "get_payments_page"),
         user_id=user_id,
+        product_name=product_name,
         limit=limit,
         offset=offset,
     )
     assert (  # nosec
         parse_obj_as(tuple[int, list[PaymentTransaction]], result) is not None
+    )
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_payment_invoice_url(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    rpc_client = get_rabbitmq_rpc_client(app)
+
+    result: HttpUrl = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "get_payment_invoice_url"),
+        user_id=user_id,
+        wallet_id=wallet_id,
+        payment_id=payment_id,
     )
     return result
 
@@ -221,6 +251,9 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
     user_id: UserID,
     user_name: str,
     user_email: EmailStr,
+    user_address: UserInvoiceAddress,
+    stripe_price_id: StripePriceID,
+    stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ) -> PaymentTransaction:
     rpc_client = get_rabbitmq_rpc_client(app)
@@ -237,6 +270,9 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
+        user_address=user_address,
+        stripe_price_id=stripe_price_id,
+        stripe_tax_rate_id=stripe_tax_rate_id,
         comment=comment,
     )
 

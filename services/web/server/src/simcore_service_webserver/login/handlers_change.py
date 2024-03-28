@@ -7,6 +7,8 @@ from pydantic import SecretStr, validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from simcore_postgres_database.utils_users import UsersRepo
+from simcore_service_webserver.db.plugin import get_database_engine
 
 from .._meta import API_VTAG
 from ..products.api import Product, get_current_product
@@ -98,6 +100,7 @@ async def submit_request_to_reset_password(request: web.Request):
                 context={
                     "host": request.host,
                     "reason": err.reason,
+                    "product": product,
                 },
             )
         except Exception as err_mail:  # pylint: disable=broad-except
@@ -118,6 +121,7 @@ async def submit_request_to_reset_password(request: web.Request):
                 context={
                     "host": request.host,
                     "link": link,
+                    "product": product,
                 },
             )
         except Exception as err:  # pylint: disable=broad-except
@@ -132,9 +136,8 @@ class ChangeEmailBody(InputSchema):
     email: LowerCaseEmailStr
 
 
-@routes.post(f"/{API_VTAG}/auth/change-email", name="auth_change_email")
-@login_required
 async def submit_request_to_change_email(request: web.Request):
+    # NOTE: This code have been intentially disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
     db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = get_current_product(request)
 
@@ -146,9 +149,9 @@ async def submit_request_to_change_email(request: web.Request):
     if user["email"] == request_body.email:
         return flash_response("Email changed")
 
-    other = await db.get_user({"email": request_body.email})
-    if other:
-        raise web.HTTPUnprocessableEntity(reason="This email cannot be used")
+    async with get_database_engine(request.app).acquire() as conn:
+        if await UsersRepo.is_email_used(conn, email=request_body.email):
+            raise web.HTTPUnprocessableEntity(reason="This email cannot be used")
 
     # Reset if previously requested
     confirmation = await db.get_confirmation({"user": user, "action": CHANGE_EMAIL})
@@ -169,10 +172,11 @@ async def submit_request_to_change_email(request: web.Request):
             context={
                 "host": request.host,
                 "link": link,
+                "product": product,
             },
         )
     except Exception as err:  # pylint: disable=broad-except
-        _logger.error("Can not send email")
+        _logger.exception("Can not send change_email_email")
         await db.delete_confirmation(confirmation)
         raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
 

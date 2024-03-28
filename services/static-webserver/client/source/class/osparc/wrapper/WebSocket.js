@@ -113,8 +113,8 @@ qx.Class.define("osparc.wrapper.WebSocket", {
       init: 500,
       check: "Number"
     },
-    /** Max reconnection attemps */
-    maxReconnectionAttemps: {
+    /** Max reconnection attempts */
+    maxReconnectionAttempts: {
       nullable: false,
       init: 1000,
       check: "Number"
@@ -169,7 +169,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           "reconnection": this.getReconnect(),
           "timeout": this.getConnectTimeout(),
           "reconnectionDelay": this.getReconnectionDelay(),
-          "reconnectionAttempts": this.getMaxReconnectionAttemps(),
+          "reconnectionAttempts": this.getMaxReconnectionAttempts(),
           "forceNew": true,
           "query": "client_session_id="+osparc.utils.Utils.getClientSessionID(),
           "transports": ["websocket"]

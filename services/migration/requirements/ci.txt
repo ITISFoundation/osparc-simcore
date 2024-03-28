@@ -13,4 +13,4 @@
 --requirement _tools.txt
 
 # installs this repo's packages
-../../packages/pytest-simcore/
+pytest-simcore @ ../../packages/pytest-simcore/

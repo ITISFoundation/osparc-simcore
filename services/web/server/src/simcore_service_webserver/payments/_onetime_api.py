@@ -1,6 +1,6 @@
 import logging
 from decimal import Decimal
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 import arrow
@@ -14,7 +14,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl
+from pydantic import HttpUrl, parse_obj_as
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -23,8 +23,9 @@ from simcore_postgres_database.utils_payments import insert_init_payment_transac
 from yarl import URL
 
 from ..db.plugin import get_database_engine
+from ..products.api import get_product_stripe_info
 from ..resource_usage.api import add_credits_to_wallet
-from ..users.api import get_user_name_and_email
+from ..users.api import get_user_display_and_id_names, get_user_invoice_address
 from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _onetime_db, _rpc
@@ -222,6 +223,22 @@ async def _fake_get_payments_page(
     return total_number_of_items, [_to_api_model(t) for t in transactions]
 
 
+@log_decorator(_logger, level=logging.INFO)
+async def _fake_get_payment_invoice_url(
+    app: web.Application,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    assert app  ## nosec
+    assert user_id  # nosec
+    assert wallet_id  # nosec
+
+    return cast(
+        HttpUrl, parse_obj_as(HttpUrl, f"https://fake-invoice.com/?id={payment_id}")
+    )
+
+
 async def raise_for_wallet_payments_permissions(
     app: web.Application,
     *,
@@ -273,7 +290,11 @@ async def init_creation_of_wallet_payment(
     assert user_wallet.wallet_id == wallet_id  # nosec
 
     # user info
-    user = await get_user_name_and_email(app, user_id=user_id)
+    user = await get_user_display_and_id_names(app, user_id=user_id)
+    user_invoice_address = await get_user_invoice_address(app, user_id=user_id)
+    # stripe info
+    product_stripe_info = await get_product_stripe_info(app, product_name=product_name)
+
     settings: PaymentsSettings = get_plugin_settings(app)
     payment_inited: WalletPaymentInitiated
     if settings.PAYMENTS_FAKE_COMPLETION:
@@ -298,8 +319,11 @@ async def init_creation_of_wallet_payment(
             wallet_id=wallet_id,
             wallet_name=user_wallet.name,
             user_id=user_id,
-            user_name=user.name,
+            user_name=user.full_name,
             user_email=user.email,
+            user_address=user_invoice_address,
+            stripe_price_id=product_stripe_info.stripe_price_id,
+            stripe_tax_rate_id=product_stripe_info.stripe_tax_rate_id,
             comment=comment,
         )
 
@@ -350,8 +374,12 @@ async def pay_with_payment_method(
     )
     assert user_wallet.wallet_id == wallet_id  # nosec
 
+    # stripe info
+    product_stripe_info = await get_product_stripe_info(app, product_name=product_name)
+
     # user info
-    user = await get_user_name_and_email(app, user_id=user_id)
+    user = await get_user_display_and_id_names(app, user_id=user_id)
+    user_invoice_address = await get_user_invoice_address(app, user_id=user_id)
 
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
@@ -364,7 +392,7 @@ async def pay_with_payment_method(
             wallet_id=wallet_id,
             wallet_name=user_wallet.name,
             user_id=user_id,
-            user_name=user.name,
+            user_name=user.full_name,
             user_email=user.email,
             comment=comment,
         )
@@ -380,8 +408,11 @@ async def pay_with_payment_method(
         wallet_id=wallet_id,
         wallet_name=user_wallet.name,
         user_id=user_id,
-        user_name=user.name,
+        user_name=user.full_name,
         user_email=user.email,
+        user_address=user_invoice_address,
+        stripe_price_id=product_stripe_info.stripe_price_id,
+        stripe_tax_rate_id=product_stripe_info.stripe_tax_rate_id,
         comment=comment,
     )
 
@@ -407,7 +438,34 @@ async def list_user_payments_page(
     else:
         assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
         total_number_of_items, payments = await _rpc.get_payments_page(
-            app, user_id=user_id, offset=offset, limit=limit
+            app, user_id=user_id, product_name=product_name, offset=offset, limit=limit
         )
 
     return payments, total_number_of_items
+
+
+async def get_payment_invoice_url(
+    app: web.Application,
+    product_name: str,
+    user_id: UserID,
+    *,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    assert product_name  # nosec
+    assert wallet_id  # nosec
+
+    payment_invoice_url: HttpUrl
+    settings: PaymentsSettings = get_plugin_settings(app)
+    if settings.PAYMENTS_FAKE_COMPLETION:
+        payment_invoice_url = await _fake_get_payment_invoice_url(
+            app, user_id=user_id, wallet_id=wallet_id, payment_id=payment_id
+        )
+
+    else:
+        assert not settings.PAYMENTS_FAKE_COMPLETION  # nosec
+        payment_invoice_url = await _rpc.get_payment_invoice_url(
+            app, user_id=user_id, wallet_id=wallet_id, payment_id=payment_id
+        )
+
+    return payment_invoice_url

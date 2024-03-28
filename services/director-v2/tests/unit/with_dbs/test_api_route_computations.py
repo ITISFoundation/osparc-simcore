@@ -20,7 +20,7 @@ import httpx
 import pytest
 import respx
 from faker import Faker
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationCreate,
@@ -28,7 +28,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 )
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
-    ServicePricingPlanGet,
+    PricingPlanGet,
 )
 from models_library.basic_types import VersionStr
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
@@ -61,7 +61,6 @@ from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils impor
     _RAM_SAFE_MARGIN_RATIO,
 )
 from simcore_service_director_v2.utils.computations import to_node_class
-from starlette import status
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [
@@ -254,16 +253,16 @@ def mocked_catalog_service_fcts_deprecated(
 
 
 @pytest.fixture(
-    params=ServicePricingPlanGet.Config.schema_extra["examples"],
+    params=PricingPlanGet.Config.schema_extra["examples"],
     ids=["with ec2 restriction", "without"],
 )
-def default_pricing_plan(request: pytest.FixtureRequest) -> ServicePricingPlanGet:
-    return ServicePricingPlanGet(**request.param)
+def default_pricing_plan(request: pytest.FixtureRequest) -> PricingPlanGet:
+    return PricingPlanGet(**request.param)
 
 
 @pytest.fixture
 def default_pricing_plan_aws_ec2_type(
-    default_pricing_plan: ServicePricingPlanGet,
+    default_pricing_plan: PricingPlanGet,
 ) -> str | None:
     for p in default_pricing_plan.pricing_units:
         if p.default:
@@ -277,7 +276,7 @@ def default_pricing_plan_aws_ec2_type(
 
 @pytest.fixture
 def mocked_resource_usage_tracker_service_fcts(
-    minimal_app: FastAPI, default_pricing_plan: ServicePricingPlanGet
+    minimal_app: FastAPI, default_pricing_plan: PricingPlanGet
 ) -> Iterator[respx.MockRouter]:
     def _mocked_service_default_pricing_plan(
         request, service_key: str, service_version: str
@@ -286,7 +285,7 @@ def mocked_resource_usage_tracker_service_fcts(
         # otherwise it returns 404s
         if "frontend" in service_key:
             # NOTE: there are typically no frontend services that have pricing plans
-            return httpx.Response(status_code=404)
+            return httpx.Response(status_code=status.HTTP_404_NOT_FOUND)
         return httpx.Response(
             200, json=jsonable_encoder(default_pricing_plan, by_alias=True)
         )
@@ -540,7 +539,7 @@ async def test_create_computation_with_wallet(
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [ServicePricingPlanGet.Config.schema_extra["examples"][0]],
+    [PricingPlanGet.Config.schema_extra["examples"][0]],
 )
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_409(
     minimal_configuration: None,
@@ -578,7 +577,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [ServicePricingPlanGet.Config.schema_extra["examples"][0]],
+    [PricingPlanGet.Config.schema_extra["examples"][0]],
 )
 async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503(
     minimal_configuration: None,

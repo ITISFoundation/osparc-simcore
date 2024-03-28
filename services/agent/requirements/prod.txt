@@ -10,8 +10,8 @@
 --requirement _base.txt
 
 # installs this repo's packages
-../../packages/models-library
-../../packages/service-library
-../../packages/settings-library
+simcore-models-library @ ../../packages/models-library
+simcore-service-library @ ../../packages/service-library
+simcore-settings-library @ ../../packages/settings-library
 # installs current package
-.
+simcore-service-agent @ .

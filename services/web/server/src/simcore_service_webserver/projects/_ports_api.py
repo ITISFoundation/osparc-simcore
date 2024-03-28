@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any, Iterator, Literal
+from typing import Any, Literal
 
 from models_library.function_services_catalog.api import catalog
 from models_library.projects_nodes import Node, NodeID
@@ -10,6 +11,8 @@ from models_library.utils.json_schema import (
 )
 from models_library.utils.services_io import JsonSchemaDict, get_service_io_json_schema
 from pydantic import ValidationError
+
+from .exceptions import InvalidInputValue
 
 
 @dataclass(frozen=True)
@@ -103,10 +106,6 @@ def get_project_inputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     return input_to_value
 
 
-class InvalidInputValue(ValueError):
-    pass
-
-
 def set_project_inputs(
     workbench: dict[NodeID, Node], update: dict[NodeID, Any]
 ) -> set[NodeID]:
@@ -129,7 +128,7 @@ def set_project_inputs(
                     jsonschema_validate_data(value, schema)
             except JsonSchemaValidationError as err:
                 raise InvalidInputValue(
-                    f"Invalid value for input '{node_id}': {err.message} for {value=}"
+                    node_id=node_id, message=err.message, value=value
                 ) from err
 
             workbench[node_id].outputs = output

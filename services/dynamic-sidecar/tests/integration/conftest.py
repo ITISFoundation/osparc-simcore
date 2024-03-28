@@ -6,6 +6,12 @@ from models_library.users import UserID
 from pytest_simcore.helpers.rawdata_fakers import random_user
 from simcore_postgres_database.models.users import users
 
+pytest_plugins = [
+    "pytest_simcore.postgres_service",
+    "pytest_simcore.simcore_storage_service",
+    "pytest_simcore.rabbit_service",
+]
+
 
 @pytest.fixture
 def user_id(postgres_db: sa.engine.Engine) -> Iterable[UserID]:

@@ -1,0 +1,77 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+
+from datetime import timedelta
+
+import pytest
+from asgi_lifespan import LifespanManager
+from fastapi import FastAPI
+from models_library.projects import ProjectID
+from pytest_mock import MockerFixture
+from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from simcore_service_dynamic_sidecar.core.application import create_app
+from simcore_service_dynamic_sidecar.core.external_dependencies import (
+    CouldNotReachExternalDependenciesError,
+)
+
+
+@pytest.fixture
+def mock_liveness_timeout(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.service_liveness._DEFAULT_TIMEOUT_INTERVAL",
+        new=timedelta(seconds=0.1),
+    )
+
+
+@pytest.fixture
+def mock_environment(
+    mock_liveness_timeout: None,
+    base_mock_envs: EnvVarsDict,
+    project_id: ProjectID,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
+            "DY_SIDECAR_PROJECT_ID": f"{project_id}",
+            "DY_SIDECAR_USER_ID": f"{2}",
+            "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
+            "R_CLONE_PROVIDER": "MINIO",
+            "RABBIT_HOST": "test",
+            "RABBIT_PASSWORD": "test",
+            "RABBIT_SECURE": "0",
+            "RABBIT_USER": "test",
+            "STORAGE_USERNAME": "test",
+            "STORAGE_PASSWORD": "test",
+            "S3_ENDPOINT": "test",
+            "S3_ACCESS_KEY": "test",
+            "S3_SECRET_KEY": "test",
+            "S3_BUCKET_NAME": "test",
+            "POSTGRES_HOST": "test",
+            "POSTGRES_USER": "test",
+            "POSTGRES_PASSWORD": "test",
+            "POSTGRES_DB": "test",
+            "REGISTRY_AUTH": "0",
+            "REGISTRY_USER": "test",
+            "REGISTRY_PW": "test",
+            "REGISTRY_SSL": "0",
+            **base_mock_envs,
+        },
+    )
+
+
+@pytest.fixture
+async def app(mock_environment: EnvVarsDict) -> FastAPI:
+    return create_app()
+
+
+async def test_external_dependencies_are_not_reachable(app: FastAPI):
+    with pytest.raises(CouldNotReachExternalDependenciesError) as exe_info:
+        async with LifespanManager(app):
+            ...
+    failed = exe_info.value.failed
+    assert len(failed) == 4
+
+    for entry in ["Postgres", "RabbitMQ", "Registry", "Storage"]:
+        assert any(f"Could not contact service '{entry}'" in err for err in failed)

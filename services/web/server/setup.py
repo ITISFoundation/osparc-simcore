@@ -31,40 +31,40 @@ INSTALL_REQUIREMENTS = tuple(
 )
 TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
-SETUP = dict(
-    name="simcore-service-webserver",
-    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
-    description="Main service with an interface (http-API & websockets) to the web front-end",
-    author=", ".join(
+SETUP = {
+    "name": "simcore-service-webserver",
+    "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
+    "description": "Main service with an interface (http-API & websockets) to the web front-end",
+    "author": ", ".join(
         (
             "Pedro Crespo-Valero (pcrespov)",
             "Sylvain Anderegg (sanderegg)",
             "Andrei Neagu (GitHK)",
         )
     ),
-    packages=find_packages(where="src"),
-    package_dir={
+    "packages": find_packages(where="src"),
+    "package_dir": {
         "": "src",
     },
-    include_package_data=True,
-    package_data={
+    "include_package_data": True,
+    "package_data": {
         "": [
             "api/v0/openapi.yaml",
             "api/v0/schemas/*.json",
             "templates/**/*.jinja2",
         ]
     },
-    entry_points={
+    "entry_points": {
         "console_scripts": [
             "simcore-service-webserver=simcore_service_webserver.__main__:main",
             "simcore-service=simcore_service_webserver.__main__:main",
         ]
     },
-    python_requires="~=3.10",
-    install_requires=INSTALL_REQUIREMENTS,
-    tests_require=TEST_REQUIREMENTS,
-    setup_requires=["pytest-runner"],
-)
+    "python_requires": "~=3.10",
+    "install_requires": INSTALL_REQUIREMENTS,
+    "tests_require": TEST_REQUIREMENTS,
+    "setup_requires": ["pytest-runner"],
+}
 
 
 if __name__ == "__main__":

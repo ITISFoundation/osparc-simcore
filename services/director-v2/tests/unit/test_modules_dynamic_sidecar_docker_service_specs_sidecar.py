@@ -5,10 +5,13 @@
 from typing import Any, Final
 
 import pytest
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.sidecar import (
     _get_environment_variables,
+    _get_storage_config,
+    _StorageConfig,
 )
 
 # PLEASE keep alphabetical to simplify debugging
@@ -62,12 +65,14 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
     "SIMCORE_HOST_NAME",
     "SSL_CERT_FILE",
     "STORAGE_HOST",
+    "STORAGE_PASSWORD",
     "STORAGE_PORT",
+    "STORAGE_SECURE",
+    "STORAGE_USERNAME",
 }
 
 
 def test_dynamic_sidecar_env_vars(
-    monkeypatch: pytest.MonkeyPatch,
     scheduler_data_from_http_request: SchedulerData,
     project_env_devel_environment: dict[str, Any],
 ):
@@ -84,3 +89,89 @@ def test_dynamic_sidecar_env_vars(
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 
     assert set(dynamic_sidecar_env_vars) == EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES
+
+
+@pytest.mark.parametrize(
+    "env_vars, expected_storage_config",
+    [
+        pytest.param(
+            {},
+            _StorageConfig("storage", "8080", "null", "null", "0"),
+            id="no_env_vars",
+        ),
+        pytest.param(
+            {
+                "STORAGE_HOST": "just-storage",
+                "STORAGE_PORT": "123",
+            },
+            _StorageConfig("just-storage", "123", "null", "null", "0"),
+            id="host-and-port",
+        ),
+        pytest.param(
+            {
+                "STORAGE_HOST": "storage-with-auth",
+                "STORAGE_PORT": "42",
+                "STORAGE_PASSWORD": "pass",
+                "STORAGE_USERNAME": "user",
+            },
+            _StorageConfig("storage-with-auth", "42", "user", "pass", "0"),
+            id="host-port-pass-user",
+        ),
+        pytest.param(
+            {
+                "STORAGE_HOST": "storage-with-auth",
+                "STORAGE_PORT": "42",
+                "STORAGE_PASSWORD": "pass",
+                "STORAGE_USERNAME": "user",
+                "STORAGE_SECURE": "1",
+            },
+            _StorageConfig("storage-with-auth", "42", "user", "pass", "1"),
+            id="host-port-pass-user-secure-true",
+        ),
+        pytest.param(
+            {
+                "STORAGE_HOST": "normal-storage",
+                "STORAGE_PORT": "8081",
+                "DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH": (
+                    "{"
+                    '"STORAGE_USERNAME": "overwrite-user", '
+                    '"STORAGE_PASSWORD": "overwrite-passwd", '
+                    '"STORAGE_HOST": "overwrite-host", '
+                    '"STORAGE_PORT": "44", '
+                    '"STORAGE_SECURE": "1"'
+                    "}"
+                ),
+            },
+            _StorageConfig(
+                "overwrite-host", "44", "overwrite-user", "overwrite-passwd", "1"
+            ),
+            id="host-port-and-node-ports-config",
+        ),
+        pytest.param(
+            {
+                "DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH": (
+                    "{"
+                    '"STORAGE_USERNAME": "overwrite-user", '
+                    '"STORAGE_PASSWORD": "overwrite-passwd", '
+                    '"STORAGE_HOST": "overwrite-host", '
+                    '"STORAGE_PORT": "44"'
+                    "}"
+                ),
+            },
+            _StorageConfig(
+                "overwrite-host", "44", "overwrite-user", "overwrite-passwd", "0"
+            ),
+            id="only-node-ports-config",
+        ),
+    ],
+)
+def test__get_storage_config(
+    project_env_devel_environment: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    env_vars: dict[str, str],
+    expected_storage_config: _StorageConfig,
+):
+    setenvs_from_dict(monkeypatch, env_vars)
+    app_settings = AppSettings.create_from_envs()
+
+    assert _get_storage_config(app_settings) == expected_storage_config

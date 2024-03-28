@@ -26,3 +26,7 @@ class NotificationProvider(ABC):
         payment_method: PaymentMethodTransaction,
     ):
         ...
+
+    @classmethod
+    def get_name(cls):
+        return cls.__name__

@@ -10,7 +10,7 @@ _check_venv_active:
 install-dev install: _check_venv_active
 	# installing webserver and requirements.txt
 	@cd ./../../../services/web/server && make install-dev && cd -
-	@pip install -r requirements.txt
+	@uv pip install -r requirements.txt
 
 
 .PHONY: all

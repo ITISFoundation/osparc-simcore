@@ -1,4 +1,4 @@
-🐼 Request for an account in {{ host }}
+Request for an Account in {{ host }}
 <!--
 NOTE: this header is only for testing purposes and removed automatically before sending
 TEST host:{{ host }}
@@ -11,19 +11,27 @@ Dear {{ name }},
 </p>
 
 <p>
-We have received the following request form for an account in {{ product["name"] }}
+  We have received the following request form for an account in {{ product.display_name }} from {{ host }}
 </p>
+
+<pre>
+{{ dumps(request_form) }}
+</pre>
 
 <p>
-{{ request_form }}
+  Some details about the requested product follow:
 </p>
+
+<pre>
+{{ dumps(product) }}
+</pre>
 
 <p>
-Some details about the requested product follow:
+  To validate the request form, here you can get further info on this request:
 </p>
 
-<p>
-{{ product }}
-</p>
+<pre>
+{{ dumps(ipinfo) }}
+</pre>
 
-Thanks<br>
+<p>TIP: Use https://ipinfo.io/ to find out more information on the ip</p>

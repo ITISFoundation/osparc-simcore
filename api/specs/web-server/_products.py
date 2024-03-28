@@ -41,6 +41,9 @@ async def get_current_product_price():
 @router.get(
     "/products/{product_name}",
     response_model=Envelope[GetProduct],
+    tags=[
+        "po",
+    ],
 )
 async def get_product(_params: Annotated[_ProductsRequestParams, Depends()]):
     ...
@@ -49,6 +52,9 @@ async def get_product(_params: Annotated[_ProductsRequestParams, Depends()]):
 @router.put(
     "/products/{product_name}/templates/{template_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    tags=[
+        "po",
+    ],
 )
 async def update_product_template(
     _params: Annotated[_ProductTemplateParams, Depends()], _body: UpdateProductTemplate
@@ -59,6 +65,9 @@ async def update_product_template(
 @router.post(
     "/invitation:generate",
     response_model=Envelope[InvitationGenerated],
+    tags=[
+        "po",
+    ],
 )
 async def generate_invitation(_body: GenerateInvitation):
     ...

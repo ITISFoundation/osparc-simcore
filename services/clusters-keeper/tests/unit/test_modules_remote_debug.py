@@ -15,7 +15,7 @@ def app_environment(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         envs={
-            "SC_BOOT_MODE": "debug-ptvsd",
+            "SC_BOOT_MODE": "debug",
         },
     )
 

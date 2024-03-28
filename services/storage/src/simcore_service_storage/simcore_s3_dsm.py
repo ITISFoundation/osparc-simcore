@@ -4,11 +4,11 @@ import logging
 import tempfile
 import urllib.parse
 from collections import deque
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Coroutine
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Coroutine, Final, cast
+from typing import Any, Final, cast
 
 from aiohttp import web
 from aiopg.sa import Engine

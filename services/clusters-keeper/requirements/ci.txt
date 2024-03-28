@@ -11,11 +11,11 @@
 --requirement _test.txt
 
 # installs this repo's packages
-../../packages/aws-library
-../../packages/models-library
-../../packages/pytest-simcore
-../../packages/service-library[fastapi]
-../../packages/settings-library
+simcore-aws-library @ ../../packages/aws-library
+simcore-models-library @ ../../packages/models-library
+pytest-simcore @ ../../packages/pytest-simcore
+simcore-service-library[fastapi] @ ../../packages/service-library
+simcore-settings-library @ ../../packages/settings-library
 
 # installs current package
-.
+simcore-service-clusters-keeper @ .

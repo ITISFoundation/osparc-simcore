@@ -87,7 +87,7 @@ def app_environment(
             # .env-devel
             **env_devel_dict,
             # Variables directly define inside Dockerfile
-            "SC_BOOT_MODE": "debug-ptvsd",
+            "SC_BOOT_MODE": "debug",
             "SIDECAR_LOGLEVEL": "DEBUG",
             "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME": "simcore_computational_shared_data",
             "SIDECAR_COMP_SERVICES_SHARED_FOLDER": f"{shared_data_folder}",

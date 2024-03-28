@@ -12,6 +12,7 @@ from servicelib.aiohttp.observer import (
     register_observer,
     setup_observer_registry,
 )
+from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 
 from ..notifications import project_logs
@@ -25,17 +26,24 @@ async def _on_user_disconnected(
     user_id: int,
     client_session_id: str,
     app: web.Application,
-    product_name: ProductName,  # pylint: disable=unused-argument
+    product_name: ProductName,
 ) -> None:
+    assert product_name  # nosec
+
     # check if there is a project resource
     with managed_resource(user_id, client_session_id, app) as user_session:
         projects: list[str] = await user_session.find(PROJECT_ID_KEY)
 
     assert len(projects) <= 1, "At the moment, at most one project per session"  # nosec
 
-    await logged_gather(
-        *[project_logs.unsubscribe(app, ProjectID(prj)) for prj in projects]
-    )
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        msg=f"user disconnects and unsubscribes from following {projects=}",
+    ):
+        await logged_gather(
+            *[project_logs.unsubscribe(app, ProjectID(prj)) for prj in projects]
+        )
 
     await logged_gather(
         *[

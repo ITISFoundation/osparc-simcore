@@ -1,18 +1,21 @@
+import asyncio
 import logging
 import urllib.parse
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import partial
 from operator import attrgetter
 
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceDockerData, ServiceType
-from pydantic import Extra, ValidationError, parse_obj_as
+from pydantic import Extra, ValidationError, parse_obj_as, parse_raw_as
 from settings_library.catalog import CatalogSettings
 
 from ..models.basic_types import VersionStr
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, SolverPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+from .service_exception_handling import service_exception_mapper
 
 _logger = logging.getLogger(__name__)
 
@@ -61,6 +64,8 @@ class TruncatedCatalogServiceOut(ServiceDockerData):
 # - Error handling: What do we reraise, suppress, transform???
 #
 
+_exception_mapper = partial(service_exception_mapper, "Catalog")
+
 
 @dataclass
 class CatalogApi(BaseServiceClientApi):
@@ -71,10 +76,18 @@ class CatalogApi(BaseServiceClientApi):
     SEE osparc-simcore/services/catalog/openapi.json
     """
 
+    @_exception_mapper(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                lambda kwargs: "Could not list solvers/studies",
+            )
+        }
+    )
     async def list_solvers(
         self,
-        user_id: int,
         *,
+        user_id: int,
         product_name: str,
         predicate: Callable[[Solver], bool] | None = None,
     ) -> list[Solver]:
@@ -85,10 +98,14 @@ class CatalogApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
+        services: list[
+            TruncatedCatalogServiceOut
+        ] = await asyncio.get_event_loop().run_in_executor(
+            None, parse_raw_as, list[TruncatedCatalogServiceOut], response.text
+        )
         solvers = []
-        for data in response.json():
+        for service in services:
             try:
-                service = TruncatedCatalogServiceOut.parse_obj(data)
                 if service.service_type == ServiceType.COMPUTATIONAL:
                     solver = service.to_solver()
                     if predicate is None or predicate(solver):
@@ -100,13 +117,21 @@ class CatalogApi(BaseServiceClientApi):
                 #       invalid items instead of returning error
                 _logger.warning(
                     "Skipping invalid service returned by catalog '%s': %s",
-                    data,
+                    service.json(),
                     err,
                 )
         return solvers
 
+    @_exception_mapper(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                lambda kwargs: f"Could not get solver/study {kwargs['name']}:{kwargs['version']}",
+            )
+        }
+    )
     async def get_service(
-        self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
+        self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
     ) -> Solver:
 
         assert version != LATEST_VERSION  # nosec
@@ -121,7 +146,11 @@ class CatalogApi(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-        service = TruncatedCatalogServiceOut.parse_obj(response.json())
+        service: (
+            TruncatedCatalogServiceOut
+        ) = await asyncio.get_event_loop().run_in_executor(
+            None, parse_raw_as, TruncatedCatalogServiceOut, response.text
+        )
         assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
         ), "Expected by SolverName regex"
@@ -129,8 +158,16 @@ class CatalogApi(BaseServiceClientApi):
         solver: Solver = service.to_solver()
         return solver
 
+    @_exception_mapper(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                lambda kwargs: f"Could not get ports for solver/study {kwargs['name']}:{kwargs['version']}",
+            )
+        }
+    )
     async def get_service_ports(
-        self, user_id: int, name: SolverKeyId, version: VersionStr, *, product_name: str
+        self, *, user_id: int, name: SolverKeyId, version: VersionStr, product_name: str
     ):
 
         assert version != LATEST_VERSION  # nosec
@@ -149,10 +186,10 @@ class CatalogApi(BaseServiceClientApi):
         return parse_obj_as(list[SolverPort], response.json())
 
     async def list_latest_releases(
-        self, user_id: int, *, product_name: str
+        self, *, user_id: int, product_name: str
     ) -> list[Solver]:
         solvers: list[Solver] = await self.list_solvers(
-            user_id, product_name=product_name
+            user_id=user_id, product_name=product_name
         )
 
         latest_releases: dict[SolverKeyId, Solver] = {}
@@ -164,13 +201,13 @@ class CatalogApi(BaseServiceClientApi):
         return list(latest_releases.values())
 
     async def list_solver_releases(
-        self, user_id: int, solver_key: SolverKeyId, *, product_name: str
+        self, *, user_id: int, solver_key: SolverKeyId, product_name: str
     ) -> list[Solver]:
         def _this_solver(solver: Solver) -> bool:
             return solver.id == solver_key
 
         releases: list[Solver] = await self.list_solvers(
-            user_id, predicate=_this_solver, product_name=product_name
+            user_id=user_id, predicate=_this_solver, product_name=product_name
         )
         return releases
 
@@ -178,7 +215,7 @@ class CatalogApi(BaseServiceClientApi):
         self, user_id: int, solver_key: SolverKeyId, *, product_name: str
     ) -> Solver:
         releases = await self.list_solver_releases(
-            user_id, solver_key, product_name=product_name
+            user_id=user_id, solver_key=solver_key, product_name=product_name
         )
 
         # raises IndexError if None

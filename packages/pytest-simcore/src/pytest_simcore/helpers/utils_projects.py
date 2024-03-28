@@ -5,6 +5,7 @@
 
 import json
 import uuid as uuidlib
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 
@@ -162,7 +163,7 @@ class NewProject:
 async def assert_get_same_project(
     client: TestClient,
     project: ProjectDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     api_vtag="/v0",
 ) -> dict:
     # GET /v0/projects/{project_id}

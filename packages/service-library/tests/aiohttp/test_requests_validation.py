@@ -11,6 +11,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pydantic import BaseModel, Extra, Field
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -169,7 +170,7 @@ async def test_parse_request_as(
         params=query_params.as_params(),
         json=body.dict(),
     )
-    assert r.status == web.HTTPOk.status_code, f"{await r.text()}"
+    assert r.status == status.HTTP_200_OK, f"{await r.text()}"
 
     got = await r.json()
 
@@ -193,7 +194,7 @@ async def test_parse_request_with_invalid_path_params(
         params=query_params.as_params(),
         json=body.dict(),
     )
-    assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
+    assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
     response_body = await r.json()
     assert response_body["error"].pop("resource")
@@ -222,7 +223,7 @@ async def test_parse_request_with_invalid_query_params(
         params={},
         json=body.dict(),
     )
-    assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
+    assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
     response_body = await r.json()
     assert response_body["error"].pop("resource")
@@ -251,7 +252,7 @@ async def test_parse_request_with_invalid_body(
         params=query_params.as_params(),
         json={"invalid": "body"},
     )
-    assert r.status == web.HTTPUnprocessableEntity.status_code, f"{await r.text()}"
+    assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
     response_body = await r.json()
 
@@ -289,4 +290,4 @@ async def test_parse_request_with_invalid_json_body(
     )
 
     body = await r.text()
-    assert r.status == web.HTTPBadRequest.status_code, body
+    assert r.status == status.HTTP_400_BAD_REQUEST, body

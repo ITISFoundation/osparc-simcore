@@ -7,10 +7,10 @@
 from typing import Any
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.users import UserID
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from tests.helpers.utils import has_datcore_tokens
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -62,7 +62,7 @@ async def test_synchronise_meta_data_table(
     resp = await client.post(
         f"{url}",
     )
-    data, error = await assert_status(resp, web.HTTPOk)
+    data, error = await assert_status(resp, status.HTTP_200_OK)
     assert not error
     assert data
     assert data["dry_run"] == (False if dry_run is None else dry_run)

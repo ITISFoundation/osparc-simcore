@@ -3,7 +3,8 @@
 # pylint: disable=unused-variable
 
 import json
-from typing import Any, Callable, Dict, Iterator
+from collections.abc import Callable, Iterator
+from typing import Any
 
 import pytest
 from aiohttp import web
@@ -35,22 +36,21 @@ def server(event_loop, aiohttp_server: Callable) -> Iterator[TestServer]:
     assert isinstance(app[APP_CLIENT_SESSION_KEY], ClientSession)
     assert not app[APP_CLIENT_SESSION_KEY].closed
 
-    yield test_server
+    return test_server
 
 
-async def test_get_always_the_same_client_session():
-    app = web.Application()
-    session = get_client_session(app)
+async def test_get_always_the_same_client_session(server: TestServer):
+    session = get_client_session(server.app)
 
-    assert session in app.values()
-    assert app[APP_CLIENT_SESSION_KEY] == session
+    assert session in server.app.values()
+    assert server.app[APP_CLIENT_SESSION_KEY] == session
 
     for _ in range(3):
-        assert get_client_session(app) == session
+        assert get_client_session(server.app) == session
 
 
 async def test_app_client_session_json_serialize(
-    server: TestServer, fake_data_dict: Dict[str, Any]
+    server: TestServer, fake_data_dict: dict[str, Any]
 ):
     session = get_client_session(server.app)
 

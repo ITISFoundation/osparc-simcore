@@ -33,13 +33,11 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     study.setReadOnly(true);
 
     this.__buildLayout();
-    this.__attachEventHandlers();
     this.__initComponents();
   },
 
   statics: {
     LAYOUT_HEIGHT: 320,
-    THUMBNAIL_SLIDER_HEIGHT: 60
   },
 
   members: {
@@ -55,15 +53,9 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
           });
           break;
         }
-        case "thumbnail-suggestions": {
-          control = this.__getThumbnailSuggestions();
-          const thumbnailsLayout = this.getChildControl("thumbnails-layout");
-          thumbnailsLayout.add(control);
-          break;
-        }
         case "thumbnail-viewer-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.Canvas()).set({
-            maxHeight: this.self().LAYOUT_HEIGHT - this.self().THUMBNAIL_SLIDER_HEIGHT
+            maxHeight: this.self().LAYOUT_HEIGHT
           });
           const thumbnailsLayout = this.getChildControl("thumbnails-layout");
           thumbnailsLayout.add(control, {
@@ -76,27 +68,8 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
       return control || this.base(arguments, id);
     },
 
-    __getThumbnailSuggestions: function() {
-      const thumbnailSuggestions = new osparc.editor.ThumbnailSuggestions().set({
-        minHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
-        maxHeight: this.self().THUMBNAIL_SLIDER_HEIGHT,
-        backgroundColor: "transparent",
-        padding: [3, 0]
-      });
-      return thumbnailSuggestions;
-    },
-
     __buildLayout: function() {
-      this.getChildControl("thumbnail-suggestions");
       this.getChildControl("thumbnail-viewer-layout");
-    },
-
-    __attachEventHandlers: function() {
-      const scrollThumbnails = this.getChildControl("thumbnail-suggestions");
-      scrollThumbnails.addListener("thumbnailTapped", e => {
-        const thumbnailData = e.getData();
-        this.__showInThumbnailViewer(thumbnailData["type"], thumbnailData["source"]);
-      });
     },
 
     __showInThumbnailViewer: function(type, source) {
@@ -105,11 +78,7 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
         case "workbenchUIPreview":
           control = this.__getWorkbenchUIPreview();
           break;
-        case null:
-          control = new osparc.widget.Three(source);
-          break;
         default:
-          control = this.__getThumbnail(source);
           break;
       }
       if (control) {
@@ -122,12 +91,6 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
           left: 0
         });
       }
-    },
-
-    __getThumbnail: function(thumbnailSource) {
-      const maxHeight = this.self().LAYOUT_HEIGHT - this.self().THUMBNAIL_SLIDER_HEIGHT;
-      const thumbnail = new osparc.ui.basic.Thumbnail(thumbnailSource, maxHeight, parseInt(maxHeight*2/3));
-      return thumbnail;
     },
 
     __getWorkbenchUIPreview: function() {
@@ -146,36 +109,9 @@ qx.Class.define("osparc.dashboard.StudyThumbnailExplorer", {
     },
 
     __initComponents: function() {
-      const thumbnailSuggestions = this.getChildControl("thumbnail-suggestions");
-      // make it visible only if there are thumbnails
-      this.exclude();
-      thumbnailSuggestions.addListener("thumbnailAdded", () => this.show());
-
-      if (this.__isWorkbenchUIPreviewVisible()) {
-        thumbnailSuggestions.addWorkbenchUIPreviewToSuggestions();
-      }
-
-      thumbnailSuggestions.setStudy(this.__study);
-
       if (this.__isWorkbenchUIPreviewVisible()) {
         this.__showInThumbnailViewer("workbenchUIPreview");
       }
-
-      const params = {
-        url: {
-          studyId: this.__study.getUuid()
-        }
-      };
-      osparc.data.Resources.fetch("studyPreviews", "getPreviews", params)
-        .then(previewsPerNodes => {
-          thumbnailSuggestions.addPreviewsToSuggestions(previewsPerNodes);
-          // show the last preview by default
-          if (previewsPerNodes && previewsPerNodes.length) {
-            const thumbnails = thumbnailSuggestions.getChildren();
-            thumbnailSuggestions.thumbnailTapped(thumbnails[thumbnails.length - 1]);
-          }
-        })
-        .catch(err => console.error(err));
     },
 
     __isWorkbenchUIPreviewVisible: function() {

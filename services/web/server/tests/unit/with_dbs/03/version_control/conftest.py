@@ -4,7 +4,6 @@
 
 import logging
 from copy import deepcopy
-from http import HTTPStatus
 from pathlib import Path
 from typing import Any, AsyncIterator, Awaitable, Callable
 from unittest import mock
@@ -23,6 +22,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import random_project
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import NewProject
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.projects_version_control import (
     projects_vc_repos,
     projects_vc_snapshots,
@@ -203,7 +203,7 @@ def request_update_project(
                 project_id=f"{project_uuid}", node_id=node_id
             )
             response = await client.delete(f"{delete_node_url}")
-            assert response.status == HTTPStatus.NO_CONTENT
+            assert response.status == status.HTTP_204_NO_CONTENT
 
         # add a node
         node_id = faker.uuid4()
@@ -227,7 +227,7 @@ def request_update_project(
                 "service_id": f"{node_id}",
             },
         )
-        assert response.status == HTTPStatus.CREATED
+        assert response.status == status.HTTP_201_CREATED
         project["workbench"] = {node_id: jsonable_encoder(node)}
         resp = await client.put(f"{VX}/projects/{project_uuid}", json=project)
         body = await resp.json()

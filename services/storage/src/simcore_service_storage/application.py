@@ -2,6 +2,7 @@
 
     Functions to create, setup and run an aiohttp application provided a settingsuration object
 """
+
 import logging
 from typing import Final
 
@@ -11,7 +12,7 @@ from servicelib.aiohttp.dev_error_logger import setup_dev_error_logger
 from servicelib.aiohttp.monitoring import setup_monitoring
 from servicelib.aiohttp.tracing import setup_tracing
 
-from ._meta import WELCOME_MSG, app_name, version
+from ._meta import WELCOME_MSG, app_name, version_info
 from .db import setup_db
 from .dsm import setup_dsm
 from .dsm_cleaner import setup_dsm_cleaner
@@ -74,7 +75,7 @@ def create(settings: Settings) -> web.Application:
         setup_dev_error_logger(app)
 
     if settings.STORAGE_MONITORING_ENABLED:
-        setup_monitoring(app, app_name, version=f"{version}")
+        setup_monitoring(app, app_name, version=f"{version_info}")
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(

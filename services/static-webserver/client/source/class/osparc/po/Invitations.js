@@ -16,45 +16,9 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.po.Invitations", {
-  extend: qx.ui.core.Widget,
-
-  construct: function() {
-    this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.VBox(10));
-
-    this.__buildLayout();
-  },
-
-  statics: {
-    createGroupBox: function(title) {
-      const box = new qx.ui.groupbox.GroupBox(title).set({
-        appearance: "settings-groupbox",
-        layout: new qx.ui.layout.VBox(5),
-        alignX: "center"
-      });
-      box.getChildControl("legend").set({
-        font: "text-14"
-      });
-      box.getChildControl("frame").set({
-        backgroundColor: "transparent"
-      });
-      return box;
-    },
-
-    createHelpLabel: function(text) {
-      const label = new qx.ui.basic.Label(text).set({
-        font: "text-13",
-        rich: true,
-        alignX: "left"
-      });
-      return label;
-    }
-  },
+  extend: osparc.po.BaseView,
 
   members: {
-    __generatedInvitationLayout: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -62,20 +26,26 @@ qx.Class.define("osparc.po.Invitations", {
           control = this.__createInvitations();
           this._add(control);
           break;
+        case "invitation-container": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
-      this._createChildControlImpl("create-invitation");
+    _buildLayout: function() {
+      this.getChildControl("create-invitation");
+      this.getChildControl("invitation-container");
     },
 
     __createInvitations: function() {
-      const invitationGroupBox = this.self().createGroupBox(this.tr("Create invitation"));
+      const invitationGroupBox = osparc.po.BaseView.createGroupBox(this.tr("Create invitation"));
 
-      const disclaimer = this.self().createHelpLabel(this.tr("There is no invitation required in this product/deployment.")).set({
-        textColor: "info"
-      });
+      const disclaimer = osparc.po.BaseView.createHelpLabel(this.tr("There is no invitation required in this product/deployment."));
       disclaimer.exclude();
       const config = osparc.store.Store.getInstance().get("config");
       if ("invitation_required" in config && config["invitation_required"] === false) {
@@ -101,10 +71,10 @@ qx.Class.define("osparc.po.Invitations", {
 
       const extraCreditsInUsd = new qx.ui.form.Spinner().set({
         minimum: 0,
-        maximum: 199,
+        maximum: 1000,
         value: 100
       });
-      form.add(extraCreditsInUsd, this.tr("Welcome Credits (US$)"));
+      form.add(extraCreditsInUsd, this.tr("Welcome Credits (USD)"));
 
       const withExpiration = new qx.ui.form.CheckBox().set({
         value: false
@@ -130,9 +100,7 @@ qx.Class.define("osparc.po.Invitations", {
           return;
         }
         if (form.validate()) {
-          if (this.__generatedInvitationLayout) {
-            this._remove(this.__generatedInvitationLayout);
-          }
+          generateInvitationBtn.setFetching(true);
           const params = {
             data: {
               "guest": userEmail.getValue()
@@ -144,11 +112,9 @@ qx.Class.define("osparc.po.Invitations", {
           if (withExpiration.getValue()) {
             params.data["trialAccountDays"] = trialDays.getValue();
           }
-          generateInvitationBtn.setFetching(true);
           osparc.data.Resources.fetch("invitations", "post", params)
             .then(data => {
-              const generatedInvitationLayout = this.__generatedInvitationLayout = this.__createGeneratedInvitationLayout(data);
-              this._add(generatedInvitationLayout);
+              this.__populateInvitationLayout(data);
             })
             .catch(err => {
               console.error(err);
@@ -162,8 +128,9 @@ qx.Class.define("osparc.po.Invitations", {
       return form;
     },
 
-    __createGeneratedInvitationLayout: function(respData) {
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+    __populateInvitationLayout: function(respData) {
+      const vBox = this.getChildControl("invitation-container");
+      vBox.removeAll();
 
       const label = new qx.ui.basic.Label().set({
         value: this.tr("Remember that this is a one time use link")
@@ -199,9 +166,9 @@ qx.Class.define("osparc.po.Invitations", {
       const invitationRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "invitation-data");
       const container = new qx.ui.container.Scroll();
       container.add(invitationRespViewer);
-      vBox.add(container);
-
-      return vBox;
+      vBox.add(container, {
+        flex: 1
+      });
     }
   }
 });

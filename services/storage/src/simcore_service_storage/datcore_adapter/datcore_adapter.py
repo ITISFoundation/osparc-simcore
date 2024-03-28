@@ -232,6 +232,21 @@ async def get_file_download_presigned_link(
     return url
 
 
+async def get_package_files(
+    app: web.Application, api_key: str, api_secret: str, package_id: str
+) -> list[dict[str, Any]]:
+    return cast(
+        list[dict[str, Any]],
+        await _request(
+            app,
+            api_key,
+            api_secret,
+            "GET",
+            f"/packages/{package_id}/files",
+        ),
+    )
+
+
 async def delete_file(
     app: web.Application, api_key: str, api_secret: str, file_id: str
 ) -> None:

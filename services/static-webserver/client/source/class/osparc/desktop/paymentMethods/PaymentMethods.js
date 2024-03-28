@@ -95,8 +95,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         osparc.data.Resources.fetch("paymentMethods", "init", params)
           .then(data => {
             const gatewayWindow = this.__popUpPaymentGateway(data.paymentMethodId, data.paymentMethodFormUrl);
-            osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentMethodAcknowledged", wsData => {
-              const {paymentMethodId} = JSON.parse(wsData);
+            osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentMethodAcknowledged", ({ paymentMethodId }) => {
               if (paymentMethodId === data.paymentMethodId) {
                 gatewayWindow.close();
                 this.__fetchPaymentMethods();
@@ -166,7 +165,13 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
           }
         })
         .finally(() => this.__fetchingMsg.setVisibility("excluded"))
-        .catch(err => console.error(err));
+        .catch(err => {
+          console.error(err)
+          osparc.FlashMessenger.getInstance().logAs(
+            this.tr("We could not retrieve your saved payment methods. Please try again later."),
+            "ERROR"
+          );
+        });
     },
 
     __populatePaymentMethodsList: function(allPaymentMethods) {

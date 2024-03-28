@@ -3,5 +3,6 @@ services:
   osparc-gateway-server:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+      - OSPARC_GATEWAY_SERVER_DEBUGGING_PORT=3000
     ports:
-      - "3100:3000" # ptvsd port
+      - "3100:3000" # debug port

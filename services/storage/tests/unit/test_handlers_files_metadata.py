@@ -4,12 +4,11 @@
 
 
 import urllib.parse
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from random import choice
-from typing import Awaitable, Callable
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, SimcoreS3FileID
@@ -17,6 +16,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -40,7 +40,7 @@ async def test_get_files_metadata(
 
     # this should return an empty list
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert not list_fmds
@@ -53,7 +53,7 @@ async def test_get_files_metadata(
         files_owned_by_us.append(await upload_file(file_size, faker.file_name()))
     # we should find these files now
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert len(list_fmds) == NUM_FILES
@@ -67,13 +67,13 @@ async def test_get_files_metadata(
         )
     # we should find these files now
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert len(list_fmds) == (2 * NUM_FILES)
     # we can filter them now
     response = await client.get(f"{url.update_query(uuid_filter='common_name')}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
     assert len(list_fmds) == (NUM_FILES)
@@ -100,7 +100,7 @@ async def test_get_file_metadata_is_legacy_services_compatible(
     )
     # this should return an empty list
     response = await client.get(f"{url}")
-    await assert_status(response, web.HTTPNotFound)
+    await assert_status(response, status.HTTP_404_NOT_FOUND)
 
 
 async def test_get_file_metadata(
@@ -124,10 +124,10 @@ async def test_get_file_metadata(
     )
     # this should return an empty list
     response = await client.get(f"{url}")
-    # await assert_status(response, web.HTTPNotFound)
+    # await assert_status(response, status.HTTP_404_NOT_FOUND)
 
     # NOTE: This needs to be a Ok response with empty data until ALL legacy services are gone, then it should be changed to 404! see test above
-    assert response.status == web.HTTPOk.status_code
+    assert response.status == status.HTTP_200_OK
     assert await response.json() == {"data": {}, "error": "No result found"}
 
     # now add some stuff there
@@ -146,7 +146,7 @@ async def test_get_file_metadata(
         .with_query(user_id=f"{user_id}")
     )
     response = await client.get(f"{url}")
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     assert data
     fmd = parse_obj_as(FileMetaDataGet, data)

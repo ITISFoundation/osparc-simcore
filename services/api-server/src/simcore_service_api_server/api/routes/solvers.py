@@ -1,14 +1,18 @@
 import logging
 from collections.abc import Callable
 from operator import attrgetter
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
-from models_library.api_schemas_webserver.resource_usage import ServicePricingPlanGet
+from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
 from servicelib.error_codes import create_error_code
+from simcore_service_api_server.models.schemas.errors import ErrorGet
+from simcore_service_api_server.services.service_exception_handling import (
+    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
+)
 
 from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
@@ -22,6 +26,13 @@ from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
 
+_SOLVER_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_404_NOT_FOUND: {
+        "description": "Not found",
+        "model": ErrorGet,
+    }
+} | DEFAULT_BACKEND_SERVICE_STATUS_CODES
+
 router = APIRouter()
 
 ## SOLVERS -----------------------------------------------------------------------------------------
@@ -34,7 +45,7 @@ router = APIRouter()
 #    Would be nice to have /solvers/foo/releases/latest or solvers/foo/releases/3 , similar to docker tagging
 
 
-@router.get("", response_model=list[Solver])
+@router.get("", response_model=list[Solver], responses=_SOLVER_STATUS_CODES)
 async def list_solvers(
     user_id: Annotated[int, Depends(get_current_user_id)],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
@@ -61,6 +72,8 @@ async def list_solvers(
     "/page",
     response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def get_solvers_page(
     page_params: Annotated[PaginationParams, Depends()],
@@ -69,7 +82,12 @@ async def get_solvers_page(
     raise NotImplementedError(msg)
 
 
-@router.get("/releases", response_model=list[Solver], summary="Lists All Releases")
+@router.get(
+    "/releases",
+    response_model=list[Solver],
+    summary="Lists All Releases",
+    responses=_SOLVER_STATUS_CODES,
+)
 async def list_solvers_releases(
     user_id: Annotated[int, Depends(get_current_user_id)],
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
@@ -98,6 +116,8 @@ async def list_solvers_releases(
     "/releases/page",
     response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def get_solvers_releases_page(
     page_params: Annotated[PaginationParams, Depends()],
@@ -110,6 +130,7 @@ async def get_solvers_releases_page(
     "/{solver_key:path}/latest",
     response_model=Solver,
     summary="Get Latest Release of a Solver",
+    responses=_SOLVER_STATUS_CODES,
 )
 async def get_solver(
     solver_key: SolverKeyId,
@@ -138,7 +159,11 @@ async def get_solver(
         ) from err
 
 
-@router.get("/{solver_key:path}/releases", response_model=list[Solver])
+@router.get(
+    "/{solver_key:path}/releases",
+    response_model=list[Solver],
+    responses=_SOLVER_STATUS_CODES,
+)
 async def list_solver_releases(
     solver_key: SolverKeyId,
     user_id: Annotated[int, Depends(get_current_user_id)],
@@ -151,7 +176,7 @@ async def list_solver_releases(
     SEE get_solver_releases_page for a paginated version of this function
     """
     releases: list[Solver] = await catalog_client.list_solver_releases(
-        user_id, solver_key, product_name=product_name
+        user_id=user_id, solver_key=solver_key, product_name=product_name
     )
 
     for solver in releases:
@@ -166,6 +191,8 @@ async def list_solver_releases(
     "/{solver_key:path}/releases/page",
     response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+    response_description="Not implemented",
 )
 async def get_solver_releases_page(
     solver_key: SolverKeyId,
@@ -178,6 +205,7 @@ async def get_solver_releases_page(
 @router.get(
     "/{solver_key:path}/releases/{version}",
     response_model=Solver,
+    responses=_SOLVER_STATUS_CODES,
 )
 async def get_solver_release(
     solver_key: SolverKeyId,
@@ -189,7 +217,7 @@ async def get_solver_release(
 ) -> Solver:
     """Gets a specific release of a solver"""
     try:
-        solver = await catalog_client.get_service(
+        solver: Solver = await catalog_client.get_service(
             user_id=user_id,
             name=solver_key,
             version=version,
@@ -217,6 +245,7 @@ async def get_solver_release(
 @router.get(
     "/{solver_key:path}/releases/{version}/ports",
     response_model=OnePage[SolverPort],
+    responses=_SOLVER_STATUS_CODES,
 )
 async def list_solver_ports(
     solver_key: SolverKeyId,
@@ -252,17 +281,12 @@ async def list_solver_ports(
             detail=f"Port definition of {solver_key}:{version} seems corrupted [{error_code}]",
         ) from err
 
-    except HTTPStatusError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Ports for solver {solver_key}:{version} not found",
-        ) from err
-
 
 @router.get(
     "/{solver_key:path}/releases/{version}/pricing_plan",
     response_model=ServicePricingPlanGet,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    responses=_SOLVER_STATUS_CODES,
 )
 async def get_solver_pricing_plan(
     solver_key: SolverKeyId,

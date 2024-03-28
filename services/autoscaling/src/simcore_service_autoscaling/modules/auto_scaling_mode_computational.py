@@ -9,7 +9,7 @@ from models_library.docker import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerLabelKey,
 )
-from models_library.generated_models.docker_rest_api import Availability, Node
+from models_library.generated_models.docker_rest_api import Node
 from pydantic import AnyUrl, ByteSize
 from servicelib.logging_utils import LogLevelInt
 from servicelib.utils import logged_gather
@@ -115,16 +115,30 @@ class ComputationalAutoscaling(BaseAutoscaling):
         app: FastAPI, instance: AssociatedInstance
     ) -> Resources:
         try:
-            num_results_in_memory = await dask.get_worker_still_has_results_in_memory(
+            resource = await dask.get_worker_used_resources(
                 _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
             )
-            if num_results_in_memory > 0:
-                # NOTE: this is a trick to consider the node still useful
-                return Resources(cpus=0, ram=ByteSize(1024 * 1024 * 1024))
-            return await dask.get_worker_used_resources(
-                _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
+            if resource == Resources.create_as_empty():
+                num_results_in_memory = (
+                    await dask.get_worker_still_has_results_in_memory(
+                        _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
+                    )
+                )
+                if num_results_in_memory > 0:
+                    _logger.debug(
+                        "found %s for %s",
+                        f"{num_results_in_memory=}",
+                        f"{instance.ec2_instance.id}",
+                    )
+                    # NOTE: this is a trick to consider the node still useful
+                    return Resources(cpus=0, ram=ByteSize(1024 * 1024 * 1024))
+
+            _logger.debug(
+                "found %s for %s", f"{resource=}", f"{instance.ec2_instance.id}"
             )
+            return resource
         except (DaskWorkerNotFoundError, DaskNoWorkersError):
+            _logger.debug("no resource found for %s", f"{instance.ec2_instance.id}")
             return Resources.create_as_empty()
 
     @staticmethod
@@ -155,9 +169,7 @@ class ComputationalAutoscaling(BaseAutoscaling):
 
     @staticmethod
     async def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
-        if not utils_docker.is_node_ready_and_available(
-            instance.node, Availability.active
-        ):
+        if not utils_docker.is_node_osparc_ready(instance.node):
             return False
 
         # now check if dask-scheduler is available

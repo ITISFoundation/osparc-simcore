@@ -10,8 +10,8 @@
 --requirement _base.txt
 --requirement _test.txt
 
-../models-library/
-../pytest-simcore/
+simcore-models-library @ ../models-library
+pytest-simcore @ ../pytest-simcore
 
 # current module
-.
+simcore-service-integration @ .

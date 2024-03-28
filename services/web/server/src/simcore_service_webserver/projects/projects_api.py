@@ -14,6 +14,7 @@ import datetime
 import json
 import logging
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import suppress
 from pprint import pformat
 from typing import Any, Final
@@ -79,7 +80,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from simcore_postgres_database.webserver_models import ProjectType
 
-from ..application_settings import get_settings
+from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
@@ -96,8 +97,8 @@ from ..resource_usage import api as rut_api
 from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
-    send_group_messages,
-    send_messages,
+    send_message_to_standard_group,
+    send_message_to_user,
 )
 from ..storage import api as storage_api
 from ..users.api import FullNameDict, get_user_fullname, get_user_role
@@ -105,7 +106,6 @@ from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
     PreferredWalletIdFrontendUserPreference,
     UserDefaultWalletNotFoundError,
-    UserInactivityThresholdFrontendUserPreference,
     get_frontend_user_preference,
 )
 from ..wallets import api as wallets_api
@@ -264,15 +264,15 @@ async def _get_default_pricing_and_hardware_info(
         service_key=ServiceKey(service_key),
         service_version=ServiceVersion(service_version),
     )
-    for unit in service_pricing_plan_get.pricing_units:
-        if unit.default:
-            return PricingAndHardwareInfoTuple(
-                service_pricing_plan_get.pricing_plan_id,
-                unit.pricing_unit_id,
-                unit.current_cost_per_unit_id,
-                unit.specific_info.aws_ec2_instances,
-            )
-
+    if service_pricing_plan_get.pricing_units:
+        for unit in service_pricing_plan_get.pricing_units:
+            if unit.default:
+                return PricingAndHardwareInfoTuple(
+                    service_pricing_plan_get.pricing_plan_id,
+                    unit.pricing_unit_id,
+                    unit.current_cost_per_unit_id,
+                    unit.specific_info.aws_ec2_instances,
+                )
     raise DefaultPricingUnitNotFoundError(
         project_uuid=f"{project_uuid}", node_uuid=f"{node_uuid}"
     )
@@ -440,7 +440,7 @@ async def _start_dynamic_service(
         # Get wallet/pricing/hardware information
         wallet_info, pricing_info, hardware_info = None, None, None
         product = products_api.get_current_product(request)
-        app_settings = get_settings(request.app)
+        app_settings = get_application_settings(request.app)
         if (
             product.is_payment_enabled
             and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
@@ -1227,7 +1227,7 @@ async def is_project_node_deprecated(
         return await is_service_deprecated(
             app, user_id, project_node["key"], project_node["version"], product_name
         )
-    raise NodeNotFoundError(project["uuid"], f"{node_id}")
+    raise NodeNotFoundError(project_uuid=project["uuid"], node_uuid=f"{node_id}")
 
 
 #
@@ -1257,7 +1257,9 @@ async def get_project_node_resources(
         return node_resources
 
     except ProjectNodesNodeNotFound as exc:
-        raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
+        raise NodeNotFoundError(
+            project_uuid=f"{project_id}", node_uuid=f"{node_id}"
+        ) from exc
 
 
 async def update_project_node_resources(
@@ -1297,7 +1299,9 @@ async def update_project_node_resources(
         )
         return parse_obj_as(ServiceResourcesDict, project_node.required_resources)
     except ProjectNodesNodeNotFound as exc:
-        raise NodeNotFoundError(f"{project_id}", f"{node_id}") from exc
+        raise NodeNotFoundError(
+            project_uuid=f"{project_id}", node_uuid=f"{node_id}"
+        ) from exc
 
 
 #
@@ -1441,28 +1445,31 @@ async def remove_project_dynamic_services(
 async def notify_project_state_update(
     app: web.Application,
     project: ProjectDict,
-    notify_only_user: int | None = None,
+    notify_only_user: UserID | None = None,
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
-    messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_PROJECT_UPDATED_EVENT,
-            "data": {
-                "project_uuid": project["uuid"],
-                "data": project["state"],
-            },
-        }
-    ]
+    message = SocketMessageDict(
+        event_type=SOCKET_IO_PROJECT_UPDATED_EVENT,
+        data={
+            "project_uuid": project["uuid"],
+            "data": project["state"],
+        },
+    )
 
     if notify_only_user:
-        await send_messages(app, user_id=f"{notify_only_user}", messages=messages)
+        await send_message_to_user(
+            app,
+            user_id=notify_only_user,
+            message=message,
+            ignore_queue=True,
+        )
     else:
-        rooms_to_notify: list[GroupID] = [
+        rooms_to_notify: Generator[GroupID, None, None] = (
             gid for gid, rights in project["accessRights"].items() if rights["read"]
-        ]
+        )
         for room in rooms_to_notify:
-            await send_group_messages(app, room, messages)
+            await send_message_to_standard_group(app, group_id=room, message=message)
 
 
 async def notify_project_node_update(
@@ -1478,22 +1485,20 @@ async def notify_project_node_update(
         gid for gid, rights in project["accessRights"].items() if rights["read"]
     ]
 
-    messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
-            "data": {
-                "project_id": project["uuid"],
-                "node_id": f"{node_id}",
-                # as GET projects/{project_id}/nodes/{node_id}
-                "data": project["workbench"][f"{node_id}"],
-                # as GET projects/{project_id}/nodes/{node_id}/errors
-                "errors": errors,
-            },
-        }
-    ]
+    message = SocketMessageDict(
+        event_type=SOCKET_IO_NODE_UPDATED_EVENT,
+        data={
+            "project_id": project["uuid"],
+            "node_id": f"{node_id}",
+            # as GET projects/{project_id}/nodes/{node_id}
+            "data": project["workbench"][f"{node_id}"],
+            # as GET projects/{project_id}/nodes/{node_id}/errors
+            "errors": errors,
+        },
+    )
 
     for room in rooms_to_notify:
-        await send_group_messages(app, room, messages)
+        await send_message_to_standard_group(app, room, message)
 
 
 async def retrieve_and_notify_project_locked_state(
@@ -1548,23 +1553,16 @@ async def lock_with_notification(
 
 
 async def get_project_inactivity(
-    app: web.Application, project_id: ProjectID, user_id: UserID, product_name: str
+    app: web.Application, project_id: ProjectID
 ) -> GetProjectInactivityResponse:
-    preference = await get_frontend_user_preference(
-        app,
-        user_id=user_id,
-        product_name=product_name,
-        preference_class=UserInactivityThresholdFrontendUserPreference,
-    )
-
-    # preference not present in the DB, use the default value
-    if preference is None:
-        preference = UserInactivityThresholdFrontendUserPreference()
-
-    assert preference.value is not None  # nosec
-    max_inactivity_seconds: int = preference.value
-
+    project_settings: ProjectsSettings = get_plugin_settings(app)
     project_inactivity = await director_v2_api.get_project_inactivity(
-        app, project_id, max_inactivity_seconds
+        app,
+        project_id,
+        # NOTE: project is considered inactive if all services exposing an /inactivity
+        # endpoint were inactive since at least PROJECTS_INACTIVITY_INTERVAL
+        max_inactivity_seconds=int(
+            project_settings.PROJECTS_INACTIVITY_INTERVAL.total_seconds()
+        ),
     )
     return parse_obj_as(GetProjectInactivityResponse, project_inactivity)

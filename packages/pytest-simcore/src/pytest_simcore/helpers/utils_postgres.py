@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, TypedDict
+from typing import TypedDict
 
 import simcore_postgres_database.cli
 import sqlalchemy as sa

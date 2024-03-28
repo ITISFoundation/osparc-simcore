@@ -30,17 +30,18 @@ openapi_modules = [
         "_nih_sparc_redirections",
         "_nih_sparc",
         "_products",
+        "_project_nodes_pricing_unit",
         "_projects_comments",
         "_projects_crud",
         "_projects_metadata",
         "_projects_nodes",
-        "_project_nodes_pricing_unit",
         "_projects_ports",
         "_projects_states",
         "_projects_tags",
         "_projects_wallet",
         "_publications",
         "_resource_usage",
+        "_statics",
         "_storage",
         "_tags",
         "_users",
@@ -82,7 +83,7 @@ def main():
     openapi = create_openapi_specs(app, remove_main_sections=False)
 
     # .yaml
-    oas_path = webserver_resources.get_path("/api/v0/openapi.yaml")
+    oas_path = webserver_resources.get_path("api/v0/openapi.yaml").resolve()
     print(f"Writing {oas_path}...", end=None)
     with oas_path.open("wt") as fh:
         yaml.safe_dump(openapi, stream=fh, sort_keys=False)

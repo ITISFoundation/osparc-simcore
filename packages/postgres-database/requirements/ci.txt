@@ -12,7 +12,7 @@
 --requirement _test.txt
 
 # installs this repo's packages
---editable ../../packages/pytest-simcore/
+pytest-simcore @ ../../packages/pytest-simcore/
 
 # current module
-.
+simcore-postgres-database @ .

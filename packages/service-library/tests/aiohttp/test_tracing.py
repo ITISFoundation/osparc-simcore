@@ -9,6 +9,7 @@ import pytest
 from aiohttp import web
 from aiohttp.client_reqrep import ClientResponse
 from aiohttp.test_utils import TestClient
+from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import _collect_http_exceptions
 from servicelib.aiohttp.tracing import setup_tracing
 
@@ -78,7 +79,7 @@ async def test_setup_tracing(client: TestClient):
     res: ClientResponse
 
     # on error
-    for code in (web.HTTPOk.status_code, web.HTTPBadRequest.status_code):
+    for code in (status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST):
         res = await client.get(f"/return/{code}")
 
         assert res.status == code, await res.text()
@@ -90,8 +91,8 @@ async def test_setup_tracing(client: TestClient):
     assert res.status == 200, await res.text()
 
     res = await client.get("/skip")
-    assert res.status == web.HTTPServiceUnavailable.status_code
+    assert res.status == status.HTTP_503_SERVICE_UNAVAILABLE
 
     # using POST instead of GET ->  HTTPMethodNotAllowed
     res = await client.post("/skip")
-    assert res.status == web.HTTPMethodNotAllowed.status_code, "GET and not POST"
+    assert res.status == status.HTTP_405_METHOD_NOT_ALLOWED, "GET and not POST"

@@ -6,14 +6,13 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
-  bash ci/helpers/ensure_python_pip.bash
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd packages/models-library
   make install-ci
   popd
-  .venv/bin/pip list --verbose
+  uv pip list
 }
 
 test() {

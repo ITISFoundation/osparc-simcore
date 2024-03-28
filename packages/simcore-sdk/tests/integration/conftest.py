@@ -39,10 +39,10 @@ def user_id(postgres_db: sa.engine.Engine) -> Iterable[UserID]:
     # which would turn this test too complex.
 
     # pylint: disable=no-value-for-parameter
-    stmt = users.insert().values(**random_user(name="test")).returning(users.c.id)
-    print(f"{stmt}")
     with postgres_db.connect() as conn:
-        result = conn.execute(stmt)
+        result = conn.execute(
+            users.insert().values(**random_user(name="test")).returning(users.c.id)
+        )
         row = result.first()
         assert row
         usr_id = row[users.c.id]

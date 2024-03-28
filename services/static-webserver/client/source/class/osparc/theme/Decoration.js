@@ -20,6 +20,7 @@ qx.Theme.define("osparc.theme.Decoration", {
   extend: osparc.theme.common.Decoration,
 
   decorations: {
+    "material-button-invalid": {},
     "material-button": {
       style: {
         radius: 4,
@@ -28,6 +29,19 @@ qx.Theme.define("osparc.theme.Decoration", {
         transitionDuration: "0.25s",
         transitionTimingFunction: "linear",
         shadowColor: "transparent"
+      }
+    },
+
+    "indicator-border": {
+      include: "material-button",
+      style: {
+        radius: 2
+      }
+    },
+
+    "rounded": {
+      style: {
+        radius: 4
       }
     },
 
@@ -552,6 +566,49 @@ qx.Theme.define("osparc.theme.Decoration", {
         width: 1,
         color: "background-selected-dark",
         backgroundColor: "background-selected-dark"
+      }
+    },
+
+    "thumbnail": {
+      include: "material-button",
+      style: {
+        style: "solid",
+        width: 1,
+        color: "box-shadow",
+        backgroundColor: "fab-background",
+      }
+    },
+
+    "thumbnail-selected": {
+      include: "thumbnail",
+      style: {
+        style: "solid",
+        width: 1,
+        color: "background-selected-dark",
+        backgroundColor: "background-selected"
+      }
+    },
+
+    "progressbar": {
+      style: {
+        style: "solid",
+        width: 0,
+        color: "transparent",
+        backgroundColor: "progressbar-runner",
+      }
+    },
+
+    /*
+    ---------------------------------------------------------------------------
+      Tooltip
+    ---------------------------------------------------------------------------
+    */
+    "tooltip": {
+      style: {
+        style: "solid",
+        width: 1,
+        color: "info",
+        backgroundColor: "tooltip",
       }
     },
 

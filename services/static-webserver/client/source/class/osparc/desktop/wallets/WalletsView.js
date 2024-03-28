@@ -59,6 +59,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsView", {
       };
       if (this.__walletsList.isWalletsLoaded()) {
         openWalletDetails(walletId);
+        this.__walletDetails.excludeShareButton()
       } else {
         this.__walletsList.addListenerOnce("changeWalletsLoaded", () => openWalletDetails(walletId));
       }

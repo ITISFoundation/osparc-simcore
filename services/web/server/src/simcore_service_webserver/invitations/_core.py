@@ -10,6 +10,7 @@ from models_library.api_schemas_invitations.invitations import (
 )
 from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.error_codes import create_error_code
 
 from ..groups.api import is_user_by_email_in_group
@@ -18,9 +19,9 @@ from ._client import InvitationsServiceApi, get_invitations_service_api
 from .errors import (
     MSG_INVALID_INVITATION_URL,
     MSG_INVITATION_ALREADY_USED,
-    InvalidInvitation,
-    InvitationsErrors,
-    InvitationsServiceUnavailable,
+    InvalidInvitationError,
+    InvitationsError,
+    InvitationsServiceUnavailableError,
 )
 
 _logger = logging.getLogger(__name__)
@@ -33,30 +34,32 @@ def _handle_exceptions_as_invitations_errors():
 
     except ClientResponseError as err:
         # check possible errors
-        if err.status == web.HTTPUnprocessableEntity.status_code:
+        if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
             error_code = create_error_code(err)
             _logger.exception(
                 "Invitation request unexpectedly failed [%s]",
                 f"{error_code}",
                 extra={"error_code": error_code},
             )
-            raise InvalidInvitation(reason=f"Unexpected error [{error_code}]") from err
+            raise InvalidInvitationError(
+                reason=f"Unexpected error [{error_code}]"
+            ) from err
 
-        assert err.status >= 400  # nosec
+        assert err.status >= status.HTTP_400_BAD_REQUEST  # nosec
         # any other error status code
-        raise InvitationsServiceUnavailable from err
+        raise InvitationsServiceUnavailableError from err
 
     except (ValidationError, ClientError) as err:
         _logger.debug("Invitations error %s", f"{err}")
-        raise InvitationsServiceUnavailable from err
+        raise InvitationsServiceUnavailableError from err
 
-    except InvitationsErrors:
+    except InvitationsError:
         # bypass: prevents that the Exceptions handler catches this exception
         raise
 
     except Exception as err:
         _logger.exception("Unexpected error in invitations plugin")
-        raise InvitationsServiceUnavailable from err
+        raise InvitationsServiceUnavailableError from err
 
 
 #
@@ -83,7 +86,7 @@ async def validate_invitation_url(
     raises InvitationsError
     """
     if current_product.group_id is None:
-        raise InvitationsServiceUnavailable(
+        raise InvitationsServiceUnavailableError(
             reason="Current product is not configured for invitations"
         )
 
@@ -93,7 +96,7 @@ async def validate_invitation_url(
         try:
             valid_url = parse_obj_as(AnyHttpUrl, invitation_url)
         except ValidationError as err:
-            raise InvalidInvitation(reason=MSG_INVALID_INVITATION_URL) from err
+            raise InvalidInvitationError(reason=MSG_INVALID_INVITATION_URL) from err
 
         # check with service
         invitation = await invitations_service.extract_invitation(
@@ -102,7 +105,7 @@ async def validate_invitation_url(
 
         # check email
         if invitation.guest.lower() != guest_email.lower():
-            raise InvalidInvitation(
+            raise InvalidInvitationError(
                 reason="This invitation was issued for a different email"
             )
 
@@ -112,7 +115,7 @@ async def validate_invitation_url(
             invitation.product is not None
             and invitation.product != current_product.name
         ):
-            raise InvalidInvitation(
+            raise InvalidInvitationError(
                 reason="This invitation was issued for a different product. "
                 f"Got '{invitation.product}', expected '{current_product.name}'"
             )
@@ -126,7 +129,7 @@ async def validate_invitation_url(
         )
         if is_user_registered_in_product:
             # NOTE: a user might be already registered but the invitation is for another product
-            raise InvalidInvitation(reason=MSG_INVITATION_ALREADY_USED)
+            raise InvalidInvitationError(reason=MSG_INVITATION_ALREADY_USED)
 
     return invitation
 
@@ -144,7 +147,7 @@ async def extract_invitation(
         try:
             valid_url = parse_obj_as(AnyHttpUrl, invitation_url)
         except ValidationError as err:
-            raise InvalidInvitation(reason=MSG_INVALID_INVITATION_URL) from err
+            raise InvalidInvitationError(reason=MSG_INVALID_INVITATION_URL) from err
 
         # check with service
         return await invitations_service.extract_invitation(invitation_url=valid_url)

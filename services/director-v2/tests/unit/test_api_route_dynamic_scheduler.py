@@ -26,6 +26,7 @@ from starlette.testclient import TestClient
 
 @pytest.fixture
 def mock_env(
+    mock_exclusive: None,
     disable_rabbitmq: None,
     disable_postgres: None,
     mock_env: EnvVarsDict,
@@ -73,10 +74,7 @@ def mock_free_reserved_disk_space(mocker: MockerFixture) -> None:
 async def mock_sidecar_api(
     scheduler_data: SchedulerData,
 ) -> AsyncIterator[None]:
-    with respx.mock(
-        assert_all_called=False,
-        assert_all_mocked=True,
-    ) as respx_mock:
+    with respx.mock(assert_all_called=False, assert_all_mocked=True) as respx_mock:
         respx_mock.get(f"{scheduler_data.endpoint}/health", name="is_healthy").respond(
             json={"is_healthy": True}
         )

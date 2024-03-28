@@ -64,7 +64,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             alignY: "middle"
           })).set({
             anonymous: true,
-            maxWidth: 100
           });
           this._add(control, {
             row: 0,
@@ -112,6 +111,10 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "empty-workbench":
           control = this._getEmptyWorkbenchIcon();
+          control.set({
+            alignY: "middle",
+            alignX: "center"
+          });
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.UPDATES
@@ -209,8 +212,19 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       }
     },
 
-    // overridden
+    createOwner: function(label) {
+      if (label === osparc.auth.Data.getInstance().getEmail()) {
+        const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(this.getResourceType());
+        return qx.locale.Manager.tr(`My ${resourceAlias}`);
+      }
+      return osparc.utils.Utils.getNameFromEmail(label);
+    },
+
     _applyOwner: function(value, old) {
+      const label = this.getChildControl("owner");
+      const user = this.createOwner(value);
+      label.setValue(user);
+      label.setVisibility(value ? "visible" : "excluded");
       return;
     },
 

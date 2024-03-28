@@ -17,7 +17,6 @@
 
 aiocache
 fastapi
-fastapi-pagination
 packaging
 prometheus_api_client
 shortuuid

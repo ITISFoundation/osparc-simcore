@@ -55,11 +55,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     MODE_APP: "@FontAwesome5Solid/desktop/13",
     NEW_ICON: "@FontAwesome5Solid/plus/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
-    STUDY_ICON: "resource/osparc/Thumbnail_Transparent.png",
-    TEMPLATE_ICON: "resource/osparc/Thumbnail_Transparent.png",
-    SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
-    COMP_SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
-    DYNAMIC_SERVICE_ICON: "resource/osparc/Thumbnail_Transparent.png",
+    // Get the default thumbnail for each product else add the image and extension osparc.product.Utils.getProductThumbUrl(Thumbnail-01.png)
+    STUDY_ICON: osparc.product.Utils.getProductThumbUrl(),
+    TEMPLATE_ICON: osparc.product.Utils.getProductThumbUrl(),
+    SERVICE_ICON: osparc.product.Utils.getProductThumbUrl(),
+    COMP_SERVICE_ICON: osparc.product.Utils.getProductThumbUrl(),
+    DYNAMIC_SERVICE_ICON: osparc.product.Utils.getProductThumbUrl(),
 
     CARD_PRIORITY: {
       NEW: 0,
@@ -417,7 +418,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         const uiModeIcon = this.getChildControl("workbench-mode");
         uiModeIcon.set({
           source,
-          toolTipText
+          toolTipText,
+          alignY: "bottom",
+          marginBottom: 10
         });
       }
     },
@@ -520,58 +523,63 @@ qx.Class.define("osparc.dashboard.CardBase", {
     _applyProjectState: function(projectStatus) {
       const status = projectStatus["value"];
       let icon;
-      let label;
+      let toolTip;
       let border;
       switch (status) {
         case "STARTED":
-          icon = "@FontAwesome5Solid/spinner/8";
-          label = this.tr("Running");
+          icon = "@FontAwesome5Solid/spinner/10";
+          toolTip = this.tr("Running");
           border = "info";
           break;
         case "SUCCESS":
-          icon = "@FontAwesome5Solid/check/8";
-          label = this.tr("Ran successfully");
+          icon = "@FontAwesome5Solid/check/10";
+          toolTip = this.tr("Ran successfully");
           border = "success";
           break;
         case "ABORTED":
-          icon = "@FontAwesome5Solid/info/8";
-          label = this.tr("Run aborted");
+          icon = "@FontAwesome5Solid/exclamation/10";
+          toolTip = this.tr("Run aborted");
           border = "warning";
           break;
         case "FAILED":
-          icon = "@FontAwesome5Solid/times/8";
-          label = this.tr("Ran with error");
+          icon = "@FontAwesome5Solid/exclamation/10";
+          toolTip = this.tr("Ran with error");
           border = "error";
           break;
         default:
           icon = null;
-          label = null;
+          toolTip = null;
           border = null;
           break;
       }
-      this.__applyProjectLabel(icon, label, border);
+      this.__applyProjectLabel(icon, toolTip, border);
     },
 
-    __applyProjectLabel: function(icn, lbl, bdr) {
-      const projectStatusLabel = this.getChildControl("project-status");
-      projectStatusLabel.setVisibility(icn && lbl && bdr ? "visible" : "excluded");
+    __applyProjectLabel: function(icn, toolTipText, bdr) {
       const border = new qx.ui.decoration.Decorator().set({
+        radius: 10,
         width: 1,
         style: "solid",
         color: bdr,
-        backgroundColor: bdr
+        backgroundColor: bdr ? bdr + "-bg" : null
       });
-      const icon = this.getChildControl("project-status-icon");
-      const label = this.getChildControl("project-status-label");
-      icon.setSource(icn);
-      icon.set({
-        decorator: border
+      const projectStatusLabel = this.getChildControl("project-status");
+      projectStatusLabel.set({
+        decorator: border,
+        textColor: bdr,
+        alignX: "center",
+        alignY: "middle",
+        height: 17,
+        width: 17,
+        padding: 3
       });
-      icon.getContentElement().setStyles({
-        "border-radius": "50%",
-        "background-clip": "border-box"
+
+      projectStatusLabel.set({
+        visibility: icn && toolTipText && bdr ? "visible" : "excluded",
+        source: icn,
+        toolTipIcon: icn,
+        toolTipText
       });
-      label.setValue(lbl);
     },
 
     __showBlockedCardFromStatus: function(lockedStatus) {
@@ -706,70 +714,18 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return moreOpts;
     },
 
-    _checkLoggedIn: function() {
-      let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
-      if (!isLogged) {
-        const msg = this.tr("You need to be logged in to create a study");
-        osparc.FlashMessenger.getInstance().logAs(msg);
-      }
-      return isLogged;
-    },
-
     _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
-      if (!this._checkLoggedIn()) {
-        return;
-      }
-
-      const openStudy = () => {
-        if (openCB) {
-          openCB();
-        }
-        osparc.desktop.MainPageHandler.getInstance().startStudy(studyId);
-      };
-
-      const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
-      if (walletsEnabled) {
-        const params = {
-          url: {
-            studyId
-          }
-        };
-        osparc.data.Resources.fetch("studies", "getWallet", params)
-          .then(wallet => {
-            if (isStudyCreation || wallet === null || osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null) {
-              // pop up study options if the study was just created or if it has no wallet assigned or user has no access to it
-              const resourceSelector = new osparc.study.StudyOptions(studyId);
-              const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
-              resourceSelector.addListener("startStudy", () => {
-                win.close();
-                openStudy();
-              });
-              resourceSelector.addListener("cancel", () => {
-                win.close();
-                if (cancelCB) {
-                  cancelCB();
-                }
-              });
-              // listen to "tap" instead of "execute": the "execute" is not propagated
-              win.getChildControl("close-button").addListener("tap", () => {
-                cancelCB();
-              });
-            } else {
-              openStudy();
-            }
-          })
-          .catch(err => {
-            console.error(err);
-            osparc.FlashMessenger.logAs(err.message, "ERROR");
-          });
-      } else {
-        openStudy();
-      }
+      osparc.dashboard.ResourceBrowserBase.startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
     openData: function() {
       const moreOpts = this.__openMoreOptions();
       moreOpts.openData();
+    },
+
+    openBilling: function() {
+      const moreOpts = this.__openMoreOptions();
+      moreOpts.openBillingSettings();
     },
 
     openAccessRights: function() {

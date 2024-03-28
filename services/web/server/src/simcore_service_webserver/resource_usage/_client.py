@@ -16,8 +16,8 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
     WalletTotalCredits,
 )
 from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
+    PricingPlanGet,
     PricingUnitGet,
-    ServicePricingPlanGet,
 )
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
@@ -84,7 +84,7 @@ async def list_service_runs_by_user_and_product_and_wallet(
 
 async def get_default_service_pricing_plan(
     app: web.Application, product_name: str, service_key: str, service_version: str
-) -> ServicePricingPlanGet:
+) -> PricingPlanGet:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
     url = URL(
         f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}/pricing-plan"
@@ -97,7 +97,7 @@ async def get_default_service_pricing_plan(
         async with session.get(url) as response:
             response.raise_for_status()
             body: dict = await response.json()
-            return parse_obj_as(ServicePricingPlanGet, body)
+            return parse_obj_as(PricingPlanGet, body)
 
 
 async def get_pricing_plan_unit(

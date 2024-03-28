@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
     error_middleware_factory,
@@ -135,11 +136,11 @@ async def test_envelope_middleware(path: str, expected_data: Any, client: TestCl
 async def test_404_not_found(client: TestClient):
     response = await client.get("/some-invalid-address-outside-api")
     payload = await response.text()
-    assert response.status == 404, payload
+    assert response.status == status.HTTP_404_NOT_FOUND, payload
 
     response = await client.get("/v1/some-invalid-address-in-api")
     payload = await response.json()
-    assert response.status == 404, payload
+    assert response.status == status.HTTP_404_NOT_FOUND, payload
 
     assert is_enveloped(payload)
 

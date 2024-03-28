@@ -11,7 +11,6 @@ from copy import deepcopy
 from typing import Any
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -20,6 +19,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
 )
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
@@ -123,7 +123,7 @@ async def test_list_groups(
 
     response = await client.get(f"{url}")
     data, error = await assert_status(
-        response, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+        response, expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK
     )
 
     if not error:
@@ -147,12 +147,12 @@ async def test_list_groups(
             # try to delete a group
             url = client.app.router["delete_group"].url_for(gid=f"{group['gid']}")
             response = await client.delete(f"{url}")
-            await assert_status(response, web.HTTPForbidden)
+            await assert_status(response, status.HTTP_403_FORBIDDEN)
 
             # try to add some user in the group
             url = client.app.router["add_group_user"].url_for(gid=f"{group['gid']}")
             response = await client.post(f"{url}", json={"uid": logged_user["id"]})
-            await assert_status(response, web.HTTPForbidden)
+            await assert_status(response, status.HTTP_403_FORBIDDEN)
 
             # try to modify the user in the group
             url = client.app.router["update_group_user"].url_for(
@@ -162,14 +162,14 @@ async def test_list_groups(
                 f"{url}",
                 json={"access_rights": {"read": True, "write": True, "delete": True}},
             )
-            await assert_status(response, web.HTTPForbidden)
+            await assert_status(response, status.HTTP_403_FORBIDDEN)
 
             # try to remove the user from the group
             url = client.app.router["delete_group_user"].url_for(
                 gid=f"{group['gid']}", uid=f"{logged_user['id']}"
             )
             response = await client.delete(f"{url}")
-            await assert_status(response, web.HTTPForbidden)
+            await assert_status(response, status.HTTP_403_FORBIDDEN)
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -215,7 +215,7 @@ async def test_group_creation_workflow(
 
     resp = await client.get(f"{url}")
     data, error = await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+        resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK
     )
     if not error and user_role != UserRole.GUEST:
         assert len(data["organizations"]) == 1
@@ -226,7 +226,7 @@ async def test_group_creation_workflow(
     assert f"{url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}"
     resp = await client.get(f"{url}")
     data, error = await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPNotFound
+        resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_404_NOT_FOUND
     )
     if not error:
         assert data == assigned_group
@@ -247,7 +247,7 @@ async def test_group_creation_workflow(
     assert f"{url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}"
     resp = await client.get(f"{url}")
     data, error = await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPNotFound
+        resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_404_NOT_FOUND
     )
     if not error:
         _assert_group(data)
@@ -272,7 +272,10 @@ async def test_group_creation_workflow(
     assert f"{url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}"
     resp = await client.get(f"{url}")
     data, error = await assert_status(
-        resp, expected.not_found if user_role != UserRole.GUEST else web.HTTPNotFound
+        resp,
+        expected.not_found
+        if user_role != UserRole.GUEST
+        else status.HTTP_404_NOT_FOUND,
     )
 
 
@@ -542,7 +545,7 @@ async def test_group_access_rights(
         # as a manager I cannot delete the group
         url = client.app.router["delete_group"].url_for(gid=f"{assigned_group['gid']}")
         resp = await client.delete(f"{url}")
-        data, error = await assert_status(resp, web.HTTPForbidden)
+        data, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
         # now log in as user 2
         # login
@@ -564,14 +567,14 @@ async def test_group_access_rights(
             == f"/{API_VTAG}/groups/{assigned_group['gid']}/users/{users[0]['id']}"
         )
         resp = await client.delete(f"{delete_group_user_url}")
-        data, error = await assert_status(resp, web.HTTPForbidden)
+        data, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
         # as a member I cannot add user 1
         resp = await client.post(f"{add_group_user_url}", json={"uid": users[0]["id"]})
-        data, error = await assert_status(resp, web.HTTPForbidden)
+        data, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
         # as a member I cannot delete the grouop
         url = client.app.router["delete_group"].url_for(gid=f"{assigned_group['gid']}")
         resp = await client.delete(f"{url}")
-        data, error = await assert_status(resp, web.HTTPForbidden)
+        data, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
 
 
 @pytest.mark.parametrize(*standard_role_response())
@@ -593,7 +596,7 @@ async def test_add_user_gets_added_to_group(
             user = await users_stack.enter_async_context(
                 LoggedUser(
                     client,
-                    params={"role": user_role.name, "email": email},
+                    user_data={"role": user_role.name, "email": email},
                     check_if_succeeds=user_role != UserRole.ANONYMOUS,
                 )
             )
@@ -604,7 +607,7 @@ async def test_add_user_gets_added_to_group(
 
             resp = await client.get(f"{url}")
             data, error = await assert_status(
-                resp, web.HTTPOk if user_role == UserRole.GUEST else expected.ok
+                resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
             )
             if not error:
                 assert len(data["organizations"]) == (0 if "bad" in email else 1)
@@ -659,7 +662,7 @@ async def test_adding_user_to_group_with_upper_case_email(
                 "email": registered_user["email"].upper()
             },  # <--- email in upper case
         )
-        data, error = await assert_status(response, web.HTTPNoContent)
+        data, error = await assert_status(response, status.HTTP_204_NO_CONTENT)
 
         assert not data
         assert not error

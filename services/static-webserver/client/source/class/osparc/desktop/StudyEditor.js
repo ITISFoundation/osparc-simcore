@@ -182,7 +182,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           study.initStudy();
 
-          if (osparc.product.Utils.isS4LProduct()) {
+          if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
             this.__startIdlingTracker();
           }
 
@@ -404,9 +404,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           osparc.store.Store.getInstance().getStudyState(pipelineId);
         }, 60000);
         const socket = osparc.wrapper.WebSocket.getInstance();
-        socket.getSocket().once("projectStateUpdated", jsonStr => {
-          const study = JSON.parse(jsonStr);
-          if (study["project_uuid"] === pipelineId) {
+        socket.getSocket().once("projectStateUpdated", ({ "project_uuid": projectUuid }) => {
+          if (projectUuid === pipelineId) {
             clearTimeout(timer);
           }
         });

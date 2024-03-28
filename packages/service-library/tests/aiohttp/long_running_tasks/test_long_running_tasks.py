@@ -20,7 +20,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
-from servicelib.aiohttp import long_running_tasks
+from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskId
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.long_running_tasks._task import TaskContext
@@ -72,7 +72,7 @@ async def test_workflow(
     ):
         with attempt:
             result = await client.get(f"{status_url}")
-            data, error = await assert_status(result, web.HTTPOk)
+            data, error = await assert_status(result, status.HTTP_200_OK)
             assert data
             assert not error
             task_status = long_running_tasks.server.TaskStatus.parse_obj(data)
@@ -102,13 +102,13 @@ async def test_workflow(
     # now get the result
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")
-    task_result, error = await assert_status(result, web.HTTPCreated)
+    task_result, error = await assert_status(result, status.HTTP_201_CREATED)
     assert task_result
     assert not error
     assert task_result == [f"{x}" for x in range(10)]
     # getting the result again should raise a 404
     result = await client.get(f"{result_url}")
-    await assert_status(result, web.HTTPNotFound)
+    await assert_status(result, status.HTTP_404_NOT_FOUND)
 
 
 @pytest.mark.parametrize(
@@ -125,7 +125,7 @@ async def test_get_task_wrong_task_id_raises_not_found(
     assert client.app
     url = client.app.router[route_name].url_for(task_id="fake_task_id")
     result = await client.request(method, f"{url}")
-    await assert_status(result, web.HTTPNotFound)
+    await assert_status(result, status.HTTP_404_NOT_FOUND)
 
 
 async def test_failing_task_returns_error(
@@ -140,7 +140,7 @@ async def test_failing_task_returns_error(
     # get the result
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")
-    data, error = await assert_status(result, web.HTTPInternalServerError)
+    data, error = await assert_status(result, status.HTTP_500_INTERNAL_SERVER_ERROR)
     assert not data
     assert error
     assert "errors" in error
@@ -158,7 +158,7 @@ async def test_get_results_before_tasks_finishes_returns_404(
 
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")
-    await assert_status(result, web.HTTPNotFound)
+    await assert_status(result, status.HTTP_404_NOT_FOUND)
 
 
 async def test_cancel_task(
@@ -171,22 +171,22 @@ async def test_cancel_task(
     # cancel the task
     delete_url = client.app.router["cancel_and_delete_task"].url_for(task_id=task_id)
     result = await client.delete(f"{delete_url}")
-    data, error = await assert_status(result, web.HTTPNoContent)
+    data, error = await assert_status(result, status.HTTP_204_NO_CONTENT)
     assert not data
     assert not error
 
     # it should be gone, so no status
     status_url = client.app.router["get_task_status"].url_for(task_id=task_id)
     result = await client.get(f"{status_url}")
-    await assert_status(result, web.HTTPNotFound)
+    await assert_status(result, status.HTTP_404_NOT_FOUND)
     # and also no results
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")
-    await assert_status(result, web.HTTPNotFound)
+    await assert_status(result, status.HTTP_404_NOT_FOUND)
 
     # try cancelling again
     result = await client.delete(f"{delete_url}")
-    await assert_status(result, web.HTTPNotFound)
+    await assert_status(result, status.HTTP_404_NOT_FOUND)
 
 
 async def test_list_tasks_empty_list(client: TestClient):
@@ -194,7 +194,7 @@ async def test_list_tasks_empty_list(client: TestClient):
     assert client.app
     list_url = client.app.router["list_tasks"].url_for()
     result = await client.get(f"{list_url}")
-    data, error = await assert_status(result, web.HTTPOk)
+    data, error = await assert_status(result, status.HTTP_200_OK)
     assert not error
     assert data == []
 
@@ -214,7 +214,7 @@ async def test_list_tasks(
     # check we have the full list
     list_url = client.app.router["list_tasks"].url_for()
     result = await client.get(f"{list_url}")
-    data, error = await assert_status(result, web.HTTPOk)
+    data, error = await assert_status(result, status.HTTP_200_OK)
     assert not error
     list_of_tasks = parse_obj_as(list[TaskGet], data)
     assert len(list_of_tasks) == NUM_TASKS
@@ -233,7 +233,7 @@ async def test_list_tasks(
         await client.get(f"{result_url}")
         # the list shall go down one by one
         result = await client.get(f"{list_url}")
-        data, error = await assert_status(result, web.HTTPOk)
+        data, error = await assert_status(result, status.HTTP_200_OK)
         assert not error
         list_of_tasks = parse_obj_as(list[TaskGet], data)
         assert len(list_of_tasks) == NUM_TASKS - (task_index + 1)

@@ -6,16 +6,14 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 # NOTE: notice that the CI uses [all]
-# TODO: add STEPS where pip-sync individual extras and test separately
 install_all() {
-  bash ci/helpers/ensure_python_pip.bash
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd packages/service-library
   make "install-ci[all]"
   popd
-  .venv/bin/pip list --verbose
+  uv pip list
 }
 
 test_all() {

@@ -17,8 +17,8 @@ from simcore_service_webserver.invitations._client import (
 )
 from simcore_service_webserver.invitations.api import validate_invitation_url
 from simcore_service_webserver.invitations.errors import (
-    InvalidInvitation,
-    InvitationsServiceUnavailable,
+    InvalidInvitationError,
+    InvitationsServiceUnavailableError,
 )
 from simcore_service_webserver.products.api import Product
 from yarl import URL
@@ -34,7 +34,7 @@ async def test_invitation_service_unavailable(
 
     assert not await invitations_api.ping()
 
-    with pytest.raises(InvitationsServiceUnavailable):
+    with pytest.raises(InvitationsServiceUnavailableError):
         await validate_invitation_url(
             app=client.app,
             guest_email=fake_osparc_invitation.guest,
@@ -100,7 +100,7 @@ async def test_invalid_invitation_if_guest_is_already_registered_in_product(
         autospec=True,
     )
     async with NewUser(
-        params={
+        user_data={
             "name": "test-user",
             "email": fake_osparc_invitation.guest,
         },
@@ -116,7 +116,7 @@ async def test_invalid_invitation_if_guest_is_already_registered_in_product(
         )
 
         # invitation is invalid now
-        with pytest.raises(InvalidInvitation):
+        with pytest.raises(InvalidInvitationError):
             await validate_invitation_url(**kwargs)
 
 
@@ -128,7 +128,7 @@ async def test_invalid_invitation_if_not_guest(
 ):
     assert client.app
     assert fake_osparc_invitation.guest != "unexpected_guest@email.me"
-    with pytest.raises(InvalidInvitation):
+    with pytest.raises(InvalidInvitationError):
         await validate_invitation_url(
             app=client.app,
             guest_email="unexpected_guest@email.me",

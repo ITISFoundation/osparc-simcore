@@ -4,9 +4,9 @@ from typing import Literal, TypedDict
 
 import asyncpg
 from aiohttp import web
+from servicelib.utils_secrets import generate_passcode
 
 from . import _sql
-from .utils import get_random_string
 
 _logger = getLogger(__name__)
 
@@ -80,13 +80,16 @@ class AsyncpgStorage:
         async with self.pool.acquire() as conn:
             # generate different code
             while True:
-                code: str = get_random_string(30)
-                if not await _sql.find_one(conn, self.confirm_tbl, {"code": code}):
+                # NOTE: use only numbers (i.e. avoid generate_password) since front-end does not handle well url encoding
+                numeric_code: str = generate_passcode(20)
+                if not await _sql.find_one(
+                    conn, self.confirm_tbl, {"code": numeric_code}
+                ):
                     break
             # insert confirmation
             # NOTE: returns timestamp generated at the server-side
             confirmation = ConfirmationTokenDict(
-                code=code,
+                code=numeric_code,
                 action=action,
                 user_id=user_id,
                 data=data,
@@ -95,7 +98,7 @@ class AsyncpgStorage:
             c = await _sql.insert(
                 conn, self.confirm_tbl, confirmation, returning="code"
             )
-            assert code == c  # nosec
+            assert numeric_code == c  # nosec
             return confirmation
 
     async def get_confirmation(self, filter_dict) -> ConfirmationTokenDict | None:

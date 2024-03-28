@@ -4,6 +4,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, PositiveInt, SecretStr
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import LogExtra, get_log_record_extra, log_context
@@ -126,7 +127,7 @@ async def login(request: web.Request):
                 "code": CODE_PHONE_NUMBER_REQUIRED,
                 "reason": MSG_PHONE_MISSING,
             },
-            status=web.HTTPAccepted.status_code,
+            status=status.HTTP_202_ACCEPTED,
         )
 
     # create 2FA
@@ -167,7 +168,7 @@ async def login(request: web.Request):
                     phone_number=mask_phone_number(user["phone"])
                 ),
             },
-            status=web.HTTPAccepted.status_code,
+            status=status.HTTP_202_ACCEPTED,
         )
 
     except Exception as exc:

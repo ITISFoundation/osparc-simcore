@@ -1,18 +1,23 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
+# pylint: disable=logging-fstring-interpolation
 # pylint:disable=no-value-for-parameter
+# pylint:disable=protected-access
+# pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 # pylint:disable=too-many-statements
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 
 import datetime
+import logging
 import re
 from collections.abc import Callable
 from typing import Final
 
+from packaging.version import Version
+from packaging.version import parse as parse_version
 from playwright.sync_api import Page, WebSocket
+from pytest_simcore.logging_utils import ContextMessages, log_context, test_logger
 from pytest_simcore.playwright_utils import (
     MINUTE,
     RunningState,
@@ -32,6 +37,20 @@ _WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[
 _WAITING_FOR_FILE_NAMES_WAIT_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
     seconds=1
 )
+
+_VERSION_TO_EXPECTED_FILE_NAMES: Final[dict[Version, list[str]]] = {
+    parse_version("1.0.0"): ["logs.zip", "single_number.txt"],
+    parse_version("2.2.0"): ["dream.txt", "logs.zip", "single_number.txt"],
+}
+
+
+def _get_expected_file_names_for_version(version: Version) -> list[str]:
+    for base_version, expected_file_names in reversed(
+        _VERSION_TO_EXPECTED_FILE_NAMES.items()
+    ):
+        if version >= base_version:
+            return expected_file_names
+    return []
 
 
 @retry(
@@ -73,35 +92,74 @@ def test_sleepers(
     create_new_project_and_delete(auto_delete=True)
 
     # we are now in the workbench
-    print(f"---> creating {num_sleepers} sleeper(s)...")
-    for _ in range(1, num_sleepers):
-        page.get_by_text("New Node").click()
-        page.get_by_placeholder("Filter").click()
-        page.get_by_placeholder("Filter").fill("sleeper")
-        page.get_by_placeholder("Filter").press("Enter")
-    print(f"<--- {num_sleepers} sleeper(s) created")
+    with log_context(
+        logging.INFO,
+        (
+            f"creating {num_sleepers} sleeper(s)...",
+            f"{num_sleepers} sleeper(s) created",
+        ),
+    ):
+        for _ in range(1, num_sleepers):
+            page.get_by_test_id("newNodeBtn").click()
+            page.get_by_placeholder("Filter").click()
+            page.get_by_placeholder("Filter").fill("sleeper")
+            page.get_by_placeholder("Filter").press("Enter")
+
+    # get sleeper version
+    sleeper_version = parse_version("1.0.0")
+    sleeper_expected_output_files = _get_expected_file_names_for_version(
+        sleeper_version
+    )
+    for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
+        with log_context(
+            logging.INFO,
+            f"getting sleeper {index} version...",
+        ) as ctx:
+            sleeper.click()
+            page.keyboard.press("i")
+            version_string = page.get_by_test_id("serviceVersion").text_content()
+            ctx.logger.info("found sleeper version: %s", version_string)
+            assert version_string
+            sleeper_version = parse_version(version_string)
+            sleeper_expected_output_files = _get_expected_file_names_for_version(
+                sleeper_version
+            )
+            ctx.logger.info(
+                "we will expect the following outputs: %s",
+                sleeper_expected_output_files,
+            )
+            page.keyboard.press("Escape")
+
+            workbench_selector = page.get_by_test_id("desktopWindow")
+            assert workbench_selector
+            workbench_selector.click()
+        break
 
     # set inputs if needed
     if input_sleep_time:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
-            print(f"---> setting sleeper {index} input time to {input_sleep_time}...")
-            sleeper.click()
-            sleep_interval_selector = page.get_by_role("textbox").nth(1)
-            sleep_interval_selector.click()
-            sleep_interval_selector.fill(f"{input_sleep_time}")
-            print(f"<--- sleeper {index} input time set to {input_sleep_time}")
+            with log_context(
+                logging.INFO,
+                (
+                    f"setting sleeper {index} input time to {input_sleep_time}...",
+                    f"sleeper {index} input time set to {input_sleep_time}",
+                ),
+            ):
+                sleeper.click()
+                sleep_interval_selector = page.get_by_role("textbox").nth(1)
+                sleep_interval_selector.click()
+                sleep_interval_selector.fill(f"{input_sleep_time}")
 
         workbench_selector = page.get_by_test_id("desktopWindow")
         assert workbench_selector
         workbench_selector.click()
-
     # start the pipeline (depending on the state of the cluster, we might receive one of
     # in [] are optional states depending on the state of the clusters and if we have external clusters
     # sometimes they may jump
     # PUBLISHED -> [WAITING_FOR_CLUSTER] -> (PENDING) -> [WAITING_FOR_RESOURCES] -> (PENDING) -> STARTED -> SUCCESS/FAILED
     socket_io_event = start_and_stop_pipeline()
     current_state = retrieve_project_state_from_decoded_message(socket_io_event)
-    print(f"---> pipeline is in {current_state=}")
+    test_logger.info("--- pipeline is in %s", f"{current_state=}")
 
     # this should not stay like this for long, it will either go to PENDING, WAITING_FOR_CLUSTER/WAITING_FOR_RESOURCES or STARTED or FAILED
     current_state = wait_for_pipeline_state(
@@ -150,25 +208,24 @@ def test_sleepers(
     )
 
     # check the outputs (the first item is the title, so we skip it)
-    expected_file_names = ["logs.zip", "single_number.txt"]
-    print(
-        f"---> looking for {expected_file_names=} in all {num_sleepers} sleeper services..."
-    )
+    with log_context(
+        logging.INFO,
+        ContextMessages(
+            starting=f"Looking for {sleeper_expected_output_files=} in all {num_sleepers} sleeper services...",
+            done="All good, we're done here! This was really great!",
+            raised="Error checking outputs!",
+        ),
+    ) as ctx:
+        for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
+            sleeper.click()
+            page.get_by_test_id("outputsTabButton").click()
+            # waiting for this response is not enough, the frontend needs some time to show the files
+            # therefore _get_file_names is wrapped with tenacity
+            with page.expect_response(re.compile(r"files/metadata")):
+                page.get_by_test_id("nodeOutputFilesBtn").click()
+                output_file_names_found = _get_file_names(page)
 
-    for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
-        sleeper.click()
-        page.get_by_test_id("outputsTabButton").click()
-        # waiting for this response is not enough, the frontend needs some time to show the files
-        # therefore _get_file_names is wrapped with tenacity
-        with page.expect_response(re.compile(r"files/metadata")):
-            page.get_by_test_id("nodeOutputFilesBtn").click()
-            output_file_names_found = _get_file_names(page)
-        print(
-            f"<--- found {output_file_names_found=} in sleeper {index} service outputs."
-        )
-        assert output_file_names_found == expected_file_names
-        page.get_by_test_id("nodeDataManagerCloseBtn").click()
-
-    print("------------------------------------------------------")
-    print("---> All good, we're done here! This was really great!")
-    print("------------------------------------------------------")
+            msg = f"--- found {output_file_names_found=} in sleeper {index} service outputs."
+            ctx.logger.info(msg)
+            assert output_file_names_found == sleeper_expected_output_files
+            page.get_by_test_id("nodeDataManagerCloseBtn").click()

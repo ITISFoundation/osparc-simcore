@@ -1,8 +1,9 @@
 # Collection of tests fixtures for integration testing
-import pkg_resources
+from importlib.metadata import version
+
 import pytest
 
-__version__: str = pkg_resources.get_distribution("pytest-simcore").version
+__version__: str = version("pytest-simcore")
 
 
 def pytest_addoption(parser):

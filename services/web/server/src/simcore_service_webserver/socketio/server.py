@@ -17,13 +17,16 @@ _logger = logging.getLogger(__name__)
 
 
 async def _socketio_server_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
+    use_logger: bool | logging.Logger = _logger
+
     # SEE https://github.com/miguelgrinberg/python-socketio/blob/v4.6.1/docs/server.rst#aiohttp
     server_manager = AsyncAioPikaManager(
-        url=get_rabbitmq_settings(app).dsn, logger=_logger
+        url=get_rabbitmq_settings(app).dsn,
+        logger=use_logger,
     )
     sio_server = AsyncServer(
         async_mode="aiohttp",
-        logger=_logger,
+        logger=use_logger,
         engineio_logger=False,
         client_manager=server_manager,
     )

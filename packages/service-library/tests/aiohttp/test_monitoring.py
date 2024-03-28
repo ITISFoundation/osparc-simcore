@@ -11,6 +11,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from prometheus_client.parser import text_string_to_metric_families
+from servicelib.aiohttp import status
 from servicelib.aiohttp.monitoring import setup_monitoring
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -75,17 +76,17 @@ async def test_setup_monitoring(client: TestClient):
     NUM_CALLS = 12
     for _ in range(NUM_CALLS):
         response = await client.get("/monitored_request")
-        assert response.status == web.HTTPOk.status_code
+        assert response.status == status.HTTP_200_OK
         data = await response.json()
         assert data
         assert "data" in data
         assert data["data"] == "OK"
 
     response = await client.get("/metrics")
-    assert response.status == web.HTTPOk.status_code
+    assert response.status == status.HTTP_200_OK
     # by calling it twice, the metrics endpoint should also be incremented
     response = await client.get("/metrics")
-    assert response.status == web.HTTPOk.status_code
+    assert response.status == status.HTTP_200_OK
     metrics_as_text = await response.text()
     _assert_metrics_contain_entry(
         metrics_as_text,
@@ -122,10 +123,10 @@ async def test_request_with_simcore_user_agent(client: TestClient, faker: Faker)
         "/monitored_request",
         headers={X_SIMCORE_USER_AGENT: faker_simcore_user_agent},
     )
-    assert response.status == web.HTTPOk.status_code
+    assert response.status == status.HTTP_200_OK
 
     response = await client.get("/metrics")
-    assert response.status == web.HTTPOk.status_code
+    assert response.status == status.HTTP_200_OK
     metrics_as_text = await response.text()
     _assert_metrics_contain_entry(
         metrics_as_text,

@@ -361,7 +361,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
     if f"{path_params.node_id}" not in project["workbench"]:
         project_uuid = f"{path_params.project_id}"
         node_id = f"{path_params.node_id}"
-        raise NodeNotFoundError(project_uuid, node_id)
+        raise NodeNotFoundError(project_uuid=project_uuid, node_uuid=node_id)
 
     resources: ServiceResourcesDict = await projects_api.get_project_node_resources(
         request.app,
@@ -393,7 +393,9 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
     )
     if f"{path_params.node_id}" not in project["workbench"]:
-        raise NodeNotFoundError(f"{path_params.project_id}", f"{path_params.node_id}")
+        raise NodeNotFoundError(
+            project_uuid=f"{path_params.project_id}", node_uuid=f"{path_params.node_id}"
+        )
     try:
         new_node_resources = await projects_api.update_project_node_resources(
             request.app,

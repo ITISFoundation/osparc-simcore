@@ -19,10 +19,11 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   command -v python | sed 's/^/    /'
 
   cd services/web/server || exit 1
-  pip --quiet --no-cache-dir install -r requirements/dev.txt
+  pip install uv
+  uv pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
-  pip list | sed 's/^/    /'
+  uv pip list | sed 's/^/    /'
 
   APP_CONFIG=server-docker-dev.yaml
 elif [ "${SC_BUILD_TARGET}" = "production" ]; then
@@ -40,17 +41,18 @@ echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 # the official recommendation [https://docs.gunicorn.org/en/latest/design.html#how-many-workers]
 # For now we set it to 1 to check what happens with websockets
 
-if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: ptvsd is programmatically enabled inside of the service
   # this way we can have reload in place as well
-  exec gunicorn simcore_service_webserver.cli:app_factory \
-    --log-level="${SERVER_LOG_LEVEL}"\
+  exec python -m debugpy --listen 0.0.0.0:"${WEBSERVER_REMOTE_DEBUGGING_PORT}" -m gunicorn simcore_service_webserver.cli:app_factory \
+    --log-level="${SERVER_LOG_LEVEL}" \
     --bind 0.0.0.0:8080 \
     --worker-class aiohttp.GunicornWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"' \
+    --worker-tmp-dir=/dev/shm \
     --reload
 
 else
@@ -62,5 +64,6 @@ else
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
     --access-logfile='-' \
-    --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
+    --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"' \
+    --worker-tmp-dir=/dev/shm
 fi

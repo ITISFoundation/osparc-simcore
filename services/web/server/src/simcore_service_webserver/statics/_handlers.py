@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+from servicelib.mimetype_constants import MIMETYPE_TEXT_HTML
 
 from ..products.api import get_product_name
 from ._constants import (
@@ -33,14 +34,14 @@ async def get_cached_frontend_index(request: web.Request):
         raise web.HTTPNotFound(reason=f"No index.html found for {product_name}")
 
     return web.Response(
-        body=cached_index_per_product[product_name], content_type="text/html"
+        body=cached_index_per_product[product_name], content_type=MIMETYPE_TEXT_HTML
     )
 
 
 async def get_statics_json(request: web.Request):
     product_name = get_product_name(request)
 
-    statics_json = request.app[APP_FRONTEND_CACHED_STATICS_JSON_KEY].get(
-        product_name, {}
+    return web.Response(
+        body=request.app[APP_FRONTEND_CACHED_STATICS_JSON_KEY].get(product_name, None),
+        content_type="application/json",
     )
-    return web.Response(body=statics_json, content_type="application/json")

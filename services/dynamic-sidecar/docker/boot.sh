@@ -23,7 +23,8 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
 
-  cd services/dynamic-sidecar || exit 1
+  # NOTE: uv does not like this requirement file...
+  cd /devel/services/dynamic-sidecar
   pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
@@ -34,15 +35,16 @@ fi
 # RUNNING application
 #
 APP_LOG_LEVEL=${DYNAMIC_SIDECAR_LOG_LEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
+DYNAMIC_SIDECAR_REMOTE_DEBUGGING_PORT=${DYNAMIC_SIDECAR_REMOTE_DEBUGGING_PORT:-3000}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
-if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
   reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
 
   exec sh -c "
     cd services/dynamic-sidecar/src/simcore_service_dynamic_sidecar && \
-    uvicorn main:the_app \
+    python -m debugpy --listen 0.0.0.0:${DYNAMIC_SIDECAR_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages

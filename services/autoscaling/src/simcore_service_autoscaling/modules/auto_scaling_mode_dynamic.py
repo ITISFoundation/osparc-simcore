@@ -1,7 +1,7 @@
 from aws_library.ec2.models import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey
-from models_library.generated_models.docker_rest_api import Availability, Node, Task
+from models_library.generated_models.docker_rest_api import Node, Task
 from servicelib.logging_utils import LogLevelInt
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -33,7 +33,7 @@ class DynamicAutoscaling(BaseAutoscaling):
         app: FastAPI, ec2_instance_data: EC2InstanceData
     ) -> dict[DockerLabelKey, str]:
         app_settings = get_application_settings(app)
-        return utils_docker.get__new_node_docker_tags(app_settings, ec2_instance_data)
+        return utils_docker.get_new_node_docker_tags(app_settings, ec2_instance_data)
 
     @staticmethod
     async def list_unrunnable_tasks(app: FastAPI) -> list[Task]:
@@ -100,9 +100,7 @@ class DynamicAutoscaling(BaseAutoscaling):
     @staticmethod
     async def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
         assert app  # nosec
-        return utils_docker.is_node_ready_and_available(
-            instance.node, Availability.active
-        )
+        return utils_docker.is_node_osparc_ready(instance.node)
 
     @staticmethod
     async def try_retire_nodes(app: FastAPI) -> None:

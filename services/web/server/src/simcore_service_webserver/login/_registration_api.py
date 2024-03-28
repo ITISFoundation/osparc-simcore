@@ -1,8 +1,11 @@
+import functools
 import logging
 from typing import Any
 
 from aiohttp import web
-from pydantic import EmailStr, PositiveInt
+from models_library.emails import LowerCaseEmailStr
+from pydantic import EmailStr, PositiveInt, ValidationError, parse_obj_as
+from servicelib.json_serialization import safe_json_dumps
 
 from ..email.utils import send_email_from_template
 from ..products.api import Product, get_current_product, get_product_template_path
@@ -13,8 +16,8 @@ _logger = logging.getLogger(__name__)
 async def send_close_account_email(
     request: web.Request,
     user_email: EmailStr,
-    user_name: str,
-    retention_days: PositiveInt = 30,
+    user_first_name: str,
+    retention_days: PositiveInt,
 ):
     template_name = "close_account.jinja2"
     email_template_path = await get_product_template_path(request, template_name)
@@ -28,9 +31,10 @@ async def send_close_account_email(
             template=email_template_path,
             context={
                 "host": request.host,
-                "name": user_name.capitalize(),
+                "name": user_first_name.capitalize(),
                 "support_email": product.support_email,
                 "retention_days": retention_days,
+                "product": product,
             },
         )
     except Exception:  # pylint: disable=broad-except
@@ -42,17 +46,26 @@ async def send_close_account_email(
 
 
 async def send_account_request_email_to_support(
-    request: web.Request, *, product: Product, request_form: dict[str, Any]
+    request: web.Request,
+    *,
+    product: Product,
+    request_form: dict[str, Any],
+    ipinfo: dict,
 ):
     template_name = "request_account.jinja2"
     support_email = product.support_email
     email_template_path = await get_product_template_path(request, template_name)
+    try:
+        user_email = parse_obj_as(LowerCaseEmailStr, request_form.get("email", None))
+    except ValidationError:
+        user_email = None
 
     try:
         await send_email_from_template(
             request,
             from_=support_email,
             to=support_email,
+            reply_to=user_email,  # So that issue-tracker system ACK email is sent to the user that requests the account
             template=email_template_path,
             context={
                 "host": request.host,
@@ -61,12 +74,13 @@ async def send_account_request_email_to_support(
                     include={
                         "name",
                         "display_name",
-                        "support_email",
                         "vendor",
                         "is_payment_enabled",
                     }
                 ),
                 "request_form": request_form,
+                "ipinfo": ipinfo,
+                "dumps": functools.partial(safe_json_dumps, indent=1),
             },
         )
     except Exception:  # pylint: disable=broad-except

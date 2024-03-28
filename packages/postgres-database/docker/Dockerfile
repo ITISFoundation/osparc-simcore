@@ -22,12 +22,15 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
+# NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
+RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
+  pip install uv~=0.1
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
-RUN python -m venv "${VIRTUAL_ENV}"
+RUN uv venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
+  uv pip install --upgrade \
   pip~=24.0  \
   wheel \
   setuptools
@@ -36,7 +39,7 @@ ARG GIT_BRANCH
 ARG GIT_REPOSITORY
 
 RUN git clone --single-branch --branch ${GIT_BRANCH} ${GIT_REPOSITORY} osparc-simcore\
-  && pip install osparc-simcore/packages/postgres-database[migration]
+  && uv pip install osparc-simcore/packages/postgres-database[migration]
 
 FROM base as production
 

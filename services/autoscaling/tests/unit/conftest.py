@@ -14,23 +14,31 @@ from typing import Any, Final, cast
 from unittest import mock
 
 import aiodocker
+import arrow
 import distributed
 import httpx
 import psutil
 import pytest
 import simcore_service_autoscaling
 from asgi_lifespan import LifespanManager
-from aws_library.ec2.models import EC2InstanceBootSpecific, EC2InstanceData
+from aws_library.ec2.models import (
+    EC2InstanceBootSpecific,
+    EC2InstanceData,
+    EC2InstanceType,
+    Resources,
+)
 from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.generated_models.docker_rest_api import Availability
+from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import (
-    Availability,
-    Node,
     NodeDescription,
     NodeSpec,
+    NodeState,
+    NodeStatus,
     ObjectVersion,
     ResourceObject,
     Service,
@@ -46,8 +54,17 @@ from simcore_service_autoscaling.core.settings import (
     ApplicationSettings,
     EC2Settings,
 )
-from simcore_service_autoscaling.models import Cluster, DaskTaskResources
+from simcore_service_autoscaling.models import (
+    AssociatedInstance,
+    Cluster,
+    DaskTaskResources,
+)
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
+from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
+from simcore_service_autoscaling.utils.utils_docker import (
+    _OSPARC_SERVICE_READY_LABEL_KEY,
+    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
+)
 from tenacity import retry
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -100,7 +117,31 @@ def mocked_ec2_server_envs(
         f"{AUTOSCALING_ENV_PREFIX}{k}": v
         for k, v in mocked_ec2_server_settings.dict().items()
     }
-    return setenvs_from_dict(monkeypatch, changed_envs)
+    return setenvs_from_dict(monkeypatch, changed_envs)  # type: ignore
+
+
+@pytest.fixture(
+    params=[
+        "with_AUTOSCALING_DRAIN_NODES_WITH_LABELS",
+        "without_AUTOSCALING_DRAIN_NODES_WITH_LABELS",
+    ]
+)
+def with_drain_nodes_labelled(request: pytest.FixtureRequest) -> bool:
+    return bool(request.param == "with_AUTOSCALING_DRAIN_NODES_WITH_LABELS")
+
+
+@pytest.fixture
+def with_labelize_drain_nodes(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    with_drain_nodes_labelled: bool,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "AUTOSCALING_DRAIN_NODES_WITH_LABELS": f"{with_drain_nodes_labelled}",
+        },
+    )
 
 
 @pytest.fixture
@@ -292,15 +333,57 @@ async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
 async def host_node(
     docker_swarm: None,
     async_docker_client: aiodocker.Docker,
-) -> Node:
-    nodes = parse_obj_as(list[Node], await async_docker_client.nodes.list())
+) -> AsyncIterator[DockerNode]:
+    nodes = parse_obj_as(list[DockerNode], await async_docker_client.nodes.list())
     assert len(nodes) == 1
-    return nodes[0]
+    # keep state of node for later revert
+    old_node = deepcopy(nodes[0])
+    assert old_node.ID
+    assert old_node.Spec
+    assert old_node.Spec.Role
+    assert old_node.Spec.Availability
+    assert old_node.Version
+    assert old_node.Version.Index
+    labels = old_node.Spec.Labels or {}
+    # ensure we have the necessary labels
+    await async_docker_client.nodes.update(
+        node_id=old_node.ID,
+        version=old_node.Version.Index,
+        spec={
+            "Availability": old_node.Spec.Availability.value,
+            "Labels": labels
+            | {
+                _OSPARC_SERVICE_READY_LABEL_KEY: "true",
+                _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: arrow.utcnow().isoformat(),
+            },
+            "Role": old_node.Spec.Role.value,
+        },
+    )
+    modified_host_node = parse_obj_as(
+        DockerNode, await async_docker_client.nodes.inspect(node_id=old_node.ID)
+    )
+    yield modified_host_node
+    # revert state
+    current_node = parse_obj_as(
+        DockerNode, await async_docker_client.nodes.inspect(node_id=old_node.ID)
+    )
+    assert current_node.ID
+    assert current_node.Version
+    assert current_node.Version.Index
+    await async_docker_client.nodes.update(
+        node_id=current_node.ID,
+        version=current_node.Version.Index,
+        spec={
+            "Availability": old_node.Spec.Availability.value,
+            "Labels": old_node.Spec.Labels,
+            "Role": old_node.Spec.Role.value,
+        },
+    )
 
 
 @pytest.fixture
-def create_fake_node(faker: Faker) -> Callable[..., Node]:
-    def _creator(**node_overrides) -> Node:
+def create_fake_node(faker: Faker) -> Callable[..., DockerNode]:
+    def _creator(**node_overrides) -> DockerNode:
         default_config = {
             "ID": faker.uuid4(),
             "Version": ObjectVersion(Index=faker.pyint()),
@@ -314,19 +397,20 @@ def create_fake_node(faker: Faker) -> Callable[..., Node]:
             ),
             "Spec": NodeSpec(
                 Name=None,
-                Labels=None,
+                Labels=faker.pydict(allowed_types=(str,)),
                 Role=None,
                 Availability=Availability.drain,
             ),
+            "Status": NodeStatus(State=NodeState.unknown, Message=None, Addr=None),
         }
         default_config.update(**node_overrides)
-        return Node(**default_config)
+        return DockerNode(**default_config)
 
     return _creator
 
 
 @pytest.fixture
-def fake_node(create_fake_node: Callable[..., Node]) -> Node:
+def fake_node(create_fake_node: Callable[..., DockerNode]) -> DockerNode:
     return create_fake_node()
 
 
@@ -390,7 +474,7 @@ async def create_service(
         placement_constraints: list[str] | None = None,
     ) -> Service:
         service_name = f"pytest_{faker.pystr()}"
-        base_labels = {}
+        base_labels: dict[DockerLabelKey, Any] = {}
         task_labels = task_template.setdefault("ContainerSpec", {}).setdefault(
             "Labels", base_labels
         )
@@ -404,7 +488,7 @@ async def create_service(
         service = await async_docker_client.services.create(
             task_template=task_template,
             name=service_name,
-            labels=base_labels,
+            labels=base_labels,  # type: ignore
         )
         assert service
         service = parse_obj_as(
@@ -541,7 +625,7 @@ def aws_allowed_ec2_instance_type_names_env(
     monkeypatch: pytest.MonkeyPatch,
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
 ) -> EnvVarsDict:
-    changed_envs = {
+    changed_envs: dict[str, str | bool] = {
         "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(aws_allowed_ec2_instance_type_names),
     }
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
@@ -630,8 +714,8 @@ async def create_dask_task(
 @pytest.fixture
 def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
     async def _fake_set_node_availability(
-        docker_client: AutoscalingDocker, node: Node, *, available: bool
-    ) -> Node:
+        docker_client: AutoscalingDocker, node: DockerNode, *, available: bool
+    ) -> DockerNode:
         returned_node = deepcopy(node)
         assert returned_node.Spec
         returned_node.Spec.Availability = (
@@ -647,3 +731,114 @@ def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
         autospec=True,
         side_effect=_fake_set_node_availability,
     )
+
+
+@pytest.fixture
+def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
+    async def fake_tag_node(
+        docker_client: AutoscalingDocker,
+        node: DockerNode,
+        *,
+        tags: dict[DockerLabelKey, str],
+        available: bool,
+    ) -> DockerNode:
+        updated_node = deepcopy(node)
+        assert updated_node.Spec
+        updated_node.Spec.Labels = deepcopy(cast(dict[str, str], tags))
+        updated_node.Spec.Availability = (
+            Availability.active if available else Availability.drain
+        )
+        return updated_node
+
+    return mocker.patch(
+        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.tag_node",
+        autospec=True,
+        side_effect=fake_tag_node,
+    )
+
+
+@pytest.fixture
+def patch_ec2_client_start_aws_instances_min_number_of_instances(
+    mocker: MockerFixture,
+) -> mock.Mock:
+    """the moto library always returns min number of instances instead of max number of instances which makes
+    it difficult to test scaling to multiple of machines. this should help"""
+    original_fct = SimcoreEC2API.start_aws_instance
+
+    async def _change_parameters(*args, **kwargs) -> list[EC2InstanceData]:
+        new_kwargs = kwargs | {"min_number_of_instances": kwargs["number_of_instances"]}
+        print(f"patching start_aws_instance with: {new_kwargs}")
+        return await original_fct(*args, **new_kwargs)
+
+    return mocker.patch.object(
+        SimcoreEC2API,
+        "start_aws_instance",
+        autospec=True,
+        side_effect=_change_parameters,
+    )
+
+
+@pytest.fixture
+def random_fake_available_instances(faker: Faker) -> list[EC2InstanceType]:
+    list_of_instances = [
+        EC2InstanceType(
+            name=faker.pystr(),
+            resources=Resources(cpus=n, ram=ByteSize(n)),
+        )
+        for n in range(1, 30)
+    ]
+    random.shuffle(list_of_instances)
+    return list_of_instances
+
+
+@pytest.fixture
+def create_associated_instance(
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    app_settings: ApplicationSettings,
+    faker: Faker,
+    host_cpu_count: int,
+    host_memory_total: ByteSize,
+) -> Callable[[DockerNode, bool, dict[str, Any]], AssociatedInstance]:
+    def _creator(
+        node: DockerNode,
+        terminateable_time: bool,
+        fake_ec2_instance_data_override: dict[str, Any] | None = None,
+    ) -> AssociatedInstance:
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+        assert (
+            datetime.timedelta(seconds=10)
+            < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+        ), "this tests relies on the fact that the time before termination is above 10 seconds"
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+        seconds_delta = (
+            -datetime.timedelta(seconds=10)
+            if terminateable_time
+            else datetime.timedelta(seconds=10)
+        )
+
+        if fake_ec2_instance_data_override is None:
+            fake_ec2_instance_data_override = {}
+
+        return AssociatedInstance(
+            node=node,
+            ec2_instance=fake_ec2_instance_data(
+                launch_time=datetime.datetime.now(datetime.timezone.utc)
+                - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+                - datetime.timedelta(
+                    days=faker.pyint(min_value=0, max_value=100),
+                    hours=faker.pyint(min_value=0, max_value=100),
+                )
+                + seconds_delta,
+                resources=Resources(cpus=host_cpu_count, ram=host_memory_total),
+                **fake_ec2_instance_data_override,
+            ),
+        )
+
+    return _creator
+
+
+@pytest.fixture
+def mock_machines_buffer(monkeypatch: pytest.MonkeyPatch) -> int:
+    num_machines_in_buffer = 5
+    monkeypatch.setenv("EC2_INSTANCES_MACHINES_BUFFER", f"{num_machines_in_buffer}")
+    return num_machines_in_buffer

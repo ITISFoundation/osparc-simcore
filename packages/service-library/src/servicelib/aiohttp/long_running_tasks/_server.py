@@ -5,6 +5,7 @@ from typing import Any, AsyncGenerator, Callable
 
 from aiohttp import web
 from pydantic import PositiveFloat
+from servicelib.aiohttp import status
 from servicelib.json_serialization import json_dumps
 
 from ...long_running_tasks._models import TaskGet
@@ -75,7 +76,7 @@ async def start_long_running_task(
         )
         return web.json_response(
             data={"data": task_get},
-            status=web.HTTPAccepted.status_code,
+            status=status.HTTP_202_ACCEPTED,
             dumps=json_dumps,
         )
     except asyncio.CancelledError:

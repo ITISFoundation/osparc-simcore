@@ -22,6 +22,7 @@ from models_library.clusters import (
     NoAuthentication,
     TLSAuthentication,
 )
+from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.clusters import (
@@ -138,6 +139,33 @@ def test_create_startup_script(
         f'"{key}": "{value}"' in startup_script
         for key, value in additional_custom_tags.items()
     )
+
+
+def test_create_startup_script_script_size_below_16kb(
+    disabled_rabbitmq: None,
+    mocked_ec2_server_envs: EnvVarsDict,
+    mocked_redis_server: None,
+    app_settings: ApplicationSettings,
+    cluster_machines_name_prefix: str,
+    clusters_keeper_docker_compose: dict[str, Any],
+    ec2_boot_specs: EC2InstanceBootSpecific,
+):
+    additional_custom_tags = {
+        AWSTagKey("pytest-tag-key"): AWSTagValue("pytest-tag-value")
+    }
+    startup_script = create_startup_script(
+        app_settings,
+        cluster_machines_name_prefix=cluster_machines_name_prefix,
+        ec2_boot_specific=ec2_boot_specs,
+        additional_custom_tags=additional_custom_tags,
+    )
+    script_size_in_bytes = len(startup_script.encode("utf-8"))
+
+    print(
+        f"current script size is {parse_obj_as(ByteSize, script_size_in_bytes).human_readable()}"
+    )
+    # NOTE: EC2 user data cannot be above 16KB, we keep some margin here
+    assert script_size_in_bytes < 15 * 1024
 
 
 def test_startup_script_defines_all_envs_for_docker_compose(

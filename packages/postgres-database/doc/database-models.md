@@ -25,6 +25,6 @@ cd packages/postgres-database
 make install-dev
 
 cd scripts
-pip install eralchemy
+uv pip install eralchemy
 python create_erd.py
 ```

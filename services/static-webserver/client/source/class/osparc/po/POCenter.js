@@ -36,6 +36,12 @@ qx.Class.define("osparc.po.POCenter", {
     });
     tabViews.getChildControl("bar").add(miniProfile);
 
+    const usersPage = this.__getUsersPage();
+    tabViews.add(usersPage);
+
+    const preRegistration = this.__getPreRegistrationPage();
+    tabViews.add(preRegistration);
+
     const invitationsPage = this.__getInvitationsPage();
     tabViews.add(invitationsPage);
 
@@ -45,46 +51,64 @@ qx.Class.define("osparc.po.POCenter", {
     const msgTemplatesPage = this.__getMsgTemplatesPage();
     tabViews.add(msgTemplatesPage);
 
-    this._add(tabViews);
+    this._add(tabViews, {
+      flex: 1
+    });
   },
 
   members: {
+    __widgetToPage: function(title, iconSrc, widget) {
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      widget.set({
+        margin: 10
+      });
+      page.add(widget, {
+        flex: 1
+      });
+      return page;
+    },
+
+    __getUsersPage: function() {
+      const title = this.tr("Users");
+      const iconSrc = "@FontAwesome5Solid/user/22";
+      const users = new osparc.po.Users();
+      const page = this.__widgetToPage(title, iconSrc, users)
+      return page;
+    },
+
+    __getPreRegistrationPage: function() {
+      const title = this.tr("PreRegistration");
+      const iconSrc = "@FontAwesome5Solid/address-card/22";
+      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
+      const preRegistration = new osparc.po.PreRegistration();
+      preRegistration.set({
+        margin: 10
+      });
+      page.add(preRegistration);
+      return page;
+    },
+
     __getInvitationsPage: function() {
       const title = this.tr("Invitations");
       const iconSrc = "@FontAwesome5Solid/envelope/22";
-      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
       const invitations = new osparc.po.Invitations();
-      invitations.set({
-        margin: 10
-      });
-      page.add(invitations);
+      const page = this.__widgetToPage(title, iconSrc, invitations);
       return page;
     },
 
     __getProductPage: function() {
       const title = this.tr("Product Info");
       const iconSrc = "@FontAwesome5Solid/info/22";
-      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
       const productInfo = new osparc.po.ProductInfo();
-      productInfo.set({
-        margin: 10
-      });
-      page.add(productInfo);
+      const page = this.__widgetToPage(title, iconSrc, productInfo);
       return page;
     },
 
     __getMsgTemplatesPage: function() {
       const title = this.tr("Message Templates");
       const iconSrc = "@FontAwesome5Solid/envelope-open/22";
-      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
       const productInfo = new osparc.po.MessageTemplates();
-      productInfo.set({
-        margin: 10
-      });
-      page.add(productInfo);
+      const page = this.__widgetToPage(title, iconSrc, productInfo);
       return page;
     }
   }

@@ -56,7 +56,7 @@ requirements: ## compiles pip requirements (.in -> .txt)
 .PHONY: install-dev install-prod install-ci
 install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
-	pip-sync requirements/$(subst install-,,$@).txt
+	@uv pip sync requirements/$(subst install-,,$@).txt
 	# installing playwright dependencies
 	@playwright install
 
@@ -121,7 +121,7 @@ $(USER_INPUT_FILE):
 		echo "$$PRODUCT_URL $$USER_NAME $$PASSWORD $$NUM_SLEEPERS $$BILLABLE" > $(USER_INPUT_FILE)
 
 # Read user input from the file and run the test
-test-sleepers-anywhere: _check_venv_active $(USER_INPUT_FILE)
+test-sleepers-anywhere: _check_venv_active $(USER_INPUT_FILE) ## test sleepers anywhere and keeps a cache as to where
 	@IFS=' ' read -r PRODUCT_URL USER_NAME PASSWORD NUM_SLEEPERS BILLABLE < $(USER_INPUT_FILE); \
 	BILLABLE_FLAG=""; \
     if [ "$$BILLABLE" = "y" ]; then \

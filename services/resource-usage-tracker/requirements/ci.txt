@@ -11,12 +11,12 @@
 --requirement _test.txt
 
 # installs this repo's packages
-../../packages/aws-library
-../../packages/models-library
-../../packages/pytest-simcore
-../../packages/service-library[fastapi]
-../../packages/settings-library
-../../packages/postgres-database
+simcore-aws-library @ ../../packages/aws-library
+simcore-models-library @ ../../packages/models-library
+pytest-simcore @ ../../packages/pytest-simcore
+simcore-service-library[fastapi] @ ../../packages/service-library
+simcore-settings-library @ ../../packages/settings-library
+simcore-postgres-database @ ../../packages/postgres-database
 
 # installs current package
-.
+simcore-service-resource-usage-tracker @ .

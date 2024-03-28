@@ -1,6 +1,12 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+
+from collections.abc import Callable
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Callable, Final
+from typing import Any, Final
 from uuid import UUID
 
 import httpx
@@ -20,9 +26,6 @@ from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.services.director_v2 import ComputationTaskGet
 from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from unit.conftest import SideEffectCallback
-
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
 
 
 def _start_job_side_effect(
@@ -104,12 +107,12 @@ async def test_get_solver_job_wallet(
         auth=auth,
     )
     if capture == "get_job_wallet_found.json":
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         body = response.json()
         assert isinstance(body, dict)
         assert _wallet_id == body.get("walletId")
     elif capture == "get_job_wallet_not_found.json":
-        assert response.status_code == 404
+        assert response.status_code == status.HTTP_404_NOT_FOUND
         body = response.json()
         assert isinstance(body, dict)
         assert body.get("data") is None
@@ -348,7 +351,7 @@ async def test_stop_job(
 
 @pytest.mark.parametrize(
     "sufficient_credits,expected_status_code",
-    [(True, 200), (False, 402)],
+    [(True, status.HTTP_200_OK), (False, status.HTTP_402_PAYMENT_REQUIRED)],
 )
 async def test_get_solver_job_outputs(
     client: AsyncClient,

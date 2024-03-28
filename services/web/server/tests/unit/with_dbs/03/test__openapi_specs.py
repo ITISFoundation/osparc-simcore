@@ -12,7 +12,7 @@ from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.application_settings import get_settings
+from simcore_service_webserver.application_settings import get_application_settings
 
 
 class Entrypoint(NamedTuple):
@@ -33,8 +33,6 @@ def app_environment(
     return mock_env_devel_environment | setenvs_from_dict(
         monkeypatch,
         {
-            # disable index and statics routings
-            "WEBSERVER_STATICWEB": "null",
             # disable bundle configs
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
@@ -58,7 +56,7 @@ def app(app_environment: EnvVarsDict) -> web.Application:
     # - all plugins are setup but app is NOT started (i.e events are not triggered)
     #
     app_ = create_application()
-    print(get_settings(app_).json(indent=1))
+    print(get_application_settings(app_).json(indent=1))
     return app_
 
 

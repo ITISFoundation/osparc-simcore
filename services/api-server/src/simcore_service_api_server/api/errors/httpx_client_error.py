@@ -1,50 +1,36 @@
 """ General handling of httpx-based exceptions
 
     - httpx-based clients are used to communicate with other backend services
-    - When those respond with 4XX, 5XX status codes, those are generally handled here
+    - any exception raised by a httpx client will be handled here.
 """
 import logging
+from typing import Any
 
-from fastapi import status
-from httpx import HTTPStatusError
-from starlette.requests import Request
-from starlette.responses import JSONResponse
-
-from .http_error import create_error_json_response
+from fastapi import Request, status
+from fastapi.responses import JSONResponse
+from httpx import HTTPError, TimeoutException
 
 _logger = logging.getLogger(__file__)
 
 
-async def httpx_client_error_handler(_: Request, exc: HTTPStatusError) -> JSONResponse:
+async def handle_httpx_client_exceptions(_: Request, exc: HTTPError):
     """
-    This is called when HTTPStatusError was raised and reached the outermost handler
-
-    This handler is used as a "last resource" since it is recommended to handle these exceptions
-    closer to the raising point.
-
-    The response had an error HTTP status of 4xx or 5xx, and this is how is
-    transformed in the api-server API
+    Default httpx exception handler.
+    See https://www.python-httpx.org/exceptions/
+    With this in place only HTTPStatusErrors need to be customized closer to the httpx client itself.
     """
-    if exc.response.is_client_error:
-        assert exc.response.is_server_error  # nosec
-        # Forward api-server's client from backend client errors
-        status_code = exc.response.status_code
-        errors = exc.response.json()["errors"]
+    status_code: Any
+    detail: str
+    headers: dict[str, str] = {}
+    if isinstance(exc, TimeoutException):
+        status_code = status.HTTP_504_GATEWAY_TIMEOUT
+        detail = f"Request to {exc.request.url.host.capitalize()} timed out"
     else:
-        assert exc.response.is_server_error  # nosec
-        # Hide api-server's client from backend server errors
-        status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-        message = f"{exc.request.url.host.capitalize()} service unexpectedly failed"
-        errors = [
-            message,
-        ]
+        status_code = status.HTTP_502_BAD_GATEWAY
+        detail = f"{exc.request.url.host.capitalize()} service unexpectedly failed"
 
-        _logger.exception(
-            "%s. host=%s status-code=%s msg=%s",
-            message,
-            exc.request.url.host,
-            exc.response.status_code,
-            exc.response.text,
-        )
-
-    return create_error_json_response(*errors, status_code=status_code)
+    if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
+        _logger.exception("%s. host=%s. %s", detail, exc.request.url.host, f"{exc}")
+    return JSONResponse(
+        status_code=status_code, content={"detail": detail}, headers=headers
+    )

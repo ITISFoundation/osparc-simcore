@@ -35,7 +35,7 @@ class BootMode(str, Enum):
 
     DEFAULT = "default"
     LOCAL = "local-development"
-    DEBUG = "debug-ptvsd"
+    DEBUG = "debug"
     PRODUCTION = "production"
     DEVELOPMENT = "development"
 

@@ -11,27 +11,23 @@ set -o nounset  # abort on unbound variable
 set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
-
 install() {
-  bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd tests/public-api
-  pip3 install -r requirements/ci.txt
-  pip freeze
+  make install-ci
   popd
-  make .env
-  pip list -v
   make info-images
 }
 
 test() {
   # WARNING: this test is heavy. Due to limited CI machine power, please do not
   # add too much overhead (e.g. low log-level etc)
-  pytest \
-    --color=yes \
-    --keep-docker-up \
-    --durations=5 \
-    -v \
-    tests/public-api
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd tests/public-api
+  make test-ci
 }
 
 clean_up() {

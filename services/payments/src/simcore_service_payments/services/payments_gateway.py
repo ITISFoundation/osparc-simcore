@@ -124,7 +124,7 @@ class PaymentsGatewayApi(
     async def init_payment(self, payment: InitPayment) -> PaymentInitiated:
         response = await self.client.post(
             "/init",
-            json=jsonable_encoder(payment),
+            json=jsonable_encoder(payment.dict(exclude_none=True, by_alias=True)),
         )
         response.raise_for_status()
         return PaymentInitiated.parse_obj(response.json())
@@ -192,11 +192,13 @@ class PaymentsGatewayApi(
 
     @_handle_status_errors
     async def pay_with_payment_method(
-        self, id_: PaymentMethodID, payment: InitPayment
+        self,
+        id_: PaymentMethodID,
+        payment: InitPayment,
     ) -> AckPaymentWithPaymentMethod:
         response = await self.client.post(
             f"/payment-methods/{id_}:pay",
-            json=jsonable_encoder(payment),
+            json=jsonable_encoder(payment.dict(exclude_none=True, by_alias=True)),
         )
         response.raise_for_status()
         return AckPaymentWithPaymentMethod.parse_obj(response.json())

@@ -12,10 +12,12 @@ import datetime
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Iterator
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 from unittest import mock
 
+import arrow
 import distributed
 import pytest
 from aws_library.ec2.models import Resources
@@ -40,6 +42,11 @@ from simcore_service_autoscaling.modules.auto_scaling_mode_computational import 
 )
 from simcore_service_autoscaling.modules.dask import DaskTaskResources
 from simcore_service_autoscaling.modules.docker import get_docker_client
+from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
+from simcore_service_autoscaling.utils.utils_docker import (
+    _OSPARC_SERVICE_READY_LABEL_KEY,
+    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
+)
 from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -60,6 +67,7 @@ def local_dask_scheduler_server_envs(
 
 @pytest.fixture
 def minimal_configuration(
+    with_labelize_drain_nodes: EnvVarsDict,
     docker_swarm: None,
     mocked_ec2_server_envs: EnvVarsDict,
     enabled_computational_mode: EnvVarsDict,
@@ -157,18 +165,6 @@ def _assert_rabbit_autoscaling_message_sent(
     mock_rabbitmq_post_message.assert_called_once_with(
         app,
         expected_message,
-    )
-
-
-@pytest.fixture
-def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
-    async def fake_tag_node(*args, **kwargs) -> DockerNode:
-        return args[1]
-
-    return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.tag_node",
-        autospec=True,
-        side_effect=fake_tag_node,
     )
 
 
@@ -392,6 +388,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     dask_task_imposed_ec2_type: InstanceTypeType | None,
     dask_ram: ByteSize | None,
     expected_ec2_type: InstanceTypeType,
+    with_drain_nodes_labelled: bool,
 ):
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -458,39 +455,92 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert len(internal_dns_names) == 1
     internal_dns_name = internal_dns_names[0].removesuffix(".ec2.internal")
 
-    # the node is tagged and made active right away since we still have the pending task
+    # the node is attached first and then tagged and made active right away since we still have the pending task
     mock_docker_find_node_with_name.assert_called_once()
     mock_docker_find_node_with_name.reset_mock()
     expected_docker_node_tags = {
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: expected_ec2_type
     }
-    mock_docker_tag_node.assert_called_once_with(
+    assert mock_docker_tag_node.call_count == 2
+    assert fake_node.Spec
+    assert fake_node.Spec.Labels
+    fake_attached_node = deepcopy(fake_node)
+    assert fake_attached_node.Spec
+    fake_attached_node.Spec.Availability = (
+        Availability.active if with_drain_nodes_labelled else Availability.drain
+    )
+    assert fake_attached_node.Spec.Labels
+    fake_attached_node.Spec.Labels |= expected_docker_node_tags | {
+        _OSPARC_SERVICE_READY_LABEL_KEY: "false",
+    }
+    # check attach call
+    assert mock_docker_tag_node.call_args_list[0] == mock.call(
         get_docker_client(initialized_app),
         fake_node,
-        tags=expected_docker_node_tags,
-        available=False,
+        tags=fake_node.Spec.Labels
+        | expected_docker_node_tags
+        | {
+            _OSPARC_SERVICE_READY_LABEL_KEY: "false",
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
+        },
+        available=with_drain_nodes_labelled,
     )
+    # update our fake node
+    fake_attached_node.Spec.Labels[
+        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+    ] = mock_docker_tag_node.call_args_list[0][1]["tags"][
+        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+    ]
+    # check the activate time is later than attach time
+    assert arrow.get(
+        mock_docker_tag_node.call_args_list[1][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    ) > arrow.get(
+        mock_docker_tag_node.call_args_list[0][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    )
+
+    # check activate call
+    assert mock_docker_tag_node.call_args_list[1] == mock.call(
+        get_docker_client(initialized_app),
+        fake_attached_node,
+        tags=fake_node.Spec.Labels
+        | expected_docker_node_tags
+        | {
+            _OSPARC_SERVICE_READY_LABEL_KEY: "true",
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
+        },
+        available=True,
+    )
+    # update our fake node
+    fake_attached_node.Spec.Labels[
+        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+    ] = mock_docker_tag_node.call_args_list[1][1]["tags"][
+        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+    ]
     mock_docker_tag_node.reset_mock()
-    mock_docker_set_node_availability.assert_called_once_with(
-        get_docker_client(initialized_app), fake_node, available=True
-    )
-    mock_docker_set_node_availability.reset_mock()
+    mock_docker_set_node_availability.assert_not_called()
     mock_rabbitmq_post_message.assert_called_once()
     mock_rabbitmq_post_message.reset_mock()
 
     # now we have 1 monitored node that needs to be mocked
+    fake_attached_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
+    fake_attached_node.Status = NodeStatus(
+        State=NodeState.ready, Message=None, Addr=None
+    )
+    fake_attached_node.Spec.Availability = Availability.active
+    assert fake_attached_node.Description
+    fake_attached_node.Description.Hostname = internal_dns_name
+
     auto_scaling_mode = ComputationalAutoscaling()
     mocker.patch.object(
         auto_scaling_mode,
         "get_monitored_nodes",
         autospec=True,
-        return_value=[fake_node],
+        return_value=[fake_attached_node],
     )
-    fake_node.Status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
-    assert fake_node.Spec
-    fake_node.Spec.Availability = Availability.active
-    assert fake_node.Description
-    fake_node.Description.Hostname = internal_dns_name
 
     # 3. calling this multiple times should do nothing
     num_useless_calls = 10
@@ -541,10 +591,27 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert mock_dask_get_worker_used_resources.call_count == 2
     mock_dask_get_worker_used_resources.reset_mock()
     # the node shall be set to drain, but not yet terminated
-    mock_docker_set_node_availability.assert_called_once_with(
-        get_docker_client(initialized_app), fake_node, available=False
+    mock_docker_set_node_availability.assert_not_called()
+    mock_docker_tag_node.assert_called_once_with(
+        get_docker_client(initialized_app),
+        fake_attached_node,
+        tags=fake_attached_node.Spec.Labels
+        | {
+            _OSPARC_SERVICE_READY_LABEL_KEY: "false",
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
+        },
+        available=with_drain_nodes_labelled,
     )
-    mock_docker_set_node_availability.reset_mock()
+    # check the datetime was updated
+    assert arrow.get(
+        mock_docker_tag_node.call_args_list[0][1]["tags"][
+            _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+        ]
+    ) > arrow.get(
+        fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]
+    )
+    mock_docker_tag_node.reset_mock()
+
     await _assert_ec2_instances(
         ec2_client,
         num_reservations=1,
@@ -554,9 +621,13 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
 
     # we artifically set the node to drain
-    fake_node.Spec.Availability = Availability.drain
-    fake_node.UpdatedAt = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
-    # the node will be not be terminated beforet the timeout triggers
+    fake_attached_node.Spec.Availability = Availability.drain
+    fake_attached_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
+    fake_attached_node.Spec.Labels[
+        _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
+    ] = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+
+    # the node will be not be terminated before the timeout triggers
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert (
         datetime.timedelta(seconds=5)
@@ -578,14 +649,14 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
 
     # now changing the last update timepoint will trigger the node removal and shutdown the ec2 instance
-    fake_node.UpdatedAt = (
+    fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
         datetime.datetime.now(tz=datetime.timezone.utc)
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         - datetime.timedelta(seconds=1)
     ).isoformat()
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mocked_docker_remove_node.assert_called_once_with(
-        mock.ANY, nodes=[fake_node], force=True
+        mock.ANY, nodes=[fake_attached_node], force=True
     )
     await _assert_ec2_instances(
         ec2_client,
@@ -685,6 +756,27 @@ def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResourc
     }
 
 
+@pytest.fixture
+def patch_ec2_client_start_aws_instances_min_number_of_instances(
+    mocker: MockerFixture,
+) -> mock.Mock:
+    """the moto library always returns min number of instances instead of max number of instances which makes
+    it difficult to test scaling to multiple of machines. this should help"""
+    original_fct = SimcoreEC2API.start_aws_instance
+
+    async def _change_parameters(*args, **kwargs) -> list[EC2InstanceData]:
+        new_kwargs = kwargs | {"min_number_of_instances": kwargs["number_of_instances"]}
+        print(f"patching start_aws_instance with: {new_kwargs}")
+        return await original_fct(*args, **new_kwargs)
+
+    return mocker.patch.object(
+        SimcoreEC2API,
+        "start_aws_instance",
+        autospec=True,
+        side_effect=_change_parameters,
+    )
+
+
 @pytest.mark.parametrize(
     "scale_up_params",
     [
@@ -700,6 +792,7 @@ def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResourc
     ],
 )
 async def test_cluster_scaling_up_starts_multiple_instances(
+    patch_ec2_client_start_aws_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -759,6 +852,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
 
 
 async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and_not_more(
+    patch_ec2_client_start_aws_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -843,6 +937,7 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
 
 
 async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_starts_max_instances_and_not_more(
+    patch_ec2_client_start_aws_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,

@@ -30,13 +30,14 @@ qx.Class.define("osparc.desktop.credits.TransactionsTable", {
     columnModel.setColumnWidth(0, 130);
     columnModel.setColumnWidth(1, 70);
     columnModel.setColumnWidth(2, 70);
-    columnModel.setColumnWidth(3, 70);
+    columnModel.setColumnWidth(3, 75);
     columnModel.setColumnWidth(4, 320);
     columnModel.setColumnWidth(5, 60);
 
     columnModel.setDataCellRenderer(1, new qx.ui.table.cellrenderer.Number());
     columnModel.setDataCellRenderer(2, new qx.ui.table.cellrenderer.Number());
     columnModel.setDataCellRenderer(3, new qx.ui.table.cellrenderer.Html());
+    columnModel.setDataCellRenderer(4, new osparc.ui.table.cellrenderer.StringWithTooltip());
     columnModel.setDataCellRenderer(5, new qx.ui.table.cellrenderer.Html());
 
     this.setHeaderCellHeight(26);

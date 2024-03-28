@@ -22,7 +22,7 @@ help:	## overwrites and calls common help function
 
 install-%: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
-	pip-sync requirements/$(subst install-,,$@).txt
+	@uv pip sync requirements/$(subst install-,,$@).txt
 
 APP_PACKAGE_NAME=servicelib
 .PHONY: test-dev

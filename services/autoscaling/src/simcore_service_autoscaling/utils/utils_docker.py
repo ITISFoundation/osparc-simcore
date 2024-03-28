@@ -9,9 +9,11 @@ import datetime
 import logging
 import re
 from contextlib import suppress
+from copy import deepcopy
 from pathlib import Path
 from typing import Final, cast
 
+import arrow
 import yaml
 from aws_library.ec2.models import EC2InstanceData, Resources
 from models_library.docker import (
@@ -57,23 +59,41 @@ _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS: Final[list[str]] = [
 _PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
 _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
 _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR: Final[str] = "no suitable node"
+_OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
+    DockerLabelKey, "io.simcore.osparc-services-ready"
+)
+_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
+    DockerLabelKey, f"{_OSPARC_SERVICE_READY_LABEL_KEY}-last-changed"
+)
+_OSPARC_SERVICE_READY_LABEL_KEYS: Final[list[DockerLabelKey]] = [
+    _OSPARC_SERVICE_READY_LABEL_KEY,
+    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
+]
 
 
 async def get_monitored_nodes(
     docker_client: AutoscalingDocker, node_labels: list[DockerLabelKey]
 ) -> list[Node]:
+    node_label_filters = [f"{label}=true" for label in node_labels] + [
+        f"{label}" for label in _OSPARC_SERVICE_READY_LABEL_KEYS
+    ]
     return parse_obj_as(
         list[Node],
-        await docker_client.nodes.list(
-            filters={"node.label": [f"{label}=true" for label in node_labels]}
-        ),
+        await docker_client.nodes.list(filters={"node.label": node_label_filters}),
     )
 
 
 async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
     return parse_obj_as(
         list[Node],
-        await docker_client.nodes.list(filters={"role": ["worker"]}),
+        await docker_client.nodes.list(
+            filters={
+                "role": ["worker"],
+                "node.label": [
+                    f"{label}" for label in _OSPARC_SERVICE_READY_LABEL_KEYS
+                ],
+            }
+        ),
     )
 
 
@@ -109,7 +129,7 @@ async def remove_nodes(
 def _is_task_waiting_for_resources(task: Task) -> bool:
     # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
     with log_context(
-        logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task}"
+        logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task.ID}"
     ):
         if (
             not task.Status
@@ -523,7 +543,7 @@ async def set_node_availability(
     )
 
 
-def get__new_node_docker_tags(
+def get_new_node_docker_tags(
     app_settings: ApplicationSettings, ec2_instance: EC2InstanceData
 ) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
@@ -540,9 +560,69 @@ def get__new_node_docker_tags(
     )
 
 
-def is_node_ready_and_available(node: Node, availability: Availability) -> bool:
+def is_node_ready_and_available(node: Node, *, availability: Availability) -> bool:
     assert node.Status  # nosec
     assert node.Spec  # nosec
     return bool(
         node.Status.State == NodeState.ready and node.Spec.Availability == availability
+    )
+
+
+def is_node_osparc_ready(node: Node) -> bool:
+    if not is_node_ready_and_available(node, availability=Availability.active):
+        return False
+    assert node.Spec  # nosec
+    return bool(
+        node.Spec.Labels
+        and _OSPARC_SERVICE_READY_LABEL_KEY in node.Spec.Labels
+        and node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] == "true"
+    )
+
+
+async def set_node_osparc_ready(
+    app_settings: ApplicationSettings,
+    docker_client: AutoscalingDocker,
+    node: Node,
+    *,
+    ready: bool,
+) -> Node:
+    assert node.Spec  # nosec
+    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.Spec.Labels))
+    new_tags[_OSPARC_SERVICE_READY_LABEL_KEY] = "true" if ready else "false"
+    new_tags[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
+    # NOTE: docker drain sometimes impeed on performance when undraining see https://github.com/ITISFoundation/osparc-simcore/issues/5339
+    available = app_settings.AUTOSCALING_DRAIN_NODES_WITH_LABELS or ready
+    return await tag_node(
+        docker_client,
+        node,
+        tags=new_tags,
+        available=available,
+    )
+
+
+def get_node_last_readyness_update(node: Node) -> datetime.datetime:
+    assert node.Spec  # nosec
+    assert node.Spec.Labels  # nosec
+    return cast(
+        datetime.datetime,
+        arrow.get(node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]).datetime,
+    )  # mypy
+
+
+async def attach_node(
+    app_settings: ApplicationSettings,
+    docker_client: AutoscalingDocker,
+    node: Node,
+    *,
+    tags: dict[DockerLabelKey, str],
+) -> Node:
+    assert node.Spec  # nosec
+    current_tags = cast(dict[DockerLabelKey, str], node.Spec.Labels or {})
+    new_tags = current_tags | tags | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"}
+    new_tags[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
+    return await tag_node(
+        docker_client,
+        node,
+        tags=new_tags,
+        available=app_settings.AUTOSCALING_DRAIN_NODES_WITH_LABELS,  # NOTE: full drain sometimes impede on performance
     )

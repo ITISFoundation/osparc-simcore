@@ -5,11 +5,11 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import json
 import time
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import datetime, timedelta
+from http import HTTPStatus
 from typing import Any
 from unittest import mock
 from unittest.mock import call
@@ -17,7 +17,7 @@ from unittest.mock import call
 import pytest
 import socketio
 import sqlalchemy as sa
-from aiohttp import ClientResponse, web
+from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -37,6 +37,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
@@ -45,7 +46,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     ExpectedResponse,
     standard_role_response,
 )
-from servicelib.aiohttp.web_exceptions_extension import HTTPLockedError
+from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
 from simcore_service_webserver._meta import API_VTAG
@@ -85,7 +86,7 @@ def assert_replaced(current_project, update_data):
 
 async def _list_projects(
     client: TestClient,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     query_parameters: dict | None = None,
 ) -> list[ProjectDict]:
 
@@ -103,7 +104,7 @@ async def _list_projects(
 
 
 async def _replace_project(
-    client: TestClient, project_update: ProjectDict, expected: type[web.HTTPException]
+    client: TestClient, project_update: ProjectDict, expected: HTTPStatus
 ) -> ProjectDict:
     assert client.app
 
@@ -142,7 +143,7 @@ async def _open_project(
     client: TestClient,
     client_id: str,
     project: ProjectDict,
-    expected: type[web.HTTPException] | list[type[web.HTTPException]],
+    expected: HTTPStatus | list[HTTPStatus],
 ) -> tuple[dict, dict]:
     assert client.app
 
@@ -168,7 +169,7 @@ async def _open_project(
 
 
 async def _close_project(
-    client: TestClient, client_id: str, project: dict, expected: type[web.HTTPException]
+    client: TestClient, client_id: str, project: dict, expected: HTTPStatus
 ):
     assert client.app
 
@@ -180,7 +181,7 @@ async def _close_project(
 async def _state_project(
     client: TestClient,
     project: dict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     expected_project_state: ProjectState,
 ):
     assert client.app
@@ -216,7 +217,7 @@ async def _assert_project_state_updated(
 
         calls = [
             call(
-                json.dumps(
+                jsonable_encoder(
                     {
                         "project_uuid": shared_project["uuid"],
                         "data": p_state.dict(by_alias=True, exclude_unset=True),
@@ -311,7 +312,7 @@ async def test_share_project(
         resp = await _delete_project(client, new_project)
         await assert_status(
             resp,
-            expected_cls=expected.no_content
+            expected_status_code=expected.no_content
             if share_rights["delete"]
             else expected.forbidden,
         )
@@ -320,10 +321,10 @@ async def test_share_project(
 @pytest.mark.parametrize(
     "user_role,expected, save_state",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized, False),
-        (UserRole.GUEST, web.HTTPOk, False),
-        (UserRole.USER, web.HTTPOk, True),
-        (UserRole.TESTER, web.HTTPOk, True),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED, False),
+        (UserRole.GUEST, status.HTTP_200_OK, False),
+        (UserRole.USER, status.HTTP_200_OK, True),
+        (UserRole.TESTER, status.HTTP_200_OK, True),
     ],
 )
 async def test_open_project(
@@ -331,7 +332,7 @@ async def test_open_project(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     client_session_id_factory: Callable[[], str],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     save_state: bool,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
@@ -348,7 +349,7 @@ async def test_open_project(
 
     await assert_status(resp, expected)
 
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         # calls notifications to subscribe to this project
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
@@ -396,10 +397,10 @@ async def test_open_project(
 @pytest.mark.parametrize(
     "user_role,expected,save_state",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized, False),
-        (UserRole.GUEST, web.HTTPForbidden, False),
-        (UserRole.USER, web.HTTPOk, True),
-        (UserRole.TESTER, web.HTTPOk, True),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED, False),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN, False),
+        (UserRole.USER, status.HTTP_200_OK, True),
+        (UserRole.TESTER, status.HTTP_200_OK, True),
     ],
 )
 async def test_open_template_project_for_edition(
@@ -407,7 +408,7 @@ async def test_open_template_project_for_edition(
     logged_user: UserInfoDict,
     create_template_project: Callable[..., Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     save_state: bool,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
@@ -429,7 +430,7 @@ async def test_open_template_project_for_edition(
     resp = await client.post(f"{url}", json=client_session_id_factory())
     await assert_status(resp, expected)
 
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(template_project["uuid"])
         )
@@ -475,10 +476,10 @@ async def test_open_template_project_for_edition(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPForbidden),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
     ],
 )
 async def test_open_template_project_for_edition_with_missing_write_rights(
@@ -486,7 +487,7 @@ async def test_open_template_project_for_edition_with_missing_write_rights(
     logged_user: UserInfoDict,
     create_template_project: Callable[..., Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
     mock_orphaned_services: mock.Mock,
@@ -739,7 +740,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
         client,
         client_id_1,
         user_project,
-        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
     )
 
     client_id_2 = client_session_id_factory()
@@ -747,7 +748,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
         client,
         client_id_2,
         shared_project,
-        expected.conflict if user_role != UserRole.GUEST else web.HTTPConflict,
+        expected.conflict if user_role != UserRole.GUEST else status.HTTP_409_CONFLICT,
     )
 
 
@@ -777,7 +778,7 @@ async def test_close_project(
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
 
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
         )
@@ -793,7 +794,7 @@ async def test_close_project(
     resp = await client.post(url, json=client_id)
     await assert_status(resp, expected.no_content)
 
-    if resp.status == web.HTTPNoContent.status_code:
+    if resp.status == status.HTTP_204_NO_CONTENT:
         mocked_notifications_plugin["unsubscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
         )
@@ -831,10 +832,10 @@ async def test_close_project(
 @pytest.mark.parametrize(
     "user_role, expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_get_active_project(
@@ -855,7 +856,7 @@ async def test_get_active_project(
         sio = await socketio_client_factory(client_id1)
         assert sio.sid
     except SocketConnectionError:
-        if expected == web.HTTPOk:
+        if expected == status.HTTP_200_OK:
             pytest.fail("socket io connection should not fail")
 
     # get active projects -> empty
@@ -866,7 +867,7 @@ async def test_get_active_project(
     )
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         assert not data
         assert not error
 
@@ -879,7 +880,7 @@ async def test_get_active_project(
 
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
         )
@@ -900,7 +901,7 @@ async def test_get_active_project(
         sio = await socketio_client_factory(client_id2)
         assert sio.sid
     except SocketConnectionError:
-        if expected == web.HTTPOk:
+        if expected == status.HTTP_200_OK:
             pytest.fail("socket io connection should not fail")
     # get active projects -> empty
     get_active_projects_url = (
@@ -910,7 +911,7 @@ async def test_get_active_project(
     )
     resp = await client.get(get_active_projects_url)
     data, error = await assert_status(resp, expected)
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         assert not data
         assert not error
 
@@ -920,15 +921,15 @@ async def test_get_active_project(
     [
         (
             UserRole.USER,
-            web.HTTPCreated,
-            web.HTTPOk,
-            web.HTTPNoContent,
+            status.HTTP_201_CREATED,
+            status.HTTP_200_OK,
+            status.HTTP_204_NO_CONTENT,
         ),
         (
             UserRole.TESTER,
-            web.HTTPCreated,
-            web.HTTPOk,
-            web.HTTPNoContent,
+            status.HTTP_201_CREATED,
+            status.HTTP_200_OK,
+            status.HTTP_204_NO_CONTENT,
         ),
     ],
 )
@@ -957,7 +958,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     resp = await client.post(url.path, json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
     node_id = None
-    if resp.status == web.HTTPCreated.status_code:
+    if resp.status == status.HTTP_201_CREATED:
         mocked_director_v2_api[
             "dynamic_scheduler.api.run_dynamic_service"
         ].assert_called_once()
@@ -978,7 +979,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     resp = await client.post(f"{url}", json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
     node_id_2 = None
-    if resp.status == web.HTTPCreated.status_code:
+    if resp.status == status.HTTP_201_CREATED:
         mocked_director_v2_api[
             "dynamic_scheduler.api.run_dynamic_service"
         ].assert_not_called()
@@ -1008,7 +1009,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
     resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_get)
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         assert "service_state" in data
         assert data["service_state"] == "running"
 
@@ -1028,7 +1029,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
     resp = await client.get(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_get)
-    if resp.status == web.HTTPOk.status_code:
+    if resp.status == status.HTTP_200_OK:
         assert "service_state" in data
         assert data["service_state"] == "idle"
 
@@ -1041,7 +1042,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
     resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_delete)
-    if resp.status == web.HTTPNoContent.status_code:
+    if resp.status == status.HTTP_204_NO_CONTENT:
         mocked_director_v2_api[
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_called_once()
@@ -1061,7 +1062,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
     resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_delete)
-    if resp.status == web.HTTPNoContent.status_code:
+    if resp.status == status.HTTP_204_NO_CONTENT:
         mocked_director_v2_api[
             "dynamic_scheduler.api.stop_dynamic_service"
         ].assert_not_called()
@@ -1160,14 +1161,14 @@ async def test_open_shared_project_2_users_locked(
         await _state_project(
             client_1,
             shared_project,
-            expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+            expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
             expected_project_state_client_1,
         )
     await _open_project(
         client_1,
         client_id1,
         shared_project,
-        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
     )
     # now the expected result is that the project is locked and opened by client 1
     owner1 = Owner(
@@ -1188,7 +1189,7 @@ async def test_open_shared_project_2_users_locked(
     await _state_project(
         client_1,
         shared_project,
-        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
         expected_project_state_client_1,
     )
 
@@ -1207,7 +1208,7 @@ async def test_open_shared_project_2_users_locked(
         client_2,
         client_id2,
         shared_project,
-        expected.locked if user_role != UserRole.GUEST else HTTPLockedError,
+        expected.locked if user_role != UserRole.GUEST else status.HTTP_423_LOCKED,
     )
     expected_project_state_client_2 = deepcopy(expected_project_state_client_1)
     expected_project_state_client_2.locked.status = ProjectStatus.OPENED
@@ -1215,7 +1216,7 @@ async def test_open_shared_project_2_users_locked(
     await _state_project(
         client_2,
         shared_project,
-        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
         expected_project_state_client_2,
     )
 
@@ -1258,7 +1259,7 @@ async def test_open_shared_project_2_users_locked(
     await _state_project(
         client_1,
         shared_project,
-        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
         expected_project_state_client_1,
     )
 
@@ -1267,7 +1268,7 @@ async def test_open_shared_project_2_users_locked(
         client_2,
         client_id2,
         shared_project,
-        expected.ok if user_role != UserRole.GUEST else HTTPLockedError,
+        expected.ok if user_role != UserRole.GUEST else status.HTTP_423_LOCKED,
     )
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         expected_project_state_client_2.locked.value = True
@@ -1295,7 +1296,7 @@ async def test_open_shared_project_2_users_locked(
     await _state_project(
         client_1,
         shared_project,
-        expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
+        expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
         expected_project_state_client_1,
     )
 
@@ -1356,8 +1357,10 @@ async def test_open_shared_project_at_same_time(
             c["client_id"],
             shared_project,
             [
-                expected.ok if user_role != UserRole.GUEST else web.HTTPOk,
-                expected.locked if user_role != UserRole.GUEST else HTTPLockedError,
+                expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
+                expected.locked
+                if user_role != UserRole.GUEST
+                else status.HTTP_423_LOCKED,
             ],
         )
         for c in clients
@@ -1418,9 +1421,9 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(f"{url}", json=client_session_id)
     await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+        resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK
     )
-    if resp.status != web.HTTPOk.status_code:
+    if resp.status != status.HTTP_200_OK:
         return
 
     # the project is opened, now let's simulate a refresh
@@ -1439,5 +1442,5 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     # re-open the project
     resp = await client.post(f"{url}", json=client_session_id)
     await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+        resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK
     )

@@ -1,5 +1,7 @@
+from collections.abc import Iterator
+
 import pytest
-from aioresponses import aioresponses as AioResponsesMock
+from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 
 from .helpers.utils_host import get_localhost_ip
 
@@ -14,7 +16,7 @@ PASSTHROUGH_REQUESTS_PREFIXES = [
 
 
 @pytest.fixture
-def aioresponses_mocker() -> AioResponsesMock:
+def aioresponses_mocker() -> Iterator[AioResponsesMock]:
     """Generick aioresponses mock
 
     SEE https://github.com/pnuckowski/aioresponses

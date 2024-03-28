@@ -9,10 +9,11 @@ from ._errors import (
     RPCServerError,
 )
 from ._rpc_router import RPCRouter
-from ._utils import wait_till_rabbitmq_responsive
+from ._utils import is_rabbitmq_responsive, wait_till_rabbitmq_responsive
 
 __all__: tuple[str, ...] = (
     "BIND_TO_ALL_TOPICS",
+    "is_rabbitmq_responsive",
     "RabbitMQClient",
     "RabbitMQRPCClient",
     "RemoteMethodNotRegisteredError",

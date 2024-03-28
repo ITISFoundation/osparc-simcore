@@ -2,11 +2,10 @@
 
 See https://setuptools.readthedocs.io/en/latest/pkg_resources.html
 """
-import pathlib
+
+import importlib.resources
 from dataclasses import dataclass
 from pathlib import Path
-
-import pkg_resources
 
 
 @dataclass(frozen=True)
@@ -22,17 +21,20 @@ class DataResourcesFacade:
     distribution_name: str
 
     def exists(self, resource_name: str) -> bool:
-        return pkg_resources.resource_exists(self.package_name, resource_name)
+        path = self.get_path(resource_name)
+
+        return path.exists()
 
     def get_path(self, resource_name: str) -> Path:
-        """Returns a path to a resource
+        """Returns a path to a resourced
 
         WARNING: existence of file is not guaranteed
         WARNING: resource files are supposed to be used as read-only!
         """
-        return pathlib.Path(
-            pkg_resources.resource_filename(self.package_name, resource_name)
+        package_dir = importlib.resources.files(
+            self.distribution_name.replace("-", "_")
         )
+        return Path(f"{package_dir}") / resource_name.lstrip("/")
 
 
 # resources env keys

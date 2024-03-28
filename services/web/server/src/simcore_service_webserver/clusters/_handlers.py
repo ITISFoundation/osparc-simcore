@@ -12,6 +12,7 @@ from models_library.api_schemas_webserver.clusters import (
 )
 from models_library.users import UserID
 from pydantic import BaseModel, Field, parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -88,7 +89,7 @@ async def create_cluster(request: web.Request) -> web.Response:
     )
     return web.json_response(
         data={"data": created_cluster},
-        status=web.HTTPCreated.status_code,
+        status=status.HTTP_201_CREATED,
         dumps=json_dumps,
     )
 
@@ -158,7 +159,7 @@ async def delete_cluster(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         cluster_id=path_params.cluster_id,
     )
-    return web.json_response(status=web.HTTPNoContent.status_code)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.get(
@@ -192,7 +193,7 @@ async def ping_cluster(request: web.Request) -> web.Response:
         app=request.app,
         cluster_ping=cluster_ping,
     )
-    return web.json_response(status=web.HTTPNoContent.status_code)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.post(
@@ -211,4 +212,4 @@ async def ping_cluster_cluster_id(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         cluster_id=path_params.cluster_id,
     )
-    return web.json_response(status=web.HTTPNoContent.status_code)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

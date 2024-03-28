@@ -20,6 +20,7 @@ from models_library.api_schemas_catalog.service_access_rights import (
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pydantic import parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from settings_library.catalog import CatalogSettings
@@ -40,7 +41,7 @@ def _handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
         yield session
 
     except ClientResponseError as err:
-        if err.status == 404:
+        if err.status == status.HTTP_404_NOT_FOUND:
             raise web.HTTPNotFound(reason=MSG_CATALOG_SERVICE_NOT_FOUND)
         raise web.HTTPServiceUnavailable(
             reason=MSG_CATALOG_SERVICE_UNAVAILABLE

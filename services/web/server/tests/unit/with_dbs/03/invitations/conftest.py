@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import CallbackResult
 from faker import Faker
@@ -24,6 +23,7 @@ from models_library.api_schemas_invitations.invitations import (
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
+from servicelib.aiohttp import status
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.invitations.settings import (
     InvitationsSettings,
@@ -101,7 +101,7 @@ def mock_invitations_service_http_api(
     assert "/" in oas["paths"]
     aioresponses_mocker.get(
         f"{base_url}/",
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
         repeat=False,  # NOTE: this is only usable once!
     )
 
@@ -109,7 +109,7 @@ def mock_invitations_service_http_api(
     assert "/v1/meta" in oas["paths"]
     aioresponses_mocker.get(
         f"{base_url}/v1/meta",
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
         payload={"name": "string", "version": "string", "docs_url": "string"},
     )
 
@@ -127,7 +127,7 @@ def mock_invitations_service_http_api(
             body.update(decoded)
 
         return CallbackResult(
-            status=web.HTTPOk.status_code,
+            status=status.HTTP_200_OK,
             payload=jsonable_encoder(body),
         )
 
@@ -149,7 +149,7 @@ def mock_invitations_service_http_api(
         fake_code = binascii.hexlify(json.dumps(body).encode()).decode()
 
         return CallbackResult(
-            status=web.HTTPOk.status_code,
+            status=status.HTTP_200_OK,
             payload=jsonable_encoder(
                 ApiInvitationContentAndLink.parse_obj(
                     {

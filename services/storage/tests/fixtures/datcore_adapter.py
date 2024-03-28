@@ -1,8 +1,8 @@
 import re
 
 import pytest
-from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
+from servicelib.aiohttp import status
 from simcore_service_storage.datcore_adapter.datcore_adapter_settings import (
     DatcoreAdapterSettings,
 )
@@ -16,13 +16,11 @@ def datcore_adapter_service_mock(
     datcore_adapter_base_url = dat_core_settings.endpoint
     # mock base endpoint
     aioresponses_mocker.get(
-        datcore_adapter_base_url, status=web.HTTPOk.status_code, repeat=True
+        datcore_adapter_base_url, status=status.HTTP_200_OK, repeat=True
     )
     list_datasets_re = re.compile(rf"^{datcore_adapter_base_url}/datasets")
+    aioresponses_mocker.get(list_datasets_re, status=status.HTTP_200_OK, repeat=True)
     aioresponses_mocker.get(
-        list_datasets_re, status=web.HTTPOk.status_code, repeat=True
-    )
-    aioresponses_mocker.get(
-        datcore_adapter_base_url, status=web.HTTPOk.status_code, repeat=True, payload={}
+        datcore_adapter_base_url, status=status.HTTP_200_OK, repeat=True, payload={}
     )
     return aioresponses_mocker

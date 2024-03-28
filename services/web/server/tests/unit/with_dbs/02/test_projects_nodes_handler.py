@@ -8,6 +8,7 @@ import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from http import HTTPStatus
 from pathlib import Path
 from random import choice
 from typing import Any, Final
@@ -16,7 +17,6 @@ from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
@@ -37,6 +37,7 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import (
     MockedStorageSubsystem,
     standard_role_response,
 )
+from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.projects import projects as projects_db_model
 from simcore_service_webserver.db.models import UserRole
@@ -47,16 +48,16 @@ from simcore_service_webserver.projects.models import ProjectDict
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_get_node_resources(
     client: TestClient,
     user_project: dict[str, Any],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     assert client.app
     for node_id in user_project["workbench"]:
@@ -82,13 +83,13 @@ async def test_get_node_resources(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.TESTER, web.HTTPNotFound),
+        (UserRole.TESTER, status.HTTP_404_NOT_FOUND),
     ],
 )
 async def test_get_wrong_project_raises_not_found_error(
     client: TestClient,
     user_project: dict[str, Any],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     assert client.app
     for node_id in user_project["workbench"]:
@@ -102,13 +103,13 @@ async def test_get_wrong_project_raises_not_found_error(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.TESTER, web.HTTPNotFound),
+        (UserRole.TESTER, status.HTTP_404_NOT_FOUND),
     ],
 )
 async def test_get_wrong_node_raises_not_found_error(
     client: TestClient,
     user_project: dict[str, Any],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     assert client.app
     url = client.app.router["get_node_resources"].url_for(
@@ -121,16 +122,16 @@ async def test_get_wrong_node_raises_not_found_error(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPForbidden),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
     ],
 )
 async def test_replace_node_resources_is_forbidden_by_default(
     client: TestClient,
     user_project: dict[str, Any],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     assert client.app
     for node_id in user_project["workbench"]:
@@ -158,16 +159,16 @@ async def test_replace_node_resources_is_forbidden_by_default(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_replace_node_resources_is_ok_if_explicitly_authorized(
     client: TestClient,
     user_project: dict[str, Any],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     with_permitted_override_services_specifications: None,
 ):
     assert client.app
@@ -196,13 +197,13 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.TESTER, web.HTTPUnprocessableEntity),
+        (UserRole.TESTER, status.HTTP_422_UNPROCESSABLE_ENTITY),
     ],
 )
 async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
     client: TestClient,
     user_project: dict[str, Any],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
 ):
     assert client.app
     for node_id in user_project["workbench"]:
@@ -222,13 +223,13 @@ async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.TESTER, web.HTTPNotFound),
+        (UserRole.TESTER, status.HTTP_404_NOT_FOUND),
     ],
 )
 async def test_replace_node_resources_raises_404_if_wrong_project_id_used(
     client: TestClient,
     user_project: dict[str, Any],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     faker: Faker,
 ):
     assert client.app
@@ -246,13 +247,13 @@ async def test_replace_node_resources_raises_404_if_wrong_project_id_used(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.TESTER, web.HTTPNotFound),
+        (UserRole.TESTER, status.HTTP_404_NOT_FOUND),
     ],
 )
 async def test_replace_node_resources_raises_404_if_wrong_node_id_used(
     client: TestClient,
     user_project: dict[str, Any],
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     faker: Faker,
 ):
     assert client.app
@@ -286,7 +287,7 @@ async def test_create_node_returns_422_if_body_is_missing(
         },
     ]:
         response = await client.post(url.path, json=partial_body)
-        assert response.status == expected.unprocessable.status_code
+        assert response.status == expected.unprocessable
     # this does not start anything in the backend
     mocked_director_v2_api[
         "dynamic_scheduler.api.run_dynamic_service"
@@ -713,7 +714,9 @@ async def test_start_node(
     response = await client.post(f"{url}")
     data, error = await assert_status(
         response,
-        web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content,
+        status.HTTP_204_NO_CONTENT
+        if user_role == UserRole.GUEST
+        else expected.no_content,
     )
     if error is None:
         mocked_director_v2_api[
@@ -864,7 +867,7 @@ async def test_stop_node(
     response = await client.post(f"{url}")
     data, error = await assert_status(
         response,
-        web.HTTPAccepted if user_role == UserRole.GUEST else expected.accepted,
+        status.HTTP_202_ACCEPTED if user_role == UserRole.GUEST else expected.accepted,
     )
     if error is None:
         mocked_director_v2_api[
@@ -920,7 +923,7 @@ def mock_storage_calls(aioresponses_mocker: aioresponses, faker: Faker) -> None:
 
     aioresponses_mocker.get(
         _get_download_link,
-        status=web.HTTPOk.status_code,
+        status=status.HTTP_200_OK,
         payload=jsonable_encoder(
             Envelope[PresignedLink](data=PresignedLink(link=faker.image_url()))
         ),
@@ -946,7 +949,7 @@ async def test_read_project_nodes_previews(
 
     data, error = await assert_status(
         response,
-        web.HTTPOk,
+        status.HTTP_200_OK,
     )
 
     assert not error
@@ -965,7 +968,7 @@ async def test_read_project_nodes_previews(
         response = await client.get(f"{url}")
         data, error = await assert_status(
             response,
-            web.HTTPOk,
+            status.HTTP_200_OK,
         )
 
         assert parse_obj_as(_ProjectNodePreview, data) == node_preview

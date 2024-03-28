@@ -3,10 +3,10 @@
 # pylint: disable=unused-variable
 
 import pytest
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, parse_link
+from servicelib.aiohttp import status
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.login._constants import (
     MSG_CHANGE_EMAIL_REQUESTED,
@@ -22,6 +22,18 @@ def new_email(fake_user_email: str) -> str:
     return fake_user_email
 
 
+async def test_change_email_disabled(client: TestClient, new_email: str):
+    assert client.app
+    assert "auth_change_email" not in client.app.router
+
+    response = await client.post(
+        "/v0/auth/change-email",
+        json={"email": new_email},
+    )
+    await assert_status(response, status.HTTP_404_NOT_FOUND)
+
+
+@pytest.mark.xfail(reason="Change email has been disabled")
 async def test_unauthorized_to_change_email(client: TestClient, new_email: str):
     assert client.app
     url = client.app.router["auth_change_email"].url_for()
@@ -31,27 +43,29 @@ async def test_unauthorized_to_change_email(client: TestClient, new_email: str):
             "email": new_email,
         },
     )
-    assert response.status == 401
-    await assert_status(response, web.HTTPUnauthorized)
+    await assert_status(response, status.HTTP_401_UNAUTHORIZED)
 
 
+@pytest.mark.xfail(reason="Change email has been disabled")
 async def test_change_to_existing_email(client: TestClient):
     assert client.app
     url = client.app.router["auth_change_email"].url_for()
 
-    async with LoggedUser(client) as user:
-        async with NewUser(app=client.app) as other:
-            response = await client.post(
-                f"{url}",
-                json={
-                    "email": other["email"],
-                },
-            )
-            await assert_status(
-                response, web.HTTPUnprocessableEntity, "This email cannot be used"
-            )
+    async with LoggedUser(client), NewUser(app=client.app) as other:
+        response = await client.post(
+            f"{url}",
+            json={
+                "email": other["email"],
+            },
+        )
+        await assert_status(
+            response,
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "This email cannot be used",
+        )
 
 
+@pytest.mark.xfail(reason="Change email has been disabled")
 async def test_change_and_confirm(
     client: TestClient,
     login_options: LoginOptions,
@@ -77,7 +91,7 @@ async def test_change_and_confirm(
             },
         )
         assert response.url.path == url.path
-        await assert_status(response, web.HTTPOk, MSG_CHANGE_EMAIL_REQUESTED)
+        await assert_status(response, status.HTTP_200_OK, MSG_CHANGE_EMAIL_REQUESTED)
 
         # email sent
         out, err = capsys.readouterr()
@@ -86,7 +100,7 @@ async def test_change_and_confirm(
         # try new email but logout first
         response = await client.post(f"{logout_url}")
         assert response.url.path == logout_url.path
-        await assert_status(response, web.HTTPOk, MSG_LOGGED_OUT)
+        await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_OUT)
 
         # click email's link
         response = await client.get(link)
@@ -105,6 +119,5 @@ async def test_change_and_confirm(
                 "password": user["raw_password"],
             },
         )
-        payload = await response.json()
         assert response.url.path == login_url.path
-        await assert_status(response, web.HTTPOk, MSG_LOGGED_IN)
+        await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)

@@ -23,6 +23,7 @@ from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from . import _preferences_api
+from .exceptions import FrontendUserPreferenceIsNotDefinedError
 
 routes = web.RouteTableDef()
 
@@ -40,7 +41,7 @@ def _handle_users_exceptions(handler: Handler):
 
         except (
             CouldNotCreateOrUpdateUserPreferenceError,
-            _preferences_api.FrontendUserPreferenceIsNotDefinedError,
+            FrontendUserPreferenceIsNotDefinedError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 

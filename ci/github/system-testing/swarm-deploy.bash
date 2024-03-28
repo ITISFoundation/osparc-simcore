@@ -12,18 +12,21 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
-  bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd tests/swarm-deploy
-  pip3 install -r requirements/ci.txt
+  make install-ci
   popd
-  make .env
-  pip list -v
+  uv pip list
   make info-images
 }
 
 test() {
   # WARNING: this test is heavy. Due to limited CI machine power, please do not
   # add too much overhead (e.g. low log-level etc)
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pytest \
     --asyncio-mode=auto \
     --color=yes \

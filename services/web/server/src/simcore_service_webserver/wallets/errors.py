@@ -1,12 +1,7 @@
-"""
-    API plugin errors
-"""
+from ..errors import WebServerBaseError
 
 
-from pydantic.errors import PydanticErrorMixin
-
-
-class WalletsValueError(PydanticErrorMixin, ValueError):
+class WalletsValueError(WebServerBaseError, ValueError):
     ...
 
 

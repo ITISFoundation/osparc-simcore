@@ -14,6 +14,7 @@ from aiopg.sa.result import RowProxy
 
 from .errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
+from .models.users_details import users_pre_registration_details
 
 
 class BaseUserRepoError(Exception):
@@ -77,6 +78,83 @@ class UsersRepo:
         return row
 
     @staticmethod
+    async def join_and_update_from_pre_registration_details(
+        conn: SAConnection, new_user_id: int, new_user_email: str
+    ) -> None:
+        """After a user is created, it can be associated with information provided during invitation
+
+        WARNING: Use ONLY upon new user creation. It might override user_details.user_id, users.first_name, users.last_name etc if already applied
+        or changes happen in users table
+        """
+        assert new_user_email  # nosec
+        assert new_user_id > 0  # nosec
+
+        # link both tables first
+        result = await conn.execute(
+            users_pre_registration_details.update()
+            .where(users_pre_registration_details.c.pre_email == new_user_email)
+            .values(user_id=new_user_id)
+        )
+
+        if result.rowcount:
+            pre_columns = (
+                users_pre_registration_details.c.pre_first_name,
+                users_pre_registration_details.c.pre_last_name,
+                # NOTE: pre_phone is not copied since it has to be validated. Otherwise, if
+                # phone is wrong, currently user won't be able to login!
+            )
+
+            assert {c.name for c in pre_columns} == {  # nosec
+                c.name
+                for c in users_pre_registration_details.columns
+                if c
+                not in (
+                    users_pre_registration_details.c.pre_email,
+                    users_pre_registration_details.c.pre_phone,
+                )
+                and c.name.startswith("pre_")
+            }, "Different pre-cols detected. This code might need an update update"
+
+            result = await conn.execute(
+                sa.select(*pre_columns).where(
+                    users_pre_registration_details.c.pre_email == new_user_email
+                )
+            )
+            if details := await result.fetchone():
+                await conn.execute(
+                    users.update()
+                    .where(users.c.id == new_user_id)
+                    .values(
+                        first_name=details.pre_first_name,
+                        last_name=details.pre_last_name,
+                    )
+                )
+
+    @staticmethod
+    async def get_billing_details(conn: SAConnection, user_id: int) -> RowProxy | None:
+        result = await conn.execute(
+            sa.select(
+                users.c.first_name,
+                users.c.last_name,
+                users_pre_registration_details.c.institution,
+                users_pre_registration_details.c.address,
+                users_pre_registration_details.c.city,
+                users_pre_registration_details.c.state,
+                users_pre_registration_details.c.country,
+                users_pre_registration_details.c.postal_code,
+                users.c.phone,
+            )
+            .select_from(
+                users.join(
+                    users_pre_registration_details,
+                    users.c.id == users_pre_registration_details.c.user_id,
+                )
+            )
+            .where(users.c.id == user_id)
+        )
+        return await result.fetchone()
+
+    @staticmethod
     async def get_role(conn: SAConnection, user_id: int) -> UserRole:
         value: UserRole | None = await conn.scalar(
             sa.select(users.c.role).where(users.c.id == user_id)
@@ -110,3 +188,23 @@ class UsersRepo:
             return value
 
         raise UserNotFoundInRepoError
+
+    @staticmethod
+    async def is_email_used(conn: SAConnection, email: str) -> bool:
+        email = email.lower()
+
+        registered = await conn.scalar(
+            sa.select(users.c.id).where(users.c.email == email)
+        )
+        if registered:
+            return True
+
+        pre_registered = await conn.scalar(
+            sa.select(users_pre_registration_details.c.user_id).where(
+                users_pre_registration_details.c.pre_email == email
+            )
+        )
+        if pre_registered:
+            return True
+
+        return False

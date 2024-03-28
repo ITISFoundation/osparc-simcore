@@ -13,7 +13,7 @@ from typing import Any
 import pytest
 import simcore_service_webserver.studies_dispatcher._redirects_handlers
 import sqlalchemy as sa
-from aiohttp import ClientResponse, ClientSession, web
+from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
@@ -22,6 +22,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
+from servicelib.aiohttp import status
 from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
@@ -162,7 +163,7 @@ def _get_base_url(client: TestClient) -> str:
 
 async def test_api_get_viewer_for_file(client: TestClient):
     resp = await client.get("/v0/viewers/default?file_type=JPEG")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     base_url = _get_base_url(client)
     assert data == [
@@ -176,14 +177,14 @@ async def test_api_get_viewer_for_file(client: TestClient):
 
 async def test_api_get_viewer_for_unsupported_type(client: TestClient):
     resp = await client.get("/v0/viewers/default?file_type=UNSUPPORTED_TYPE")
-    data, error = await assert_status(resp, web.HTTPOk)
+    data, error = await assert_status(resp, status.HTTP_200_OK)
     assert data == []
     assert error is None
 
 
 async def test_api_list_supported_filetypes(client: TestClient):
     resp = await client.get("/v0/viewers/default")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     base_url = _get_base_url(client)
     assert data == [
@@ -250,7 +251,7 @@ async def test_api_list_services(client: TestClient):
     url = client.app.router["list_latest_services"].url_for()
     response = await client.get(f"{url}")
 
-    data, error = await assert_status(response, web.HTTPOk)
+    data, error = await assert_status(response, status.HTTP_200_OK)
 
     services = parse_obj_as(list[ServiceGet], data)
     assert services
@@ -305,7 +306,7 @@ async def assert_redirected_to_study(
     resp: ClientResponse, session: ClientSession
 ) -> str:
     content = await resp.text()
-    assert resp.status == web.HTTPOk.status_code, f"Got {content}"
+    assert resp.status == status.HTTP_200_OK, f"Got {content}"
 
     # Expects redirection to osparc web
     assert resp.url.path == "/"
@@ -402,7 +403,7 @@ async def test_dispatch_study_anonymously(
     if redirect_type == "file_only":
         message, status_code = assert_error_in_fragment(response)
         assert (
-            status_code == web.HTTPUnauthorized.status_code
+            status_code == status.HTTP_401_UNAUTHORIZED
         ), f"Got instead {status_code=}, {message=}"
 
     else:
@@ -412,7 +413,7 @@ async def test_dispatch_study_anonymously(
         me_url = client.app.router["get_my_profile"].url_for()
         response = await client.get(f"{me_url}")
 
-        data, _ = await assert_status(response, web.HTTPOk)
+        data, _ = await assert_status(response, status.HTTP_200_OK)
         assert data["login"].endswith("guest-at-osparc.io")
         assert data["gravatar_id"]
         assert data["role"].upper() == UserRole.GUEST.name
@@ -424,7 +425,7 @@ async def test_dispatch_study_anonymously(
         payload = await response.json()
         assert response.status == 200, payload
 
-        projects, error = await assert_status(response, web.HTTPOk)
+        projects, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
 
         assert len(projects) == 1
@@ -467,7 +468,7 @@ async def test_dispatch_logged_in_user(
     me_url = client.app.router["get_my_profile"].url_for()
     response = await client.get(f"{me_url}")
 
-    data, _ = await assert_status(response, web.HTTPOk)
+    data, _ = await assert_status(response, status.HTTP_200_OK)
     assert data["role"].upper() == UserRole.USER.name
 
     # guest user only a copy of the template project
@@ -477,7 +478,7 @@ async def test_dispatch_logged_in_user(
     payload = await response.json()
     assert response.status == 200, payload
 
-    projects, error = await assert_status(response, web.HTTPOk)
+    projects, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
 
     assert len(projects) == 1
@@ -537,7 +538,7 @@ async def test_viewer_redirect_with_file_type_errors(client: TestClient):
 
     message, status_code = assert_error_in_fragment(resp)
 
-    assert status_code == web.HTTPUnprocessableEntity.status_code
+    assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert "type" in message.lower()
 
 
@@ -564,7 +565,7 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
 
     message, status_code = assert_error_in_fragment(resp)
     print(message)
-    assert status_code == web.HTTPUnprocessableEntity.status_code
+    assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.parametrize(
@@ -592,4 +593,4 @@ async def test_missing_file_param(client: TestClient, missing_parameter: str):
     assert response.status == 200
 
     message, status_code = assert_error_in_fragment(response)
-    assert status_code == web.HTTPUnprocessableEntity.status_code, f"Got {message=}"
+    assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got {message=}"

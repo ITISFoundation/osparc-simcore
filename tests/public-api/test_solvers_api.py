@@ -6,7 +6,6 @@
 
 
 import random
-from http import HTTPStatus
 from typing import NamedTuple
 
 import osparc
@@ -110,5 +109,5 @@ def test_solvers_not_found(solvers_api: osparc.SolversApi):
             "simcore/services/comp/something-not-in-this-registry",
             "1.4.55",
         )
-    assert excinfo.value.status == HTTPStatus.NOT_FOUND  # 404
+    assert excinfo.value.status == 404
     assert "not found" in excinfo.value.reason.lower()

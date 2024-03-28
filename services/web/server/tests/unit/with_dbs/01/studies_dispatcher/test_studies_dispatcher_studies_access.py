@@ -25,6 +25,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSubsystem
+from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.rest_responses import unwrap_envelope
@@ -43,7 +44,7 @@ async def _get_user_projects(client) -> list[ProjectDict]:
     resp = await client.get(url.with_query(type="user"))
 
     payload = await resp.json()
-    assert resp.status == web.HTTPOk.status_code, payload
+    assert resp.status == status.HTTP_200_OK, payload
 
     projects, error = unwrap_envelope(payload)
     assert not error, pformat(error)
@@ -198,7 +199,7 @@ async def _assert_redirected_to_study(
     assert len(response.history) == 1, "Is a re-direction"
 
     content = await response.text()
-    assert response.status == web.HTTPOk.status_code, f"Got {content}"
+    assert response.status == status.HTTP_200_OK, f"Got {content}"
 
     # Expects redirection to osparc web
     assert response.url.path == "/"
@@ -235,7 +236,7 @@ async def test_access_to_invalid_study(client: TestClient, faker: Faker):
     _assert_redirected_to_error_page(
         response,
         expected_page="error",
-        expected_status_code=web.HTTPNotFound.status_code,
+        expected_status_code=status.HTTP_404_NOT_FOUND,
     )
 
 
@@ -247,7 +248,7 @@ async def test_access_to_forbidden_study(
     _assert_redirected_to_error_page(
         response,
         expected_page="error",
-        expected_status_code=web.HTTPUnauthorized.status_code,
+        expected_status_code=status.HTTP_401_UNAUTHORIZED,
     )
 
 
@@ -277,7 +278,7 @@ async def test_access_study_anonymously(
     me_url = client.app.router["get_my_profile"].url_for()
     resp = await client.get(f"{me_url}")
 
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["login"].endswith("guest-at-osparc.io")
     assert data["gravatar_id"]
     assert data["role"].upper() == UserRole.GUEST.name
@@ -362,7 +363,7 @@ async def test_access_cookie_of_expired_user(
     me_url = app.router["get_my_profile"].url_for()
     resp = await client.get(f"{me_url}")
 
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert await get_user_role(app, data["id"]) == UserRole.GUEST
 
     async def enforce_garbage_collect_guest(uid):
@@ -390,7 +391,7 @@ async def test_access_cookie_of_expired_user(
 
     # Now this should be non -authorized
     resp = await client.get(f"{me_url}")
-    await assert_status(resp, web.HTTPUnauthorized)
+    await assert_status(resp, status.HTTP_401_UNAUTHORIZED)
 
     # But still can access as a new user
     resp = await client.get(f"{study_url}")
@@ -398,7 +399,7 @@ async def test_access_cookie_of_expired_user(
 
     # as a guest user
     resp = await client.get(f"{me_url}")
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert await get_user_role(app, data["id"]) == UserRole.GUEST
 
     # But I am another user
@@ -443,7 +444,7 @@ async def test_guest_user_is_not_garbage_collected(
         me_url = client.app.router["get_my_profile"].url_for()
         resp = await client.get(f"{me_url}")
 
-        data, _ = await assert_status(resp, web.HTTPOk)
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert data["login"].endswith("guest-at-osparc.io")
         assert data["gravatar_id"]
         assert data["role"].upper() == UserRole.GUEST.name

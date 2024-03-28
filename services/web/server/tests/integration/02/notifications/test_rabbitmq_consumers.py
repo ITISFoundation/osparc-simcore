@@ -4,9 +4,9 @@
 # pylint: disable=too-many-arguments
 
 import asyncio
-import json
+from collections.abc import Awaitable, Callable
 from random import choice
-from typing import Any, Awaitable, Callable
+from typing import Any
 from unittest import mock
 
 import aiopg
@@ -79,7 +79,7 @@ _STABLE_DELAY_S = 2
 
 
 async def _assert_handler_not_called(handler: mock.Mock) -> None:
-    with pytest.raises(RetryError):
+    with pytest.raises(RetryError):  # noqa: PT012
         async for attempt in AsyncRetrying(
             retry=retry_always,
             stop=stop_after_delay(_STABLE_DELAY_S),
@@ -124,7 +124,7 @@ async def _assert_handler_called_with_json(
             )
             handler.assert_called_once()
             call_args, _call_kwargs = handler.call_args
-            assert json.loads(call_args[0]) == expected_call
+            assert call_args[0] == expected_call
             print(f"calls received! {attempt.retry_state.retry_object.statistics}")
 
 
@@ -175,25 +175,52 @@ async def rabbitmq_publisher(
     return create_rabbitmq_client("pytest_publisher")
 
 
+@pytest.fixture
+def random_node_id_in_user_project(user_project: ProjectDict) -> NodeID:
+    workbench = list(user_project["workbench"])
+    return NodeID(choice(workbench))  # noqa: S311
+
+
+@pytest.fixture
+def user_project_id(user_project: ProjectDict) -> ProjectID:
+    return ProjectID(user_project["uuid"])
+
+
+@pytest.fixture
+def user_id(logged_user: UserInfoDict) -> UserID:
+    return UserID(logged_user["id"])
+
+
+@pytest.fixture
+def sender_user_id(user_id: UserID, sender_same_user_id: bool, faker: Faker) -> UserID:
+    if sender_same_user_id is False:
+        return UserID(faker.pyint(min_value=user_id + 1))
+    return user_id
+
+
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
 @pytest.mark.parametrize(
-    "sender_same_user_id", [True, False], ids=lambda id: f"same_sender_id={id}"
+    "sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}"
 )
 @pytest.mark.parametrize(
-    "subscribe_to_logs", [True, False], ids=lambda id: f"subscribed={id}"
+    "subscribe_to_logs", [True, False], ids=lambda id_: f"subscribed={id_}"
 )
 async def test_log_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
-    faker: Faker,
+    subscribe_to_logs: bool,
     socketio_client_factory: Callable[
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
-    mocker: MockerFixture,
+    # user
     sender_same_user_id: bool,
-    subscribe_to_logs: bool,
+    sender_user_id: UserID,
+    # project
+    random_node_id_in_user_project: NodeID,
+    user_project_id: ProjectID,
+    #
+    faker: Faker,
+    mocker: MockerFixture,
 ):
     """
     RabbitMQ (TOPIC) --> Webserver --> Redis --> webclient (socketio)
@@ -204,20 +231,14 @@ async def test_log_workflow(
     mock_log_handler = mocker.MagicMock()
     socket_io_conn.on(SOCKET_IO_LOG_EVENT, handler=mock_log_handler)
 
-    project_id = ProjectID(user_project["uuid"])
-    random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
-    sender_user_id = UserID(logged_user["id"])
-    if sender_same_user_id is False:
-        sender_user_id = UserID(faker.pyint(min_value=logged_user["id"] + 1))
-
     if subscribe_to_logs:
         assert client.app
-        await project_logs.subscribe(client.app, project_id)
+        await project_logs.subscribe(client.app, user_project_id)
 
     log_message = LoggerRabbitMessage(
         user_id=sender_user_id,
-        project_id=project_id,
-        node_id=random_node_id_in_project,
+        project_id=user_project_id,
+        node_id=random_node_id_in_user_project,
         messages=[faker.text() for _ in range(10)],
     )
     await rabbitmq_publisher.publish(log_message.channel_name, log_message)
@@ -236,8 +257,12 @@ async def test_log_workflow(
 async def test_log_workflow_only_receives_messages_if_subscribed(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
+    # user
+    user_id: UserID,
+    # project
+    random_node_id_in_user_project: NodeID,
+    user_project_id: ProjectID,
+    #
     faker: Faker,
     mocker: MockerFixture,
 ):
@@ -246,21 +271,17 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
 
     """
     mocked_send_messages = mocker.patch(
-        "simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers.send_messages",
+        "simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers.send_message_to_user",
         autospec=True,
     )
 
-    project_id = ProjectID(user_project["uuid"])
-    random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
-    sender_user_id = UserID(logged_user["id"])
-
     assert client.app
-    await project_logs.subscribe(client.app, project_id)
+    await project_logs.subscribe(client.app, user_project_id)
 
     log_message = LoggerRabbitMessage(
-        user_id=sender_user_id,
-        project_id=project_id,
-        node_id=random_node_id_in_project,
+        user_id=user_id,
+        project_id=user_project_id,
+        node_id=random_node_id_in_user_project,
         messages=[faker.text() for _ in range(10)],
     )
     await rabbitmq_publisher.publish(log_message.channel_name, log_message)
@@ -269,18 +290,17 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
         mock.call(
             client.app,
             log_message.user_id,
-            [
-                {
-                    "event_type": SOCKET_IO_LOG_EVENT,
-                    "data": log_message.dict(exclude={"user_id", "channel_name"}),
-                }
-            ],
+            message={
+                "event_type": SOCKET_IO_LOG_EVENT,
+                "data": log_message.dict(exclude={"user_id", "channel_name"}),
+            },
+            ignore_queue=True,
         ),
     )
     mocked_send_messages.reset_mock()
 
     # when unsubscribed, we do not receive the messages anymore
-    await project_logs.unsubscribe(client.app, project_id)
+    await project_logs.unsubscribe(client.app, user_project_id)
     await rabbitmq_publisher.publish(log_message.channel_name, log_message)
     await _assert_handler_not_called(mocked_send_messages)
 
@@ -292,24 +312,27 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
     ids=str,
 )
 @pytest.mark.parametrize(
-    "sender_same_user_id", [True, False], ids=lambda id: f"same_sender_id={id}"
+    "sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}"
 )
 @pytest.mark.parametrize(
-    "subscribe_to_logs", [True, False], ids=lambda id: f"subscribed={id}"
+    "subscribe_to_logs", [True, False], ids=lambda id_: f"subscribed={id_}"
 )
 async def test_progress_non_computational_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
-    faker: Faker,
     socketio_client_factory: Callable[
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
-    mocker: MockerFixture,
-    progress_type: ProgressType,
-    sender_same_user_id: bool,
     subscribe_to_logs: bool,
+    progress_type: ProgressType,
+    # user
+    sender_same_user_id: bool,
+    sender_user_id: UserID,
+    # project
+    random_node_id_in_user_project: NodeID,
+    user_project_id: ProjectID,
+    #
+    mocker: MockerFixture,
 ):
     """
     RabbitMQ (TOPIC) --> Webserver -->  Redis --> webclient (socketio)
@@ -320,18 +343,14 @@ async def test_progress_non_computational_workflow(
     mock_progress_handler = mocker.MagicMock()
     socket_io_conn.on(SOCKET_IO_NODE_PROGRESS_EVENT, handler=mock_progress_handler)
 
-    random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
-    sender_user_id = UserID(logged_user["id"])
-    project_id = ProjectID(user_project["uuid"])
-    if sender_same_user_id is False:
-        sender_user_id = UserID(faker.pyint(min_value=logged_user["id"] + 1))
     if subscribe_to_logs:
         assert client.app
-        await project_logs.subscribe(client.app, project_id)
+        await project_logs.subscribe(client.app, user_project_id)
+
     progress_message = ProgressRabbitMessageNode(
         user_id=sender_user_id,
-        project_id=ProjectID(user_project["uuid"]),
-        node_id=random_node_id_in_project,
+        project_id=user_project_id,
+        node_id=random_node_id_in_user_project,
         progress=0.3,
         progress_type=progress_type,
     )
@@ -347,24 +366,27 @@ async def test_progress_non_computational_workflow(
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
 @pytest.mark.parametrize(
-    "sender_same_user_id", [True, False], ids=lambda id: f"same_sender_id={id}"
+    "sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}"
 )
 @pytest.mark.parametrize(
-    "subscribe_to_logs", [True, False], ids=lambda id: f"subscribed={id}"
+    "subscribe_to_logs", [True, False], ids=lambda id_: f"subscribed={id_}"
 )
 async def test_progress_computational_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
-    logged_user: UserInfoDict,
     user_project: ProjectDict,
     socketio_client_factory: Callable[
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
     mocker: MockerFixture,
     aiopg_engine: aiopg.sa.Engine,
-    sender_same_user_id: bool,
-    faker: Faker,
     subscribe_to_logs: bool,
+    # user
+    sender_same_user_id: bool,
+    sender_user_id: UserID,
+    # project
+    random_node_id_in_user_project: NodeID,
+    user_project_id: ProjectID,
 ):
     """
     RabbitMQ (TOPIC) --> Webserver -->  DB (get project)
@@ -375,18 +397,14 @@ async def test_progress_computational_workflow(
 
     mock_progress_handler = mocker.MagicMock()
     socket_io_conn.on(SOCKET_IO_NODE_UPDATED_EVENT, handler=mock_progress_handler)
-    random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
-    sender_user_id = UserID(logged_user["id"])
-    project_id = ProjectID(user_project["uuid"])
-    if sender_same_user_id is False:
-        sender_user_id = UserID(faker.pyint(min_value=logged_user["id"] + 1))
+
     if subscribe_to_logs:
         assert client.app
-        await project_logs.subscribe(client.app, project_id)
+        await project_logs.subscribe(client.app, user_project_id)
     progress_message = ProgressRabbitMessageNode(
         user_id=sender_user_id,
-        project_id=ProjectID(user_project["uuid"]),
-        node_id=random_node_id_in_project,
+        project_id=user_project_id,
+        node_id=random_node_id_in_user_project,
         progress=0.3,
         progress_type=ProgressType.COMPUTATION_RUNNING,
     )
@@ -398,7 +416,7 @@ async def test_progress_computational_workflow(
             progress_message, include={"node_id", "project_id"}
         )
         expected_call |= {
-            "data": user_project["workbench"][f"{random_node_id_in_project}"]
+            "data": user_project["workbench"][f"{random_node_id_in_user_project}"]
         }
         expected_call["data"]["progress"] = int(progress_message.progress * 100)
         await _assert_handler_called_with_json(mock_progress_handler, expected_call)
@@ -409,14 +427,17 @@ async def test_progress_computational_workflow(
     async with aiopg_engine.acquire() as conn:
         result = await conn.execute(
             sa.select(projects.c.workbench).where(
-                projects.c.uuid == user_project["uuid"]
+                projects.c.uuid == str(user_project_id)
             )
         )
         row = await result.fetchone()
         assert row
         project_workbench = dict(row[projects.c.workbench])
         # NOTE: the progress might still be present but is not used anymore
-        assert project_workbench[f"{random_node_id_in_project}"].get("progress", 0) == 0
+        assert (
+            project_workbench[f"{random_node_id_in_user_project}"].get("progress", 0)
+            == 0
+        )
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
@@ -424,11 +445,14 @@ async def test_progress_computational_workflow(
 async def test_instrumentation_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
     mocker: MockerFixture,
     faker: Faker,
     metrics_name: str,
+    # user
+    user_id: UserID,
+    # project
+    random_node_id_in_user_project: NodeID,
+    user_project_id: ProjectID,
 ):
     """
     RabbitMQ --> Webserver -->  Prometheus metrics
@@ -439,11 +463,10 @@ async def test_instrumentation_workflow(
         f"simcore_service_webserver.notifications._rabbitmq_nonexclusive_queue_consumers.{metrics_name}"
     )
 
-    random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
     rabbit_message = InstrumentationRabbitMessage(
-        user_id=UserID(logged_user["id"]),
-        project_id=ProjectID(user_project["uuid"]),
-        node_id=random_node_id_in_project,
+        user_id=user_id,
+        project_id=user_project_id,
+        node_id=random_node_id_in_user_project,
         metrics=metrics_name,
         service_uuid=faker.uuid4(),
         service_key=faker.pystr(),
@@ -468,19 +491,21 @@ async def test_instrumentation_workflow(
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
 @pytest.mark.parametrize(
-    "sender_same_user_id", [True, False], ids=lambda id: f"same_sender_id={id}"
+    "sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}"
 )
 async def test_event_workflow(
+    mocker: MockerFixture,
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
     socketio_client_factory: Callable[
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
-    mocker: MockerFixture,
+    # user
     sender_same_user_id: bool,
-    faker: Faker,
+    sender_user_id: UserID,
+    # project
+    random_node_id_in_user_project: NodeID,
+    user_project_id: ProjectID,
 ):
     """
     RabbitMQ --> Webserver --> Redis --> webclient (socketio)
@@ -490,14 +515,10 @@ async def test_event_workflow(
     mock_event_handler = mocker.MagicMock()
     socket_io_conn.on(SOCKET_IO_EVENT, handler=mock_event_handler)
 
-    sender_user_id = UserID(logged_user["id"])
-    if sender_same_user_id is False:
-        sender_user_id = UserID(faker.pyint(min_value=logged_user["id"] + 1))
-    random_node_id_in_project = NodeID(choice(list(user_project["workbench"])))
     rabbit_message = EventRabbitMessage(
         user_id=sender_user_id,
-        project_id=ProjectID(user_project["uuid"]),
-        node_id=random_node_id_in_project,
+        project_id=user_project_id,
+        node_id=random_node_id_in_user_project,
         action=RabbitEventMessageType.RELOAD_IFRAME,
     )
 

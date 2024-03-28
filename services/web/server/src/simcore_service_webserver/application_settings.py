@@ -1,7 +1,6 @@
 import logging
-from datetime import datetime
 from functools import cached_property
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 from models_library.basic_types import (
@@ -85,10 +84,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Name of the tag that makrs this release or None if undefined",
         example="ResistanceIsFutile10",
     )
-    SIMCORE_VCS_RELEASE_DATE: datetime | None = Field(
-        default=None,
-        description="Release date or None if undefined. It corresponds to the tag's creation date",
-    )
+
     SIMCORE_VCS_RELEASE_URL: AnyHttpUrl | None = Field(
         default=None,
         description="URL to release notes",
@@ -243,13 +239,18 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @root_validator()
     @classmethod
     def build_vcs_release_url_if_unset(cls, values):
-        vcs_release_url = values.get("SIMCORE_VCS_RELEASE_URL")
+        release_url = values.get("SIMCORE_VCS_RELEASE_URL")
 
-        if vcs_release_url is None and (
+        if release_url is None and (
             vsc_release_tag := values.get("SIMCORE_VCS_RELEASE_TAG")
         ):
-            vcs_release_url = f"https://github.com/ITISFoundation/osparc-simcore/releases/tag/{vsc_release_tag}"
-            values["SIMCORE_VCS_RELEASE_URL"] = vcs_release_url
+            if vsc_release_tag == "latest":
+                release_url = (
+                    "https://github.com/ITISFoundation/osparc-simcore/commits/master/"
+                )
+            else:
+                release_url = f"https://github.com/ITISFoundation/osparc-simcore/releases/tag/{vsc_release_tag}"
+            values["SIMCORE_VCS_RELEASE_URL"] = release_url
 
         return values
 
@@ -309,7 +310,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         # might reveal critical info on the settings of a deploy to the client.
         # TODO: more reliable definition of a "plugin" and whether it can be advertised or not
         # (extra var? e.g. Field( ... , x_advertise_plugin=True))
-        PUBLIC_PLUGIN_CANDIDATES = {
+        public_plugin_candidates: Final = {
             "WEBSERVER_CLUSTERS",
             "WEBSERVER_EXPORTER",
             "WEBSERVER_META_MODELING",
@@ -317,11 +318,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "WEBSERVER_SCICRUNCH",
             "WEBSERVER_VERSION_CONTROL",
         }
-        return [
-            plugin_name
-            for plugin_name in PUBLIC_PLUGIN_CANDIDATES
-            if not self.is_enabled(plugin_name)
-        ]
+        return [_ for _ in public_plugin_candidates if not self.is_enabled(_)]
 
     def _export_by_alias(self, **kwargs) -> dict[str, Any]:
         #  This is a small helper to assist export functions since aliases are no longer used by
@@ -337,7 +334,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "SC_VCS_REF": "vcs_ref",
             "SC_VCS_URL": "vcs_url",
             "SIMCORE_VCS_RELEASE_TAG": "vcs_release_tag",
-            "SIMCORE_VCS_RELEASE_DATE": "vcs_release_date",
             "SIMCORE_VCS_RELEASE_URL": "vcs_release_url",
             "SWARM_STACK_NAME": "stack_name",
         }
@@ -366,7 +362,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                     "SC_VCS_REF",
                     "SC_VCS_URL",
                     "SIMCORE_VCS_RELEASE_TAG",
-                    "SIMCORE_VCS_RELEASE_DATE",
                     "SIMCORE_VCS_RELEASE_URL",
                 },
                 exclude_none=True,
@@ -383,10 +378,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SC_VCS_REF": True,
                 "SC_VCS_URL": True,
                 "SIMCORE_VCS_RELEASE_TAG": True,
-                "SIMCORE_VCS_RELEASE_DATE": True,
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_PROJECTS": {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES"},
+                "WEBSERVER_LOGIN": {"LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"},
+                "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
             },
             exclude_none=True,
         )
@@ -406,7 +402,7 @@ def setup_settings(app: web.Application) -> ApplicationSettings:
     return settings
 
 
-def get_settings(app: web.Application) -> ApplicationSettings:
+def get_application_settings(app: web.Application) -> ApplicationSettings:
     settings: ApplicationSettings = app[APP_SETTINGS_KEY]
     assert settings, "Forgot to setup plugin?"  # nosec
     return settings

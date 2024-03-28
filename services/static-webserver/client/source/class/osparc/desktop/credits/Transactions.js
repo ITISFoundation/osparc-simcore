@@ -43,14 +43,19 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
   members: {
     __buildLayout: function() {
       this._removeAll();
-
+      const introContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox())
       this.__introLabel = new qx.ui.basic.Label().set({
         value: this.tr("Top-up and refunds in US Dollars associated to your personal account show up here."),
         font: "text-14",
         rich: true,
         wrap: true
       });
-      this._add(this.__introLabel);
+      introContainer.add(this.__introLabel)
+      introContainer.add(new qx.ui.core.Spacer(), { flex: 1 })
+      const refreshButton = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14")
+      refreshButton.addListener("execute", () => this.__table && this.__table.getTableModel().reloadData())
+      introContainer.add(refreshButton)
+      this._add(introContainer);
 
       // FEATURE TOGGLE
       // const filterContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox())

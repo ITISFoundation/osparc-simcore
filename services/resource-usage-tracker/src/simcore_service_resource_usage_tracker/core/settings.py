@@ -42,11 +42,6 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_USER_NAME: str | None = None
 
     # RUNTIME  -----------------------------------------------------------
-    MACHINE_FQDN: str = Field(
-        default="osparc-master.speag.com",
-        description="Machine's fully qualified domain name",
-        env=["MACHINE_FQDN"],
-    )
     RESOURCE_USAGE_TRACKER_DEBUG: bool = Field(
         default=False,
         description="Debug mode",

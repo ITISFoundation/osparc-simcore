@@ -14,6 +14,7 @@ import simcore_service_webserver
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import setup_settings
@@ -64,7 +65,7 @@ async def _health_check_emulator(
         nonlocal check_count
         check_count += 1
         resp = await asyncio.wait_for(checkpoint, timeout=timeout)
-        assert resp.status == web.HTTPOk.status_code
+        assert resp.status == status.HTTP_200_OK
 
     await asyncio.sleep(start_period)
 
@@ -168,7 +169,7 @@ def test_diagnostics_setup(client: TestClient):
 async def test_healthy_app(client: TestClient, api_version_prefix: str):
     resp = await client.get(f"/{api_version_prefix}/health")
 
-    data, error = await assert_status(resp, web.HTTPOk)
+    data, error = await assert_status(resp, status.HTTP_200_OK)
 
     assert data
     assert not error
@@ -181,19 +182,19 @@ async def test_unhealthy_app_with_slow_callbacks(
     client: TestClient, api_version_prefix: str
 ):
     resp = await client.get(f"/{api_version_prefix}/health")
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
 
     resp = await client.get("/slow")  # emulates a very slow handle!
-    await assert_status(resp, web.HTTPOk)
+    await assert_status(resp, status.HTTP_200_OK)
 
     resp = await client.get(f"/{api_version_prefix}/health")
-    await assert_status(resp, web.HTTPServiceUnavailable)
+    await assert_status(resp, status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 async def test_diagnose_on_unexpected_error(client: TestClient):
     assert client.app
     resp = await client.get("/error")
-    assert resp.status == web.HTTPInternalServerError.status_code
+    assert resp.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
     assert_healthy_app(client.app)
 
@@ -201,7 +202,7 @@ async def test_diagnose_on_unexpected_error(client: TestClient):
 async def test_diagnose_on_failure(client: TestClient):
     assert client.app
     resp = await client.get("/fail")
-    assert resp.status == web.HTTPServiceUnavailable.status_code
+    assert resp.status == status.HTTP_503_SERVICE_UNAVAILABLE
 
     assert_healthy_app(client.app)
 
@@ -215,7 +216,7 @@ async def test_diagnose_on_response_delays(client: TestClient):
     resps = await asyncio.gather(*coros)
 
     for resp in resps:
-        await assert_status(resp, web.HTTPOk)
+        await assert_status(resp, status.HTTP_200_OK)
 
     # monitoring
     latency_observed = client.app[HEALTH_LATENCY_PROBE].value()

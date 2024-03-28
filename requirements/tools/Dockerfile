@@ -26,7 +26,8 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
   pip install --upgrade \
   pip~=24.0  \
   wheel \
-  setuptools
+  setuptools \
+  uv
 
 
 # devenv

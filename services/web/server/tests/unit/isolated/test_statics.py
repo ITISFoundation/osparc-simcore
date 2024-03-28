@@ -31,6 +31,13 @@ def source_boot_index_html(web_client_dir: Path) -> Path:
     return index_html
 
 
+@pytest.fixture(scope="module")
+def metadata_file(web_client_dir: Path) -> Path:
+    metadata_filepath = web_client_dir / "scripts" / "apps_metadata.json"
+    assert metadata_filepath.exists()
+    return json.loads(metadata_filepath.read_text())
+
+
 def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: dict):
     """
     tests that names in FRONTEND_APP_DEFAULT and FRONTEND_APPS_AVAILABLE
@@ -66,3 +73,21 @@ def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: dict):
     ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
 
     assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE
+
+
+def test_expected_frontend_apps_metadata(client_compile_cfg: dict, metadata_file: dict):
+    """
+    tests that names in FRONTEND_APP_DEFAULT and metadata provided in app_metadata.json
+    corresponds to actual front-end apps produced by static-webserver/client
+    """
+    frontend_apps_in_repo = {
+        feapp["name"] for feapp in client_compile_cfg["applications"]
+    }
+
+    frontend_apps_in_metadata = {
+        feapp["application"] for feapp in metadata_file["applications"]
+    }
+
+    assert (
+        frontend_apps_in_repo == frontend_apps_in_metadata
+    ), "Sync with values in FRONTEND_APPS_AVAILABLE with {metadata_filepath}"

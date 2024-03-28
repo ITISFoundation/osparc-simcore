@@ -25,8 +25,8 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   pip list | sed 's/^/    /'
 fi
 
-if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-  exec watchmedo auto-restart \
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
+  exec python -m debugpy --listen 0.0.0.0:"${OSPARC_GATEWAY_SERVER_DEBUGGING_PORT}" -m watchmedo auto-restart \
       --recursive \
       --pattern="*.py;*/src/*" \
       --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \

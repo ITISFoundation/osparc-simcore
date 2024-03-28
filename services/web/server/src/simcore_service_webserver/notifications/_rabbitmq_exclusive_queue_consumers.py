@@ -1,5 +1,5 @@
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Generator
 from typing import Final
 
 from aiohttp import web
@@ -28,14 +28,15 @@ from ..socketio.messages import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_PROGRESS_EVENT,
     SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
-    send_group_messages,
-    send_messages,
+    send_message_to_standard_group,
+    send_message_to_user,
 )
 from ..wallets import api as wallets_api
-from ._constants import APP_RABBITMQ_CONSUMERS_KEY
 from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rabbitmq
 
 _logger = logging.getLogger(__name__)
+
+_APP_RABBITMQ_CONSUMERS_KEY: Final[str] = f"{__name__}.rabbit_consumers"
 
 
 def _convert_to_project_progress_event(
@@ -97,65 +98,78 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message: ProgressRabbitMessageNode | ProgressRabbitMessageProject = (
         parse_raw_as(ProgressRabbitMessageNode | ProgressRabbitMessageProject, data)
     )
-    socket_message: SocketMessageDict | None = None
+    message: SocketMessageDict | None = None
     if isinstance(rabbit_message, ProgressRabbitMessageProject):
-        socket_message = _convert_to_project_progress_event(rabbit_message)
-    elif rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
-        socket_message = await _convert_to_node_update_event(app, rabbit_message)
-    else:
-        socket_message = _convert_to_node_progress_event(rabbit_message)
-    if socket_message:
-        await send_messages(app, rabbit_message.user_id, [socket_message])
+        message = _convert_to_project_progress_event(rabbit_message)
 
+    elif rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
+        message = await _convert_to_node_update_event(app, rabbit_message)
+
+    else:
+        message = _convert_to_node_progress_event(rabbit_message)
+
+    if message:
+        await send_message_to_user(
+            app,
+            rabbit_message.user_id,
+            message=message,
+            ignore_queue=True,
+        )
     return True
 
 
 async def _log_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = LoggerRabbitMessage.parse_raw(data)
-    socket_messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_LOG_EVENT,
-            "data": rabbit_message.dict(exclude={"user_id", "channel_name"}),
-        }
-    ]
-    await send_messages(app, rabbit_message.user_id, socket_messages)
+    await send_message_to_user(
+        app,
+        rabbit_message.user_id,
+        message=SocketMessageDict(
+            event_type=SOCKET_IO_LOG_EVENT,
+            data=rabbit_message.dict(exclude={"user_id", "channel_name"}),
+        ),
+        ignore_queue=True,
+    )
     return True
 
 
 async def _events_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = EventRabbitMessage.parse_raw(data)
-
-    socket_messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_EVENT,
-            "data": {
+    await send_message_to_user(
+        app,
+        rabbit_message.user_id,
+        message=SocketMessageDict(
+            event_type=SOCKET_IO_EVENT,
+            data={
                 "action": rabbit_message.action,
                 "node_id": f"{rabbit_message.node_id}",
             },
-        }
-    ]
-    await send_messages(app, rabbit_message.user_id, socket_messages)
+        ),
+        ignore_queue=True,
+    )
     return True
 
 
 async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = parse_raw_as(WalletCreditsMessage, data)
-    socket_messages: list[SocketMessageDict] = [
-        {
-            "event_type": SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
-            "data": {
-                "wallet_id": rabbit_message.wallet_id,
-                "osparc_credits": rabbit_message.credits,
-                "created_at": rabbit_message.created_at,
-            },
-        }
-    ]
     wallet_groups = await wallets_api.list_wallet_groups_with_read_access_by_wallet(
         app, wallet_id=rabbit_message.wallet_id
     )
-    rooms_to_notify: list[GroupID] = [item.gid for item in wallet_groups]
+    rooms_to_notify: Generator[GroupID, None, None] = (
+        item.gid for item in wallet_groups
+    )
     for room in rooms_to_notify:
-        await send_group_messages(app, room, socket_messages)
+        await send_message_to_standard_group(
+            app,
+            room,
+            message=SocketMessageDict(
+                event_type=SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
+                data={
+                    "wallet_id": rabbit_message.wallet_id,
+                    "osparc_credits": rabbit_message.credits,
+                    "created_at": rabbit_message.created_at,
+                },
+            ),
+        )
     return True
 
 
@@ -191,7 +205,7 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
         await logged_gather(
             *(
                 rabbit_client.unsubscribe(queue_name)
-                for queue_name in app[APP_RABBITMQ_CONSUMERS_KEY].values()
+                for queue_name in app[_APP_RABBITMQ_CONSUMERS_KEY].values()
             ),
         )
 
@@ -199,7 +213,7 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
 async def on_cleanup_ctx_rabbitmq_consumers(
     app: web.Application,
 ) -> AsyncIterator[None]:
-    app[APP_RABBITMQ_CONSUMERS_KEY] = await subscribe_to_rabbitmq(
+    app[_APP_RABBITMQ_CONSUMERS_KEY] = await subscribe_to_rabbitmq(
         app, _EXCHANGE_TO_PARSER_CONFIG
     )
     yield

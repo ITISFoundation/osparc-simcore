@@ -28,10 +28,6 @@ from simcore_service_dynamic_sidecar.modules.user_services_preferences._utils im
     is_feature_enabled,
 )
 
-pytest_plugins = [
-    "pytest_simcore.postgres_service",
-]
-
 pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
@@ -63,7 +59,9 @@ def product_name() -> ProductName:
 
 
 @pytest.fixture
-def mock_environment(
+def mock_environment(  # pylint:disable=too-many-arguments
+    mock_rabbit_check: None,
+    mock_storage_check: None,
     postgres_host_config: PostgresTestConfig,
     monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,
@@ -82,6 +80,10 @@ def mock_environment(
         "S3_SECRET_KEY": "test",
         "S3_BUCKET_NAME": "test",
         "S3_SECURE": "false",
+        "RABBIT_HOST": "test",
+        "RABBIT_PASSWORD": "test",
+        "RABBIT_SECURE": "0",
+        "RABBIT_USER": "test",
         "R_CLONE_PROVIDER": "MINIO",
         "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
         "DY_SIDECAR_SERVICE_KEY": service_key,

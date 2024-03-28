@@ -1,6 +1,9 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import asyncio
 
-import pytest
 import servicelib.aiohttp.application
 from aiohttp import web
 from aiohttp.test_utils import TestServer
@@ -9,7 +12,7 @@ from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY, get_client_session
 
 
-async def test_create_safe_application(mocker: MockerFixture):
+async def test_create_safe_application(mocker: MockerFixture):  # noqa: PLR0915
     # setup spies before init
     first_call_on_startup_spy = mocker.spy(
         servicelib.aiohttp.application, "_first_call_on_startup"
@@ -108,7 +111,7 @@ async def test_create_safe_application(mocker: MockerFixture):
     assert persistent_client_session_spy.call_count == 1
 
     # persistent_client_session closed session
-    assert the_app[APP_CLIENT_SESSION_KEY].closed
+    assert get_client_session(the_app).closed
 
     # checks that _cancel_all_background_tasks worked?
     fire_and_forget_tasks = the_app[APP_FIRE_AND_FORGET_TASKS_KEY]
@@ -117,12 +120,6 @@ async def test_create_safe_application(mocker: MockerFixture):
     pending = [t for t in fire_and_forget_tasks if not t.cancelled() or not t.done()]
     assert not pending
     assert done or cancelled
-
-    # will create a new client
-    # WARNING: POTENTIAL BUG a client created in a cleanup event might
-    # leave client session opened!
-    with pytest.raises(RuntimeError):
-        get_client_session(the_app)
 
 
 async def test_aiohttp_events_order():

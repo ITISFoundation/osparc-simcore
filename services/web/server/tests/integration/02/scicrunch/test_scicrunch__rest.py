@@ -15,14 +15,15 @@
 
 import os
 from pprint import pprint
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pytest
-from aiohttp import ClientResponseError, ClientSession, web
+from aiohttp import ClientResponseError, ClientSession
 from pytest_simcore.helpers.utils_scrunch_citations import (
     NOT_TOOL_CITATIONS,
     TOOL_CITATIONS,
 )
+from servicelib.aiohttp import status
 from simcore_service_webserver.scicrunch._rest import (
     ListOfResourceHits,
     ResourceView,
@@ -63,7 +64,7 @@ async def test_scicrunch_openapi_specs(settings: SciCrunchSettings):
 
 @pytest.mark.parametrize("name,rrid", TOOL_CITATIONS)
 async def test_scicrunch_get_all_versions(
-    name: Optional[str], rrid: str, settings: SciCrunchSettings
+    name: str | None, rrid: str, settings: SciCrunchSettings
 ):
     async with ClientSession() as client:
         versions = await get_all_versions(rrid, client, settings)
@@ -101,12 +102,12 @@ async def test_scicrunch_get_all_versions_with_empty(settings: SciCrunchSettings
         with pytest.raises(ClientResponseError) as exc_info:
             await get_all_versions(rrid, client, settings)
 
-        assert exc_info.value.status == web.HTTPNotFound.status_code
+        assert exc_info.value.status == status.HTTP_404_NOT_FOUND
 
 
 @pytest.mark.parametrize("name,rrid", TOOL_CITATIONS)
 async def test_scicrunch_get_resource_fields(
-    name: Optional[str], rrid: str, settings: SciCrunchSettings
+    name: str | None, rrid: str, settings: SciCrunchSettings
 ):
     async with ClientSession() as client:
         resource_view: ResourceView = await get_resource_fields(rrid, client, settings)
@@ -133,10 +134,10 @@ async def test_scicrunch_get_fields_from_invalid_rrid(
 ):
     # - ONLY RRIDs from SCR sources are actually supported
     # - 'RRID:' prefix should NOT be used here!
-    expected_status_code = web.HTTPBadRequest.status_code
+    expected_status_code = status.HTTP_400_BAD_REQUEST
 
     if rrid == "":
-        expected_status_code = web.HTTPNotFound.status_code
+        expected_status_code = status.HTTP_404_NOT_FOUND
 
     async with ClientSession() as client:
         with pytest.raises(ClientResponseError) as exc_info:
@@ -147,7 +148,7 @@ async def test_scicrunch_get_fields_from_invalid_rrid(
 
 async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSettings):
 
-    expected: List[Dict[str, Any]] = ListOfResourceHits.parse_obj(
+    expected: list[dict[str, Any]] = ListOfResourceHits.parse_obj(
         [
             {
                 "rid": "SCR_000860",

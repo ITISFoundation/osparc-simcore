@@ -41,8 +41,8 @@ qx.Class.define("osparc.widget.Renamer", {
     this.base(arguments, winTitle || this.tr("Rename"));
 
     const maxWidth = 350;
-    const minWidth = 100;
-    const labelWidth = oldLabel ? Math.min(Math.max(parseInt(oldLabel.length*4), minWidth), maxWidth) : 90;
+    const minWidth = 150;
+    const labelWidth = oldLabel ? Math.min(Math.max(parseInt(oldLabel.length*4), minWidth), maxWidth) : minWidth;
     this.set({
       appearance: "window-small-cap",
       layout: new qx.ui.layout.VBox(5),
@@ -89,6 +89,10 @@ qx.Class.define("osparc.widget.Renamer", {
 
       // Create the "Save" button to close the cell editor
       const save = this.__save = new qx.ui.form.Button(this.tr("Save"));
+      save.set({
+        appearance: "form-button",
+        padding: [1, 5]
+      });
       save.addListener("execute", e => {
         const newLabel = labelEditor.getValue();
         const data = {

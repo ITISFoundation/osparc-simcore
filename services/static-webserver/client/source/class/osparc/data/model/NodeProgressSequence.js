@@ -17,12 +17,12 @@
 
 /**
  * The progress sequence of a dynamic service is as follows:
- * - SIDECARS_PULLING        (1)
- * - CLUSTER_UP_SCALING      (2)
- * - SERVICE_INPUTS_PULLING  (3a)
- * - SERVICE_OUTPUTS_PULLING (3b)
- * - SERVICE_STATE_PULLING   (3c)
- * - SERVICE_IMAGES_PULLING  (4)
+ *
+ * [CLUSTER_UP_SCALING]
+ * [SIDECARS_PULLING]
+ * [SERVICE_OUTPUTS_PULLING, SERVICE_STATE_PULLING] (notice the parallelism here)
+ * [SERVICE_IMAGES_PULLING]
+ * [SERVICE_INPUTS_PULLING] (when this happens, the frontend has already loaded the service and is displaying it to the user) I would still keep it as is, when we decide to make inputs pulling part of the boot sequence this will be helpful.
  *
  * This class provides different widgets that render the progress status
  *
@@ -39,11 +39,11 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
   },
 
   properties: {
-    sidecarPulling: {
+    defaultProgress: {
       check: "Number",
-      init: 0,
+      init: null,
       nullable: false,
-      apply: "__applySidecarPulling"
+      apply: "__applyDefaultProgress"
     },
 
     clusterUpScaling: {
@@ -53,11 +53,11 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       apply: "__applyClusterUpScaling"
     },
 
-    inputsPulling: {
+    sidecarPulling: {
       check: "Number",
       init: 0,
       nullable: false,
-      apply: "__applyInputsPulling"
+      apply: "__applySidecarPulling"
     },
 
     outputsPulling: {
@@ -79,6 +79,13 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       init: null,
       nullable: false,
       apply: "__applyImagesPulling"
+    },
+
+    inputsPulling: {
+      check: "Number",
+      init: 0,
+      nullable: false,
+      apply: "__applyInputsPulling"
     }
   },
 
@@ -86,91 +93,111 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     createTitleAtom: function(label) {
       const atom = new qx.ui.basic.Atom().set({
         label,
-        font: "text-16",
-        icon: "@FontAwesome5Solid/circle-notch/16",
-        gap: 15
+        iconPosition: "right",
+        font: "text-14",
+        icon: "@FontAwesome5Solid/circle-notch/14",
+        gap: 15,
+        margin: [5, 10]
       });
+      const lbl = atom.getChildControl("label");
+      lbl.set({
+        allowGrowX: true,
+        allowShrinkX: true
+      })
       const icon = atom.getChildControl("icon");
+      icon.set({
+        allowGrowX: false,
+        allowShrinkX: false
+      })
       osparc.service.StatusUI.updateCircleAnimation(icon);
       return atom;
     },
 
-    createProgressBar: function() {
+    createProgressBar: function(max = 1) {
       const progressBar = new qx.ui.indicator.ProgressBar().set({
-        maximum: 1,
-        height: 14
-      });
-      progressBar.getChildControl("progress").set({
-        backgroundColor: "strong-main"
+        maximum: max,
+        height: 4,
+        margin: 0,
+        padding: 0
       });
       progressBar.exclude();
       return progressBar;
     },
 
-    progressReceived: function(atom, pBar, value) {
+    updateProgressLabel: function(atom, value) {
       if ([null, undefined].includes(value)) {
         return;
       }
 
       if (atom) {
         if (value === 1) {
-          atom.setIcon("@FontAwesome5Solid/check/16");
+          atom.setIcon("@FontAwesome5Solid/check/14");
         } else {
-          atom.setIcon("@FontAwesome5Solid/circle-notch/16");
+          atom.setIcon("@FontAwesome5Solid/circle-notch/14");
         }
         const icon = atom.getChildControl("icon");
         osparc.service.StatusUI.updateCircleAnimation(icon);
+      }
+    },
+
+    progressReceived: function(pBar, value) {
+      if ([null, undefined].includes(value)) {
+        return;
       }
 
       if (pBar) {
         pBar.set({
           value,
-          visibility: (value > 0 && value < 1) ? "visible" : "excluded"
+          visibility: (value >= 0) ? "visible" : "excluded"
         });
       }
     }
   },
 
   members: {
+    __mainLoadingPage: null,
     __sequenceLoadingPage: null,
-    __pullingSidecarTitle: null,
-    __pullingSidecarPBar: null,
+    __defaultProgressBar: null,
     __clusterUpScalingTitle: null,
-    __clusterUpScalingSubtitle: null,
-    __clusterUpScalingPBar: null,
-    __pullingInputsTitle: null,
-    __pullingInputsPBar: null,
+    __pullingSidecarTitle: null,
     __pullingOutputsTitle: null,
-    __pullingOutputsPBar: null,
     __pullingStateTitle: null,
-    __pullingStatePBar: null,
     __pullingImagesTitle: null,
-    __pullingImagesPBar: null,
+    __pullingInputsTitle: null,
+    __disclaimerText: null,
 
     getWidgetForLoadingPage: function() {
-      return this.__sequenceLoadingPage;
+      return this.__mainLoadingPage;
     },
 
     resetSequence: function() {
-      // reverted setting
-      this.setImagesPulling(0);
-      this.setStatePulling(0);
-      this.setOutputsPulling(0);
-      this.setInputsPulling(0);
+      this.setDefaultProgress(0);
       this.setClusterUpScaling(0);
       this.setSidecarPulling(0);
+      this.setOutputsPulling(0);
+      this.setStatePulling(0);
+      this.setImagesPulling(0);
+      this.setInputsPulling(0);
     },
 
     addProgressMessage: function(progressType, progress) {
+      const defaultProgress = this.getClusterUpScaling() +
+        this.getSidecarPulling() +
+        this.getOutputsPulling() +
+        this.getStatePulling() +
+        this.getImagesPulling() +
+        this.getInputsPulling();
+      if (progress) {
+        const val = defaultProgress
+        this.setDefaultProgress(val)
+      }
+
       switch (progressType) {
-        case "SIDECARS_PULLING":
-          this.setSidecarPulling(progress);
-          break;
         case "CLUSTER_UP_SCALING":
           this.setClusterUpScaling(progress);
           break;
-        case "SERVICE_INPUTS_PULLING":
-          this.setInputsPulling(progress);
+        case "SIDECARS_PULLING":
+          this.setSidecarPulling(progress);
           break;
         case "SERVICE_OUTPUTS_PULLING":
           this.setOutputsPulling(progress);
@@ -181,96 +208,109 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         case "SERVICE_IMAGES_PULLING":
           this.setImagesPulling(progress);
           break;
+        case "SERVICE_INPUTS_PULLING":
+          this.setInputsPulling(progress);
+          break;
       }
     },
 
     __initLayout: function() {
-      this.__sequenceLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
-        maxWidth: 280,
-        minHeight: 250
+      this.__mainLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
+
+
+      const sequenceLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(9)).set({
+        backgroundColor: "window-popup-background"
       });
 
+      const progressTitle = new qx.ui.basic.Label(qx.locale.Manager.tr("LOADING...")).set({
+        font: "text-12",
+        alignX: "center",
+        alignY: "middle",
+        margin: 10
+      });
+      const defaultPBar = this.__defaultProgressBar = this.self().createProgressBar(6);
+      sequenceLoadingPage.add(progressTitle);
+      sequenceLoadingPage.add(defaultPBar);
+
+      const defaultProgressSubtitle = this.__disclaimerText = new qx.ui.basic.Atom().set({
+        label: qx.locale.Manager.tr("Please be patient, this process can take a few minutes..."),
+        padding: [20, 10],
+        gap: 15,
+        icon: "@FontAwesome5Solid/exclamation-triangle/16",
+        backgroundColor: "disclaimer-bg",
+        textColor: "info",
+        alignX: "center"
+      });
+      const icon = defaultProgressSubtitle.getChildControl("icon");
+      icon.set({
+        textColor: "info"
+      })
+      defaultProgressSubtitle.exclude();
+
+
       const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Increasing system capacity..."));
-      this.__sequenceLoadingPage.add(scalingTitle);
+      sequenceLoadingPage.add(scalingTitle);
 
-      const scalingSubtitle = this.__clusterUpScalingSubtitle = new qx.ui.basic.Label(qx.locale.Manager.tr("This step can take up to 3 minutes"));
-      scalingSubtitle.exclude();
-      this.__sequenceLoadingPage.add(scalingSubtitle);
-
-      const clusterUpScalingPBar = this.__clusterUpScalingPBar = this.self().createProgressBar();
-      this.__sequenceLoadingPage.add(clusterUpScalingPBar);
+      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your input data..."));
+      sequenceLoadingPage.add(pullingInputsTitle);
 
       const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Setting up key components..."));
-      this.__sequenceLoadingPage.add(pullingSidecarTitle);
+      sequenceLoadingPage.add(pullingSidecarTitle);
 
-      const pullingSidecarPBar = this.__pullingSidecarPBar = this.self().createProgressBar();
-      this.__sequenceLoadingPage.add(pullingSidecarPBar);
-
-      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your outputs..."));
-      this.__sequenceLoadingPage.add(pullingOutputsTitle);
-
-      const pullingOutputsPBar = this.__pullingOutputsPBar = this.self().createProgressBar();
-      this.__sequenceLoadingPage.add(pullingOutputsPBar);
+      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your output data..."));
+      sequenceLoadingPage.add(pullingOutputsTitle);
 
       const pullingStateTitle = this.__pullingStateTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your work..."));
-      this.__sequenceLoadingPage.add(pullingStateTitle);
-
-      const pullingStatePBar = this.__pullingStatePBar = this.self().createProgressBar();
-      this.__sequenceLoadingPage.add(pullingStatePBar);
+      sequenceLoadingPage.add(pullingStateTitle);
 
       const pullingImagesTitle = this.__pullingImagesTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Installing software..."));
-      this.__sequenceLoadingPage.add(pullingImagesTitle);
+      sequenceLoadingPage.add(pullingImagesTitle);
 
-      const pullingImagesPBar = this.__pullingImagesPBar = this.self().createProgressBar();
-      this.__sequenceLoadingPage.add(pullingImagesPBar);
-
-      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your inputs..."));
-      this.__sequenceLoadingPage.add(pullingInputsTitle);
-
-      const pullingInputsPBar = this.__pullingInputsPBar = this.self().createProgressBar();
-      this.__sequenceLoadingPage.add(pullingInputsPBar);
+      this.__mainLoadingPage.addAt(sequenceLoadingPage, 0, {
+        flex: 1
+      });
+      this.__mainLoadingPage.addAt(this.__disclaimerText, 1, {
+        flex: 1
+      });
     },
 
-    __applySidecarPulling: function(value) {
-      this.self().progressReceived(this.__pullingSidecarTitle, this.__pullingSidecarPBar, value);
+    __applyDefaultProgress: function(value) {
+      if (value > 0 && value < 6) {
+        setTimeout(() => {
+          this.__disclaimerText.show();
+        }, 50000);
+      } else {
+        this.__disclaimerText.exclude();
+      }
+
+      this.self().progressReceived(this.__defaultProgressBar, value);
     },
 
     __applyClusterUpScaling: function(value) {
-      this.setSidecarPulling(1);
-
-      this.self().progressReceived(this.__clusterUpScalingTitle, this.__clusterUpScalingPBar, value);
-
-      if (value > 0 && value < 1) {
-        this.__clusterUpScalingSubtitle.show();
-      } else {
-        this.__clusterUpScalingSubtitle.exclude();
-      }
+      this.self().updateProgressLabel(this.__clusterUpScalingTitle, value);
     },
 
-    __applyInputsPulling: function(value) {
-      this.setClusterUpScaling(1);
-
-      this.self().progressReceived(this.__pullingInputsTitle, this.__pullingInputsPBar, value);
+    __applySidecarPulling: function(value) {
+      if (this.getClusterUpScaling() < 1) {
+        this.setClusterUpScaling(1)
+      }
+      this.self().updateProgressLabel(this.__pullingSidecarTitle, value);
     },
 
     __applyOutputsPulling: function(value) {
-      this.setClusterUpScaling(1);
-
-      this.self().progressReceived(this.__pullingOutputsTitle, this.__pullingOutputsPBar, value);
+      this.self().updateProgressLabel(this.__pullingOutputsTitle, value);
     },
 
     __applyStatePulling: function(value) {
-      this.setClusterUpScaling(1);
-
-      this.self().progressReceived(this.__pullingStateTitle, this.__pullingStatePBar, value);
+      this.self().updateProgressLabel(this.__pullingStateTitle, value);
     },
 
     __applyImagesPulling: function(value) {
-      this.setInputsPulling(1);
-      this.setOutputsPulling(1);
-      this.setStatePulling(1);
+      this.self().updateProgressLabel(this.__pullingImagesTitle, value);
+    },
 
-      this.self().progressReceived(this.__pullingImagesTitle, this.__pullingImagesPBar, value);
+    __applyInputsPulling: function(value) {
+      this.self().updateProgressLabel(this.__pullingInputsTitle, value);
     }
   }
 });

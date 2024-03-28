@@ -115,6 +115,9 @@ async def all_product_prices(
                     product_name=product_name,
                     usd_per_credit=usd_or_none,
                     comment=faker.sentence(),
+                    min_payment_amount_usd=10,
+                    stripe_price_id=faker.pystr(),
+                    stripe_tax_rate_id=faker.pystr(),
                 )
             )
 
@@ -138,6 +141,8 @@ async def latest_osparc_price(
             product_name="osparc",
             usd_per_credit=all_product_prices["osparc"] + 5,
             comment="New price for osparc",
+            stripe_price_id="stripe-price-id",
+            stripe_tax_rate_id="stripe-tax-rate-id",
         )
         .returning(products_prices.c.usd_per_credit)
     )

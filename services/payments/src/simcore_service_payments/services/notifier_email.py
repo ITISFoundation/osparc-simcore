@@ -66,29 +66,27 @@ _NOTIFY_PAYMENTS_HTML = """
 {% block title %}Payment Confirmation{% endblock %}
 
 {% block content %}
-<div class="container">
-    <p>Dear {{ user.first_name }},</p>
-    <p>We are delighted to confirm the successful processing of your payment of <strong>{{ payment.price_dollars }}</strong> <em>USD</em> for the purchase of <strong>{{ payment.osparc_credits }}</strong> <em>credits</em>. The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.</p>
-    <p>For more details you can view or download your <a href="{{ payment.invoice_url }}">receipt</a></p>
-    <p>Should you have any questions or require further assistance, please do not hesitate to reach out to our <a href="mailto:{{ product.support_email }}">customer support team</a>.</p>
-    <p>Best Regards,</p>
-    <p>{{ product.display_name }} support team<br>{{ product.vendor_display_inline }}</p>
-</div>
+<p>Dear {{ user.first_name }},</p>
+<p>We are delighted to confirm the successful processing of your payment of <strong>{{ payment.price_dollars }}</strong> <strong><em>USD</em></strong> for the purchase of <strong>{{ payment.osparc_credits }}</strong> <strong><em>credits</em></strong>.
+The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.</p>
+<p>For more details you can view or download your <a href="{{ payment.invoice_url }}">receipt</a>.</p>
+<p>Please don't hesitate to contact us at {{ product.support_email }} if you need further help.</p>
+<p>Best Regards,</p>
+<p>The <i>{{ product.display_name }}</i> Team</p>
 {% endblock %}
 """
 
 _NOTIFY_PAYMENTS_TXT = """
-    Dear {{ user.first_name }},
+Dear {{ user.first_name }},
 
-    We are delighted to confirm the successful processing of your payment of **{{ payment.price_dollars }}** *USD* for the purchase of **{{ payment.osparc_credits }}** *credits*. The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.
+We are delighted to confirm the successful processing of your payment of {{ payment.price_dollars }} USD for the purchase of {{ payment.osparc_credits }} credits. The credits have been added to your {{ product.display_name }} account, and you are all set to utilize them.
 
-    To view or download your detailed receipt, please click the following link {{ payment.invoice_url }}
+For more details you can view or download your receipt: {{ payment.invoice_url }}.
 
-    Should you have any questions or require further assistance, please do not hesitate to reach out to our {{ product.support_email }}" customer support team.
-    Best Regards,
+Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
 
-    {{ product.display_name }} support team
-    {{ product.vendor_display_inline }}
+Best Regards,
+The {{ product.display_name }} Team
 """
 
 
@@ -216,12 +214,13 @@ class EmailProvider(NotificationProvider):
             autoescape=select_autoescape(["html", "xml"]),
         )
 
-    async def _create_message(
+    async def _create_successful_payments_message(
         self, user_id: UserID, payment: PaymentTransaction
     ) -> EmailMessage:
-
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
+        data_vendor = data.vendor or {}
 
+        # email for successful payment
         msg: EmailMessage = await _create_user_email(
             self._jinja_env,
             user=_UserData(
@@ -237,7 +236,7 @@ class EmailProvider(NotificationProvider):
             product=_ProductData(
                 product_name=data.product_name,
                 display_name=data.display_name,
-                vendor_display_inline=f"{data.vendor.get('name', '')}. {data.vendor.get('address', '')}",
+                vendor_display_inline=f"{data_vendor.get('name', '')}. {data_vendor.get('address', '')}",
                 support_email=data.support_email,
             ),
         )
@@ -249,10 +248,17 @@ class EmailProvider(NotificationProvider):
         user_id: UserID,
         payment: PaymentTransaction,
     ):
-        msg = await self._create_message(user_id, payment)
-
-        async with _create_email_session(self._settings) as smtp:
-            await smtp.send_message(msg)
+        # NOTE: we only have an email for successful payments
+        if payment.state == "SUCCESS":
+            msg = await self._create_successful_payments_message(user_id, payment)
+            async with _create_email_session(self._settings) as smtp:
+                await smtp.send_message(msg)
+        else:
+            _logger.debug(
+                "No email sent when %s did a non-SUCCESS %s",
+                f"{user_id=}",
+                f"{payment=}",
+            )
 
     async def notify_payment_method_acked(
         self,

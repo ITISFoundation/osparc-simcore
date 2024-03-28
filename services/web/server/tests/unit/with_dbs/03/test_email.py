@@ -3,10 +3,12 @@
 # pylint: disable=unused-variable
 
 
+import functools
 import json
 from collections import Counter
 from html.parser import HTMLParser
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
@@ -19,12 +21,15 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
+from servicelib.aiohttp import status
+from servicelib.json_serialization import safe_json_dumps
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver._resources import webserver_resources
 from simcore_service_webserver.email._core import _remove_comments, _render_template
 from simcore_service_webserver.email._handlers import EmailTestFailed, EmailTestPassed
 from simcore_service_webserver.email.plugin import setup_email
+from simcore_service_webserver.login._registration_handlers import _get_ipinfo
 
 
 @pytest.fixture
@@ -86,11 +91,11 @@ def mocked_send_email(mocker: MockerFixture, app_environment: EnvVarsDict) -> Ma
 @pytest.mark.parametrize(
     "user_role,expected_response_cls",
     [
-        (UserRole.ADMIN, web.HTTPOk),
-        (UserRole.USER, web.HTTPForbidden),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPForbidden),
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.ADMIN, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
     ],
 )
 async def test_email_handlers(
@@ -108,7 +113,9 @@ async def test_email_handlers(
         f"/{API_VTAG}/email:test", json={"to": destination_email}
     )
 
-    data, error = await assert_status(response, expected_cls=expected_response_cls)
+    data, error = await assert_status(
+        response, expected_status_code=expected_response_cls
+    )
 
     if error:
         assert not mocked_send_email.called
@@ -154,23 +161,49 @@ class IndexParser(HTMLParser):
     list(webserver_resources.get_path("templates").rglob("*.jinja2")),
     ids=lambda p: p.name,
 )
-def test_render_templates(template_path: Path):
+def test_render_templates(template_path: Path, faker: Faker):
     app = web.Application()
     setup_email(app)
 
-    request = make_mocked_request("GET", "/fake", app=app)
+    request = make_mocked_request(
+        "GET",
+        "/fake",
+        headers={
+            "x-real-ip": faker.ipv4(),
+            "x-forwarded-for": faker.ipv4(),
+            "peername": faker.ipv4(),
+        },
+        app=app,
+    )
+
+    fake_request_form = {
+        "name": faker.name(),
+        "user": {
+            "name": faker.name(),
+            "address": faker.address(),
+            "email": faker.email(),
+        },
+        "job": {
+            "title": faker.job(),
+            "company": {"name": faker.company(), "address": faker.address()},
+        },
+    }
 
     subject, html_body = _render_template(
         request,
         template_path,
         context={
             "host": request.host,
-            "support_email": "support@company.com",
-            "name": "foo",
+            "support_email": faker.email(),
+            "name": "this is user.first_name",
             "code": "123",
             "reason": "no reason",
-            "link": "https://link.com",
-            "product": {"name": "foo"},
+            "link": faker.url(),
+            "product": SimpleNamespace(name="foobar", display_name="Foo Bar"),
+            "retention_days": 30,
+            "dumps": functools.partial(safe_json_dumps, indent=1),
+            "request_form": fake_request_form,
+            "ipinfo": _get_ipinfo(request),
         },
     )
 

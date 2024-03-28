@@ -111,7 +111,6 @@ qx.Class.define("osparc.desktop.credits.MyAccount", {
 
     __getProfilePage: function() {
       const page = new osparc.desktop.credits.ProfilePage();
-      page.showLabelOnTab();
       return page;
     },
 
@@ -119,7 +118,6 @@ qx.Class.define("osparc.desktop.credits.MyAccount", {
       const title = this.tr("Usage");
       const iconSrc = "@FontAwesome5Solid/list/22";
       const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      page.showLabelOnTab();
       const usageOverview = new osparc.desktop.credits.Usage();
       usageOverview.set({
         margin: 10

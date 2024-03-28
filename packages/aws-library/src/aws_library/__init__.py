@@ -1,3 +1,3 @@
-import pkg_resources
+from importlib.metadata import version
 
-__version__: str = pkg_resources.get_distribution("simcore-aws-library").version
+__version__: str = version("simcore-aws-library")

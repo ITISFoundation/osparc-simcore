@@ -299,14 +299,10 @@ async def get_project(request: web.Request):
 @login_required
 @permission_required("project.read")
 async def get_project_inactivity(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     project_inactivity = await projects_api.get_project_inactivity(
-        app=request.app,
-        project_id=path_params.project_id,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
+        app=request.app, project_id=path_params.project_id
     )
     return web.json_response(Envelope(data=project_inactivity), dumps=json_dumps)
 

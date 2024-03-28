@@ -7,11 +7,12 @@
 
 from collections.abc import AsyncIterator
 from decimal import Decimal
+from http import HTTPStatus
 from unittest import mock
 
 import arrow
 import pytest
-from aiohttp import ClientResponseError, web
+from aiohttp import ClientResponseError
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
@@ -24,10 +25,12 @@ from models_library.products import ProductName
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
+from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.login.utils import notify_user_confirmation
 from simcore_service_webserver.products.api import get_product
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.users.api import UserDisplayAndIdNamesTuple
 from simcore_service_webserver.wallets._events import (
     _WALLET_DESCRIPTION_TEMPLATE,
     _WALLET_NAME_TEMPLATE,
@@ -48,12 +51,12 @@ def mock_rut_sum_total_available_credits_in_the_wallet(
     )
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_wallets_full_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     wallets_clean_db: AsyncIterator[None],
     mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
 ):
@@ -62,7 +65,7 @@ async def test_wallets_full_workflow(
     # list user wallets
     url = client.app.router["list_wallets"].url_for()
     resp = await client.get(url.path)
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data == []
 
     # create a new wallet
@@ -70,12 +73,12 @@ async def test_wallets_full_workflow(
     resp = await client.post(
         url.path, json={"name": "My first wallet", "description": "Custom description"}
     )
-    added_wallet, _ = await assert_status(resp, web.HTTPCreated)
+    added_wallet, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # list user wallets
     url = client.app.router["list_wallets"].url_for()
     resp = await client.get(url.path)
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["walletId"] == added_wallet["walletId"]
     assert data[0]["name"] == "My first wallet"
@@ -92,7 +95,7 @@ async def test_wallets_full_workflow(
         wallet_id=f"{added_wallet['walletId']}"
     )
     resp = await client.get(url.path)
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["walletId"] == added_wallet["walletId"]
 
     # update user wallet
@@ -108,7 +111,7 @@ async def test_wallets_full_workflow(
             "status": "INACTIVE",
         },
     )
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["walletId"] == added_wallet["walletId"]
     assert data["name"] == "My first wallet"
     assert data["description"] is None
@@ -119,7 +122,7 @@ async def test_wallets_full_workflow(
     # list user wallets and check the updated wallet
     url = client.app.router["list_wallets"].url_for()
     resp = await client.get(url.path)
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["walletId"] == added_wallet["walletId"]
     assert data[0]["name"] == "My first wallet"
@@ -131,7 +134,7 @@ async def test_wallets_full_workflow(
     # add two more wallets
     url = client.app.router["create_wallet"].url_for()
     resp = await client.post(url.path, json={"name": "My second wallet"})
-    await assert_status(resp, web.HTTPCreated)
+    await assert_status(resp, status.HTTP_201_CREATED)
     resp = await client.post(
         url.path,
         json={
@@ -140,12 +143,12 @@ async def test_wallets_full_workflow(
             "thumbnail": "Custom thumbnail",
         },
     )
-    await assert_status(resp, web.HTTPCreated)
+    await assert_status(resp, status.HTTP_201_CREATED)
 
     # list user wallets
     url = client.app.router["list_wallets"].url_for()
     resp = await client.get(url.path)
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 3
 
     # Now we will log as a different user
@@ -165,16 +168,16 @@ async def test_wallets_full_workflow(
         )
         _, errors = await assert_status(
             resp,
-            web.HTTPForbidden,
+            status.HTTP_403_FORBIDDEN,
         )
         assert errors
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_wallets_events_auto_add_default_wallet_on_user_confirmation(
     client: TestClient,
     logged_user: UserInfoDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     wallets_clean_db: AsyncIterator[None],
     osparc_product_name: ProductName,
     mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
@@ -193,7 +196,7 @@ async def test_wallets_events_auto_add_default_wallet_on_user_confirmation(
 
     url = client.app.router["list_wallets"].url_for()
     resp = await client.get(url.path)
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 0
 
     await notify_user_confirmation(
@@ -204,35 +207,38 @@ async def test_wallets_events_auto_add_default_wallet_on_user_confirmation(
     )
 
     resp = await client.get(url.path)
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     wallet = WalletGet(**data[0])
-    user_name = logged_user["name"].capitalize()
-    assert wallet.name == _WALLET_NAME_TEMPLATE.format(user_name)
-    assert wallet.description == _WALLET_DESCRIPTION_TEMPLATE.format(user_name)
+
+    user = UserDisplayAndIdNamesTuple(
+        **{k: logged_user[k] for k in UserDisplayAndIdNamesTuple._fields}
+    )
+    assert wallet.name == _WALLET_NAME_TEMPLATE.format(user.full_name)
+    assert wallet.description == _WALLET_DESCRIPTION_TEMPLATE.format(user.full_name)
     assert mock_rut_sum_total_available_credits_in_the_wallet.called
     assert mock_add_credits_to_wallet.called == product.is_payment_enabled
 
     # Test whether default wallet was set in user preferences
     url = client.app.router["get_default_wallet"].url_for()
     resp = await client.get(url.path)
-    data, _ = await assert_status(resp, web.HTTPOk)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data
     wallet = WalletGetWithAvailableCredits(**data)
     assert wallet.available_credits > Decimal(0)
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_get_default_wallet_not_found(
     client: TestClient,
     logged_user: UserInfoDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     wallets_clean_db: AsyncIterator[None],
     mock_rut_sum_total_available_credits_in_the_wallet: mock.Mock,
 ):
     url = client.app.router["get_default_wallet"].url_for()
     resp = await client.get(url.path)
-    await assert_status(resp, web.HTTPNotFound)
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
 
 @pytest.mark.parametrize(
@@ -249,6 +255,6 @@ async def test_get_default_wallet_access_rights(
 
     error = err_info.value
     assert error.status in (
-        web.HTTPUnauthorized.status_code,
-        web.HTTPForbidden.status_code,
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
     ), f"{error}"

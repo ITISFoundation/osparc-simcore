@@ -87,6 +87,7 @@ def fake_project_for_streaming(
     yield fake_project
 
 
+@pytest.mark.parametrize("disconnect", [True, False])
 async def test_log_streaming(
     app: FastAPI,
     auth: httpx.BasicAuth,
@@ -96,6 +97,7 @@ async def test_log_streaming(
     fake_log_distributor,
     fake_project_for_streaming: ProjectGet,
     mocked_directorv2_service: MockRouter,
+    disconnect: bool,
 ):
 
     job_id: JobID = fake_project_for_streaming.uuid
@@ -107,10 +109,13 @@ async def test_log_streaming(
         auth=auth,
     ) as response:
         response.raise_for_status()
-        async for line in response.aiter_lines():
-            job_log = JobLog.parse_raw(line)
-            pprint(job_log.json())
-            collected_messages += job_log.messages
+        if not disconnect:
+            async for line in response.aiter_lines():
+                job_log = JobLog.parse_raw(line)
+                pprint(job_log.json())
+                collected_messages += job_log.messages
+
+    assert fake_log_distributor.deregister_is_called
 
     assert (
         collected_messages

@@ -112,12 +112,12 @@ async def delete_project(
 
     except ProjectLockError as err:
         raise ProjectDeleteError(
-            project_uuid, reason=f"Project currently in use {err}"
+            project_uuid=project_uuid, reason=f"Project currently in use {err}"
         ) from err
 
     except (ProjectNotFoundError, UserNotFoundError) as err:
         raise ProjectDeleteError(
-            project_uuid, reason=f"Invalid project state {err}"
+            project_uuid=project_uuid, reason=f"Invalid project state {err}"
         ) from err
 
 

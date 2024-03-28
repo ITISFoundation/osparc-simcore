@@ -14,13 +14,13 @@ from pydantic.errors import PydanticErrorMixin
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
-from servicelib.retry_policies import RedisRetryPolicyUponInitialization
-from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import retry
 
 from .background_task import periodic_task, start_periodic_task, stop_periodic_task
 from .logging_utils import log_catch, log_context
+from .retry_policies import RedisRetryPolicyUponInitialization
+from .utils import logged_gather
 
 _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
 

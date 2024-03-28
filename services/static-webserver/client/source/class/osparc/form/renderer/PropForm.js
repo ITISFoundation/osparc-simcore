@@ -104,10 +104,10 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (minVisibleInputs === null) {
         return emptyDataPorts;
       }
-      const portKeys = this.__getPortKeys();
+      const portIds = this.getPortIds();
       // it will always show 1 more, so: -1
-      for (let i=minVisibleInputs-1; i<portKeys.length; i++) {
-        const portId = portKeys[i];
+      for (let i=minVisibleInputs-1; i<portIds.length; i++) {
+        const portId = portIds[i];
         const ctrl = this._form.getControl(portId);
         if (ctrl && ctrl.type.includes("data:") && !("link" in ctrl)) {
           emptyDataPorts.push(portId);
@@ -120,7 +120,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
     __getVisibleEmptyDataLastPort: function() {
       let emptyDataPorts = null;
-      this.__getPortKeys().forEach(portId => {
+      this.getPortIds().forEach(portId => {
         const ctrl = this._form.getControl(portId);
         const label = this._getLabelFieldChild(portId).child;
         if (
@@ -186,7 +186,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     makeInputsDynamic: function() {
-      this.__getPortKeys().forEach(portId => this.__showPort(portId));
+      this.getPortIds().forEach(portId => this.__showPort(portId));
 
       const emptyDataPorts = this.__getEmptyDataLastPorts();
       for (let i=1; i<emptyDataPorts.length; i++) {
@@ -233,7 +233,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         alignX: "center"
       });
       this.__fieldOptsBtnMap[field.key] = fieldOptsBtn;
-      // populaten the button/menu when the it appears
+      // populate the button/menu when the it appears
       fieldOptsBtn.addListenerOnce("appear", () => {
         if (this.getStudy()) {
           this.__populateFieldOptionsMenu(optionsMenu, field);
@@ -700,15 +700,15 @@ qx.Class.define("osparc.form.renderer.PropForm", {
           if (!(node2Id in destinations)) {
             destinations[node2Id] = {};
           }
-          this.__getPortKeys().forEach(portKey => {
-            if (!(portKey in destinations[node2Id])) {
-              destinations[node2Id][portKey] = "fetching";
+          this.getPortIds().forEach(portId => {
+            if (!(portId in destinations[node2Id])) {
+              destinations[node2Id][portId] = "fetching";
             }
           });
           osparc.data.Resources.getCompatibleInputs(node1, dragPortId, this.getNode())
             .then(compatiblePorts => {
-              this.__getPortKeys().forEach(portKey => {
-                destinations[node2Id][portKey] = compatiblePorts.includes(portKey);
+              this.getPortIds().forEach(portId => {
+                destinations[node2Id][portId] = compatiblePorts.includes(portId);
               });
               this.__highlightCompatibles(compatiblePorts);
             })
@@ -768,13 +768,13 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       return false;
     },
 
-    __getPortKeys: function() {
+    getPortIds: function() {
       return Object.keys(this._form.getControls());
     },
 
     /* LINKS */
-    getControlLink: function(key) {
-      return this.__ctrlLinkMap[key];
+    getControlLink: function(portId) {
+      return this.__ctrlLinkMap[portId];
     },
 
     __addLinkCtrl: function(portId) {
@@ -783,7 +783,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     __addLinkCtrls: function() {
-      this.__getPortKeys().forEach(portId => {
+      this.getPortIds().forEach(portId => {
         this.__addLinkCtrl(portId);
       });
     },

@@ -69,9 +69,9 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         decorator: "no-border",
         spacing: 3,
         backgroundColor: "transparent",
-        height: null
+        height: null,
+        focusable: false
       });
-      walletsUIList.addListener("changeSelection", e => this.__walletSelected(e.getData()), this);
       const walletsModel = new qx.data.Array();
       const walletsCtrl = new qx.data.controller.List(walletsModel, walletsUIList, "name");
       walletsCtrl.setDelegate({
@@ -80,7 +80,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           ctrl.bindProperty("walletId", "key", null, item, id);
           ctrl.bindProperty("walletId", "model", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
-          ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("creditsAvailable", "creditsAvailable", null, item, id);
@@ -90,12 +89,9 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("walletsList");
-          const thumbnail = item.getChildControl("thumbnail");
-          thumbnail.getContentElement().setStyles({
-            "border-radius": "16px"
-          });
 
           item.addListener("openEditWallet", e => this.__openEditWallet(e.getData()));
+          item.addListener("openShareWallet", e => this.__walletSelected(e.getData()));
           item.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
           item.addListener("toggleFavourite", e => {
             const {
@@ -111,11 +107,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       return walletsModel;
     },
 
-    __walletSelected: function(data) {
-      if (data && data.length>0) {
-        const wallet = data[0];
-        this.fireDataEvent("walletSelected", wallet.getModel());
-      }
+    __walletSelected: function(wallet) {
+      this.fireDataEvent("walletSelected", wallet);
     },
 
     loadWallets: function() {
@@ -149,17 +142,14 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       wallet.bind("walletId", walletEditor, "walletId");
       wallet.bind("name", walletEditor, "name");
       wallet.bind("description", walletEditor, "description");
-      wallet.bind("thumbnail", walletEditor, "thumbnail", {
-        converter: val => val ? val : ""
-      });
       const title = this.tr("Credit Account Details Editor");
       const win = osparc.ui.window.Window.popUpInWindow(walletEditor, title, 400, 250);
-      walletEditor.addListener("updateWallet", () => this.__updateWallet(win, walletEditor.getChildControl("save"), walletEditor));
+      walletEditor.addListener("updateWallet", () => this.__updateWallet(win, walletEditor));
       walletEditor.addListener("cancel", () => win.close());
     },
 
-    __updateWallet: function(win, button, walletEditor) {
-      button.setFetching(true);
+    __updateWallet: function(win, walletEditor) {
+      walletEditor.setIsFetching(true);
 
       const store = osparc.store.Store.getInstance();
       const walletId = walletEditor.getWalletId();
@@ -167,7 +157,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
       if (found) {
         const name = walletEditor.getName();
         const description = walletEditor.getDescription();
-        const thumbnail = walletEditor.getThumbnail();
         const params = {
           url: {
             "walletId": walletId
@@ -175,7 +164,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
           data: {
             "name": name,
             "description": description || null,
-            "thumbnail": thumbnail || null,
             "status": found.getStatus()
           }
         };
@@ -191,12 +179,11 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
             osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
           })
           .finally(() => {
-            button.setFetching(false);
+            walletEditor.setIsFetching(false);
             win.close();
           });
       }
 
-      button.setFetching(false);
       win.close();
     },
 

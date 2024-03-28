@@ -119,14 +119,12 @@ qx.Class.define("osparc.snapshots.IterationsView", {
 
     __listenToNodeUpdates: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
-      const slotName = "nodeUpdated";
-      socket.on(slotName, data => {
-        const dataUpdate = JSON.parse(data);
-        const idx = this.__iterations.findIndex(it => it["uuid"] === dataUpdate["project_id"]);
+      socket.on("nodeUpdated", data => {
+        const idx = this.__iterations.findIndex(it => it.uuid === data["project_id"]);
         if (idx === -1) {
           return;
         }
-        this.__iterationUpdated(dataUpdate);
+        this.__iterationUpdated(data);
       }, this);
     },
 
@@ -297,9 +295,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
     },
 
     unlistenToNodeUpdates: function() {
-      const socket = osparc.wrapper.WebSocket.getInstance();
-      const slotName = "nodeUpdated";
-      socket.removeSlot(slotName);
+      osparc.wrapper.WebSocket.getInstance().removeSlot("nodeUpdated");
     }
   }
 });

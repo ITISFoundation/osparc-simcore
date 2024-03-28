@@ -41,7 +41,7 @@ qx.Class.define("osparc.store.VendorInfo", {
         "license_url": "http://docs.osparc.io/#/docs/support/license"
       }
       */
-      return this.__getFromStaticInfo("vendor", null);
+      return this.__getFromStaticInfo("vendor", {});
     },
 
     getManuals: function() {

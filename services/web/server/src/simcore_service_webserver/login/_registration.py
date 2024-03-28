@@ -33,7 +33,10 @@ from ..invitations.api import (
     is_service_invitation_code,
     validate_invitation_url,
 )
-from ..invitations.errors import InvalidInvitation, InvitationsServiceUnavailable
+from ..invitations.errors import (
+    InvalidInvitationError,
+    InvitationsServiceUnavailableError,
+)
 from ..products.api import Product
 from ._confirmation import is_confirmation_expired, validate_confirmation_code
 from ._constants import (
@@ -207,16 +210,16 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
 
         yield url
 
-    except (ValidationError, InvalidInvitation) as err:
+    except (ValidationError, InvalidInvitationError) as err:
         msg = f"{err}"
         if isinstance(err, ValidationError):
-            msg = f"{InvalidInvitation(reason='')}"
+            msg = f"{InvalidInvitationError(reason='')}"
         raise web.HTTPForbidden(
             reason=f"{msg}. {MSG_INVITATIONS_CONTACT_SUFFIX}",
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
-    except InvitationsServiceUnavailable as err:
+    except InvitationsServiceUnavailableError as err:
         raise web.HTTPServiceUnavailable(
             reason=f"{err}",
             content_type=MIMETYPE_APPLICATION_JSON,

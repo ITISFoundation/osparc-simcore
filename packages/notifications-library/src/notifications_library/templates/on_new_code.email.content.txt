@@ -1,0 +1,10 @@
+Dear {{ user.first_name }},
+
+Please find below the Two-factor Authentication sign-in code for your {{ host }} account.
+
+Your code is: {{ code }}
+
+Please don't hesitate to contact us at {{ product.support_email }} if you need further help.
+
+Best Regards,
+The {{ product.display_name }} Team

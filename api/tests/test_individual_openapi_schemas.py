@@ -7,8 +7,6 @@ import shutil
 from pathlib import Path
 
 import pytest
-from openapi_spec_validator import validate_spec
-from openapi_spec_validator.exceptions import OpenAPISpecValidatorError
 from utils import dump_specs, is_json_schema, is_openapi_schema, load_specs
 
 # Conventions
@@ -132,15 +130,3 @@ def converted_specs_testdir(api_specs_dir, all_api_specs_tails, tmpdir_factory):
             shutil.copy2(basedir / tail, testdir / tail)
 
     return testdir
-
-
-@pytest.mark.skip(reason="Implementing in PR 324")
-def test_valid_individual_openapi_specs(api_specs_tail, converted_specs_testdir):
-    # NOTE: api_specs_tail is a parametrized **fixture**
-    #
-    api_specs_path = converted_specs_testdir / api_specs_tail
-    try:
-        specs = load_specs(api_specs_path)
-        validate_spec(specs, spec_url=api_specs_path.as_uri())
-    except OpenAPISpecValidatorError as err:
-        pytest.fail(f"Failed validating {api_specs_path}:\n{err.message}")

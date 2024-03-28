@@ -1,11 +1,9 @@
 import logging
-from contextlib import contextmanager
+from functools import partial
 from typing import Any, ClassVar
 from uuid import UUID
 
 from fastapi import FastAPI
-from fastapi.exceptions import HTTPException
-from httpx import HTTPStatusError, codes
 from models_library.clusters import ClusterID
 from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
@@ -19,6 +17,7 @@ from starlette import status
 from ..core.settings import DirectorV2Settings
 from ..models.schemas.jobs import PercentageInt
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+from .service_exception_handling import service_exception_mapper
 
 logger = logging.getLogger(__name__)
 
@@ -64,42 +63,11 @@ DownloadLink = AnyUrl
 
 # API CLASS ---------------------------------------------
 
-
-@contextmanager
-def _handle_errors_context(project_id: UUID):
-    try:
-        yield
-
-    # except ValidationError
-    except HTTPStatusError as err:
-        msg = (
-            f"Failed {err.request.url} with status={err.response.status_code}: {err.response.json()}",
-        )
-        if codes.is_client_error(err.response.status_code):
-            # client errors are mapped
-            logger.debug(msg)
-            if err.response.status_code == status.HTTP_404_NOT_FOUND:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Job {project_id} not found",
-                ) from err
-
-            raise err
-
-        # server errors are logged and re-raised as 503
-        assert codes.is_server_error(err.response.status_code)  # nosec
-
-        logger.exception(
-            "director-v2 service failed: %s. Re-rasing as service unavailable (503)",
-            msg,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Director service failed",
-        ) from err
+_exception_mapper = partial(service_exception_mapper, "Director V2")
 
 
 class DirectorV2Api(BaseServiceClientApi):
+    @_exception_mapper({})
     async def create_computation(
         self,
         project_id: UUID,
@@ -116,8 +84,10 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        return ComputationTaskGet(**response.json())
+        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        return task
 
+    @_exception_mapper({})
     async def start_computation(
         self,
         project_id: UUID,
@@ -126,32 +96,40 @@ class DirectorV2Api(BaseServiceClientApi):
         groups_extra_properties_repository: GroupsExtraPropertiesRepository,
         cluster_id: ClusterID | None = None,
     ) -> ComputationTaskGet:
-        with _handle_errors_context(project_id):
-            extras = {}
+        extras = {}
 
-            use_on_demand_clusters = (
-                await groups_extra_properties_repository.use_on_demand_clusters(
-                    user_id, product_name
-                )
+        use_on_demand_clusters = (
+            await groups_extra_properties_repository.use_on_demand_clusters(
+                user_id, product_name
             )
+        )
 
-            if cluster_id is not None and not use_on_demand_clusters:
-                extras["cluster_id"] = cluster_id
+        if cluster_id is not None and not use_on_demand_clusters:
+            extras["cluster_id"] = cluster_id
 
-            response = await self.client.post(
-                "/v2/computations",
-                json={
-                    "user_id": user_id,
-                    "project_id": str(project_id),
-                    "start_pipeline": True,
-                    "product_name": product_name,
-                    "use_on_demand_clusters": use_on_demand_clusters,
-                    **extras,
-                },
+        response = await self.client.post(
+            "/v2/computations",
+            json={
+                "user_id": user_id,
+                "project_id": str(project_id),
+                "start_pipeline": True,
+                "product_name": product_name,
+                "use_on_demand_clusters": use_on_demand_clusters,
+                **extras,
+            },
+        )
+        response.raise_for_status()
+        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        return task
+
+    @_exception_mapper(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
             )
-            response.raise_for_status()
-            return ComputationTaskGet(**response.json())
-
+        }
+    )
     async def get_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
@@ -162,8 +140,17 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        return ComputationTaskGet(**response.json())
+        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        return task
 
+    @_exception_mapper(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
+            )
+        }
+    )
     async def stop_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskGet:
@@ -173,11 +160,20 @@ class DirectorV2Api(BaseServiceClientApi):
                 "user_id": user_id,
             },
         )
+        response.raise_for_status()
+        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        return task
 
-        return ComputationTaskGet(**response.json())
-
+    @_exception_mapper(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                lambda kwargs: f"Could not get solver/study job {kwargs['project_id']}",
+            )
+        }
+    )
     async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
-        await self.client.request(
+        response = await self.client.request(
             "DELETE",
             f"/v2/computations/{project_id}",
             json={
@@ -185,7 +181,16 @@ class DirectorV2Api(BaseServiceClientApi):
                 "force": True,
             },
         )
+        response.raise_for_status()
 
+    @_exception_mapper(
+        {
+            status.HTTP_404_NOT_FOUND: (
+                status.HTTP_404_NOT_FOUND,
+                lambda kwargs: f"Could not get logfile for solver/study job {kwargs['project_id']}",
+            )
+        }
+    )
     async def get_computation_logs(
         self, user_id: PositiveInt, project_id: UUID
     ) -> dict[NodeName, DownloadLink]:

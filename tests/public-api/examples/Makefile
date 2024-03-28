@@ -17,14 +17,14 @@ help: ## help on rule's targets
 
 .PHONY: install-dev
 install-dev: ## installs osparc client from folder for developent
-	pip install --editable $(API_SERVER_DIR)/client
-	pip install python-dotenv
+	uv pip install --editable $(API_SERVER_DIR)/client
+	uv pip install python-dotenv
 
 
 .PHONY: install-ci
 install-ci: ## installs osparc client and dependencies
-	pip install git+https://github.com/ITISFoundation/osparc-simcore-clients.git
-	pip install python-dotenv jupytext
+	uv pip install git+https://github.com/ITISFoundation/osparc-simcore-clients.git
+	uv pip install python-dotenv jupytext
 
 
 objects = $(wildcard *.py)

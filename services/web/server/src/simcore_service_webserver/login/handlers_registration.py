@@ -6,6 +6,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, PositiveInt, SecretStr, validator
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -217,7 +218,7 @@ async def register(request: web.Request):
             request.app,
             email=registration.email,
             password=registration.password.get_secret_value(),
-            status=(
+            status_upon_creation=(
                 UserStatus.CONFIRMATION_PENDING
                 if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
                 else UserStatus.ACTIVE
@@ -258,8 +259,9 @@ async def register(request: web.Request):
                 context={
                     "host": request.host,
                     "link": email_confirmation_url,  # SEE email_confirmation handler (action=REGISTRATION)
-                    "name": user["name"],
+                    "name": user.get("first_name") or user["name"],
                     "support_email": product.support_email,
+                    "product": product,
                 },
             )
         except Exception as err:  # pylint: disable=broad-except
@@ -346,7 +348,6 @@ async def register_phone(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
-    db: AsyncpgStorage = get_plugin_storage(request.app)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
@@ -363,12 +364,6 @@ async def register_phone(request: web.Request):
             msg = f"Messaging SID is not configured in {product}. Update product's twilio_messaging_sid in database."
             raise ValueError(msg)
 
-        if await db.get_user({"phone": registration.phone}):
-            raise web.HTTPUnauthorized(  # noqa: TRY301
-                reason="Cannot register this phone number because it is already assigned to an active user",
-                content_type=MIMETYPE_APPLICATION_JSON,
-            )
-
         code = await create_2fa_code(
             app=request.app,
             user_email=registration.email,
@@ -383,10 +378,6 @@ async def register_phone(request: web.Request):
             first_name=get_user_name_from_email(registration.email),
         )
 
-        message = MSG_2FA_CODE_SENT.format(
-            phone_number=mask_phone_number(registration.phone)
-        )
-
         return envelope_response(
             # RegisterPhoneNextPage
             data={
@@ -394,11 +385,13 @@ async def register_phone(request: web.Request):
                 "parameters": {
                     "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
-                "message": message,
+                "message": MSG_2FA_CODE_SENT.format(
+                    phone_number=mask_phone_number(registration.phone)
+                ),
                 "level": "INFO",
                 "logger": "user",
             },
-            status=web.HTTPAccepted.status_code,
+            status=status.HTTP_202_ACCEPTED,
         )
 
     except web.HTTPException:

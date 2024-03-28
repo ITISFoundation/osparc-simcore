@@ -8,6 +8,7 @@ import pytest
 from aiohttp import web
 from faker import Faker
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.users import UserRole
 
@@ -152,10 +153,10 @@ PREFIX = "/" + API_VERSION + "/storage"
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_get_storage_locations(client, storage_server, logged_user, expected):
@@ -173,11 +174,11 @@ async def test_get_storage_locations(client, storage_server, logged_user, expect
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPForbidden),
-        (UserRole.ADMIN, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
+        (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
 async def test_sync_file_meta_table(client, storage_server, logged_user, expected):
@@ -196,10 +197,10 @@ async def test_sync_file_meta_table(client, storage_server, logged_user, expecte
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_get_datasets_metadata(client, storage_server, logged_user, expected):
@@ -221,10 +222,10 @@ async def test_get_datasets_metadata(client, storage_server, logged_user, expect
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_get_files_metadata_dataset(
@@ -250,10 +251,10 @@ async def test_get_files_metadata_dataset(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_storage_file_meta(
@@ -277,10 +278,10 @@ async def test_storage_file_meta(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_storage_list_filter(client, storage_server, logged_user, expected):

@@ -2,20 +2,24 @@
 #
 
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -o errexit   # abort on nonzero exitstatus
-set -o nounset   # abort on unbound variable
-set -o pipefail  # don't hide errors within pipes
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
-  bash ci/helpers/ensure_python_pip.bash
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pushd tests/environment-setup
-  pip3 install -r requirements/ci.txt
+  make install-ci
   popd
-  make .env
+  uv pip list
 }
 
 test() {
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
   pytest --color=yes -v tests/environment-setup --log-level=DEBUG --asyncio-mode=auto
 }
 

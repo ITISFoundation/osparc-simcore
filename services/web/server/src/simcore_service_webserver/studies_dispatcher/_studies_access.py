@@ -20,6 +20,7 @@ from uuid import UUID, uuid5
 from aiohttp import web
 from aiohttp_session import get_session
 from models_library.projects import ProjectID
+from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.error_codes import create_error_code
 
@@ -94,7 +95,7 @@ async def _get_published_template_project(
             "Project with %s %s was not found. Reason: %s",
             f"{project_uuid=}",
             f"{only_public_projects=}",
-            err.detailed_message(),
+            err.debug_message(),
         )
 
         support_email = get_current_product(request).support_email
@@ -102,13 +103,13 @@ async def _get_published_template_project(
             raise RedirectToFrontEndPageError(
                 MSG_PUBLIC_PROJECT_NOT_PUBLISHED.format(support_email=support_email),
                 error_code="PUBLIC_PROJECT_NOT_PUBLISHED",
-                status_code=web.HTTPUnauthorized.status_code,
+                status_code=status.HTTP_401_UNAUTHORIZED,
             ) from err
 
         raise RedirectToFrontEndPageError(
             MSG_PROJECT_NOT_PUBLISHED.format(project_id=project_uuid),
             error_code="PROJECT_NOT_PUBLISHED",
-            status_code=web.HTTPNotFound.status_code,
+            status_code=status.HTTP_404_NOT_FOUND,
         ) from err
 
 
@@ -214,7 +215,7 @@ def _handle_errors_with_error_page(handler: Handler):
                     msg=MSG_PROJECT_NOT_FOUND.format(project_id=err.project_uuid),
                     error_code="PROJECT_NOT_FOUND",
                 ),
-                status_code=web.HTTPNotFound.status_code,
+                status_code=status.HTTP_404_NOT_FOUND,
             ) from err
 
         except RedirectToFrontEndPageError as err:
@@ -238,7 +239,7 @@ def _handle_errors_with_error_page(handler: Handler):
                 message=compose_support_error_msg(
                     msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
                 ),
-                status_code=500,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) from err
 
     return wrapper
@@ -272,7 +273,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         raise RedirectToFrontEndPageError(
             MSG_PROJECT_NOT_FOUND.format(project_id=project_id),
             error_code="PROJECT_NOT_FOUND",
-            status_code=web.HTTPNotFound.status_code,
+            status_code=status.HTTP_404_NOT_FOUND,
         ) from exc
 
     # Get published PROJECT referenced in link
@@ -304,7 +305,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             raise RedirectToFrontEndPageError(
                 MSG_TOO_MANY_GUESTS,
                 error_code=error_code,
-                status_code=web.HTTPTooManyRequests.status_code,
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             ) from exc
 
     # COPY
@@ -330,7 +331,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         raise RedirectToFrontEndPageError(
             MSG_UNEXPECTED_ERROR.format(hint="while copying your study"),
             error_code=error_code,
-            status_code=web.HTTPInternalServerError.status_code,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         ) from exc
 
     # Creating REDIRECTION LINK

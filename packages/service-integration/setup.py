@@ -43,10 +43,10 @@ TEST_REQUIREMENTS = tuple(
 )  # STRICT requirements
 
 
-SETUP = dict(
-    name="simcore-service-integration",
-    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
-    author=", ".join(
+SETUP = {
+    "name": "simcore-service-integration",
+    "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
+    "author": ", ".join(
         (
             "Pedro Crespo-Valero (pcrespov)",
             "Sylvain Anderegg (sanderegg)",
@@ -54,8 +54,8 @@ SETUP = dict(
             "Andrei Neagu (GitHK)",
         )
     ),
-    description="Toolkit for service integration",
-    classifiers=[
+    "description": "Toolkit for service integration",
+    "classifiers": [
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
@@ -63,24 +63,24 @@ SETUP = dict(
         "Programming Language :: Python :: 3.10",
         "Framework :: Pytest",
     ],
-    long_description=Path(CURRENT_DIR / "README.md").read_text(),
-    python_requires=">=3.6",
-    license="MIT license",
-    install_requires=INSTALL_REQUIREMENTS,
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
-    include_package_data=True,
-    package_data={
+    "long_description": Path(CURRENT_DIR / "README.md").read_text(),
+    "python_requires": ">=3.6",
+    "license": "MIT license",
+    "install_requires": INSTALL_REQUIREMENTS,
+    "packages": find_packages(where="src"),
+    "package_dir": {"": "src"},
+    "include_package_data": True,
+    "package_data": {
         "": [
             "service/tests/**/*.py",
             "service/tests/unit/*.py",
         ]
     },
-    test_suite="tests",
-    tests_require=TEST_REQUIREMENTS,
-    extras_require={},
-    zip_safe=False,
-    entry_points={
+    "test_suite": "tests",
+    "tests_require": TEST_REQUIREMENTS,
+    "extras_require": {},
+    "zip_safe": False,
+    "entry_points": {
         "console_scripts": [
             "ooil=service_integration.cli:app",
             "osparc-service-integrator=service_integration.cli:app",
@@ -89,7 +89,7 @@ SETUP = dict(
         ],
         "pytest11": ["simcore_service_integration=service_integration.pytest_plugin"],
     },
-)
+}
 
 
 if __name__ == "__main__":

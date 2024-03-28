@@ -8,16 +8,14 @@ from models_library.errors import ErrorDict
 from pydantic import BaseModel, ValidationError, conint
 
 
-class B(BaseModel):
-    y: list[int]
-
-
-class A(BaseModel):
-    x: conint(ge=2)
-    b: B
-
-
 def test_pydantic_error_dict():
+    class B(BaseModel):
+        y: list[int]
+
+    class A(BaseModel):
+        x: conint(ge=2)
+        b: B
+
     with pytest.raises(ValidationError) as exc_info:
         A(x=-1, b={"y": [0, "wrong"]})
 

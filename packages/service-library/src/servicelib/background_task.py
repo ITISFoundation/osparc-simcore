@@ -6,13 +6,13 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Final
 
 from pydantic.errors import PydanticErrorMixin
-from servicelib.logging_utils import log_catch, log_context
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 from .decorators import async_delayed
+from .logging_utils import log_catch, log_context
 
 logger = logging.getLogger(__name__)
 

@@ -3,6 +3,7 @@ from http import HTTPStatus
 from typing import Any, Literal
 
 import httpx
+from fastapi import status
 from pydantic import BaseModel, Field
 from simcore_service_api_server.utils.http_calls_capture_processing import (
     PathDescription,
@@ -23,7 +24,7 @@ class HttpApiCallCaptureModel(BaseModel):
     query: str | None = None
     request_payload: dict[str, Any] | None = None
     response_body: dict[str, Any] | list | None = None
-    status_code: HTTPStatus = Field(default=HTTPStatus.OK)
+    status_code: HTTPStatus = Field(default=status.HTTP_200_OK)
 
     @classmethod
     def create_from_response(

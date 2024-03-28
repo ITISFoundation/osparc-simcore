@@ -20,6 +20,13 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
   events: {
     "completed": "qx.event.type.Event"
   },
+  properties: {
+    paymentId: {
+      check: "String",
+      init: null,
+      nullable: true
+    }
+  },
   members: {
     __buildLayout() {
       this.removeAll();
@@ -41,8 +48,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
           osparc.data.Resources.fetch("payments", "payWithPaymentMethod", params)
             .then(data => {
               const { paymentId } = data
-              osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentCompleted", wsData => {
-                const paymentData = JSON.parse(wsData);
+              osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentCompleted", paymentData => {
                 if (paymentId === paymentData.paymentId) {
                   this.__paymentCompleted(paymentData)
                   this.__form.setFetching(false);
@@ -58,12 +64,13 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
           osparc.data.Resources.fetch("payments", "startPayment", params)
             .then(data => {
               const { paymentId, paymentFormUrl } = data;
+              this.setPaymentId(paymentId)
               this.__iframe = new qx.ui.embed.Iframe(paymentFormUrl).set({
                 decorator: "no-border-2"
               });
               this.add(this.__iframe);
-              osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentCompleted", wsData => {
-                const paymentData = JSON.parse(wsData);
+              this.setSelection([this.__iframe])
+              osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentCompleted", paymentData => {
                 if (paymentId === paymentData.paymentId) {
                   this.__paymentCompleted(paymentData);
                 }
@@ -78,6 +85,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
       });
       this.__form.addListener("cancel", () => this.fireEvent("completed"));
       this.add(this.__form);
+      this.setSelection([this.__form])
     },
     __paymentCompleted(paymentData) {
       if (paymentData && paymentData.completedStatus) {
@@ -99,6 +107,20 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
         }
       }
       this.fireEvent("completed");
+    },
+    __isGatewaySelected() {
+      const selection = this.getSelection()
+      return selection.length === 1 && selection[0] === this.__iframe
+    },
+    cancelPayment: function() {
+      if (this.__isGatewaySelected() && this.getPaymentId()) {
+        osparc.data.Resources.fetch("payments", "cancelPayment", {
+          url: {
+            walletId: this.__personalWallet.getWalletId(),
+            paymentId: this.getPaymentId()
+          }
+        })
+      }
     }
   }
 });

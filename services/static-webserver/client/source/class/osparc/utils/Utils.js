@@ -269,13 +269,29 @@ qx.Class.define("osparc.utils.Utils", {
       return (["dev", "master"].includes(platformName));
     },
 
-    getEditButton: function() {
-      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+    resourceTypeToAlias: function(resourceType) {
+      switch (resourceType) {
+        case "study":
+          resourceType = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+          break;
+        case "template":
+          resourceType = osparc.product.Utils.getTemplateAlias({firstUpperCase: true});
+          break;
+        case "service":
+          resourceType = qx.locale.Manager.tr("Service");
+          break;
+      }
+      return resourceType;
+    },
+
+    getEditButton: function(isVisible = true) {
+      return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+        appearance: "form-button-outlined",
         allowGrowY: false,
         padding: 3,
-        maxWidth: 20
+        maxWidth: 20,
+        visibility: isVisible ? "visible" : "excluded"
       });
-      return button;
     },
 
     getViewButton: function() {
@@ -348,11 +364,14 @@ qx.Class.define("osparc.utils.Utils", {
       return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
     },
 
-    formatMilliSeconds: function(milliseconds) {
-      const date = new Date(0);
-      date.setMilliseconds(milliseconds);
-      const timeString = date.toISOString().substring(11, 19); // hh:mm:ss
-      return timeString;
+    formatMsToHHMMSS: function(ms) {
+      const absMs = Math.abs(ms)
+      const nHours = Math.floor(absMs / 3600000)
+      const remaining1 = absMs - (nHours * 3600000)
+      const nMinutes = Math.floor(remaining1 / 60000)
+      const remaining2 = remaining1 - (nMinutes * 60000)
+      const nSeconds = Math.round(remaining2 / 1000)
+      return `${ms < 0 ? "-" : ""}${nHours}:${nMinutes.toString().padStart(2, "0")}:${nSeconds.toString().padStart(2, "0")}`
     },
 
     formatSeconds: function(seconds) {
@@ -411,7 +430,7 @@ qx.Class.define("osparc.utils.Utils", {
       return email.split("@")[0];
     },
 
-    uuidv4: function() {
+    uuidV4: function() {
       return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
     },
@@ -426,6 +445,18 @@ qx.Class.define("osparc.utils.Utils", {
 
     addBorder: function(widget, width = 1, color = "transparent") {
       widget.getContentElement().setStyle("border", width+"px solid " + color);
+    },
+
+    updateBorderColor: function(widget, color = "inherit") {
+      widget.getContentElement().setStyle("border-color", color);
+    },
+
+    addBackground: function(widget, color = "transparent") {
+      widget.getContentElement().setStyle("background-color", color);
+    },
+
+    removeBackground: function(widget) {
+      widget.getContentElement().setStyle("background-color", "transparent");
     },
 
     removeBorder: function(widget) {
@@ -521,13 +552,16 @@ qx.Class.define("osparc.utils.Utils", {
       return L > 0.35 ? "#FFF" : "#000";
     },
 
-    bytesToSize: function(bytes) {
-      const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-      if (bytes == 0) {
+    bytesToSize: function(bytes, decimals = 2) {
+      if (!+bytes) {
         return "0 Bytes";
       }
-      const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1000)));
-      return Math.round((bytes / Math.pow(1000, i)) * 100) / 100 + " " + sizes[i];
+      const k = 1000;
+      const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+      const dm = decimals < 0 ? 0 : decimals;
+
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
     },
 
     bytesToGB: function(bytes) {
@@ -730,10 +764,13 @@ qx.Class.define("osparc.utils.Utils", {
 
     cookie: {
       setCookie: (cname, cvalue, exdays) => {
-        var d = new Date();
-        d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-        var expires = "expires="+d.toUTCString();
-        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        if (exdays) {
+          const d = new Date();
+          d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+          document.cookie = cname + "=" + cvalue + ";Expires=" + d.toUTCString() + ";path=/";
+        } else {
+          document.cookie = cname + "=" + cvalue + ";path=/";
+        }
       },
 
       getCookie: cname => {
@@ -811,7 +848,7 @@ qx.Class.define("osparc.utils.Utils", {
 
     getClientSessionID: function() {
       // https://stackoverflow.com/questions/11896160/any-way-to-identify-browser-tab-in-javascript
-      const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidv4();
+      const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidV4();
       sessionStorage.setItem("clientsessionid", clientSessionID);
       return clientSessionID;
     },
@@ -891,6 +928,13 @@ qx.Class.define("osparc.utils.Utils", {
           child.close();
         }
       });
+    },
+
+    removeAllChildren: function(container) {
+      const nChildren = container.getChildren().length;
+      for (let i=nChildren-1; i>=0; i--) {
+        container.remove(container.getChildren()[i]);
+      }
     }
   }
 });

@@ -49,6 +49,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = [
+    "adminer",
     "minio",
 ]
 
@@ -176,10 +177,10 @@ async def ensure_services_stopped(
 
         # pylint: disable=protected-access
         scheduler_interval = (
-            minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
+            minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL
         )
         # sleep enough to ensure the observation cycle properly stopped the service
-        await asyncio.sleep(2 * scheduler_interval)
+        await asyncio.sleep(2 * scheduler_interval.total_seconds())
         await ensure_network_cleanup(docker_client, project_id)
 
 

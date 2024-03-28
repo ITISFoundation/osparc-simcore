@@ -26,7 +26,7 @@ from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..products.api import Product, get_current_product
 from ..scicrunch.db import ResearchResourceRepository
-from ..scicrunch.errors import InvalidRRID, ScicrunchError
+from ..scicrunch.errors import InvalidRRIDError, ScicrunchError
 from ..scicrunch.models import ResearchResource, ResourceHit
 from ..scicrunch.service_client import SciCrunch
 from ..security.decorators import permission_required
@@ -295,8 +295,8 @@ def _handle_scicrunch_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except InvalidRRID as err:
-            raise web.HTTPBadRequest(reason=err.reason) from err
+        except InvalidRRIDError as err:
+            raise web.HTTPBadRequest(reason=f"{err}") from err
 
         except ScicrunchError as err:
             user_msg = "Cannot get RRID since scicrunch.org service is not reachable."

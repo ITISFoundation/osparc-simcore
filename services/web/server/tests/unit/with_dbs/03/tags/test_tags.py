@@ -5,11 +5,11 @@
 
 
 from collections.abc import AsyncIterator, Callable, Iterator
+from http import HTTPStatus
 from typing import Any
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects_state import (
@@ -24,6 +24,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from pytest_simcore.helpers.utils_tags import create_tag, delete_tag
+from servicelib.aiohttp import status
 from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import get_database_engine
@@ -45,12 +46,12 @@ def fake_tags(faker: Faker) -> list[dict[str, Any]]:
     ]
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_tags_to_studies(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    expected: type[web.HTTPException],
+    expected: HTTPStatus,
     fake_tags: dict[str, Any],
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
 ):
@@ -90,7 +91,7 @@ async def test_tags_to_studies(
     # Delete tag0
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[0].get("id")))
     resp = await client.delete(f"{url}")
-    await assert_status(resp, web.HTTPNoContent)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Get project and check that tag is no longer there
     user_project["tags"].remove(added_tags[0]["id"])
@@ -111,7 +112,7 @@ async def test_tags_to_studies(
     # Delete tag1
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[1].get("id")))
     resp = await client.delete(f"{url}")
-    await assert_status(resp, web.HTTPNoContent)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
 
 @pytest.fixture
@@ -154,7 +155,7 @@ async def test_read_tags(
 
     url = client.app.router["list_tags"].url_for()
     resp = await client.get(f"{url}")
-    datas, _ = await assert_status(resp, web.HTTPOk)
+    datas, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert datas == [
         {
@@ -182,7 +183,7 @@ async def test_create_and_update_tags(
         f"{client.app.router['create_tag'].url_for()}",
         json={"name": "T", "color": "#f00"},
     )
-    created, _ = await assert_status(resp, web.HTTPOk)
+    created, _ = await assert_status(resp, status.HTTP_200_OK)
 
     assert created == {
         "id": created["id"],
@@ -198,7 +199,7 @@ async def test_create_and_update_tags(
         json={"description": "This is my tag"},
     )
 
-    updated, _ = await assert_status(resp, web.HTTPOk)
+    updated, _ = await assert_status(resp, status.HTTP_200_OK)
     created.update(description="This is my tag")
     assert updated == created
 
@@ -207,5 +208,5 @@ async def test_create_and_update_tags(
         f"{url}",
         json={"description": "I have NO WRITE ACCESS TO THIS TAG"},
     )
-    _, error = await assert_status(resp, web.HTTPUnauthorized)
+    _, error = await assert_status(resp, status.HTTP_401_UNAUTHORIZED)
     assert error

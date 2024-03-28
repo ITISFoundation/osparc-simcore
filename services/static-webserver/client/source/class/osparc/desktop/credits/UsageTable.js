@@ -64,7 +64,7 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
 
     columnModel.setColumnWidth(0, 130)
     columnModel.setColumnWidth(1, 130)
-    columnModel.setColumnWidth(3, 125)
+    columnModel.setColumnWidth(3, 130)
     columnModel.setColumnWidth(4, 70)
     columnModel.setColumnWidth(5, 70)
     columnModel.setColumnWidth(6, 56)

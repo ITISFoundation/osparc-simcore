@@ -3,9 +3,9 @@
 # pylint: disable=protected-access
 
 import asyncio
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncIterable, AsyncIterator, Awaitable, Callable
 from unittest.mock import AsyncMock
 
 import pytest
@@ -21,11 +21,12 @@ from models_library.api_schemas_storage import (
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
+from servicelib.aiohttp import status
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.exceptions import AwsS3BadRequestRequestTimeoutError
 from simcore_sdk.node_ports_common.file_io_utils import (
-    ExtendedClientResponseError,
     _check_for_aws_http_errors,
+    _ExtendedClientResponseError,
     _process_batch,
     _raise_for_status,
     upload_file_to_presigned_links,
@@ -50,7 +51,7 @@ async def test_raise_for_status(
     async with client_session.get(A_TEST_ROUTE) as resp:
         assert isinstance(resp, ClientResponse)
 
-        with pytest.raises(ExtendedClientResponseError) as exe_info:
+        with pytest.raises(_ExtendedClientResponseError) as exe_info:
             await _raise_for_status(resp)
         assert "OPSIE there was an error here" in f"{exe_info.value}"
 
@@ -65,10 +66,10 @@ class _TestParams:
 @pytest.mark.parametrize(
     "test_params",
     [
-        _TestParams(will_retry=True, status_code=500),
-        _TestParams(will_retry=True, status_code=503),
-        _TestParams(will_retry=False, status_code=400),
-        _TestParams(will_retry=False, status_code=200),
+        _TestParams(will_retry=True, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
+        _TestParams(will_retry=True, status_code=status.HTTP_503_SERVICE_UNAVAILABLE),
+        _TestParams(will_retry=False, status_code=status.HTTP_400_BAD_REQUEST),
+        _TestParams(will_retry=False, status_code=status.HTTP_200_OK),
         _TestParams(will_retry=False, status_code=399),
     ],
 )
@@ -84,7 +85,7 @@ async def test_check_for_aws_http_errors(
     async with client_session.get(A_TEST_ROUTE) as resp:
         try:
             await _raise_for_status(resp)
-        except ExtendedClientResponseError as exception:
+        except _ExtendedClientResponseError as exception:
             assert (  # noqa: PT017
                 _check_for_aws_http_errors(exception) is test_params.will_retry
             )
@@ -178,7 +179,7 @@ async def bucket(aiobotocore_s3_client: AioBaseClient, faker: Faker) -> str:
     response = await aiobotocore_s3_client.create_bucket(Bucket=faker.pystr())
     assert "ResponseMetadata" in response
     assert "HTTPStatusCode" in response["ResponseMetadata"]
-    assert response["ResponseMetadata"]["HTTPStatusCode"] == 200
+    assert response["ResponseMetadata"]["HTTPStatusCode"] == status.HTTP_200_OK
 
     response = await aiobotocore_s3_client.list_buckets()
     assert response["Buckets"]
@@ -237,7 +238,7 @@ async def create_upload_links(
             ),
         )
 
-    yield _creator
+    return _creator
 
 
 @pytest.mark.skip(reason="this will allow to reproduce an issue")
