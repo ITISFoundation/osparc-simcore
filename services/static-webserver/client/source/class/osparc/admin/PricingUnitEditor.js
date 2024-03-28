@@ -23,69 +23,82 @@ qx.Class.define("osparc.admin.PricingUnitEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    const ppKey = this.getChildControl("pp-key");
-    const name = this.getChildControl("name");
-    this.getChildControl("description");
-    this.getChildControl("classification");
-    const isActive = this.getChildControl("is-active");
+    const unitName = this.getChildControl("unit-name");
+    const costPerUnit = this.getChildControl("cost-per-unit");
+    this.getChildControl("comment");
+    const specificInfo = this.getChildControl("specific-info");
+    const unitExtraInfo = this.getChildControl("unit-extra-info");
+    const isDefault = this.getChildControl("is-default");
 
     const manager = this.__validator = new qx.ui.form.validation.Manager();
-    ppKey.setRequired(true);
-    name.setRequired(true);
-    manager.add(ppKey);
-    manager.add(name);
+    unitName.setRequired(true);
+    costPerUnit.setRequired(true);
+    specificInfo.setRequired(true);
+    unitExtraInfo.setRequired(true);
+    isDefault.setRequired(true);
+    manager.add(unitName);
+    manager.add(costPerUnit);
+    manager.add(specificInfo);
+    manager.add(unitExtraInfo);
+    manager.add(isDefault);
 
     if (pricingUnit) {
       this.__pricingUnit = osparc.utils.Utils.deepCloneObject(pricingUnit);
       this.set({
-        ppKey: pricingUnit.pricingUnitKey,
-        name: pricingUnit.displayName,
-        description: pricingUnit.description,
-        classification: pricingUnit.classification,
-        isActive: pricingUnit.isActive
+        unitName: pricingUnit.unitName,
+        costPerUnit: pricingUnit.costPerUnit,
+        comment: pricingUnit.comment,
+        specificInfo: pricingUnit.specificInfo,
+        unitExtraInfo: pricingUnit.unitExtraInfo,
+        default: pricingUnit.default
       });
-      ppKey.setEnabled(false);
       this.getChildControl("save");
     } else {
-      isActive.setEnabled(false);
       this.getChildControl("create");
     }
   },
 
   properties: {
-    ppKey: {
+    unitName: {
       check: "String",
       init: "",
       nullable: false,
-      event: "changePpKey"
+      event: "changeUnitName"
     },
 
-    name: {
+    costPerUnit: {
+      check: "Number",
+      init: 0,
+      nullable: false,
+      event: "changeCostPerUnit"
+    },
+
+    comment: {
       check: "String",
       init: "",
       nullable: false,
-      event: "changeName"
+      event: "changeComment"
     },
 
-    description: {
+    specificInfo: {
       check: "String",
-      init: "",
+      init: "'aws_ec2_instances' ['']",
       nullable: false,
-      event: "changeDescription"
+      event: "changeSpecificInfo"
     },
 
-    classification: {
+    unitExtraInfo: {
       check: "String",
-      init: "TIER",
+      init: "{}",
       nullable: false,
-      event: "changeClassification"
+      event: "changeUnitExtraInfo"
     },
 
-    isActive: {
+    default: {
       check: "Boolean",
       init: true,
       nullable: false,
-      event: "changeIsActive"
+      event: "changeDefault"
     }
   },
 
@@ -101,52 +114,59 @@ qx.Class.define("osparc.admin.PricingUnitEditor", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "pp-key": {
+        case "unit-name":
           control = new qx.ui.form.TextField().set({
             font: "text-14",
-            placeholder: this.tr("Pricing Unit Key")
+            placeholder: this.tr("Unit Name")
           });
-          this.bind("ppKey", control, "value");
-          control.bind("value", this, "ppKey");
+          this.bind("unitName", control, "value");
+          control.bind("value", this, "unitName");
           this._add(control);
           break;
-        }
-        case "name": {
+        case "cost-per-unit":
+          control = new qx.ui.form.Spinner().set({
+            minimum: 0,
+            maximum: 10000
+          });
+          this.bind("costPerUnit", control, "value");
+          control.bind("value", this, "costPerUnit");
+          this._add(control);
+          break;
+        case "comment":
           control = new qx.ui.form.TextField().set({
             font: "text-14",
-            placeholder: this.tr("Name")
+            placeholder: this.tr("Comment")
           });
-          this.bind("name", control, "value");
-          control.bind("value", this, "name");
+          this.bind("comment", control, "value");
+          control.bind("value", this, "comment");
           this._add(control);
           break;
-        }
-        case "description": {
+        case "specific-info": {
           control = new qx.ui.form.TextArea().set({
             font: "text-14",
-            placeholder: this.tr("Description")
+            placeholder: this.tr("'aws_ec2_instances' ['']")
           });
-          this.bind("description", control, "value");
-          control.bind("value", this, "description");
+          this.bind("specificInfo", control, "value");
+          control.bind("value", this, "specificInfo");
           this._add(control);
           break;
         }
-        case "classification": {
+        case "unit-extra-info": {
           control = new qx.ui.form.TextField().set({
             font: "text-14",
-            enabled: false
+            placeholder: this.tr("{}")
           });
-          this.bind("classification", control, "value");
-          control.bind("value", this, "classification");
+          this.bind("unitExtraInfo", control, "value");
+          control.bind("value", this, "unitExtraInfo");
           this._add(control);
           break;
         }
-        case "is-active": {
+        case "is-default": {
           control = new qx.ui.form.CheckBox().set({
             value: true
           });
-          this.bind("isActive", control, "value");
-          control.bind("value", this, "isActive");
+          this.bind("default", control, "value");
+          control.bind("value", this, "default");
           this._add(control);
           break;
         }
