@@ -127,7 +127,7 @@ async def upload_file_to_bucket(
 async def test_create_single_presigned_download_link(
     simcore_s3_api: SimcoreS3API, upload_file_to_bucket: None, create_s3_bucket
 ):
-    download_url = await simcore_s3_api.create_presigned_download_link(
+    download_url = await simcore_s3_api.create_single_presigned_download_link(
         create_s3_bucket, "test.csv", 50
     )
     assert isinstance(download_url, AnyUrl)

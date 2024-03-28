@@ -1,3 +1,8 @@
+from aws_library.s3.errors import (
+    S3AccessError,
+    S3BucketInvalidError,
+    S3KeyNotFoundError,
+)
 from pydantic.errors import PydanticErrorMixin
 
 
@@ -37,16 +42,13 @@ class LinkAlreadyExistsError(DatabaseAccessError):
     msg_template: str = "The link {file_id} already exists"
 
 
-class S3AccessError(StorageRuntimeError):
-    code = "s3_access.error"
-    msg_template: str = "Unexpected error while accessing S3 backend"
+assert S3AccessError  # nosec
+assert S3BucketInvalidError  # nosec
+assert S3KeyNotFoundError  # nosec
 
 
-class S3BucketInvalidError(S3AccessError):
-    code = "s3_bucket.invalid_error"
-    msg_template: str = "The bucket '{bucket}' is invalid"
-
-
-class S3KeyNotFoundError(S3AccessError):
-    code = "s3_key.not_found_error"
-    msg_template: str = "The file {key}  in {bucket} was not found"
+__all__: tuple[str, ...] = (
+    "S3AccessError",
+    "S3BucketInvalidError",
+    "S3KeyNotFoundError",
+)
