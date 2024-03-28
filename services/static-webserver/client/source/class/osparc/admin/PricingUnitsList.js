@@ -90,14 +90,16 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
     },
 
     __openCreatePricingUnit: function() {
-      const ppCreator = new osparc.admin.PricingUnitEditor();
+      const puCreator = new osparc.admin.PricingUnitEditor().set({
+        pricingPlanId: this.getPricingPlanId()
+      });
       const title = this.tr("Pricing Unit Creator");
-      const win = osparc.ui.window.Window.popUpInWindow(ppCreator, title, 400, 250);
-      ppCreator.addListener("done", () => {
+      const win = osparc.ui.window.Window.popUpInWindow(puCreator, title, 400, 250);
+      puCreator.addListener("done", () => {
         win.close();
         this.__fetchUnits();
       });
-      ppCreator.addListener("cancel", () => win.close());
+      puCreator.addListener("cancel", () => win.close());
     },
 
     __updatePricingUnit: function(pricingUnitId) {
@@ -108,14 +110,16 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
       }
       osparc.data.Resources.fetch("pricingUnits", "getOne", params)
         .then(pricingUnit => {
-          const ppEditor = new osparc.admin.PricingUnitEditor(pricingUnit);
+          const puEditor = new osparc.admin.PricingUnitEditor(pricingUnit).set({
+            pricingPlanId: this.getPricingPlanId()
+          });
           const title = this.tr("Pricing Unit Editor");
-          const win = osparc.ui.window.Window.popUpInWindow(ppEditor, title, 400, 250);
-          ppEditor.addListener("done", () => {
+          const win = osparc.ui.window.Window.popUpInWindow(puEditor, title, 400, 250);
+          puEditor.addListener("done", () => {
             win.close();
             this.__fetchUnits();
           });
-          ppEditor.addListener("cancel", () => win.close());
+          puEditor.addListener("cancel", () => win.close());
         });
     }
   }

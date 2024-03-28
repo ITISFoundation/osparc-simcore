@@ -59,6 +59,12 @@ qx.Class.define("osparc.admin.PricingUnitEditor", {
   },
 
   properties: {
+    pricingPlanId: {
+      check: "Number",
+      init: null,
+      nullable: false,
+    },
+
     unitName: {
       check: "String",
       init: "",
@@ -82,7 +88,7 @@ qx.Class.define("osparc.admin.PricingUnitEditor", {
 
     specificInfo: {
       check: "String",
-      init: "'aws_ec2_instances' ['']",
+      init: "",
       nullable: false,
       event: "changeSpecificInfo"
     },
@@ -144,7 +150,7 @@ qx.Class.define("osparc.admin.PricingUnitEditor", {
         case "specific-info": {
           control = new qx.ui.form.TextArea().set({
             font: "text-14",
-            placeholder: this.tr("'aws_ec2_instances' ['']")
+            placeholder: this.tr("aws_ec2_instances")
           });
           this.bind("specificInfo", control, "value");
           control.bind("value", this, "specificInfo");
@@ -216,39 +222,63 @@ qx.Class.define("osparc.admin.PricingUnitEditor", {
     },
 
     __createPricingUnit: function() {
-      const ppKey = this.getPpKey();
-      const name = this.getName();
-      const description = this.getDescription();
-      const classification = this.getClassification();
+      const unitName = this.getUnitName();
+      const costPerUnit = this.getCostPerUnit();
+      const comment = this.getComment();
+      const specificInfo = this.getSpecificInfo();
+      const extraInfo = this.getExtraInfo();
+      const isDefault = this.getIsDefault();
       const params = {
+        url: {
+          "pricingPlanId": this.getPricingPlanId()
+        },
         data: {
-          "pricingUnitKey": ppKey,
-          "displayName": name,
-          "description": description,
-          "classification": classification
+          "unitName": unitName,
+          "costPerUnit": costPerUnit,
+          "comment": comment,
+          "specificInfo": {
+            "aws_ec2_instances": [specificInfo]
+          },
+          "unitExtraInfo": extraInfo,
+          "default": isDefault
         }
       };
       osparc.data.Resources.fetch("pricingUnits", "post", params)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Successfully created"));
           this.fireEvent("done");
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong"), "ERROR");
           console.error(err);
         })
         .finally(() => this.getChildControl("create").setFetching(false));
     },
 
     __updatePricingUnit: function() {
-      this.__pricingUnit["displayName"] = this.getName();
-      this.__pricingUnit["description"] = this.getDescription();
-      this.__pricingUnit["isActive"] = this.getIsActive();
+      const unitName = this.getUnitName();
+      const costPerUnit = this.getCostPerUnit();
+      const comment = this.getComment();
+      const specificInfo = this.getSpecificInfo();
+      const extraInfo = this.getExtraInfo();
+      const isDefault = this.getIsDefault();
       const params = {
         url: {
+          "pricingPlanId": this.getPricingPlanId(),
           "pricingUnitId": this.__pricingUnit["pricingUnitId"]
         },
-        data: this.__pricingUnit
+        data: {
+          "unitName": unitName,
+          "pricingUnitCostUpdate": {
+            "cost_per_unit": costPerUnit,
+            "comment": comment
+          },
+          "specificInfo": {
+            "aws_ec2_instances": [specificInfo]
+          },
+          "unitExtraInfo": extraInfo,
+          "default": isDefault
+        }
       };
       osparc.data.Resources.fetch("pricingUnits", "update", params)
         .then(() => {
