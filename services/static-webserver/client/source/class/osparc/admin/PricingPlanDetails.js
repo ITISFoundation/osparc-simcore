@@ -39,6 +39,7 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
 
     _createChildControlImpl: function(id) {
       let control;
+      let layout;
       switch (id) {
         case "title-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -59,7 +60,7 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
             flex: 1
           });
           break;
-        case "tabs-view":
+        case "resources-view":
           control = new qx.ui.tabview.TabView().set({
             contentPadding: 10
           });
@@ -68,21 +69,23 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
           });
           break;
         case "pricing-units": {
-          control = this.__createTabPage(this.tr("Pricing Units"));
-          const pricingUnitsList = this.__pricingUnitsList = new osparc.admin.PricingUnitsList();
-          control.add(pricingUnitsList, {
+          control = new osparc.admin.PricingUnitsList();
+          const tabPage = this.__createTabPage(this.tr("Pricing Units"), "@FontAwesome5Solid/paw/14");
+          tabPage.add(control, {
             flex: 1
           });
-          this.getChildControl("tabs-view").add(control);
+          layout = this.getChildControl("resources-view");
+          layout.add(tabPage);
           break;
         }
         case "service-list": {
-          control = this.__createTabPage(this.tr("Services"));
-          const servicesList = this.__servicesList = new osparc.admin.ServicesList();
-          control.add(servicesList, {
+          control = new osparc.admin.ServicesList();
+          const tabPage = this.__createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
+          tabPage.add(control, {
             flex: 1
           });
-          this.getChildControl("tabs-view").add(control);
+          layout = this.getChildControl("resources-view");
+          layout.add(tabPage);
           break;
         }
       }
@@ -103,8 +106,8 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
       pricingPlanModel.bind("isActive", pricingPlanListItem, "isActive");
 
       // set PricingPlanId to the tab views
-      this.__pricingUnitsList.setPricingPlanId(pricingPlanModel.getModel());
-      this.__servicesList.setPricingPlanId(pricingPlanModel.getModel());
+      this.getChildControl("pricing-units").setPricingPlanId(pricingPlanModel.getModel());
+      this.getChildControl("service-list").setPricingPlanId(pricingPlanModel.getModel());
     },
 
     __createTabPage: function(label, icon) {
