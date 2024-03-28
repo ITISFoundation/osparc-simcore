@@ -14,6 +14,7 @@ import pytest
 import sqlalchemy as sa
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import PaymentID
+from models_library.payments import StripeInvoiceID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import HttpUrl
@@ -66,8 +67,8 @@ def populate_payment_transaction_db(
     postgres_db: sa.engine.Engine,
     wallet_id: int,
     user_id: UserID,
-    invoice_url: str,
-    stripe_invoice_id: str | None,
+    invoice_url: HttpUrl,
+    stripe_invoice_id: StripeInvoiceID | None,
 ) -> Iterator[PaymentID]:
     with postgres_db.connect() as con:
         result = con.execute(
