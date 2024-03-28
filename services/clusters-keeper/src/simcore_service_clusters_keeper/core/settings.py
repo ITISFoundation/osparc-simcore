@@ -16,6 +16,7 @@ from pydantic import (
     NonNegativeFloat,
     NonNegativeInt,
     PositiveInt,
+    SecretStr,
     parse_obj_as,
     validator,
 )
@@ -160,6 +161,12 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
     )
     PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY: str = Field(
         ..., description="Name of the dask TLC key in AWS Parameter Store"
+    )
+    PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME: str = Field(
+        ..., description="Username for accessing prometheus data"
+    )
+    PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD: SecretStr = Field(
+        ..., description="Password for accessing prometheus data"
     )
 
     @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
