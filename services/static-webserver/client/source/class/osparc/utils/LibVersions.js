@@ -68,14 +68,14 @@ qx.Class.define("osparc.utils.LibVersions", {
       return {
         name,
         version: commitId ? commitId.slice(0, 7) : "",
-        url: url
+        url
       };
     },
 
     getUIVersion: function() {
       let name = "osparc-simcore UI";
       const commitId = this.getVcsRefUI();
-      const remoteUrl = this.getVcsRefUIUrl();
+      const url = this.getVcsRefUIUrl();
       let status = qx.core.Environment.get("osparc.vcsStatusClient");
       if (status) {
         name = name + " [" + status + "]";
@@ -84,7 +84,7 @@ qx.Class.define("osparc.utils.LibVersions", {
       return {
         name: name,
         version: commitId,
-        url: remoteUrl
+        url
       };
     },
 
