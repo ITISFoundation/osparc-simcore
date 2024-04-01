@@ -180,6 +180,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
         this.getChildControl("log-in");
       } else {
         this.getChildControl("user-center");
+        if (osparc.data.Permissions.getInstance().isAdmin()) {
+          this.getChildControl("admin-center");
+        }
         if (osparc.data.Permissions.getInstance().isProductOwner()) {
           this.getChildControl("po-center");
         }
