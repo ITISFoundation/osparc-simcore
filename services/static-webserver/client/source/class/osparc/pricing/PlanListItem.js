@@ -50,7 +50,7 @@ qx.Class.define("osparc.pricing.PlanListItem", {
 
     ppId: {
       check: "Number",
-      nullable: false,
+      nullable: true,
       apply: "__applyPpId",
       event: "changePpId"
     },
@@ -58,25 +58,25 @@ qx.Class.define("osparc.pricing.PlanListItem", {
     ppKey: {
       check: "String",
       apply: "__applyPpKey",
-      nullable : true,
+      nullable: true,
       event: "changePpKey"
     },
 
     title: {
-      check : "String",
-      nullable : true,
+      check: "String",
+      nullable: true,
       event: "changeTitle"
     },
 
     description: {
-      check : "String",
-      nullable : true,
+      check: "String",
+      nullable: true,
       event: "changeDescription"
     },
 
     isActive: {
-      check : "Boolean",
-      apply : "__applyIsActive",
+      check: "Boolean",
+      apply: "__applyIsActive",
       nullable : true,
       event: "changeIsActive"
     }
