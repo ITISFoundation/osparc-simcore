@@ -63,18 +63,11 @@ qx.Class.define("osparc.NewRelease", {
       });
       this._add(introLabel);
 
-      const detailsText = this.tr("What's new");
-      // old commit link
-      const link = osparc.utils.LibVersions.getVcsRefUrl();
+      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      const detailsText = rData["tag"] ?? this.tr("What's new");
+      const link = rData["url"] ?? osparc.utils.LibVersions.getVcsRefUrl();
       const linkLabel = new osparc.ui.basic.LinkLabel(detailsText, link);
       this._add(linkLabel);
-      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
-      if (rData) {
-        const releaseUrl = rData["url"];
-        if (releaseUrl) {
-          linkLabel.setUrl(releaseUrl);
-        }
-      }
     }
   }
 });
