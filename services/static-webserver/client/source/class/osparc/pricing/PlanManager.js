@@ -34,12 +34,13 @@ qx.Class.define("osparc.pricing.PlanManager", {
       stack.setSelection([pricingPlans]);
       pricingPlans.addListener("pricingPlanSelected", e => {
         const pricingPlanModel = e.getData();
-        stack.setSelection([pricingPlanDetails]);
-        pricingPlanDetails.setCurrentPricingPlan(pricingPlanModel);
+        if (pricingPlanModel) {
+          stack.setSelection([pricingPlanDetails]);
+          pricingPlanDetails.setCurrentPricingPlan(pricingPlanModel);
+        }
       });
 
       pricingPlanDetails.addListener("backToPricingPlans", () => {
-        pricingPlans.fetchPlans();
         stack.setSelection([pricingPlans]);
       });
     }
