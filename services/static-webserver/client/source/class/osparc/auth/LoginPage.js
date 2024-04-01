@@ -323,10 +323,10 @@ qx.Class.define("osparc.auth.LoginPage", {
       text += (rData["tag"] && rData["tag"] !== "latest") ? rData["tag"] : platformVersion.version;
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       text += platformName.length ? ` (${platformName})` : "";
-      const link = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
       versionLink.set({
         value: text,
-        url: link
+        url
       });
       versionLinkLayout.add(versionLink);
 
