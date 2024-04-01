@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.admin.PricingPlanManager", {
+qx.Class.define("osparc.pricing.PlanManager", {
   extend: osparc.po.BaseView,
 
   members: {
@@ -25,10 +25,10 @@ qx.Class.define("osparc.admin.PricingPlanManager", {
         flex: 1
       });
 
-      const pricingPlans = new osparc.admin.PricingPlans();
+      const pricingPlans = new osparc.pricing.Plans();
       stack.add(pricingPlans);
 
-      const pricingPlanDetails = new osparc.admin.PricingPlanDetails();
+      const pricingPlanDetails = new osparc.pricing.PlanDetails();
       stack.add(pricingPlanDetails);
 
       stack.setSelection([pricingPlans]);

@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.admin.PricingPlanEditor", {
+qx.Class.define("osparc.pricing.PlanEditor", {
   extend: qx.ui.core.Widget,
 
   construct: function(pricingPlan) {

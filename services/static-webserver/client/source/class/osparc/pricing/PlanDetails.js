@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.admin.PricingPlanDetails", {
+qx.Class.define("osparc.pricing.PlanDetails", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -55,7 +55,7 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
           this.getChildControl("title-layout").add(control);
           break;
         case "pricing-plan-details":
-          control = new osparc.admin.PricingPlanListItem();
+          control = new osparc.pricing.PlanListItem();
           this.getChildControl("title-layout").add(control, {
             flex: 1
           });
@@ -69,7 +69,7 @@ qx.Class.define("osparc.admin.PricingPlanDetails", {
           });
           break;
         case "pricing-units": {
-          control = new osparc.admin.PricingUnitsList();
+          control = new osparc.pricing.UnitsList();
           const tabPage = this.__createTabPage(this.tr("Pricing Units"), "@FontAwesome5Solid/paw/14");
           tabPage.add(control, {
             flex: 1

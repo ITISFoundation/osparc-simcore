@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.admin.PricingUnitsList", {
+qx.Class.define("osparc.pricing.UnitsList", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -90,7 +90,7 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
     },
 
     __openCreatePricingUnit: function() {
-      const puCreator = new osparc.admin.PricingUnitEditor().set({
+      const puCreator = new osparc.pricing.UnitEditor().set({
         pricingPlanId: this.getPricingPlanId()
       });
       const title = this.tr("Pricing Unit Creator");
@@ -110,7 +110,7 @@ qx.Class.define("osparc.admin.PricingUnitsList", {
       }
       osparc.data.Resources.fetch("pricingUnits", "getOne", params)
         .then(pricingUnit => {
-          const puEditor = new osparc.admin.PricingUnitEditor(pricingUnit).set({
+          const puEditor = new osparc.pricing.UnitEditor(pricingUnit).set({
             pricingPlanId: this.getPricingPlanId()
           });
           const title = this.tr("Pricing Unit Editor");

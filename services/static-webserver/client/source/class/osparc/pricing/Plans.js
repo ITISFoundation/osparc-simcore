@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.admin.PricingPlans", {
+qx.Class.define("osparc.pricing.Plans", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -83,7 +83,7 @@ qx.Class.define("osparc.admin.PricingPlans", {
       const model = this.__model = new qx.data.Array();
       const ppsCtrl = new qx.data.controller.List(model, list, "label");
       ppsCtrl.setDelegate({
-        createItem: () => new osparc.admin.PricingPlanListItem(),
+        createItem: () => new osparc.pricing.PlanListItem(),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("pricingPlanId", "model", null, item, id);
           ctrl.bindProperty("pricingPlanId", "ppId", null, item, id);
@@ -110,7 +110,7 @@ qx.Class.define("osparc.admin.PricingPlans", {
     },
 
     __openCreatePricingPlan: function() {
-      const ppCreator = new osparc.admin.PricingPlanEditor();
+      const ppCreator = new osparc.pricing.PlanEditor();
       const title = this.tr("Pricing Plan Creator");
       const win = osparc.ui.window.Window.popUpInWindow(ppCreator, title, 400, 250);
       ppCreator.addListener("done", () => {
@@ -128,7 +128,7 @@ qx.Class.define("osparc.admin.PricingPlans", {
       }
       osparc.data.Resources.fetch("pricingPlans", "getOne", params)
         .then(pricingPlan => {
-          const ppEditor = new osparc.admin.PricingPlanEditor(pricingPlan);
+          const ppEditor = new osparc.pricing.PlanEditor(pricingPlan);
           const title = this.tr("Pricing Plan Editor");
           const win = osparc.ui.window.Window.popUpInWindow(ppEditor, title, 400, 250);
           ppEditor.addListener("done", () => {

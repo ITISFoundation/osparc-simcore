@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.admin.PricingUnitEditor", {
+qx.Class.define("osparc.pricing.UnitEditor", {
   extend: qx.ui.core.Widget,
 
   construct: function(pricingUnit) {

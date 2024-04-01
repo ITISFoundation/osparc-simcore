@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.admin.PricingPlanListItem", {
+qx.Class.define("osparc.pricing.PlanListItem", {
   extend: qx.ui.core.Widget,
   implement : [qx.ui.form.IModel, osparc.filter.IFilterable],
   include : [qx.ui.form.MModelProperty, osparc.filter.MFilterable],

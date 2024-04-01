@@ -62,7 +62,7 @@ qx.Class.define("osparc.admin.AdminCenter", {
     __getPricingPlansPage: function() {
       const title = this.tr("Pricing Plans");
       const iconSrc = "@FontAwesome5Solid/dollar-sign/22";
-      const pricingPlans = new osparc.admin.PricingPlanManager();
+      const pricingPlans = new osparc.pricing.PlanManager();
       const page = this.__widgetToPage(title, iconSrc, pricingPlans);
       return page;
     },
