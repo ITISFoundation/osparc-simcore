@@ -94,8 +94,13 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     },
 
     unitExtraInfo: {
-      check: "String",
-      init: "{'CPU': 1, 'RAM': 1, 'SSD': 1, 'VRAM': 1}",
+      check: "Object",
+      init: {
+        "CPU": 1,
+        "RAM": 1,
+        "SSD": 1,
+        "VRAM": 1
+      },
       nullable: false,
       event: "changeUnitExtraInfo"
     },
@@ -160,8 +165,12 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           control = new qx.ui.form.TextField().set({
             font: "text-14"
           });
-          this.bind("unitExtraInfo", control, "value");
-          control.bind("value", this, "unitExtraInfo");
+          this.bind("unitExtraInfo", control, "value", {
+            converter: v => JSON.stringify(v)
+          });
+          control.bind("value", this, "unitExtraInfo", {
+            converter: v => JSON.parse(v)
+          });
           this._add(control);
           break;
         }
@@ -237,7 +246,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           "specificInfo": {
             "aws_ec2_instances": [specificInfo]
           },
-          "unitExtraInfo": JSON.parse(extraInfo),
+          "unitExtraInfo": extraInfo,
           "default": isDefault
         }
       };
@@ -274,7 +283,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           "specificInfo": {
             "aws_ec2_instances": [specificInfo]
           },
-          "unitExtraInfo": JSON.parse(extraInfo),
+          "unitExtraInfo": extraInfo,
           "default": isDefault
         }
       };
