@@ -94,7 +94,7 @@ qx.Class.define("osparc.pricing.Plans", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("pricingPlansList");
-          item.addListener("editPricingPlan", () => this.__updatePricingPlan(item.getModel()));
+          item.addListener("editPricingPlan", () => this.__openUpdatePricingPlan(item.getModel()));
         }
       });
     },
@@ -120,7 +120,7 @@ qx.Class.define("osparc.pricing.Plans", {
       ppCreator.addListener("cancel", () => win.close());
     },
 
-    __updatePricingPlan: function(pricingPlanId) {
+    __openUpdatePricingPlan: function(pricingPlanId) {
       const params = {
         url: {
           pricingPlanId
