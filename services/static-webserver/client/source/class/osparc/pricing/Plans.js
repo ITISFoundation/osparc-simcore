@@ -106,7 +106,7 @@ qx.Class.define("osparc.pricing.Plans", {
 
     __populateList: function(pricingPlans) {
       this.__model.removeAll();
-      pricingPlans.forEach(pricingPlan => this.__model.append(qx.data.marshal.Json.createModel(pricingPlan)));
+      pricingPlans.forEach(pricingPlan => this.__model.append(new osparc.pricing.PlanData(pricingPlan)));
     },
 
     __openCreatePricingPlan: function() {
