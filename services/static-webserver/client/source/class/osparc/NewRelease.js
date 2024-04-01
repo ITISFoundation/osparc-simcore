@@ -58,15 +58,19 @@ qx.Class.define("osparc.NewRelease", {
     __buildLayout: function() {
       const introText = qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
       const introLabel = new qx.ui.basic.Label(introText).set({
+        font: "text-14",
         rich: true,
         wrap: true
       });
       this._add(introLabel);
 
       const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
-      const detailsText = rData["tag"] || this.tr("What's new");
-      const link = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
-      const linkLabel = new osparc.ui.basic.LinkLabel(detailsText, link);
+      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      const linkLabel = new osparc.ui.basic.LinkLabel().set({
+        value: this.tr("What's new"),
+        url,
+        font: "link-label-14"
+      });
       this._add(linkLabel);
     }
   }
