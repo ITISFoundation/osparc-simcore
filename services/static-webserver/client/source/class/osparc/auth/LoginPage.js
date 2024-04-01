@@ -317,28 +317,17 @@ qx.Class.define("osparc.auth.LoginPage", {
       const versionLink = new osparc.ui.basic.LinkLabel().set({
         textColor: "text-darker"
       });
-      const staticInfo = osparc.store.StaticInfo.getInstance();
-      const rData = staticInfo.getReleaseData();
-      if (rData) {
-        const releaseDate = rData["date"];
-        const releaseTag = rData["tag"];
-        const releaseUrl = rData["url"];
-        if (releaseDate && releaseTag && releaseUrl) {
-          const date = osparc.utils.Utils.formatDate(new Date(releaseDate));
-          versionLink.set({
-            value: date + " (" + releaseTag + ")&nbsp",
-            url: releaseUrl
-          });
-        }
-      } else {
-        // fallback to old style
-        const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
-        versionLink.setUrl(platformVersion.url);
-        let text = platformVersion.name + " " + platformVersion.version;
-        const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
-        text += platformName.length ? ` (${platformName})` : " (production)";
-        versionLink.setValue(text);
-      }
+      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
+      let text = "osparc-simcore ";
+      text += (rData["tag"] && rData["tag"] !== "latest") ? rData["tag"] : platformVersion.version;
+      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      text += platformName.length ? ` (${platformName})` : "";
+      const link = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      versionLink.set({
+        value: text,
+        url: link
+      });
       versionLinkLayout.add(versionLink);
 
       const organizationLink = new osparc.ui.basic.LinkLabel().set({
