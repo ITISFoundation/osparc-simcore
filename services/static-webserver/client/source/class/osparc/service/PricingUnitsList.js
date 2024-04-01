@@ -54,13 +54,22 @@ qx.Class.define("osparc.service.PricingUnitsList", {
         )
       };
       osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
-        .then(data => this.__populateList(data["pricingUnits"]));
+        .then(data => this.__populateList(data["pricingUnits"]))
+        .catch(err => {
+          console.error(err);
+          this.__populateList([]);
+        });
     },
 
     __populateList: function(pricingUnits) {
       this.getChildControl("pricing-units-container").removeAll();
 
-      if (pricingUnits === null) {
+      if (pricingUnits.length === 0) {
+        const notFound = new qx.ui.basic.Label().set({
+          value: this.tr("No Tiers found"),
+          font: "text-14"
+        });
+        this.getChildControl("pricing-units-container").add(notFound);
         return;
       }
 
