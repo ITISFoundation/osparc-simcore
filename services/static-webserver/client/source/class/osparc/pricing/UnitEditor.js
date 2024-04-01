@@ -88,14 +88,14 @@ qx.Class.define("osparc.pricing.UnitEditor", {
 
     specificInfo: {
       check: "String",
-      init: "",
+      init: "t2.medium",
       nullable: false,
       event: "changeSpecificInfo"
     },
 
     unitExtraInfo: {
       check: "String",
-      init: "{}",
+      init: "{'CPU': 1, 'RAM': 1, 'SSD': 1, 'VRAM': 1}",
       nullable: false,
       event: "changeUnitExtraInfo"
     },
@@ -149,8 +149,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           break;
         case "specific-info": {
           control = new qx.ui.form.TextArea().set({
-            font: "text-14",
-            placeholder: this.tr("aws_ec2_instances")
+            font: "text-14"
           });
           this.bind("specificInfo", control, "value");
           control.bind("value", this, "specificInfo");
@@ -159,8 +158,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
         }
         case "unit-extra-info": {
           control = new qx.ui.form.TextField().set({
-            font: "text-14",
-            placeholder: this.tr("{}")
+            font: "text-14"
           });
           this.bind("unitExtraInfo", control, "value");
           control.bind("value", this, "unitExtraInfo");
@@ -226,8 +224,8 @@ qx.Class.define("osparc.pricing.UnitEditor", {
       const costPerUnit = this.getCostPerUnit();
       const comment = this.getComment();
       const specificInfo = this.getSpecificInfo();
-      const extraInfo = this.getExtraInfo();
-      const isDefault = this.getIsDefault();
+      const extraInfo = this.getUnitExtraInfo();
+      const isDefault = this.getDefault();
       const params = {
         url: {
           "pricingPlanId": this.getPricingPlanId()
@@ -239,7 +237,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           "specificInfo": {
             "aws_ec2_instances": [specificInfo]
           },
-          "unitExtraInfo": extraInfo,
+          "unitExtraInfo": JSON.parse(extraInfo),
           "default": isDefault
         }
       };
@@ -260,8 +258,8 @@ qx.Class.define("osparc.pricing.UnitEditor", {
       const costPerUnit = this.getCostPerUnit();
       const comment = this.getComment();
       const specificInfo = this.getSpecificInfo();
-      const extraInfo = this.getExtraInfo();
-      const isDefault = this.getIsDefault();
+      const extraInfo = this.getUnitExtraInfo();
+      const isDefault = this.getDefault();
       const params = {
         url: {
           "pricingPlanId": this.getPricingPlanId(),
@@ -276,7 +274,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           "specificInfo": {
             "aws_ec2_instances": [specificInfo]
           },
-          "unitExtraInfo": extraInfo,
+          "unitExtraInfo": JSON.parse(extraInfo),
           "default": isDefault
         }
       };
