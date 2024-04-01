@@ -39,6 +39,7 @@ qx.Class.define("osparc.pricing.PlanManager", {
       });
 
       pricingPlanDetails.addListener("backToPricingPlans", () => {
+        pricingPlans.fetchPlans();
         stack.setSelection([pricingPlans]);
       });
     }

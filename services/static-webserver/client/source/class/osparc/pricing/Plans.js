@@ -25,7 +25,7 @@ qx.Class.define("osparc.pricing.Plans", {
 
     this.getChildControl("pricing-plans-filter");
     this.__createList();
-    this.__fetchPlans();
+    this.fetchPlans();
     this.getChildControl("create-pricing-plan");
   },
 
@@ -99,7 +99,7 @@ qx.Class.define("osparc.pricing.Plans", {
       });
     },
 
-    __fetchPlans: function() {
+    fetchPlans: function() {
       osparc.data.Resources.fetch("pricingPlans", "get")
         .then(data => this.__populateList(data));
     },
@@ -115,7 +115,7 @@ qx.Class.define("osparc.pricing.Plans", {
       const win = osparc.ui.window.Window.popUpInWindow(ppCreator, title, 400, 250);
       ppCreator.addListener("done", () => {
         win.close();
-        this.__fetchPlans();
+        this.fetchPlans();
       });
       ppCreator.addListener("cancel", () => win.close());
     },
@@ -133,7 +133,7 @@ qx.Class.define("osparc.pricing.Plans", {
           const win = osparc.ui.window.Window.popUpInWindow(ppEditor, title, 400, 250);
           ppEditor.addListener("done", () => {
             win.close();
-            this.__fetchPlans();
+            this.fetchPlans();
           });
           ppEditor.addListener("cancel", () => win.close());
         });
