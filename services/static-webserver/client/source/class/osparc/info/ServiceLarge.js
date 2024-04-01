@@ -83,7 +83,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     _rebuildLayout: function() {
       this._removeAll();
 
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
 
       const deprecated = this.__createDeprecated();
       if (deprecated) {
