@@ -35,6 +35,10 @@ qx.Class.define("osparc.study.PricingUnit", {
     this.__buildLayout();
   },
 
+  events: {
+    "editPricingUnit": "qx.event.type.Event"
+  },
+
   properties: {
     pricingUnitId: {
       check: "Number",
@@ -54,7 +58,13 @@ qx.Class.define("osparc.study.PricingUnit", {
       check: "Boolean",
       init: null,
       nullable: true,
-      event: "changeAdvanced",
+      apply: "__buildLayout"
+    },
+
+    showEditButton: {
+      check: "Boolean",
+      init: null,
+      nullable: true,
       apply: "__buildLayout"
     },
   },
@@ -100,6 +110,12 @@ qx.Class.define("osparc.study.PricingUnit", {
               font: "text-13"
             }));
           });
+        }
+
+        if (this.isShowEditButton()) {
+          const editButton = new qx.ui.form.Button(this.tr("Edit"));
+          this._add(editButton);
+          editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
         }
       } else {
         this._setLayout(new qx.ui.layout.HBox(5));

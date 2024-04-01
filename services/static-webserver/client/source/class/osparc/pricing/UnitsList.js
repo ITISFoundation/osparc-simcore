@@ -83,8 +83,10 @@ qx.Class.define("osparc.pricing.UnitsList", {
         const pUnit = new osparc.study.PricingUnit(pricingUnit).set({
           advanced: true,
           showSpecificInfo: true,
+          showEditButton: true,
           allowGrowY: false
         });
+        pUnit.addListener("editPricingUnit", () => this.__openUpdatePricingUnit(pricingUnit));
         this.getChildControl("pricing-units-container").add(pUnit);
       });
     },
@@ -102,25 +104,17 @@ qx.Class.define("osparc.pricing.UnitsList", {
       puCreator.addListener("cancel", () => win.close());
     },
 
-    __updatePricingUnit: function(pricingUnitId) {
-      const params = {
-        url: {
-          pricingPlanId: pricingUnitId
-        }
-      }
-      osparc.data.Resources.fetch("pricingUnits", "getOne", params)
-        .then(pricingUnit => {
-          const puEditor = new osparc.pricing.UnitEditor(pricingUnit).set({
-            pricingPlanId: this.getPricingPlanId()
-          });
-          const title = this.tr("Pricing Unit Editor");
-          const win = osparc.ui.window.Window.popUpInWindow(puEditor, title, 400, 250);
-          puEditor.addListener("done", () => {
-            win.close();
-            this.__fetchUnits();
-          });
-          puEditor.addListener("cancel", () => win.close());
-        });
+    __openUpdatePricingUnit: function(pricingUnit) {
+      const puEditor = new osparc.pricing.UnitEditor(pricingUnit).set({
+        pricingPlanId: this.getPricingPlanId()
+      });
+      const title = this.tr("Pricing Unit Editor");
+      const win = osparc.ui.window.Window.popUpInWindow(puEditor, title, 400, 250);
+      puEditor.addListener("done", () => {
+        win.close();
+        this.__fetchUnits();
+      });
+      puEditor.addListener("cancel", () => win.close());
     }
   }
 });

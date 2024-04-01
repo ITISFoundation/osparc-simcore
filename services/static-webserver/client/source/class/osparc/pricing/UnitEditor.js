@@ -28,27 +28,25 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     this.getChildControl("comment");
     const specificInfo = this.getChildControl("specific-info");
     const unitExtraInfo = this.getChildControl("unit-extra-info");
-    const isDefault = this.getChildControl("is-default");
+    this.getChildControl("is-default");
 
     const manager = this.__validator = new qx.ui.form.validation.Manager();
     unitName.setRequired(true);
     costPerUnit.setRequired(true);
     specificInfo.setRequired(true);
     unitExtraInfo.setRequired(true);
-    isDefault.setRequired(true);
     manager.add(unitName);
     manager.add(costPerUnit);
     manager.add(specificInfo);
     manager.add(unitExtraInfo);
-    manager.add(isDefault);
 
     if (pricingUnit) {
       this.__pricingUnit = osparc.utils.Utils.deepCloneObject(pricingUnit);
       this.set({
         unitName: pricingUnit.unitName,
-        costPerUnit: pricingUnit.costPerUnit,
-        comment: pricingUnit.comment,
-        specificInfo: pricingUnit.specificInfo,
+        costPerUnit: pricingUnit.currentCostPerUnit,
+        comment: pricingUnit.comment || "",
+        specificInfo: pricingUnit.specificInfo && pricingUnit.specificInfo["aws_ec2_instances"] ? pricingUnit.specificInfo["aws_ec2_instances"].toString() : "",
         unitExtraInfo: pricingUnit.unitExtraInfo,
         default: pricingUnit.default
       });
