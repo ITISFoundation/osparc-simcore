@@ -56,6 +56,7 @@ qx.Class.define("osparc.pricing.PlanDetails", {
           break;
         case "pricing-plan-details":
           control = new osparc.pricing.PlanListItem();
+          control.getChildControl("edit-button").exclude();
           this.getChildControl("title-layout").add(control, {
             flex: 1
           });
@@ -79,7 +80,7 @@ qx.Class.define("osparc.pricing.PlanDetails", {
           break;
         }
         case "service-list": {
-          control = new osparc.admin.ServicesList();
+          control = new osparc.pricing.ServicesList();
           const tabPage = this.__createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
           tabPage.add(control, {
             flex: 1

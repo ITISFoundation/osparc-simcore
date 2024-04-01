@@ -28,9 +28,9 @@ qx.Class.define("osparc.pricing.PlanListItem", {
     this._setLayout(layout);
     this.setPadding(10);
 
-    this._createChildControlImpl("title");
-    this._createChildControlImpl("description");
-    this._createChildControlImpl("edit-button");
+    this.getChildControl("title");
+    this.getChildControl("description");
+    this.getChildControl("edit-button");
 
     this.addListener("pointerover", this._onPointerOver, this);
     this.addListener("pointerout", this._onPointerOut, this);
@@ -176,6 +176,7 @@ qx.Class.define("osparc.pricing.PlanListItem", {
           break;
       }
       if (control && id !== "edit-button") {
+        // make edit button tappable
         control.set({
           anonymous: true
         });

@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.admin.ServicesList", {
+qx.Class.define("osparc.pricing.ServicesList", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -24,7 +24,6 @@ qx.Class.define("osparc.admin.ServicesList", {
     this._setLayout(new qx.ui.layout.VBox(5));
 
     this.getChildControl("services-list");
-    this.getChildControl("add-service");
   },
 
   properties: {
@@ -52,17 +51,6 @@ qx.Class.define("osparc.admin.ServicesList", {
           });
           break;
         }
-        case "add-service":
-          control = new qx.ui.form.Button().set({
-            appearance: "form-button",
-            label: this.tr("Add Service"),
-            alignX: "center",
-            icon: "@FontAwesome5Solid/plus/14",
-            allowGrowX: false
-          });
-          control.addListener("execute", () => this.__addService());
-          this._addAt(control, 1);
-          break;
       }
       return control || this.base(arguments, id);
     },
@@ -87,10 +75,6 @@ qx.Class.define("osparc.admin.ServicesList", {
 
       const servicesList = this.getChildControl("services-list");
       servicesList.setModel(new qx.data.Array(sList));
-    },
-
-    __addService: function() {
-
     }
   }
 });
