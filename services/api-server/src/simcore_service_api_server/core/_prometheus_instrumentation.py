@@ -43,9 +43,9 @@ async def _collect_prometheus_metrics_task(app: FastAPI):
     metrics_collect_seconds: PositiveInt = (
         app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS
     )
-    assert (
+    assert (  # nosec
         app.state.instrumentation
-    ), "Instrumentation not setup. Please check the configuration"  # nosec
+    ), "Instrumentation not setup. Please check the configuration"
     instrumentation = get_instrumentation(app)
     await wait_till_log_distributor_ready(app)
     log_distributor = get_log_distributor(app)
