@@ -232,7 +232,7 @@ qx.Class.define("osparc.Application", {
       }
     },
 
-    __checkNewRelease: async function() {
+    __checkNewRelease: function() {
       if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
         const newRelease = new osparc.NewRelease();
         const title = this.tr("New Release");
