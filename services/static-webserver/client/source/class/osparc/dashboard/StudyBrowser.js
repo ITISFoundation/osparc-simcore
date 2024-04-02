@@ -394,17 +394,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
     },
 
-    reloadStudy: function(studyId) {
-      const params = {
-        url: {
-          "studyId": studyId
-        }
-      };
-      return osparc.data.Resources.getOne("studies", params)
-        .then(studyData => this._updateStudyData(studyData))
-        .catch(err => console.error(err));
-    },
-
     __getNextRequestParams: function() {
       if ("nextRequest" in this._resourcesContainer.getFlatList() &&
         this._resourcesContainer.getFlatList().nextRequest !== null &&
@@ -885,7 +874,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studies = this._resourcesList;
       const index = studies.findIndex(study => study["uuid"] === studyData["uuid"]);
       if (index === -1) {
-        studies.push(studyData);
+        // add it in first position, most likely it's a new study
+        studies.unshift(studyData);
       } else {
         studies[index] = studyData;
       }
@@ -925,6 +915,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
+      if (osparc.product.Utils.isProduct("osparc")) {
+        const exportStudyButton = this.__getExportMenuButton(studyData);
+        menu.add(exportStudyButton);
+      }
+
       menu.addSeparator();
 
       if (writeAccess) {
@@ -942,8 +937,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyDataButton = this.__getStudyDataMenuButton(card);
       menu.add(studyDataButton);
 
-      const billingsSettingsButton = this.__getBillingMenuButton(card);
-      menu.add(billingsSettingsButton);
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        const billingsSettingsButton = this.__getBillingMenuButton(card);
+        menu.add(billingsSettingsButton);
+      }
 
       if (deleteAccess) {
         const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
@@ -1078,6 +1075,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         null,
         true
       );
+
+      if (this._resourcesContainer.getMode() === "list") {
+        const width = this._resourcesContainer.getBounds().width - 15;
+        duplicatingStudyCard.setWidth(width);
+      }
       return duplicatingStudyCard;
     },
 
@@ -1094,7 +1096,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const interval = 1000;
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
-        .then(task => this.taskDuplicateReceived(task, studyData["name"]))
+        .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
         .catch(errMsg => {
           const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
           osparc.FlashMessenger.logAs(msg, "ERROR");
@@ -1273,11 +1275,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
         // ask backend for studyData?
         const studyName = "";
-        this.taskDuplicateReceived(task, studyName);
+        this.__taskDuplicateReceived(task, studyName);
       }
     },
 
-    taskDuplicateReceived: function(task, studyName) {
+    __taskDuplicateReceived: function(task, studyName) {
       const duplicateTaskUI = new osparc.task.Duplicate(studyName);
       duplicateTaskUI.setTask(task);
       duplicateTaskUI.start();
@@ -1304,7 +1306,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       task.addListener("resultReceived", e => {
         finished();
         const duplicatedStudyData = e.getData();
-        this.reloadStudy(duplicatedStudyData["uuid"]);
+        this._updateStudyData(duplicatedStudyData);
       });
       task.addListener("pollingError", e => {
         const errMsg = e.getData();

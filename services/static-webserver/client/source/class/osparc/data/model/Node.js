@@ -60,7 +60,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.setStudy(study);
     }
     this.set({
-      nodeId: uuid || osparc.utils.Utils.uuidv4(),
+      nodeId: uuid || osparc.utils.Utils.uuidV4(),
       key,
       version,
       status: new osparc.data.model.NodeStatus(this)
@@ -230,6 +230,7 @@ qx.Class.define("osparc.data.model.Node", {
     "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
     "probeRequested": "qx.event.type.Data",
+    "fileUploaded": "qx.event.type.Event",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event",
     "changeInputNodes": "qx.event.type.Event"
@@ -868,9 +869,19 @@ qx.Class.define("osparc.data.model.Node", {
       });
     },
 
+    getLink: function(portId) {
+      const link = this.getPropsForm() ? this.getPropsForm().getLink(portId) : null;
+      return link;
+    },
+
     getLinks: function() {
       const links = this.getPropsForm() ? this.getPropsForm().getLinks() : [];
       return links;
+    },
+
+    getPortIds: function() {
+      const portIds = this.getPropsForm() ? this.getPropsForm().getPortIds() : [];
+      return portIds;
     },
 
     // ----- Input Nodes -----
@@ -1031,35 +1042,12 @@ qx.Class.define("osparc.data.model.Node", {
       return statusText + " " + this.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + this.getVersion() + "</sub></span>";
     },
 
-    __addDisclaimer: function(loadingPage) {
-      if (this.getKey() && this.getKey().includes("pub-nat-med")) {
-        loadingPage.set({
-          disclaimer: this.tr("This might take a couple of minutes")
-        });
-      }
-      if (
-        (this.getKey() && this.getKey().includes("sim4life-lite")) ||
-        osparc.product.Utils.isProduct("tis")
-      ) {
-        // show disclaimer after 1'
-        setTimeout(() => {
-          if (loadingPage) {
-            loadingPage.set({
-              disclaimer: this.tr("Platform demand is currently exceptional and efforts are underway to increase system capacity.<br>There may be a delay of a few minutes in starting services.")
-            });
-          }
-        }, 60*1000);
-      }
-      return null;
-    },
-
     __initLoadingPage: function() {
       const showZoomMaximizeButton = !osparc.product.Utils.isProduct("s4llite");
       const loadingPage = new osparc.ui.message.Loading(showZoomMaximizeButton);
       loadingPage.set({
         header: this.__getLoadingPageHeader()
       });
-      this.__addDisclaimer(loadingPage);
 
       const thumbnail = this.getMetaData()["thumbnail"];
       if (thumbnail) {
@@ -1166,7 +1154,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.fireDataEvent("retrieveInputs", data);
     },
 
-    retrieveInputs: function(portKey = null) {
+    retrieveInputs: function(portKey) {
       if (this.isDynamic()) {
         if (!osparc.data.Permissions.getInstance().canDo("study.update")) {
           return;
@@ -1336,7 +1324,7 @@ qx.Class.define("osparc.data.model.Node", {
           const errorMsgData = {
             nodeId: this.getNodeId(),
             msg,
-            lvel: "ERROR"
+            level: "ERROR"
           };
           this.fireDataEvent("showInLogger", errorMsgData);
           return;

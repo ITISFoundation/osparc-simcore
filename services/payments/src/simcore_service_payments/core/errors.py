@@ -19,3 +19,12 @@ class PaymentsGatewayError(_BaseAppError):
 
 class PaymentsGatewayNotReadyError(PaymentsGatewayError):
     msg_template = "Payments-Gateway is unresponsive: {checks}"
+
+
+#
+# stripe  errors
+#
+
+
+class StripeRuntimeError(_BaseAppError):
+    msg_template = "Stripe unexpected error"

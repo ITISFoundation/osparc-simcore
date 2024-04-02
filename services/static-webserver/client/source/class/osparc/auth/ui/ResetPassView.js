@@ -67,13 +67,17 @@ qx.Class.define("osparc.auth.ui.ResetPassView", {
       // buttons
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      const submitBtn = new qx.ui.form.Button(this.tr("Submit"));
-      grp.add(submitBtn, {
+      const submitBtn = new qx.ui.form.Button(this.tr("Submit")).set({
+        appearance: "form-button"
+      });
+      grp.addAt(submitBtn, 1, {
         flex:1
       });
 
-      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
-      grp.add(cancelBtn, {
+      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
+        appearance: "form-button-text"
+      });
+      grp.addAt(cancelBtn, 0, {
         flex:1
       });
 
@@ -100,7 +104,7 @@ qx.Class.define("osparc.auth.ui.ResetPassView", {
 
       const failFun = msg => {
         msg = msg || this.tr("Could not reset password");
-        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR", "user");
+        osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
       };
 
       const manager = osparc.auth.Manager.getInstance();

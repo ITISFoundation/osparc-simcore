@@ -124,7 +124,8 @@
   "response_body": {
    "data": {
     "productName": "osparc",
-    "usdPerCredit": 10.0
+    "usdPerCredit": 10.0,
+    "minPaymentAmountUsd": 5
    }
   },
   "status_code": 200

@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.40.0
+  version: 0.40.2
 servers:
 - url: ''
   description: webserver
@@ -1807,6 +1807,7 @@ paths:
     get:
       tags:
       - products
+      - po
       summary: Get Product
       operationId: get_product
       parameters:
@@ -1833,6 +1834,7 @@ paths:
     put:
       tags:
       - products
+      - po
       summary: Update Product Template
       operationId: update_product_template
       parameters:
@@ -1869,6 +1871,7 @@ paths:
     post:
       tags:
       - products
+      - po
       summary: Generate Invitation
       operationId: generate_invitation
       requestBody:
@@ -3205,6 +3208,229 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_PricingUnitGet_'
+  /v0/admin/pricing-plans:
+    get:
+      tags:
+      - admin
+      summary: List pricing plans
+      description: To keep the listing lightweight, the pricingUnits field is None.
+      operationId: list_pricing_plans
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanAdminGet__'
+    post:
+      tags:
+      - admin
+      summary: Create pricing plan
+      operationId: create_pricing_plan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePricingPlanBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
+  /v0/admin/pricing-plans/{pricing_plan_id}:
+    get:
+      tags:
+      - admin
+      summary: Retrieve detail information about pricing plan
+      operationId: get_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
+    put:
+      tags:
+      - admin
+      summary: Update detail information about pricing plan
+      operationId: update_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePricingPlanBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanAdminGet_'
+  /v0/admin/pricing-plans/{pricing_plan_id}/pricing-units/{pricing_unit_id}:
+    get:
+      tags:
+      - admin
+      summary: Retrieve detail information about pricing unit
+      operationId: get_pricing_unit
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Unit Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_unit_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingUnitAdminGet_'
+    put:
+      tags:
+      - admin
+      summary: Update detail information about pricing plan
+      operationId: update_pricing_unit
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Unit Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_unit_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePricingUnitBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingUnitAdminGet_'
+  /v0/admin/pricing-plans/{pricing_plan_id}/pricing-units:
+    post:
+      tags:
+      - admin
+      summary: Create pricing unit
+      operationId: create_pricing_unit
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePricingUnitBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingUnitAdminGet_'
+  /v0/admin/pricing-plans/{pricing_plan_id}/billable-services:
+    get:
+      tags:
+      - admin
+      summary: List services that are connected to the provided pricing plan
+      operationId: list_connected_services_to_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanToServiceAdminGet__'
+    post:
+      tags:
+      - admin
+      summary: Connect service with pricing plan
+      operationId: connect_service_to_pricing_plan
+      parameters:
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectServiceToPricingPlanBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PricingPlanToServiceAdminGet_'
   /:
     get:
       tags:
@@ -3865,12 +4091,14 @@ paths:
     get:
       tags:
       - user
+      - po
       summary: Search Users
       operationId: search_users
       parameters:
       - required: true
         schema:
           title: Email
+          maxLength: 200
           minLength: 3
           type: string
         name: email
@@ -3886,6 +4114,7 @@ paths:
     post:
       tags:
       - user
+      - po
       summary: Pre Register User
       operationId: pre_register_user
       requestBody:
@@ -4279,6 +4508,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_PaymentTransaction_'
+  /v0/wallets/{wallet_id}/payments/{payment_id}/invoice-link:
+    get:
+      tags:
+      - wallets
+      summary: Get Payment Invoice Link
+      operationId: get_payment_invoice_link
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Id
+          maxLength: 50
+          minLength: 1
+          type: string
+        name: payment_id
+        in: path
+      responses:
+        '302':
+          description: redirection to invoice download link
+          content:
+            application/json:
+              schema: {}
   /v0/wallets/{wallet_id}/payments/{payment_id}:cancel:
     post:
       tags:
@@ -4688,6 +4946,8 @@ components:
           application: Antenna_Design
           description: Description of something
           hear: Search_Engine
+          privacyPolicy: true
+          eula: true
     Activity:
       title: Activity
       required:
@@ -5350,6 +5610,21 @@ components:
           title: Cluster Id
           minimum: 0
           type: integer
+    ConnectServiceToPricingPlanBodyParams:
+      title: ConnectServiceToPricingPlanBodyParams
+      required:
+      - serviceKey
+      - serviceVersion
+      type: object
+      properties:
+        serviceKey:
+          title: Servicekey
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        serviceVersion:
+          title: Serviceversion
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
     CountryInfoDict:
       title: CountryInfoDict
       required:
@@ -5362,6 +5637,54 @@ components:
           type: string
         alpha2:
           title: Alpha2
+          type: string
+    CreatePricingPlanBodyParams:
+      title: CreatePricingPlanBodyParams
+      required:
+      - displayName
+      - description
+      - classification
+      - pricingPlanKey
+      type: object
+      properties:
+        displayName:
+          title: Displayname
+          type: string
+        description:
+          title: Description
+          type: string
+        classification:
+          $ref: '#/components/schemas/PricingPlanClassification'
+        pricingPlanKey:
+          title: Pricingplankey
+          type: string
+    CreatePricingUnitBodyParams:
+      title: CreatePricingUnitBodyParams
+      required:
+      - unitName
+      - unitExtraInfo
+      - default
+      - specificInfo
+      - costPerUnit
+      - comment
+      type: object
+      properties:
+        unitName:
+          title: Unitname
+          type: string
+        unitExtraInfo:
+          title: Unitextrainfo
+          type: object
+        default:
+          title: Default
+          type: boolean
+        specificInfo:
+          $ref: '#/components/schemas/SpecificInfo'
+        costPerUnit:
+          title: Costperunit
+          type: number
+        comment:
+          title: Comment
           type: string
     CreateWalletBodyParams:
       title: CreateWalletBodyParams
@@ -5736,6 +6059,30 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/PresignedLink'
+        error:
+          title: Error
+    Envelope_PricingPlanAdminGet_:
+      title: Envelope[PricingPlanAdminGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PricingPlanAdminGet'
+        error:
+          title: Error
+    Envelope_PricingPlanToServiceAdminGet_:
+      title: Envelope[PricingPlanToServiceAdminGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PricingPlanToServiceAdminGet'
+        error:
+          title: Error
+    Envelope_PricingUnitAdminGet_:
+      title: Envelope[PricingUnitAdminGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PricingUnitAdminGet'
         error:
           title: Error
     Envelope_PricingUnitGet_:
@@ -6134,6 +6481,28 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/GroupUserGet'
+        error:
+          title: Error
+    Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanAdminGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.resource_usage.PricingPlanAdminGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/PricingPlanAdminGet'
+        error:
+          title: Error
+    Envelope_list_models_library.api_schemas_webserver.resource_usage.PricingPlanToServiceAdminGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.resource_usage.PricingPlanToServiceAdminGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/PricingPlanToServiceAdminGet'
         error:
           title: Error
     Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__:
@@ -6671,6 +7040,7 @@ components:
       required:
       - productName
       - usdPerCredit
+      - minPaymentAmountUsd
       type: object
       properties:
         productName:
@@ -6682,6 +7052,12 @@ components:
           type: number
           description: Price of a credit in USD. If None, then this product's price
             is UNDEFINED
+        minPaymentAmountUsd:
+          title: Minpaymentamountusd
+          minimum: 0
+          type: integer
+          description: Minimum amount (included) in USD that can be paid for this
+            productCan be None if this product's price is UNDEFINED
     GetProduct:
       title: GetProduct
       required:
@@ -6869,6 +7245,17 @@ components:
           read: true
           write: false
           delete: false
+    HardwareInfo:
+      title: HardwareInfo
+      required:
+      - aws_ec2_instances
+      type: object
+      properties:
+        aws_ec2_instances:
+          title: Aws Ec2 Instances
+          type: array
+          items:
+            type: string
     HealthInfoDict:
       title: HealthInfoDict
       required:
@@ -7966,9 +8353,10 @@ components:
           title: Email
           type: string
           format: email
-        companyName:
-          title: Companyname
+        institution:
+          title: Institution
           type: string
+          description: company, university, ...
         phone:
           title: Phone
           type: string
@@ -7987,6 +8375,11 @@ components:
         country:
           title: Country
           type: string
+        extras:
+          title: Extras
+          type: object
+          description: Keeps extra information provided in the request form. At most
+            MAX_NUM_EXTRAS fields
     Preference:
       title: Preference
       required:
@@ -8012,12 +8405,121 @@ components:
           minLength: 1
           type: string
           format: uri
+    PricingPlanAdminGet:
+      title: PricingPlanAdminGet
+      required:
+      - pricingPlanId
+      - displayName
+      - description
+      - classification
+      - createdAt
+      - pricingPlanKey
+      - isActive
+      type: object
+      properties:
+        pricingPlanId:
+          title: Pricingplanid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        displayName:
+          title: Displayname
+          type: string
+        description:
+          title: Description
+          type: string
+        classification:
+          $ref: '#/components/schemas/PricingPlanClassification'
+        createdAt:
+          title: Createdat
+          type: string
+          format: date-time
+        pricingPlanKey:
+          title: Pricingplankey
+          type: string
+        pricingUnits:
+          title: Pricingunits
+          type: array
+          items:
+            $ref: '#/components/schemas/PricingUnitGet'
+        isActive:
+          title: Isactive
+          type: boolean
     PricingPlanClassification:
       title: PricingPlanClassification
       enum:
       - TIER
       type: string
       description: An enumeration.
+    PricingPlanToServiceAdminGet:
+      title: PricingPlanToServiceAdminGet
+      required:
+      - pricingPlanId
+      - serviceKey
+      - serviceVersion
+      - created
+      type: object
+      properties:
+        pricingPlanId:
+          title: Pricingplanid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        serviceKey:
+          title: Servicekey
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        serviceVersion:
+          title: Serviceversion
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        created:
+          title: Created
+          type: string
+          format: date-time
+    PricingUnitAdminGet:
+      title: PricingUnitAdminGet
+      required:
+      - pricingUnitId
+      - unitName
+      - unitExtraInfo
+      - currentCostPerUnit
+      - default
+      - specificInfo
+      type: object
+      properties:
+        pricingUnitId:
+          title: Pricingunitid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        unitName:
+          title: Unitname
+          type: string
+        unitExtraInfo:
+          title: Unitextrainfo
+          type: object
+        currentCostPerUnit:
+          title: Currentcostperunit
+          type: number
+        default:
+          title: Default
+          type: boolean
+        specificInfo:
+          $ref: '#/components/schemas/HardwareInfo'
+    PricingUnitCostUpdate:
+      title: PricingUnitCostUpdate
+      required:
+      - cost_per_unit
+      - comment
+      type: object
+      properties:
+        cost_per_unit:
+          title: Cost Per Unit
+          type: number
+        comment:
+          title: Comment
+          type: string
     PricingUnitGet:
       title: PricingUnitGet
       required:
@@ -9627,6 +10129,21 @@ components:
         instructions:
           title: Instructions
           type: string
+    SpecificInfo:
+      title: SpecificInfo
+      required:
+      - aws_ec2_instances
+      type: object
+      properties:
+        aws_ec2_instances:
+          title: Aws Ec2 Instances
+          type: array
+          items:
+            type: string
+      description: 'Custom information that is not propagated to the frontend. For
+        example can be used
+
+        to store aws ec2 instance type.'
     StackInfoDict:
       title: StackInfoDict
       required:
@@ -10091,6 +10608,45 @@ components:
           type: string
           format: password
           writeOnly: true
+    UpdatePricingPlanBodyParams:
+      title: UpdatePricingPlanBodyParams
+      required:
+      - displayName
+      - description
+      - isActive
+      type: object
+      properties:
+        displayName:
+          title: Displayname
+          type: string
+        description:
+          title: Description
+          type: string
+        isActive:
+          title: Isactive
+          type: boolean
+    UpdatePricingUnitBodyParams:
+      title: UpdatePricingUnitBodyParams
+      required:
+      - unitName
+      - unitExtraInfo
+      - default
+      - specificInfo
+      type: object
+      properties:
+        unitName:
+          title: Unitname
+          type: string
+        unitExtraInfo:
+          title: Unitextrainfo
+          type: object
+        default:
+          title: Default
+          type: boolean
+        specificInfo:
+          $ref: '#/components/schemas/SpecificInfo'
+        pricingUnitCostUpdate:
+          $ref: '#/components/schemas/PricingUnitCostUpdate'
     UpdateProductTemplate:
       title: UpdateProductTemplate
       required:
@@ -10217,8 +10773,8 @@ components:
           title: Email
           type: string
           format: email
-        companyName:
-          title: Companyname
+        institution:
+          title: Institution
           type: string
         phone:
           title: Phone
@@ -10239,11 +10795,25 @@ components:
         country:
           title: Country
           type: string
+        extras:
+          title: Extras
+          type: object
+          description: Keeps extra information provided in the request form
+        invitedBy:
+          title: Invitedby
+          type: string
         registered:
           title: Registered
           type: boolean
         status:
           $ref: '#/components/schemas/UserStatus'
+        products:
+          title: Products
+          type: array
+          items:
+            type: string
+          description: List of products this users is included or None if fields is
+            unset
     UserStatus:
       title: UserStatus
       enum:

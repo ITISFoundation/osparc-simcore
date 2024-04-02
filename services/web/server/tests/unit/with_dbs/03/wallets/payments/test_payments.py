@@ -61,6 +61,10 @@ async def test_payment_on_invalid_wallet(
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
 )
+@pytest.mark.parametrize(
+    "amount_usd,expected_status",
+    [(1, status.HTTP_422_UNPROCESSABLE_ENTITY), (25, status.HTTP_201_CREATED)],
+)
 async def test_one_time_payment_worfklow(
     latest_osparc_price: Decimal,
     client: TestClient,
@@ -69,6 +73,8 @@ async def test_one_time_payment_worfklow(
     faker: Faker,
     mock_rpc_payments_service_api: dict[str, MagicMock],
     setup_user_pre_registration_details_db: None,
+    amount_usd: int,
+    expected_status: int,
 ):
     assert client.app
     settings: PaymentsSettings = get_plugin_settings(client.app)
@@ -90,53 +96,63 @@ async def test_one_time_payment_worfklow(
     response = await client.post(
         f"/v0/wallets/{wallet.wallet_id}/payments",
         json={
-            "priceDollars": 25,
+            "priceDollars": amount_usd,
         },
     )
-    data, error = await assert_status(response, status.HTTP_201_CREATED)
-    assert error is None
-    payment = WalletPaymentInitiated.parse_obj(data)
+    data, error = await assert_status(response, expected_status)
 
-    assert payment.payment_id
-    assert payment.payment_form_url
-    assert payment.payment_form_url.host == "some-fake-gateway.com"
-    assert payment.payment_form_url.query
-    assert payment.payment_form_url.query.endswith(payment.payment_id)
-    assert mock_rpc_payments_service_api["init_payment"].called
+    if not error:
+        payment = WalletPaymentInitiated.parse_obj(data)
 
-    # Complete
-    await _ack_creation_of_wallet_payment(
-        client.app,
-        payment_id=payment.payment_id,
-        completion_state=PaymentTransactionState.SUCCESS,
-        invoice_url=faker.url(),
-    )
+        assert payment.payment_id
+        assert payment.payment_form_url
+        assert payment.payment_form_url.host == "some-fake-gateway.com"
+        assert payment.payment_form_url.query
+        assert payment.payment_form_url.query.endswith(payment.payment_id)
+        assert mock_rpc_payments_service_api["init_payment"].called
 
-    # check notification to RUT (fake)
-    assert mock_rut_add_credits_to_wallet.called
-    mock_rut_add_credits_to_wallet.assert_called_once()
+        # Complete
+        await _ack_creation_of_wallet_payment(
+            client.app,
+            payment_id=payment.payment_id,
+            completion_state=PaymentTransactionState.SUCCESS,
+            invoice_url=faker.url(),
+        )
 
-    # check notification (fake)
-    assert send_message.called
-    send_message.assert_called_once()
+        # check notification to RUT (fake)
+        assert mock_rut_add_credits_to_wallet.called
+        mock_rut_add_credits_to_wallet.assert_called_once()
 
-    # list all payment transactions in all my wallets
-    response = await client.get("/v0/wallets/-/payments")
-    data, error = await assert_status(response, status.HTTP_200_OK)
+        # check notification (fake)
+        assert send_message.called
+        send_message.assert_called_once()
 
-    page = parse_obj_as(Page[PaymentTransaction], data)
+        # list all payment transactions in all my wallets
+        response = await client.get("/v0/wallets/-/payments")
+        data, error = await assert_status(response, status.HTTP_200_OK)
 
-    assert page.data
-    assert page.meta.total == 1
-    assert page.meta.offset == 0
+        page = parse_obj_as(Page[PaymentTransaction], data)
 
-    transaction = page.data[0]
-    assert transaction.payment_id == payment.payment_id
+        assert page.data
+        assert page.meta.total == 1
+        assert page.meta.offset == 0
 
-    # payment was completed successfully
-    assert transaction.completed_at is not None
-    assert transaction.created_at < transaction.completed_at
-    assert transaction.invoice_url is not None
+        transaction = page.data[0]
+        assert transaction.payment_id == payment.payment_id
+
+        # payment was completed successfully
+        assert transaction.completed_at is not None
+        assert transaction.created_at < transaction.completed_at
+        assert transaction.invoice_url is not None
+
+        # Get invoice link
+        response = await client.get(
+            f"/v0/wallets/{wallet.wallet_id}/payments/{payment.payment_id}/invoice-link"
+        )
+        if response.status == status.HTTP_200_OK:
+            # checks is a redirection
+            assert len(response.history) == 1
+            assert response.history[0].status == status.HTTP_302_FOUND
 
 
 async def test_multiple_payments(

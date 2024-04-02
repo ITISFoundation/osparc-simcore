@@ -54,7 +54,14 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const email = new qx.ui.form.TextField().set({
         required: true
       });
-      this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
+      if (
+        osparc.product.Utils.isProduct("s4lacad") ||
+        osparc.product.Utils.isProduct("s4ldesktopacad")
+      ) {
+        this._form.add(email, this.tr("University Email"), qx.util.Validate.email(), "email");
+      } else {
+        this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
+      }
 
       const phone = new qx.ui.form.TextField();
       this._form.add(phone, this.tr("Phone Number"), null, "phone");
@@ -88,10 +95,25 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       });
       this._form.add(postalCode, this.tr("Postal code"), null, "postalCode");
 
-      const country = new qx.ui.form.TextField().set({
+      const country = new qx.ui.form.SelectBox().set({
         required: true
       });
       doubleSpaced.push(country);
+      const countries = osparc.store.StaticInfo.getInstance().getCountries();
+      countries.forEach(c => {
+        const cItem = new qx.ui.form.ListItem(c.name, null, c.alpha2).set({
+          rich: true
+        });
+        country.add(cItem);
+      })
+      fetch("https://ipapi.co/json")
+        .then(res => res.json())
+        .then(data => {
+          const countryFound = country.getSelectables().find(c => c.getModel().toUpperCase() === data.country_code.toUpperCase());
+          if (countryFound) {
+            country.setSelection([countryFound])
+          }
+        });
       this._form.add(country, this.tr("Country"), null, "country");
 
       const application = new qx.ui.form.SelectBox();
@@ -201,15 +223,17 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const submitBtn = this.__requestButton = new qx.ui.form.Button(this.tr("Request")).set({
         center: true,
-        appearance: "strong-button"
+        appearance: "form-button"
       });
       osparc.utils.Utils.setIdToWidget(submitBtn, "registrationSubmitBtn");
-      buttons.add(submitBtn, {
+      buttons.addAt(submitBtn, 1, {
         flex:1
       });
 
-      const cancelBtn = this.__cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
-      buttons.add(cancelBtn, {
+      const cancelBtn = this.__cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
+        appearance: "form-button-text"
+      });
+      buttons.addAt(cancelBtn, 0, {
         flex:1
       });
 

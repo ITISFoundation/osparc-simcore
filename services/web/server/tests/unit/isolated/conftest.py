@@ -75,7 +75,7 @@ def app_config_for_production_legacy(test_data_dir: Path) -> ConfigDict:
 
 
 @pytest.fixture
-def mock_env_auto_deployer_agent(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
+def mock_env_deployer_pipeline(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # git log --tags --simplify-by-decoration --pretty="format:%ci %d"
     #  2023-02-08 18:34:56 +0000  (tag: v1.47.0, tag: staging_ResistanceIsFutile12)
     #  2023-02-06 18:40:07 +0100  (tag: v1.46.0, tag: staging_ResistanceIsFutile11)
@@ -85,7 +85,6 @@ def mock_env_auto_deployer_agent(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict
         monkeypatch,
         envs={
             "SIMCORE_VCS_RELEASE_TAG": "staging_ResistanceIsFutile12",
-            "SIMCORE_VCS_RELEASE_DATE": "2023-02-10T18:03:35.957601",
         },
     )
 

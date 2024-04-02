@@ -10,12 +10,17 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
 
   construct(pricePerCredit, currencySymbol = "$") {
     this.base(arguments);
-    this.__currencySymbol = currencySymbol
-    this.__pricePerCredit = pricePerCredit
+
+    if (isNaN(pricePerCredit)) {
+      return;
+    }
+
+    this.__pricePerCredit = pricePerCredit;
+    this.__currencySymbol = currencySymbol;
     this._setLayout(new qx.ui.layout.HBox(25).set({
       alignX: "center"
-    }))
-    this._render()
+    }));
+    this._render();
   },
 
   events: {
@@ -23,58 +28,90 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsInput", {
   },
 
   members: {
-    _render: function() {
-      this._removeAll()
+    __pricePerCredit: null,
+    __currencySymbol: null,
+    __priceInput: null,
+    __amountInput: null,
+    __totalInput: null,
 
-      const [priceContainer, priceInput] = this.__getInputAndLabel("Credit Price", {
+    _render: function() {
+      this._removeAll();
+
+      const [priceContainer, priceInput] = this.__getInputAndLabel(this.tr("Credit Price"), {
         readOnly: true,
         value: this.__pricePerCredit + this.__currencySymbol,
         paddingLeft: 0,
         paddingRight: 0
-      })
-      this._add(priceContainer)
-      this.__priceInput = priceInput
+      });
+      this._add(priceContainer);
+      this.__priceInput = priceInput;
 
-      const [amountContainer, amountInput] = this.__getInputAndLabel("Credit Amount", {
-        filter: /^[0-9]*(?:[.][0-9]*)?$/
-      })
-      this._add(amountContainer)
-      this.__amountInput = amountInput
+      const [amountContainer, amountInput] = this.__getSpinnerAndLabel(this.tr("Credit Amount"));
+      this.__amountInput = amountInput;
+      this._add(amountContainer);
 
-      const [totalContainer, totalInput] = this.__getInputAndLabel("Total", {
+      const [totalContainer, totalInput] = this.__getInputAndLabel(this.tr("Total"), {
         readOnly: true,
         value: "-",
         paddingLeft: 0,
         paddingRight: 0
-      })
-      amountInput.addListener("input", e => {
-        const value = Number(e.getData());
+      });
+      this.__totalInput = totalInput;
+      amountInput.addListener("changeValue", e => {
+        const value = e.getData();
         totalInput.setValue(value ? 1 * (value * this.__pricePerCredit).toFixed(2) + this.__currencySymbol : "-");
         this.fireDataEvent("input", this.getValues());
-      })
-      this._add(totalContainer)
-      this.__totalInput = totalInput
+      });
+      this._add(totalContainer);
+
+      osparc.store.Store.getInstance().getMinimumAmount()
+        .then(minimum => {
+          amountInput.set({
+            maximum: 10000,
+            minimum: Math.ceil(minimum/this.__pricePerCredit),
+            value: Math.ceil(minimum/this.__pricePerCredit)
+          });
+        });
     },
 
     __getInputAndLabel: function(labelText, inputProps) {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignX: "center"
-      }))
+      }));
       const input = new qx.ui.form.TextField().set({
         appearance: "appmotion-buy-credits-input",
         textAlign: "center",
-        width: 80,
+        width: 90,
         ...inputProps
-      })
-      const label = new qx.ui.basic.Label(labelText)
-      container.add(input)
-      container.add(label)
-      return [container, input]
+      });
+      const label = new qx.ui.basic.Label(labelText);
+      container.add(input);
+      container.add(label);
+      return [container, input];
+    },
+
+    __getSpinnerAndLabel: function(labelText, inputProps) {
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignX: "center"
+      }));
+      const input = new qx.ui.form.Spinner().set({
+        appearance: "appmotion-buy-credits-spinner",
+        width: 100,
+        ...inputProps
+      });
+      input.getChildControl("textfield").set({
+        font: "text-18",
+        textAlign: "center"
+      });
+      const label = new qx.ui.basic.Label(labelText);
+      container.add(input);
+      container.add(label);
+      return [container, input];
     },
 
     getValues: function() {
       return {
-        osparcCredits: parseFloat(this.__amountInput.getValue()),
+        osparcCredits: this.__amountInput.getValue(),
         amountDollars: parseFloat(this.__totalInput.getValue().split(this.__currencySymbol)[0])
       }
     }

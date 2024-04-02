@@ -3,8 +3,6 @@ from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
-from simcore_service_payments.services.notifier import setup_notifier
-from simcore_service_payments.services.socketio import setup_socketio
 
 from .._meta import (
     API_VERSION,
@@ -17,10 +15,13 @@ from .._meta import (
 from ..api.rest.routes import setup_rest_api
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..services.auto_recharge_listener import setup_auto_recharge_listener
+from ..services.notifier import setup_notifier
 from ..services.payments_gateway import setup_payments_gateway
 from ..services.postgres import setup_postgres
 from ..services.rabbitmq import setup_rabbitmq
 from ..services.resource_usage_tracker import setup_resource_usage_tracker
+from ..services.socketio import setup_socketio
+from ..services.stripe import setup_stripe
 from .settings import ApplicationSettings
 
 
@@ -56,6 +57,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # APIs w/ RUT
     setup_resource_usage_tracker(app)
+
+    # APIs w/ Stripe
+    setup_stripe(app)
 
     # Listening to Rabbitmq
     setup_auto_recharge_listener(app)

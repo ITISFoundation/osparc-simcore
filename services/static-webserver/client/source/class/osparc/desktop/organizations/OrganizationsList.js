@@ -92,7 +92,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
 
     __getCreateOrganizationSection: function() {
       const createOrgBtn = new qx.ui.form.Button().set({
-        appearance: "strong-button",
+        appearance: "form-button",
         label: this.tr("New Organization"),
         alignX: "center",
         icon: "@FontAwesome5Solid/plus/14",

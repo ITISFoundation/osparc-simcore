@@ -6,7 +6,7 @@ import pytest
 import respx
 from fastapi import status
 from httpx import AsyncClient
-from models_library.api_schemas_webserver.resource_usage import ServicePricingPlanGet
+from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from pydantic import parse_obj_as
 from simcore_service_api_server._meta import API_VTAG
 from unit.conftest import SideEffectCallback

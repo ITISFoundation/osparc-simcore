@@ -51,6 +51,13 @@ RUN \
   ls -la build-output
 # -> /project/build-output
 
+# Install python...
+RUN apk add --update python3 py3-pip
+# ...and run post compilation step
+RUN \
+  --mount=type=bind,source=scripts,target=scripts \
+  python3 ./scripts/post-compile.py
+
 
 FROM joseluisq/static-web-server:1.16.0-alpine as server-base
 

@@ -31,6 +31,7 @@ from ..payments import api
 from ..payments.api import (
     cancel_creation_of_wallet_payment_method,
     delete_wallet_payment_method,
+    get_payment_invoice_url,
     get_wallet_payment_autorecharge,
     get_wallet_payment_method,
     init_creation_of_wallet_payment,
@@ -134,6 +135,29 @@ async def _list_all_payments(request: web.Request):
     )
 
     return envelope_json_response(page, web.HTTPOk)
+
+
+@routes.get(
+    f"/{VTAG}/wallets/{{wallet_id}}/payments/{{payment_id}}/invoice-link",
+    name="get_payment_invoice_link",
+)
+@login_required
+@permission_required("wallets.*")
+@handle_wallets_exceptions
+async def _get_payment_invoice_link(request: web.Request):
+    """Get invoice for concrete payment"""
+    req_ctx = WalletsRequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(PaymentsPathParams, request)
+
+    payment_invoice = await get_payment_invoice_url(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        payment_id=path_params.payment_id,
+    )
+
+    raise web.HTTPFound(location=f"{payment_invoice}")
 
 
 class PaymentsPathParams(WalletsPathParams):
@@ -392,6 +416,14 @@ async def _get_wallet_autorecharge(request: web.Request):
         user_id=req_ctx.user_id,
         wallet_id=path_params.wallet_id,
     )
+
+    # NOTE: just to check that top_up is under limit. Guaranteed by _validate_prices_in_product_settings
+    assert await get_credit_amount(  # nosec
+        request.app,
+        dollar_amount=auto_recharge.top_up_amount_in_usd,
+        product_name=req_ctx.product_name,
+    )
+
     return envelope_json_response(GetWalletAutoRecharge.parse_obj(auto_recharge))
 
 
@@ -406,6 +438,12 @@ async def _replace_wallet_autorecharge(request: web.Request):
     req_ctx = WalletsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     body_params = await parse_request_body_as(ReplaceWalletAutoRecharge, request)
+
+    await get_credit_amount(
+        request.app,
+        dollar_amount=body_params.top_up_amount_in_usd,
+        product_name=req_ctx.product_name,
+    )
 
     udpated = await replace_wallet_payment_autorecharge(
         request.app,

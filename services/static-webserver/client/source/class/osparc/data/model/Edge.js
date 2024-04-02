@@ -42,7 +42,7 @@ qx.Class.define("osparc.data.model.Edge", {
   construct: function(edgeId, node1, node2) {
     this.base();
 
-    this.setEdgeId(edgeId || osparc.utils.Utils.uuidv4());
+    this.setEdgeId(edgeId || osparc.utils.Utils.uuidV4());
     this.setInputNode(node1);
     this.setOutputNode(node2);
   },

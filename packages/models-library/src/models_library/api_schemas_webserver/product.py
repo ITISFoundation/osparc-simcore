@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, ClassVar
 
-from pydantic import ConstrainedInt, Field, HttpUrl, PositiveInt
+from pydantic import ConstrainedInt, Field, HttpUrl, NonNegativeInt, PositiveInt
 
 from ..basic_types import IDStr, NonNegativeDecimal
 from ..emails import LowerCaseEmailStr
@@ -16,12 +16,25 @@ class GetCreditPrice(OutputSchema):
         description="Price of a credit in USD. "
         "If None, then this product's price is UNDEFINED",
     )
+    min_payment_amount_usd: NonNegativeInt | None = Field(
+        ...,
+        description="Minimum amount (included) in USD that can be paid for this product"
+        "Can be None if this product's price is UNDEFINED",
+    )
 
     class Config(OutputSchema.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
-                {"productName": "osparc", "usdPerCredit": None},
-                {"productName": "osparc", "usdPerCredit": "10"},
+                {
+                    "productName": "osparc",
+                    "usdPerCredit": None,
+                    "minPaymentAmountUsd": None,
+                },
+                {
+                    "productName": "osparc",
+                    "usdPerCredit": "10",
+                    "minPaymentAmountUsd": "10",
+                },
             ]
         }
 

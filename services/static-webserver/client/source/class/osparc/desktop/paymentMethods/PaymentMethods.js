@@ -168,7 +168,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
         .catch(err => {
           console.error(err)
           osparc.FlashMessenger.getInstance().logAs(
-            this.tr("We could not retreive your saved payment methods. Please try again later."),
+            this.tr("We could not retrieve your saved payment methods. Please try again later."),
             "ERROR"
           );
         });

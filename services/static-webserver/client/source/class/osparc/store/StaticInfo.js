@@ -51,17 +51,13 @@ qx.Class.define("osparc.store.StaticInfo", {
 
     getReleaseData: function() {
       const rTag = this.getValue("vcsReleaseTag");
-      const rDate = this.getValue("vcsReleaseDate");
       const rUrl = this.getValue("vcsReleaseUrl");
-      if (rTag && rDate && rUrl) {
-        return {
-          "tag": rTag,
-          "date": rDate,
-          "url": rUrl
-        };
-      }
-      return null;
+      return {
+        "tag": rTag,
+        "url": rUrl
+      };
     },
+
 
     getMaxNumberDyNodes: function() {
       const staticKey = "webserverProjects";
@@ -81,6 +77,25 @@ qx.Class.define("osparc.store.StaticInfo", {
         return wsStaticData[key];
       }
       return 30;
+    },
+
+    getCountries: function() {
+      const staticKey = "countries";
+      const metadata = this.getValue(staticKey);
+      return metadata ? metadata : [];
+    },
+
+    /**
+     * @returns {Number} Cookie expiration time in seconds
+     */
+    getCookieMaxAge: function() {
+      const staticKey = "webserverSession";
+      const wsStaticData = this.getValue(staticKey);
+      const key = "SESSION_COOKIE_MAX_AGE";
+      if (key in wsStaticData) {
+        return wsStaticData[key];
+      }
+      return null;
     }
   }
 });

@@ -33,30 +33,30 @@ PROD_REQUIREMENTS = tuple(
 TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 
-SETUP = dict(
-    name="simcore-service-storage",
-    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
-    description="Service to manage data storage in simcore",
-    author="Manuel Guidon (mguidon)",
-    python_requires="~=3.10",
-    packages=find_packages(where="src"),
-    package_dir={"": "src"},
-    include_package_data=True,
-    install_requires=PROD_REQUIREMENTS,
-    tests_require=TEST_REQUIREMENTS,
-    package_data={
+SETUP = {
+    "name": "simcore-service-storage",
+    "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
+    "description": "Service to manage data storage in simcore",
+    "author": "Manuel Guidon (mguidon)",
+    "python_requires": "~=3.10",
+    "packages": find_packages(where="src"),
+    "package_dir": {"": "src"},
+    "include_package_data": True,
+    "install_requires": PROD_REQUIREMENTS,
+    "tests_require": TEST_REQUIREMENTS,
+    "package_data": {
         "": [
             "api/v0/openapi.yaml",
             "api/v0/schemas/*.json",
         ],
     },
-    entry_points={
+    "entry_points": {
         "console_scripts": [
             "simcore-service-storage = simcore_service_storage.cli:main",
             "simcore-service = simcore_service_storage.cli:main",
         ],
     },
-)
+}
 
 
 if __name__ == "__main__":
