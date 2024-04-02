@@ -18,6 +18,7 @@ aiofiles # i/o
 aiohttp # server
 aiohttp-swagger[performance] # server
 aiopg[sa] # db
+packaging
 tenacity
 typer
 types-aiobotocore[s3] # s3 storage

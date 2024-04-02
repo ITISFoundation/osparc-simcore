@@ -161,7 +161,7 @@ pprintpp==0.4.0
     # via pytest-icdiff
 py-partiql-parser==0.5.2
     # via moto
-pycparser==2.21
+pycparser==2.22
     # via cffi
 pydantic==1.10.14
     # via aws-sam-translator
@@ -262,7 +262,7 @@ urllib3==2.0.7
     #   requests
     #   responses
     #   simcore-service-storage-sdk
-werkzeug==3.0.1
+werkzeug==3.0.2
     # via
     #   flask
     #   moto
