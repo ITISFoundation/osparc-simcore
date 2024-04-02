@@ -85,9 +85,7 @@ qx.Class.define("osparc.pricing.UnitData", {
       const serialized = {
         unitName: this.getUnitName(),
         currentCostPerUnit: this.getCurrentCostPerUnit(),
-        specificInfo: {
-          "aws_ec2_instances": [this.getAwsSpecificInfo()]
-        },
+        awsSpecificInfo: this.getAwsSpecificInfo(),
         extraInfo: this.getUnitExtraInfo(),
         default: this.getDefault()
       };

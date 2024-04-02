@@ -274,7 +274,9 @@ qx.Class.define("osparc.pricing.UnitEditor", {
             "cost_per_unit": unitData.currentCostPerUnit,
             "comment": comment
           },
-          "specificInfo": unitData.specificInfo,
+          "specificInfo": {
+            "aws_ec2_instances": [unitData.awsSpecificInfo]
+          },
           "unitExtraInfo": unitData.extraInfo,
           "default": unitData.default
         }
