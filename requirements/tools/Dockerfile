@@ -11,29 +11,37 @@
 ARG PYTHON_VERSION="3.10.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 
+ENV VIRTUAL_ENV=/home/scu/.venv
 
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
+  --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
+  set -eux && \
+  apt-get update \
   && apt-get -y install --no-install-recommends\
   make \
   git \
   gawk \
-  && rm -rf /var/lib/apt/lists/* \
-  && apt-get clean
+  && apt-get clean -y
 
 
-# SEE bug with pip==22.1 https://github.com/jazzband/pip-tools/issues/1617
+# NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
 RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade \
+  pip install uv~=0.1
+
+RUN uv venv "${VIRTUAL_ENV}"
+
+RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
+  uv pip install --upgrade  \
   pip~=24.0  \
   wheel \
-  setuptools \
-  uv
+  setuptools
+
 
 
 # devenv
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install \
+RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
+  uv pip install \
   pip-tools \
   pipreqs \
   pipdeptree && \
-  pip list -vv
+  uv pip list -vv
