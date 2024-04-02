@@ -235,7 +235,7 @@ qx.Class.define("osparc.Application", {
       if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
         const newRelease = new osparc.NewRelease();
         const title = this.tr("New Release");
-        const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 130).set({
+        const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
           clickAwayClose: false,
           resizable: false,
           showClose: true
