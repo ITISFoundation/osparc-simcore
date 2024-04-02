@@ -41,14 +41,15 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     manager.add(unitExtraInfo);
 
     if (pricingUnitData) {
-      const pricingUnit = this.__pricingUnit = new osparc.pricing.UnitData(pricingUnitData);
+      this.__pricingUnit = osparc.utils.Utils.deepCloneObject(pricingUnitData);
       this.set({
-        unitName: pricingUnit.getUnitName(),
-        costPerUnit: pricingUnit.getCurrentCostPerUnit(),
-        comment: pricingUnit.getComment(),
-        specificInfo: pricingUnit.getSpecificInfo(),
-        unitExtraInfo: pricingUnit.getUnitExtraInfo(),
-        default: pricingUnit.getDefault()
+        pricingUnitId: pricingUnitData.pricingUnitId,
+        unitName: pricingUnitData.unitName,
+        costPerUnit: pricingUnitData.currentCostPerUnit,
+        comment: pricingUnitData.comment ? pricingUnitData.comment : "",
+        specificInfo: pricingUnitData.specificInfo && pricingUnitData.specificInfo["aws_ec2_instances"] ? pricingUnitData.specificInfo["aws_ec2_instances"].toString() : "",
+        unitExtraInfo: pricingUnitData.unitExtraInfo,
+        default: pricingUnitData.default
       });
       this.getChildControl("save");
     } else {
