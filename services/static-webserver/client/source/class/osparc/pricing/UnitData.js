@@ -29,8 +29,8 @@ qx.Class.define("osparc.pricing.UnitData", {
     this.set({
       pricingUnitId: unitData.pricingUnitId ? unitData.pricingUnitId : null,
       unitName: unitData.unitName,
-      costPerUnit: unitData.currentCostPerUnit,
-      specificInfo: unitData.specificInfo && unitData.specificInfo["aws_ec2_instances"] ? unitData.specificInfo["aws_ec2_instances"].toString() : "",
+      currentCostPerUnit: unitData.currentCostPerUnit,
+      awsSpecificInfo: unitData.specificInfo && unitData.specificInfo["aws_ec2_instances"] ? unitData.specificInfo["aws_ec2_instances"].toString() : "",
       unitExtraInfo: unitData.unitExtraInfo,
       default: unitData.default
     });
@@ -77,22 +77,6 @@ qx.Class.define("osparc.pricing.UnitData", {
       init: true,
       nullable: false,
       event: "changeDefault"
-    }
-  },
-
-  members: {
-    serialize: function() {
-      const serialized = {
-        unitName: this.getUnitName(),
-        currentCostPerUnit: this.getCurrentCostPerUnit(),
-        awsSpecificInfo: this.getAwsSpecificInfo(),
-        extraInfo: this.getUnitExtraInfo(),
-        default: this.getDefault()
-      };
-      if (this.getPricingUnitId()) {
-        serialized.pricingUnitId = this.getPricingUnitId()
-      }
-      return serialized;
     }
   }
 });

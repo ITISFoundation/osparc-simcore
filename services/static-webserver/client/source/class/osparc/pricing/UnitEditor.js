@@ -261,24 +261,29 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     },
 
     __updatePricingUnit: function() {
-      const unitData = this.__pricingUnit.serialize();
+      const unitName = this.getUnitName();
+      const costPerUnit = this.getCostPerUnit();
       const comment = this.getComment();
+      const specificInfo = this.getSpecificInfo();
+      const extraInfo = this.getUnitExtraInfo();
+      const default = this.getDefault();
+
       const params = {
         url: {
           "pricingPlanId": this.getPricingPlanId(),
           "pricingUnitId": unitData.pricingUnitId
         },
         data: {
-          "unitName": unitData.unitName,
+          "unitName": unitName,
           "pricingUnitCostUpdate": {
-            "cost_per_unit": unitData.currentCostPerUnit,
+            "cost_per_unit": costPerUnit,
             "comment": comment
           },
           "specificInfo": {
-            "aws_ec2_instances": [unitData.awsSpecificInfo]
+            "aws_ec2_instances": [specificInfo]
           },
-          "unitExtraInfo": unitData.extraInfo,
-          "default": unitData.default
+          "unitExtraInfo": extraInfo,
+          "default": default
         }
       };
       osparc.data.Resources.fetch("pricingUnits", "update", params)
