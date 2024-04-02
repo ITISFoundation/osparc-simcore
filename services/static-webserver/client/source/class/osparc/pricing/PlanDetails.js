@@ -34,9 +34,6 @@ qx.Class.define("osparc.pricing.PlanDetails", {
   },
 
   members: {
-    __pricingUnitsList: null,
-    __servicesList: null,
-
     _createChildControlImpl: function(id) {
       let control;
       let layout;

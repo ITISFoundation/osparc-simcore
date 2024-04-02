@@ -61,8 +61,6 @@ qx.Class.define("osparc.study.PricingUnit", {
   },
 
   members: {
-    __pricingUnit: null,
-
     __buildLayout: function() {
       const pricingUnit = this.getUnitData();
 

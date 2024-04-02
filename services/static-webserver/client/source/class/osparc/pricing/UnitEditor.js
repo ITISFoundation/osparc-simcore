@@ -41,7 +41,6 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     manager.add(unitExtraInfo);
 
     if (pricingUnitData) {
-      this.__pricingUnit = osparc.utils.Utils.deepCloneObject(pricingUnitData);
       this.set({
         pricingUnitId: pricingUnitData.pricingUnitId,
         unitName: pricingUnitData.unitName,
@@ -125,7 +124,6 @@ qx.Class.define("osparc.pricing.UnitEditor", {
   },
 
   members: {
-    __pricingUnit: null,
     __validator: null,
 
     _createChildControlImpl: function(id) {
