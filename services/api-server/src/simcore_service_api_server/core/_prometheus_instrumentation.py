@@ -1,11 +1,13 @@
 import asyncio
 from dataclasses import dataclass
+from functools import partial
 from typing import Final, cast
 
 from attr import field
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Gauge
 from pydantic import PositiveInt
+from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation as setup_rest_instrumentation,
 )
@@ -63,17 +65,15 @@ def setup_prometheus_instrumentation(app: FastAPI):
         app.state.instrumentation = ApiServerPrometheusInstrumentation(
             registry=instrumentator.registry
         )
-        app.state.instrumentation_task = asyncio.create_task(
-            _collect_prometheus_metrics_task(app)
+        app.state.instrumentation_task = start_periodic_task(
+            task=partial(_collect_prometheus_metrics_task, app),
+            interval=app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS,
+            task_name="prometheus_metrics_collection_task",
         )
 
     async def on_shutdown() -> None:
         assert app.state.instrumentation_task  # nosec
-        app.state.instrumentation_task.cancel()
-        try:
-            await app.state.instrumentation_task
-        except asyncio.CancelledError:
-            pass
+        await stop_periodic_task(app.state.instrumentation_task)
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
