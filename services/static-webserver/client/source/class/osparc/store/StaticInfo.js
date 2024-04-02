@@ -51,17 +51,13 @@ qx.Class.define("osparc.store.StaticInfo", {
 
     getReleaseData: function() {
       const rTag = this.getValue("vcsReleaseTag");
-      const rDate = this.getValue("vcsReleaseDate");
       const rUrl = this.getValue("vcsReleaseUrl");
-      if (rTag && rDate && rUrl) {
-        return {
-          "tag": rTag,
-          "date": rDate,
-          "url": rUrl
-        };
-      }
-      return null;
+      return {
+        "tag": rTag,
+        "url": rUrl
+      };
     },
+
 
     getMaxNumberDyNodes: function() {
       const staticKey = "webserverProjects";
