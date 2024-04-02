@@ -10,13 +10,16 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
+from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from ..error_codes import create_error_code
 from ..json_serialization import json_dumps, safe_json_loads
+from ..logging_utils import get_log_record_extra
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from .rest_models import ErrorDetail, LogMessage, ResponseErrorBody
+from ..request_keys import RQT_USERID_KEY
+from ..rest_constants import RESPONSE_MODEL_POLICY
+from .rest_models import OneError
 from .rest_responses import create_enveloped_response, create_error_response
-from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
 _DEFAULT_API_VERSION = "v0"
@@ -81,14 +84,9 @@ async def _handle_http_error(
     err.content_type = MIMETYPE_APPLICATION_JSON
 
     if not _has_body(request, err):
-        error_body = ResponseErrorBody(
-            message=err.reason,  # we do not like default text=`{status}: {reason}`
-            status=err.status,
-            errors=[ErrorDetail.from_exception(err)],
-            logs=[LogMessage(message=err.reason, level="ERROR")],
+        err.text = jsonable_encoder(
+            {"error": OneError(msg=err.reason)}, **RESPONSE_MODEL_POLICY
         )
-        err.text = EnvelopeFactory(error=error_body).as_text()
-
     return err
 
 
@@ -110,14 +108,19 @@ async def _handle_unexpected_exception(
         errors=None,  # avoid details
         message=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(error_code),
         http_error_cls=web.HTTPInternalServerError,
+        # error_type = "undefined"
     )
+
     _logger.exception(
         "Request %s raised '%s' [%s]%s",
         f"'{request.method} {request.path}'",
         type(err).__name__,
         error_code,
         f"\n {request.remote=}\n request.headers={dict(request.raw_headers)}",
-        extra={"error_code": error_code},
+        extra=get_log_record_extra(
+            error_code=error_code,
+            user_id=request.get(RQT_USERID_KEY),
+        ),
     )
     return resp
 

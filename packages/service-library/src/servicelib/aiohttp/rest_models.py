@@ -28,8 +28,7 @@ class ErrorDetail:
 @dataclass
 class ResponseErrorBody:
     message: str
-    status: int
-    logs: list[LogMessage] = field(default_factory=list)
+
     errors: list[ErrorDetail] = field(default_factory=list)
 
 
