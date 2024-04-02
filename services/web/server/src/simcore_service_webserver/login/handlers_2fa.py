@@ -126,7 +126,7 @@ async def resend_2fa_code(request: web.Request):
                         phone_number=mask_phone_number(user["phone"])
                     ),
                 },
-                status=status.HTTP_200_OK,
+                status_code=status.HTTP_200_OK,
             )
 
         # sends via Email
@@ -145,7 +145,7 @@ async def resend_2fa_code(request: web.Request):
                 {
                     "reason": MSG_EMAIL_SENT.format(email=user["email"]),
                 },
-                status=status.HTTP_200_OK,
+                status_code=status.HTTP_200_OK,
             )
 
         return response

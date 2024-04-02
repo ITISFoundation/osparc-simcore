@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from typing import Any
 
 from aiohttp import web
@@ -6,9 +5,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.aiohttp import observer
-from servicelib.aiohttp.rest_models import LogMessage
-from servicelib.aiohttp.status import HTTP_200_OK
-from servicelib.json_serialization import json_dumps
+from servicelib.aiohttp.rest_responses import envelope_response, flash_response
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
@@ -116,26 +113,14 @@ async def notify_user_logout(
     )
 
 
-def flash_response(
-    message: str, level: str = "INFO", *, status: int = HTTP_200_OK
-) -> web.Response:
-    # FIXME: move this to utils_aiohttp
-    return envelope_response(
-        data=asdict(LogMessage(message, level)),
-        status=status,
-    )
-
-
-def envelope_response(data: Any, *, status: int = HTTP_200_OK) -> web.Response:
-    return web.json_response(
-        {
-            "data": data,
-            "error": None,
-        },
-        dumps=json_dumps,
-        status=status,
-    )
-
-
 def get_user_name_from_email(email: str) -> str:
     return email.split("@")[0]
+
+
+assert envelope_response  # nosec
+assert flash_response  # nosec
+
+__all__: tuple[str, ...] = (
+    "envelope_response",
+    "flash_response",
+)

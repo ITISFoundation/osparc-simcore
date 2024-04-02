@@ -3,14 +3,10 @@ from collections.abc import Callable
 from typing import Any, Generic, Literal, TypeAlias, TypeVar
 
 from aiohttp import web
-from aiohttp.web_exceptions import HTTPError, HTTPException
-from models_library.generics import Envelope
 from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
+from servicelib.aiohttp.rest_responses import envelope_json_response
 from servicelib.common_headers import X_FORWARDED_PROTO
-from servicelib.json_serialization import json_dumps
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from yarl import URL
 
 from ._constants import INDEX_RESOURCE_NAME
@@ -43,22 +39,6 @@ def create_url_for_function(request: web.Request) -> Callable:
             raise RuntimeError(msg) from err
 
     return _url_for
-
-
-def envelope_json_response(
-    obj: Any, status_cls: type[HTTPException] = web.HTTPOk
-) -> web.Response:
-    # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3646
-    if issubclass(status_cls, HTTPError):
-        enveloped = Envelope[Any](error=obj)
-    else:
-        enveloped = Envelope[Any](data=obj)
-
-    return web.Response(
-        text=json_dumps(enveloped.dict(**RESPONSE_MODEL_POLICY)),
-        content_type=MIMETYPE_APPLICATION_JSON,
-        status=status_cls.status_code,
-    )
 
 
 #
@@ -113,3 +93,8 @@ class NextPage(GenericModel, Generic[PageParameters]):
         ..., description="Code name to the front-end page. Ideally a PageStr"
     )
     parameters: PageParameters | None = None
+
+
+assert envelope_json_response  # nosec
+
+__all__: tuple[str, ...] = ("envelope_json_response",)

@@ -4,8 +4,7 @@ from typing import Any, ClassVar
 from pydantic import BaseModel, Field
 
 
-@dataclass
-class LogMessage:
+class LogMessage(BaseModel):
     message: str
     level: str = "INFO"
     logger: str = "user"
@@ -28,13 +27,15 @@ class ErrorDetail:
 @dataclass
 class ResponseErrorBody:
     message: str
-
     errors: list[ErrorDetail] = field(default_factory=list)
 
 
 #
 # NOTE: These are the new models that should replace the ones above
 #
+
+
+# TODO: inherit from OutputSchema
 
 
 class OneError(BaseModel):

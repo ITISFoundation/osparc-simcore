@@ -127,7 +127,7 @@ async def login(request: web.Request):
                 "code": CODE_PHONE_NUMBER_REQUIRED,
                 "reason": MSG_PHONE_MISSING,
             },
-            status=status.HTTP_202_ACCEPTED,
+            status_code=status.HTTP_202_ACCEPTED,
         )
 
     # create 2FA
@@ -168,7 +168,7 @@ async def login(request: web.Request):
                     phone_number=mask_phone_number(user["phone"])
                 ),
             },
-            status=status.HTTP_202_ACCEPTED,
+            status_code=status.HTTP_202_ACCEPTED,
         )
 
     except Exception as exc:

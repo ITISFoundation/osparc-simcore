@@ -18,6 +18,7 @@ from ..logging_utils import get_log_record_extra
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..request_keys import RQT_USERID_KEY
 from ..rest_constants import RESPONSE_MODEL_POLICY
+from . import status
 from .rest_models import OneError
 from .rest_responses import create_enveloped_response, create_error_response
 from .typing_extension import Handler, Middleware
@@ -84,8 +85,10 @@ async def _handle_http_error(
     err.content_type = MIMETYPE_APPLICATION_JSON
 
     if not _has_body(request, err):
-        err.text = jsonable_encoder(
-            {"error": OneError(msg=err.reason)}, **RESPONSE_MODEL_POLICY
+        err.text = json_dumps(
+            jsonable_encoder(
+                {"error": OneError(msg=err.reason)}, **RESPONSE_MODEL_POLICY
+            )
         )
     return err
 
@@ -104,11 +107,18 @@ async def _handle_unexpected_exception(
         - log sufficient information to diagnose the issue
     """
     error_code = create_error_code(err)
-    resp = create_error_response(
-        errors=None,  # avoid details
-        message=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(error_code),
-        http_error_cls=web.HTTPInternalServerError,
-        # error_type = "undefined"
+
+    resp = web.json_response(
+        jsonable_encoder(
+            {
+                "error": OneError(
+                    msg=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(error_code),
+                    type="unexpected",
+                )
+            },
+            **RESPONSE_MODEL_POLICY,
+        ),
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
     )
 
     _logger.exception(
