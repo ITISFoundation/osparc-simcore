@@ -1,12 +1,10 @@
-import asyncio
 from dataclasses import dataclass
-from functools import partial
+from datetime import timedelta
 from typing import Final, cast
 
 from attr import field
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Gauge
-from pydantic import PositiveInt
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation as setup_rest_instrumentation,
@@ -42,20 +40,9 @@ class ApiServerPrometheusInstrumentation:
 
 
 async def _collect_prometheus_metrics_task(app: FastAPI):
-    metrics_collect_seconds: PositiveInt = (
-        app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS
+    get_instrumentation(app).update_metrics(
+        log_queue_sizes=get_log_distributor(app).get_log_queue_sizes()
     )
-    assert (  # nosec
-        app.state.instrumentation
-    ), "Instrumentation not setup. Please check the configuration"
-    instrumentation = get_instrumentation(app)
-    await wait_till_log_distributor_ready(app)
-    log_distributor = get_log_distributor(app)
-    while True:
-        await asyncio.sleep(metrics_collect_seconds)
-        instrumentation.update_metrics(
-            log_queue_sizes=log_distributor.get_log_queue_sizes()
-        )
 
 
 def setup_prometheus_instrumentation(app: FastAPI):
@@ -65,10 +52,14 @@ def setup_prometheus_instrumentation(app: FastAPI):
         app.state.instrumentation = ApiServerPrometheusInstrumentation(
             registry=instrumentator.registry
         )
+        await wait_till_log_distributor_ready(app)
         app.state.instrumentation_task = start_periodic_task(
-            task=partial(_collect_prometheus_metrics_task, app),
-            interval=app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS,
+            task=_collect_prometheus_metrics_task,
+            interval=timedelta(
+                seconds=app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS
+            ),
             task_name="prometheus_metrics_collection_task",
+            app=app,
         )
 
     async def on_shutdown() -> None:
