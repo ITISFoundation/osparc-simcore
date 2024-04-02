@@ -3,6 +3,7 @@ from typing import Any
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from models_library.emails import LowerCaseEmailStr
+from models_library.groups import Group
 from models_library.users import GroupID, UserID
 
 from ..db.plugin import get_database_engine
@@ -181,6 +182,10 @@ async def delete_user_in_group(
         )
 
 
-async def get_group_from_gid(app: web.Application, gid: GroupID) -> RowProxy | None:
+async def get_group_from_gid(app: web.Application, gid: GroupID) -> Group | None:
     async with get_database_engine(app).acquire() as conn:
-        return await _db.get_group_from_gid(conn, gid=gid)
+        group_db = await _db.get_group_from_gid(conn, gid=gid)
+
+    if group_db:
+        return Group.construct(**group_db.dict())
+    return None

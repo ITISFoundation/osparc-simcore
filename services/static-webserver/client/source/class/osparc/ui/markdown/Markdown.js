@@ -123,10 +123,10 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       }
       if (domElement && domElement.children) {
         const elemHeight = this.__getChildrenElementHeight(domElement.children);
-        if (this.getMaxHeight() && (elemHeight > this.getMaxHeight())) {
-          this.setHeight(elemHeight + 40);
+        if (this.getMaxHeight() && elemHeight > this.getMaxHeight()) {
+          this.setHeight(elemHeight);
         } else {
-          this.setMinHeight(elemHeight + 40);
+          this.setMinHeight(elemHeight);
         }
       }
     },
@@ -134,7 +134,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     __getChildrenElementHeight: function(children) {
       let height = 0;
       if (children.length) {
-        for (let i=0; i<children.length; i++) {
+        for (let i=0; i < children.length; i++) {
           height += this.__getElementHeight(children[i]);
         }
       }

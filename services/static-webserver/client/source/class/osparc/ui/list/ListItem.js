@@ -173,7 +173,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
           control = new osparc.ui.markdown.Markdown().set({
             font: "text-13",
             noMargin: true,
-            maxHeight: 16
+            maxHeight: 18
           });
           this._add(control, {
             row: 1,
