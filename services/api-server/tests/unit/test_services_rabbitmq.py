@@ -3,6 +3,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=R6301
 
 import asyncio
 import logging
