@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from typing import cast
+from typing import Final, cast
 
 from attr import field
 from fastapi import FastAPI
@@ -9,8 +9,15 @@ from pydantic import PositiveInt
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation as setup_rest_instrumentation,
 )
-from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
+from simcore_service_api_server.api.dependencies.rabbitmq import (
+    get_log_distributor,
+    wait_till_log_distributor_ready,
+)
 from simcore_service_api_server.models.schemas.jobs import JobID
+
+from .._meta import PROJECT_NAME
+
+METRICS_NAMESPACE: Final[str] = PROJECT_NAME.replace("-", "_")
 
 
 @dataclass(slots=True, kw_only=True)
@@ -20,7 +27,10 @@ class ApiServerPrometheusInstrumentation:
 
     def __post_init__(self) -> None:
         self._logstreaming_queues = Gauge(
-            "log_stream_queue_length", "#Logs in log streaming queue", ["job_id"]
+            "log_stream_queue_length",
+            "#Logs in log streaming queue",
+            ["job_id"],
+            namespace=METRICS_NAMESPACE,
         )
 
     def update_metrics(self, log_queue_sizes: dict[JobID, int]):
@@ -37,6 +47,7 @@ async def collect_prometheus_metrics_task(app: FastAPI):
         app.state.instrumentation
     ), "Instrumentation not setup. Please check the configuration"  # nosec
     instrumentation = get_instrumentation(app)
+    await wait_till_log_distributor_ready(app)
     log_distributor = get_log_distributor(app)
     while True:
         await asyncio.sleep(metrics_collect_seconds)
@@ -45,9 +56,8 @@ async def collect_prometheus_metrics_task(app: FastAPI):
         )
 
 
-async def setup(app: FastAPI):
+def setup_prometheus_instrumentation(app: FastAPI):
     instrumentator = setup_rest_instrumentation(app)
-    get_log_distributor(app)  # check log_distributor is already setup
 
     async def on_startup() -> None:
         app.state.instrumentation = ApiServerPrometheusInstrumentation(
