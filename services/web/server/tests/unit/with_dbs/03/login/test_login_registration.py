@@ -107,6 +107,7 @@ async def test_register_body_validation(
                 "field": "body.confirm",
             },
         ],
+        "message": "Invalid field/s 'body.email, body.confirm' in request",
     }
 
 
