@@ -58,23 +58,20 @@ qx.Class.define("osparc.NewRelease", {
     __buildLayout: function() {
       const introText = qx.locale.Manager.tr("We are pleased to announce that some new features were deployed for you!");
       const introLabel = new qx.ui.basic.Label(introText).set({
+        font: "text-14",
         rich: true,
         wrap: true
       });
       this._add(introLabel);
 
-      const detailsText = this.tr("What's new");
-      // old commit link
-      const link = osparc.utils.LibVersions.getVcsRefUrl();
-      const linkLabel = new osparc.ui.basic.LinkLabel(detailsText, link);
-      this._add(linkLabel);
       const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
-      if (rData) {
-        const releaseUrl = rData["url"];
-        if (releaseUrl) {
-          linkLabel.setUrl(releaseUrl);
-        }
-      }
+      const url = rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
+      const linkLabel = new osparc.ui.basic.LinkLabel().set({
+        value: this.tr("What's new"),
+        url,
+        font: "link-label-14"
+      });
+      this._add(linkLabel);
     }
   }
 });
