@@ -46,14 +46,6 @@ qx.Class.define("osparc.study.PricingUnit", {
       init: null
     },
 
-    advanced: {
-      check: "Boolean",
-      init: null,
-      nullable: true,
-      event: "changeAdvanced",
-      apply: "__buildLayout"
-    },
-
     showSpecificInfo: {
       check: "Boolean",
       init: null,
@@ -76,53 +68,45 @@ qx.Class.define("osparc.study.PricingUnit", {
       const pricingUnit = this.__pricingUnit;
 
       this._removeAll();
-      if (this.isAdvanced()) {
-        this._setLayout(new qx.ui.layout.VBox(5));
+      this._setLayout(new qx.ui.layout.VBox(5));
 
-        this._add(new qx.ui.basic.Label().set({
-          value: pricingUnit.unitName,
-          font: "text-16"
-        }));
+      this._add(new qx.ui.basic.Label().set({
+        value: pricingUnit.unitName,
+        font: "text-16"
+      }));
 
-        // add price info
-        this._add(new qx.ui.basic.Label().set({
-          value: qx.locale.Manager.tr("Credits/h") + ": " + pricingUnit.currentCostPerUnit,
-          font: "text-14"
-        }));
+      // add price info
+      this._add(new qx.ui.basic.Label().set({
+        value: qx.locale.Manager.tr("Credits/h") + ": " + pricingUnit.currentCostPerUnit,
+        font: "text-14"
+      }));
 
-        // add aws specific info
-        if (this.isShowSpecificInfo()) {
-          if ("specificInfo" in pricingUnit) {
-            Object.values(pricingUnit.specificInfo).forEach(value => {
-              this._add(new qx.ui.basic.Label().set({
-                value: "EC2: " + value,
-                font: "text-14"
-              }));
-            });
-          }
-        }
-
-        // add pricing unit extra info
-        if ("unitExtraInfo" in pricingUnit) {
-          Object.entries(pricingUnit.unitExtraInfo).forEach(([key, value]) => {
+      // add aws specific info
+      if (this.isShowSpecificInfo()) {
+        if ("specificInfo" in pricingUnit) {
+          Object.values(pricingUnit.specificInfo).forEach(value => {
             this._add(new qx.ui.basic.Label().set({
-              value: key + ": " + value,
-              font: "text-13"
+              value: "EC2: " + value,
+              font: "text-14"
             }));
           });
         }
+      }
 
-        if (this.isShowEditButton()) {
-          const editButton = new qx.ui.form.Button(this.tr("Edit"));
-          this._add(editButton);
-          editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
-        }
-      } else {
-        this._setLayout(new qx.ui.layout.HBox(5));
-        this._add(new qx.ui.basic.Label().set({
-          value: pricingUnit.unitName + ": " + pricingUnit.currentCostPerUnit + " C/h",
-          font: "text-16"
-        }));
+      // add pricing unit extra info
+      if ("unitExtraInfo" in pricingUnit) {
+        Object.entries(pricingUnit.unitExtraInfo).forEach(([key, value]) => {
+          this._add(new qx.ui.basic.Label().set({
+            value: key + ": " + value,
+            font: "text-13"
+          }));
+        });
+      }
+
+      if (this.isShowEditButton()) {
+        const editButton = new qx.ui.form.Button(this.tr("Edit"));
+        this._add(editButton);
+        editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
       }
     },
 

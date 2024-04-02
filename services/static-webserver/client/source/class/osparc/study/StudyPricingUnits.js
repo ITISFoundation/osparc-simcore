@@ -93,9 +93,6 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
         const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
 
         const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"], preselectedPricingUnit);
-        unitButtons.set({
-          advanced: true
-        });
         pricingUnitsLayout.add(unitButtons);
 
         return {

@@ -34,13 +34,6 @@ qx.Class.define("osparc.study.PricingUnits", {
       init: null,
       nullable: false,
       event: "changeSelectedUnit"
-    },
-
-    advanced: {
-      check: "Boolean",
-      init: null,
-      nullable: true,
-      event: "changeAdvanced"
     }
   },
 
@@ -49,7 +42,6 @@ qx.Class.define("osparc.study.PricingUnits", {
       const buttons = [];
       pricingUnits.forEach(pricingUnit => {
         const button = new osparc.study.PricingUnit(pricingUnit);
-        this.bind("advanced", button, "advanced");
         buttons.push(button);
         this._add(button);
       });
