@@ -46,14 +46,8 @@ qx.Class.define("osparc.study.PricingUnits", {
         this._add(button);
       });
 
-      const buttonSelected = button => {
-        buttons.forEach(btn => {
-          if (btn !== button) {
-            btn.setValue(false);
-          }
-        });
-      };
-      buttons.forEach(button => button.addListener("execute", () => buttonSelected(button)));
+      const groupOptions = new qx.ui.form.RadioGroup();
+      buttons.forEach(btn => groupOptions.add(btn));
 
       if (preselectedPricingUnit) {
         const buttonFound = buttons.find(button => button.getPricingUnitId() === preselectedPricingUnit["pricingUnitId"]);
