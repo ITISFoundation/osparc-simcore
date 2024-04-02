@@ -83,7 +83,7 @@ qx.Class.define("osparc.service.PricingUnitsList", {
       const buttons = this.getChildControl("pricing-units-container").getChildren();
       const keepDefaultSelected = () => {
         buttons.forEach(btn => {
-          btn.setValue(btn.getPricingUnitData()["default"]);
+          btn.setValue(btn.getUnitData().isDefault());
         });
       };
       keepDefaultSelected();

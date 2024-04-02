@@ -29,8 +29,7 @@ qx.Class.define("osparc.study.PricingUnit", {
       "border-radius": "4px"
     });
 
-    this.setPricingUnitId(pricingUnit["pricingUnitId"]);
-    this.__pricingUnit = pricingUnit;
+    this.setUnitData(new osparc.pricing.UnitData(pricingUnit));
 
     this.__buildLayout();
   },
@@ -40,8 +39,8 @@ qx.Class.define("osparc.study.PricingUnit", {
   },
 
   properties: {
-    pricingUnitId: {
-      check: "Number",
+    unitData: {
+      check: "osparc.pricing.UnitData",
       nullable: false,
       init: null
     },
@@ -65,45 +64,50 @@ qx.Class.define("osparc.study.PricingUnit", {
     __pricingUnit: null,
 
     __buildLayout: function() {
-      const pricingUnit = this.__pricingUnit;
+      const pricingUnit = this.getUnitData();
 
       this._removeAll();
       this._setLayout(new qx.ui.layout.VBox(5));
 
-      this._add(new qx.ui.basic.Label().set({
-        value: pricingUnit.unitName,
+      const unitName = new qx.ui.basic.Label().set({
         font: "text-16"
-      }));
+      })
+      pricingUnit.bind("unitName", unitName, "value");
+      this._add(unitName);
 
       // add price info
-      this._add(new qx.ui.basic.Label().set({
-        value: qx.locale.Manager.tr("Credits/h") + ": " + pricingUnit.currentCostPerUnit,
+      const price = new qx.ui.basic.Label().set({
         font: "text-14"
-      }));
+      })
+      pricingUnit.bind("currentCostPerUnit", price, "value", {
+        converter: v => qx.locale.Manager.tr("Credits/h") + ": " + v,
+      });
+      this._add(price);
 
       // add aws specific info
       if ("specificInfo" in pricingUnit) {
-        Object.values(pricingUnit.specificInfo).forEach(value => {
-          const label = new qx.ui.basic.Label().set({
-            value: "EC2: " + value,
-            font: "text-14"
-          })
-          this.bind("showSpecificInfo", label, "visibility", {
-            converter: show => show ? "visible" : "excluded"
-          })
-          this._add(label);
+        const label = new qx.ui.basic.Label().set({
+          font: "text-14"
+        })
+        const awsSpecificInfo = new qx.ui.basic.Label().set({
+          font: "text-14"
+        })
+        pricingUnit.bind("awsSpecificInfo", awsSpecificInfo, "value", {
+          converter: v => qx.locale.Manager.tr("EC2") + ": " + v,
         });
+        this.bind("showSpecificInfo", label, "visibility", {
+          converter: show => show ? "visible" : "excluded"
+        })
+        this._add(label);
       }
 
       // add pricing unit extra info
-      if ("unitExtraInfo" in pricingUnit) {
-        Object.entries(pricingUnit.unitExtraInfo).forEach(([key, value]) => {
-          this._add(new qx.ui.basic.Label().set({
-            value: key + ": " + value,
-            font: "text-13"
-          }));
-        });
-      }
+      Object.entries(pricingUnit.getUnitExtraInfo()).forEach(([key, value]) => {
+        this._add(new qx.ui.basic.Label().set({
+          value: key + ": " + value,
+          font: "text-13"
+        }));
+      });
 
       // add edit button
       const editButton = new qx.ui.form.Button(this.tr("Edit"));
@@ -112,10 +116,6 @@ qx.Class.define("osparc.study.PricingUnit", {
       })
       this._add(editButton);
       editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
-    },
-
-    getPricingUnitData: function() {
-      return this.__pricingUnit;
     }
   }
 });
