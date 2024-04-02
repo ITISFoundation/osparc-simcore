@@ -50,14 +50,14 @@ qx.Class.define("osparc.study.PricingUnit", {
       check: "Boolean",
       init: null,
       nullable: true,
-      apply: "__buildLayout"
+      event: "changeShowSpecificInfo"
     },
 
     showEditButton: {
       check: "Boolean",
       init: null,
       nullable: true,
-      apply: "__buildLayout"
+      event: "changeShowEditButton"
     },
   },
 
@@ -82,15 +82,17 @@ qx.Class.define("osparc.study.PricingUnit", {
       }));
 
       // add aws specific info
-      if (this.isShowSpecificInfo()) {
-        if ("specificInfo" in pricingUnit) {
-          Object.values(pricingUnit.specificInfo).forEach(value => {
-            this._add(new qx.ui.basic.Label().set({
-              value: "EC2: " + value,
-              font: "text-14"
-            }));
-          });
-        }
+      if ("specificInfo" in pricingUnit) {
+        Object.values(pricingUnit.specificInfo).forEach(value => {
+          const label = new qx.ui.basic.Label().set({
+            value: "EC2: " + value,
+            font: "text-14"
+          })
+          this.bind("showSpecificInfo", label, "visibility", {
+            converter: show => show ? "visible" : "excluded"
+          })
+          this._add(label);
+        });
       }
 
       // add pricing unit extra info
@@ -103,14 +105,16 @@ qx.Class.define("osparc.study.PricingUnit", {
         });
       }
 
-      if (this.isShowEditButton()) {
-        const editButton = new qx.ui.form.Button(this.tr("Edit"));
-        this._add(editButton);
-        editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
-      }
+      // add edit button
+      const editButton = new qx.ui.form.Button(this.tr("Edit"));
+      this.bind("showEditButton", editButton, "visibility", {
+        converter: show => show ? "visible" : "excluded"
+      })
+      this._add(editButton);
+      editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
     },
 
-    getPricingUnit: function() {
+    getPricingUnitData: function() {
       return this.__pricingUnit;
     }
   }

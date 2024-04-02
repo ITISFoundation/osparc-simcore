@@ -63,7 +63,7 @@ qx.Class.define("osparc.study.PricingUnits", {
       } else {
         // preselect default
         buttons.forEach(button => {
-          if (button.getPricingUnit()["default"]) {
+          if (button.getPricingUnitData()["default"]) {
             button.execute();
           }
         });
@@ -71,7 +71,7 @@ qx.Class.define("osparc.study.PricingUnits", {
 
       buttons.forEach(button => button.addListener("changeValue", e => {
         if (e.getData()) {
-          const selectedUnit = button.getPricingUnit();
+          const selectedUnit = button.getPricingUnitData();
           this.setSelectedUnit(selectedUnit);
         }
       }));
