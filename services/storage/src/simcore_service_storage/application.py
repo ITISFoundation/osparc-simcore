@@ -12,7 +12,7 @@ from servicelib.aiohttp.dev_error_logger import setup_dev_error_logger
 from servicelib.aiohttp.monitoring import setup_monitoring
 from servicelib.aiohttp.tracing import setup_tracing
 
-from ._meta import WELCOME_MSG, app_name, version_info
+from ._meta import APP_STARTED_BANNER_MSG, PROJECT_NAME, VERSION
 from .db import setup_db
 from .dsm import setup_dsm
 from .dsm_cleaner import setup_dsm_cleaner
@@ -75,7 +75,7 @@ def create(settings: Settings) -> web.Application:
         setup_dev_error_logger(app)
 
     if settings.STORAGE_MONITORING_ENABLED:
-        setup_monitoring(app, app_name, version=f"{version_info}")
+        setup_monitoring(app, PROJECT_NAME, version=f"{VERSION}")
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
@@ -93,7 +93,7 @@ def run(settings: Settings, app: web.Application | None = None):
         app = create(settings)
 
     async def welcome_banner(_app: web.Application):
-        print(WELCOME_MSG, flush=True)  # noqa: T201
+        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     app.on_startup.append(welcome_banner)
 

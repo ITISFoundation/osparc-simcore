@@ -19,7 +19,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetUnknown,
     NodeRetrieve,
 )
-from models_library.groups import EVERYONE_GROUP_ID
+from models_library.groups import EVERYONE_GROUP_ID, Group, GroupTypeInModel
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import NodeIDStr
@@ -50,14 +50,16 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWasNotFoundError,
 )
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.groups.exceptions import GroupNotFoundError
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
+from ..groups.api import get_group_from_gid, list_user_groups
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ..users.api import get_user_role
+from ..users.api import get_user_id_from_gid, get_user_role
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.errors import WalletNotEnoughCreditsError
@@ -88,6 +90,7 @@ def _handle_project_nodes_exceptions(handler: Handler):
             NodeNotFoundError,
             UserDefaultWalletNotFoundError,
             DefaultPricingUnitNotFoundError,
+            GroupNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except WalletNotEnoughCreditsError as exc:
@@ -469,23 +472,54 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
         ]
     )
 
+    # Initialize groups to compare with everyone group ID
+    groups_to_compare = {EVERYONE_GROUP_ID}
+
+    # Get the group from the provided group ID
+    _sharing_with_group: Group | None = await get_group_from_gid(
+        app=request.app, gid=query_params.for_gid
+    )
+
+    # Check if the group exists
+    if _sharing_with_group is None:
+        raise GroupNotFoundError(gid=query_params.for_gid)
+
+    # Update groups to compare based on the type of sharing group
+    if _sharing_with_group.group_type == GroupTypeInModel.PRIMARY:
+        _user_id = await get_user_id_from_gid(
+            app=request.app, primary_gid=query_params.for_gid
+        )
+        _, _user_groups, _ = await list_user_groups(app=request.app, user_id=_user_id)
+        groups_to_compare.update({int(item.get("gid")) for item in _user_groups})
+        groups_to_compare.add(query_params.for_gid)
+    elif _sharing_with_group.group_type == GroupTypeInModel.STANDARD:
+        groups_to_compare = {query_params.for_gid}
+
+    # Initialize a list for inaccessible services
     inaccessible_services = []
+
+    # Check accessibility of each service
     for service in project_services_access_rights:
         service_access_rights = service.gids_with_access_rights
 
-        # Ignore services shared with everyone
-        if service_access_rights.get(EVERYONE_GROUP_ID):
-            continue
-
-        # Check if service is accessible to the provided group
-        service_access_rights_for_gid = service_access_rights.get(
-            query_params.for_gid, {}
+        # Find common groups between service access rights and groups to compare
+        _groups_intersection = set(service_access_rights.keys()).intersection(
+            groups_to_compare
         )
 
-        if (
-            not service_access_rights_for_gid
-            or service_access_rights_for_gid.get("execute_access", False) is False
-        ):
+        _is_service_accessible = False
+
+        # Iterate through common groups
+        for group in _groups_intersection:
+            service_access_rights_for_gid = service_access_rights.get(group)
+            assert service_access_rights_for_gid is not None  # nosec
+            # Check if execute access is granted for the group
+            if service_access_rights_for_gid.get("execute_access", False):
+                _is_service_accessible = True
+                break
+
+        # If service is not accessible, add it to the list of inaccessible services
+        if not _is_service_accessible:
             inaccessible_services.append(service)
 
     project_accessible = not inaccessible_services

@@ -2,10 +2,9 @@ import logging
 
 import asyncpg.exceptions
 from aiohttp import web
-from aiopg.sa.result import RowProxy
+from models_library.groups import Group, GroupTypeInModel
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.errors import DatabaseError
-from simcore_postgres_database.models.groups import GroupType
 
 from ..groups.api import get_group_from_gid
 from ..projects.db import APP_PROJECT_DBAPI, ProjectAccessRights
@@ -74,7 +73,7 @@ async def get_new_project_owner_gid(
     standard_groups = {}  # groups of users, multiple users can be part of this
     primary_groups = {}  # each individual user has a unique primary group
     for other_gid in other_users_access_rights:
-        group: RowProxy | None = await get_group_from_gid(app=app, gid=int(other_gid))
+        group: Group | None = await get_group_from_gid(app=app, gid=int(other_gid))
 
         # only process for users and groups with write access right
         if group is None:
@@ -82,9 +81,9 @@ async def get_new_project_owner_gid(
         if access_rights[other_gid]["write"] is not True:
             continue
 
-        if group.type == GroupType.STANDARD:
+        if group.group_type == GroupTypeInModel.STANDARD:
             standard_groups[other_gid] = access_rights[other_gid]
-        elif group.type == GroupType.PRIMARY:
+        elif group.group_type == GroupTypeInModel.PRIMARY:
             primary_groups[other_gid] = access_rights[other_gid]
 
     _logger.debug(
