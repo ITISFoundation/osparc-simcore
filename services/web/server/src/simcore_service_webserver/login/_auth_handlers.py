@@ -158,7 +158,7 @@ async def login(request: web.Request):
                     "next_url": f"{request.app.router['auth_register_phone'].url_for()}",
                 },
             },
-            status=status.HTTP_202_ACCEPTED,
+            status_code=status.HTTP_202_ACCEPTED,
         )
 
     code = await create_2fa_code(
@@ -195,7 +195,7 @@ async def login(request: web.Request):
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
             },
-            status=status.HTTP_202_ACCEPTED,
+            status_code=status.HTTP_202_ACCEPTED,
         )
 
     # otherwise create email f2a

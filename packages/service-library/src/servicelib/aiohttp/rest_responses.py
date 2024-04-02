@@ -7,12 +7,15 @@ from http import HTTPStatus
 from typing import Any, Final
 
 from aiohttp import web
-from aiohttp.web_exceptions import HTTPError
-from servicelib.aiohttp.status import HTTP_200_OK
+from aiohttp.web_exceptions import HTTPError, HTTPException
+from models_library.generics import Envelope
+from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from ..json_serialization import json_dumps, safe_json_loads
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from .rest_models import ErrorDetail, ResponseErrorBody
+from ..rest_constants import RESPONSE_MODEL_POLICY
+from . import status
+from .rest_models import ErrorDetail, LogMessage, ResponseErrorBody
 
 _ENVELOPE_KEYS: Final = ("data", "error")
 
@@ -51,14 +54,15 @@ def unwrap_envelope(payload: dict[str, Any]) -> tuple:
     return tuple(payload.get(k) for k in _ENVELOPE_KEYS) if payload else (None, None)
 
 
-# RESPONSES FACTORIES -------------------------------
-
-
-def create_enveloped_response(data: Any, *, status: int = HTTP_200_OK) -> web.Response:
+def create_enveloped_response(
+    data: Any, *, status_code: int = status.HTTP_200_OK
+) -> web.Response:
     response = None
     try:
         enveloped_payload = wrap_as_envelope(data) if not is_enveloped(data) else data
-        response = web.json_response(enveloped_payload, dumps=json_dumps, status=status)
+        response = web.json_response(
+            enveloped_payload, dumps=json_dumps, status=status_code
+        )
     except (TypeError, ValueError) as err:
         # FIXME: this should never happen!
         response = create_error_response(
@@ -89,7 +93,6 @@ def create_error_response(
     text: str | None = None
     if not http_error_cls.empty_body:
         error = ResponseErrorBody(
-            status=http_error_cls.status_code,
             message=message or HTTPStatus(http_error_cls.status_code).description,
             errors=[ErrorDetail.from_exception(e) for e in errors],
         )
@@ -99,4 +102,39 @@ def create_error_response(
         reason=message,
         text=text,
         content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
+def envelope_response(
+    data: Any, *, status_code: int = status.HTTP_200_OK
+) -> web.Response:
+    return web.json_response(
+        jsonable_encoder({"data": data}, **RESPONSE_MODEL_POLICY),
+        dumps=json_dumps,
+        status=status_code,
+    )
+
+
+def envelope_json_response(
+    obj: Any, status_cls: type[HTTPException] = web.HTTPOk
+) -> web.Response:
+    # NOTE: see https://github.com/ITISFoundation/osparc-simcore/issues/3646
+    if issubclass(status_cls, HTTPError):
+        enveloped = Envelope[Any](error=obj)
+    else:
+        enveloped = Envelope[Any](data=obj)
+
+    return web.json_response(
+        jsonable_encoder(enveloped, **RESPONSE_MODEL_POLICY),
+        dumps=json_dumps,
+        status=status_cls.status_code,
+    )
+
+
+def flash_response(
+    message: str, level: str = "INFO", *, status_code: int = status.HTTP_200_OK
+) -> web.Response:
+    return envelope_response(
+        data=LogMessage(message=message, level=level),
+        status_code=status_code,
     )
