@@ -65,12 +65,6 @@ done
 # docker_command+=" --skip-interpolation"
 # because docker stack compose will *validate* that e.g. `replicas: ${SIMCORE_SERVICES_POSTGRES_REPLICAS}` is a valid number, which it is not if it is read as a literal string.
 
-docker_command+=" \
-| sed '/published:/s/\"//g' \
-| sed '/size:/s/\"//g' \
-| sed --regexp-extended 's/cpus: ([0-9\\.]+)/cpus: \"\\1\"/' \
-| sed 's/\\\$/\\\$\\\$/g'" # mitigates https://stackoverflow.com/questions/40619582/how-can-i-escape-a-dollar-sign-in-a-docker-compose-file
-
 # Execute the command
 show_info "Executing Docker command: ${docker_command}"
 eval "${docker_command}"
