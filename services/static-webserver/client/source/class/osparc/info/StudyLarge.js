@@ -81,6 +81,7 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
+
       leftVBox.add(extraInfoLayout);
 
       let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
@@ -142,7 +143,7 @@ qx.Class.define("osparc.info.StudyLarge", {
         },
         "DESCRIPTION": {
           label: this.tr("Description:"),
-          view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), 110),
+          view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), 150),
           action: {
             button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
             callback: this.__canIWrite() ? this.__openDescriptionEditor : null,
