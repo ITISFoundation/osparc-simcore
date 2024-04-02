@@ -52,7 +52,7 @@ async def collect_prometheus_metrics_task(app: FastAPI):
     while True:
         await asyncio.sleep(metrics_collect_seconds)
         instrumentation.update_metrics(
-            log_queue_sizes=log_distributor.log_queue_sizes()
+            log_queue_sizes=log_distributor.get_log_queue_sizes()
         )
 
 

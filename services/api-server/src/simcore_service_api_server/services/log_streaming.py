@@ -98,7 +98,7 @@ class LogDistributor:
         )
         del self._log_streamers[job_id]
 
-    def log_queue_sizes(self) -> dict[JobID, int]:
+    def get_log_queue_sizes(self) -> dict[JobID, int]:
         keys: list[JobID] = list(self._log_streamers.keys())
         values: list[int] = list(map(lambda q: q.qsize(), self._log_streamers.values()))
         return dict(zip(keys, values))
