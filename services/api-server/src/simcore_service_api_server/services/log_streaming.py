@@ -100,6 +100,11 @@ class LogDistributor:
         )
         del self._log_streamers[job_id]
 
+    async def log_queue_sizes(self) -> dict[JobID, int]:
+        keys: list[JobID] = list(self._log_streamers.keys())
+        values: list[int] = [await q.qsize() for q in self._log_streamers.values()]
+        return dict(zip(keys, values))
+
 
 class LogStreamer:
     def __init__(
