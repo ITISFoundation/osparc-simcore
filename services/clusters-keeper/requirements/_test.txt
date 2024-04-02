@@ -3,6 +3,8 @@ aiohttp==3.9.3
     # via aiodocker
 aiosignal==1.3.1
     # via aiohttp
+antlr4-python3-runtime==4.13.1
+    # via moto
 anyio==4.3.0
     # via httpx
 asgi-lifespan==2.1.0
@@ -60,7 +62,7 @@ exceptiongroup==1.2.0
     # via
     #   anyio
     #   pytest
-faker==24.3.0
+faker==24.4.0
 fakeredis==2.21.3
 flask==3.0.2
     # via
@@ -76,7 +78,7 @@ graphql-core==3.2.3
     # via moto
 h11==0.14.0
     # via httpcore
-httpcore==1.0.4
+httpcore==1.0.5
     # via httpx
 httpx==0.27.0
     # via respx
@@ -90,7 +92,7 @@ iniconfig==2.0.0
     # via pytest
 itsdangerous==2.1.2
     # via flask
-jinja2==3.1.2
+jinja2==3.1.3
     # via
     #   flask
     #   moto
@@ -106,6 +108,8 @@ jsondiff==2.0.0
     # via moto
 jsonpatch==1.33
     # via cfn-lint
+jsonpath-ng==1.6.1
+    # via moto
 jsonpickle==3.0.3
     # via jschema-to-python
 jsonpointer==2.4
@@ -128,11 +132,11 @@ lazy-object-proxy==1.10.0
     # via openapi-spec-validator
 lupa==2.1
     # via fakeredis
-markupsafe==2.1.3
+markupsafe==2.1.5
     # via
     #   jinja2
     #   werkzeug
-moto==5.0.3
+moto==5.0.4
 mpmath==1.3.0
     # via sympy
 multidict==6.0.5
@@ -147,7 +151,7 @@ openapi-spec-validator==0.7.1
     # via moto
 ordered-set==4.1.0
     # via deepdiff
-packaging==23.1
+packaging==24.0
     # via
     #   docker
     #   pytest
@@ -160,10 +164,12 @@ pbr==6.0.0
     #   sarif-om
 pluggy==1.4.0
     # via pytest
-psutil==5.9.5
-py-partiql-parser==0.5.1
+ply==3.11
+    # via jsonpath-ng
+psutil==5.9.8
+py-partiql-parser==0.5.2
     # via moto
-pycparser==2.21
+pycparser==2.22
     # via cffi
 pydantic==1.10.14
     # via aws-sam-translator
@@ -207,7 +213,7 @@ requests==2.31.0
     #   responses
 responses==0.25.0
     # via moto
-respx==0.21.0
+respx==0.21.1
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
 rpds-py==0.18.0
@@ -244,13 +250,13 @@ typing-extensions==4.10.0
     #   anyio
     #   aws-sam-translator
     #   pydantic
-urllib3==1.26.16
+urllib3==2.0.7
     # via
     #   botocore
     #   docker
     #   requests
     #   responses
-werkzeug==3.0.1
+werkzeug==3.0.2
     # via
     #   flask
     #   moto
