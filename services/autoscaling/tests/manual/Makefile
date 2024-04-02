@@ -6,12 +6,12 @@ include ../../../../scripts/common-service.Makefile
 
 
 .stack-devel.yml: .env
-	../../../../scripts/docker/docker-compose-config.bash -e .env \
+	../../../../scripts/docker/docker-stack-config.bash -e .env \
 		docker-compose.yml \
 		> $@
 
 .stack-computational-devel.yml: .env
-	../../../../scripts/docker/docker-compose-config.bash -e .env \
+	../../../../scripts/docker/docker-stack-config.bash -e .env \
 		docker-compose.yml \
 		docker-compose-computational.yml \
 		> $@

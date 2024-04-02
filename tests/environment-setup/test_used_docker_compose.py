@@ -96,7 +96,7 @@ compose_paths = filter(
 @pytest.fixture
 def docker_compose_config_bash(osparc_simcore_scripts_dir: Path) -> Path:
     docker_compose_config_script = (
-        osparc_simcore_scripts_dir / "docker" / "docker-compose-config.bash"
+        osparc_simcore_scripts_dir / "docker" / "docker-stack-config.bash"
     )
     assert docker_compose_config_script.exists()
     return docker_compose_config_script
