@@ -303,7 +303,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       // add Open service button
       [
         this.__getInfoPage,
-        this.__getBillingSettings,
+        this.__getBillingPage,
         this.__getServicesUpdatePage,
         this.__getServicesBootOptionsPage,
         this.__getDataPage,
@@ -370,25 +370,34 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       return page;
     },
 
-    __getBillingSettings: function() {
-      const resourceData = this.__resourceData;
-      if (
-        !osparc.utils.Resources.isStudy(resourceData) ||
-        !osparc.desktop.credits.Utils.areWalletsEnabled()
-      ) {
+    __getBillingPage: function() {
+      if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
         return null;
       }
 
-      const id = "Billing";
-      const title = this.tr("Billing Settings");
-      const iconSrc = "@FontAwesome5Solid/cogs/22";
-
-      const billingSettings = new osparc.study.BillingSettings(resourceData);
-      const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
-      const billingScroll = new qx.ui.container.Scroll(billingSettings);
-      this.__addOpenButton(page);
-      page.addToContent(billingScroll);
-      return page;
+      const resourceData = this.__resourceData;
+      if (osparc.utils.Resources.isStudy(resourceData)) {
+        const id = "Billing";
+        const title = this.tr("Billing Settings");
+        const iconSrc = "@FontAwesome5Solid/cogs/22";
+        const billingSettings = new osparc.study.BillingSettings(resourceData);
+        const page = this.__billingSettings = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+        const billingScroll = new qx.ui.container.Scroll(billingSettings);
+        this.__addOpenButton(page);
+        page.addToContent(billingScroll);
+        return page;
+      } else if (osparc.utils.Resources.isService(resourceData)) {
+        const id = "Tiers";
+        const title = this.tr("Tiers");
+        const iconSrc = "@FontAwesome5Solid/server/22";
+        const pricingUnitsList = new osparc.service.PricingUnitsList(resourceData);
+        const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+        const pricingUnitsListScroll = new qx.ui.container.Scroll(pricingUnitsList);
+        this.__addOpenButton(page);
+        page.addToContent(pricingUnitsListScroll);
+        return page;
+      }
+      return null;
     },
 
     __getPreviewPage: function() {
@@ -520,7 +529,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         classifiers = new osparc.metadata.ClassifiersViewer(resourceData);
       }
 
-      const page = this.__permissionsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      const page = this.__classifiersPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addOpenButton(page);
       page.addToContent(classifiers);
       return page;
