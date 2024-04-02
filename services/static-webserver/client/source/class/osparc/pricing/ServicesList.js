@@ -90,7 +90,25 @@ qx.Class.define("osparc.pricing.ServicesList", {
     },
 
     __openAddServiceToPlan: function() {
-      
+      const srvCat = new osparc.workbench.ServiceCatalog();
+      srvCat.addListener("addService", e => {
+        const data = e.getData();
+        const service = data.service;
+        console.log(service);
+        const params = {
+          url: {
+            pricingPlanId: this.getPricingPlanId()
+          },
+          data: {
+            serviceKey: service.getKey(),
+            serviceVersion: service.getVersion()
+          }
+        };
+        osparc.data.Resources.fetch("billableServices", "post", params)
+          .then(() => this.__fetchServices());
+      });
+      srvCat.center();
+      srvCat.open();
     }
   }
 });
