@@ -18,7 +18,7 @@
 qx.Class.define("osparc.pricing.UnitEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(pricingUnit) {
+  construct: function(pricingUnitData) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -40,15 +40,15 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     manager.add(specificInfo);
     manager.add(unitExtraInfo);
 
-    if (pricingUnit) {
-      this.__pricingUnit = osparc.utils.Utils.deepCloneObject(pricingUnit);
+    if (pricingUnitData) {
+      const pricingUnit = this.__pricingUnit = new osparc.pricing.UnitData(pricingUnitData);
       this.set({
-        unitName: pricingUnit.unitName,
-        costPerUnit: pricingUnit.currentCostPerUnit,
-        comment: pricingUnit.comment || "",
-        specificInfo: pricingUnit.specificInfo && pricingUnit.specificInfo["aws_ec2_instances"] ? pricingUnit.specificInfo["aws_ec2_instances"].toString() : "",
-        unitExtraInfo: pricingUnit.unitExtraInfo,
-        default: pricingUnit.default
+        unitName: pricingUnit.getUnitName(),
+        costPerUnit: pricingUnit.getCurrentCostPerUnit(),
+        comment: pricingUnit.getComment(),
+        specificInfo: pricingUnit.getSpecificInfo(),
+        unitExtraInfo: pricingUnit.getUnitExtraInfo(),
+        default: pricingUnit.getDefault()
       });
       this.getChildControl("save");
     } else {
@@ -261,28 +261,22 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     },
 
     __updatePricingUnit: function() {
-      const unitName = this.getUnitName();
-      const costPerUnit = this.getCostPerUnit();
+      const unitData = this.__pricingUnit.serialize();
       const comment = this.getComment();
-      const specificInfo = this.getSpecificInfo();
-      const extraInfo = this.getUnitExtraInfo();
-      const isDefault = this.getDefault();
       const params = {
         url: {
           "pricingPlanId": this.getPricingPlanId(),
-          "pricingUnitId": this.__pricingUnit["pricingUnitId"]
+          "pricingUnitId": unitData.pricingUnitId
         },
         data: {
-          "unitName": unitName,
+          "unitName": unitData.unitName,
           "pricingUnitCostUpdate": {
-            "cost_per_unit": costPerUnit,
+            "cost_per_unit": unitData.currentCostPerUnit,
             "comment": comment
           },
-          "specificInfo": {
-            "aws_ec2_instances": [specificInfo]
-          },
-          "unitExtraInfo": extraInfo,
-          "default": isDefault
+          "specificInfo": unitData.specificInfo,
+          "unitExtraInfo": unitData.extraInfo,
+          "default": unitData.default
         }
       };
       osparc.data.Resources.fetch("pricingUnits", "update", params)
