@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Request
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -21,9 +22,9 @@ log = logging.getLogger(__file__)
 @cancel_on_disconnect
 async def get_user_profile(
     request: Request,
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
+    x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
+    x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
+    pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
 ):
     assert request  # nosec
     return await pennsieve_client.get_user_profile(
