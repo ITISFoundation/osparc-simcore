@@ -88,6 +88,15 @@ qx.Class.define("osparc.pricing.UnitsList", {
         pUnit.addListener("editPricingUnit", () => this.__openUpdatePricingUnit(pricingUnit));
         this.getChildControl("pricing-units-container").add(pUnit);
       });
+
+      const buttons = this.getChildControl("pricing-units-container").getChildren();
+      const keepDefaultSelected = () => {
+        buttons.forEach(btn => {
+          btn.setValue(btn.getPricingUnitData()["default"]);
+        });
+      };
+      keepDefaultSelected();
+      buttons.forEach(btn => btn.addListener("execute", () => keepDefaultSelected()));
     },
 
     __openCreatePricingUnit: function() {
