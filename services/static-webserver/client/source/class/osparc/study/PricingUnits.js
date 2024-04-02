@@ -29,11 +29,11 @@ qx.Class.define("osparc.study.PricingUnits", {
   },
 
   properties: {
-    selectedUnit: {
-      check: "Object",
+    selectedUnitId: {
+      check: "Number",
       init: null,
       nullable: false,
-      event: "changeSelectedUnit"
+      event: "changeSelectedUnitId"
     }
   },
 
@@ -65,8 +65,8 @@ qx.Class.define("osparc.study.PricingUnits", {
 
       buttons.forEach(button => button.addListener("changeValue", e => {
         if (e.getData()) {
-          const selectedUnit = button.getPricingUnitData();
-          this.setSelectedUnit(selectedUnit);
+          const selectedUnitId = button.getUnitData().getPricingUnitId();
+          this.setSelectedUnitId(selectedUnitId);
         }
       }));
     }
