@@ -39,7 +39,7 @@ class ApiServerPrometheusInstrumentation:
             self._logstreaming_queues.labels(job_id=job_id).set(length)
 
 
-async def collect_prometheus_metrics_task(app: FastAPI):
+async def _collect_prometheus_metrics_task(app: FastAPI):
     metrics_collect_seconds: PositiveInt = (
         app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS
     )
@@ -64,7 +64,7 @@ def setup_prometheus_instrumentation(app: FastAPI):
             registry=instrumentator.registry
         )
         app.state.instrumentation_task = asyncio.create_task(
-            collect_prometheus_metrics_task(app)
+            _collect_prometheus_metrics_task(app)
         )
 
     async def on_shutdown() -> None:
