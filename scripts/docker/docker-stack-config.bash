@@ -39,13 +39,13 @@ if [[ "$#" -eq 0 ]]; then
   exit 1
 fi
 
-# Check if Docker version is greater than or equal to 25.0.3
+# Check if Docker version is greater than or equal to 24.0.9
 version_check=$(docker --version | grep --extended-regexp --only-matching '[0-9]+\.[0-9]+\.[0-9]+')
 IFS='.' read -r -a version_parts <<<"$version_check"
 
-if [[ "${version_parts[0]}" -gt 25 ]] ||
-  { [[ "${version_parts[0]}" -eq 25 ]] && [[ "${version_parts[1]}" -gt 0 ]]; } ||
-  { [[ "${version_parts[0]}" -eq 25 ]] && [[ "${version_parts[1]}" -eq 0 ]] && [[ "${version_parts[2]}" -ge 3 ]]; }; then
+if [[ "${version_parts[0]}" -gt 24 ]] ||
+  { [[ "${version_parts[0]}" -eq 24 ]] && [[ "${version_parts[1]}" -gt 0 ]]; } ||
+  { [[ "${version_parts[0]}" -eq 24 ]] && [[ "${version_parts[1]}" -eq 0 ]] && [[ "${version_parts[2]}" -ge 9 ]]; }; then
   show_info "Running Docker version $version_check"
 else
   show_error "Docker version 25.0.3 or higher is required."
