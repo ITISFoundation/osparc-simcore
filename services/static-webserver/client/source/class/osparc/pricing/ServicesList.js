@@ -81,8 +81,11 @@ qx.Class.define("osparc.pricing.ServicesList", {
       const sList = [];
       services.forEach(service => {
         const serviceKey = service["serviceKey"];
-        const serviceData = osparc.service.Utils.getLatest(null, serviceKey);
-        sList.push(qx.data.marshal.Json.createModel(serviceData));
+        const serviceVersion = service["serviceVersion"];
+        const serviceMetaData = osparc.service.Utils.getMetaData(serviceKey, serviceVersion);
+        if (serviceMetaData) {
+          sList.push(qx.data.marshal.Json.createModel(serviceMetaData));
+        }
       });
 
       const servicesList = this.getChildControl("services-list");
