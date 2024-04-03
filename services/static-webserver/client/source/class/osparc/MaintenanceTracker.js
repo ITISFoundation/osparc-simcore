@@ -42,11 +42,11 @@ qx.Class.define("osparc.MaintenanceTracker", {
   statics: {
     CHECK_INTERVAL: 15*60*1000, // Check every 15'
     CLOSABLE_WARN_IN_ADVANCE: 24*60*60*1000, // Show Ribbon Closable Message 24h in advance
-    PERMANENT_WARN_IN_ADVANCE: 30*60*1000 // Show Ribbon Permament Message 30' in advance
+    PERMANENT_WARN_IN_ADVANCE: 30*60*1000 // Show Ribbon Permanent Message 30' in advance
   },
 
   members: {
-    __checkInternval: null,
+    __checkInterval: null,
     __lastRibbonMessage: null,
     __logoutTimer: null,
 
@@ -64,12 +64,12 @@ qx.Class.define("osparc.MaintenanceTracker", {
           .catch(err => console.error(err));
       };
       checkMaintenance();
-      this.__checkInternval = setInterval(checkMaintenance, this.self().CHECK_INTERVAL);
+      this.__checkInterval = setInterval(checkMaintenance, this.self().CHECK_INTERVAL);
     },
 
     stopTracker: function() {
-      if (this.__checkInternval) {
-        clearInterval(this.__checkInternval);
+      if (this.__checkInterval) {
+        clearInterval(this.__checkInterval);
       }
     },
 
@@ -160,27 +160,25 @@ qx.Class.define("osparc.MaintenanceTracker", {
       }
     },
 
+    __logout: function() {
+      this.set({
+        start: null,
+        end: null,
+        reason: null
+      });
+      const reason = qx.locale.Manager.tr("We are under maintenance. Please check back later");
+      qx.core.Init.getApplication().logout(reason);
+    },
+
     __scheduleLogout: function() {
       this.__removeScheduledLogout();
 
-      const logoutUser = () => {
-        this.set({
-          start: null,
-          end: null,
-          reason: null
-        });
-        let text = qx.locale.Manager.tr("We are under maintenance.");
-        text += "<br>";
-        text += qx.locale.Manager.tr("Please check back later");
-        osparc.FlashMessenger.getInstance().logAs(text, "WARNING");
-        qx.core.Init.getApplication().logout();
-      };
       const now = new Date();
       if (this.getStart().getTime() > now.getTime()) {
         const diff = this.getStart().getTime() - now.getTime();
-        this.__logoutTimer = setTimeout(() => logoutUser(), diff);
+        this.__logoutTimer = setTimeout(() => this.__logout(), diff);
       } else if (this.getStart().getTime() < now.getTime() && this.getEnd().getTime() > now.getTime()) {
-        logoutUser();
+        this.__logout();
       }
     },
 

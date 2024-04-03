@@ -1,7 +1,5 @@
 from collections.abc import Iterator
-from unittest import mock
 
-import httpx
 import pytest
 import sqlalchemy as sa
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
@@ -12,8 +10,6 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import service_ru
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
-from starlette import status
-from yarl import URL
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [
@@ -65,32 +61,6 @@ def resource_tracker_service_run_db(
         yield created_services
 
         con.execute(resource_tracker_service_runs.delete())
-
-
-async def test_list_service_runs_with_wallet(
-    mocked_redis_server: None,
-    mocked_setup_rabbitmq: mock.Mock,
-    postgres_db: sa.engine.Engine,
-    resource_tracker_service_run_db: dict,
-    async_client: httpx.AsyncClient,
-):
-    url = URL("/v1/services/-/usages")
-
-    response = await async_client.get(
-        f'{url.with_query({"user_id": _USER_ID_1, "product_name": "osparc", "wallet_id": _WALLET_ID, "access_all_wallet_usage": "false"})}'
-    )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert len(data["items"]) == 10
-    assert data["total"] == 10
-
-    response = await async_client.get(
-        f'{url.with_query({"user_id": _USER_ID_1, "product_name": "osparc", "wallet_id": _WALLET_ID, "access_all_wallet_usage": "true"})}'
-    )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert len(data["items"]) == 20
-    assert data["total"] == 20
 
 
 @pytest.mark.rpc_test()

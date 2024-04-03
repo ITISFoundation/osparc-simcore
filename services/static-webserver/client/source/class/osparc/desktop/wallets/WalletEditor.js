@@ -99,18 +99,22 @@ qx.Class.define("osparc.desktop.wallets.WalletEditor", {
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
         alignX: "right"
       }));
-      const cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
+      const cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
+        appearance: "form-button-text"
+      });
       cancelButton.addListener("execute", () => this.fireEvent("cancel"), this);
-      buttons.add(cancelButton);
+      buttons.addAt(cancelButton, 0);
 
-      const saveButton = new osparc.ui.form.FetchButton(this.tr("Save"));
+      const saveButton = new osparc.ui.form.FetchButton(this.tr("Save")).set({
+        appearance: "form-button"
+      });
       saveButton.addListener("execute", () => {
         if (this.__validator.validate()) {
           this.fireEvent("updateWallet");
         }
       }, this);
       this.bind("isFetching", saveButton, "fetching")
-      buttons.addAt(saveButton, 0);
+      buttons.addAt(saveButton, 1);
       this._add(buttons);
     }
   }

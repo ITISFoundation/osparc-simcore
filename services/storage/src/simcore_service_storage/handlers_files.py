@@ -27,7 +27,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
-from ._meta import api_vtag
+from ._meta import API_VTAG
 from .dsm import get_dsm_provider
 from .exceptions import FileMetaDataNotFoundError
 from .models import (
@@ -53,7 +53,7 @@ UPLOAD_TASKS_KEY = f"{__name__}.upload_tasks"
 
 
 @routes.get(
-    f"/{api_vtag}/locations/{{location_id}}/files/metadata", name="get_files_metadata"
+    f"/{API_VTAG}/locations/{{location_id}}/files/metadata", name="get_files_metadata"
 )
 async def get_files_metadata(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(FilesMetadataQueryParams, request)
@@ -75,7 +75,7 @@ async def get_files_metadata(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}/metadata",
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}/metadata",
     name="get_file_metadata",
 )
 async def get_file_metadata(request: web.Request) -> web.Response:
@@ -130,7 +130,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
 
 
 @routes.get(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="download_file"
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}", name="download_file"
 )
 async def download_file(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(FileDownloadQueryParams, request)
@@ -147,7 +147,7 @@ async def download_file(request: web.Request) -> web.Response:
 
 
 @routes.put(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="upload_file"
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}", name="upload_file"
 )
 async def upload_file(request: web.Request) -> web.Response:
     """creates upload file links:
@@ -233,7 +233,7 @@ async def upload_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:abort",
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}:abort",
     name="abort_upload_file",
 )
 async def abort_upload_file(request: web.Request) -> NoReturn:
@@ -250,7 +250,7 @@ async def abort_upload_file(request: web.Request) -> NoReturn:
 
 
 @routes.post(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:complete",
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}:complete",
     name="complete_upload_file",
 )
 async def complete_upload_file(request: web.Request) -> web.Response:
@@ -296,7 +296,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}:complete/futures/{{future_id}}",
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}:complete/futures/{{future_id}}",
     name="is_completed_upload_file",
 )
 async def is_completed_upload_file(request: web.Request) -> web.Response:
@@ -348,7 +348,7 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
 
 
 @routes.delete(
-    f"/{api_vtag}/locations/{{location_id}}/files/{{file_id}}", name="delete_file"
+    f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}", name="delete_file"
 )
 async def delete_file(request: web.Request) -> NoReturn:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
@@ -363,7 +363,7 @@ async def delete_file(request: web.Request) -> NoReturn:
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
-@routes.post(f"/{api_vtag}/files/{{file_id}}:soft-copy", name="copy_as_soft_link")
+@routes.post(f"/{API_VTAG}/files/{{file_id}}:soft-copy", name="copy_as_soft_link")
 async def copy_as_soft_link(request: web.Request):
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     path_params = parse_request_path_parameters_as(CopyAsSoftLinkParams, request)

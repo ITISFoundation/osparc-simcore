@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, NonNegativeInt, SecretStr, parse_obj_as
+from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, parse_obj_as
 from pydantic.class_validators import validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
@@ -137,6 +137,7 @@ class ApplicationSettings(BasicSettings):
     )
     API_SERVER_LOG_CHECK_TIMEOUT_SECONDS: NonNegativeInt = 3 * 60
     API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+    API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS: PositiveInt = 5
     # DEV-TOOLS
     API_SERVER_DEV_HTTP_CALLS_LOGS_PATH: Path | None = Field(
         default=None,

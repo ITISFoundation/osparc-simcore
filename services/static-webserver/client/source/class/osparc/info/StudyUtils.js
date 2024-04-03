@@ -225,32 +225,6 @@ qx.Class.define("osparc.info.StudyUtils", {
       return tagsContainer;
     },
 
-    createExtraInfoVBox: function(extraInfos) {
-      const grid = new qx.ui.layout.Grid(10, 8);
-      grid.setColumnAlign(0, "right", "middle");
-      grid.setColumnAlign(1, "left", "middle");
-      const moreInfo = new qx.ui.container.Composite(grid);
-
-      Object.keys(extraInfos).forEach((key, idx) => {
-        const extraInfo = extraInfos[key];
-
-        const title = new qx.ui.basic.Label(extraInfo.label);
-        moreInfo.add(title, {
-          row: idx,
-          column: 0
-        });
-
-        if (extraInfo.view) {
-          moreInfo.add(extraInfo.view, {
-            row: idx,
-            column: 1
-          });
-        }
-      });
-
-      return moreInfo;
-    },
-
     __titleWithEditLayout: function(data) {
       const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const title = new qx.ui.basic.Label(data.label);
@@ -286,78 +260,98 @@ qx.Class.define("osparc.info.StudyUtils", {
         AUTHOR: {
           inline: true,
           column: 0,
-          row: 3,
+          row: 0,
         },
         CREATED: {
           inline: true,
           column: 0,
-          row: 4,
+          row: 1,
         },
         MODIFIED: {
           inline: true,
           column: 0,
-          row: 5,
+          row: 2,
         },
         ACCESS_RIGHTS: {
           inline: true,
           column: 0,
-          row: 6,
+          row: 3,
         },
         TAGS: {
           inline: true,
           column: 0,
-          row: 7,
+          row: 4,
         },
         QUALITY: {
           inline: true,
           column: 0,
-          row: 8,
+          row: 5,
         },
         CLASSIFIERS: {
           inline: true,
           column: 0,
-          row: 9,
+          row: 6,
         }
       };
 
       const grid = new qx.ui.layout.Grid(15, 5);
+      const grid2 = new qx.ui.layout.Grid(15, 5);
       grid.setColumnAlign(0, "left", "top");
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       const moreInfo = new qx.ui.container.Composite(grid);
+      const otherInfo = new qx.ui.container.Composite(grid2);
       grid.setColumnFlex(0, 1);
+      grid2.setColumnFlex(0, 1);
+
+      const box = this._createSectionBox(qx.locale.Manager.tr("Details"));
+      const box2 = this._createSectionBox(qx.locale.Manager.tr("Meta details"));
 
       let row = 0;
+      let row2 = 0;
       Object.keys(positions).forEach(key => {
         if (key in extraInfos) {
           const extraInfo = extraInfos[key];
           const gridInfo = positions[key];
 
-          const titleLayout = this.__titleWithEditLayout(extraInfo);
-          moreInfo.add(titleLayout, {
-            row,
-            column: gridInfo.column
-          });
-          row++;
-
           if (gridInfo.inline) {
+            const titleLayout = this.__titleWithEditLayout(extraInfo);
             if (extraInfo.action && extraInfo.action.button) {
               extraInfo.action.button.set({
                 marginRight: 15
               });
             }
             titleLayout.add(extraInfo.view);
+            otherInfo.add(titleLayout, {
+              row: row2,
+              column: gridInfo.column
+            });
+            row2++;
+            grid2.setRowHeight(row2, 5); // spacer
+            row2++;
           } else {
+            const titleLayout = this.__titleWithEditLayout(extraInfo);
+            moreInfo.add(titleLayout, {
+              row,
+              column: gridInfo.column
+            });
+            row++;
             moreInfo.add(extraInfo.view, {
               row,
               column: gridInfo.column
             });
             row++;
+            grid.setRowHeight(row, 5); // spacer
+            row++;
           }
-          grid.setRowHeight(row, 5); // spacer
-          row++;
         }
       });
 
-      return moreInfo;
+      box.add(moreInfo);
+      box2.add(otherInfo);
+      container.addAt(box, 0);
+      container.addAt(box2, 1);
+
+      return container;
     },
 
     /**
@@ -378,6 +372,22 @@ qx.Class.define("osparc.info.StudyUtils", {
       const title = resourceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
       osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 700);
       return qualityEditor;
-    }
+    },
+
+    /**
+     * Common layout of section's box
+     * @param {page section's name} sectionName
+     */
+    _createSectionBox: function(sectionName) {
+      const box = new qx.ui.groupbox.GroupBox(sectionName);
+      box.getChildControl("legend").set({
+        font: "text-14"
+      });
+      box.getChildControl("frame").set({
+        backgroundColor: "transparent"
+      });
+      box.setLayout(new qx.ui.layout.VBox(10));
+      return box;
+    },
   }
 });

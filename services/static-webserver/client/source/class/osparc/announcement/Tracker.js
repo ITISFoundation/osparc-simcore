@@ -24,7 +24,7 @@ qx.Class.define("osparc.announcement.Tracker", {
   },
 
   members: {
-    __checkInternval: null,
+    __checkInterval: null,
     __announcements: null,
 
     startTracker: function() {
@@ -40,12 +40,12 @@ qx.Class.define("osparc.announcement.Tracker", {
           .catch(err => console.error(err));
       };
       checkAnnouncements();
-      this.__checkInternval = setInterval(checkAnnouncements, this.self().CHECK_INTERVAL);
+      this.__checkInterval = setInterval(checkAnnouncements, this.self().CHECK_INTERVAL);
     },
 
     stopTracker: function() {
-      if (this.__checkInternval) {
-        clearInterval(this.__checkInternval);
+      if (this.__checkInterval) {
+        clearInterval(this.__checkInterval);
       }
     },
 

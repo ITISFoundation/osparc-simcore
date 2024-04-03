@@ -217,7 +217,7 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.StudyUtils.createExtraInfoVBox(extraInfo).set({
+      const moreInfo = osparc.info.Utils.extraInfosToGrid(extraInfo).set({
         width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
       });
 

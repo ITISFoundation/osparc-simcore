@@ -1,0 +1,54 @@
+{
+    "applications": [
+        {
+            "application": "osparc",
+            "replacements": {
+                "replace_me_og_title": "oSPARC",
+                "replace_me_og_description": "open online simulations for Stimulating Peripheral Activity to Relieve Conditions",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/static-webserver/client/source/resource/osparc/favicon-osparc.png"
+            }
+        }, {
+            "application": "s4l",
+            "replacements": {
+                "replace_me_og_title": "Sim4Life",
+                "replace_me_og_description": "Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models.",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-default.png"
+            }
+        }, {
+            "application": "s4lacad",
+            "replacements": {
+                "replace_me_og_title": "Sim4Life Science",
+                "replace_me_og_description": "Sim4Life for Science - Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models.",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-academy.png"
+            }
+        }, {
+            "application": "s4ldesktop",
+            "replacements": {
+                "replace_me_og_title": "Sim4Life (Desktop)",
+                "replace_me_og_description": "Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models.",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-default.png"
+            }
+        }, {
+            "application": "s4ldesktopacad",
+            "replacements": {
+                "replace_me_og_title": "Sim4Life Science (Desktop)",
+                "replace_me_og_description": "Sim4Life for Science - Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models.",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-academy.png"
+            }
+        }, {
+            "application": "s4llite",
+            "replacements": {
+                "replace_me_og_title": "S4L Lite",
+                "replace_me_og_description": "Sim4Life for Students - Computational life sciences platform that combines computable human phantoms, powerful physics solvers and advanced tissue models.",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/full/background-images/S4L/Sim4Life-head-lite.png"
+            }
+        }, {
+            "application": "tis",
+            "replacements": {
+                "replace_me_og_title": "TI Plan - IT'IS",
+                "replace_me_og_description": "A tool powered by o²S²PARC technology that reduces optimization of targeted neurostimulation protocols.",
+                "replace_me_og_image": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/services/static-webserver/client/source/resource/osparc/tip_splitimage.png"
+            }
+        }
+    ]
+}

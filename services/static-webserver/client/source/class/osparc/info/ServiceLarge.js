@@ -83,14 +83,16 @@ qx.Class.define("osparc.info.ServiceLarge", {
     _rebuildLayout: function() {
       this._removeAll();
 
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+
       const deprecated = this.__createDeprecated();
       if (deprecated) {
-        this._add(deprecated);
+        vBox.add(deprecated);
       }
 
       const title = this.__createTitle();
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
-      this._add(titleLayout);
+      vBox.add(titleLayout);
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
@@ -114,28 +116,27 @@ qx.Class.define("osparc.info.ServiceLarge", {
       hBox.add(thumbnailLayout, {
         flex: 1
       });
-      this._add(hBox);
+      vBox.add(hBox);
 
       const description = this.__createDescription();
       const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
       description.addAt(editInTitle, 0);
-      this._add(description);
+      vBox.add(description);
 
       const resources = this.__createResources();
-      this._add(resources);
+      vBox.add(resources);
 
-      const rawMetadata = this.__createRawMetadata();
-      const more = new osparc.desktop.PanelView(this.tr("Raw metadata"), rawMetadata).set({
-        caretSize: 14
+      const copyMetadataButton = new qx.ui.form.Button(this.tr("Copy Raw metadata"), "@FontAwesome5Solid/copy/12").set({
+        allowGrowX: false
       });
-      more.setCollapsed(true);
-      more.getChildControl("title").setFont("text-12");
-      this._add(more, {
+      copyMetadataButton.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService())), this);
+      vBox.add(copyMetadataButton);
+
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(vBox);
+      this._add(scrollContainer, {
         flex: 1
       });
-      const copy2Clip = osparc.utils.Utils.getCopyButton();
-      copy2Clip.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService())), this);
-      more.getChildControl("header").add(copy2Clip);
     },
 
     __createViewWithEdit: function(view, cb) {
@@ -255,7 +256,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.ServiceUtils.createExtraInfoVBox(extraInfo).set({
+      const moreInfo = osparc.info.Utils.extraInfosToGrid(extraInfo).set({
         width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
       });
       return moreInfo;
