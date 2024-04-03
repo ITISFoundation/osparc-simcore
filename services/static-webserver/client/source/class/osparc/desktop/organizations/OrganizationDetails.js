@@ -165,7 +165,6 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       const tabView = new qx.ui.tabview.TabView().set({
         contentPadding: 10
       });
-      tabView.getChildControl("pane");
 
       const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
       const membersList = this.__membersList = new osparc.desktop.organizations.MembersList();
