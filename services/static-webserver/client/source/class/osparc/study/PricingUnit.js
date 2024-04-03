@@ -29,67 +29,91 @@ qx.Class.define("osparc.study.PricingUnit", {
       "border-radius": "4px"
     });
 
-    this.setPricingUnitId(pricingUnit["pricingUnitId"]);
-    this.__pricingUnit = pricingUnit;
+    this.setUnitData(new osparc.pricing.UnitData(pricingUnit));
 
     this.__buildLayout();
   },
 
+  events: {
+    "editPricingUnit": "qx.event.type.Event"
+  },
+
   properties: {
-    pricingUnitId: {
-      check: "Number",
+    unitData: {
+      check: "osparc.pricing.UnitData",
       nullable: false,
       init: null
     },
 
-    advanced: {
+    showSpecificInfo: {
       check: "Boolean",
       init: null,
       nullable: true,
-      event: "changeAdvanced",
-      apply: "__buildLayout"
-    }
+      event: "changeShowSpecificInfo"
+    },
+
+    showEditButton: {
+      check: "Boolean",
+      init: null,
+      nullable: true,
+      event: "changeShowEditButton"
+    },
   },
 
   members: {
-    __pricingUnit: null,
-
     __buildLayout: function() {
-      const pricingUnit = this.__pricingUnit;
+      const pricingUnit = this.getUnitData();
 
       this._removeAll();
-      if (this.isAdvanced()) {
-        this._setLayout(new qx.ui.layout.VBox(5));
+      this._setLayout(new qx.ui.layout.VBox(5));
 
-        this._add(new qx.ui.basic.Label().set({
-          value: pricingUnit.unitName,
-          font: "text-16"
-        }));
-        // add price info
-        this._add(new qx.ui.basic.Label().set({
-          value: qx.locale.Manager.tr("Credits/h") + ": " + pricingUnit.currentCostPerUnit,
+      const unitName = new qx.ui.basic.Label().set({
+        font: "text-16"
+      })
+      pricingUnit.bind("unitName", unitName, "value");
+      this._add(unitName);
+
+      // add price info
+      const price = new qx.ui.basic.Label().set({
+        font: "text-14"
+      })
+      pricingUnit.bind("currentCostPerUnit", price, "value", {
+        converter: v => qx.locale.Manager.tr("Credits/h") + ": " + v,
+      });
+      this._add(price);
+
+      // add aws specific info
+      if ("specificInfo" in pricingUnit) {
+        const label = new qx.ui.basic.Label().set({
           font: "text-14"
-        }));
-        // add pricing unit extra info
-        if ("unitExtraInfo" in pricingUnit) {
-          Object.entries(pricingUnit.unitExtraInfo).forEach(([key, value]) => {
-            this._add(new qx.ui.basic.Label().set({
-              value: key + ": " + value,
-              font: "text-13"
-            }));
-          });
-        }
-      } else {
-        this._setLayout(new qx.ui.layout.HBox(5));
-        this._add(new qx.ui.basic.Label().set({
-          value: pricingUnit.unitName + ": " + pricingUnit.currentCostPerUnit + " C/h",
-          font: "text-16"
-        }));
+        })
+        const awsSpecificInfo = new qx.ui.basic.Label().set({
+          font: "text-14"
+        })
+        pricingUnit.bind("awsSpecificInfo", awsSpecificInfo, "value", {
+          converter: v => qx.locale.Manager.tr("EC2") + ": " + v,
+        });
+        this.bind("showSpecificInfo", label, "visibility", {
+          converter: show => show ? "visible" : "excluded"
+        })
+        this._add(label);
       }
-    },
 
-    getPricingUnit: function() {
-      return this.__pricingUnit;
+      // add pricing unit extra info
+      Object.entries(pricingUnit.getUnitExtraInfo()).forEach(([key, value]) => {
+        this._add(new qx.ui.basic.Label().set({
+          value: key + ": " + value,
+          font: "text-13"
+        }));
+      });
+
+      // add edit button
+      const editButton = new qx.ui.form.Button(this.tr("Edit"));
+      this.bind("showEditButton", editButton, "visibility", {
+        converter: show => show ? "visible" : "excluded"
+      })
+      this._add(editButton);
+      editButton.addListener("execute", () => this.fireEvent("editPricingUnit"));
     }
   }
 });

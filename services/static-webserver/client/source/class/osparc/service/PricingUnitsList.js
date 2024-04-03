@@ -75,11 +75,19 @@ qx.Class.define("osparc.service.PricingUnitsList", {
 
       pricingUnits.forEach(pricingUnit => {
         const pUnit = new osparc.study.PricingUnit(pricingUnit).set({
-          advanced: true,
           allowGrowY: false
         });
         this.getChildControl("pricing-units-container").add(pUnit);
       });
+
+      const buttons = this.getChildControl("pricing-units-container").getChildren();
+      const keepDefaultSelected = () => {
+        buttons.forEach(btn => {
+          btn.setValue(btn.getUnitData().isDefault());
+        });
+      };
+      keepDefaultSelected();
+      buttons.forEach(btn => btn.addListener("execute", () => keepDefaultSelected()));
     }
   }
 });

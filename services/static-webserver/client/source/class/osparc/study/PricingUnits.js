@@ -29,18 +29,11 @@ qx.Class.define("osparc.study.PricingUnits", {
   },
 
   properties: {
-    selectedUnit: {
-      check: "Object",
+    selectedUnitId: {
+      check: "Number",
       init: null,
       nullable: false,
-      event: "changeSelectedUnit"
-    },
-
-    advanced: {
-      check: "Boolean",
-      init: null,
-      nullable: true,
-      event: "changeAdvanced"
+      event: "changeSelectedUnitId"
     }
   },
 
@@ -49,29 +42,22 @@ qx.Class.define("osparc.study.PricingUnits", {
       const buttons = [];
       pricingUnits.forEach(pricingUnit => {
         const button = new osparc.study.PricingUnit(pricingUnit);
-        this.bind("advanced", button, "advanced");
         buttons.push(button);
         this._add(button);
       });
 
-      const buttonSelected = button => {
-        buttons.forEach(btn => {
-          if (btn !== button) {
-            btn.setValue(false);
-          }
-        });
-      };
-      buttons.forEach(button => button.addListener("execute", () => buttonSelected(button)));
+      const groupOptions = new qx.ui.form.RadioGroup();
+      buttons.forEach(btn => groupOptions.add(btn));
 
       if (preselectedPricingUnit) {
-        const buttonFound = buttons.find(button => button.getPricingUnitId() === preselectedPricingUnit["pricingUnitId"]);
+        const buttonFound = buttons.find(button => button.getUnitData().getPricingUnitId() === preselectedPricingUnit["pricingUnitId"]);
         if (buttonFound) {
           buttonFound.execute();
         }
       } else {
         // preselect default
         buttons.forEach(button => {
-          if (button.getPricingUnit()["default"]) {
+          if (button.getUnitData().isDefault()) {
             button.execute();
           }
         });
@@ -79,8 +65,8 @@ qx.Class.define("osparc.study.PricingUnits", {
 
       buttons.forEach(button => button.addListener("changeValue", e => {
         if (e.getData()) {
-          const selectedUnit = button.getPricingUnit();
-          this.setSelectedUnit(selectedUnit);
+          const selectedUnitId = button.getUnitData().getPricingUnitId();
+          this.setSelectedUnitId(selectedUnitId);
         }
       }));
     }
