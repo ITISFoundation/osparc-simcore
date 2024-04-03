@@ -40,6 +40,7 @@ from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
+from ._jobs import raise_if_job_not_associated_with_solver
 
 _logger = logging.getLogger(__name__)
 
@@ -52,19 +53,6 @@ def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
         parent_name=Solver.compose_resource_name(solver_key, solver_version),  # type: ignore
         job_id=job_id,
     )
-
-
-def _raise_if_job_not_associated_with_solver(
-    solver_key: SolverKeyId, version: VersionStr, project: ProjectGet
-) -> None:
-    expected_job_name: str = _compose_job_resource_name(
-        solver_key, version, project.uuid
-    )
-    if expected_job_name != project.name:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"job {project.uuid} is not associated with solver {solver_key} and version {version}",
-        )
 
 
 # JOBS ---------------
@@ -190,7 +178,7 @@ async def start_job(
     if pricing_spec := JobPricingSpecification.create_from_headers(request.headers):
         with log_context(_logger, logging.DEBUG, "Set pricing plan and unit"):
             project: ProjectGet = await webserver_api.get_project(project_id=job_id)
-            _raise_if_job_not_associated_with_solver(solver_key, version, project)
+            raise_if_job_not_associated_with_solver(job_name, project)
             node_ids = list(project.workbench.keys())
             assert len(node_ids) == 1  # nosec
             await webserver_api.connect_pricing_unit_to_project_node(
