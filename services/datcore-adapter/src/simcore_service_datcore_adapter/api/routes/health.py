@@ -1,6 +1,7 @@
 import logging
-from datetime import datetime
-from typing import Callable
+from collections.abc import Callable
+from datetime import datetime, timezone
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from models_library.app_diagnostics import AppStatusCheck
@@ -23,13 +24,13 @@ log = logging.getLogger(__file__)
     status_code=status.HTTP_200_OK,
 )
 async def get_service_alive():
-    return f"{__name__}@{datetime.utcnow().isoformat()}"
+    return f"{__name__}@{datetime.now(timezone.utc).isoformat()}"
 
 
 @router.get("/ready", status_code=status.HTTP_200_OK, response_model=AppStatusCheck)
 async def get_service_ready(
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
-    url_for: Callable = Depends(get_reverse_url_mapper),
+    pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
+    url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     pennsieve_health_ok = await pennsieve_client.is_responsive()
     return AppStatusCheck(

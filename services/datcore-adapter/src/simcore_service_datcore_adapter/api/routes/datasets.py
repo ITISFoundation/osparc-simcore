@@ -1,5 +1,5 @@
 import logging
-from typing import Final
+from typing import Annotated, Final
 
 from aiocache import cached
 from fastapi import APIRouter, Depends, Header, Request
@@ -35,10 +35,10 @@ _PENNSIEVE_CACHING_TTL_S: Final[int] = (
 )
 async def list_datasets(
     request: Request,
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
-    params: Params = Depends(),
+    x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
+    x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
+    pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
+    params: Annotated[Params, Depends()],
 ) -> Page[DatasetsOut]:
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
@@ -48,7 +48,7 @@ async def list_datasets(
         limit=raw_params.limit,
         offset=raw_params.offset,
     )
-    return create_page(items=datasets, total=total, params=params)
+    return create_page(datasets, total=total, params=params)
 
 
 @router.get(
@@ -65,10 +65,10 @@ async def list_datasets(
 async def list_dataset_top_level_files(
     request: Request,
     dataset_id: str,
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
-    params: Params = Depends(),
+    x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
+    x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
+    pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
+    params: Annotated[Params, Depends()],
 ) -> Page[FileMetaDataOut]:
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
@@ -80,7 +80,7 @@ async def list_dataset_top_level_files(
         limit=raw_params.limit,
         offset=raw_params.offset,
     )
-    return create_page(items=file_metas, total=total, params=params)
+    return create_page(file_metas, total=total, params=params)
 
 
 @router.get(
@@ -98,10 +98,10 @@ async def list_dataset_collection_files(
     request: Request,
     dataset_id: str,
     collection_id: str,
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
-    params: Params = Depends(),
+    x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
+    x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
+    pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
+    params: Annotated[Params, Depends()],
 ) -> Page[FileMetaDataOut]:
     assert request  # nosec
     raw_params: RawParams = resolve_params(params).to_raw_params()
@@ -114,7 +114,7 @@ async def list_dataset_collection_files(
         dataset_id=dataset_id,
         collection_id=collection_id,
     )
-    return create_page(items=file_metas, total=total, params=params)
+    return create_page(file_metas, total=total, params=params)
 
 
 @router.get(
@@ -131,14 +131,13 @@ async def list_dataset_collection_files(
 async def list_dataset_files_legacy(
     request: Request,
     dataset_id: str,
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
+    x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
+    x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
+    pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
 ) -> list[FileMetaDataOut]:
     assert request  # nosec
-    file_metas = await pennsieve_client.list_all_dataset_files(
+    return await pennsieve_client.list_all_dataset_files(
         api_key=x_datcore_api_key,
         api_secret=x_datcore_api_secret,
         dataset_id=dataset_id,
     )
-    return file_metas
