@@ -154,6 +154,9 @@ def app_environment(
 ) -> EnvVarsDict:
     """app environments WITH database settings"""
     mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
+    mocker.patch(
+        "simcore_service_api_server.core.application.setup_prometheus_instrumentation"
+    )
 
     envs = setenvs_from_dict(monkeypatch, default_app_env_vars)
     assert "API_SERVER_POSTGRES" not in envs
