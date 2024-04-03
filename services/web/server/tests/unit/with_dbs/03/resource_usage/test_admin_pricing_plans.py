@@ -118,11 +118,11 @@ def mock_catalog_client(mocker: MockerFixture, faker: Faker) -> dict[str, MagicM
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        # (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        # (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
-        # (UserRole.USER, status.HTTP_403_FORBIDDEN),
-        # (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
-        # (UserRole.PRODUCT_OWNER, status.HTTP_403_FORBIDDEN),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
+        (UserRole.PRODUCT_OWNER, status.HTTP_403_FORBIDDEN),
         (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
@@ -183,7 +183,7 @@ async def test_get_admin_pricing_endpoints_user_role_access(
         json={
             "pricingPlanId": 1,
             "unitName": "My pricing plan",
-            "unitExtraInfo": {"CPU": 4, "GPU": "32GB", "VRAM": "No"},
+            "unitExtraInfo": {"CPU": 4, "RAM": 32, "VRAM": 0},
             "default": True,
             "specificInfo": {"aws_ec2_instances": ["t3.medium"]},
             "costPerUnit": 10,
@@ -200,7 +200,7 @@ async def test_get_admin_pricing_endpoints_user_role_access(
         json={
             "pricingPlanId": 1,
             "unitName": "My pricing plan",
-            "unitExtraInfo": {"CPU": 4, "GPU": "32GB", "VRAM": "No"},
+            "unitExtraInfo": {"CPU": 4, "RAM": 10, "VRAM": 0, "SSD": "800GB"},
             "default": True,
             "specificInfo": {"aws_ec2_instances": ["t3.medium"]},
             "costPerUnit": 10,
