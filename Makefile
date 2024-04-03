@@ -238,7 +238,7 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	@export DOCKER_REGISTRY=local && \
 	export DOCKER_IMAGE_TAG=development && \
 	export DEV_PC_CPU_COUNT=${CPU_COUNT} && \
-	scripts/docker/docker-compose-config.bash -e .env \
+	scripts/docker/docker-stack-config.bash -e .env \
 		services/docker-compose.yml \
 		services/docker-compose.local.yml \
 		services/docker-compose.devel.yml \
@@ -248,7 +248,7 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	# Creating config for stack with 'local/{service}:production' to $@
 	@export DOCKER_REGISTRY=local && \
 	export DOCKER_IMAGE_TAG=production && \
-	scripts/docker/docker-compose-config.bash -e .env \
+	scripts/docker/docker-stack-config.bash -e .env \
 		services/docker-compose.yml \
 		services/docker-compose.local.yml \
 		> $@
@@ -258,7 +258,7 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	# Creating config for stack with 'local/{service}:production' (except of static-webserver -> static-webserver:development) to $@
 	@export DOCKER_REGISTRY=local && \
 	export DOCKER_IMAGE_TAG=production && \
-	scripts/docker/docker-compose-config.bash -e $< \
+	scripts/docker/docker-stack-config.bash -e $< \
 		services/docker-compose.yml \
 		services/docker-compose.local.yml \
 		services/docker-compose.devel-frontend.yml \
@@ -266,7 +266,7 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 
 .stack-simcore-version.yml: .env $(docker-compose-configs)
 	# Creating config for stack with '$(DOCKER_REGISTRY)/{service}:${DOCKER_IMAGE_TAG}' to $@
-	@scripts/docker/docker-compose-config.bash -e .env \
+	@scripts/docker/docker-stack-config.bash -e .env \
 		services/docker-compose.yml \
 		services/docker-compose.local.yml \
 		> $@
@@ -276,13 +276,13 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	# Creating config for ops stack to $@
 ifdef ops_ci
 	@$(shell \
-		scripts/docker/docker-compose-config.bash -e .env \
+		scripts/docker/docker-stack-config.bash -e .env \
 		services/docker-compose-ops-ci.yml \
 		> $@ \
 	)
 else
 	@$(shell \
-		scripts/docker/docker-compose-config.bash -e .env \
+		scripts/docker/docker-stack-config.bash -e .env \
 		services/docker-compose-ops.yml \
 		> $@ \
 	)
