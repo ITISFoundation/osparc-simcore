@@ -106,6 +106,7 @@ qx.Class.define("osparc.ui.form.EditLabel", {
       apply: "_applyEditable"
     }
   },
+
   members: {
     __labelWidth: null,
     __loadingIcon: null,
