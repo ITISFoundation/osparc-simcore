@@ -18,7 +18,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task
 
 # Exclusive for simcore-s3 storage -----------------------
-from ._meta import api_vtag
+from ._meta import API_VTAG
 from .dsm import get_dsm_provider
 from .models import LocationPathParams, StorageQueryParamsBase, SyncMetadataQueryParams
 from .settings import Settings
@@ -30,7 +30,7 @@ routes = RouteTableDef()
 
 
 # HANDLERS ---------------------------------------------------
-@routes.get(f"/{api_vtag}/locations", name="get_storage_locations")
+@routes.get(f"/{API_VTAG}/locations", name="get_storage_locations")
 async def get_storage_locations(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(StorageQueryParamsBase, request)
     log.debug(
@@ -49,7 +49,7 @@ async def get_storage_locations(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    f"/{api_vtag}/locations/{{location_id}}:sync", name="synchronise_meta_data_table"
+    f"/{API_VTAG}/locations/{{location_id}}:sync", name="synchronise_meta_data_table"
 )
 async def synchronise_meta_data_table(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(SyncMetadataQueryParams, request)
