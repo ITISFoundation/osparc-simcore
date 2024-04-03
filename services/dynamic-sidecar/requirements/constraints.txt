@@ -1,0 +1,3 @@
+# From 3.9.0 the follwong test fails: `tests/unit/test_modules_system_monitor__notifier.py::test_notifier_publish_message`
+# the room disconnect event is no longer propagated
+aiohttp<3.9.0
