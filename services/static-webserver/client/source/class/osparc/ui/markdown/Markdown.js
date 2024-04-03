@@ -134,7 +134,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     __getChildrenElementHeight: function(children) {
       let height = 0;
       if (children.length) {
-        for (let i=0; i<children.length; i++) {
+        for (let i=0; i < children.length; i++) {
           height += this.__getElementHeight(children[i]);
         }
       }

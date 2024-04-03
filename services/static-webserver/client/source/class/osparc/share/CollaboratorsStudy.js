@@ -202,7 +202,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       Promise.all(promises)
         .then(values => {
           const noAccessible = values.filter(value => value["accessible"] === false);
-          if (noAccessible.length && !osparc.product.Utils.isS4LProduct()) {
+          if (noAccessible.length) {
             const shareePermissions = new osparc.share.ShareePermissions(noAccessible);
             const win = osparc.ui.window.Window.popUpInWindow(shareePermissions, this.tr("Sharee permissions"), 500, 500, "@FontAwesome5Solid/exclamation-triangle/14").set({
               clickAwayClose: false,
