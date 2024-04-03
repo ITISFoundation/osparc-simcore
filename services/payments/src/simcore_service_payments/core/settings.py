@@ -60,10 +60,6 @@ class ApplicationSettings(_BaseApplicationSettings):
     PAYMENTS_GATEWAY_API_SECRET: SecretStr = Field(
         ..., description="Credentials for payments-gateway api"
     )
-    PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED: bool = Field(
-        default=False,
-        description="This feature should be enabled after we deploy Payment Gateway with computation of taxes feature",
-    )
 
     PAYMENTS_USERNAME: str = Field(
         ...,
@@ -108,6 +104,13 @@ class ApplicationSettings(_BaseApplicationSettings):
 
     PAYMENTS_POSTGRES: PostgresSettings = Field(
         auto_default_from_env=True, description="settings for postgres service"
+    )
+
+    PAYMENTS_STRIPE_URL: HttpUrl = Field(
+        ..., description="Base url to the payment Stripe"
+    )
+    PAYMENTS_STRIPE_API_SECRET: SecretStr = Field(
+        ..., description="Credentials for Stripe api"
     )
 
     PAYMENTS_SWAGGER_API_DOC_ENABLED: bool = Field(

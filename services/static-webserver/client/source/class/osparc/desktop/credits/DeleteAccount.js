@@ -83,7 +83,9 @@ qx.Class.define("osparc.desktop.credits.DeleteAccount", {
       });
       form.add(password, "Password", null, "password");
 
-      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
+      const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
+        appearance: "form-button-text"
+      });
       cancelBtn.addListener("execute", () => this.fireEvent("cancel"), this);
       form.addButton(cancelBtn);
 

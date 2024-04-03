@@ -60,7 +60,6 @@ def echo_dotenv(
         PAYMENTS_GATEWAY_API_SECRET=os.environ.get(
             "PAYMENTS_GATEWAY_API_SECRET", "replace-with-api-secret"
         ),
-        PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED=True,
         PAYMENTS_RABBITMQ=os.environ.get(
             "PAYMENTS_RABBITMQ",
             RabbitSettings.create_from_envs(
@@ -86,6 +85,12 @@ def echo_dotenv(
                     "POSTGRES_PASSWORD", "replace-with-postgres-password"
                 ),
             ),
+        ),
+        PAYMENTS_STRIPE_URL=os.environ.get(
+            "PAYMENTS_STRIPE_URL", "https://api.stripe.com"
+        ),
+        PAYMENTS_STRIPE_API_SECRET=os.environ.get(
+            "PAYMENTS_STRIPE_API_SECRET", "replace-with-api-secret"
         ),
     )
 

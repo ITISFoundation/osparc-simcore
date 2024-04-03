@@ -167,7 +167,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           break;
         case "cancel-button":
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
-            appearance: "form-button-outlined",
+            appearance: "form-button-text",
             font: "text-14",
             minWidth: 150,
             maxWidth: 150,

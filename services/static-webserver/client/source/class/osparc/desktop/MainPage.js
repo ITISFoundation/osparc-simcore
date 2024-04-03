@@ -56,6 +56,8 @@ qx.Class.define("osparc.desktop.MainPage", {
     // Some resources request before building the main stack
     osparc.WindowSizeTracker.getInstance().startTracker();
     osparc.MaintenanceTracker.getInstance().startTracker();
+    osparc.CookieExpirationTracker.getInstance().startTracker();
+    osparc.NewUITracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
     const preloadPromises = [];
@@ -270,7 +272,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __showDashboard: function() {
       if (!osparc.data.Permissions.getInstance().canDo("dashboard.read")) {
         // If guest fails to load study, log him out
-        osparc.auth.Manager.getInstance().logout();
+        qx.core.Init.getApplication().logout();
         return;
       }
 

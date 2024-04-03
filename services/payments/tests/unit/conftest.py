@@ -20,12 +20,14 @@ from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
+from models_library.payments import StripeInvoiceID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.rawdata_fakers import random_payment_method_view
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import load_dotenv
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.models.payments_transactions import payments_transactions
@@ -393,6 +395,116 @@ def mock_payments_gateway_service_or_none(
     mock_payments_routes(mock_payments_gateway_service_api_base)
     mock_payments_methods_routes(mock_payments_gateway_service_api_base)
     return mock_payments_gateway_service_api_base
+
+
+#
+# mock Stripe API
+#
+
+
+@pytest.fixture
+def mock_payments_stripe_api_base(app: FastAPI) -> Iterator[MockRouter]:
+    """
+    If external_environment is present, then this mock is not really used
+    and instead the test runs against some real services
+    """
+    settings: ApplicationSettings = app.state.settings
+
+    with respx.mock(
+        base_url=settings.PAYMENTS_STRIPE_URL,
+        assert_all_called=False,
+        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+    ) as respx_mock:
+        yield respx_mock
+
+
+@pytest.fixture
+def mock_payments_stripe_routes(faker: Faker) -> Callable:
+    """Mocks https://docs.stripe.com/api. In the future https://github.com/stripe/stripe-mock might be used"""
+
+    def _mock(mock_router: MockRouter):
+        def _list_products(request: httpx.Request):
+            assert "Bearer " in request.headers["authorization"]
+
+            return httpx.Response(
+                status.HTTP_200_OK, json={"object": "list", "data": []}
+            )
+
+        def _get_invoice(request: httpx.Request):
+            assert "Bearer " in request.headers["authorization"]
+
+            return httpx.Response(
+                status.HTTP_200_OK,
+                json={"hosted_invoice_url": "https://fake-invoice.com/?id=12345"},
+            )
+
+        mock_router.get(
+            path="/v1/products",
+            name="list_products",
+        ).mock(side_effect=_list_products)
+
+        mock_router.get(
+            path__regex=r"(^/v1/invoices/.*)$",
+            name="get_invoice",
+        ).mock(side_effect=_get_invoice)
+
+    return _mock
+
+
+@pytest.fixture(scope="session")
+def external_stripe_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
+    """
+    If a file under test folder prefixed with `.env-secret` is present,
+    then this fixture captures it.
+
+    This technique allows reusing the same tests to check against
+    external development/production servers
+    """
+    envs = {}
+    if envfile := request.config.getoption("--external-envfile"):
+        assert isinstance(envfile, Path)
+        assert envfile.is_file()
+        print("🚨 EXTERNAL: external envs detected. Loading", envfile, "...")
+        envs = load_dotenv(envfile)
+        assert "PAYMENTS_STRIPE_API_SECRET" in envs
+        assert "PAYMENTS_STRIPE_URL" in envs
+
+    return envs
+
+
+@pytest.fixture(scope="session")
+def external_invoice_id(request: pytest.FixtureRequest) -> str | None:
+    stripe_invoice_id_or_none = request.config.getoption(
+        "--external-stripe-invoice-id", default=None
+    )
+    return f"{stripe_invoice_id_or_none}" if stripe_invoice_id_or_none else None
+
+
+@pytest.fixture
+def stripe_invoice_id(external_invoice_id: StripeInvoiceID | None) -> StripeInvoiceID:
+    if external_invoice_id:
+        print(
+            f"📧 EXTERNAL `stripe_invoice_id` detected. Setting stripe_invoice_id={external_invoice_id}"
+        )
+        return StripeInvoiceID(external_invoice_id)
+    return StripeInvoiceID("in_mYf5CIF3AU6h126Xj47jIPlB")
+
+
+@pytest.fixture
+def mock_stripe_or_none(
+    mock_payments_stripe_api_base: MockRouter,
+    mock_payments_stripe_routes: Callable,
+    external_stripe_environment: EnvVarsDict,
+) -> MockRouter | None:
+    # EITHER tests against external Stripe
+    if payments_stripe_url := external_stripe_environment.get("PAYMENTS_STRIPE_URL"):
+        print("🚨 EXTERNAL: these tests are running against", f"{payments_stripe_url=}")
+        mock_payments_stripe_api_base.stop()
+        return None
+
+    # OR tests against mock Stripe
+    mock_payments_stripe_routes(mock_payments_stripe_api_base)
+    return mock_payments_stripe_api_base
 
 
 #

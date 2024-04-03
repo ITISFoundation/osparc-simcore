@@ -74,11 +74,13 @@ qx.Class.define("osparc.desktop.StartPipelineView", {
         alignX: "right"
       }));
       const cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
+        appearance: "form-button-text",
         allowGrowX: false
       });
       cancelBtn.addListener("execute", () => this.fireEvent("cancel"));
       btnsLayout.add(cancelBtn);
       const startBtn = new qx.ui.form.Button(this.tr("Start")).set({
+        appearance: "form-button",
         allowGrowX: false
       });
       btnsLayout.add(startBtn);

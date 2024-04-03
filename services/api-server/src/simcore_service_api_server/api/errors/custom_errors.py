@@ -19,6 +19,10 @@ class MissingWallet(CustomBaseError):
     pass
 
 
+class ApplicationSetupError(CustomBaseError):
+    pass
+
+
 async def custom_error_handler(_: Request, exc: CustomBaseError):
     if isinstance(exc, InsufficientCredits):
         return JSONResponse(

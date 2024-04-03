@@ -70,6 +70,7 @@ def test_creation_ec2_tags(
         "Name",
         "user_id",
         "wallet_id",
+        "role",
         "osparc-tag",
     ]
     assert all(

@@ -21,7 +21,7 @@ from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr, HttpUrl, parse_obj_as
 from servicelib.logging_utils import log_decorator
 
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -109,6 +109,26 @@ async def get_payments_page(
     )
     assert (  # nosec
         parse_obj_as(tuple[int, list[PaymentTransaction]], result) is not None
+    )
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_payment_invoice_url(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    wallet_id: WalletID,
+    payment_id: PaymentID,
+) -> HttpUrl:
+    rpc_client = get_rabbitmq_rpc_client(app)
+
+    result: HttpUrl = await rpc_client.request(
+        PAYMENTS_RPC_NAMESPACE,
+        parse_obj_as(RPCMethodName, "get_payment_invoice_url"),
+        user_id=user_id,
+        wallet_id=wallet_id,
+        payment_id=payment_id,
     )
     return result
 

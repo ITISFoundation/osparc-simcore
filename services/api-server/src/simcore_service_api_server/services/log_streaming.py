@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from asyncio import Queue
-from typing import AsyncIterable, Awaitable, Callable, Final
+from typing import AsyncIterable, Final
 
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
@@ -31,7 +31,7 @@ class LogStreamerRegistionConflict(LogDistributionBaseException):
 class LogDistributor:
     def __init__(self, rabbitmq_client: RabbitMQClient):
         self._rabbit_client = rabbitmq_client
-        self._log_streamers: dict[JobID, Callable[[JobLog], Awaitable[None]]] = {}
+        self._log_streamers: dict[JobID, Queue] = {}
         self._queue_name: str
 
     async def setup(self):
@@ -72,22 +72,20 @@ class LogDistributor:
             log_level=got.log_level,
             messages=got.messages,
         )
-        callback = self._log_streamers.get(item.job_id)
-        if callback is None:
+        queue = self._log_streamers.get(item.job_id)
+        if queue is None:
             raise LogStreamerNotRegistered(
                 f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
             )
-        await callback(item)
+        await queue.put(item)
         return True
 
-    async def register(
-        self, job_id: JobID, callback: Callable[[JobLog], Awaitable[None]]
-    ):
+    async def register(self, job_id: JobID, queue: Queue):
         if job_id in self._log_streamers:
             raise LogStreamerRegistionConflict(
                 f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
             )
-        self._log_streamers[job_id] = callback
+        self._log_streamers[job_id] = queue
         await self._rabbit_client.add_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
@@ -99,6 +97,9 @@ class LogDistributor:
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
         del self._log_streamers[job_id]
+
+    def get_log_queue_sizes(self) -> dict[JobID, int]:
+        return {k: v.qsize() for k, v in self._log_streamers.items()}
 
 
 class LogStreamer:
@@ -120,7 +121,7 @@ class LogStreamer:
         self._log_check_timeout: NonNegativeInt = log_check_timeout
 
     async def setup(self):
-        await self._log_distributor.register(self._job_id, self._queue.put)
+        await self._log_distributor.register(self._job_id, self._queue)
         self._is_registered = True
 
     async def teardown(self):

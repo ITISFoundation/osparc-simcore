@@ -57,14 +57,16 @@ qx.Class.define("osparc.auth.ui.ResetPassRequestView", {
 
       const submitBtn = this.__submitBtn = new qx.ui.form.Button(this.tr("Submit")).set({
         center: true,
-        appearance: "strong-button"
+        appearance: "form-button"
       });
-      grp.add(submitBtn, {
+      grp.addAt(submitBtn, 1, {
         flex:1
       });
 
-      const cancelBtn = this.__cancelBtn = new qx.ui.form.Button(this.tr("Cancel"));
-      grp.add(cancelBtn, {
+      const cancelBtn = this.__cancelBtn = new qx.ui.form.Button(this.tr("Cancel")).set({
+        appearance: "form-button-text"
+      });
+      grp.addAt(cancelBtn, 0, {
         flex:1
       });
 
