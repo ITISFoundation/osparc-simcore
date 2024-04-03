@@ -331,8 +331,14 @@ async def get_payment_invoice_url(
     payment: PaymentsTransactionsDB | None = await repo.get_payment_transaction(
         payment_id=payment_id, user_id=user_id, wallet_id=wallet_id
     )
-    if payment is None or payment.stripe_invoice_id is None:
+    if payment is None or payment.invoice_url is None:
         raise PaymentNotFoundError(payment_id=payment_id)
-    invoice_data: InvoiceData = await stripe_api.get_invoice(payment.stripe_invoice_id)
 
-    return invoice_data.hosted_invoice_url
+    # NOTE: A new method for generating invoices directly from Stripe has been introduced (https://github.com/ITISFoundation/osparc-simcore/pull/5537).
+    # In order to maintain backward compatibility with older invoices, the old invoice URL is provided in such cases.
+    if payment.stripe_invoice_id:
+        invoice_data: InvoiceData = await stripe_api.get_invoice(
+            payment.stripe_invoice_id
+        )
+        return invoice_data.hosted_invoice_url
+    return payment.invoice_url

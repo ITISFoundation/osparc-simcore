@@ -292,24 +292,53 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     __applySidecarPulling: function(value) {
       if (this.getClusterUpScaling() < 1) {
-        this.setClusterUpScaling(1)
+        this.setClusterUpScaling(1);
+        const progress = this.getDefaultProgress();
+        this.setDefaultProgress(progress + 1);
       }
       this.self().updateProgressLabel(this.__pullingSidecarTitle, value);
     },
 
     __applyOutputsPulling: function(value) {
+      if (this.getSidecarPulling() < 1) {
+        this.setSidecarPulling(1);
+        const progress = this.getDefaultProgress();
+        this.setDefaultProgress(progress + 1);
+      }
       this.self().updateProgressLabel(this.__pullingOutputsTitle, value);
     },
 
     __applyStatePulling: function(value) {
+      if (this.getSidecarPulling() < 1) {
+        this.setSidecarPulling(1);
+        const progress = this.getDefaultProgress();
+        this.setDefaultProgress(progress + 1);
+      }
       this.self().updateProgressLabel(this.__pullingStateTitle, value);
     },
 
     __applyImagesPulling: function(value) {
+      // [SERVICE_OUTPUTS_PULLING, SERVICE_STATE_PULLING] (notice the parallelism here)
+      // As the two previous are running in parallel we can assume if this runs both should be done when we start pulling the images
+      if (this.getOutputsPulling() < 1) {
+        this.setOutputsPulling(1);
+        const progress = this.getDefaultProgress();
+        this.setDefaultProgress(progress + 1);
+      }
+      if (this.getStatePulling() < 1) {
+        this.setStatePulling(1);
+        const progress = this.getDefaultProgress();
+        this.setDefaultProgress(progress + 1);
+      }
       this.self().updateProgressLabel(this.__pullingImagesTitle, value);
     },
 
     __applyInputsPulling: function(value) {
+      if (this.getImagesPulling() < 1) {
+        this.setImagesPulling(1);
+        const progress = this.getDefaultProgress();
+        this.setDefaultProgress(progress + 1);
+      }
       this.self().updateProgressLabel(this.__pullingInputsTitle, value);
     }
   }

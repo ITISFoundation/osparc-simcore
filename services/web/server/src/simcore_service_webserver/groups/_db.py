@@ -4,6 +4,7 @@ from typing import Any
 import sqlalchemy as sa
 from aiopg.sa import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.groups import GroupAtDB
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.utils_products import get_or_create_product_group
 from sqlalchemy import and_, literal_column
@@ -386,6 +387,9 @@ async def delete_user_in_group(
     )
 
 
-async def get_group_from_gid(conn: SAConnection, gid: GroupID) -> RowProxy | None:
-    res: ResultProxy = await conn.execute(groups.select().where(groups.c.gid == gid))
-    return await res.first()
+async def get_group_from_gid(conn: SAConnection, gid: GroupID) -> GroupAtDB | None:
+    row: ResultProxy = await conn.execute(groups.select().where(groups.c.gid == gid))
+    result = await row.first()
+    if result:
+        return GroupAtDB.from_orm(result)
+    return None
