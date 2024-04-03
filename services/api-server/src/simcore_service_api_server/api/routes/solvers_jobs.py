@@ -3,14 +3,12 @@
 import logging
 from collections.abc import Callable
 from typing import Annotated, Any
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.exceptions import HTTPException
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
 from pydantic.types import PositiveInt
-from servicelib.logging_utils import log_context
 from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.services.service_exception_handling import (
     DEFAULT_BACKEND_SERVICE_STATUS_CODES,
@@ -23,7 +21,6 @@ from ...models.schemas.jobs import (
     JobInputs,
     JobMetadata,
     JobMetadataUpdate,
-    JobPricingSpecification,
     JobStatus,
 )
 from ...models.schemas.solvers import Solver, SolverKeyId
@@ -40,7 +37,7 @@ from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import raise_if_job_not_associated_with_solver
+from ._jobs import start_project
 
 _logger = logging.getLogger(__name__)
 
@@ -175,28 +172,20 @@ async def start_job(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
 
-    if pricing_spec := JobPricingSpecification.create_from_headers(request.headers):
-        with log_context(_logger, logging.DEBUG, "Set pricing plan and unit"):
-            project: ProjectGet = await webserver_api.get_project(project_id=job_id)
-            raise_if_job_not_associated_with_solver(job_name, project)
-            node_ids = list(project.workbench.keys())
-            assert len(node_ids) == 1  # nosec
-            await webserver_api.connect_pricing_unit_to_project_node(
-                project_id=job_id,
-                node_id=UUID(node_ids[0]),
-                pricing_plan=pricing_spec.pricing_plan,
-                pricing_unit=pricing_spec.pricing_unit,
-            )
-
-    with log_context(_logger, logging.DEBUG, "Starting job"):
-        await webserver_api.start_project(project_id=job_id, cluster_id=cluster_id)
-        return await inspect_job(
-            solver_key=solver_key,
-            version=version,
-            job_id=job_id,
-            user_id=user_id,
-            director2_api=director2_api,
-        )
+    await start_project(
+        request=request,
+        job_id=job_id,
+        expected_job_name=job_name,
+        webserver_api=webserver_api,
+        cluster_id=cluster_id,
+    )
+    return await inspect_job(
+        solver_key=solver_key,
+        version=version,
+        job_id=job_id,
+        user_id=user_id,
+        director2_api=director2_api,
+    )
 
 
 @router.post(
