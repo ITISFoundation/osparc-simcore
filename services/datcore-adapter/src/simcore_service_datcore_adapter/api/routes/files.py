@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, Request
 from pydantic import AnyUrl, parse_obj_as
@@ -24,9 +24,9 @@ log = logging.getLogger(__file__)
 async def download_file(
     request: Request,
     file_id: str,
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
+    x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
+    x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
+    pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
 ) -> FileDownloadOut:
     assert request  # nosec
     presigned_download_link = await pennsieve_client.get_presigned_download_link(
@@ -44,9 +44,9 @@ async def download_file(
 async def delete_file(
     request: Request,
     file_id: str,
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
+    x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
+    x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
+    pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
 ):
     assert request  # nosec
     await pennsieve_client.delete_object(
@@ -66,9 +66,9 @@ async def delete_file(
 async def get_package(
     request: Request,
     package_id: str,
-    x_datcore_api_key: str = Header(..., description="Datcore API Key"),
-    x_datcore_api_secret: str = Header(..., description="Datcore API Secret"),
-    pennsieve_client: PennsieveApiClient = Depends(get_pennsieve_api_client),
+    x_datcore_api_key: Annotated[str, Header(..., description="Datcore API Key")],
+    x_datcore_api_secret: Annotated[str, Header(..., description="Datcore API Secret")],
+    pennsieve_client: Annotated[PennsieveApiClient, Depends(get_pennsieve_api_client)],
 ) -> list[dict[str, Any]]:
     assert request  # nosec
     return await pennsieve_client.get_package_files(

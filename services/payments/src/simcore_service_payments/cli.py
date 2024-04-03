@@ -60,7 +60,6 @@ def echo_dotenv(
         PAYMENTS_GATEWAY_API_SECRET=os.environ.get(
             "PAYMENTS_GATEWAY_API_SECRET", "replace-with-api-secret"
         ),
-        PAYMENTS_GATEWAY_TAX_FEATURE_ENABLED=True,
         PAYMENTS_RABBITMQ=os.environ.get(
             "PAYMENTS_RABBITMQ",
             RabbitSettings.create_from_envs(
