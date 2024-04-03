@@ -30,8 +30,6 @@ qx.Class.define("osparc.ui.form.EditLabel", {
       this.setValue(value);
     }
 
-    this.setCursor("text");
-
     this.__loadingIcon = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/12");
     this.__loadingIcon.getContentElement().addClass("rotate");
   },
