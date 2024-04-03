@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Final, TypeAlias, cast
 
 import aioboto3
+import arrow
 from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
@@ -20,15 +21,16 @@ from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
-from simcore_service_storage.exceptions import S3KeyNotFoundError
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.type_defs import (
+    CopyObjectOutputTypeDef,
     ListObjectsV2OutputTypeDef,
     ObjectTypeDef,
     PaginatorConfigTypeDef,
 )
 
 from .constants import EXPAND_DIR_MAX_ITEM_COUNT, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
+from .exceptions import S3KeyNotFoundError
 from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
 from .s3_utils import compute_num_file_chunks, s3_exception_handler
 
@@ -39,6 +41,8 @@ _MAX_ITEMS_PER_PAGE: Final[NonNegativeInt] = 500
 
 
 NextContinuationToken: TypeAlias = str
+
+_LARGE_OBJECT_SIZE = 5 * 1024 * 1024 * 1024  # 5GB
 
 
 @dataclass(frozen=True)
@@ -73,12 +77,13 @@ async def _list_objects_v2_paginated_gen(
     *,
     items_per_page: int = _MAX_ITEMS_PER_PAGE,
 ) -> AsyncGenerator[list[ObjectTypeDef], None]:
+    paginator = client.get_paginator("list_objects_v2")
     pagination_config: PaginatorConfigTypeDef = {
         "PageSize": items_per_page,
     }
 
     page: ListObjectsV2OutputTypeDef
-    async for page in client.get_paginator("list_objects_v2").paginate(
+    async for page in paginator.paginate(
         Bucket=bucket, Prefix=prefix, PaginationConfig=pagination_config
     ):
         items_in_page: list[ObjectTypeDef] = page.get("Contents", [])
@@ -87,9 +92,13 @@ async def _list_objects_v2_paginated_gen(
 
 @dataclass
 class StorageS3Client:  # pylint: disable=too-many-public-methods
-    session: aioboto3.Session
-    client: S3Client
+    _session: aioboto3.Session
+    _client: S3Client
     transfer_max_concurrency: int
+
+    @property
+    def inner(self) -> S3Client:
+        return self._client
 
     @classmethod
     async def create(
@@ -105,6 +114,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
             aws_secret_access_key=settings.S3_SECRET_KEY,
             aws_session_token=settings.S3_ACCESS_TOKEN,
             region_name=settings.S3_REGION,
+            # FIXME: retries should be reconfigurable via settings
             config=Config(signature_version="s3v4"),
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
@@ -112,15 +122,21 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
         await client.list_buckets()
 
-        return cls(session, client, s3_max_concurrency)
+        _logger.debug("AWS S3 %s", f"{client.meta.config=}")
+
+        return cls(
+            _session=session,
+            _client=client,
+            transfer_max_concurrency=s3_max_concurrency,
+        )
 
     @s3_exception_handler(_logger)
     async def create_bucket(self, bucket: S3BucketName) -> None:
         _logger.debug("Creating bucket: %s", bucket)
         try:
-            await self.client.create_bucket(Bucket=bucket)
+            await self._client.create_bucket(Bucket=bucket)
             _logger.info("Bucket %s successfully created", bucket)
-        except self.client.exceptions.BucketAlreadyOwnedByYou:
+        except self._client.exceptions.BucketAlreadyOwnedByYou:
             _logger.info(
                 "Bucket %s already exists and is owned by us",
                 bucket,
@@ -133,16 +149,16 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         :raises: S3AccessError for any other error
         """
         _logger.debug("Head bucket: %s", bucket)
-        await self.client.head_bucket(Bucket=bucket)
+        await self._client.head_bucket(Bucket=bucket)
 
     @s3_exception_handler(_logger)
     async def create_single_presigned_download_link(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID, expiration_secs: int
     ) -> AnyUrl:
         # NOTE: ensure the bucket/object exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket)
+        await self._client.head_bucket(Bucket=bucket)
         await self.get_file_metadata(bucket, file_id)
-        generated_link = await self.client.generate_presigned_url(
+        generated_link = await self._client.generate_presigned_url(
             "get_object",
             Params={"Bucket": bucket, "Key": file_id},
             ExpiresIn=expiration_secs,
@@ -155,8 +171,8 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         self, bucket: S3BucketName, file_id: SimcoreS3FileID, expiration_secs: int
     ) -> AnyUrl:
         # NOTE: ensure the bucket/object exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket)
-        generated_link = await self.client.generate_presigned_url(
+        await self._client.head_bucket(Bucket=bucket)
+        generated_link = await self._client.generate_presigned_url(
             "put_object",
             Params={"Bucket": bucket, "Key": file_id},
             ExpiresIn=expiration_secs,
@@ -174,12 +190,12 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         sha256_checksum: SHA256Str | None,
     ) -> MultiPartUploadLinks:
         # NOTE: ensure the bucket/object exists, this will raise if not
-        await self.client.head_bucket(Bucket=bucket)
+        await self._client.head_bucket(Bucket=bucket)
         # first initiate the multipart upload
         create_input: dict[str, Any] = {"Bucket": bucket, "Key": file_id}
         if sha256_checksum:
             create_input["Metadata"] = {"sha256_checksum": sha256_checksum}
-        response = await self.client.create_multipart_upload(**create_input)
+        response = await self._client.create_multipart_upload(**create_input)
         upload_id = response["UploadId"]
         # compute the number of links, based on the announced file size
         num_upload_links, chunk_size = compute_num_file_chunks(file_size)
@@ -188,7 +204,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
             list[AnyUrl],
             await logged_gather(
                 *[
-                    self.client.generate_presigned_url(
+                    self._client.generate_presigned_url(
                         "upload_part",
                         Params={
                             "Bucket": bucket,
@@ -220,7 +236,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
 
         :return: list of AWS uploads see [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.list_multipart_uploads)
         """
-        response = await self.client.list_multipart_uploads(
+        response = await self._client.list_multipart_uploads(
             Bucket=bucket,
         )
 
@@ -236,7 +252,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
     async def abort_multipart_upload(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID, upload_id: UploadID
     ) -> None:
-        await self.client.abort_multipart_upload(
+        await self._client.abort_multipart_upload(
             Bucket=bucket, Key=file_id, UploadId=upload_id
         )
 
@@ -259,19 +275,19 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
                 ]
             },
         }
-        response = await self.client.complete_multipart_upload(**inputs)
+        response = await self._client.complete_multipart_upload(**inputs)
         return response["ETag"]
 
     @s3_exception_handler(_logger)
     async def delete_file(self, bucket: S3BucketName, file_id: SimcoreS3FileID) -> None:
-        await self.client.delete_object(Bucket=bucket, Key=file_id)
+        await self._client.delete_object(Bucket=bucket, Key=file_id)
 
     @s3_exception_handler(_logger)
     async def undelete_file(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID
     ) -> None:
         with log_context(_logger, logging.DEBUG, msg=f"undeleting {bucket}/{file_id}"):
-            response = await self.client.list_object_versions(
+            response = await self._client.list_object_versions(
                 Bucket=bucket, Prefix=file_id, MaxKeys=1
             )
             _logger.debug("%s", f"{response=}")
@@ -285,18 +301,18 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
                 assert "IsLatest" in latest_version  # nosec
                 assert "VersionId" in latest_version  # nosec
                 if latest_version["IsLatest"]:
-                    await self.client.delete_object(
+                    await self._client.delete_object(
                         Bucket=bucket,
                         Key=file_id,
                         VersionId=latest_version["VersionId"],
                     )
                     _logger.debug("restored %s", f"{bucket}/{file_id}")
 
-    async def list_all_objects_gen(
+    async def iter_pages(
         self, bucket: S3BucketName, *, prefix: str
     ) -> AsyncGenerator[list[ObjectTypeDef], None]:
         async for s3_objects in _list_objects_v2_paginated_gen(
-            self.client, bucket=bucket, prefix=prefix
+            self._client, bucket=bucket, prefix=prefix
         ):
             yield s3_objects
 
@@ -313,9 +329,9 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         with log_context(
             _logger, logging.INFO, f"deleting objects in {prefix=}", log_duration=True
         ):
-            async for s3_objects in self.list_all_objects_gen(bucket, prefix=prefix):
+            async for s3_objects in self.iter_pages(bucket, prefix=prefix):
                 if objects_to_delete := [f["Key"] for f in s3_objects if "Key" in f]:
-                    await self.client.delete_objects(
+                    await self._client.delete_objects(
                         Bucket=bucket,
                         Delete={"Objects": [{"Key": key} for key in objects_to_delete]},
                     )
@@ -335,7 +351,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
     async def get_file_metadata(
         self, bucket: S3BucketName, file_id: SimcoreS3FileID
     ) -> S3MetaData:
-        response = await self.client.head_object(
+        response = await self._client.head_object(
             Bucket=bucket, Key=file_id, ChecksumMode="ENABLED"
         )
         return S3MetaData(
@@ -354,12 +370,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         dst_file: SimcoreS3FileID,
         bytes_transfered_cb: Callable[[int], None] | None,
     ) -> None:
-        """copy a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)
-
-        :type bucket: S3BucketName
-        :type src_file: SimcoreS3FileID
-        :type dst_file: SimcoreS3FileID
-        """
+        """Copies a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
         copy_options = {
             "CopySource": {"Bucket": bucket, "Key": src_file},
             "Bucket": bucket,
@@ -368,7 +379,92 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         }
         if bytes_transfered_cb:
             copy_options |= {"Callback": bytes_transfered_cb}
-        await self.client.copy(**copy_options)
+        await self._client.copy(**copy_options)
+
+    async def _copy_large_objects(
+        self,
+        bucket: S3BucketName,
+        src_file: SimcoreS3FileID,
+        dst_file: SimcoreS3FileID,
+        bytes_transfered_cb: Callable[[int], None] | None,
+    ) -> None:
+        copy_options = {}
+        if bytes_transfered_cb:
+            copy_options |= {"Callback": bytes_transfered_cb}
+
+        await self._client.copy(
+            CopySource={"Bucket": bucket, "Key": src_file},
+            Bucket=bucket,
+            Key=dst_file,
+            Config=TransferConfig(max_concurrency=self.transfer_max_concurrency),
+            **copy_options,
+        )
+
+    async def _copy_non_large_objects(
+        self,
+        bucket: S3BucketName,
+        src_file: SimcoreS3FileID,
+        dst_file: SimcoreS3FileID,
+    ) -> CopyObjectOutputTypeDef:
+
+        obj: CopyObjectOutputTypeDef = await self._client.copy_object(
+            Bucket=bucket,
+            CopySource={"Bucket": bucket, "Key": src_file},
+            Key=dst_file,
+        )
+        return obj
+
+    async def copy_directory(
+        self,
+        bucket: S3BucketName,
+        src_prefix: str,
+        dst_prefix: str,
+        bytes_transfered_cb: Callable[[int], None] | None,
+    ) -> tuple[int, int]:
+        """Copies multiple objects within the same bucket
+
+        WARNING: No gurarantees on atomicity
+        """
+        total_count = 0
+        total_size = 0
+
+        copy_options = {}
+        if bytes_transfered_cb:
+            copy_options |= {"Callback": bytes_transfered_cb}
+
+        async for page in self.iter_pages(bucket, prefix=src_prefix):
+            for obj in page:
+                assert "Key" in obj  # nosec
+                assert "Size" in obj  # nosec
+
+                src = obj["Key"]
+                dst = obj["Key"].replace(src_prefix, dst_prefix, 1)
+
+                try:
+                    # NOTE: copy_file cannot be called concurrently or it will hang.
+                    # test this with copying multiple 1GB files if you do not believe me
+                    await self._client.copy(
+                        CopySource={"Bucket": bucket, "Key": src},
+                        Bucket=bucket,
+                        Key=dst,
+                        Config=TransferConfig(
+                            max_concurrency=self.transfer_max_concurrency
+                        ),
+                        **copy_options,
+                    )
+                    total_size += obj["Size"]
+                    total_count += 1
+
+                    print(
+                        f"{arrow.now().isoformat()=}",
+                        f"{total_size=}",
+                        f"{total_count=}",
+                    )
+
+                except Exception:
+                    _logger.exception("%s failed to copy to -> %s", obj, dst)
+
+        return total_count, total_size
 
     @s3_exception_handler(_logger)
     async def list_files(
@@ -384,7 +480,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         """
         found_items: list[ObjectTypeDef] = []
         async for s3_objects in _list_objects_v2_paginated_gen(
-            self.client, bucket, prefix, items_per_page=max_files_to_list
+            self._client, bucket, prefix, items_per_page=max_files_to_list
         ):
             found_items.extend(s3_objects)
             # NOTE: stop immediately after listing after `max_files_to_list`
@@ -400,7 +496,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
     async def file_exists(self, bucket: S3BucketName, *, s3_object: str) -> bool:
         """Checks if an S3 object exists"""
         # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
-        response = await self.client.list_objects_v2(Bucket=bucket, Prefix=s3_object)
+        response = await self._client.list_objects_v2(Bucket=bucket, Prefix=s3_object)
         return len(response.get("Contents", [])) > 0
 
     @s3_exception_handler(_logger)
@@ -411,12 +507,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         file_id: SimcoreS3FileID,
         bytes_transfered_cb: Callable[[int], None] | None,
     ) -> None:
-        """upload a file using aioboto3 transfer manager (e.g. works >5Gb and create multiple threads)
-
-        :type bucket: S3BucketName
-        :type file: Path
-        :type file_id: SimcoreS3FileID
-        """
+        """Uploads a file using aioboto3 transfer manager (e.g. works >5Gb and create multiple threads)"""
         upload_options = {
             "Bucket": bucket,
             "Key": file_id,
@@ -424,7 +515,7 @@ class StorageS3Client:  # pylint: disable=too-many-public-methods
         }
         if bytes_transfered_cb:
             upload_options |= {"Callback": bytes_transfered_cb}
-        await self.client.upload_file(f"{file}", **upload_options)
+        await self._client.upload_file(f"{file}", **upload_options)
 
     @staticmethod
     def compute_s3_url(bucket: S3BucketName, file_id: SimcoreS3FileID) -> AnyUrl:

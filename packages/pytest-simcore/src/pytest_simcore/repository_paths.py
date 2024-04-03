@@ -97,7 +97,8 @@ def pylintrc(osparc_simcore_root_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def project_slug_dir() -> Path:
-    raise NotImplementedError("Override fixture in project's tests/conftest.py")
+    msg = "Override fixture in project's tests/conftest.py"
+    raise NotImplementedError(msg)
     #
     # Implementation example
     #   folder = CURRENT_DIR.parent

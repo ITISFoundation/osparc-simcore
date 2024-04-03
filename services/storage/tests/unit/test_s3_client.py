@@ -1,9 +1,9 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=too-many-arguments
-# pylint:disable=no-name-in-module
-
+# pylint: disable=no-name-in-module
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import json
@@ -45,12 +45,13 @@ from tests.helpers.file_utils import (
 )
 from types_aiobotocore_s3.type_defs import ObjectTypeDef
 
-DEFAULT_EXPIRATION_SECS: Final[int] = 10
+_DEFAULT_EXPIRATION_SECS: Final[int] = 10
 
 
 @pytest.fixture
 def mock_config(
-    mocked_s3_server_envs: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    monkeypatch: pytest.MonkeyPatch,
+    mocked_s3_server_envs: EnvVarsDict,
 ) -> None:
     # NOTE: override services/storage/tests/conftest.py::mock_config
     monkeypatch.setenv("STORAGE_POSTGRES", "null")
@@ -58,6 +59,7 @@ def mock_config(
 
 async def test_storage_storage_s3_client_creation(app_settings: Settings):
     assert app_settings.STORAGE_S3
+
     async with AsyncExitStack() as exit_stack:
         storage_s3_client = await StorageS3Client.create(
             exit_stack,
@@ -65,10 +67,11 @@ async def test_storage_storage_s3_client_creation(app_settings: Settings):
             app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
         )
         assert storage_s3_client
-        response = await storage_s3_client.client.list_buckets()
+        response = await storage_s3_client._client.list_buckets()  # noqa: SLF001
         assert not response["Buckets"]
+
     with pytest.raises(botocore.exceptions.HTTPClientError):
-        await storage_s3_client.client.list_buckets()
+        await storage_s3_client._client.list_buckets()
 
 
 @pytest.fixture
@@ -84,7 +87,7 @@ async def storage_s3_client(
         )
         # check that no bucket is lying around
         assert storage_s3_client
-        response = await storage_s3_client.client.list_buckets()
+        response = await storage_s3_client._client.list_buckets()
         assert not response[
             "Buckets"
         ], f"for testing puproses, there should be no bucket lying around! {response=}"
@@ -92,18 +95,20 @@ async def storage_s3_client(
 
 
 async def test_create_bucket(storage_s3_client: StorageS3Client, faker: Faker):
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert not response["Buckets"]
+
     bucket = faker.pystr()
     await storage_s3_client.create_bucket(bucket)
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
     assert "Name" in response["Buckets"][0]
     assert response["Buckets"][0]["Name"] == bucket
+
     # now we create the bucket again, it should silently work even if it exists already
     await storage_s3_client.create_bucket(bucket)
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
     assert "Name" in response["Buckets"][0]
@@ -112,11 +117,12 @@ async def test_create_bucket(storage_s3_client: StorageS3Client, faker: Faker):
 
 @pytest.fixture
 async def storage_s3_bucket(storage_s3_client: StorageS3Client, faker: Faker) -> str:
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert not response["Buckets"]
+
     bucket_name = faker.pystr()
     await storage_s3_client.create_bucket(bucket_name)
-    response = await storage_s3_client.client.list_buckets()
+    response = await storage_s3_client._client.list_buckets()
     assert response["Buckets"]
     assert bucket_name in [
         bucket_struct.get("Name") for bucket_struct in response["Buckets"]
@@ -134,7 +140,7 @@ async def test_create_single_presigned_upload_link(
     file = create_file_of_size(parse_obj_as(ByteSize, "1Mib"))
     file_id = create_simcore_file_id(uuid4(), uuid4(), file.name)
     presigned_url = await storage_s3_client.create_single_presigned_upload_link(
-        storage_s3_bucket, file_id, expiration_secs=DEFAULT_EXPIRATION_SECS
+        storage_s3_bucket, file_id, expiration_secs=_DEFAULT_EXPIRATION_SECS
     )
     assert presigned_url
 
@@ -167,7 +173,7 @@ async def test_create_single_presigned_upload_link_invalid_raises(
         await storage_s3_client.create_single_presigned_upload_link(
             S3BucketName("pytestinvalidbucket"),
             file_id,
-            expiration_secs=DEFAULT_EXPIRATION_SECS,
+            expiration_secs=_DEFAULT_EXPIRATION_SECS,
         )
 
 
@@ -379,7 +385,7 @@ def upload_file_single_presigned_link(
         if not file_id:
             file_id = SimcoreS3FileID(file.name)
         presigned_url = await storage_s3_client.create_single_presigned_upload_link(
-            storage_s3_bucket, file_id, expiration_secs=DEFAULT_EXPIRATION_SECS
+            storage_s3_bucket, file_id, expiration_secs=_DEFAULT_EXPIRATION_SECS
         )
         assert presigned_url
 
@@ -423,7 +429,7 @@ def upload_file_multipart_presigned_link_without_completion(
             storage_s3_bucket,
             file_id,
             ByteSize(file.stat().st_size),
-            expiration_secs=DEFAULT_EXPIRATION_SECS,
+            expiration_secs=_DEFAULT_EXPIRATION_SECS,
             sha256_checksum=parse_obj_as(SHA256Str, faker.sha256()),
         )
         assert upload_links
@@ -662,7 +668,7 @@ async def test_create_single_presigned_download_link(
     file_id = await upload_file_single_presigned_link()
 
     presigned_url = await storage_s3_client.create_single_presigned_download_link(
-        storage_s3_bucket, file_id, expiration_secs=DEFAULT_EXPIRATION_SECS
+        storage_s3_bucket, file_id, expiration_secs=_DEFAULT_EXPIRATION_SECS
     )
 
     assert presigned_url
@@ -695,12 +701,12 @@ async def test_create_single_presigned_download_link_invalid_raises(
         await storage_s3_client.create_single_presigned_download_link(
             S3BucketName("invalidpytestbucket"),
             file_id,
-            expiration_secs=DEFAULT_EXPIRATION_SECS,
+            expiration_secs=_DEFAULT_EXPIRATION_SECS,
         )
     wrong_file_id = create_simcore_file_id(uuid4(), uuid4(), faker.file_name())
     with pytest.raises(S3KeyNotFoundError):
         await storage_s3_client.create_single_presigned_download_link(
-            storage_s3_bucket, wrong_file_id, expiration_secs=DEFAULT_EXPIRATION_SECS
+            storage_s3_bucket, wrong_file_id, expiration_secs=_DEFAULT_EXPIRATION_SECS
         )
 
 
@@ -722,7 +728,7 @@ async def upload_file_with_aioboto3_managed_transfer(
         # there is no response from aioboto3...
         assert not response
         # check the object is uploaded
-        response = await storage_s3_client.client.list_objects_v2(
+        response = await storage_s3_client._client.list_objects_v2(
             Bucket=storage_s3_bucket
         )
         assert "Contents" in response
@@ -738,7 +744,7 @@ async def upload_file_with_aioboto3_managed_transfer(
                 assert "Size" in s3_obj
                 assert s3_obj["Size"] == file.stat().st_size
                 return file, file_id
-        assert False, "Object was not properly uploaded!"
+        pytest.fail("Object was not properly uploaded!")
 
     return _uploader
 
@@ -796,7 +802,7 @@ async def test_copy_file(
     )
 
     # check the object is uploaded
-    response = await storage_s3_client.client.list_objects_v2(Bucket=storage_s3_bucket)
+    response = await storage_s3_client._client.list_objects_v2(Bucket=storage_s3_bucket)
     assert "Contents" in response
     list_objects = response["Contents"]
     assert len(list_objects) == 2
@@ -851,11 +857,10 @@ async def test_list_files(
 
     NUM_FILES = 12
     FILE_SIZE = parse_obj_as(ByteSize, "11Mib")
-    uploaded_files: list[tuple[Path, SimcoreS3FileID]] = []
-    for _ in range(NUM_FILES):
-        uploaded_files.append(
-            await upload_file_with_aioboto3_managed_transfer(FILE_SIZE)
-        )
+    uploaded_files: list[tuple[Path, SimcoreS3FileID]] = [
+        await upload_file_with_aioboto3_managed_transfer(FILE_SIZE)
+        for _ in range(NUM_FILES)
+    ]
 
     list_files = await storage_s3_client.list_files(storage_s3_bucket, prefix="")
     assert len(list_files) == NUM_FILES
@@ -867,7 +872,7 @@ async def test_list_files(
     assert len(list_files) == NUM_FILES - 2
 
     # test with prefix
-    file, file_id = choice(uploaded_files)
+    file, file_id = choice(uploaded_files)  # noqa: S311
     list_files = await storage_s3_client.list_files(storage_s3_bucket, prefix=file_id)
     assert len(list_files) == 1
     assert list_files[0].file_id == file_id
@@ -947,7 +952,7 @@ async def test_list_objects_v2_paginated_and_list_all_objects_gen(
     listing_requests: list[ObjectTypeDef] = []
 
     async for page_items in _list_objects_v2_paginated_gen(
-        client=storage_s3_client.client,
+        client=storage_s3_client._client,
         bucket=storage_s3_bucket,
         prefix="",  # all items
     ):
@@ -962,7 +967,7 @@ async def test_list_objects_v2_paginated_and_list_all_objects_gen(
 
     # fetch all items using the generator make sure it does not break
     generator_query = []
-    async for s3_objects in storage_s3_client.list_all_objects_gen(
+    async for s3_objects in storage_s3_client.iter_pages(
         storage_s3_bucket,
         prefix="",
     ):
