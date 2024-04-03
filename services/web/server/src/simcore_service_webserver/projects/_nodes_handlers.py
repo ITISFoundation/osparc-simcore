@@ -263,7 +263,6 @@ async def update_node_outputs(request: web.Request) -> web.Response:
         node_errors=None,
         ui_changed_keys=ui_changed_keys,
     )
-    return
 
 
 @routes.post(
