@@ -40,3 +40,31 @@ aws-sam-translator<1.56.0
 # #   aws-sam-translator<1.55.0 (from -c ./constraints.txt (line 32))
 # #   aws-sam-translator>=1.57.0 (from cfn-lint==0.72.10->-c ./constraints.txt (line 33))
 cfn-lint<0.72.1
+
+
+
+#
+# .venv/lib/python3.10/site-packages/fastapi_pagination/api.py:352: in _update_route
+#     get_parameterless_sub_dependant(
+# .venv/lib/python3.10/site-packages/fastapi/dependencies/utils.py:136: in get_parameterless_sub_dependant
+#     return get_sub_dependant(depends=depends, dependency=depends.dependency, path=path)
+# .venv/lib/python3.10/site-packages/fastapi/dependencies/utils.py:159: in get_sub_dependant
+#     sub_dependant = get_dependant(
+# .venv/lib/python3.10/site-packages/fastapi/dependencies/utils.py:310: in get_dependant
+#     sub_dependant = get_param_sub_dependant(
+# .venv/lib/python3.10/site-packages/fastapi/dependencies/utils.py:123: in get_param_sub_dependant
+#     return get_sub_dependant(
+# .venv/lib/python3.10/site-packages/fastapi/dependencies/utils.py:159: in get_sub_dependant
+#     sub_dependant = get_dependant(
+# .venv/lib/python3.10/site-packages/fastapi/dependencies/utils.py:331: in get_dependant
+#     add_param_to_fields(field=param_field, dependant=dependant)
+# _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+#     def add_param_to_fields(*, field: ModelField, dependant: Dependant) -> None:
+#         field_info = cast(params.Param, field.field_info)
+# >       if field_info.in_ == params.ParamTypes.path:
+# E       AttributeError: 'FieldInfo' object has no attribute 'in_'
+
+# .venv/lib/python3.10/site-packages/fastapi/dependencies/utils.py:500: AttributeError
+
+fastapi-pagination<=0.12.17

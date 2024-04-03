@@ -140,13 +140,8 @@ def run_docker_compose_config(
             ".yaml",
         ], "Expected yaml/yml file as destination path"
 
-    # SEE https://docs.docker.com/compose/reference/
-    bash_options = [
-        "-p",
-        str(project_dir),  # Specify an alternate working directory
-    ]
     # https://docs.docker.com/compose/environment-variables/#using-the---env-file--option
-    bash_options += [
+    bash_options = [
         "-e",
         str(env_file_path),  # Custom environment variables
     ]
@@ -158,15 +153,13 @@ def run_docker_compose_config(
         bash_options += [os.path.relpath(docker_compose_path, project_dir)]
 
     # SEE https://docs.docker.com/compose/reference/config/
-    docker_compose_path = scripts_dir / "docker" / "docker-compose-config.bash"
+    docker_compose_path = scripts_dir / "docker" / "docker-stack-config.bash"
     assert docker_compose_path.exists()
-
     args = [f"{docker_compose_path}", *bash_options]
     print(" ".join(args))
 
     process = subprocess.run(
         args,
-        shell=False,
         cwd=project_dir,
         capture_output=True,
         check=True,
@@ -175,20 +168,6 @@ def run_docker_compose_config(
 
     compose_file_str = process.stdout.decode("utf-8")
     compose_file: dict[str, Any] = yaml.safe_load(compose_file_str)
-
-    def _remove_top_level_name_attribute_generated_by_compose_v2(
-        compose: dict[str, Any]
-    ) -> dict[str, Any]:
-        """docker compose V2 CLI config adds a top level name attribute
-        https://docs.docker.com/compose/compose-file/#name-top-level-element
-        but it is incompatible with docker stack deploy...
-        """
-        compose.pop("name", None)
-        return compose
-
-    compose_file = _remove_top_level_name_attribute_generated_by_compose_v2(
-        compose_file
-    )
 
     if destination_path:
         #
@@ -282,7 +261,7 @@ def save_docker_infos(destination_dir: Path):
                             json.dumps(container.attrs, indent=2)
                         )
 
-            except Exception as err:  # pylint: disable=broad-except
+            except Exception as err:  # pylint: disable=broad-except  # noqa: PERF203
                 if container.status != ContainerStatus.created:
                     print(
                         f"Error while dumping {container.name=}, {container.status=}.\n\t{err=}"

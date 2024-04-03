@@ -3,6 +3,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=R6301
 
 import asyncio
 import logging
@@ -16,6 +17,7 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import respx
+from attr import dataclass
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
@@ -113,12 +115,18 @@ async def test_subscribe_publish_receive_logs(
     log_distributor: LogDistributor,
     mocker: MockerFixture,
 ):
-    async def _consumer_message_handler(job_log: JobLog):
-        _consumer_message_handler.called = True
-        _consumer_message_handler.job_log = job_log
-        assert isinstance(job_log, JobLog)
+    @dataclass
+    class MockQueue:
+        called: bool = False
+        job_log: JobLog | None = None
 
-    await log_distributor.register(project_id, _consumer_message_handler)
+        async def put(self, job_log: JobLog):
+            self.called = True
+            self.job_log = job_log
+            assert isinstance(job_log, JobLog)
+
+    mock_queue = MockQueue()
+    await log_distributor.register(project_id, mock_queue)  # type: ignore
 
     # log producer
     rabbitmq_producer = create_rabbitmq_client("pytest_producer")
@@ -128,16 +136,14 @@ async def test_subscribe_publish_receive_logs(
         node_id=node_id,
         messages=[faker.text() for _ in range(10)],
     )
-    _consumer_message_handler.called = False
-    _consumer_message_handler.job_log = None
     await rabbitmq_producer.publish(log_message.channel_name, log_message)
 
     # check it received
     await asyncio.sleep(1)
     await log_distributor.deregister(project_id)
 
-    assert _consumer_message_handler.called
-    job_log = _consumer_message_handler.job_log
+    assert mock_queue.called
+    job_log = mock_queue.job_log
     assert isinstance(job_log, JobLog)
     assert job_log.job_id == log_message.project_id
 
@@ -147,12 +153,13 @@ async def rabbit_consuming_context(
     app: FastAPI,
     project_id: ProjectID,
 ) -> AsyncIterable[AsyncMock]:
-    consumer_message_handler = AsyncMock()
 
+    queue = asyncio.Queue()
+    queue.put = AsyncMock()
     log_distributor: LogDistributor = get_log_distributor(app)
-    await log_distributor.register(project_id, consumer_message_handler)
+    await log_distributor.register(project_id, queue)
 
-    yield consumer_message_handler
+    yield queue.put
 
     await log_distributor.deregister(project_id)
 
@@ -233,10 +240,12 @@ async def test_log_distributor_register_deregister(
 ):
     collected_logs: list[str] = []
 
-    async def callback(job_log: JobLog):
-        for msg in job_log.messages:
-            collected_logs.append(msg)
+    class MockQueue:
+        async def put(self, job_log: JobLog):
+            for msg in job_log.messages:
+                collected_logs.append(msg)
 
+    queue = MockQueue()
     published_logs: list[str] = []
 
     async def _log_publisher():
@@ -246,12 +255,12 @@ async def test_log_distributor_register_deregister(
             await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
             published_logs.append(msg)
 
-    await log_distributor.register(project_id, callback)
+    await log_distributor.register(project_id, queue)  # type: ignore
     publisher_task = asyncio.create_task(_log_publisher())
     await asyncio.sleep(0.1)
     await log_distributor.deregister(project_id)
     await asyncio.sleep(0.1)
-    await log_distributor.register(project_id, callback)
+    await log_distributor.register(project_id, queue)  # type: ignore
     await asyncio.gather(publisher_task)
     await asyncio.sleep(0.5)
     await log_distributor.deregister(project_id)
@@ -274,12 +283,14 @@ async def test_log_distributor_multiple_streams(
 
     collected_logs: dict[JobID, list[str]] = {id_: [] for id_ in job_ids}
 
-    async def callback(job_log: JobLog):
-        job_id = job_log.job_id
-        assert (msgs := collected_logs.get(job_id)) is not None
-        for msg in job_log.messages:
-            msgs.append(msg)
+    class MockQueue:
+        async def put(self, job_log: JobLog):
+            job_id = job_log.job_id
+            assert (msgs := collected_logs.get(job_id)) is not None
+            for msg in job_log.messages:
+                msgs.append(msg)
 
+    queue = MockQueue()
     published_logs: dict[JobID, list[str]] = {id_: [] for id_ in job_ids}
 
     async def _log_publisher():
@@ -291,7 +302,7 @@ async def test_log_distributor_multiple_streams(
             published_logs[job_id].append(msg)
 
     for job_id in job_ids:
-        await log_distributor.register(job_id, callback)
+        await log_distributor.register(job_id, queue)  # type: ignore
     publisher_task = asyncio.create_task(_log_publisher())
     await asyncio.gather(publisher_task)
     await asyncio.sleep(0.5)
