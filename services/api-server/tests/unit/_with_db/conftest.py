@@ -78,7 +78,9 @@ def docker_compose_file(
 def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> dict:
     # check docker-compose's environ is resolved properly
     config = yaml.safe_load(docker_compose_file.read_text())
-    environ = config["services"]["postgres"]["environment"]
+    environ = dict(
+        tuple(s.split("=")) for s in config["services"]["postgres"]["environment"]
+    )
 
     # builds DSN
     config = {
@@ -154,6 +156,9 @@ def app_environment(
 ) -> EnvVarsDict:
     """app environments WITH database settings"""
     mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
+    mocker.patch(
+        "simcore_service_api_server.core.application.setup_prometheus_instrumentation"
+    )
 
     envs = setenvs_from_dict(monkeypatch, default_app_env_vars)
     assert "API_SERVER_POSTGRES" not in envs
