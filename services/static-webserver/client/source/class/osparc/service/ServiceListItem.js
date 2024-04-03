@@ -24,6 +24,8 @@ qx.Class.define("osparc.service.ServiceListItem", {
     this.set({
       width: this.self().ITEM_WIDTH,
       height: this.self().ITEM_HEIGHT,
+      paddingTop: 0,
+      paddingBottom: 0,
       allowGrowX: true
     });
 
@@ -98,11 +100,11 @@ qx.Class.define("osparc.service.ServiceListItem", {
       serviceModel.bind("name", this.getChildControl("title"), "value");
 
       // ITEM
-      this.__applyLatestVersion(serviceModel);
+      this.__applyVersion(serviceModel);
       this.__applyHitsOnItem(serviceModel);
     },
 
-    __applyLatestVersion: function(serviceModel) {
+    __applyVersion: function(serviceModel) {
       const latestVLabel = new qx.ui.basic.Label("v" + serviceModel.getVersion()).set({
         alignY: "middle"
       });
@@ -113,14 +115,16 @@ qx.Class.define("osparc.service.ServiceListItem", {
     },
 
     __applyHitsOnItem: function(serviceModel) {
-      const hitsLabel = new qx.ui.basic.Label(this.tr("Hits: ") + String(serviceModel.getHits())).set({
-        alignY: "middle",
-        toolTipText: this.tr("Number of times you instantiated it")
-      });
-      this._add(hitsLabel, {
-        row: 0,
-        column: osparc.dashboard.ListButtonBase.POS.HITS
-      });
+      if ("getHits" in serviceModel) {
+        const hitsLabel = new qx.ui.basic.Label(this.tr("Hits: ") + String(serviceModel.getHits())).set({
+          alignY: "middle",
+          toolTipText: this.tr("Number of times you instantiated it")
+        });
+        this._add(hitsLabel, {
+          row: 0,
+          column: osparc.dashboard.ListButtonBase.POS.HITS
+        });
+      }
     },
 
     __itemSelected: function(selected) {

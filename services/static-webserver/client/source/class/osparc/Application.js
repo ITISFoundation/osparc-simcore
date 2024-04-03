@@ -222,16 +222,17 @@ qx.Class.define("osparc.Application", {
     },
 
     __startupChecks: function() {
+      // first, pop up new release window
+      this.__checkNewRelease();
+
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       if (platformName !== "master") {
-        // first, pop up new release window
-        this.__checkNewRelease();
         // then, pop up cookies accepted window. It will go on top.
         this.__checkCookiesAccepted();
       }
     },
 
-    __checkNewRelease: async function() {
+    __checkNewRelease: function() {
       if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
         const newRelease = new osparc.NewRelease();
         const title = this.tr("New Release");
