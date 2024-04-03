@@ -1,8 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Final, cast
 
-from attr import field
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Gauge
 from servicelib.background_task import start_periodic_task, stop_periodic_task
