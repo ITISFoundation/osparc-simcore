@@ -1083,7 +1083,6 @@ qx.Theme.define("osparc.theme.Appearance", {
       EditLabel
     ---------------------------------------------------------------------------
     */
-    "editlabel": {},
     "editlabel-label": {
       include: "label",
       style: state => ({

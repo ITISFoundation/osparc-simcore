@@ -48,11 +48,6 @@ qx.Class.define("osparc.ui.form.EditLabel", {
   },
 
   properties: {
-    appearance: {
-      init: "editlabel",
-      refine: true
-    },
-
     /**
      * Controls the two modes of the widget. In edit mode, it shows an input, in display mode,
      * it shows the edited label.
