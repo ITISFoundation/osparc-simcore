@@ -19,6 +19,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
+from servicelib.json_serialization import json_dumps
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
@@ -143,7 +144,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
     )
     inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
 
-    return Envelope(
+    return _web_json_response_enveloped(
         data={
             node_id: ProjectInputGet(
                 key=node_id, label=workbench[node_id].label, value=value
@@ -196,7 +197,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     workbench = parse_obj_as(dict[NodeID, Node], updated_project["workbench"])
     inputs: dict[NodeID, Any] = _ports_api.get_project_inputs(workbench)
 
-    return Envelope(
+    return _web_json_response_enveloped(
         data={
             node_id: ProjectInputGet(
                 key=node_id, label=workbench[node_id].label, value=value
@@ -228,7 +229,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
     )
     outputs: dict[NodeID, Any] = _ports_api.get_project_outputs(workbench)
 
-    return Envelope(
+    return _web_json_response_enveloped(
         data={
             node_id: ProjectOutputGet(
                 key=node_id, label=workbench[node_id].label, value=value
@@ -274,7 +275,7 @@ async def list_project_metadata_ports(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
     )
 
-    return Envelope(
+    return _web_json_response_enveloped(
         data=[
             ProjectMetadataPortGet(
                 key=port.node_id,
