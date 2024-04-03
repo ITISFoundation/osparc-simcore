@@ -1,10 +1,11 @@
 from datetime import datetime
 from enum import auto
-from typing import Any, ClassVar, Final
+from typing import Any, ClassVar, Final, Literal
 from uuid import uuid4
 
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
+from models_library.products import ProductName
 from pydantic import BaseModel, NonNegativeInt, validator
 
 MAX_NOTIFICATIONS_FOR_USER_TO_SHOW: Final[NonNegativeInt] = 10
@@ -30,6 +31,7 @@ class BaseUserNotification(BaseModel):
     title: str
     text: str
     date: datetime
+    product: Literal["UNDEFINED"] | ProductName
 
     @validator("category", pre=True)
     @classmethod
@@ -70,6 +72,7 @@ class UserNotification(BaseUserNotification):
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
                     "read": True,
+                    "product": "osparc",
                 },
                 {
                     "id": "ba64ffce-c58c-4382-aad6-96a7787251d6",
@@ -90,6 +93,7 @@ class UserNotification(BaseUserNotification):
                     "text": "A template was shared with you",
                     "date": "2023-02-23T16:28:13.122Z",
                     "read": False,
+                    "product": "s4l",
                 },
                 {
                     "id": "390053c9-3931-40e1-839f-585268f6fd3d",
@@ -110,6 +114,7 @@ class UserNotification(BaseUserNotification):
                     "text": "A Credit account was shared with you",
                     "date": "2023-09-29T16:28:13.122Z",
                     "read": False,
+                    "product": "s4llite",
                 },
             ]
         }
