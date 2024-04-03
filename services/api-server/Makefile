@@ -25,6 +25,10 @@ define _create_and_validate_openapi
 	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
+	# patching version until tools adapted
+	@sed -i 's/"openapi": "3.1.0",/"openapi": "3.0.2",/g' $@
+
+
 	# validates OAS file: $@
 	docker run --rm \
 			--volume "$(CURDIR):/local" \
@@ -63,6 +67,7 @@ endef
 
 .PHONY: openapi-diff-dev.json
 openapi-dev-diff.json: openapi.json openapi-dev.json ## Diffs against newer openapi-dev.json and checks backwards compatibility
+
 	$(call _openapi_diff_inputs)
 
 openapi-client-diff.json: openapi-client.json openapi.json ## Diffs against older openapi-client.json and checks backwards compatibility
