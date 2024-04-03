@@ -5,11 +5,21 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, Request, status
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.clusters import ClusterID
+from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.api.dependencies.authentication import (
+    get_current_user_id,
+)
+from simcore_service_api_server.api.dependencies.services import get_api_client
 from simcore_service_api_server.api.dependencies.webserver import get_webserver_session
 from simcore_service_api_server.models.schemas.jobs import (
     JobID,
     JobPricingSpecification,
+    JobStatus,
+)
+from simcore_service_api_server.services.director_v2 import DirectorV2Api
+from simcore_service_api_server.services.solver_job_models_converters import (
+    create_jobstatus_from_task,
 )
 from simcore_service_api_server.services.webserver import AuthSession
 
@@ -48,3 +58,16 @@ async def start_project(
             )
     with log_context(_logger, logging.DEBUG, "Starting job"):
         await webserver_api.start_project(project_id=job_id, cluster_id=cluster_id)
+
+
+async def stop_project(
+    *,
+    job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+) -> JobStatus:
+    await director2_api.stop_computation(job_id, user_id)
+
+    task = await director2_api.get_computation(job_id, user_id)
+    job_status: JobStatus = create_jobstatus_from_task(task)
+    return job_status

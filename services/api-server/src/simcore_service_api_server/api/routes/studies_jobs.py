@@ -12,7 +12,6 @@ from simcore_service_api_server.api.dependencies.authentication import (
 )
 from simcore_service_api_server.api.dependencies.services import get_api_client
 from simcore_service_api_server.api.dependencies.webserver import get_webserver_session
-from simcore_service_api_server.api.errors.http_error import create_error_json_response
 from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.services.director_v2 import DirectorV2Api
 from simcore_service_api_server.services.solver_job_models_converters import (
@@ -37,7 +36,7 @@ from ...services.study_job_models_converters import (
 )
 from ...services.webserver import ProjectNotFoundError
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import start_project
+from ._jobs import start_project, stop_project
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -161,14 +160,7 @@ async def delete_study_job(
     """Deletes an existing study job"""
     job_name = _compose_job_resource_name(study_id, job_id)
     _logger.debug("Deleting Job '%s'", job_name)
-
-    try:
-        await webserver_api.delete_project(project_id=job_id)
-    except ProjectNotFoundError:
-        return create_error_json_response(
-            f"Cannot find job={job_id} to delete",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+    await webserver_api.delete_project(project_id=job_id)
 
 
 @router.post(
@@ -217,11 +209,9 @@ async def stop_study_job(
     job_name = _compose_job_resource_name(study_id, job_id)
     _logger.debug("Stopping Job '%s'", job_name)
 
-    await director2_api.stop_computation(job_id, user_id)
-
-    task = await director2_api.get_computation(job_id, user_id)
-    job_status: JobStatus = create_jobstatus_from_task(task)
-    return job_status
+    return await stop_project(
+        job_id=job_id, user_id=user_id, director2_api=director2_api
+    )
 
 
 @router.post(

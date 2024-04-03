@@ -37,7 +37,7 @@ from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import start_project
+from ._jobs import start_project, stop_project
 
 _logger = logging.getLogger(__name__)
 
@@ -203,11 +203,9 @@ async def stop_job(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Stopping Job '%s'", job_name)
 
-    await director2_api.stop_computation(job_id, user_id)
-
-    task = await director2_api.get_computation(job_id, user_id)
-    job_status: JobStatus = create_jobstatus_from_task(task)
-    return job_status
+    return await stop_project(
+        job_id=job_id, user_id=user_id, director2_api=director2_api
+    )
 
 
 @router.post(
