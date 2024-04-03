@@ -661,7 +661,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       this._getChildren().forEach(item => {
-        item.setOpacity(enabled ? 1.0 : 0.7);
+        if (item) {
+          item.setOpacity(enabled ? 1.0 : 0.7);
+        }
       });
 
       if (this.getMenu() && this.getMenu().getChildren()) {
