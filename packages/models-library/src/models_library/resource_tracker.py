@@ -225,7 +225,7 @@ class PricingUnitWithCostCreate(BaseModel):
                 {
                     "pricing_plan_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": {"CPU": 4, "GPU": "32GB", "VRAM": "No"},
+                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "cost_per_unit": 10,
@@ -256,7 +256,7 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": {"CPU": 4, "GPU": "32GB", "VRAM": "No"},
+                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": {
@@ -268,7 +268,7 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": {"CPU": 4, "GPU": "32GB", "VRAM": "No"},
+                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": None,
