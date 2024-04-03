@@ -1,10 +1,11 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from models_library.api_schemas_webserver.projects import ProjectUpdate
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
+from models_library.clusters import ClusterID
 from pydantic import PositiveInt
 from simcore_service_api_server.api.dependencies.authentication import (
     get_current_user_id,
@@ -36,6 +37,7 @@ from ...services.study_job_models_converters import (
 )
 from ...services.webserver import ProjectNotFoundError
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
+from ._jobs import start_project
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -175,17 +177,24 @@ async def delete_study_job(
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def start_study_job(
+    request: Request,
     study_id: StudyID,
     job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    cluster_id: ClusterID | None = None,
 ) -> JobStatus:
     job_name = _compose_job_resource_name(study_id, job_id)
     _logger.debug("Starting Job '%s'", job_name)
 
-    await webserver_api.start_project(project_id=job_id)
-
+    await start_project(
+        request=request,
+        job_id=job_id,
+        expected_job_name=job_name,
+        webserver_api=webserver_api,
+        cluster_id=cluster_id,
+    )
     return await inspect_study_job(
         study_id=study_id,
         job_id=job_id,
