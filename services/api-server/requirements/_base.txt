@@ -52,7 +52,7 @@ fastapi==0.99.1
     # via
     #   fastapi-pagination
     #   prometheus-fastapi-instrumentator
-fastapi-pagination==0.12.21
+fastapi-pagination==0.12.17
 frozenlist==1.4.1
     # via
     #   aiohttp
