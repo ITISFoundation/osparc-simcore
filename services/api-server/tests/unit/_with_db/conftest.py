@@ -78,9 +78,7 @@ def docker_compose_file(
 def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> dict:
     # check docker-compose's environ is resolved properly
     config = yaml.safe_load(docker_compose_file.read_text())
-    environ = dict(
-        tuple(s.split("=")) for s in config["services"]["postgres"]["environment"]
-    )
+    environ = config["services"]["postgres"]["environment"]
 
     # builds DSN
     config = {
