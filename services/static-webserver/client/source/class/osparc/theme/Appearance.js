@@ -1093,6 +1093,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         backgroundColor: "input_background"
       })
     },
+
     "editlabel-input": {
       include: "textfield",
       style: () => ({
