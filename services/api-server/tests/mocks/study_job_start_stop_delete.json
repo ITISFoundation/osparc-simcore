@@ -1,0 +1,243 @@
+[
+ {
+  "name": "POST /computations/e049f69a-f199-11ee-af8a-0242ac140049:start",
+  "description": "<Request('POST', 'http://webserver:8080/v0/computations/e049f69a-f199-11ee-af8a-0242ac140049:start')>",
+  "method": "POST",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/computations/{project_id}:start",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": null,
+  "request_payload": {},
+  "response_body": {
+   "data": {
+    "pipeline_id": "e049f69a-f199-11ee-af8a-0242ac140049"
+   }
+  },
+  "status_code": 201
+ },
+ {
+  "name": "GET /v2/computations/e049f69a-f199-11ee-af8a-0242ac140049",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e049f69a-f199-11ee-af8a-0242ac140049?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "request_payload": null,
+  "response_body": {
+   "id": "e049f69a-f199-11ee-af8a-0242ac140049",
+   "state": "STARTED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "6e8f441a-8bd9-51b9-9dc3-cb10e8ccc97f": []
+    },
+    "progress": 0.0,
+    "node_states": {
+     "6e8f441a-8bd9-51b9-9dc3-cb10e8ccc97f": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "STARTED",
+      "progress": 0.0
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-03T09:11:31.485626+00:00",
+   "stopped": null,
+   "submitted": "2024-04-03T09:11:31.253400+00:00",
+   "url": "http://director-v2:8000/v2/computations/e049f69a-f199-11ee-af8a-0242ac140049?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/e049f69a-f199-11ee-af8a-0242ac140049:stop?user_id=1"
+  },
+  "status_code": 200
+ },
+ {
+  "name": "POST /v2/computations/e049f69a-f199-11ee-af8a-0242ac140049:stop",
+  "description": "<Request('POST', 'http://director-v2:8000/v2/computations/e049f69a-f199-11ee-af8a-0242ac140049:stop')>",
+  "method": "POST",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}:stop",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": null,
+  "request_payload": {
+   "user_id": 1
+  },
+  "response_body": {
+   "id": "e049f69a-f199-11ee-af8a-0242ac140049",
+   "state": "SUCCESS",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "6e8f441a-8bd9-51b9-9dc3-cb10e8ccc97f": []
+    },
+    "progress": 1.0,
+    "node_states": {
+     "6e8f441a-8bd9-51b9-9dc3-cb10e8ccc97f": {
+      "modified": false,
+      "dependencies": [],
+      "currentStatus": "SUCCESS",
+      "progress": 1.0
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-03T09:11:31.485626+00:00",
+   "stopped": "2024-04-03T09:11:40.136721+00:00",
+   "submitted": "2024-04-03T09:11:31.253400+00:00",
+   "url": "http://director-v2:8000/v2/computations/e049f69a-f199-11ee-af8a-0242ac140049:stop",
+   "stop_url": null
+  },
+  "status_code": 202
+ },
+ {
+  "name": "GET /v2/computations/e049f69a-f199-11ee-af8a-0242ac140049",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e049f69a-f199-11ee-af8a-0242ac140049?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "request_payload": null,
+  "response_body": {
+   "id": "e049f69a-f199-11ee-af8a-0242ac140049",
+   "state": "SUCCESS",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "6e8f441a-8bd9-51b9-9dc3-cb10e8ccc97f": []
+    },
+    "progress": 1.0,
+    "node_states": {
+     "6e8f441a-8bd9-51b9-9dc3-cb10e8ccc97f": {
+      "modified": false,
+      "dependencies": [],
+      "currentStatus": "SUCCESS",
+      "progress": 1.0
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-03T09:11:31.485626+00:00",
+   "stopped": "2024-04-03T09:11:40.136721+00:00",
+   "submitted": "2024-04-03T09:11:31.253400+00:00",
+   "url": "http://director-v2:8000/v2/computations/e049f69a-f199-11ee-af8a-0242ac140049?user_id=1",
+   "stop_url": null
+  },
+  "status_code": 200
+ },
+ {
+  "name": "DELETE /projects/e049f69a-f199-11ee-af8a-0242ac140049",
+  "description": "<Request('DELETE', 'http://webserver:8080/v0/projects/e049f69a-f199-11ee-af8a-0242ac140049')>",
+  "method": "DELETE",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "pattern": null,
+      "format": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "projects"
+    }
+   ]
+  },
+  "query": null,
+  "request_payload": null,
+  "response_body": null,
+  "status_code": 204
+ }
+]
