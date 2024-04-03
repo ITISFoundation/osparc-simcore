@@ -118,8 +118,14 @@ qx.Class.define("osparc.ui.form.EditLabel", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "label":
-          control = new qx.ui.basic.Label();
+        case "text":
+          control = new qx.ui.basic.Label().set({
+            appearance: "editlabel-label"
+          });
+          // make it clear that the field is editable
+          control.getContentElement().setStyles({
+            "border-radius": "4px"
+          });
           this.bind("value", control, "value");
           if (this.isEditable()) {
             control.addState("editable");
@@ -130,7 +136,9 @@ qx.Class.define("osparc.ui.form.EditLabel", {
           this._add(control);
           break;
         case "input":
-          control = new qx.ui.form.TextField(this.getValue());
+          control = new qx.ui.form.TextField(this.getValue()).set({
+            appearance: "editlabel-input"
+          });
           control.addListener("focusout", () => this.setMode(this.self().MODES.DISPLAY), this);
           control.addListener("focus", () => control.selectAllText(), this);
           control.addListener("changeValue", evt => {
@@ -153,7 +161,7 @@ qx.Class.define("osparc.ui.form.EditLabel", {
      * to render the correct version of the widget.
      */
     __renderLayout: function() {
-      const label = this.getChildControl("label");
+      const label = this.getChildControl("text");
       const input = this.getChildControl("input")
       switch (this.getMode()) {
         case this.self().MODES.EDIT:
@@ -173,13 +181,13 @@ qx.Class.define("osparc.ui.form.EditLabel", {
 
     _applyMode: function(mode) {
       if (mode === this.self().MODES.EDIT) {
-        this.__labelWidth = this.getChildControl("label").getSizeHint().width;
+        this.__labelWidth = this.getChildControl("text").getSizeHint().width;
       }
       this.__renderLayout();
     },
 
     _applyFetching: function(isFetching) {
-      const label = this.getChildControl("label");
+      const label = this.getChildControl("text");
       if (isFetching) {
         label.setEnabled(false);
         this._add(this.__loadingIcon);
@@ -196,14 +204,14 @@ qx.Class.define("osparc.ui.form.EditLabel", {
 
     _applySpecificFont: function(font, oldFont, name) {
       if (name === "labelFont") {
-        this.getChildControl("label").setFont(font);
+        this.getChildControl("text").setFont(font);
       } else if (name === "inputFont") {
         this.getChildControl("input").setFont(font);
       }
     },
 
     _applyEditable: function(isEditable) {
-      const label = this.getChildControl("label");
+      const label = this.getChildControl("text");
       if (isEditable) {
         label.addState("editable");
       } else {

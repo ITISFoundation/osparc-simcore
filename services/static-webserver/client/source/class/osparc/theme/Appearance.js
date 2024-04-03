@@ -1084,21 +1084,21 @@ qx.Theme.define("osparc.theme.Appearance", {
     ---------------------------------------------------------------------------
     */
     "editlabel": {},
-    "editlabel/label": {
-      include: "atom/label",
+    "editlabel-label": {
+      include: "label",
       style: state => ({
         decorator: state.hovered && state.editable ? "border-editable" : null,
         marginLeft: state.hovered && state.editable ? 0 : 1,
-        padding: [2, state.hovered && state.editable ? 2 : 3, 2, 2],
-        cursor: state.editable ? "text" : "auto"
+        padding: 5,
+        cursor: state.editable ? "text" : "auto",
+        backgroundColor: "input_background"
       })
     },
-    "editlabel/input": {
+    "editlabel-input": {
       include: "textfield",
-      style: state => ({
-        paddingTop: 4,
-        paddingLeft: 3,
-        minWidth: 80,
+      style: () => ({
+        padding: 5,
+        minWidth: 120,
         backgroundColor: "transparent"
       })
     },
