@@ -2,10 +2,10 @@ version: "3.8"
 x-dask-tls-secrets: &dask_tls_secrets
   - source: dask_tls_key
     target: ${DASK_TLS_KEY}
-    mode: 444
+    # mode: 444 # not supported by docker stack compose as of 26.0.0
   - source: dask_tls_cert
     target: ${DASK_TLS_CERT}
-    mode: 444
+    # mode: 444 # not supported by docker stack compose as of 26.0.0
 
 services:
   api-server:
