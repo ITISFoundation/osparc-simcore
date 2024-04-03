@@ -38,6 +38,7 @@ def test_encrypt_password_raises_type_error_for_non_string_input():
     "ignore:passing settings to"
 )  # DeprecationWarning of sha256_crypt.hash
 def test_encrypt_decrypt_deprecated_and_new_method_return_same_values(password: str):
+    # Checks fixed deprecation  https://github.com/ITISFoundation/osparc-simcore/issues/3375
     salt = "salt"  # Use a fixed salt value for consistent hash values
 
     hashed_password_new = sha256_crypt.using(rounds=1000).hash(password, salt=salt)
