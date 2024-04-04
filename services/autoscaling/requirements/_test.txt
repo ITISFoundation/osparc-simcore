@@ -156,7 +156,7 @@ py-partiql-parser==0.5.2
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==1.10.14
+pydantic==1.10.15
     # via aws-sam-translator
 pyparsing==3.1.2
     # via moto
