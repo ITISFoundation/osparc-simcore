@@ -145,12 +145,21 @@ qx.Class.define("osparc.auth.LoginPage", {
     },
 
     _setBackgroundImage: function(backgroundImage) {
-      this.getContentElement().setStyles({
-        "background-image": backgroundImage,
-        "background-repeat": "no-repeat",
-        "background-size": "65% auto, 80% auto", // auto width, 85% height
-        "background-position": "left bottom, left -440px bottom -230px" // left bottom
-      });
+      if (osparc.product.Utils.getProductName().includes("s4l")) {
+        this.getContentElement().setStyles({
+          "background-image": backgroundImage,
+          "background-repeat": "no-repeat",
+          "background-size": "65% auto, 80% auto", // auto width, 85% height
+          "background-position": "left bottom, left -440px bottom -230px" // left bottom
+        });
+      } else {
+        this.getContentElement().setStyles({
+          "background-image": backgroundImage,
+          "background-repeat": "no-repeat",
+          "background-size": "50% auto", // 50% of the view width
+          "background-position": "left 10% center" // left bottom
+        });
+      }
     },
 
     _resetBackgroundImage: function() {
