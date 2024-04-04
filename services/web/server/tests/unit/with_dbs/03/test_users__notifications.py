@@ -17,6 +17,7 @@ from typing import Any
 import pytest
 import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
+from models_library.products import ProductName
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -63,32 +64,40 @@ async def notification_redis_client(
 
 
 @asynccontextmanager
-async def _create_notifications(
-    redis_client: aioredis.Redis, logged_user: UserInfoDict, count: int
-) -> AsyncIterator[list[UserNotification]]:
+async def _create_notification(
+    redis_client: aioredis.Redis, logged_user: UserInfoDict, product_name: ProductName,
+) -> UserNotification:
     user_id = logged_user["id"]
     notification_categories = tuple(NotificationCategory)
 
-    user_notifications: list[UserNotification] = [
-        UserNotification.create_from_request_data(
-            UserNotificationCreate.parse_obj(
-                {
-                    "user_id": user_id,
-                    "category": random.choice(notification_categories),
-                    "actionable_path": "a/path",
-                    "title": "test_title",
-                    "text": "text_text",
-                    "date": datetime.now(timezone.utc).isoformat(),
-                }
-            )
+    notification: UserNotification = UserNotification.create_from_request_data(
+        UserNotificationCreate.parse_obj(
+            {
+                "user_id": user_id,
+                "category": random.choice(notification_categories),
+                "actionable_path": "a/path",
+                "title": "test_title",
+                "text": "text_text",
+                "date": datetime.now(timezone.utc).isoformat(),
+                "product": product_name
+            }
         )
-        for _ in range(count)
-    ]
+    )
 
     redis_key = get_notification_key(user_id)
-    if user_notifications:
-        for notification in user_notifications:
-            await redis_client.lpush(redis_key, notification.json())
+    await redis_client.lpush(redis_key, notification.json())
+
+    return notification
+
+
+@asynccontextmanager
+async def _create_notifications(redis_client: aioredis.Redis, logged_user: UserInfoDict, product_name: ProductName, count: int
+) -> AsyncIterator[list[UserNotification]]:
+
+    user_notifications: list[UserNotification] = [
+        await _create_notification(redis_client, logged_user, product_name)
+        for _ in range(count)
+    ]
 
     yield user_notifications
 
