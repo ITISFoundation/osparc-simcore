@@ -482,12 +482,10 @@
           },
           "RAM": {
             "type": "integer",
-            "minimum": 0,
             "title": "Ram"
           },
           "VRAM": {
             "type": "integer",
-            "minimum": 0,
             "title": "Vram"
           }
         },
