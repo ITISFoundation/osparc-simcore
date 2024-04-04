@@ -221,7 +221,9 @@ async def test_create_user_notification(
     if not error:
         user_id = logged_user["id"]
         user_notifications = await _get_user_notifications(
-            notification_redis_client, user_id
+            redis_client=notification_redis_client,
+            user_id=user_id,
+            product_name="osparc",
         )
         assert len(user_notifications) == 1
         # these are always generated and overwritten, even if provided by the user, since
@@ -278,7 +280,9 @@ async def test_create_user_notification_capped_list_length(
 
     user_id = logged_user["id"]
     user_notifications = await _get_user_notifications(
-        notification_redis_client, user_id
+        redis_client=notification_redis_client,
+        user_id=user_id,
+        product_name="osparc",
     )
     assert len(user_notifications) <= MAX_NOTIFICATIONS_FOR_USER_TO_KEEP
 
