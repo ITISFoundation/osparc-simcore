@@ -2896,7 +2896,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -10605,11 +10605,9 @@ components:
           type: integer
         RAM:
           title: Ram
-          minimum: 0
           type: integer
         VRAM:
           title: Vram
-          minimum: 0
           type: integer
       description: Custom information that is propagated to the frontend. Defined
         fields are mandatory.

@@ -5,7 +5,15 @@ from enum import auto
 from typing import Any, ClassVar, NamedTuple, TypeAlias
 
 from models_library.products import ProductName
-from pydantic import BaseModel, Extra, Field, NonNegativeInt, PositiveInt, validator
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    Extra,
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    validator,
+)
 
 from .rest_filters import Filters
 from .utils.enums import StrAutoEnum
@@ -191,8 +199,8 @@ class UnitExtraInfo(BaseModel):
     """Custom information that is propagated to the frontend. Defined fields are mandatory."""
 
     CPU: NonNegativeInt
-    RAM: NonNegativeInt
-    VRAM: NonNegativeInt
+    RAM: ByteSize
+    VRAM: ByteSize
 
     class Config:
         allow_population_by_field_name = True
