@@ -14,6 +14,7 @@ from random import choice
 from typing import Final
 from uuid import uuid4
 
+import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
 from faker import Faker
@@ -65,6 +66,10 @@ async def test_storage_storage_s3_client_creation(
     assert storage_s3_client
     response = await storage_s3_client.client.list_buckets()
     assert not response["Buckets"]
+
+    await storage_s3_client.close()
+    with pytest.raises(botocore.exceptions.HTTPClientError):
+        await storage_s3_client.client.list_buckets()
 
 
 @pytest.fixture

@@ -1,4 +1,3 @@
-import contextlib
 import datetime
 import json
 import logging
@@ -6,14 +5,11 @@ import urllib.parse
 from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final, TypeAlias, cast
+from typing import Any, Final, TypeAlias
 
-import aioboto3
-from aiobotocore.session import ClientCreatorContext
 from aws_library.s3.client import SimcoreS3API
 from aws_library.s3.errors import s3_exception_handler
 from boto3.s3.transfer import TransferConfig
-from botocore.client import Config
 from models_library.api_schemas_storage import UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
@@ -21,7 +17,6 @@ from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
-from settings_library.s3 import S3Settings
 from simcore_service_storage.exceptions import S3KeyNotFoundError
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.type_defs import (
@@ -89,34 +84,7 @@ async def _list_objects_v2_paginated_gen(
         yield items_in_page
 
 
-@dataclass
 class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
-    @classmethod
-    async def create(
-        cls, settings: S3Settings, s3_max_concurrency: int = 10
-    ) -> "StorageS3Client":
-        # upon creation the client does not try to connect, one need to make an operation
-        session = aioboto3.Session()
-        # NOTE: session.client returns an aiobotocore client enhanced with aioboto3 fcts (e.g. download_file, upload_file, copy_file...)
-        session_client = session.client(
-            "s3",
-            endpoint_url=settings.S3_ENDPOINT,
-            aws_access_key_id=settings.S3_ACCESS_KEY,
-            aws_secret_access_key=settings.S3_SECRET_KEY,
-            aws_session_token=settings.S3_ACCESS_TOKEN,
-            region_name=settings.S3_REGION,
-            config=Config(signature_version="s3v4"),
-        )
-        assert isinstance(session_client, ClientCreatorContext)  # nosec
-        exit_stack = contextlib.AsyncExitStack()
-        client = cast(S3Client, await exit_stack.enter_async_context(session_client))
-        # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
-        await client.list_buckets()
-
-        return cls(  # pylint: disable=too-many-function-args
-            client, session, exit_stack, s3_max_concurrency
-        )
-
     @s3_exception_handler(_logger)
     async def create_bucket(self, bucket: S3BucketName) -> None:
         _logger.debug("Creating bucket: %s", bucket)

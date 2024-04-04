@@ -15,8 +15,10 @@ from .errors import s3_exception_handler
 
 _logger = logging.getLogger(__name__)
 
+_S3_MAX_CONCURRENCY_DEFAULT = 10
 
-@dataclass
+
+@dataclass(frozen=True)
 class SimcoreS3API:
     client: S3Client
     session: aioboto3.Session
@@ -25,7 +27,7 @@ class SimcoreS3API:
 
     @classmethod
     async def create(
-        cls, settings: S3Settings, s3_max_concurrency: int = 10
+        cls, settings: S3Settings, s3_max_concurrency: int = _S3_MAX_CONCURRENCY_DEFAULT
     ) -> "SimcoreS3API":
         session = aioboto3.Session()
         session_client = session.client(
@@ -39,9 +41,10 @@ class SimcoreS3API:
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
-        s3_client = cast(
-            S3Settings, await exit_stack.enter_async_context(session_client)
-        )
+        s3_client = cast(S3Client, await exit_stack.enter_async_context(session_client))
+        # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
+        await s3_client.list_buckets()
+
         return cls(s3_client, session, exit_stack, s3_max_concurrency)
 
     async def close(self) -> None:

@@ -64,6 +64,7 @@ async def benchmark_s3_client(
 
     # empty bucket once more when done testing
     await client.delete_files_in_path(bucket, prefix="")
+    await client.close()
 
 
 @asynccontextmanager

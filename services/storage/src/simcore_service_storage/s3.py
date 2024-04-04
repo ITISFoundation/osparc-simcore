@@ -46,6 +46,8 @@ async def setup_s3_client(app):
         yield
         # tear-down
         log.debug("closing %s", f"{client=}")
+        await client.close()
+
     log.info("closed s3 client %s", f"{client=}")
 
 
