@@ -7,6 +7,7 @@ from models_library.resource_tracker import (
     PricingPlanId,
     PricingUnitCostId,
     PricingUnitId,
+    UnitExtraInfo,
 )
 from pydantic import BaseModel, validator
 
@@ -15,7 +16,7 @@ class PricingUnitsDB(BaseModel):
     pricing_unit_id: PricingUnitId
     pricing_plan_id: PricingPlanId
     unit_name: str
-    unit_extra_info: dict
+    unit_extra_info: UnitExtraInfo
     default: bool
     specific_info: HardwareInfo
     created: datetime
