@@ -72,10 +72,10 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
                       this._add(serviceGroup.layout);
 
                       const unitButtons = serviceGroup.unitButtons;
-                      unitButtons.addListener("changeSelectedUnit", e => {
+                      unitButtons.addListener("changeSelectedUnitId", e => {
                         unitButtons.setEnabled(false);
-                        const selectedPricingUnit = e.getData();
-                        this.__pricingUnitSelected(nodeId, pricingPlans["pricingPlanId"], selectedPricingUnit)
+                        const selectedPricingUnitId = e.getData();
+                        this.__pricingUnitSelected(nodeId, pricingPlans["pricingPlanId"], selectedPricingUnitId)
                           .finally(() => unitButtons.setEnabled(true));
                       });
 
@@ -93,9 +93,6 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
         const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
 
         const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"], preselectedPricingUnit);
-        unitButtons.set({
-          advanced: true
-        });
         pricingUnitsLayout.add(unitButtons);
 
         return {
@@ -106,13 +103,13 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
       return null;
     },
 
-    __pricingUnitSelected: function(nodeId, pricingPlanId, selectedPricingUnit) {
+    __pricingUnitSelected: function(nodeId, pricingPlanId, selectedPricingUnitId) {
       const params = {
         url: {
           studyId: this.__studyData["uuid"],
           nodeId,
           pricingPlanId,
-          pricingUnitId: selectedPricingUnit["pricingUnitId"]
+          pricingUnitId: selectedPricingUnitId
         }
       };
       return osparc.data.Resources.fetch("studies", "putPricingUnit", params);
