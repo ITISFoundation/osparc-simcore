@@ -1,0 +1,8 @@
+# From 3.9.0 the follwong test fails: `services/director-v2/tests/unit/test_modules_notifier.py::test_notifier_publish_message`
+# the room disconnect event is no longer propagated
+# Issue triggered by:
+# - this change: https://github.com/ttsia/aiohttp/commit/70b3536e3eef1627bbb425e71faea2f8ce1c6f9b
+# - and it's PR: https://github.com/aio-libs/aiohttp/pull/7680
+# - this is the breaking change (1 line) https://github.com/ttsia/aiohttp/commit/70b3536e3eef1627bbb425e71faea2f8ce1c6f9b#diff-5eda97b86ffb5b1e8b797dbacc03e6d75767caada5d09956c1035b5684711965R204
+# submitted issue https://github.com/miguelgrinberg/python-socketio/issues/1319
+aiohttp<3.9.0
