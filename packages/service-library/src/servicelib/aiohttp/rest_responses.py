@@ -8,7 +8,7 @@ from typing import Any, Final
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from models_library.generics import Envelope
-from models_library.rest_responses_payloads import FlashMessage, ManyErrors, OneError
+from models_library.rest_payloads import FlashMessage, ManyErrors, OneError
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from ..json_serialization import json_dumps, safe_json_loads
