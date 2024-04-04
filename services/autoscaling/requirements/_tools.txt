@@ -1,4 +1,4 @@
-aiohttp==3.8.6
+aiohttp==3.9.3
     # via black
 aiosignal==1.3.1
     # via aiohttp
@@ -6,7 +6,7 @@ astroid==3.0.2
     # via pylint
 async-timeout==4.0.3
     # via aiohttp
-attrs==23.1.0
+attrs==23.2.0
     # via aiohttp
 black==23.12.0
 build==1.0.3
@@ -14,8 +14,6 @@ build==1.0.3
 bump2version==1.0.1
 cfgv==3.4.0
     # via pre-commit
-charset-normalizer==3.3.2
-    # via aiohttp
 click==8.1.7
     # via
     #   black
@@ -26,19 +24,19 @@ distlib==0.3.8
     # via virtualenv
 filelock==3.13.1
     # via virtualenv
-frozenlist==1.4.0
+frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
 identify==2.5.33
     # via pre-commit
-idna==3.4
+idna==3.6
     # via yarl
 isort==5.13.2
     # via pylint
 mccabe==0.7.0
     # via pylint
-multidict==6.0.4
+multidict==6.0.5
     # via
     #   aiohttp
     #   yarl
@@ -82,7 +80,7 @@ tomli==2.0.1
     #   pyproject-hooks
 tomlkit==0.12.3
     # via pylint
-typing-extensions==4.8.0
+typing-extensions==4.10.0
     # via
     #   astroid
     #   black
@@ -91,5 +89,5 @@ virtualenv==20.25.0
 watchdog==3.0.0
 wheel==0.42.0
     # via pip-tools
-yarl==1.9.2
+yarl==1.9.4
     # via aiohttp

@@ -12,7 +12,7 @@ idna==3.4
 jsonschema==4.19.2
 jsonschema-specifications==2023.7.1
     # via jsonschema
-orjson==3.9.10
+orjson==3.10.0
 pydantic==1.10.13
 python-dateutil==2.8.2
     # via arrow
