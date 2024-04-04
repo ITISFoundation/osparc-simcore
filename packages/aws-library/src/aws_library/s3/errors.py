@@ -38,29 +38,28 @@ def s3_exception_handler(log: logging.Logger):
         @functools.wraps(func)
         async def wrapper(self, *args, **kwargs):
             try:
-                response = await func(self, *args, **kwargs)
+                return await func(self, *args, **kwargs)
             except self.client.exceptions.NoSuchBucket as exc:
                 raise S3BucketInvalidError(
                     bucket=exc.response.get("Error", {}).get("BucketName", "undefined")
                 ) from exc
             except botocore_exc.ClientError as exc:
-                if exc.response.get("Error", {}).get("Code") == "404":
-                    if exc.operation_name == "HeadObject":
+                status_code = int(exc.response.get("Error", {}).get("Code", -1))
+                operation_name = exc.operation_name
+
+                match status_code, operation_name:
+                    case 404, "HeadObject":
                         raise S3KeyNotFoundError(bucket=args[0], key=args[1]) from exc
-                    if exc.operation_name == "HeadBucket":
+                    case 404, "HeadBucket" | 403, "HeadBucket":
                         raise S3BucketInvalidError(bucket=args[0]) from exc
-                if exc.response.get("Error", {}).get("Code") == "403":
-                    if exc.operation_name == "HeadBucket":
-                        raise S3BucketInvalidError(bucket=args[0]) from exc
-                raise S3AccessError from exc
+                    case _:
+                        raise S3AccessError from exc
             except botocore_exc.EndpointConnectionError as exc:
                 raise S3AccessError from exc
 
             except botocore_exc.BotoCoreError as exc:
                 log.exception("Unexpected error in s3 client: ")
                 raise S3AccessError from exc
-
-            return response
 
         return wrapper
 
