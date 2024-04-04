@@ -6,6 +6,7 @@ from fastapi.responses import RedirectResponse
 from models_library.api_schemas_webserver.projects import ProjectUpdate
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
+from models_library.function_services_catalog.services import file_picker
 from pydantic import PositiveInt
 from simcore_service_api_server.api.dependencies.authentication import (
     get_current_user_id,
@@ -94,9 +95,9 @@ async def create_study_job(
 
         file_param_nodes = {}
         for node_id, node in project.workbench.items():
-            assert node.outputs is not None  # nosec
             if (
-                node.key == "simcore/services/frontend/file-picker"
+                node.key == file_picker.META.key
+                and node.outputs is not None
                 and len(node.outputs) == 0
             ):
                 file_param_nodes[node.label] = node_id
