@@ -36,7 +36,7 @@ multidict==6.0.5
     #   yarl
 pycparser==2.22
     # via cffi
-pydantic==1.10.14
+pydantic==1.10.15
 python-dotenv==1.0.1
     # via pydantic
 sqlalchemy==1.4.52
