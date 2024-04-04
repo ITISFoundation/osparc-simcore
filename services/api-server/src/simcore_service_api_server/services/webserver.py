@@ -33,7 +33,6 @@ from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
-from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from simcore_service_api_server.models.schemas.solvers import SolverKeyId
 from simcore_service_api_server.models.schemas.studies import StudyPort
@@ -56,16 +55,6 @@ from .service_exception_handling import (
 )
 
 _logger = logging.getLogger(__name__)
-
-
-class WebServerValueError(PydanticErrorMixin, ValueError):
-    ...
-
-
-class ProjectNotFoundError(WebServerValueError):
-    code = "webserver.project_not_found"
-    msg_template = "Project '{project_id}' not found"
-
 
 _exception_mapper = partial(service_exception_mapper, "Webserver")
 
