@@ -13,12 +13,12 @@ from contextlib import contextmanager
 from typing import Any, TypeAlias, TypeVar, Union
 
 from aiohttp import web
+from models_library.rest_enveloped import ManyErrors, OneError
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from . import status
-from .rest_models import ManyErrors, OneError
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)

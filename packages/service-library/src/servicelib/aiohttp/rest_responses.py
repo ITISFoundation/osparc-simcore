@@ -9,13 +9,13 @@ from typing import Any, Final
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from models_library.generics import Envelope
+from models_library.rest_enveloped import ErrorDetail, LogMessage, ResponseErrorBody
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from ..json_serialization import json_dumps, safe_json_loads
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from . import status
-from .rest_models import ErrorDetail, LogMessage, ResponseErrorBody
 
 _ENVELOPE_KEYS: Final = ("data", "error")
 

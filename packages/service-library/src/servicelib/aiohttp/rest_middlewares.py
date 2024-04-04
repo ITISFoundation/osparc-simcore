@@ -11,6 +11,7 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
+from models_library.rest_enveloped import OneError
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from ..error_codes import create_error_code
@@ -20,7 +21,6 @@ from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..request_keys import RQT_USERID_KEY
 from ..rest_constants import RESPONSE_MODEL_POLICY
 from . import status
-from .rest_models import OneError
 from .rest_responses import create_enveloped_response, create_error_response
 from .typing_extension import Handler, Middleware
 
