@@ -37,7 +37,6 @@ from ...services.log_streaming import LogDistributor, LogStreamer
 from ...services.solver_job_models_converters import create_job_from_project
 from ...services.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ...services.storage import StorageApi, to_file_api_model
-from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
@@ -385,21 +384,14 @@ async def get_job_wallet(
     version: VersionStr,
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-):
+) -> WalletGetWithAvailableCredits | None:
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Getting wallet for job '%s'", job_name)
 
-    try:
-        project_wallet = await webserver_api.get_project_wallet(project_id=job_id)
-        if project_wallet:
-            return await webserver_api.get_wallet(wallet_id=project_wallet.wallet_id)
-        return None
-
-    except ProjectNotFoundError:
-        return create_error_json_response(
-            f"Cannot find job={job_name}",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+    project_wallet = await webserver_api.get_project_wallet(project_id=job_id)
+    if project_wallet:
+        return await webserver_api.get_wallet(wallet_id=project_wallet.wallet_id)
+    return None
 
 
 @router.get(
