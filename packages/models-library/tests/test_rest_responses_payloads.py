@@ -6,7 +6,7 @@
 
 import pytest
 from faker import Faker
-from models_library.rest_enveloped import (
+from models_library.rest_responses_payloads import (
     ManyErrors,
     OneError,
     create_error_model_from_validation_error,

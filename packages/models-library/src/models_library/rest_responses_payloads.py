@@ -1,23 +1,15 @@
-""" REST API schemas used for enveloped responses
+""" Common models used in response payloads
+
+- Enveloped response body
+- Error model in Enveloped
+- Flash message
+
+NOTE: these are all Output models
 """
 
 from typing import Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, ValidationError
-
-
-class LogMessage(BaseModel):
-    message: str
-    level: str = "INFO"
-    logger: str = "user"
-
-
-#
-# NOTE: These are the new models that should replace the ones above
-#
-
-
-# TODO: inherit from OutputSchema
 
 
 class OneError(BaseModel):
@@ -107,3 +99,9 @@ def create_error_model_from_validation_error(
     if len(details) == 1:
         return details[0]
     return ManyErrors(msg=msg, details=details)
+
+
+class FlashMessage(BaseModel):
+    message: str
+    level: str = "INFO"
+    logger: str = "user"

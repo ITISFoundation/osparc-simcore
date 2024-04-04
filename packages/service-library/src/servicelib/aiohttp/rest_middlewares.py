@@ -11,7 +11,7 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
-from models_library.rest_enveloped import OneError
+from models_library.rest_responses_payloads import OneError
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from ..error_codes import create_error_code

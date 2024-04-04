@@ -8,7 +8,7 @@ from typing import Any, Final
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from models_library.generics import Envelope
-from models_library.rest_enveloped import LogMessage, ManyErrors, OneError
+from models_library.rest_responses_payloads import FlashMessage, ManyErrors, OneError
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from ..json_serialization import json_dumps, safe_json_loads
@@ -138,6 +138,6 @@ def flash_response(
     message: str, level: str = "INFO", *, status_code: int = status.HTTP_200_OK
 ) -> web.Response:
     return envelope_response(
-        data=LogMessage(message=message, level=level),
+        data=FlashMessage(message=message, level=level),
         status_code=status_code,
     )
