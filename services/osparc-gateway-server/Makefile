@@ -60,7 +60,7 @@ PHONY: .init-swarm
 .PHONY: config
 export OSPARC_GATEWAY_CONFIG_FILE_HOST = .osparc-dask-gateway-config.py
 export SWARM_STACK_NAME ?= dask-gateway
-docker-compose-config-cmd=../../scripts/docker/docker-compose-config.bash
+docker-compose-config-cmd=../../scripts/docker/docker-stack-config.bash
 docker-compose-configs = $(wildcard services/docker-compose*.yml)
 
 $(OSPARC_GATEWAY_CONFIG_FILE_HOST): $(CURDIR)/config/default_config.py  ## creates config file from defaults in /config/default_config.py
