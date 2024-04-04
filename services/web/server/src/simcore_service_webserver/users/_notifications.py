@@ -31,7 +31,7 @@ class BaseUserNotification(BaseModel):
     title: str
     text: str
     date: datetime
-    product: Literal["UNDEFINED"] | ProductName
+    product: ProductName | Literal["UNDEFINED"]
 
     @validator("category", pre=True)
     @classmethod

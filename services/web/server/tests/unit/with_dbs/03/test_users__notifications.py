@@ -81,7 +81,7 @@ async def _create_notification(
                 "title": "test_title",
                 "text": "text_text",
                 "date": datetime.now(timezone.utc).isoformat(),
-                "product": product_name
+                "product": product_name,
             }
         )
     )
