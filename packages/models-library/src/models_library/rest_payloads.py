@@ -1,4 +1,4 @@
-""" Common models used in response payloads
+""" Common models for RESPONSE payloads
 
 - Enveloped response body
 - Error model in Enveloped
