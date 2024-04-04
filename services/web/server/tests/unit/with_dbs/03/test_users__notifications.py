@@ -65,7 +65,9 @@ async def notification_redis_client(
 
 @asynccontextmanager
 async def _create_notification(
-    redis_client: aioredis.Redis, logged_user: UserInfoDict, product_name: ProductName,
+    redis_client: aioredis.Redis,
+    logged_user: UserInfoDict,
+    product_name: ProductName = "osparc",
 ) -> UserNotification:
     user_id = logged_user["id"]
     notification_categories = tuple(NotificationCategory)
@@ -91,11 +93,19 @@ async def _create_notification(
 
 
 @asynccontextmanager
-async def _create_notifications(redis_client: aioredis.Redis, logged_user: UserInfoDict, product_name: ProductName, count: int
+async def _create_notifications(
+    redis_client: aioredis.Redis,
+    logged_user: UserInfoDict,
+    product_name: ProductName,
+    count: int
 ) -> AsyncIterator[list[UserNotification]]:
 
     user_notifications: list[UserNotification] = [
-        await _create_notification(redis_client, logged_user, product_name)
+        await _create_notification(
+            redis_client=redis_client,
+            logged_user=logged_user,
+            product_name=product_name
+        )
         for _ in range(count)
     ]
 
@@ -139,7 +149,9 @@ async def test_list_user_notifications(
         assert not error
 
         async with _create_notifications(
-            notification_redis_client, logged_user, notification_count
+            redis_client=notification_redis_client,
+            logged_user=logged_user,
+            count=notification_count,
         ) as created_notifications:
             response = await client.get(url.path)
             json_response = await response.json()
@@ -285,7 +297,9 @@ async def test_update_user_notification(
     expected_response: HTTPStatus,
 ):
     async with _create_notifications(
-        notification_redis_client, logged_user, 1
+        redis_client=notification_redis_client,
+        logged_user=logged_user,
+        count=1,
     ) as created_notifications:
         assert client.app
         for notification in created_notifications:
@@ -330,7 +344,9 @@ async def test_update_user_notification_at_correct_index(
         return results
 
     async with _create_notifications(
-        notification_redis_client, logged_user, notification_count
+        redis_client=notification_redis_client,
+        logged_user=logged_user,
+        count=notification_count,
     ) as created_notifications:
         notifications_before_update = await _get_stored_notifications()
         for notification in created_notifications:
