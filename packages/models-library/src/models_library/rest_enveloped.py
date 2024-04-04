@@ -2,9 +2,9 @@
 """
 
 from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeAlias
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ValidationError
 
 
 class LogMessage(BaseModel):
@@ -43,9 +43,9 @@ class ResponseErrorBody:
 
 class OneError(BaseModel):
     msg: str
-    type_: str | None = Field(None, alias="type")
+    kind: str | None = None
     loc: str | None = None
-    ctx: dict | None = None
+    ctx: dict[str, Any] | None = None
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
@@ -54,16 +54,23 @@ class OneError(BaseModel):
                 {
                     "loc": "path.project_uuid",
                     "msg": "value is not a valid uuid",
-                    "type": "type_error.uuid",
+                    "kind": "type_error.uuid",
                 },
                 # HTTP_401_UNAUTHORIZED
                 {
                     "msg": "You have to activate your account via email, before you can login",
-                    "type": "activation_required",
+                    "kind": "activation_required",
                     "ctx": {"resend_email_url": "https://foo.io/resend?code=123456"},
                 },
             ]
         }
+
+    @classmethod
+    def from_exception(cls, exc: Exception) -> "OneError":
+        return cls(
+            msg=f"{exc}",  # str(exc) always exists
+            kind=exc.__class__.__name__,  # exception class name always exists
+        )
 
 
 class ManyErrors(BaseModel):
@@ -79,13 +86,44 @@ class ManyErrors(BaseModel):
                     {
                         "loc": "body.x",
                         "msg": "field required",
-                        "type": "value_error.missing",
+                        "kind": "value_error.missing",
                     },
                     {
                         "loc": "body.z",
                         "msg": "field required",
-                        "type": "value_error.missing",
+                        "kind": "value_error.missing",
                     },
                 ],
             }
         }
+
+
+OneOrManyErrors: TypeAlias = OneError | ManyErrors
+
+
+def loc_to_jq_filter(parts: tuple[int | str, ...]) -> str:
+    """Converts Loc into jq filter
+
+    SEE https://jqlang.github.io/jq/manual/#basic-filters
+    """
+    return "".join(["." + _ if isinstance(_, str) else f"[{_}]" for _ in parts])
+
+
+def create_error_model_from_validation_error(
+    validation_error: ValidationError, msg: str
+) -> OneOrManyErrors:
+    details = [
+        OneError(
+            msg=e["msg"],
+            kind=e["type"],
+            loc=loc_to_jq_filter(e["loc"]),
+            ctx=e.get("ctx", None),
+        )
+        for e in validation_error.errors()
+    ]
+
+    assert details  # nosec
+
+    if len(details) == 1:
+        return details[0]
+    return ManyErrors(msg=msg, details=details)
