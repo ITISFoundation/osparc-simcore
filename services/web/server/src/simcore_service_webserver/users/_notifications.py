@@ -112,7 +112,7 @@ class UserNotification(BaseUserNotification):
                     "actionable_path": "wallet/21",
                     "title": "Credits shared",
                     "text": "A Credit account was shared with you",
-                    "date": "2023-02-23T16:28:13.122Z",
+                    "date": "2023-09-29T16:28:13.122Z",
                     "read": False,
                     "product": "s4llite",
                 },
