@@ -388,8 +388,7 @@ async def get_job_wallet(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Getting wallet for job '%s'", job_name)
 
-    project_wallet = await webserver_api.get_project_wallet(project_id=job_id)
-    if project_wallet:
+    if project_wallet := await webserver_api.get_project_wallet(project_id=job_id):
         return await webserver_api.get_wallet(wallet_id=project_wallet.wallet_id)
     return None
 
