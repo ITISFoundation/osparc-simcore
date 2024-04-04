@@ -8,9 +8,8 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.studies import Study, StudyID, StudyPort
-from ...services.webserver import AuthSession, ProjectNotFoundError
+from ...services.webserver import AuthSession
 from ..dependencies.webserver import get_webserver_session
-from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 
 _logger = logging.getLogger(__name__)
@@ -76,15 +75,8 @@ async def get_study(
 
     New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
     """
-    try:
-        project: ProjectGet = await webserver_api.get_project(project_id=study_id)
-        return _create_study_from_project(project)
-
-    except ProjectNotFoundError:
-        return create_error_json_response(
-            f"Cannot find study={study_id!r}.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+    project: ProjectGet = await webserver_api.get_project(project_id=study_id)
+    return _create_study_from_project(project)
 
 
 @router.post(
@@ -98,15 +90,8 @@ async def clone_study(
     study_id: StudyID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    try:
-        project: ProjectGet = await webserver_api.clone_project(project_id=study_id)
-        return _create_study_from_project(project)
-
-    except ProjectNotFoundError:
-        return create_error_json_response(
-            f"Cannot find study={study_id!r}.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+    project: ProjectGet = await webserver_api.clone_project(project_id=study_id)
+    return _create_study_from_project(project)
 
 
 @router.get(
@@ -123,14 +108,7 @@ async def list_study_ports(
 
     New in *version 0.5.0* (only with API_SERVER_DEV_FEATURES_ENABLED=1)
     """
-    try:
-        project_ports: list[StudyPort] = await webserver_api.get_project_metadata_ports(
-            project_id=study_id
-        )
-        return OnePage[StudyPort](items=project_ports)
-
-    except ProjectNotFoundError:
-        return create_error_json_response(
-            f"Cannot find study={study_id!r}.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+    project_ports: list[StudyPort] = await webserver_api.get_project_metadata_ports(
+        project_id=study_id
+    )
+    return OnePage[StudyPort](items=project_ports)
