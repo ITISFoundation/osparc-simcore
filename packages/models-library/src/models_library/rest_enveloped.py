@@ -1,3 +1,6 @@
+""" REST API schemas used for enveloped responses
+"""
+
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
