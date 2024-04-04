@@ -13,7 +13,7 @@ from contextlib import contextmanager
 from typing import Any, TypeAlias, TypeVar, Union
 
 from aiohttp import web
-from models_library.rest_enveloped import ManyErrors, OneError
+from models_library.rest_responses_payloads import ManyErrors, OneError
 from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
 
 from ..json_serialization import json_dumps
