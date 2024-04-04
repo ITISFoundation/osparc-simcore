@@ -1,7 +1,6 @@
 """ REST API schemas used for enveloped responses
 """
 
-from dataclasses import dataclass, field
 from typing import Any, ClassVar, TypeAlias
 
 from pydantic import BaseModel, ValidationError
@@ -11,26 +10,6 @@ class LogMessage(BaseModel):
     message: str
     level: str = "INFO"
     logger: str = "user"
-
-
-@dataclass
-class ErrorDetail:
-    code: str
-    message: str
-    resource: str | None
-    field: str | None
-
-    @classmethod
-    def from_exception(cls, err: BaseException):
-        return cls(
-            code=err.__class__.__name__, message=str(err), resource=None, field=None
-        )
-
-
-@dataclass
-class ResponseErrorBody:
-    message: str
-    errors: list[ErrorDetail] = field(default_factory=list)
 
 
 #
@@ -43,6 +22,7 @@ class ResponseErrorBody:
 
 class OneError(BaseModel):
     msg: str
+    # optional
     kind: str | None = None
     loc: str | None = None
     ctx: dict[str, Any] | None = None
