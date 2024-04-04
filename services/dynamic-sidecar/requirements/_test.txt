@@ -1,7 +1,7 @@
 aioboto3==12.3.0
 aiobotocore==2.11.2
     # via aioboto3
-aiohttp==3.9.3
+aiohttp==3.8.6
     # via aiobotocore
 aioitertools==0.11.0
     # via aiobotocore
@@ -23,7 +23,9 @@ botocore==1.34.34
 certifi==2024.2.2
     # via requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   aiohttp
+    #   requests
 coverage==7.4.4
     # via pytest-cov
 docker==7.0.0
