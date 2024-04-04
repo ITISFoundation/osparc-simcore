@@ -71,6 +71,7 @@ class UserNotification(BaseUserNotification):
                     "title": "New organization",
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
+                    "product": "osparc",
                     "read": True,
                 },
                 {
@@ -81,6 +82,7 @@ class UserNotification(BaseUserNotification):
                     "title": "Study shared",
                     "text": "A study was shared with you",
                     "date": "2023-02-23T16:25:13.122Z",
+                    "product": "osparc",
                     "read": False,
                 },
                 {
