@@ -2,14 +2,13 @@
 
 """
 from collections.abc import Mapping
-from dataclasses import asdict
 from http import HTTPStatus
 from typing import Any, Final
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from models_library.generics import Envelope
-from models_library.rest_enveloped import ErrorDetail, LogMessage, ResponseErrorBody
+from models_library.rest_enveloped import LogMessage, ManyErrors, OneError
 from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from ..json_serialization import json_dumps, safe_json_loads
@@ -66,9 +65,7 @@ def create_enveloped_response(
     except (TypeError, ValueError) as err:
         # FIXME: this should never happen!
         response = create_error_response(
-            errors=[
-                err,
-            ],
+            errors=[err],
             message=str(err),
             http_error_cls=web.HTTPInternalServerError,
         )
@@ -92,11 +89,17 @@ def create_error_response(
 
     text: str | None = None
     if not http_error_cls.empty_body:
-        error = ResponseErrorBody(
-            message=message or HTTPStatus(http_error_cls.status_code).description,
-            errors=[ErrorDetail.from_exception(e) for e in errors],
-        )
-        text = json_dumps(wrap_as_envelope(error=asdict(error)))
+        msg = message or HTTPStatus(http_error_cls.status_code).description
+        if len(errors) > 1:
+            error_model = ManyErrors(
+                msg=msg, details=[OneError.from_exception(exc) for exc in errors]
+            )
+        else:
+            error_model = OneError.from_exception(errors[0])
+            if message:
+                error_model.msg = message
+
+        text = json_dumps(wrap_as_envelope(error=jsonable_encoder(error_model)))
 
     return http_error_cls(
         reason=message,
