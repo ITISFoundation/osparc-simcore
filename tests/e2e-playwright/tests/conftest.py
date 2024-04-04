@@ -341,13 +341,18 @@ def start_and_stop_pipeline(
                     "STARTED",
                 )
             )
-            with page.expect_request(
+
+            # NOTE: Keep expect_request as an inner
+            # context. In case of timeout, we want
+            # to know whether the POST was requested or not.
+            with log_in_and_out.expect_event(
+                "framereceived", waiter
+            ) as event, page.expect_request(
                 lambda request: re.search(r"/computations", request.url)
                 and request.method.upper() == "POST"  # type: ignore
-            ) as request_info, log_in_and_out.expect_event(
-                "framereceived", waiter
-            ) as event:
+            ) as request_info:
                 page.get_by_test_id("runStudyBtn").click()
+
             response = request_info.value.response()
             assert response
             assert response.ok, f"{response.json()}"
