@@ -2,7 +2,7 @@ aio-pika==9.4.1
 aioboto3==12.3.0
 aiobotocore==2.11.2
     # via aioboto3
-aiohttp==3.9.3
+aiohttp==3.8.6
     # via
     #   aiobotocore
     #   dask-gateway-server
@@ -40,7 +40,9 @@ certifi==2024.2.2
 cffi==1.16.0
     # via cryptography
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   aiohttp
+    #   requests
 click==8.1.7
     # via
     #   dask

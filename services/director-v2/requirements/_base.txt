@@ -3,7 +3,7 @@ aiocache==0.12.2
 aiodebug==2.3.0
 aiodocker==0.21.0
 aiofiles==23.2.1
-aiohttp==3.9.3
+aiohttp==3.8.6
     # via
     #   aiodocker
     #   dask-gateway
@@ -39,6 +39,8 @@ certifi==2024.2.2
     # via
     #   httpcore
     #   httpx
+charset-normalizer==3.3.2
+    # via aiohttp
 click==8.1.7
     # via
     #   dask
