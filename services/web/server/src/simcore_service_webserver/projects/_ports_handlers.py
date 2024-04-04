@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 
 def _web_json_response_enveloped(data: Any):
     return web.json_response(
-        Envelope(data=jsonable_encoder(data)),
+        jsonable_encoder(Envelope(data=data)),
         dumps=json_dumps,
     )
 
