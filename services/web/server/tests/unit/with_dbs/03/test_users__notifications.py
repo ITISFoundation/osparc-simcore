@@ -151,6 +151,7 @@ async def test_list_user_notifications(
         async with _create_notifications(
             redis_client=notification_redis_client,
             logged_user=logged_user,
+            product_name="osparc",
             count=notification_count,
         ) as created_notifications:
             response = await client.get(url.path)
@@ -306,6 +307,7 @@ async def test_update_user_notification(
     async with _create_notifications(
         redis_client=notification_redis_client,
         logged_user=logged_user,
+        product_name="osparc",
         count=1,
     ) as created_notifications:
         assert client.app
@@ -353,6 +355,7 @@ async def test_update_user_notification_at_correct_index(
     async with _create_notifications(
         redis_client=notification_redis_client,
         logged_user=logged_user,
+        product_name="osparc",
         count=notification_count,
     ) as created_notifications:
         notifications_before_update = await _get_stored_notifications()
