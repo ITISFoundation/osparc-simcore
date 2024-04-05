@@ -115,7 +115,7 @@ class UserNotification(BaseUserNotification):
                     "title": "Credits shared",
                     "text": "A Credit account was shared with you",
                     "date": "2023-09-29T16:28:13.122Z",
-                    "product": "s4llite",
+                    "product": "tis",
                     "read": False,
                 },
             ]

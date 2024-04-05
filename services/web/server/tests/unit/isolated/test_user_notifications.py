@@ -48,7 +48,7 @@ def test_get_notification_key(user_id: UserID):
                     "title": "New organization",
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
-                    "product": "s4l",
+                    "product": "osparc",
                     "read": True,
                 }
             ),
@@ -64,7 +64,7 @@ def test_get_notification_key(user_id: UserID):
                     "title": "New organization",
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
-                    "product": "s4llite",
+                    "product": "osparc",
                 }
             ),
             id="a_new_id_is_alway_recreated",
@@ -79,7 +79,7 @@ def test_get_notification_key(user_id: UserID):
                     "title": "New organization",
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
-                    "product": "tip",
+                    "product": "s4l",
                 }
             ),
             id="category_from_string",
@@ -94,7 +94,7 @@ def test_get_notification_key(user_id: UserID):
                     "title": "New organization",
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
-                    "product": "s4l",
+                    "product": "tis",
                 }
             ),
             id="category_from_lower_case_string",

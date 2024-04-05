@@ -266,6 +266,7 @@ async def test_create_user_notification_capped_list_length(
                     "title": "New organization",
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
+                    "product": "osparc",
                 },
             )
             for _ in range(notification_count)
