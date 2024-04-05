@@ -419,8 +419,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         uiModeIcon.set({
           source,
           toolTipText,
-          alignY: "bottom",
-          marginBottom: 10
+          alignY: "bottom"
         });
       }
     },

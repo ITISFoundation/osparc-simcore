@@ -441,8 +441,7 @@
             "title": "Unit Name"
           },
           "unit_extra_info": {
-            "type": "object",
-            "title": "Unit Extra Info"
+            "$ref": "#/components/schemas/UnitExtraInfo"
           },
           "current_cost_per_unit": {
             "type": "number",
@@ -473,6 +472,31 @@
           "specific_info"
         ],
         "title": "PricingUnitGet"
+      },
+      "UnitExtraInfo": {
+        "properties": {
+          "CPU": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Cpu"
+          },
+          "RAM": {
+            "type": "integer",
+            "title": "Ram"
+          },
+          "VRAM": {
+            "type": "integer",
+            "title": "Vram"
+          }
+        },
+        "type": "object",
+        "required": [
+          "CPU",
+          "RAM",
+          "VRAM"
+        ],
+        "title": "UnitExtraInfo",
+        "description": "Custom information that is propagated to the frontend. Defined fields are mandatory."
       },
       "ValidationError": {
         "properties": {
