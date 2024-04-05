@@ -110,7 +110,7 @@ class AuthSession:
 
     _api: WebserverApi
     vtag: str
-    _tmp_client: AsyncClient
+    _long_running_task_client: AsyncClient
     session_cookies: dict | None = None
 
     @classmethod
@@ -124,7 +124,7 @@ class AuthSession:
         tmp_client = AsyncClient(headers=product_header)
         return cls(
             _api=api,
-            _tmp_client=tmp_client,
+            _long_running_task_client=tmp_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
             session_cookies=session_cookies,
         )
@@ -183,7 +183,7 @@ class AuthSession:
             before_sleep=before_sleep_log(_logger, logging.INFO),
         ):
             with attempt:
-                get_response = await self._tmp_client.get(
+                get_response = await self._long_running_task_client.get(
                     url=status_url, cookies=self.session_cookies
                 )
                 get_response.raise_for_status()
@@ -193,7 +193,7 @@ class AuthSession:
                     msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
                     raise TryAgain(msg)
 
-        result_response = await self._tmp_client.get(
+        result_response = await self._long_running_task_client.get(
             f"{result_url}", cookies=self.session_cookies
         )
         result_response.raise_for_status()
