@@ -9,6 +9,7 @@ from uuid import UUID
 
 from cryptography import fernet
 from fastapi import FastAPI
+from httpx import AsyncClient, Response
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
@@ -79,6 +80,11 @@ _WALLET_STATUS_MAP: Mapping = {
 }
 
 
+def _get_server_addr_from_response(response: Response):
+    ip_addr, port = response.extensions["network_stream"].get_extra_info("server_addr")
+    return f"http://{ip_addr}:{port}"
+
+
 class WebserverApi(BaseServiceClientApi):
     """Access to web-server API
 
@@ -104,6 +110,7 @@ class AuthSession:
 
     _api: WebserverApi
     vtag: str
+    _tmp_client: AsyncClient
     session_cookies: dict | None = None
 
     @classmethod
@@ -114,8 +121,10 @@ class AuthSession:
         assert api  # nosec
         assert isinstance(api, WebserverApi)  # nosec
         api.client.headers = product_header
+        tmp_client = AsyncClient(headers=product_header)
         return cls(
             _api=api,
+            _tmp_client=tmp_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
             session_cookies=session_cookies,
         )
@@ -160,10 +169,11 @@ class AuthSession:
 
             return Page[ProjectGet].parse_raw(resp.text)
 
-    async def _wait_for_long_running_task_results(self, data: TaskGet):
-        # NOTE: /v0 is already included in the http client base_url
-        status_url = data.status_href.lstrip(f"/{self.vtag}")
-        result_url = data.result_href.lstrip(f"/{self.vtag}")
+    async def _wait_for_long_running_task_results(
+        self, data: TaskGet, server_base_url: str
+    ):
+        status_url = server_base_url + data.status_href
+        result_url = server_base_url + data.result_href
 
         # GET task status now until done
         async for attempt in AsyncRetrying(
@@ -173,8 +183,8 @@ class AuthSession:
             before_sleep=before_sleep_log(_logger, logging.INFO),
         ):
             with attempt:
-                get_response = await self.client.get(
-                    status_url, cookies=self.session_cookies
+                get_response = await self._tmp_client.get(
+                    url=status_url, cookies=self.session_cookies
                 )
                 get_response.raise_for_status()
                 task_status = Envelope[TaskStatus].parse_raw(get_response.text).data
@@ -183,7 +193,7 @@ class AuthSession:
                     msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
                     raise TryAgain(msg)
 
-        result_response = await self.client.get(
+        result_response = await self._tmp_client.get(
             f"{result_url}", cookies=self.session_cookies
         )
         result_response.raise_for_status()
@@ -225,7 +235,9 @@ class AuthSession:
         data = Envelope[TaskGet].parse_raw(response.text).data
         assert data is not None  # nosec
 
-        result = await self._wait_for_long_running_task_results(data)
+        result = await self._wait_for_long_running_task_results(
+            data, _get_server_addr_from_response(response)
+        )
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
@@ -238,7 +250,9 @@ class AuthSession:
         data = Envelope[TaskGet].parse_raw(response.text).data
         assert data is not None  # nosec
 
-        result = await self._wait_for_long_running_task_results(data)
+        result = await self._wait_for_long_running_task_results(
+            data, _get_server_addr_from_response(response)
+        )
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
