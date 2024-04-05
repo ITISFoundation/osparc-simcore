@@ -318,6 +318,11 @@ def create_new_project_and_delete(
             api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
 
 
+# SEE https://github.com/ITISFoundation/osparc-simcore/pull/5618#discussion_r1553943415
+_OUTER_CONTEXT_TIMEOUT_MS = 30000  # Default is `30000` (30 seconds)
+_INNER_CONTEXT_TIMEOUT_MS = 0.8 * _OUTER_CONTEXT_TIMEOUT_MS
+
+
 @pytest.fixture
 def start_and_stop_pipeline(
     product_url: AnyUrl,
@@ -342,14 +347,16 @@ def start_and_stop_pipeline(
                 )
             )
 
-            # NOTE: Keep expect_request as an inner
-            # context. In case of timeout, we want
+            # NOTE: Keep expect_request as an inner context. In case of timeout, we want
             # to know whether the POST was requested or not.
             with log_in_and_out.expect_event(
-                "framereceived", waiter
+                "framereceived",
+                waiter,
+                timeout=_OUTER_CONTEXT_TIMEOUT_MS,
             ) as event, page.expect_request(
-                lambda request: re.search(r"/computations", request.url)
-                and request.method.upper() == "POST"  # type: ignore
+                lambda r: re.search(r"/computations", r.url)
+                and r.method.upper() == "POST",  # type: ignore
+                timeout=_INNER_CONTEXT_TIMEOUT_MS,
             ) as request_info:
                 page.get_by_test_id("runStudyBtn").click()
 
