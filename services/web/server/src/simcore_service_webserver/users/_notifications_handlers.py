@@ -44,10 +44,9 @@ async def _get_user_notifications(
     print("notifications", notifications)
     def filter_by_product(n):
         print("n", n)
+        # make it backwards compatible
         product = getattr(n, "product", None)
         return product == product_name
-        # make it backwards compatible
-        return True
     filtered_notifications = list(filter(filter_by_product, notifications))
     print("filtered_notifications", filtered_notifications)
     return filtered_notifications
