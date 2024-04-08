@@ -17,7 +17,6 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGet,
     NodeGetIdle,
     NodeGetUnknown,
-    NodeOutputs,
     NodeRetrieve,
 )
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupTypeInModel
@@ -64,7 +63,7 @@ from ..users.api import get_user_id_from_gid, get_user_role
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
 from ..wallets.errors import WalletNotEnoughCreditsError
-from . import nodes_utils, projects_api
+from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots
 from .db import ProjectDBAPI
@@ -218,8 +217,7 @@ async def delete_node(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:retrieve",
-    name="retrieve_node",
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:retrieve", name="retrieve_node"
 )
 @login_required
 @permission_required("project.node.read")
@@ -237,37 +235,8 @@ async def retrieve_node(request: web.Request) -> web.Response:
     )
 
 
-@routes.patch(
-    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}/outputs",
-    name="update_node_outputs",
-)
-@login_required
-@permission_required(
-    "project.node.create"
-)  # TODO use correct permission, or add a new one
-@_handle_project_nodes_exceptions
-async def update_node_outputs(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(NodePathParams, request)
-    node_outputs = await parse_request_body_as(NodeOutputs, request)
-
-    ui_changed_keys = set()
-    ui_changed_keys.add(path_params.node_id)
-    return await nodes_utils.update_node_outputs(
-        app=request.app,
-        user_id=req_ctx.user_id,
-        project_uuid=path_params.project_id,
-        node_uuid=path_params.node_id,
-        outputs=node_outputs.outputs,
-        run_hash=None,
-        node_errors=None,
-        ui_changed_keys=ui_changed_keys,
-    )
-
-
 @routes.post(
-    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:start",
-    name="start_node",
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:start", name="start_node"
 )
 @login_required
 @permission_required("project.update")
@@ -355,8 +324,7 @@ async def stop_node(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart",
-    name="restart_node",
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:restart", name="restart_node"
 )
 @login_required
 @permission_required("project.node.read")
@@ -396,7 +364,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
     if f"{path_params.node_id}" not in project["workbench"]:
         project_uuid = f"{path_params.project_id}"
         node_id = f"{path_params.node_id}"
-        raise NodeNotFoundError(project_uuid, node_id)
+        raise NodeNotFoundError(project_uuid=project_uuid, node_uuid=node_id)
 
     resources: ServiceResourcesDict = await projects_api.get_project_node_resources(
         request.app,
@@ -414,7 +382,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
     name="replace_node_resources",
 )
 @login_required
-@permission_required("project.node.create")
+@permission_required("project.node.update")
 @_handle_project_nodes_exceptions
 async def replace_node_resources(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
@@ -428,7 +396,9 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
     )
     if f"{path_params.node_id}" not in project["workbench"]:
-        raise NodeNotFoundError(f"{path_params.project_id}", f"{path_params.node_id}")
+        raise NodeNotFoundError(
+            project_uuid=f"{path_params.project_id}", node_uuid=f"{path_params.node_id}"
+        )
     try:
         new_node_resources = await projects_api.update_project_node_resources(
             request.app,
@@ -473,9 +443,7 @@ class _ProjectGroupAccess(BaseModel):
 @login_required
 @permission_required("project.read")
 @_handle_project_nodes_exceptions
-async def get_project_services_access_for_gid(
-    request: web.Request,
-) -> web.Response:
+async def get_project_services_access_for_gid(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     query_params = parse_request_query_parameters_as(_ServicesAccessQuery, request)

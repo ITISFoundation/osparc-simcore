@@ -1,7 +1,6 @@
 # pylint: disable=R0904
 
 import logging
-import typing
 import urllib.parse
 from dataclasses import dataclass
 from functools import partial
@@ -14,17 +13,11 @@ from models_library.api_schemas_api_server.pricing_plans import ServicePricingPl
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.api_schemas_webserver.product import GetCreditPrice
-from models_library.api_schemas_webserver.projects import (
-    ProjectCreateNew,
-    ProjectGet,
-    ProjectUpdate,
-)
+from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataGet,
     ProjectMetadataUpdate,
 )
-from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
-from models_library.api_schemas_webserver.projects_ports import ProjectInputUpdate
 from models_library.api_schemas_webserver.resource_usage import (
     PricingPlanGet,
     PricingUnitGet,
@@ -36,8 +29,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.basic_types import NonNegativeDecimal
 from models_library.clusters import ClusterID
 from models_library.generics import Envelope
-from models_library.projects import Project, ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
@@ -330,28 +322,6 @@ class AuthSession:
         assert data  # nosec
         return data
 
-    @_exception_mapper(_JOB_STATUS_MAP)
-    async def update_project(
-        self, *, project_id: UUID, update_params: ProjectUpdate
-    ) -> ProjectGet:
-        response = await self.client.get(
-            f"/projects/{project_id}", cookies=self.session_cookies
-        )
-        response.raise_for_status()
-        project: Project | None = Envelope[Project].parse_raw(response.text).data
-        assert project is not None  # nosec
-        response = await self.client.put(
-            f"/projects/{project_id}",
-            cookies=self.session_cookies,
-            json=jsonable_encoder(
-                project.copy(update=update_params.dict(exclude_none=True))
-            ),
-        )
-        response.raise_for_status()
-        data = Envelope[ProjectGet].parse_raw(response.text).data
-        assert data is not None  # nosec
-        return data
-
     @_exception_mapper(
         {
             status.HTTP_404_NOT_FOUND: (
@@ -414,53 +384,6 @@ class AuthSession:
             json=jsonable_encoder(body, exclude_unset=True, exclude_defaults=True),
         )
         response.raise_for_status()
-
-    @_exception_mapper({})
-    async def update_project_inputs(
-        self,
-        project_id: ProjectID,
-        new_inputs: list[ProjectInputUpdate],
-    ) -> dict[NodeID, dict[str, typing.Any]]:
-        response = await self.client.patch(
-            f"/projects/{project_id}/inputs",
-            cookies=self.session_cookies,
-            json=jsonable_encoder(new_inputs),
-        )
-        response.raise_for_status()
-        data = (
-            Envelope[dict[NodeID, dict[str, typing.Any]]].parse_raw(response.text).data
-        )
-        assert data  # nosec
-        return data
-
-    @_exception_mapper({})
-    async def get_project_inputs(
-        self, project_id: ProjectID
-    ) -> dict[NodeID, dict[str, typing.Any]]:
-        response = await self.client.get(
-            f"/projects/{project_id}/inputs",
-            cookies=self.session_cookies,
-        )
-
-        response.raise_for_status()
-
-        data = (
-            Envelope[dict[NodeID, dict[str, typing.Any]]].parse_raw(response.text).data
-        )
-        return {} if data is None else data
-
-    @_exception_mapper({})
-    async def update_node_outputs(
-        self, project_id: UUID, node_id: UUID, new_node_outputs: NodeOutputs
-    ) -> NodeOutputs:
-        response = await self.client.patch(
-            f"/projects/{project_id}/nodes/{node_id}/outputs",
-            cookies=self.session_cookies,
-            json=jsonable_encoder(new_node_outputs),
-        )
-        response.raise_for_status()
-        data = Envelope[NodeOutputs].parse_raw(response.text).data
-        return NodeOutputs(outputs={}) if data is None else data
 
     # WALLETS -------------------------------------------------
 
