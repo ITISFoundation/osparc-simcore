@@ -1,4 +1,5 @@
 import logging
+import json
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -40,12 +41,13 @@ async def _get_user_notifications(
     raw_notifications: list[str] = await redis_client.lrange(
         get_notification_key(user_id), -1 * MAX_NOTIFICATIONS_FOR_USER_TO_SHOW, -1
     )
+    notifications = [json.loads(r) for r in raw_notifications]
     # make it backwards compatible
-    for n in raw_notifications:
+    for n in notifications:
         if not "product" in n:
             n["product"] = "UNDEFINED"
     # Filter by product
-    filtered_notifications = list(filter(lambda n: n["product"] in [product_name, "UNDEFINED"], raw_notifications))
+    filtered_notifications = list(filter(lambda n: n["product"] in [product_name, "UNDEFINED"], notifications))
     return [UserNotification.parse_raw(x) for x in filtered_notifications]
 
 
