@@ -36,7 +36,7 @@ from simcore_service_dynamic_sidecar.modules.system_monitor._notifier import (
 )
 from socketio import AsyncServer
 from tenacity import AsyncRetrying
-from tenacity.stop import stop_after_attempt
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
@@ -112,7 +112,7 @@ def _get_on_service_disk_usage_event(
     # emulates front-end receiving message
 
     async def on_service_status(data):
-        assert parse_obj_as(dict[Path, DiskUsage], data) is not None
+        assert parse_obj_as(ServiceDiskUsage, data) is not None
 
     on_event_spy = AsyncMock(wraps=on_service_status)
     socketio_client.on(SOCKET_IO_SERVICE_DISK_USAGE_EVENT, on_event_spy)
@@ -122,7 +122,7 @@ def _get_on_service_disk_usage_event(
 
 async def _assert_call_count(mock: AsyncMock, *, call_count: int) -> None:
     async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1), stop=stop_after_attempt(5000), reraise=True
+        wait=wait_fixed(0.1), stop=stop_after_delay(5), reraise=True
     ):
         with attempt:
             assert mock.call_count == call_count

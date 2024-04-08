@@ -43,7 +43,7 @@ mdurl==0.1.2
     # via markdown-it-py
 msgpack==1.0.7
     # via distributed
-orjson==3.9.10
+orjson==3.10.0
 packaging==23.2
     # via
     #   dask

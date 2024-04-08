@@ -65,12 +65,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         row: 3,
         column: 0
       },
-      VIEWER_MODE: {
-        row: 3,
-        column: 1,
-        rowSpan: 2,
-        colSpan: 1
-      },
       FOOTER: {
         row: 4,
         column: 0,
@@ -79,30 +73,29 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       }
     },
     FPOS: {
-      STATUS: {
+      MODIFIED: {
         row: 0,
         column: 0,
         rowSpan: 1,
-        colSpan: 4
+        colSpan: 2
       },
-      MODIFIED: {
-        row: 1,
-        column: 0,
-        rowSpan: 1,
-        colSpan: 3
+      VIEWER_MODE: {
+        row: 0,
+        column: 3,
+        colSpan: 1
       },
       UPDATES: {
-        row: 1,
+        row: 0,
         column: 4,
         colSpan: 1
       },
       TSR: {
-        row: 3,
+        row: 1,
         column: 0,
         colSpan: 2
       },
       HITS: {
-        row: 3,
+        row: 1,
         column: 2,
         colSpan: 1
       }
@@ -282,8 +275,9 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
             textColor: "status_icon",
-            height: 12,
-            width: 12,
+            height: 13,
+            width: 13,
+            margin: [0, 1]
           });
           layout = this.getChildControl("subtitle");
           layout.set({

@@ -52,10 +52,11 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           break;
         case "workbench-mode":
           control = new qx.ui.basic.Image().set({
-            alignY: "middle"
+            alignY: "middle",
+            padding: [0, 5]
           });
-          layout = this.getChildControl("main-layout");
-          layout.add(control, osparc.dashboard.GridButtonBase.POS.VIEWER_MODE);
+          layout = this.getChildControl("footer");
+          layout.add(control, osparc.dashboard.GridButtonBase.FPOS.VIEWER_MODE);
           break;
         case "empty-workbench": {
           control = this._getEmptyWorkbenchIcon();
@@ -68,7 +69,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             source: "@MaterialIcons/update/16",
             visibility: "excluded",
             alignY: "middle",
-            alignX: "center"
+            padding: [0, 5]
           });
           osparc.utils.Utils.setIdToWidget(control, "updateStudyBtn");
           layout = this.getChildControl("footer");
