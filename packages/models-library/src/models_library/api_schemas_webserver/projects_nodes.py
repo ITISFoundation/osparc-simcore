@@ -121,10 +121,6 @@ class NodeGetUnknown(OutputSchema):
         }
 
 
-class NodeOutputs(InputSchemaWithoutCameCase):
-    outputs: dict[str, Any]
-
-
 class NodeRetrieve(InputSchemaWithoutCameCase):
     port_keys: list[ServicePortKey] = []
 
