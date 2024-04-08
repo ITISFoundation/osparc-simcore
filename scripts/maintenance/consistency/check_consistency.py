@@ -140,7 +140,7 @@ async def _summary() -> None:
     async with db_engine() as engine:
         project_nodes = await _get_projects_nodes(engine)
 
-    print("Very good we are done!")
+    print("[yellow bold]Very good we are done!")
 
 
 @app.command()
