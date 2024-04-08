@@ -83,7 +83,7 @@ async def _on_message(
                     await _safe_nack(message_handler, max_retries_upon_error, message)
         except Exception:  # pylint: disable=broad-exception-caught
             _logger.exception("Exception raised when handling message")
-            with log_catch(_logger):
+            with log_catch(_logger, reraise=False):
                 await _safe_nack(message_handler, max_retries_upon_error, message)
 
 
