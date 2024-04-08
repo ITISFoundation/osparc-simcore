@@ -29,7 +29,7 @@ coverage==7.4.4
 docker==7.0.0
 exceptiongroup==1.2.0
     # via pytest
-faker==24.4.0
+faker==24.7.1
 flaky==3.8.1
 frozenlist==1.4.1
     # via
