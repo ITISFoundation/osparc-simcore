@@ -6,7 +6,6 @@ from typing import AsyncIterable, Final
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt
-from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..models.schemas.jobs import JobID, JobLog
@@ -32,7 +31,7 @@ class LogStreamerRegistionConflict(LogDistributionBaseException):
 class LogDistributor:
     def __init__(self, rabbitmq_client: RabbitMQClient):
         self._rabbit_client = rabbitmq_client
-        self._log_streamers: dict[JobID, Queue[JobLog | Exception]] = {}
+        self._log_streamers: dict[JobID, Queue[JobLog]] = {}
         self._queue_name: str
 
     async def setup(self):
@@ -71,13 +70,10 @@ class LogDistributor:
             await queue.put(item)
         except Exception as exc:  # pylint: disable=broad-except
             _logger.exception("Exception raised in log distributor callback")
-            with log_catch(_logger, reraise=False):
-                if queue is not None:
-                    await queue.put(exc)
             return False
         return True
 
-    async def register(self, job_id: JobID, queue: Queue[JobLog | Exception]):
+    async def register(self, job_id: JobID, queue: Queue[JobLog]):
         if job_id in self._log_streamers:
             raise LogStreamerRegistionConflict(
                 f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
@@ -111,7 +107,7 @@ class LogStreamer:
     ):
         self._user_id = user_id
         self._director2_api = director2_api
-        self._queue: Queue[JobLog | Exception] = Queue()
+        self._queue: Queue[JobLog] = Queue()
         self._job_id: JobID = job_id
         self._log_distributor: LogDistributor = log_distributor
         self._is_registered: bool = False
@@ -144,12 +140,9 @@ class LogStreamer:
         done: bool = False
         while not done:
             try:
-                log_or_exception: JobLog | Exception = await asyncio.wait_for(
+                log_or_exception: JobLog = await asyncio.wait_for(
                     self._queue.get(), timeout=self._log_check_timeout
                 )
-                if isinstance(log_or_exception, Exception):
-                    raise log_or_exception
-                else:
-                    yield log_or_exception.json() + _NEW_LINE
+                yield log_or_exception.json() + _NEW_LINE
             except asyncio.TimeoutError:
                 done = await self._project_done()
