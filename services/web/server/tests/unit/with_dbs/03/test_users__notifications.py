@@ -65,7 +65,7 @@ async def notification_redis_client(
 
 def _create_notification(
     logged_user: UserInfoDict,
-    product_name: ProductName = "osparc",
+    product_name: ProductName,
 ) -> UserNotification:
     user_id = logged_user["id"]
     notification_categories = tuple(NotificationCategory)
@@ -290,12 +290,10 @@ async def test_create_user_notification_capped_list_length(
 
 
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
-@pytest.mark.parametrize("product_name", ["s4l", "s4llite"])
 async def test_create_user_notification_per_product(
     logged_user: UserInfoDict,
     notification_redis_client: aioredis.Redis,
     client: TestClient,
-    product_name: ProductName
 ):
     assert client.app
     n_notifications_per_product = 2
@@ -305,14 +303,14 @@ async def test_create_user_notification_per_product(
         _create_notifications(
             redis_client=notification_redis_client,
             logged_user=logged_user,
-            product_name=product_name[0],
+            product_name="osparc",
             count=n_notifications_per_product,
         ) as _,
         # create notifications in "s4l"
         _create_notifications(
             redis_client=notification_redis_client,
             logged_user=logged_user,
-            product_name=product_name[1],
+            product_name="s4l",
             count=n_notifications_per_product,
         ) as _
     ):
@@ -321,14 +319,14 @@ async def test_create_user_notification_per_product(
         osparc_notifications = await _get_user_notifications(
             redis_client=notification_redis_client,
             user_id=user_id,
-            product_name=product_name[0],
+            product_name="osparc",
         )
         assert len(osparc_notifications) == n_notifications_per_product
 
         s4l_notifications = await _get_user_notifications(
             redis_client=notification_redis_client,
             user_id=user_id,
-            product_name=product_name[1],
+            product_name="s4l",
         )
         assert len(s4l_notifications) == n_notifications_per_product
 
