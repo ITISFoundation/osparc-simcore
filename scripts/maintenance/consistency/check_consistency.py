@@ -33,7 +33,7 @@ def main(
     deploy_config: Annotated[
         Path, typer.Option(help="path to the deploy configuration")
     ]
-):
+) -> None:
     state.deploy_config = deploy_config.expanduser()
     assert (
         deploy_config.is_dir()
@@ -56,3 +56,7 @@ def summary() -> None:
     """
 
     asyncio.run(_summary())
+
+
+if __name__ == "__main__":
+    app()
