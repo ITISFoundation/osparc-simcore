@@ -43,7 +43,7 @@ sqlalchemy==1.4.52
     # via dask-gateway-server
 traitlets==5.14.2
     # via dask-gateway-server
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   aiodocker
     #   pydantic

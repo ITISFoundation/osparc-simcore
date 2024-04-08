@@ -32,7 +32,7 @@ distributed==2023.3.2
 docker==7.0.0
 exceptiongroup==1.2.0
     # via pytest
-faker==24.4.0
+faker==24.7.1
 frozenlist==1.4.1
     # via
     #   aiohttp
@@ -133,7 +133,7 @@ tornado==6.4
     # via
     #   dask-gateway
     #   distributed
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   mypy
     #   sqlalchemy2-stubs

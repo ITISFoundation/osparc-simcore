@@ -64,7 +64,7 @@ tomli==2.0.1
     #   pyproject-hooks
 tomlkit==0.12.4
     # via pylint
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   astroid
     #   black

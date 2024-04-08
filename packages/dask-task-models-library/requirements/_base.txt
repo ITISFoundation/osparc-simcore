@@ -7,14 +7,14 @@ click==8.1.7
     # via
     #   dask
     #   distributed
-    #   typer-slim
+    #   typer
 cloudpickle==3.0.0
     # via
     #   dask
     #   distributed
-dask==2024.4.0
+dask==2024.4.1
     # via distributed
-distributed==2024.4.0
+distributed==2024.4.1
     # via dask
 dnspython==2.6.1
     # via email-validator
@@ -66,13 +66,13 @@ referencing==0.34.0
     #   jsonschema
     #   jsonschema-specifications
 rich==13.7.1
-    # via typer-slim
+    # via typer
 rpds-py==0.18.0
     # via
     #   jsonschema
     #   referencing
 shellingham==1.5.4
-    # via typer-slim
+    # via typer
 six==1.16.0
     # via python-dateutil
 sortedcontainers==2.4.0
@@ -86,19 +86,13 @@ toolz==0.12.1
     #   partd
 tornado==6.4
     # via distributed
-typer==0.12.0
-typer-cli==0.12.0
-    # via typer
-typer-slim==0.12.0
-    # via
-    #   typer
-    #   typer-cli
+typer==0.12.1
 types-python-dateutil==2.9.0.20240316
     # via arrow
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   pydantic
-    #   typer-slim
+    #   typer
 urllib3==2.2.1
     # via distributed
 zict==3.0.0
