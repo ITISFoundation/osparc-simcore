@@ -44,10 +44,11 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, Any]:
             "POSTGRES_PASSWORD",
             "POSTGRES_ENDPOINT",
             "POSTGRES_DB",
+            "POSTGRES_PUBLIC_HOST",
         ]:
             assert state.environment[env]
         postgres_db = PostgresDB(
-            dsn=f"postgresql+asyncpg://{state.environment['POSTGRES_USER']}:{state.environment['POSTGRES_PASSWORD']}@{state.environment['POSTGRES_ENDPOINT']}/{state.environment['POSTGRES_DB']}"
+            dsn=f"postgresql+asyncpg://{state.environment['POSTGRES_USER']}:{state.environment['POSTGRES_PASSWORD']}@{state.environment['POSTGRES_PUBLIC_HOST']}/{state.environment['POSTGRES_DB']}"
         )
 
         engine = create_async_engine(
@@ -67,24 +68,19 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, Any]:
 def _parse_environment(deploy_config: Path) -> dict[str, str | None]:
     repo_config = deploy_config / "repo.config"
     assert repo_config.exists()
-    environment = dotenv_values(repo_config)
-    if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
+    non_interpolated_environment = dotenv_values(repo_config, interpolate=False)
+    if non_interpolated_environment.get("AUTOSCALING_EC2_ACCESS_KEY_ID", "").startswith(
+        "${TF_"
+    ):
         print(
-            "Terraform variables detected, looking for repo.config.frozen as alternative."
-            " TIP: you are responsible for them being up to date!!"
+            "[yellow bold]Terraform variables detected, looking for repo.config.frozen as alternative."
+            " TIP: you are responsible for them being up to date!![/yellow bold]"
         )
         repo_config = deploy_config / "repo.config.frozen"
-        assert repo_config.exists()
-        environment = dotenv_values(repo_config)
-
-        if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
-            error_msg = (
-                "Terraform is necessary in order to check into that deployment!\n"
-                f"install terraform (check README.md in {state.deploy_config} for instructions)"
-                "then run make repo.config.frozen, then re-run this code"
-            )
-            print(error_msg)
-            raise typer.Abort(error_msg)
+        assert (
+            repo_config.exists()
+        ), f"{repo_config} is missing, you need to generate it! "
+    environment = dotenv_values(repo_config)
     assert environment  # nosec
     return environment
 
@@ -106,6 +102,7 @@ def main(
 
 async def _get_projects_nodes(engine: AsyncEngine) -> dict[str, Any]:
     async with engine.connect() as conn:
+        print("getting project nodes...")
         result = await conn.execute(
             sa.text(
                 "SELECT uuid, workbench, prj_owner, users.name, users.email"
