@@ -232,7 +232,7 @@ class AuthSession:
     async def clone_project(self, *, project_id: UUID, hidden: bool) -> ProjectGet:
         query = {"from_study": project_id, "hidden": hidden}
         response = await self.client.post(
-            f"/projects", cookies=self.session_cookies, params=query
+            "/projects", cookies=self.session_cookies, params=query
         )
         response.raise_for_status()
         data = Envelope[TaskGet].parse_raw(response.text).data
