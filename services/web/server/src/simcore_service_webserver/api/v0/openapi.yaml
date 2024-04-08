@@ -5705,8 +5705,7 @@ components:
           title: Unitname
           type: string
         unitExtraInfo:
-          title: Unitextrainfo
-          type: object
+          $ref: '#/components/schemas/UnitExtraInfo'
         default:
           title: Default
           type: boolean
@@ -10633,6 +10632,26 @@ components:
       example:
         service: github-api-v1
         token_key: 5f21abf5-c596-47b7-bfd1-c0e436ef1107
+    UnitExtraInfo:
+      title: UnitExtraInfo
+      required:
+      - CPU
+      - RAM
+      - VRAM
+      type: object
+      properties:
+        CPU:
+          title: Cpu
+          minimum: 0
+          type: integer
+        RAM:
+          title: Ram
+          type: integer
+        VRAM:
+          title: Vram
+          type: integer
+      description: Custom information that is propagated to the frontend. Defined
+        fields are mandatory.
     UnregisterCheck:
       title: UnregisterCheck
       required:
@@ -10679,8 +10698,7 @@ components:
           title: Unitname
           type: string
         unitExtraInfo:
-          title: Unitextrainfo
-          type: object
+          $ref: '#/components/schemas/UnitExtraInfo'
         default:
           title: Default
           type: boolean

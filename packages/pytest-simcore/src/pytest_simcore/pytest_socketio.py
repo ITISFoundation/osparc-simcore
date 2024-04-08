@@ -1,7 +1,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
 from collections.abc import AsyncIterable, AsyncIterator, Callable
 from contextlib import _AsyncGeneratorContextManager, asynccontextmanager
 from unittest.mock import AsyncMock
@@ -9,7 +8,6 @@ from unittest.mock import AsyncMock
 import pytest
 import socketio
 from aiohttp import web
-from aiohttp.test_utils import TestServer
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.users import UserID
 from pytest_mock import MockerFixture
@@ -20,9 +18,9 @@ from yarl import URL
 
 
 @pytest.fixture
-async def socketio_server_factory() -> Callable[
-    [RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]
-]:
+async def socketio_server_factory() -> (
+    Callable[[RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]]
+):
     @asynccontextmanager
     async def _(rabbit_settings: RabbitSettings) -> AsyncIterator[AsyncServer]:
         # Same configuration as simcore_service_webserver/socketio/server.py
@@ -56,27 +54,18 @@ async def web_server(
     aiohttp_app = web.Application()
     socketio_server.attach(aiohttp_app)
 
-    async def _lifespan(
-        server: TestServer, started: asyncio.Event, teardown: asyncio.Event
-    ):
-        # NOTE: this is necessary to avoid blocking comms between client and this server
-        await server.start_server()
-        started.set()  # notifies started
-        await teardown.wait()  # keeps test0server until needs to close
-        await server.close()
+    server_port = unused_tcp_port_factory()
 
-    setup = asyncio.Event()
-    teardown = asyncio.Event()
+    runner = web.AppRunner(aiohttp_app)
+    await runner.setup()
 
-    server = TestServer(aiohttp_app, port=unused_tcp_port_factory())
-    t = asyncio.create_task(_lifespan(server, setup, teardown), name="server-lifespan")
+    site = web.TCPSite(runner, "localhost", server_port)
+    await site.start()
 
-    await setup.wait()
+    yield URL(f"http://localhost:{server_port}")
 
-    yield URL(server.make_url("/"))
-
-    assert t
-    teardown.set()
+    await site.stop()
+    await runner.cleanup()
 
 
 @pytest.fixture

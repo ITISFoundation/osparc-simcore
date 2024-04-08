@@ -35,18 +35,3 @@ class ProjectNotFoundError(DatabaseAccessError):
 class LinkAlreadyExistsError(DatabaseAccessError):
     code = "link.already_exists_error"
     msg_template: str = "The link {file_id} already exists"
-
-
-class S3AccessError(StorageRuntimeError):
-    code = "s3_access.error"
-    msg_template: str = "Unexpected error while accessing S3 backend"
-
-
-class S3BucketInvalidError(S3AccessError):
-    code = "s3_bucket.invalid_error"
-    msg_template: str = "The bucket '{bucket}' is invalid"
-
-
-class S3KeyNotFoundError(S3AccessError):
-    code = "s3_key.not_found_error"
-    msg_template: str = "The file {key}  in {bucket} was not found"

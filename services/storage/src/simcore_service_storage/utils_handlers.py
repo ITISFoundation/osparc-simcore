@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from aiohttp.typedefs import Handler
 from aiohttp.web_request import Request
+from aws_library.s3.errors import S3AccessError, S3KeyNotFoundError
 from pydantic import ValidationError
 from servicelib.aiohttp.aiopg_utils import DBAPIError
 
@@ -14,8 +15,6 @@ from .exceptions import (
     LinkAlreadyExistsError,
     ProjectAccessRightError,
     ProjectNotFoundError,
-    S3AccessError,
-    S3KeyNotFoundError,
 )
 
 _logger = logging.getLogger(__name__)

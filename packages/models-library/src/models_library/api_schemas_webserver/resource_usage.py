@@ -1,8 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from models_library.utils.common_validators import ensure_unique_dict_values_validator
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
@@ -15,6 +14,7 @@ from ..resource_tracker import (
     ServiceRunId,
     ServiceRunStatus,
     SpecificInfo,
+    UnitExtraInfo,
 )
 from ..services import ServiceKey, ServiceVersion
 from ..users import UserID
@@ -111,16 +111,11 @@ class UpdatePricingPlanBodyParams(InputSchema):
 
 class CreatePricingUnitBodyParams(InputSchema):
     unit_name: str
-    unit_extra_info: dict
+    unit_extra_info: UnitExtraInfo
     default: bool
     specific_info: SpecificInfo
     cost_per_unit: Decimal
     comment: str
-
-    # validators
-    _unique_unit_extra_info_validator = validator(
-        "unit_extra_info", allow_reuse=True, pre=True
-    )(ensure_unique_dict_values_validator)
 
     class Config:
         anystr_strip_whitespace = True
@@ -129,15 +124,10 @@ class CreatePricingUnitBodyParams(InputSchema):
 
 class UpdatePricingUnitBodyParams(InputSchema):
     unit_name: str
-    unit_extra_info: dict
+    unit_extra_info: UnitExtraInfo
     default: bool
     specific_info: SpecificInfo
     pricing_unit_cost_update: PricingUnitCostUpdate | None
-
-    # validators
-    _unique_unit_extra_info_validator = validator(
-        "unit_extra_info", allow_reuse=True, pre=True
-    )(ensure_unique_dict_values_validator)
 
     class Config:
         anystr_strip_whitespace = True

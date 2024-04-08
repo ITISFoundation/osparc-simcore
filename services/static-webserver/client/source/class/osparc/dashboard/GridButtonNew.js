@@ -40,7 +40,10 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
 
     if (title) {
       const titleLabel = this.getChildControl("title");
-      titleLabel.setValue(title);
+      titleLabel.set({
+        value: title,
+        rich: true
+      });
     }
 
     if (description) {
