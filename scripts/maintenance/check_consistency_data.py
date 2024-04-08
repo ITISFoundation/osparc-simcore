@@ -31,13 +31,15 @@ async def managed_docker_compose(
     typer.echo("starting up database in localhost")
     compose_file = Path.cwd() / "consistency" / "docker-compose.yml"
     try:
-        subprocess.run(
-            ["docker compose", "--file", compose_file, "up", "--detach"],
-            shell=False,
-            check=True,
+        process = await asyncio.create_subprocess_exec(
+            *["docker", "compose", "--file", compose_file, "up", "--detach"],
             cwd=compose_file.parent,
-            env={**os.environ, **{"POSTGRES_DATA_VOLUME": postgres_volume_name}},
+            env={**os.environ, "POSTGRES_DATA_VOLUME": postgres_volume_name},
         )
+        await process.wait()
+        if process.returncode != 0:
+            msg = "Docker compose failed to start"
+            raise RuntimeError(msg)
         typer.echo(
             f"database started: adminer available on http://127.0.0.1:18080/?pgsql=postgres&username={postgres_username}&db=simcoredb&ns=public"
         )
@@ -50,20 +52,17 @@ async def managed_docker_compose(
         async def postgres_responsive():
             async with aiopg.create_pool(
                 f"dbname=simcoredb user={postgres_username} password={postgres_password} host=127.0.0.1"
-            ) as pool:
-                async with pool.acquire() as conn:
-                    async with conn.cursor() as cur:
-                        await cur.execute("SELECT 1")
+            ) as pool, pool.acquire() as conn, conn.cursor() as cur:
+                await cur.execute("SELECT 1")
 
         await postgres_responsive()
         yield
     finally:
-        subprocess.run(
-            ["docker compose", "--file", compose_file, "down"],
-            shell=False,
-            check=True,
+        stop_process = await asyncio.create_subprocess_exec(
+            *["docker", "compose", "--file", compose_file, "down"],
             cwd=compose_file.parent,
         )
+        await stop_process.wait()
 
 
 async def _get_projects_nodes(pool) -> dict[str, Any]:
@@ -99,38 +98,36 @@ async def _get_projects_nodes(pool) -> dict[str, Any]:
 async def _get_files_from_project_nodes(
     pool, project_uuid: str, node_ids: list[str]
 ) -> set[tuple[str, int, datetime]]:
-    async with pool.acquire() as conn:
-        async with conn.cursor() as cursor:
-            array = str([f"{project_uuid}/{n}%" for n in node_ids])
-            await cursor.execute(
-                "SELECT file_id, file_size, last_modified"
-                ' FROM "file_meta_data"'
-                f" WHERE file_meta_data.file_id LIKE any (array{array}) AND location_id = '0'"
-            )
+    async with pool.acquire() as conn, conn.cursor() as cursor:
+        array = str([f"{project_uuid}/{n}%" for n in node_ids])
+        await cursor.execute(
+            "SELECT file_id, file_size, last_modified"
+            ' FROM "file_meta_data"'
+            f" WHERE file_meta_data.file_id LIKE any (array{array}) AND location_id = '0'"
+        )
 
-            # here we got all the files for that project uuid/node_ids combination
-            file_rows = await cursor.fetchall()
-            return {
-                (file_id, file_size, parser.parse(last_modified or "2000-01-01"))
-                for file_id, file_size, last_modified in file_rows
-            }
+        # here we got all the files for that project uuid/node_ids combination
+        file_rows = await cursor.fetchall()
+        return {
+            (file_id, file_size, parser.parse(last_modified or "2000-01-01"))
+            for file_id, file_size, last_modified in file_rows
+        }
 
 
 async def _get_all_invalid_files_from_file_meta_data(
     pool,
 ) -> set[tuple[str, int, datetime]]:
-    async with pool.acquire() as conn:
-        async with conn.cursor() as cursor:
-            await cursor.execute(
-                'SELECT file_id, file_size, last_modified FROM "file_meta_data" '
-                "WHERE file_meta_data.file_size < 1 OR file_meta_data.entity_tag IS NULL"
-            )
-            # here we got all the files for that project uuid/node_ids combination
-            file_rows = await cursor.fetchall()
-            return {
-                (file_id, file_size, parser.parse(last_modified or "2000-01-01"))
-                for file_id, file_size, last_modified in file_rows
-            }
+    async with pool.acquire() as conn, conn.cursor() as cursor:
+        await cursor.execute(
+            'SELECT file_id, file_size, last_modified FROM "file_meta_data" '
+            "WHERE file_meta_data.file_size < 1 OR file_meta_data.entity_tag IS NULL"
+        )
+        # here we got all the files for that project uuid/node_ids combination
+        file_rows = await cursor.fetchall()
+        return {
+            (file_id, file_size, parser.parse(last_modified or "2000-01-01"))
+            for file_id, file_size, last_modified in file_rows
+        }
 
 
 POWER_LABELS = {0: "B", 1: "KiB", 2: "MiB", 3: "GiB"}
@@ -225,7 +222,7 @@ async def main_async(
     s3_bucket: str,
 ):
     # ---------------------- GET FILE ENTRIES FROM DB PROKECT TABLE -------------------------------------------------------------
-    async with managed_docker_compose(
+    async with managed_docker_compose(  # noqa: SIM117
         postgres_volume_name, postgres_username, postgres_password
     ):
         # now the database is up, let's get all the projects owned by a non-GUEST account
@@ -277,7 +274,8 @@ async def main_async(
         f"now connecting with S3 backend and getting files for {len(project_nodes)} projects..."
     )
     # pull first: prevents _get_files_from_s3_backend from pulling it and poluting outputs
-    subprocess.run("docker pull minio/mc", shell=True, check=True)
+    process = await asyncio.create_subprocess_exec(*["docker", "pull", "minio/mc"])
+    await process.wait()
     with typer.progressbar(length=len(project_nodes)) as progress:
         all_sets_in_s3 = await limited_gather(
             *[
