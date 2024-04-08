@@ -197,7 +197,7 @@ async def test_list_user_notifications(
                 "title": "New organization",
                 "text": "You're now member of a new Organization",
                 "date": "2023-02-23T16:23:13.122Z",
-                "product": "s4l",
+                "product": "osparc",
                 "read": True,
             },
             id="with_extra_params_that_will_get_overwritten",
