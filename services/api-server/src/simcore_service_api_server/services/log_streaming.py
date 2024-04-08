@@ -6,6 +6,7 @@ from typing import AsyncIterable, Final
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..models.schemas.jobs import JobID, JobLog
@@ -53,8 +54,7 @@ class LogDistributor:
         await self.teardown()
 
     async def _distribute_logs(self, data: bytes):
-        queue: Queue | None = None
-        try:
+        with log_catch(_logger, reraise=False):
             got = LoggerRabbitMessage.parse_raw(data)
             item = JobLog(
                 job_id=got.project_id,
@@ -68,10 +68,8 @@ class LogDistributor:
                     f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
                 )
             await queue.put(item)
-        except Exception as exc:  # pylint: disable=broad-except
-            _logger.exception("Exception raised in log distributor callback")
-            return False
-        return True
+            return True
+        return False
 
     async def register(self, job_id: JobID, queue: Queue[JobLog]):
         if job_id in self._log_streamers:
