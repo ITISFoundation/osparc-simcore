@@ -191,6 +191,7 @@ typing-extensions==4.10.0
     #   pydantic
     #   typer-slim
     #   types-aiobotocore
+    #   types-aiobotocore-ec2
     #   types-aiobotocore-s3
 ujson==5.9.0
     # via aiohttp-swagger
