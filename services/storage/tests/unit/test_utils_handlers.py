@@ -6,6 +6,7 @@
 import pytest
 from aiohttp import web
 from aiohttp.typedefs import Handler
+from aws_library.s3.errors import S3KeyNotFoundError
 from pydantic import BaseModel, ValidationError
 from pytest_mock import MockerFixture
 from servicelib.aiohttp.aiopg_utils import DBAPIError
@@ -15,7 +16,6 @@ from simcore_service_storage.exceptions import (
     FileMetaDataNotFoundError,
     ProjectAccessRightError,
     ProjectNotFoundError,
-    S3KeyNotFoundError,
 )
 from simcore_service_storage.utils_handlers import dsm_exception_handler
 
