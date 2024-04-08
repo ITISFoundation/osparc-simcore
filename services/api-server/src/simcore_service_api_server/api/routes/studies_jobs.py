@@ -8,6 +8,7 @@ from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
 from models_library.function_services_catalog.services import file_picker
 from pydantic import PositiveInt
+from servicelib.logging_utils import log_context
 from simcore_service_api_server.api.dependencies.authentication import (
     get_current_user_id,
 )
@@ -160,8 +161,8 @@ async def delete_study_job(
 ):
     """Deletes an existing study job"""
     job_name = _compose_job_resource_name(study_id, job_id)
-    _logger.debug("Deleting Job '%s'", job_name)
-    await webserver_api.delete_project(project_id=job_id)
+    with log_context(_logger, logging.DEBUG, f"Deleting Job '{job_name}'"):
+        await webserver_api.delete_project(project_id=job_id)
 
 
 @router.post(
@@ -179,21 +180,20 @@ async def start_study_job(
     cluster_id: ClusterID | None = None,
 ) -> JobStatus:
     job_name = _compose_job_resource_name(study_id, job_id)
-    _logger.debug("Starting Job '%s'", job_name)
-
-    await start_project(
-        request=request,
-        job_id=job_id,
-        expected_job_name=job_name,
-        webserver_api=webserver_api,
-        cluster_id=cluster_id,
-    )
-    return await inspect_study_job(
-        study_id=study_id,
-        job_id=job_id,
-        user_id=user_id,
-        director2_api=director2_api,
-    )
+    with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):
+        await start_project(
+            request=request,
+            job_id=job_id,
+            expected_job_name=job_name,
+            webserver_api=webserver_api,
+            cluster_id=cluster_id,
+        )
+        return await inspect_study_job(
+            study_id=study_id,
+            job_id=job_id,
+            user_id=user_id,
+            director2_api=director2_api,
+        )
 
 
 @router.post(
@@ -208,11 +208,10 @@ async def stop_study_job(
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
     job_name = _compose_job_resource_name(study_id, job_id)
-    _logger.debug("Stopping Job '%s'", job_name)
-
-    return await stop_project(
-        job_id=job_id, user_id=user_id, director2_api=director2_api
-    )
+    with log_context(_logger, logging.DEBUG, f"Stopping Job '{job_name}'"):
+        return await stop_project(
+            job_id=job_id, user_id=user_id, director2_api=director2_api
+        )
 
 
 @router.post(
