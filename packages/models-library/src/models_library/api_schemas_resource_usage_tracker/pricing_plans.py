@@ -11,13 +11,14 @@ from ..resource_tracker import (
     PricingPlanId,
     PricingUnitCostId,
     PricingUnitId,
+    UnitExtraInfo,
 )
 
 
 class PricingUnitGet(BaseModel):
     pricing_unit_id: PricingUnitId
     unit_name: str
-    unit_extra_info: dict
+    unit_extra_info: UnitExtraInfo
     current_cost_per_unit: Decimal
     current_cost_per_unit_id: PricingUnitCostId
     default: bool
@@ -29,7 +30,7 @@ class PricingUnitGet(BaseModel):
                 {
                     "pricing_unit_id": 1,
                     "unit_name": "SMALL",
-                    "unit_extra_info": {},
+                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,
