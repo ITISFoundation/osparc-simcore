@@ -43,11 +43,12 @@ async def _get_user_notifications(
     def filter_by_product(n):
         if "product" in n:
             return n["product"] == product_name
+        # make it backwards compatible
         n["product"] = "UNDEFINED"
         return True
     filtered_notifications = list(filter(filter_by_product, raw_notifications))
     notifications = [UserNotification.parse_raw(x) for x in filtered_notifications]
-    return filtered_notifications
+    return notifications
 
 
 @routes.get(f"/{API_VTAG}/me/notifications", name="list_user_notifications")
