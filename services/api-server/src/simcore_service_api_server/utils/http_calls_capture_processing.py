@@ -52,14 +52,13 @@ class CapturedParameterSchema(BaseModel):
         anyOf = values.get("anyOf")
         allOf = values.get("allOf")
         oneOf = values.get("oneOf")
-        if type_ is None and oneOf is None and anyOf is None and allOf is None:
+        if not any([type_, oneOf, anyOf, allOf]):
             type_ = "str"  # this default is introduced because we have started using json query params in the webserver
             values["type_"] = type_
-        if type_ != "str":
-            if pattern is not None or format_ is not None:
-                raise ValueError(
-                    f"For {type_=} both {pattern=} and {format_=} must be None"
-                )
+        if type_ != "str" and any([pattern, format_]):
+            raise ValueError(
+                f"For {type_=} both {pattern=} and {format_=} must be None"
+            )
 
         def _check_no_recursion(v: list["CapturedParameterSchema"]):
             if v is not None and not all(
