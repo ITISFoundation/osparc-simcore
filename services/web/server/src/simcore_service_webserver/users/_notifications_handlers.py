@@ -41,12 +41,15 @@ async def _get_user_notifications(
         get_notification_key(user_id), -1 * MAX_NOTIFICATIONS_FOR_USER_TO_SHOW, -1
     )
     notifications = [UserNotification.parse_raw(x) for x in raw_notifications]
+    print("notifications", notifications)
     def filter_by_product(n):
-        if "product" in n:
-            return n["product"] == product_name
+        print("n", n)
+        product = getattr(n, "product", None)
+        return product == product_name
         # make it backwards compatible
         return True
     filtered_notifications = list(filter(filter_by_product, notifications))
+    print("filtered_notifications", filtered_notifications)
     return filtered_notifications
 
 
