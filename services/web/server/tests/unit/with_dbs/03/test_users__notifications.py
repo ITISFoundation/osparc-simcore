@@ -63,9 +63,7 @@ async def notification_redis_client(
     await redis_client.flushall()
 
 
-@asynccontextmanager
-async def _create_notification(
-    redis_client: aioredis.Redis,
+def _create_notification(
     logged_user: UserInfoDict,
     product_name: ProductName = "osparc",
 ) -> UserNotification:
@@ -86,9 +84,6 @@ async def _create_notification(
         )
     )
 
-    redis_key = get_notification_key(user_id)
-    await redis_client.lpush(redis_key, notification.json())
-
     return notification
 
 
@@ -101,13 +96,18 @@ async def _create_notifications(
 ) -> AsyncIterator[list[UserNotification]]:
 
     user_notifications: list[UserNotification] = [
-        await _create_notification(
-            redis_client=redis_client,
+        _create_notification(
             logged_user=logged_user,
             product_name=product_name
         )
         for _ in range(count)
     ]
+
+    user_id = logged_user["id"]
+    redis_key = get_notification_key(user_id)
+    if user_notifications:
+        for notification in user_notifications:
+            await redis_client.lpush(redis_key, notification.json())
 
     yield user_notifications
 
