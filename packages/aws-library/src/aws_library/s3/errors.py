@@ -50,7 +50,7 @@ def s3_exception_handler(log: logging.Logger):
                 match status_code, operation_name:
                     case 404, "HeadObject":
                         raise S3KeyNotFoundError(bucket=args[0], key=args[1]) from exc
-                    case 404, "HeadBucket" | 403, "HeadBucket":
+                    case (404, "HeadBucket") | (403, "HeadBucket"):
                         raise S3BucketInvalidError(bucket=args[0]) from exc
                     case _:
                         raise S3AccessError from exc
