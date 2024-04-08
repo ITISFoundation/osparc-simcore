@@ -44,9 +44,9 @@ async def _get_user_notifications(
     for n in raw_notifications:
         if not "product" in n:
             n["product"] = "UNDEFINED"
+    # Filter by product
     filtered_notifications = list(filter(lambda n: n["product"] in [product_name, "UNDEFINED"], raw_notifications))
-    notifications = [UserNotification.parse_raw(x) for x in filtered_notifications]
-    return notifications
+    return [UserNotification.parse_raw(x) for x in filtered_notifications]
 
 
 @routes.get(f"/{API_VTAG}/me/notifications", name="list_user_notifications")
