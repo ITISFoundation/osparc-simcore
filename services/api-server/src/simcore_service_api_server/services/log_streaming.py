@@ -140,9 +140,9 @@ class LogStreamer:
         done: bool = False
         while not done:
             try:
-                log_or_exception: JobLog = await asyncio.wait_for(
+                log: JobLog = await asyncio.wait_for(
                     self._queue.get(), timeout=self._log_check_timeout
                 )
-                yield log_or_exception.json() + _NEW_LINE
+                yield log.json() + _NEW_LINE
             except asyncio.TimeoutError:
                 done = await self._project_done()
