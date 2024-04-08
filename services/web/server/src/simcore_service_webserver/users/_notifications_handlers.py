@@ -40,13 +40,11 @@ async def _get_user_notifications(
     raw_notifications: list[str] = await redis_client.lrange(
         get_notification_key(user_id), -1 * MAX_NOTIFICATIONS_FOR_USER_TO_SHOW, -1
     )
-    def filter_by_product(n):
-        if "product" in n:
-            return n["product"] == product_name
-        # make it backwards compatible
-        n["product"] = "UNDEFINED"
-        return True
-    filtered_notifications = list(filter(filter_by_product, raw_notifications))
+    # make it backwards compatible
+    for n in raw_notifications:
+        if not "product" in n:
+            n["product"] = "UNDEFINED"
+    filtered_notifications = list(filter(lambda n: n["product"] in [product_name, "UNDEFINED"], raw_notifications))
     notifications = [UserNotification.parse_raw(x) for x in filtered_notifications]
     return notifications
 
