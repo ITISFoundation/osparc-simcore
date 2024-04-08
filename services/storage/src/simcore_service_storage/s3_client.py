@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Final, TypeAlias
 
 from aws_library.s3.client import SimcoreS3API
-from aws_library.s3.errors import s3_exception_handler
+from aws_library.s3.errors import S3KeyNotFoundError, s3_exception_handler
 from boto3.s3.transfer import TransferConfig
 from models_library.api_schemas_storage import UploadedPart
 from models_library.basic_types import SHA256Str
@@ -17,7 +17,6 @@ from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
-from simcore_service_storage.exceptions import S3KeyNotFoundError
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.type_defs import (
     ListObjectsV2OutputTypeDef,

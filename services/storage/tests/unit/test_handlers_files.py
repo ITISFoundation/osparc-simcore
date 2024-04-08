@@ -22,6 +22,7 @@ import pytest
 from aiohttp import ClientSession
 from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
+from aws_library.s3.errors import S3KeyNotFoundError
 from faker import Faker
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
@@ -48,7 +49,6 @@ from simcore_service_storage.constants import (
     MULTIPART_UPLOADS_MIN_TOTAL_SIZE,
     S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID,
 )
-from simcore_service_storage.exceptions import S3KeyNotFoundError
 from simcore_service_storage.handlers_files import UPLOAD_TASKS_KEY
 from simcore_service_storage.models import S3BucketName, UploadID
 from simcore_service_storage.s3_client import StorageS3Client

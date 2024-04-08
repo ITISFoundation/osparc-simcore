@@ -17,6 +17,11 @@ from uuid import uuid4
 import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
+from aws_library.s3.errors import (
+    S3AccessError,
+    S3BucketInvalidError,
+    S3KeyNotFoundError,
+)
 from faker import Faker
 from models_library.api_schemas_storage import UploadedPart
 from models_library.basic_types import SHA256Str
@@ -27,11 +32,6 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
-from simcore_service_storage.exceptions import (
-    S3AccessError,
-    S3BucketInvalidError,
-    S3KeyNotFoundError,
-)
 from simcore_service_storage.models import MultiPartUploadLinks, S3BucketName
 from simcore_service_storage.s3_client import (
     StorageS3Client,
