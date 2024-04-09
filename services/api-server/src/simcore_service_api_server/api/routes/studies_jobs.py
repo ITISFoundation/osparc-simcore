@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import RedirectResponse
 from models_library.api_schemas_webserver.projects import ProjectUpdate
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
@@ -36,7 +36,6 @@ from ...services.study_job_models_converters import (
     create_job_from_study,
     get_project_and_file_inputs_from_job_inputs,
 )
-from ...services.webserver import ProjectNotFoundError
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._jobs import start_project, stop_project
 
@@ -83,54 +82,47 @@ async def create_study_job(
     job_inputs: JobInputs,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ) -> Job:
-    try:
-        project = await webserver_api.clone_project(project_id=study_id, hidden=True)
-        job = create_job_from_study(
-            study_key=study_id, project=project, job_inputs=job_inputs
+    project = await webserver_api.clone_project(project_id=study_id, hidden=True)
+    job = create_job_from_study(
+        study_key=study_id, project=project, job_inputs=job_inputs
+    )
+    project = await webserver_api.update_project(
+        project_id=job.id, update_params=ProjectUpdate(name=job.name)
+    )
+
+    project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)
+
+    file_param_nodes = {}
+    for node_id, node in project.workbench.items():
+        if (
+            node.key == file_picker.META.key
+            and node.outputs is not None
+            and len(node.outputs) == 0
+        ):
+            file_param_nodes[node.label] = node_id
+
+    file_inputs = {}
+
+    (
+        new_project_inputs,
+        new_project_file_inputs,
+    ) = get_project_and_file_inputs_from_job_inputs(
+        project_inputs, file_inputs, job_inputs
+    )
+
+    for node_label, file_link in new_project_file_inputs.items():
+        node_id = file_param_nodes[node_label]
+
+        await webserver_api.update_node_outputs(
+            project.uuid, node_id, NodeOutputs(outputs={"outFile": file_link})
         )
-        project = await webserver_api.update_project(
-            project_id=job.id, update_params=ProjectUpdate(name=job.name)
-        )
 
-        project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)
+    if len(new_project_inputs) > 0:
+        await webserver_api.update_project_inputs(project.uuid, new_project_inputs)
 
-        file_param_nodes = {}
-        for node_id, node in project.workbench.items():
-            if (
-                node.key == file_picker.META.key
-                and node.outputs is not None
-                and len(node.outputs) == 0
-            ):
-                file_param_nodes[node.label] = node_id
+    assert job.name == _compose_job_resource_name(study_id, job.id)
 
-        file_inputs = {}
-
-        (
-            new_project_inputs,
-            new_project_file_inputs,
-        ) = get_project_and_file_inputs_from_job_inputs(
-            project_inputs, file_inputs, job_inputs
-        )
-
-        for node_label, file_link in new_project_file_inputs.items():
-            node_id = file_param_nodes[node_label]
-
-            await webserver_api.update_node_outputs(
-                project.uuid, node_id, NodeOutputs(outputs={"outFile": file_link})
-            )
-
-        if len(new_project_inputs) > 0:
-            await webserver_api.update_project_inputs(project.uuid, new_project_inputs)
-
-        assert job.name == _compose_job_resource_name(study_id, job.id)
-
-        return job
-
-    except ProjectNotFoundError as exc:
-        raise HTTPException(
-            detail=f"Cannot find study={study_id!r}.",
-            status_code=status.HTTP_404_NOT_FOUND,
-        ) from exc
+    return job
 
 
 @router.get(
