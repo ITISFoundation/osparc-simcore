@@ -131,12 +131,13 @@ async def start_study_job(
             webserver_api=webserver_api,
             cluster_id=cluster_id,
         )
-        return await inspect_study_job(
+        job_status: JobStatus = await inspect_study_job(
             study_id=study_id,
             job_id=job_id,
             user_id=user_id,
             director2_api=director2_api,
         )
+        return job_status
 
 
 @router.post(
