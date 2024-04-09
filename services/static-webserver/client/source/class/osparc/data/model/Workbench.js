@@ -87,7 +87,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     // starts the dynamic services
     initWorkbench: function() {
-      const allModels = this.getNodes(true);
+      const allModels = this.getNodes();
       const nodes = Object.values(allModels);
       nodes.forEach(node => node.startDynamicService());
     },
@@ -118,7 +118,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     isPipelineLinear: function() {
-      const nodes = this.getNodes(true);
+      const nodes = this.getNodes();
       const inputNodeIds = [];
       const nodesWithoutInputs = [];
       for (const nodeId in nodes) {
@@ -148,7 +148,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
 
       const sortedPipeline = [];
-      const nodes = this.getNodes(true);
+      const nodes = this.getNodes();
       for (const nodeId in nodes) {
         const node = nodes[nodeId];
         const inputNodes = node.getInputNodes();
@@ -165,7 +165,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     getNode: function(nodeId) {
-      const allNodes = this.getNodes(true);
+      const allNodes = this.getNodes();
       const exists = Object.prototype.hasOwnProperty.call(allNodes, nodeId);
       if (exists) {
         return allNodes[nodeId];
@@ -608,7 +608,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     giveUniqueNameToNode: function(node, label, suffix = 2) {
       const newLabel = label + "_" + suffix;
-      const allModels = this.getNodes(true);
+      const allModels = this.getNodes();
       const nodes = Object.values(allModels);
       for (const node2 of nodes) {
         if (node2.getNodeId() !== node.getNodeId() &&
@@ -682,7 +682,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         return this.__workbenchInitData;
       }
       let workbench = {};
-      const allModels = this.getNodes(true);
+      const allModels = this.getNodes();
       const nodes = Object.values(allModels);
       for (const node of nodes) {
         const data = node.serialize(clean);
@@ -699,7 +699,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         return this.__workbenchUIInitData;
       }
       let workbenchUI = {};
-      const nodes = this.getNodes(true);
+      const nodes = this.getNodes();
       for (const nodeId in nodes) {
         const node = nodes[nodeId];
         workbenchUI[nodeId] = {};

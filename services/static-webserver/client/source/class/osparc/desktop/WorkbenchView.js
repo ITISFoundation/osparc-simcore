@@ -257,7 +257,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__evalSlidesButtons();
 
         // if there are no nodes, preselect the study item (show study info)
-        const nodes = study.getWorkbench().getNodes(true);
+        const nodes = study.getWorkbench().getNodes();
         if (Object.values(nodes).length === 0) {
           this.__studyTreeItem.selectStudyItem();
         }
@@ -1229,7 +1229,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __getNodeLogger: function(nodeId) {
-      const nodes = this.getStudy().getWorkbench().getNodes(true);
+      const nodes = this.getStudy().getWorkbench().getNodes();
       for (const node of Object.values(nodes)) {
         if (nodeId === node.getNodeId()) {
           return node.getLogger();
@@ -1320,7 +1320,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     openFirstNode: function() {
-      const nodes = this.getStudy().getWorkbench().getNodes(true);
+      const nodes = this.getStudy().getWorkbench().getNodes();
       const validNodes = Object.values(nodes).filter(node => node.isComputational() || node.isDynamic());
       if (validNodes.length === 1 && validNodes[0].isDynamic()) {
         const dynamicNode = validNodes[0];

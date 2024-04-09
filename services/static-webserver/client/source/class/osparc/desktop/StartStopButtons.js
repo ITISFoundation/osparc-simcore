@@ -247,7 +247,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __checkButtonsVisible: function() {
-      const allNodes = this.getStudy().getWorkbench().getNodes(true);
+      const allNodes = this.getStudy().getWorkbench().getNodes();
       const isRunnable = Object.values(allNodes).some(node => (node.isComputational() || node.isIterator()));
       this.__getRunButtons().forEach(runBtn => {
         if (!runBtn.isFetching()) {
