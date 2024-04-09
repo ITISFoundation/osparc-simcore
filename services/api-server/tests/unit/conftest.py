@@ -473,7 +473,7 @@ def patch_webserver_long_running_project_tasks(
         long_running_task_workflow = _LongRunningProjectTasks()
 
         webserver_mock_router.post(
-            path__regex="/projects",
+            path__regex="/projects$",
             name="create_projects",
         ).mock(side_effect=long_running_task_workflow.create_project_task)
 
