@@ -9,19 +9,7 @@ from models_library.clusters import ClusterID
 from models_library.function_services_catalog.services import file_picker
 from models_library.projects_nodes import InputID, InputTypes
 from pydantic import PositiveInt
-from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.api.dependencies.authentication import (
-    get_current_user_id,
-)
-from simcore_service_api_server.api.dependencies.services import get_api_client
-from simcore_service_api_server.api.dependencies.webserver import get_webserver_session
-from simcore_service_api_server.models.schemas.errors import ErrorGet
-from simcore_service_api_server.services.director_v2 import DirectorV2Api
-from simcore_service_api_server.services.solver_job_models_converters import (
-    create_jobstatus_from_task,
-)
-from simcore_service_api_server.services.webserver import AuthSession
 
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -40,6 +28,7 @@ from ...services.study_job_models_converters import (
     get_project_and_file_inputs_from_job_inputs,
 )
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
+from ._jobs import start_project, stop_project
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -238,7 +227,7 @@ async def get_study_job_outputs(
     _logger.debug("Getting Job Outputs for '%s'", job_name)
 
     project_outputs = await webserver_api.get_project_outputs(job_id)
-    job_outputs = await create_job_outputs_from_project_outputs(
+    job_outputs: JobOutputs = await create_job_outputs_from_project_outputs(
         job_id, project_outputs, user_id, storage_client
     )
 

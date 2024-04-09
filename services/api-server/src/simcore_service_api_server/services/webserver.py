@@ -2,7 +2,6 @@
 
 
 import logging
-import typing
 import urllib.parse
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -426,24 +425,22 @@ class AuthSession:
     async def update_project_inputs(
         self,
         project_id: ProjectID,
-        new_inputs: dict[NodeID, dict[str, typing.Any]],
-    ) -> dict[NodeID, dict[str, typing.Any]]:
+        new_inputs: dict[NodeID, dict[str, Any]],
+    ) -> dict[NodeID, dict[str, Any]]:
         response = await self.client.patch(
             f"/projects/{project_id}/inputs",
             cookies=self.session_cookies,
             json=jsonable_encoder(new_inputs),
         )
         response.raise_for_status()
-        data = (
-            Envelope[dict[NodeID, dict[str, typing.Any]]].parse_raw(response.text).data
-        )
+        data = Envelope[dict[NodeID, dict[str, Any]]].parse_raw(response.text).data
         assert data  # nosec
         return data
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_project_inputs(
         self, project_id: ProjectID
-    ) -> dict[NodeID, dict[str, typing.Any]]:
+    ) -> dict[NodeID, dict[str, Any]]:
         response = await self.client.get(
             f"/projects/{project_id}/inputs",
             cookies=self.session_cookies,
@@ -451,9 +448,7 @@ class AuthSession:
 
         response.raise_for_status()
 
-        return (
-            Envelope[dict[NodeID, dict[str, typing.Any]]].parse_raw(response.text).data
-        )
+        return Envelope[dict[NodeID, dict[str, Any]]].parse_raw(response.text).data
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_project_outputs(
@@ -466,9 +461,7 @@ class AuthSession:
 
         response.raise_for_status()
 
-        data = (
-            Envelope[dict[NodeID, dict[str, typing.Any]]].parse_raw(response.text).data
-        )
+        data = Envelope[dict[NodeID, dict[str, Any]]].parse_raw(response.text).data
 
         assert data is not None  # nosec
 
@@ -644,7 +637,7 @@ def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
         service_name="webserver",
     )
 
-    def _on_startup() -> None:
+    async def _on_startup() -> None:
         # normalize & encrypt
         secret_key = settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
         app.state.webserver_fernet = fernet.Fernet(secret_key)
