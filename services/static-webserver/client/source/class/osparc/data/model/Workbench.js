@@ -295,11 +295,11 @@ qx.Class.define("osparc.data.model.Workbench", {
         return existingNode;
       }
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("You are not allowed to add nodes"), "ERROR");
+        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("You are not allowed to add nodes"), "ERROR");
         return null;
       }
       if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Nodes can't be added while the pipeline is running"), "ERROR");
+        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Nodes can't be added while the pipeline is running"), "ERROR");
         return null;
       }
 
