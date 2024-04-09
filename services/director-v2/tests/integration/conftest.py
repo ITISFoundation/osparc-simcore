@@ -113,7 +113,7 @@ async def create_pipeline(
             for user_id, task in created_comp_tasks
         )
     )
-    assert all(r.raise_for_status() is None for r in responses)
+    assert all(isinstance(r.raise_for_status(), httpx.Response) for r in responses)
 
 
 @pytest.fixture

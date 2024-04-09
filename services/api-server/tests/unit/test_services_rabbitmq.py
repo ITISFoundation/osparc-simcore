@@ -11,7 +11,7 @@ import random
 from collections.abc import AsyncIterable, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import Final, Iterable
+from typing import Final, Iterable, Literal
 from unittest.mock import AsyncMock
 
 import httpx
@@ -24,9 +24,9 @@ from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from models_library.rabbitmq_messages import LoggerRabbitMessage
+from models_library.rabbitmq_messages import LoggerRabbitMessage, RabbitMessageBase
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import ValidationError, parse_obj_as
 from pytest_mock import MockerFixture, MockFixture
 from pytest_simcore.helpers.utils_envs import (
     EnvVarsDict,
@@ -170,15 +170,23 @@ def produce_logs(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     user_id: UserID,
 ):
-    async def _go(name, project_id_=None, node_id_=None, messages_=None, level_=None):
+    async def _go(
+        name,
+        project_id_=None,
+        node_id_=None,
+        messages_=None,
+        level_=None,
+        log_message: RabbitMessageBase | None = None,
+    ):
         rabbitmq_producer = create_rabbitmq_client(f"pytest_producer_{name}")
-        log_message = LoggerRabbitMessage(
-            user_id=user_id,
-            project_id=project_id_ or faker.uuid4(),
-            node_id=node_id_,
-            messages=messages_ or [faker.text() for _ in range(10)],
-            log_level=level_ or logging.INFO,
-        )
+        if log_message is None:
+            log_message = LoggerRabbitMessage(
+                user_id=user_id,
+                project_id=project_id_ or faker.uuid4(),
+                node_id=node_id_,
+                messages=messages_ or [faker.text() for _ in range(10)],
+                log_level=level_ or logging.INFO,
+            )
         await rabbitmq_producer.publish(log_message.channel_name, log_message)
 
     return _go
@@ -381,7 +389,6 @@ async def test_log_streamer_with_distributor(
     async def _log_publisher():
         while not computation_done():
             msg: str = faker.text()
-            await asyncio.sleep(0.2)
             await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
             published_logs.append(msg)
 
@@ -397,6 +404,45 @@ async def test_log_streamer_with_distributor(
     publish_task.cancel()
     assert len(published_logs) > 0
     assert published_logs == collected_messages
+
+
+async def test_log_streamer_not_raise_with_distributor(
+    client: httpx.AsyncClient,
+    app: FastAPI,
+    user_id,
+    project_id: ProjectID,
+    node_id: NodeID,
+    produce_logs: Callable,
+    log_streamer_with_distributor: LogStreamer,
+    faker: Faker,
+    computation_done: Callable[[], bool],
+):
+    class InvalidLoggerRabbitMessage(LoggerRabbitMessage):
+        channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
+        node_id: NodeID | None
+        messages: int
+        log_level: int = logging.INFO
+
+        def routing_key(self) -> str:
+            return f"{self.project_id}.{self.log_level}"
+
+    log_rabbit_message = InvalidLoggerRabbitMessage(
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        messages=100,
+        log_level=logging.INFO,
+    )
+    with pytest.raises(ValidationError):
+        LoggerRabbitMessage.parse_obj(log_rabbit_message.dict())
+
+    await produce_logs("expected", log_message=log_rabbit_message)
+
+    ii: int = 0
+    async for log in log_streamer_with_distributor.log_generator():
+        _ = JobLog.parse_raw(log)
+        ii += 1
+    assert ii == 0
 
 
 async def test_log_generator(mocker: MockFixture, faker: Faker):

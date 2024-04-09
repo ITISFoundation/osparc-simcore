@@ -229,10 +229,10 @@ class AuthSession:
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
-    async def clone_project(self, project_id: UUID) -> ProjectGet:
+    async def clone_project(self, *, project_id: UUID, hidden: bool) -> ProjectGet:
+        query = {"from_study": project_id, "hidden": hidden}
         response = await self.client.post(
-            f"/projects/{project_id}:clone",
-            cookies=self.session_cookies,
+            "/projects", cookies=self.session_cookies, params=query
         )
         response.raise_for_status()
         data = Envelope[TaskGet].parse_raw(response.text).data
