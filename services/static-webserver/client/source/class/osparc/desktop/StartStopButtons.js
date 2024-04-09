@@ -59,9 +59,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
   },
 
   members: {
-    __runAllButton: null,
-    __stopButton: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
