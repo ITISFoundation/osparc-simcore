@@ -158,10 +158,9 @@ qx.Class.define("osparc.data.Permissions", {
           "study.slides.stop"
         ];
       } else if (osparc.product.Utils.isProduct("s4llite")) {
-        // "services" and "data" tabs only for testers
+        // "services" tabs only for testers
         fromUserToTester = [
-          "dashboard.services.read",
-          "dashboard.data.read"
+          "dashboard.services.read"
         ];
       }
       fromUserToTester.forEach(onlyTester => {
