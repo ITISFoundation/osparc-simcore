@@ -1,6 +1,6 @@
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
-from .._utils import OM, FunctionServices, create_fake_thumbnail_url
+from .._utils import OM, WVG, FunctionServices, create_fake_thumbnail_url
 
 
 def create_metadata(type_name: str, prefix: str | None = None) -> ServiceDockerData:
@@ -76,9 +76,9 @@ META_FILE = ServiceDockerData.parse_obj(
         "description": "Probes its input for files",
         "thumbnail": create_fake_thumbnail_url("file"),
         "authors": [
-            OM,
+            WVG,
         ],
-        "contact": OM.email,
+        "contact": WVG.email,
         "inputs": {
             "in_1": {
                 "label": "file",
