@@ -59,6 +59,8 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
   },
 
   members: {
+    __runSelectionButton: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -160,7 +162,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __nodeSelectionChanged: function(selectedNodes) {
-      console.log("selectedNodes", selectedNodes);
       const dynamicsLayout = this.getChildControl("dynamics-layout");
       const computationalsLayout = this.getChildControl("computationals-layout");
       if (selectedNodes.length === 1 && selectedNodes[0].isDynamic()) {
