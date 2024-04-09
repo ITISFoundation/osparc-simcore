@@ -3,7 +3,7 @@ from typing import Any
 from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel, Field
 
-from ._base import InputSchemaWithoutCameCase, OutputSchema
+from ._base import InputSchemaWithoutCamelCase, OutputSchema
 
 
 class _ProjectIOBase(BaseModel):
@@ -15,14 +15,14 @@ class _ProjectIOBase(BaseModel):
 
 
 class ProjectInputUpdate(_ProjectIOBase):
-    class Config(InputSchemaWithoutCameCase):
+    class Config(InputSchemaWithoutCamelCase):
         ...
 
 
 class ProjectInputGet(OutputSchema, _ProjectIOBase):
     label: str
 
-    class Config(InputSchemaWithoutCameCase):
+    class Config(InputSchemaWithoutCamelCase):
         ...
 
 

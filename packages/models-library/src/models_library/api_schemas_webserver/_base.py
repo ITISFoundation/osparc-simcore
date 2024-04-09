@@ -16,7 +16,7 @@ class EmptyModel(BaseModel):
         extra = Extra.forbid
 
 
-class InputSchemaWithoutCameCase(BaseModel):
+class InputSchemaWithoutCamelCase(BaseModel):
     # Added to tmp keep backwards compatibility
     # until all bodies are updated
     #
@@ -27,7 +27,7 @@ class InputSchemaWithoutCameCase(BaseModel):
 
 
 class InputSchema(BaseModel):
-    class Config(InputSchemaWithoutCameCase.Config):  # type: ignore[pydantic-alias]
+    class Config(InputSchemaWithoutCamelCase.Config):  # type: ignore[pydantic-alias]
         alias_generator = snake_to_camel
 
 
