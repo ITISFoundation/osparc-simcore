@@ -87,6 +87,9 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
     settings = ApplicationSettings.create_from_envs()
     if settings.API_SERVER_RABBITMQ is None:
         mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
+        mocker.patch(
+            "simcore_service_api_server.core.application.setup_prometheus_instrumentation"
+        )
     return app_environment
 
 
@@ -425,6 +428,11 @@ def patch_webserver_long_running_project_tasks(
 
         def create_project_task(self, request: httpx.Request):
             # create result: use the request-body
+            query = dict(
+                elm.split("=") for elm in request.url.query.decode().split("&")
+            )
+            if from_study := query.get("from_study"):
+                return self.clone_project_task(request=request, project_id=from_study)
             project_create = json.loads(request.content)
             project_get = ProjectGet.parse_obj(
                 {
@@ -465,7 +473,7 @@ def patch_webserver_long_running_project_tasks(
         long_running_task_workflow = _LongRunningProjectTasks()
 
         webserver_mock_router.post(
-            path__regex="/projects$",
+            path__regex="/projects",
             name="create_projects",
         ).mock(side_effect=long_running_task_workflow.create_project_task)
 

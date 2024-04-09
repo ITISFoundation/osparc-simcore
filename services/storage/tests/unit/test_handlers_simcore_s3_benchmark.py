@@ -6,7 +6,7 @@ import json
 import sys
 import time
 from collections.abc import AsyncIterator, Iterable
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import asynccontextmanager
 from itertools import groupby
 from pathlib import Path
 from typing import Any, TypeAlias, TypedDict
@@ -51,21 +51,20 @@ def settings() -> Settings:
 async def benchmark_s3_client(
     benchmark_s3_settings: S3Settings, settings: Settings
 ) -> AsyncIterator[StorageS3Client]:
-    async with AsyncExitStack() as exit_stack:
-        client = await StorageS3Client.create(
-            exit_stack,
-            benchmark_s3_settings,
-            settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
-        )
-        bucket = S3BucketName(benchmark_s3_settings.S3_BUCKET_NAME)
+    client = await StorageS3Client.create(
+        benchmark_s3_settings,
+        settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
+    )
+    bucket = S3BucketName(benchmark_s3_settings.S3_BUCKET_NAME)
 
-        # make sure bucket is empty
-        await client.delete_files_in_path(bucket, prefix="")
+    # make sure bucket is empty
+    await client.delete_files_in_path(bucket, prefix="")
 
-        yield client
+    yield client
 
-        # empty bucket once more when done testing
-        await client.delete_files_in_path(bucket, prefix="")
+    # empty bucket once more when done testing
+    await client.delete_files_in_path(bucket, prefix="")
+    await client.close()
 
 
 @asynccontextmanager

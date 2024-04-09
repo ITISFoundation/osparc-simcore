@@ -37,7 +37,6 @@ from ...services.log_streaming import LogDistributor, LogStreamer
 from ...services.solver_job_models_converters import create_job_from_project
 from ...services.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ...services.storage import StorageApi, to_file_api_model
-from ...services.webserver import ProjectNotFoundError
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import Engine, get_db_engine
@@ -47,11 +46,11 @@ from ..dependencies.webserver import AuthSession, get_webserver_session
 from ..errors.custom_errors import InsufficientCredits, MissingWallet
 from ..errors.http_error import create_error_json_response
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
+from ._jobs import raise_if_job_not_associated_with_solver
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,
     _compose_job_resource_name,
-    _raise_if_job_not_associated_with_solver,
 )
 from .wallets import WALLET_STATUS_CODES
 
@@ -385,21 +384,13 @@ async def get_job_wallet(
     version: VersionStr,
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-):
+) -> WalletGetWithAvailableCredits | None:
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Getting wallet for job '%s'", job_name)
 
-    try:
-        project_wallet = await webserver_api.get_project_wallet(project_id=job_id)
-        if project_wallet:
-            return await webserver_api.get_wallet(wallet_id=project_wallet.wallet_id)
-        return None
-
-    except ProjectNotFoundError:
-        return create_error_json_response(
-            f"Cannot find job={job_name}",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+    if project_wallet := await webserver_api.get_project_wallet(project_id=job_id):
+        return await webserver_api.get_wallet(wallet_id=project_wallet.wallet_id)
+    return None
 
 
 @router.get(
@@ -418,7 +409,7 @@ async def get_job_pricing_unit(
     with log_context(_logger, logging.DEBUG, "Get pricing unit"):
         _logger.debug("job: %s", job_name)
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
-        _raise_if_job_not_associated_with_solver(solver_key, version, project)
+        raise_if_job_not_associated_with_solver(job_name, project)
         node_ids = list(project.workbench.keys())
         assert len(node_ids) == 1  # nosec
         node_id: UUID = UUID(node_ids[0])
@@ -449,7 +440,7 @@ async def get_log_stream(
         _logger, logging.DEBUG, f"Streaming logs for {job_name=} and {user_id=}"
     ):
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
-        _raise_if_job_not_associated_with_solver(solver_key, version, project)
+        raise_if_job_not_associated_with_solver(job_name, project)
         log_streamer = LogStreamer(
             user_id=user_id,
             director2_api=director2_api,

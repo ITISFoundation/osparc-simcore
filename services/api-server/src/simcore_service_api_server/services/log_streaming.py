@@ -1,12 +1,13 @@
 import asyncio
 import logging
 from asyncio import Queue
-from collections.abc import AsyncIterable, Awaitable, Callable
+from collections.abc import AsyncIterable
 from typing import Final
 
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
-from pydantic import NonNegativeInt, ValidationError
+from pydantic import NonNegativeInt
+from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..models.schemas.jobs import JobID, JobLog
@@ -32,7 +33,7 @@ class LogStreamerRegistionConflict(LogDistributionBaseException):
 class LogDistributor:
     def __init__(self, rabbitmq_client: RabbitMQClient):
         self._rabbit_client = rabbitmq_client
-        self._log_streamers: dict[JobID, Callable[[JobLog], Awaitable[None]]] = {}
+        self._log_streamers: dict[JobID, Queue[JobLog]] = {}
         self._queue_name: str
 
     async def setup(self):
@@ -54,41 +55,29 @@ class LogDistributor:
         await self.teardown()
 
     async def _distribute_logs(self, data: bytes):
-        try:
-            got = LoggerRabbitMessage.parse_raw(
-                data
-            )  # rabbitmq client safe_nacks the message if this deserialization fails
-        except ValidationError as e:
-            _logger.debug(
-                "Could not parse log message from RabbitMQ in LogDistributor._distribute_logs"
+        with log_catch(_logger, reraise=False):
+            got = LoggerRabbitMessage.parse_raw(data)
+            item = JobLog(
+                job_id=got.project_id,
+                node_id=got.node_id,
+                log_level=got.log_level,
+                messages=got.messages,
             )
-            raise e
-        _logger.debug(
-            "LogDistributor._distribute_logs received message message from RabbitMQ: %s",
-            got.json(),
-        )
-        item = JobLog(
-            job_id=got.project_id,
-            node_id=got.node_id,
-            log_level=got.log_level,
-            messages=got.messages,
-        )
-        callback = self._log_streamers.get(item.job_id)
-        if callback is None:
-            raise LogStreamerNotRegistered(
-                f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
-            )
-        await callback(item)
-        return True
+            queue = self._log_streamers.get(item.job_id)
+            if queue is None:
+                raise LogStreamerNotRegistered(
+                    f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
+                )
+            await queue.put(item)
+            return True
+        return False
 
-    async def register(
-        self, job_id: JobID, callback: Callable[[JobLog], Awaitable[None]]
-    ):
+    async def register(self, job_id: JobID, queue: Queue[JobLog]):
         if job_id in self._log_streamers:
             raise LogStreamerRegistionConflict(
                 f"A stream was already connected to {job_id=}. Only a single stream can be connected at the time"
             )
-        self._log_streamers[job_id] = callback
+        self._log_streamers[job_id] = queue
         await self._rabbit_client.add_topics(
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
@@ -100,6 +89,9 @@ class LogDistributor:
             LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
         )
         del self._log_streamers[job_id]
+
+    def get_log_queue_sizes(self) -> dict[JobID, int]:
+        return {k: v.qsize() for k, v in self._log_streamers.items()}
 
 
 class LogStreamer:
@@ -121,7 +113,7 @@ class LogStreamer:
         self._log_check_timeout: NonNegativeInt = log_check_timeout
 
     async def setup(self):
-        await self._log_distributor.register(self._job_id, self._queue.put)
+        await self._log_distributor.register(self._job_id, self._queue)
         self._is_registered = True
 
     async def teardown(self):

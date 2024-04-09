@@ -63,19 +63,19 @@ qx.Class.define("osparc.utils.LibVersions", {
     getPlatformVersion: function() {
       const name = "osparc-simcore";
       const commitId = this.getVcsRef();
-      const remoteUrl = this.getVcsRefUrl();
+      const url = this.getVcsRefUrl();
 
       return {
-        name: name,
-        version: commitId ? commitId.substring(0, 7) : "",
-        url: remoteUrl
+        name,
+        version: commitId ? commitId.slice(0, 7) : "",
+        url
       };
     },
 
     getUIVersion: function() {
       let name = "osparc-simcore UI";
       const commitId = this.getVcsRefUI();
-      const remoteUrl = this.getVcsRefUIUrl();
+      const url = this.getVcsRefUIUrl();
       let status = qx.core.Environment.get("osparc.vcsStatusClient");
       if (status) {
         name = name + " [" + status + "]";
@@ -84,7 +84,7 @@ qx.Class.define("osparc.utils.LibVersions", {
       return {
         name: name,
         version: commitId,
-        url: remoteUrl
+        url
       };
     },
 
@@ -122,21 +122,6 @@ qx.Class.define("osparc.utils.LibVersions", {
           url: wrapper.URL
         });
       });
-      return libs;
-    },
-
-    getEnvLibs: function() {
-      let libs = [];
-      [
-        osparc.utils.LibVersions.getPlatformVersion,
-        osparc.utils.LibVersions.getUIVersion,
-        osparc.utils.LibVersions.getQxCompiler,
-        osparc.utils.LibVersions.getQxLibraryInfoMap,
-        osparc.utils.LibVersions.get3rdPartyLibs
-      ].forEach(lib => {
-        libs = libs.concat(lib.call(this));
-      }, this);
-
       return libs;
     },
 

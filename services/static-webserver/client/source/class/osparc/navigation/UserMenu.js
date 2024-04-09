@@ -49,6 +49,11 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.desktop.credits.MyAccountWindow.openWindow(), this);
           this.add(control);
           break;
+        case "admin-center":
+          control = new qx.ui.menu.Button(this.tr("Admin Center"));
+          control.addListener("execute", () => osparc.admin.AdminCenterWindow.openWindow(), this);
+          this.add(control);
+          break;
         case "po-center":
           control = new qx.ui.menu.Button(this.tr("PO Center"));
           control.addListener("execute", () => osparc.po.POCenterWindow.openWindow(), this);
@@ -113,7 +118,10 @@ qx.Class.define("osparc.navigation.UserMenu", {
         case "log-out": {
           const authData = osparc.auth.Data.getInstance();
           control = new qx.ui.menu.Button(authData.isGuest() ? this.tr("Exit") : this.tr("Log out"));
-          control.addListener("execute", () => qx.core.Init.getApplication().logout());
+          control.addListener("execute", () => {
+            this.exclude();
+            qx.core.Init.getApplication().logout();
+          });
           osparc.utils.Utils.setIdToWidget(control, "userMenuLogoutBtn");
           this.add(control);
           break;
@@ -131,6 +139,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
         this.getChildControl("log-in");
       } else {
         this.getChildControl("user-center");
+        if (osparc.data.Permissions.getInstance().isAdmin()) {
+          this.getChildControl("admin-center");
+        }
         if (osparc.data.Permissions.getInstance().isProductOwner()) {
           this.getChildControl("po-center");
         }
@@ -169,6 +180,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
         this.getChildControl("log-in");
       } else {
         this.getChildControl("user-center");
+        if (osparc.data.Permissions.getInstance().isAdmin()) {
+          this.getChildControl("admin-center");
+        }
         if (osparc.data.Permissions.getInstance().isProductOwner()) {
           this.getChildControl("po-center");
         }

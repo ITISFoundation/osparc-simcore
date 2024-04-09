@@ -5,6 +5,7 @@
 --constraint ../../../requirements/constraints.txt
 
 
+--requirement ../../../packages/aws-library/requirements/_base.in
 --requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/postgres-database/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
@@ -18,7 +19,7 @@ aiofiles # i/o
 aiohttp # server
 aiohttp-swagger[performance] # server
 aiopg[sa] # db
-semantic_version
+packaging
 tenacity
 typer
 types-aiobotocore[s3] # s3 storage

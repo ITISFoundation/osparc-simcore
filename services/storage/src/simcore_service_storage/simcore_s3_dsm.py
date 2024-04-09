@@ -13,6 +13,7 @@ from typing import Any, Final, cast
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
+from aws_library.s3.errors import S3KeyNotFoundError
 from models_library.api_schemas_storage import LinkType, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
@@ -57,7 +58,6 @@ from .exceptions import (
     LinkAlreadyExistsError,
     ProjectAccessRightError,
     ProjectNotFoundError,
-    S3KeyNotFoundError,
 )
 from .models import (
     DatasetMetaData,

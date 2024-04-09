@@ -75,12 +75,12 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.r
 repo_dir = current_dir.parent.parent
 
 
-def _skip_osparc_gateway_server(p) -> bool:
-    return "osparc-gateway-server" not in f"{p}"
+def _skip_not_useful_docker_composes(p) -> bool:
+    return "osparc-gateway-server" not in f"{p}" and "manual" not in f"{p}"
 
 
 compose_paths = filter(
-    _skip_osparc_gateway_server,
+    _skip_not_useful_docker_composes,
     chain(
         *[
             repo_dir.rglob(glob)
@@ -96,7 +96,7 @@ compose_paths = filter(
 @pytest.fixture
 def docker_compose_config_bash(osparc_simcore_scripts_dir: Path) -> Path:
     docker_compose_config_script = (
-        osparc_simcore_scripts_dir / "docker" / "docker-compose-config.bash"
+        osparc_simcore_scripts_dir / "docker" / "docker-stack-config.bash"
     )
     assert docker_compose_config_script.exists()
     return docker_compose_config_script
@@ -116,6 +116,8 @@ def test_validate_compose_file(
     print(
         str(compose_path.relative_to(repo_dir)), "-> version=", compose.get("version")
     )
+
+    # NOTE: with docker stack config, the .env file MUST be alongside the docker-compose file
 
     subprocess.run(
         " ".join(

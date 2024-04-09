@@ -54,19 +54,8 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       });
     });
 
-    this.addListener("changeSortField", e => {
-      const sort = {
-        field: e.getData(),
-        direction: true
-      }
-      this.__handelSortEvent(sort)
-    }, this);
-
-    this.addListener("changeSortDirection", e => {
-      const sort = {
-        field: this.getSortField(),
-        direction: e.getData()
-      }
+    this.addListener("changeSort", e => {
+      const sort = e.getData();
       this.__handelSortEvent(sort)
     }, this);
   },
@@ -98,19 +87,15 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
   },
 
   properties: {
-    sortField: {
-      check: "String",
-      init: "last_change_date",
-      nullable: true,
-      event: "changeSortField",
-      apply: "__applySortField"
-    },
-    sortDirection: {
-      check: "Boolean",
-      init: true,
-      nullable: true,
-      event: "changeSortDirection",
-      apply: "__applySortDirection"
+    sort: {
+      check: "Object",
+      init: {
+        field: "last_change_date",
+        direction: true
+      },
+      nullable: false,
+      event: "changeSort",
+      apply: "__applySort"
     }
   },
 
@@ -133,16 +118,23 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
     },
 
     __handelSort: function(field) {
-      if (field === this.getSortField()) {
-        const direction = !this.getSortDirection();
-        this.setSortDirection(direction)
+      if (field === this.getSort().field) {
+        const { direction } = this.getSort();
+        this.setSort({
+          field,
+          direction: !direction
+        })
         return;
       }
-      this.setSortField(field)
+      this.setSort({
+        field,
+        direction: true
+      })
     },
 
     __handelSortEvent: function({field, direction}) {
       this.__menuButton.setIcon(direction ? "@FontAwesome5Solid/arrow-down/14" : "@FontAwesome5Solid/arrow-up/14")
+      this.setIcon(direction ? "@FontAwesome5Solid/arrow-down/14" : "@FontAwesome5Solid/arrow-up/14")
       const sort = {
         field: field,
         direction: direction ? "desc" : "asc"
@@ -150,11 +142,7 @@ qx.Class.define("osparc.dashboard.SortedByMenuButton", {
       this.fireDataEvent("sortByChanged", sort);
     },
 
-    __applySortField: function(value, old) {
-
-    },
-
-    __applySortDirection: function(value, old) {
+    __applySort: function(value, old) {
 
     }
   }

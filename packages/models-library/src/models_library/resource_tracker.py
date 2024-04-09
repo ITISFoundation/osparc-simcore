@@ -5,7 +5,15 @@ from enum import auto
 from typing import Any, ClassVar, NamedTuple, TypeAlias
 
 from models_library.products import ProductName
-from pydantic import BaseModel, Field, PositiveInt, validator
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    Extra,
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    validator,
+)
 
 from .rest_filters import Filters
 from .utils.enums import StrAutoEnum
@@ -187,10 +195,33 @@ class SpecificInfo(HardwareInfo):
     to store aws ec2 instance type."""
 
 
+class UnitExtraInfo(BaseModel):
+    """Custom information that is propagated to the frontend. Defined fields are mandatory."""
+
+    CPU: NonNegativeInt
+    RAM: ByteSize
+    VRAM: ByteSize
+
+    class Config:
+        allow_population_by_field_name = True
+        extra = Extra.allow
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "CPU": 32,
+                    "RAM": 64,
+                    "VRAM": 0,
+                    "SSD": 600,
+                    "custom key": "custom value",
+                }
+            ]
+        }
+
+
 class PricingUnitWithCostCreate(BaseModel):
     pricing_plan_id: PricingPlanId
     unit_name: str
-    unit_extra_info: dict
+    unit_extra_info: UnitExtraInfo
     default: bool
     specific_info: SpecificInfo
     cost_per_unit: Decimal
@@ -202,7 +233,7 @@ class PricingUnitWithCostCreate(BaseModel):
                 {
                     "pricing_plan_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": {"CPU": 4, "GPU": "32GB", "VRAM": "No"},
+                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "cost_per_unit": 10,
@@ -221,7 +252,7 @@ class PricingUnitWithCostUpdate(BaseModel):
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
     unit_name: str
-    unit_extra_info: dict
+    unit_extra_info: UnitExtraInfo
     default: bool
     specific_info: SpecificInfo
     pricing_unit_cost_update: None | PricingUnitCostUpdate
@@ -233,7 +264,7 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": {"CPU": 4, "GPU": "32GB", "VRAM": "No"},
+                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": {
@@ -245,7 +276,7 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": {"CPU": 4, "GPU": "32GB", "VRAM": "No"},
+                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": None,

@@ -94,6 +94,21 @@ qx.Class.define("osparc.data.Resources", {
       },
 
       /*
+       * APP SUMMARY
+       *  Gets the json file built by the qx compiler with some extra env variables
+       * added by oSPARC as compilation vars
+       */
+      "appSummary": {
+        endpoints: {
+          get: {
+            method: "GET",
+            url: "/{productName}/app-summary.json",
+            isJsonFile: true
+          }
+        }
+      },
+
+      /*
        * STUDIES
        */
       "studies": {
@@ -434,6 +449,70 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+
+      /*
+       * PRICING PLANS
+       */
+      "pricingPlans": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/admin/pricing-plans"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}"
+          },
+          update: {
+            method: "PUT",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/admin/pricing-plans"
+          },
+        }
+      },
+
+      /*
+       * PRICING UNITS
+       */
+      "pricingUnits": {
+        useCache: true,
+        endpoints: {
+          getOne: {
+            method: "GET",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/pricing-units/{pricingUnitId}"
+          },
+          update: {
+            method: "PUT",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/pricing-units/{pricingUnitId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/pricing-units"
+          },
+        }
+      },
+
+      /*
+       * BILLABLE SERVICES
+       */
+      "billableServices": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/billable-services"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/admin/pricing-plans/{pricingPlanId}/billable-services"
+          },
+        }
+      },
+
       /*
        * PORT COMPATIBILITY
        */
@@ -476,6 +555,7 @@ qx.Class.define("osparc.data.Resources", {
       },
       /*
        * SCHEDULED MAINTENANCE
+       * Example: {"start": "2023-01-17T14:45:00.000Z", "end": "2023-01-17T23:00:00.000Z", "reason": "Release 1.0.4"}
        */
       "maintenance": {
         endpoints: {
@@ -764,6 +844,10 @@ qx.Class.define("osparc.data.Resources", {
           payWithPaymentMethod: {
             method: "POST",
             url: statics.API + "/wallets/{walletId}/payments-methods/{paymentMethodId}:pay"
+          },
+          invoiceLink: {
+            method: "GET",
+            url: statics.API + "/wallets/{walletId}/payments/{paymentId}/invoice-link"
           }
         }
       },
@@ -1062,6 +1146,20 @@ qx.Class.define("osparc.data.Resources", {
   },
 
   members: {
+    /**
+     * @param {String} resource Name of the resource as defined in the static property 'resources'.
+     * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
+     * @param {Object} urlParams Object containing only the parameters for the url of the request.
+     */
+    replaceUrlParams: function(resource, endpoint, urlParams) {
+      const resourceDefinition = this.self().resources[resource];
+      const res = new osparc.io.rest.Resource(resourceDefinition.endpoints);
+      // Use qooxdoo's Get request configuration
+      // eslint-disable-next-line no-underscore-dangle
+      const getReqConfig = res._resource._getRequestConfig(endpoint, urlParams);
+      return getReqConfig;
+    },
+
     /**
      * Method to fetch resources from the server. If configured properly, the resources in the response will be cached in {osparc.store.Store}.
      * @param {String} resource Name of the resource as defined in the static property 'resources'.

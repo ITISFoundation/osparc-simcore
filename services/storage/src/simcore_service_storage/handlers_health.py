@@ -7,16 +7,16 @@
 import logging
 
 from aiohttp import web
+from aws_library.s3.errors import S3AccessError, S3BucketInvalidError
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from servicelib.json_serialization import json_dumps
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from ._meta import api_version, api_version_prefix, app_name
+from ._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
 from .constants import APP_CONFIG_KEY
 from .db import get_engine_state
 from .db import is_service_responsive as is_pg_responsive
-from .exceptions import S3AccessError, S3BucketInvalidError
 from .s3 import get_s3_client
 from .settings import Settings
 
@@ -25,15 +25,16 @@ log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.get(f"/{api_version_prefix}/", name="health_check")
-async def get_health(_request: web.Request) -> web.Response:
+@routes.get(f"/{API_VTAG}/", name="health_check")
+async def get_health(request: web.Request) -> web.Response:
+    assert request  # nosec
     return web.json_response(
         {
             "data": HealthCheck.parse_obj(
                 {
-                    "name": app_name,
-                    "version": api_version,
-                    "api_version": api_version,
+                    "name": PROJECT_NAME,
+                    "version": f"{VERSION}",
+                    "api_version": API_VERSION,
                 }
             ).dict(**RESPONSE_MODEL_POLICY)
         },
@@ -41,7 +42,7 @@ async def get_health(_request: web.Request) -> web.Response:
     )
 
 
-@routes.get(f"/{api_version_prefix}/status", name="get_status")
+@routes.get(f"/{API_VTAG}/status", name="get_status")
 async def get_status(request: web.Request) -> web.Response:
     # NOTE: all calls here must NOT raise
     assert request.app  # nosec
@@ -66,8 +67,8 @@ async def get_status(request: web.Request) -> web.Response:
 
     status = AppStatusCheck.parse_obj(
         {
-            "app_name": app_name,
-            "version": api_version,
+            "app_name": PROJECT_NAME,
+            "version": f"{VERSION}",
             "services": {
                 "postgres": {
                     "healthy": postgres_state,

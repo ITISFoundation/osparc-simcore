@@ -222,32 +222,27 @@ qx.Class.define("osparc.Application", {
     },
 
     __startupChecks: function() {
+      // first, pop up new release window
+      this.__checkNewRelease();
+
       const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
       if (platformName !== "master") {
-        // first, pop up new release window
-        this.__checkNewRelease();
         // then, pop up cookies accepted window. It will go on top.
         this.__checkCookiesAccepted();
       }
     },
 
     __checkNewRelease: function() {
-      const lastCommit = osparc.utils.Utils.localCache.getLastCommitVcsRefUI();
-      const thisCommit = osparc.utils.LibVersions.getVcsRef();
-      if (lastCommit) {
-        if (lastCommit !== thisCommit) {
-          const newRelease = new osparc.NewRelease();
-          const title = this.tr("New Release");
-          const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 170).set({
-            clickAwayClose: false,
-            resizable: false,
-            showClose: true
-          });
-          const closeBtn = win.getChildControl("close-button");
-          osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
-        }
-      } else {
-        osparc.utils.Utils.localCache.setLastCommitVcsRefUI(thisCommit);
+      if (osparc.NewRelease.firstTimeISeeThisFrontend()) {
+        const newRelease = new osparc.NewRelease();
+        const title = this.tr("New Release");
+        const win = osparc.ui.window.Window.popUpInWindow(newRelease, title, 350, 135).set({
+          clickAwayClose: false,
+          resizable: false,
+          showClose: true
+        });
+        const closeBtn = win.getChildControl("close-button");
+        osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
       }
     },
 
@@ -431,6 +426,7 @@ qx.Class.define("osparc.Application", {
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.CookieExpirationTracker.getInstance().stopTracker();
+      osparc.NewUITracker.getInstance().stopTracker();
       osparc.announcement.Tracker.getInstance().stopTracker();
       osparc.auth.Manager.getInstance().logout();
       if ("closeEditor" in this.__mainPage) {

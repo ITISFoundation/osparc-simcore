@@ -34,7 +34,6 @@ from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
-from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from simcore_service_api_server.models.schemas.solvers import SolverKeyId
 from simcore_service_api_server.models.schemas.studies import StudyPort
@@ -57,15 +56,6 @@ from .service_exception_handling import (
 )
 
 _logger = logging.getLogger(__name__)
-
-
-class WebServerValueError(PydanticErrorMixin, ValueError): ...
-
-
-class ProjectNotFoundError(WebServerValueError):
-    code = "webserver.project_not_found"
-    msg_template = "Project '{project_id}' not found"
-
 
 _exception_mapper = partial(service_exception_mapper, "Webserver")
 
@@ -240,10 +230,10 @@ class AuthSession:
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
-    async def clone_project(self, project_id: UUID) -> ProjectGet:
+    async def clone_project(self, *, project_id: UUID, hidden: bool) -> ProjectGet:
+        query = {"from_study": project_id, "hidden": hidden}
         response = await self.client.post(
-            f"/projects/{project_id}:clone",
-            cookies=self.session_cookies,
+            "/projects", cookies=self.session_cookies, params=query
         )
         response.raise_for_status()
         data = Envelope[TaskGet].parse_raw(response.text).data

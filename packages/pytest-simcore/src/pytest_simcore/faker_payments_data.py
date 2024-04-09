@@ -20,10 +20,11 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.basic_types import IDStr
+from models_library.payments import StripeInvoiceID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr, HttpUrl, parse_obj_as
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
@@ -42,12 +43,24 @@ def wallet_name(faker: Faker) -> IDStr:
 
 
 @pytest.fixture
+def invoice_url(faker: Faker) -> HttpUrl:
+    return parse_obj_as(HttpUrl, faker.image_url())
+
+
+@pytest.fixture
+def stripe_invoice_id(faker: Faker) -> StripeInvoiceID:
+    return parse_obj_as(StripeInvoiceID, f"in_{faker.word()}")
+
+
+@pytest.fixture
 def successful_transaction(
     faker: Faker,
     wallet_id: WalletID,
     user_email: EmailStr,
     user_id: UserID,
     product_name: ProductName,
+    invoice_url: HttpUrl,
+    stripe_invoice_id: StripeInvoiceID,
 ) -> dict[str, Any]:
 
     initiated_at = datetime.now(tz=timezone.utc)
@@ -63,5 +76,6 @@ def successful_transaction(
         user_email=user_email,
         wallet_id=wallet_id,
         comment=f"fake fixture in {__name__}.successful_transaction",
-        invoice_url=faker.image_url(),
+        invoice_url=invoice_url,
+        stripe_invoice_id=stripe_invoice_id,
     )

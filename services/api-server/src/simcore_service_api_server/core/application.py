@@ -5,9 +5,6 @@ from fastapi.exceptions import RequestValidationError
 from fastapi_pagination import add_pagination
 from httpx import HTTPError as HttpxException
 from models_library.basic_types import BootModeEnum
-from servicelib.fastapi.prometheus_instrumentation import (
-    setup_prometheus_instrumentation,
-)
 from servicelib.logging_utils import config_all_loggers
 from simcore_service_api_server.api.errors.log_handling_error import (
     log_handling_error_handler,
@@ -30,6 +27,7 @@ from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..services import catalog, director_v2, storage, webserver
 from ..services.rabbitmq import setup_rabbitmq
+from ._prometheus_instrumentation import setup_prometheus_instrumentation
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .settings import ApplicationSettings
