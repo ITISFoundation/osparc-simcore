@@ -144,7 +144,7 @@ async def test_clone_study(
     mocked_webserver_service_api_base: MockRouter,
     patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
 ):
-    # Mocks /projects/{project_id}:clone
+    # Mocks /projects
     patch_webserver_long_running_project_tasks(mocked_webserver_service_api_base)
 
     resp = await client.post(f"/v0/studies/{study_id}:clone", auth=auth)
@@ -157,10 +157,11 @@ async def test_clone_study_not_found(
     auth: httpx.BasicAuth,
     faker: Faker,
     mocked_webserver_service_api_base: MockRouter,
+    patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
 ):
-    # Mocks /projects/{project_id}:clone
+    # Mocks /projects
     mocked_webserver_service_api_base.post(
-        path__regex=r"/projects/(?P<project_id>[\w-]+):clone$",
+        path__regex=r"/projects",
         name="project_clone",
     ).respond(
         status.HTTP_404_NOT_FOUND,
