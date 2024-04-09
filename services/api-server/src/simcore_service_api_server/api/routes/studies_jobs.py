@@ -9,6 +9,7 @@ from models_library.clusters import ClusterID
 from models_library.function_services_catalog.services import file_picker
 from models_library.projects_nodes import InputID, InputTypes
 from pydantic import PositiveInt
+from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_context
 from simcore_service_api_server.api.dependencies.authentication import (
     get_current_user_id,
@@ -23,6 +24,7 @@ from simcore_service_api_server.services.solver_job_models_converters import (
 from simcore_service_api_server.services.webserver import AuthSession
 
 from ...models.pagination import Page, PaginationParams
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
     Job,
     JobID,
@@ -38,16 +40,9 @@ from ...services.study_job_models_converters import (
     get_project_and_file_inputs_from_job_inputs,
 )
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._jobs import start_project, stop_project
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
-
-
-#
-# - Study maps to project
-# - study-job maps to run??
-#
 
 
 def _compose_job_resource_name(study_key, job_id) -> str:
@@ -231,15 +226,23 @@ async def inspect_study_job(
     "/{study_id}/jobs/{job_id}/outputs",
     response_model=JobOutputs,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_study_job_outputs(
     study_id: StudyID,
     job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    msg = f"get study job outputs study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    raise NotImplementedError(msg)
+    job_name = _compose_job_resource_name(study_id, job_id)
+    _logger.debug("Getting Job Outputs for '%s'", job_name)
+
+    project_outputs = await webserver_api.get_project_outputs(job_id)
+    job_outputs = await create_job_outputs_from_project_outputs(
+        job_id, project_outputs, user_id, storage_client
+    )
+
+    return job_outputs
 
 
 @router.post(
