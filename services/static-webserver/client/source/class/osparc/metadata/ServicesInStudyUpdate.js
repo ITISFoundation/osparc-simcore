@@ -46,8 +46,8 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
     anyServiceInaccessible: async function(studyData) {
       if ("workbench" in studyData) {
         const store = osparc.store.Store.getInstance();
-        const inaccesibles = await store.getInaccessibleServices(studyData);
-        return inaccesibles.length;
+        const inaccessibles = await store.getInaccessibleServices(studyData);
+        return inaccessibles.length;
       }
       return false;
     },
