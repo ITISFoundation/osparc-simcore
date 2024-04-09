@@ -33,15 +33,11 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     this._introText = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
     this._add(this._introText);
 
-    const grid = new qx.ui.layout.Grid(20, 5);
+    const grid = this.__grid = new qx.ui.layout.Grid(20, 5);
     grid.setColumnAlign(this.self().GRID_POS.LABEL, "left", "middle");
     grid.setColumnMinWidth(this.self().GRID_POS.LABEL, 80);
     grid.setColumnMaxWidth(this.self().GRID_POS.LABEL, 160);
     grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
-    grid.setColumnAlign(this.self().GRID_POS.NAME, "left", "middle");
-    grid.setColumnMinWidth(this.self().GRID_POS.NAME, 80);
-    grid.setColumnMaxWidth(this.self().GRID_POS.NAME, 160);
-    grid.setColumnFlex(this.self().GRID_POS.NAME, 1);
     this._servicesGrid = new qx.ui.container.Composite(grid);
     this._add(this._servicesGrid);
 
@@ -67,8 +63,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
   statics: {
     GRID_POS: {
       INFO_BUTTON: 0,
-      LABEL: 1,
-      NAME: 2
+      LABEL: 1
     }
   },
 
@@ -76,6 +71,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     _studyData: null,
     _services: null,
     _introText: null,
+    __grid: null,
     _servicesGrid: null,
 
     _updateStudy: function(fetchButton) {
@@ -134,18 +130,13 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     },
 
     _populateHeader: function() {
-      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Label")).set({
+      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Name")).set({
         font: "title-14"
       }), {
         row: 0,
         column: this.self().GRID_POS.LABEL
       });
-      this._servicesGrid.add(new qx.ui.basic.Label(this.tr("Name")).set({
-        font: "title-14"
-      }), {
-        row: 0,
-        column: this.self().GRID_POS.NAME
-      });
+      this.__grid.setRowHeight(0, 24);
     },
 
     _populateRows: function() {
@@ -185,20 +176,13 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
           row: i,
           column: this.self().GRID_POS.LABEL
         });
+        this.__grid.setRowHeight(i, 24);
 
         const nodeMetaData = osparc.service.Utils.getFromObject(this._services, node["key"], node["version"]);
         if (nodeMetaData === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
         }
-        const nameLabel = new qx.ui.basic.Label(nodeMetaData["name"]).set({
-          toolTipText: node["key"],
-          font: "text-14"
-        });
-        this._servicesGrid.add(nameLabel, {
-          row: i,
-          column: this.self().GRID_POS.NAME
-        });
       }
     }
   }
