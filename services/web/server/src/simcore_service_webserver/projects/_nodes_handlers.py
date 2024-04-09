@@ -242,9 +242,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
     name="update_node_outputs",
 )
 @login_required
-@permission_required(
-    "project.node.create"
-)  # TODO use correct permission, or add a new one
+@permission_required("project.node.create")
 @_handle_project_nodes_exceptions
 async def update_node_outputs(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
@@ -253,7 +251,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
 
     ui_changed_keys = set()
     ui_changed_keys.add(path_params.node_id)
-    return await nodes_utils.update_node_outputs(
+    await nodes_utils.update_node_outputs(
         app=request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
@@ -263,6 +261,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
         node_errors=None,
         ui_changed_keys=ui_changed_keys,
     )
+    raise web.HTTPAccepted()
 
 
 @routes.post(
