@@ -211,7 +211,7 @@ class Job(BaseModel):
         global_uuid = uuid4()
 
         return cls(
-            name=cls.compose_resource_name(parent_name, global_uuid),  # type: ignore
+            name=cls.compose_resource_name(parent_name, global_uuid),
             id=global_uuid,
             runner_name=parent_name,
             inputs_checksum=inputs_checksum,

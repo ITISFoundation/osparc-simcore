@@ -7,6 +7,7 @@ from models_library.api_schemas_webserver.projects import ProjectUpdate
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
 from models_library.function_services_catalog.services import file_picker
+from models_library.projects_nodes import InputID, InputTypes
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
 from simcore_service_api_server.api.dependencies.authentication import (
@@ -52,7 +53,7 @@ router = APIRouter()
 def _compose_job_resource_name(study_key, job_id) -> str:
     """Creates a unique resource name for solver's jobs"""
     return Job.compose_resource_name(
-        parent_name=Study.compose_resource_name(study_key),  # type: ignore
+        parent_name=Study.compose_resource_name(study_key),
         job_id=job_id,
     )
 
@@ -101,7 +102,7 @@ async def create_study_job(
         ):
             file_param_nodes[node.label] = node_id
 
-    file_inputs = {}
+    file_inputs: dict[InputID, InputTypes] = {}
 
     (
         new_project_inputs,
@@ -180,12 +181,13 @@ async def start_study_job(
             webserver_api=webserver_api,
             cluster_id=cluster_id,
         )
-        return await inspect_study_job(
+        job_status: JobStatus = await inspect_study_job(
             study_id=study_id,
             job_id=job_id,
             user_id=user_id,
             director2_api=director2_api,
         )
+        return job_status
 
 
 @router.post(
@@ -216,7 +218,7 @@ async def inspect_study_job(
     job_id: JobID,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-):
+) -> JobStatus:
     job_name = _compose_job_resource_name(study_id, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 

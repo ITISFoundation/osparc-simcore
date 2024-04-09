@@ -1,7 +1,6 @@
 # pylint: disable=R0904
 
 import logging
-import typing
 import urllib.parse
 from dataclasses import dataclass
 from functools import partial
@@ -423,15 +422,15 @@ class AuthSession:
         self,
         project_id: ProjectID,
         new_inputs: list[ProjectInputUpdate],
-    ) -> dict[NodeID, dict[str, typing.Any]]:
+    ) -> dict[NodeID, ProjectInputGet]:
         response = await self.client.patch(
             f"/projects/{project_id}/inputs",
             cookies=self.session_cookies,
             json=jsonable_encoder(new_inputs),
         )
         response.raise_for_status()
-        data = (
-            Envelope[dict[NodeID, dict[str, typing.Any]]].parse_raw(response.text).data
+        data: dict[NodeID, ProjectInputGet] | None = (
+            Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
         )
         assert data  # nosec
         return data
@@ -447,7 +446,9 @@ class AuthSession:
 
         response.raise_for_status()
 
-        data = Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
+        data: dict[NodeID, ProjectInputGet] | None = (
+            Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
+        )
         return {} if data is None else data
 
     @_exception_mapper({})
