@@ -16,7 +16,7 @@ class Study(pydantic.BaseModel):
     description: str = pydantic_tools_extension.FieldNotRequired()
 
     @classmethod
-    def compose_resource_name(cls, study_key) -> str:
+    def compose_resource_name(cls, study_key) -> api_resources.RelativeResourceName:
         return api_resources.compose_resource_name("studies", study_key)
 
 

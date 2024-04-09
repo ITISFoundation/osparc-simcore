@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Final
 from uuid import UUID
 
 import httpx
@@ -182,3 +182,46 @@ async def test_start_stop_delete_study_job(
         auth=auth,
     )
     _check_response(response, status.HTTP_204_NO_CONTENT)
+
+
+async def test_create_study_job(
+    client: httpx.AsyncClient,
+    mocked_webserver_service_api_base,
+    mocked_directorv2_service_api_base,
+    respx_mock_from_capture: Callable[
+        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        list[respx.MockRouter],
+    ],
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+    fake_study_id: UUID,
+    faker: Faker,
+):
+    _capture_file: Final[Path] = project_tests_dir / "mocks" / "create_study_job.json"
+
+    def _default_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        return capture.response_body
+
+    respx_mock = respx_mock_from_capture(
+        [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
+        _capture_file,
+        [_default_side_effect] * 7,
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/studies/{fake_study_id}/jobs",
+        auth=auth,
+        json={
+            "values": {
+                "input_file": {
+                    "filename": "input.txt",
+                    "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
+                },
+            }
+        },
+    )
+    assert response.status_code == 200
