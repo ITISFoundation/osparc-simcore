@@ -24,7 +24,10 @@ from models_library.api_schemas_webserver.projects_metadata import (
     ProjectMetadataUpdate,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
-from models_library.api_schemas_webserver.projects_ports import ProjectInputUpdate
+from models_library.api_schemas_webserver.projects_ports import (
+    ProjectInputGet,
+    ProjectInputUpdate,
+)
 from models_library.api_schemas_webserver.resource_usage import (
     PricingPlanGet,
     PricingUnitGet,
@@ -436,7 +439,7 @@ class AuthSession:
     @_exception_mapper({})
     async def get_project_inputs(
         self, project_id: ProjectID
-    ) -> dict[NodeID, dict[str, typing.Any]]:
+    ) -> dict[NodeID, ProjectInputGet]:
         response = await self.client.get(
             f"/projects/{project_id}/inputs",
             cookies=self.session_cookies,
@@ -444,9 +447,7 @@ class AuthSession:
 
         response.raise_for_status()
 
-        data = (
-            Envelope[dict[NodeID, dict[str, typing.Any]]].parse_raw(response.text).data
-        )
+        data = Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
         return {} if data is None else data
 
     @_exception_mapper({})

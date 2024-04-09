@@ -2,10 +2,13 @@
     Helper functions to convert models used in
     services/api-server/src/simcore_service_api_server/api/routes/studies_jobs.py
 """
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 from models_library.api_schemas_webserver.projects import ProjectGet
-from models_library.api_schemas_webserver.projects_ports import ProjectInputUpdate
+from models_library.api_schemas_webserver.projects_ports import (
+    ProjectInputGet,
+    ProjectInputUpdate,
+)
 from models_library.projects import DateTimeStr
 from models_library.projects_nodes import InputID, NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
@@ -22,7 +25,7 @@ class ProjectInputs(NamedTuple):
 
 
 def get_project_and_file_inputs_from_job_inputs(
-    project_inputs: dict[NodeID, dict[str, Any]],
+    project_inputs: dict[NodeID, ProjectInputGet],
     file_inputs: dict[InputID, InputTypes],
     job_inputs: JobInputs,
 ) -> ProjectInputs:
@@ -42,11 +45,9 @@ def get_project_and_file_inputs_from_job_inputs(
 
     new_inputs: list[ProjectInputUpdate] = []
     for node_id, node_dict in project_inputs.items():
-        if node_dict["label"] in job_inputs_dict:
+        if node_dict.label in job_inputs_dict:
             new_inputs.append(
-                ProjectInputUpdate(
-                    key=node_id, value=job_inputs_dict[node_dict["label"]]
-                )
+                ProjectInputUpdate(key=node_id, value=job_inputs_dict[node_dict.label])
             )
 
     return ProjectInputs(new_inputs, file_inputs)
