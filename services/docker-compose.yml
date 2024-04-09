@@ -1113,6 +1113,8 @@ services:
       - "--entryPoints.simcore_api.forwardedHeaders.insecure"
       - "--entryPoints.traefik_monitor.address=:8080"
       - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
+      - "--entryPoints.postgres.address=:5432"
+      - "--entryPoints.postgres.forwardedHeaders.insecure"
       - "--providers.docker.endpoint=unix:///var/run/docker.sock"
       - "--providers.docker.network=${SWARM_STACK_NAME}_default"
       - "--providers.docker.swarmMode=true"
