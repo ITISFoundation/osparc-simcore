@@ -239,10 +239,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
     __applyStudy: async function(study) {
       study.getWorkbench().addListener("pipelineChanged", this.__checkButtonsVisible, this);
-      this.__checkButtonsVisible();
-
       study.addListener("changePipelineRunning", this.__updateRunButtonsStatus, this);
       this.__populateClustersSelectBox();
+      this.__checkButtonsVisible();
       this.__getComputations();
     },
 
@@ -256,7 +255,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       }, this);
 
       const isReadOnly = this.getStudy().isReadOnly();
-      this.setVisibility(isReadOnly && Object.keys(allNodes.length) === 0 ? "excluded" : "visible");
+      this.setVisibility(isReadOnly ? "excluded" : "visible");
     },
 
     __updateRunButtonsStatus: function() {
