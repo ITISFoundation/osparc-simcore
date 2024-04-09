@@ -7,7 +7,7 @@ from typing import Any, Final
 import aio_pika
 from pydantic import NonNegativeInt
 
-from ..logging_utils import log_context
+from ..logging_utils import log_catch, log_context
 from ._client_base import RabbitMQClientBase
 from ._models import MessageHandler, RabbitMessage
 from ._utils import (
@@ -82,7 +82,9 @@ async def _on_message(
                 if not await message_handler(message.body):
                     await _safe_nack(message_handler, max_retries_upon_error, message)
         except Exception:  # pylint: disable=broad-exception-caught
-            await _safe_nack(message_handler, max_retries_upon_error, message)
+            _logger.exception("Exception raised when handling message")
+            with log_catch(_logger, reraise=False):
+                await _safe_nack(message_handler, max_retries_upon_error, message)
 
 
 @dataclass

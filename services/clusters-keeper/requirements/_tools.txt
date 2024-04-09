@@ -1,7 +1,7 @@
 astroid==3.1.0
     # via pylint
 black==24.3.0
-build==1.1.1
+build==1.2.1
     # via pip-tools
 bump2version==1.0.1
 cfgv==3.4.0
@@ -14,7 +14,7 @@ dill==0.3.8
     # via pylint
 distlib==0.3.8
     # via virtualenv
-filelock==3.13.2
+filelock==3.13.3
     # via virtualenv
 identify==2.5.35
     # via pre-commit
@@ -26,7 +26,7 @@ mypy-extensions==1.0.0
     # via black
 nodeenv==1.8.0
     # via pre-commit
-packaging==23.1
+packaging==24.0
     # via
     #   black
     #   build
@@ -50,7 +50,7 @@ pyyaml==6.0.1
     # via
     #   pre-commit
     #   watchdog
-ruff==0.3.4
+ruff==0.3.5
 setuptools==69.2.0
     # via
     #   nodeenv
@@ -64,7 +64,7 @@ tomli==2.0.1
     #   pyproject-hooks
 tomlkit==0.12.4
     # via pylint
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   astroid
     #   black

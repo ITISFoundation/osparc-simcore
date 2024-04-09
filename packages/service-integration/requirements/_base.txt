@@ -31,7 +31,7 @@ markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-orjson==3.9.10
+orjson==3.10.0
 packaging==23.2
     # via
     #   docker

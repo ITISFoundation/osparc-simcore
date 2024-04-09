@@ -3,7 +3,6 @@
 """
 import json
 import logging
-from contextlib import AsyncExitStack
 from typing import cast
 
 from aiohttp import web
@@ -25,30 +24,30 @@ async def setup_s3_client(app):
     storage_s3_settings = storage_settings.STORAGE_S3
     assert storage_s3_settings  # nosec
 
-    async with AsyncExitStack() as exit_stack:
-        client = None
-        async for attempt in AsyncRetrying(
-            wait=wait_fixed(RETRY_WAIT_SECS),
-            before_sleep=before_sleep_log(log, logging.WARNING),
-            reraise=True,
-        ):
-            with attempt:
-                client = await StorageS3Client.create(
-                    exit_stack,
-                    storage_s3_settings,
-                    storage_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
-                )
-                log.info(
-                    "S3 client %s successfully created [%s]",
-                    f"{client=}",
-                    json.dumps(attempt.retry_state.retry_object.statistics),
-                )
+    client = None
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(RETRY_WAIT_SECS),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+        reraise=True,
+    ):
+        with attempt:
+            client = await StorageS3Client.create(
+                storage_s3_settings,
+                storage_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
+            )
+            log.info(
+                "S3 client %s successfully created [%s]",
+                f"{client=}",
+                json.dumps(attempt.retry_state.retry_object.statistics),
+            )
         assert client  # nosec
         app[APP_S3_KEY] = client
 
         yield
         # tear-down
         log.debug("closing %s", f"{client=}")
+        await client.close()
+
     log.info("closed s3 client %s", f"{client=}")
 
 
