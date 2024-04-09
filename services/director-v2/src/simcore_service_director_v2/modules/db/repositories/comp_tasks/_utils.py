@@ -305,7 +305,11 @@ async def _update_project_node_resources_from_hardware_info(
             " TIP: adjust product configuration"
         )
         raise ConfigurationError(msg) from exc
-    except (RemoteMethodNotRegisteredError, RPCServerError) as exc:
+    except (
+        RemoteMethodNotRegisteredError,
+        RPCServerError,
+        asyncio.TimeoutError,
+    ) as exc:
         raise ClustersKeeperNotAvailableError from exc
 
 
@@ -377,14 +381,15 @@ async def generate_tasks_list_from_project(
             node_version=node.version,
         )
         assert rabbitmq_rpc_client  # nosec
-        await _update_project_node_resources_from_hardware_info(
-            connection,
-            is_wallet=is_wallet,
-            project_id=project.uuid,
-            node_id=NodeID(node_id),
-            hardware_info=hardware_info,
-            rabbitmq_rpc_client=rabbitmq_rpc_client,
-        )
+        if to_node_class(node.key) == NodeClass.COMPUTATIONAL:
+            await _update_project_node_resources_from_hardware_info(
+                connection,
+                is_wallet=is_wallet,
+                project_id=project.uuid,
+                node_id=NodeID(node_id),
+                hardware_info=hardware_info,
+                rabbitmq_rpc_client=rabbitmq_rpc_client,
+            )
 
         image = await _generate_task_image(
             catalog_client=catalog_client,
