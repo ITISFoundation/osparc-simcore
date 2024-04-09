@@ -8,13 +8,13 @@ from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
 from ..services_resources import ServiceResourcesDict
-from ._base import InputSchemaWithoutCameCase, OutputSchema
+from ._base import InputSchemaWithoutCamelCase, OutputSchema
 
 assert ServiceResourcesDict  # nosec
 __all__: tuple[str, ...] = ("ServiceResourcesDict",)
 
 
-class NodeCreate(InputSchemaWithoutCameCase):
+class NodeCreate(InputSchemaWithoutCamelCase):
     service_key: ServiceKey
     service_version: ServiceVersion
     service_id: str | None
@@ -121,7 +121,11 @@ class NodeGetUnknown(OutputSchema):
         }
 
 
-class NodeRetrieve(InputSchemaWithoutCameCase):
+class NodeOutputs(InputSchemaWithoutCamelCase):
+    outputs: dict[str, Any]
+
+
+class NodeRetrieve(InputSchemaWithoutCamelCase):
     port_keys: list[ServicePortKey] = []
 
 

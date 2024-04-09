@@ -17,6 +17,7 @@ _DEFAULT = {
 EN = Author.parse_obj(AUTHORS.get("EN", _DEFAULT))
 OM = Author.parse_obj(AUTHORS.get("OM", _DEFAULT))
 PC = Author.parse_obj(AUTHORS.get("PC", _DEFAULT))
+WVG = Author.parse_obj(AUTHORS.get("WVG", _DEFAULT))
 
 
 def create_fake_thumbnail_url(label: str) -> str:
@@ -79,7 +80,9 @@ class FunctionServices:
             skip = not self.settings.is_dev_feature_enabled()
         return skip
 
-    def _items(self) -> Iterator[tuple[tuple[ServiceKey, ServiceVersion], _Record]]:
+    def _items(
+        self,
+    ) -> Iterator[tuple[tuple[ServiceKey, ServiceVersion], _Record]]:
         skip_dev = self._skip_dev()
         for key, value in self._functions.items():
             if value.is_under_development and skip_dev:
@@ -91,7 +94,9 @@ class FunctionServices:
         for _, f in self._items():
             yield f.meta
 
-    def iter_services_key_version(self) -> Iterator[tuple[ServiceKey, ServiceVersion]]:
+    def iter_services_key_version(
+        self,
+    ) -> Iterator[tuple[ServiceKey, ServiceVersion]]:
         """WARNING: this function might skip services makred as 'under development'"""
         for kv, f in self._items():
             assert kv == (f.meta.key, f.meta.version)  # nosec

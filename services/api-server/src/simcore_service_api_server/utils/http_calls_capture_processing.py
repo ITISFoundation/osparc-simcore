@@ -97,9 +97,9 @@ class CapturedParameterSchema(BaseModel):
                 pattern = r"[+-]?\d+(?:\.\d+)?"
             elif self.type_ == "str":
                 if self.format_ == "uuid":
-                    pattern = r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+                    pattern = r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-(1|3|4|5)[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
                 else:
-                    pattern = r".*"  # should match any string
+                    pattern = r"[^/]*"  # should match any string not containing "/"
         if pattern is None:
             raise OpenApiSpecIssue(
                 f"Encountered invalid {self.type_=} and {self.format_=} combination"
