@@ -175,20 +175,6 @@ qx.Class.define("osparc.data.Converters", {
         return "@MaterialIcons/insert_drive_file/15";
       }
       return "@MaterialIcons/arrow_right_alt/15";
-    },
-
-    replaceUuids: function(workbench) {
-      let workbenchStr = JSON.stringify(workbench);
-      const innerNodeIds = Object.keys(workbench);
-      for (let i=0; i<innerNodeIds.length; i++) {
-        const innerNodeId = innerNodeIds[i];
-        const newNodeId = osparc.utils.Utils.uuidV4();
-        // workbenchStr = workbenchStr.replace(innerNodeId, newNodeId);
-        const re = new RegExp(innerNodeId, "g");
-        workbenchStr = workbenchStr.replace(re, newNodeId); // Using regex for replacing ALL matches
-      }
-      workbench = JSON.parse(workbenchStr);
-      return workbench;
     }
   }
 });

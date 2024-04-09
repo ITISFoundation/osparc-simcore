@@ -173,42 +173,9 @@ qx.Class.define("osparc.data.model.Workbench", {
       return null;
     },
 
-    getNodes: function(recursive = false) {
+    getNodes: function() {
       let nodes = Object.assign({}, this.__rootNodes);
-      if (recursive && this.__rootNodes) {
-        let topLevelNodes = Object.values(this.__rootNodes);
-        for (const topLevelNode of topLevelNodes) {
-          let innerNodes = topLevelNode.getInnerNodes(true);
-          nodes = Object.assign(nodes, innerNodes);
-        }
-      }
       return nodes;
-    },
-
-    getPathIds: function(nodeId) {
-      const study = this.getStudy();
-      if (study === null) {
-        return [];
-      }
-      const studyId = study.getUuid();
-      if (nodeId === studyId || nodeId === undefined) {
-        return [studyId];
-      }
-      const nodePath = [];
-      nodePath.unshift(nodeId);
-      const node = this.getNode(nodeId);
-      if (node) {
-        let parentNodeId = node.getParentNodeId();
-        while (parentNodeId) {
-          const checkThisNode = this.getNode(parentNodeId);
-          if (checkThisNode) {
-            nodePath.unshift(parentNodeId);
-            parentNodeId = checkThisNode.getParentNodeId();
-          }
-        }
-      }
-      nodePath.unshift(studyId);
-      return nodePath;
     },
 
     getConnectedEdges: function(nodeId) {
@@ -289,7 +256,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return node;
     },
 
-    createNode: function(key, version, uuid, parent) {
+    createNode: function(key, version, uuid) {
       const existingNode = this.getNode(uuid);
       if (existingNode) {
         return existingNode;
@@ -304,7 +271,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
 
       const node = this.__createNode(this.getStudy(), key, version, uuid);
-      this.addNode(node, parent);
+      this.addNode(node);
 
       this.__initNodeSignals(node);
 
@@ -312,26 +279,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.giveUniqueNameToNode(node, node.getLabel());
       node.startInBackend();
 
-      const metaData = node.getMetaData();
-      if (metaData && Object.prototype.hasOwnProperty.call(metaData, "workbench")) {
-        this.__createInnerWorkbench(node, metaData);
-      }
-
       return node;
-    },
-
-    __createInnerWorkbench: function(parentNode, metaData) {
-      // this is must be a nodes group
-      const workbench = osparc.data.Converters.replaceUuids(metaData["workbench"]);
-      for (let innerNodeId in workbench) {
-        workbench[innerNodeId]["parent"] = workbench[innerNodeId]["parent"] || parentNode.getNodeId();
-      }
-
-      this.__deserialize(workbench);
-
-      for (let innerNodeId in workbench) {
-        this.getNode(innerNodeId).startInBackend();
-      }
     },
 
     __initNodeSignals: function(node) {
@@ -524,14 +472,9 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    addNode: function(node, parentNode) {
+    addNode: function(node) {
       const nodeId = node.getNodeId();
-      if (parentNode) {
-        parentNode.addInnerNode(nodeId, node);
-      } else {
-        this.__rootNodes[nodeId] = node;
-      }
-      node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
+      this.__rootNodes[nodeId] = node;
       this.fireEvent("pipelineChanged");
     },
 
@@ -649,29 +592,9 @@ qx.Class.define("osparc.data.model.Workbench", {
       for (let i=0; i<nodeIds.length; i++) {
         const nodeId = nodeIds[i];
         const nodeData = workbenchData[nodeId];
-        if (nodeData.parent && nodeData.parent !== null) {
-          let parentNode = this.getNode(nodeData.parent);
-          if (parentNode === null) {
-            // If parent was not yet created, delay the creation of its' children
-            nodeIds.push(nodeId);
-            // check if there is an inconsistency
-            const nKeys = nodeIds.length;
-            if (nKeys > 1) {
-              if (nodeIds[nKeys-1] === nodeIds[nKeys-2]) {
-                console.log(nodeId, "will never be created, parent missing", nodeData.parent);
-                return;
-              }
-            }
-            continue;
-          }
-        }
         const node = this.__createNode(this.getStudy(), nodeData.key, nodeData.version, nodeId);
         this.__initNodeSignals(node);
-        let parentNode = null;
-        if (nodeData.parent) {
-          parentNode = this.getNode(nodeData.parent);
-        }
-        this.addNode(node, parentNode);
+        this.addNode(node);
       }
 
       // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
@@ -736,25 +659,6 @@ qx.Class.define("osparc.data.model.Workbench", {
           }
         });
       }
-    },
-
-    __getBrotherNodes: function(currentModel, excludeNodeIds) {
-      let brotherNodesObj = {};
-      if (currentModel.getNodeId) {
-        brotherNodesObj = currentModel.getInnerNodes(false);
-      } else {
-        brotherNodesObj = this.getNodes(false);
-      }
-
-      const brotherNodes = [];
-      for (const brotherNodeId in brotherNodesObj) {
-        const index = excludeNodeIds.indexOf(brotherNodeId);
-        if (index === -1) {
-          const brotherNode = this.getNode(brotherNodeId);
-          brotherNodes.push(brotherNode);
-        }
-      }
-      return brotherNodes;
     },
 
     __getAveragePosition: function(nodes) {
