@@ -42,7 +42,7 @@ async def _get_user_notifications(
     )
     # make it backwards compatible
     for n in raw_notifications:
-        if not "product" in n:
+        if "product" not in n:
             n["product"] = "UNDEFINED"
     # Filter by product
     filtered_notifications = list(filter(lambda n: n["product"] in [product_name, "UNDEFINED"], raw_notifications))
