@@ -5,7 +5,7 @@ import re
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from typing import Any, TypeAlias
+from typing import Any, Final, TypeAlias
 from uuid import UUID
 
 from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
@@ -27,6 +27,7 @@ ProjectID: TypeAlias = UUID
 ClassifierID: TypeAlias = str
 
 NodesDict: TypeAlias = dict[NodeIDStr, Node]
+_DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 class ProjectIDStr(ConstrainedStr):
@@ -41,6 +42,10 @@ class DateTimeStr(ConstrainedStr):
 
     class Config:
         frozen = True
+
+    @classmethod
+    def to_datetime(cls, s: "DateTimeStr"):
+        return datetime.strptime(s, _DATETIME_FORMAT)
 
 
 # NOTE: careful this is in sync with packages/postgres-database/src/simcore_postgres_database/models/projects.py!!!

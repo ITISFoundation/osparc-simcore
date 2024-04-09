@@ -215,33 +215,29 @@ qx.Class.define("osparc.service.Utils", {
       const compIOFields = ["keyId"];
       let compatible = true;
 
-      // inputs
-      Object.keys(srcNode["inputs"]).forEach(inputKey => {
-        if (!(inputKey in destNode["inputs"])) {
-          compatible = false;
+      const arePortsCompatible = (portKey, inOrOut = "inputs") => {
+        if (!(portKey in destNode[inOrOut])) {
+          return false;
         }
-        Object.keys(srcNode["inputs"][inputKey]).forEach(inputField => {
-          if (compIOFields.includes(inputField)) {
-            if (!(inputField in destNode["inputs"][inputKey]) || srcNode["inputs"][inputKey][inputField] !== destNode["inputs"][inputKey][inputField]) {
-              compatible = false;
+        const fields = srcNode[inOrOut][portKey];
+        for (let i = 0; i<fields.length; i++) {
+          const field = fields[i];
+          if (compIOFields.includes(field)) {
+            if (!(field in destNode[inOrOut][portKey]) || srcNode[inOrOut][portKey][field] !== destNode[inOrOut][portKey][field]) {
+              return false;
             }
           }
-        });
-      });
+        }
+        return true;
+      }
+
+      // inputs
+      const areInputsCompatible = inputKey => arePortsCompatible(inputKey, "inputs");
+      compatible = compatible && Object.keys(srcNode["inputs"]).every(areInputsCompatible);
 
       // outputs
-      Object.keys(srcNode["outputs"]).forEach(outputKey => {
-        if (!(outputKey in destNode["outputs"])) {
-          compatible = false;
-        }
-        Object.keys(srcNode["outputs"][outputKey]).forEach(outputField => {
-          if (compIOFields.includes(outputField)) {
-            if (!(outputField in destNode["outputs"][outputKey]) || srcNode["outputs"][outputKey][outputField] !== destNode["outputs"][outputKey][outputField]) {
-              compatible = false;
-            }
-          }
-        });
-      });
+      const areOutputsCompatible = inputKey => arePortsCompatible(inputKey, "outputs");
+      compatible = compatible && Object.keys(srcNode["outputs"]).every(areOutputsCompatible);
 
       return compatible;
     },
