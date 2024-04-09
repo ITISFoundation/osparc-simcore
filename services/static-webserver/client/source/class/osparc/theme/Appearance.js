@@ -1086,7 +1086,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     "editlabel-label": {
       include: "label",
       style: state => ({
-        decorator: state.hovered && state.editable ? "border-editable" : null,
+        decorator: state.hovered && state.editable ? "border-editable" : "rounded",
         marginLeft: state.hovered && state.editable ? 0 : 1,
         padding: 5,
         cursor: state.editable ? "text" : "auto",

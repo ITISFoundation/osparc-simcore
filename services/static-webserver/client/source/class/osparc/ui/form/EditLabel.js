@@ -116,10 +116,6 @@ qx.Class.define("osparc.ui.form.EditLabel", {
           control = new qx.ui.basic.Label().set({
             appearance: "editlabel-label"
           });
-          // make it clear that the field is editable
-          control.getContentElement().setStyles({
-            "border-radius": "4px"
-          });
           this.bind("value", control, "value");
           if (this.isEditable()) {
             control.addState("editable");
