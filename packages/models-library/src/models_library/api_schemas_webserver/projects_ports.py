@@ -1,21 +1,9 @@
 from typing import Any
 
 from models_library.projects_nodes_io import NodeID
-from pydantic import BaseConfig, BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 
-
-class _InputSchemaConfig(BaseConfig):
-    class Config:
-        allow_population_by_field_name = False
-        extra = Extra.forbid
-        allow_mutations = False
-
-
-class _OutputSchemaConfig(BaseConfig):
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.ignore  # Used to prune extra fields from internal data
-        allow_mutations = False
+from ._base import InputSchemaWithoutCameCase, OutputSchema
 
 
 class _ProjectIOBase(BaseModel):
@@ -27,19 +15,19 @@ class _ProjectIOBase(BaseModel):
 
 
 class ProjectInputUpdate(_ProjectIOBase):
-    class Config(_InputSchemaConfig):
+    class Config(InputSchemaWithoutCameCase):
         ...
 
 
-class ProjectInputGet(_OutputSchemaConfig, _ProjectIOBase):
+class ProjectInputGet(OutputSchema, _ProjectIOBase):
     label: str
 
-    class Config(_InputSchemaConfig):
+    class Config(InputSchemaWithoutCameCase):
         ...
 
 
 class ProjectOutputGet(_ProjectIOBase):
     label: str
 
-    class Config(_OutputSchemaConfig):
+    class Config(OutputSchema):
         ...
