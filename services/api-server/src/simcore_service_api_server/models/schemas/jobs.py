@@ -231,7 +231,7 @@ class Job(BaseModel):
     @classmethod
     def compose_resource_name(
         cls, parent_name: RelativeResourceName, job_id: UUID
-    ) -> str:
+    ) -> RelativeResourceName:
         # CAREFUL, this is not guarantee a UNIQUE identifier since the resource
         # could have some alias entrypoints and the wrong parent_name might be introduced here
         collection_or_resource_ids = [
