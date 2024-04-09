@@ -68,7 +68,7 @@ def create_job_from_study(
 
     job_name = Job.compose_resource_name(parent_name=study_name, job_id=project.uuid)
 
-    new_job = Job(
+    return Job(
         id=project.uuid,
         name=job_name,
         inputs_checksum=job_inputs.compute_checksum(),
@@ -78,5 +78,3 @@ def create_job_from_study(
         runner_url=None,
         outputs_url=None,
     )
-
-    return new_job

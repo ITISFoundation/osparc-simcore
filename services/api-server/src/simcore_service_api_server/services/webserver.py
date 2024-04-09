@@ -10,7 +10,6 @@ from functools import partial
 from typing import Any
 from uuid import UUID
 
-import pydantic
 from cryptography import fernet
 from fastapi import FastAPI
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
@@ -211,7 +210,7 @@ class AuthSession:
                 )
                 get_response.raise_for_status()
                 task_status = Envelope[TaskStatus].parse_raw(get_response.text).data
-                assert task_status is not None
+                assert task_status is not None  # nosec
                 if not task_status.done:
                     msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
                     raise TryAgain(msg)
@@ -229,7 +228,7 @@ class AuthSession:
         response = await self.client.get("/me", cookies=self.session_cookies)
         response.raise_for_status()
         profile: Profile | None = Envelope[Profile].parse_raw(response.text).data
-        assert profile is not None
+        assert profile is not None  # nosec
         return profile
 
     @_exception_mapper(_PROFILE_STATUS_MAP)
@@ -282,11 +281,11 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[ProjectGet].parse_raw(response.text).data
-        assert data is not None
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper(_JOB_STATUS_MAP)
-    async def update_project(
+    async def replace_project(
         self, project_id: UUID, new_project: ProjectGet
     ) -> ProjectGet:
         response = await self.client.put(
@@ -296,7 +295,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[ProjectGet].parse_raw(response.text).data
-        assert data is not None
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper(_JOB_STATUS_MAP)
@@ -359,8 +358,8 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[list[StudyPort]].parse_raw(response.text).data
-        assert data is not None
-        assert isinstance(data, list)
+        assert data is not None  # nosec
+        assert isinstance(data, list)  # nosec
         return data
 
     @_exception_mapper(
@@ -459,7 +458,7 @@ class AuthSession:
     @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_project_outputs(
         self, project_id: ProjectID
-    ) -> dict[NodeID, dict[str, pydantic.typing.Any]]:
+    ) -> dict[NodeID, dict[str, Any]]:
         response = await self.client.get(
             f"/projects/{project_id}/outputs",
             cookies=self.session_cookies,
@@ -605,7 +604,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[GetCreditPrice].parse_raw(response.text).data
-        assert data is not None
+        assert data is not None  # nosec
         return data.usd_per_credit
 
     # SERVICES -------------------------------------------------
