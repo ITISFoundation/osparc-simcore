@@ -47,7 +47,8 @@ async def _get_user_notifications(
         if "product" not in n:
             n["product"] = "UNDEFINED"
     # Filter by product
-    filtered_notifications = list(filter(lambda n: n["product"] in [product_name, "UNDEFINED"], notifications))
+    included =  [product_name, "UNDEFINED"]
+    filtered_notifications = [n for n in notifications if n["product"] in included]
     return [UserNotification.parse_obj(x) for x in filtered_notifications]
 
 
