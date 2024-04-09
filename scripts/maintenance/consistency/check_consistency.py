@@ -104,34 +104,6 @@ def main(
     assert state.environment
 
 
-async def _get_projects_nodes(engine: AsyncEngine) -> dict[str, Any]:
-    async with engine.connect() as conn:
-        print("getting project nodes...")
-        result = await conn.execute(
-            sa.text(
-                "SELECT uuid, workbench, prj_owner, users.name, users.email"
-                ' FROM "projects"'
-                " INNER JOIN users"
-                " ON projects.prj_owner = users.id"
-                " WHERE users.role != 'GUEST'"
-            )
-        )
-        project_nodes = {
-            project_uuid: {
-                "nodes": list(workbench.keys()),
-                "owner": prj_owner,
-                "name": user_name,
-                "email": user_email,
-            }
-            for project_uuid, workbench, prj_owner, user_name, user_email in result
-            if len(workbench) > 0
-        }
-
-        print(f"found {len(project_nodes)} project with non empty workbench")
-
-    return project_nodes
-
-
 @dataclass(frozen=True)
 class FileInfo:
     file_id: str
@@ -150,51 +122,6 @@ class ProjectInfo:
     owner: int
     name: str
     email: str
-
-
-async def _get_files_from_project_nodes(
-    engine: AsyncEngine, project_uuid: str, node_ids: list[str]
-) -> set[FileInfo]:
-    async with engine.connect() as conn:
-        array = str([f"{project_uuid}/{n}%" for n in node_ids])
-        result = await conn.execute(
-            sa.text(
-                "SELECT file_id, file_size, last_modified"  # noqa: S608
-                ' FROM "file_meta_data"'
-                f" WHERE file_meta_data.file_id LIKE any (array{array}) AND location_id = '0'"
-            )
-        )
-
-        # here we got all the files for that project uuid/node_ids combination
-        project_nodes_files = {
-            FileInfo(
-                file_id, file_size, arrow.get(last_modified or "2000-01-01").datetime
-            )
-            for file_id, file_size, last_modified in result
-        }
-        return project_nodes_files
-
-
-async def _get_all_invalid_files_from_file_meta_data(
-    engine: AsyncEngine,
-) -> set[FileInfo]:
-    async with engine.connect() as conn:
-        print("getting invalid files from file_meta_data...")
-        result = await conn.execute(
-            sa.text(
-                'SELECT file_id, file_size, last_modified FROM "file_meta_data" '
-                "WHERE file_meta_data.file_size < 1 OR file_meta_data.entity_tag IS NULL"
-            )
-        )
-        # here we got all the files for that project uuid/node_ids combination
-        invalid_files_in_file_meta_data = {
-            FileInfo(
-                file_id, file_size, arrow.get(last_modified or "2000-01-01").datetime
-            )
-            for file_id, file_size, last_modified in result
-        }
-        print(f"found {len(invalid_files_in_file_meta_data)}")
-        return invalid_files_in_file_meta_data
 
 
 # Set a reasonable limit for concurrent database access
@@ -224,14 +151,12 @@ WHERE (file_size < 0 OR entity_tag IS NULL) AND is_directory IS FALSE
             )
         )
         # here we got all the files for that project uuid/node_ids combination
-        file_infos = {
+        return {
             FileInfo(
                 file_id, file_size, arrow.get(last_modified or "2000-01-01").datetime
             )
             for file_id, file_size, last_modified in result
         }
-        print(f"[yellow bold]found {len(file_infos)} invalid entries in file_meta_data")
-        return file_infos
 
 
 async def _list_all_invalid_soft_links_in_file_meta_data(
@@ -249,14 +174,12 @@ AND f2.file_id IS NULL
 """
             )
         )
-        file_infos = {
+        return {
             FileInfo(
                 file_id, file_size, arrow.get(last_modified or "2000-01-01").datetime
             )
             for file_id, file_size, last_modified in result
         }
-        print(f"[yellow bold]found {len(file_infos)} invalid entries in file_meta_data")
-        return file_infos
 
 
 async def _list_unused_file_meta_data_entries(engine: AsyncEngine) -> set[FileInfo]:
@@ -264,32 +187,67 @@ async def _list_unused_file_meta_data_entries(engine: AsyncEngine) -> set[FileIn
         result = await conn.execute(
             sa.text(
                 """
-SELECT f1.file_id, f1.file_size, f1.last_modified
-FROM file_meta_data AS f1
-LEFT JOIN file_meta_data AS f2 ON f1.object_name = f2.file_id
-WHERE f1.is_soft_link IS TRUE
-AND f2.file_id IS NULL
+SELECT f.file_id, f.file_size, f.last_modified
+FROM file_meta_data AS f
+LEFT JOIN projects AS p ON f.project_id = p.uuid
+WHERE f.project_id IS NOT NULL AND (
+    p.uuid IS NULL OR
+    NOT (p.workbench->f.node_id) IS NOT NULL
+);
 """
             )
         )
-        file_infos = {
+        return {
             FileInfo(
                 file_id, file_size, arrow.get(last_modified or "2000-01-01").datetime
             )
             for file_id, file_size, last_modified in result
         }
-        print(f"[yellow bold]found {len(file_infos)} invalid entries in file_meta_data")
-        return file_infos
+
+
+async def _list_unused_api_files(engine: AsyncEngine) -> set[FileInfo]:
+    async with engine.connect() as conn:
+        result = await conn.execute(
+            sa.text(
+                """
+SELECT fmd.*
+FROM file_meta_data fmd
+WHERE fmd.project_id IS NULL
+AND NOT EXISTS (
+    SELECT 1
+    FROM projects p
+    WHERE CAST(p.workbench AS text) LIKE '%' || REPLACE(fmd.object_name, '_', '\_') || '%'
+);
+"""
+            )
+        )
+        return {
+            FileInfo(
+                file_id, file_size, arrow.get(last_modified or "2000-01-01").datetime
+            )
+            for file_id, file_size, last_modified in result
+        }
 
 
 async def _summary() -> None:
     # ---------------------- GET FILE ENTRIES FROM DB PROKECT TABLE -------------------------------------------------------------
     async with db_engine() as engine:
         invalid_file_infos = await _list_all_invalid_entries_in_file_meta_data(engine)
+        print(
+            f"[yellow bold]found {len(invalid_file_infos)} invalid entries in file_meta_data"
+        )
         invalid_soft_links = await _list_all_invalid_soft_links_in_file_meta_data(
             engine
         )
-        unused_file_entries = await _list_unused_file_meta_data_entries(engine)
+        print(
+            f"[yellow bold]found {len(invalid_soft_links)} invalid soft links in file_meta_data"
+        )
+        file_entries_with_no_project = await _list_unused_file_meta_data_entries(engine)
+        print(
+            f"[white]found {len(file_entries_with_no_project)} entries with missing projectID/nodeID in file_meta_data. Do not do anything with this"
+        )
+        unused_api_files = await _list_unused_api_files(engine)
+        print(f"[yellow]found {len(unused_api_files)} unused api files")
 
     print("[yellow bold]Very good we are done!")
 
