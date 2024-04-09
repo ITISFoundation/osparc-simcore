@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 import json
-from typing import Callable
+from collections.abc import Callable
 from uuid import UUID
 
 import pytest
@@ -123,8 +123,7 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
         # request context
         request[RQT_USERID_KEY] = 42
         request["RQT_IGNORE_CONTEXT"] = "not interesting"
-        resp = await handler(request)
-        return resp
+        return await handler(request)
 
     app = web.Application(
         middlewares=[
@@ -144,8 +143,7 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
 
 @pytest.fixture
 def path_params(faker: Faker):
-    path_params = MyRequestPathParams.create_fake(faker)
-    return path_params
+    return MyRequestPathParams.create_fake(faker)
 
 
 @pytest.fixture
@@ -197,17 +195,11 @@ async def test_parse_request_with_invalid_path_params(
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
     response_body = await r.json()
-    assert response_body["error"].pop("resource")
     assert response_body == {
         "error": {
-            "msg": "Invalid parameter/s 'project_uuid' in request path",
-            "details": [
-                {
-                    "loc": "project_uuid",
-                    "msg": "value is not a valid uuid",
-                    "type": "type_error.uuid",
-                }
-            ],
+            "loc": "path.project_uuid",
+            "msg": "value is not a valid uuid",
+            "type": "type_error.uuid",
         }
     }
 
@@ -226,17 +218,11 @@ async def test_parse_request_with_invalid_query_params(
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
     response_body = await r.json()
-    assert response_body["error"].pop("resource")
     assert response_body == {
         "error": {
-            "msg": "Invalid parameter/s 'label' in request query",
-            "details": [
-                {
-                    "loc": "label",
-                    "msg": "field required",
-                    "type": "value_error.missing",
-                }
-            ],
+            "loc": "query.label",
+            "msg": "field required",
+            "type": "value_error.missing",
         }
     }
 
@@ -256,19 +242,17 @@ async def test_parse_request_with_invalid_body(
 
     response_body = await r.json()
 
-    assert response_body["error"].pop("resource")
-
     assert response_body == {
         "error": {
-            "msg": "Invalid field/s 'x, z' in request body",
+            "msg": "Invalid field/s 'body.x, body.z' in request",
             "details": [
                 {
-                    "loc": "x",
+                    "loc": "body.x",
                     "msg": "field required",
                     "type": "value_error.missing",
                 },
                 {
-                    "loc": "z",
+                    "loc": "body.z",
                     "msg": "field required",
                     "type": "value_error.missing",
                 },

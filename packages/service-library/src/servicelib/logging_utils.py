@@ -241,17 +241,26 @@ def log_catch(logger: logging.Logger, reraise: bool = True):
 
 class LogExtra(TypedDict, total=False):
     log_uid: str
+    log_eoc: str
 
 
 LogLevelInt: TypeAlias = int
 LogMessageStr: TypeAlias = str
 
 
-def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None:
+def get_log_record_extra(
+    *,
+    user_id: int | str | None = None,
+    error_code: str | None = None,
+) -> LogExtra | None:
     extra: LogExtra = {}
     if user_id:
         assert int(user_id) > 0  # nosec
         extra["log_uid"] = f"{user_id}"
+
+    if error_code is not None:
+        extra["log_eoc"] = error_code
+
     return extra or None
 
 
