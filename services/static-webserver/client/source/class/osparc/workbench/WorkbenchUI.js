@@ -319,7 +319,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addNode: function(service, pos) {
       const node = this.__getWorkbench().createNode(service.getKey(), service.getVersion(), null, null);
-      if (!node) {
+      if (node === null) {
         return null;
       }
 
