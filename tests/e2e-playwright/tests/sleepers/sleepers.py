@@ -90,7 +90,7 @@ def test_sleepers(
     ).click()
 
     project_uuid = create_new_project_and_delete(auto_delete=True)
-    logging.INFO("project uuid: %s", project_uuid)
+    print("project uuid: ", project_uuid)
 
     # we are now in the workbench
     with log_context(
