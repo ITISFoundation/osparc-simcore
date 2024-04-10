@@ -386,7 +386,11 @@ async def update_project_node_resources_from_hardware_info(
     except KeyError as exc:
         msg = "Sub service is missing RAM/CPU resource keys!"
         raise ProjectNodeResourcesInvalidError(msg) from exc
-    except (RemoteMethodNotRegisteredError, RPCServerError) as exc:
+    except (
+        RemoteMethodNotRegisteredError,
+        RPCServerError,
+        asyncio.TimeoutError,
+    ) as exc:
         raise ClustersKeeperNotAvailableError from exc
 
 

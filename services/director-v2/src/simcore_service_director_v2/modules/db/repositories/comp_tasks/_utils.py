@@ -305,7 +305,11 @@ async def _update_project_node_resources_from_hardware_info(
             " TIP: adjust product configuration"
         )
         raise ConfigurationError(msg) from exc
-    except (RemoteMethodNotRegisteredError, RPCServerError) as exc:
+    except (
+        RemoteMethodNotRegisteredError,
+        RPCServerError,
+        asyncio.TimeoutError,
+    ) as exc:
         raise ClustersKeeperNotAvailableError from exc
 
 

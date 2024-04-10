@@ -25,14 +25,25 @@ qx.Class.define("osparc.notification.Notifications", {
   },
 
   statics: {
-    __newOrganizationObj: function(userId, orgId) {
+    __newNotificationBase: function(userId) {
       return {
         "user_id": userId.toString(),
+        "date": new Date().toISOString(),
+        "product": osparc.product.Utils.getProductName()
+      };
+    },
+
+    __newOrganizationObj: function(userId, orgId) {
+      const baseNotification = this.__newNotificationBase(userId);
+      const specNotification = {
         "category": "NEW_ORGANIZATION",
         "actionable_path": "organization/"+orgId,
         "title": "New organization",
-        "text": "You're now member of a new Organization",
-        "date": new Date().toISOString()
+        "text": "You're now member of a new Organization"
+      };
+      return {
+        ...baseNotification,
+        ...specNotification
       };
     },
 
@@ -40,13 +51,16 @@ qx.Class.define("osparc.notification.Notifications", {
       const study = osparc.product.Utils.getStudyAlias({
         firstUpperCase: true
       });
-      return {
-        "user_id": userId.toString(),
+      const baseNotification = this.__newNotificationBase(userId);
+      const specNotification = {
         "category": "STUDY_SHARED",
         "actionable_path": "study/"+studyId,
         "title": `${study} shared`,
-        "text": `A ${study} was shared with you`,
-        "date": new Date().toISOString()
+        "text": `A ${study} was shared with you`
+      };
+      return {
+        ...baseNotification,
+        ...specNotification
       };
     },
 
@@ -54,35 +68,44 @@ qx.Class.define("osparc.notification.Notifications", {
       const template = osparc.product.Utils.getTemplateAlias({
         firstUpperCase: true
       });
-      return {
-        "user_id": userId.toString(),
+      const baseNotification = this.__newNotificationBase(userId);
+      const specNotification = {
         "category": "TEMPLATE_SHARED",
         "actionable_path": "template/"+templateId,
         "title": `${template} shared`,
-        "text": `A ${template} was shared with you`,
-        "date": new Date().toISOString()
+        "text": `A ${template} was shared with you`
+      };
+      return {
+        ...baseNotification,
+        ...specNotification
       };
     },
 
     __newAnnotationNoteObj: function(userId, studyId) {
-      return {
-        "user_id": userId.toString(),
+      const baseNotification = this.__newNotificationBase(userId);
+      const specNotification = {
         "category": "ANNOTATION_NOTE",
         "actionable_path": "study/"+studyId,
         "title": "Note added",
-        "text": "A Note was added for you",
-        "date": new Date().toISOString()
+        "text": "A Note was added for you"
+      };
+      return {
+        ...baseNotification,
+        ...specNotification
       };
     },
 
     __newWalletObj: function(userId, walletId) {
-      return {
-        "user_id": userId.toString(),
+      const baseNotification = this.__newNotificationBase(userId);
+      const specNotification = {
         "category": "WALLET_SHARED",
         "actionable_path": "wallet/"+walletId,
         "title": "Credits shared",
-        "text": "A Credit account was shared with you",
-        "date": new Date().toISOString()
+        "text": "A Credit account was shared with you"
+      };
+      return {
+        ...baseNotification,
+        ...specNotification
       };
     },
 

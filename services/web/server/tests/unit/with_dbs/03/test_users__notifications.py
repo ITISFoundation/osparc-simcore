@@ -17,6 +17,7 @@ from typing import Any
 import pytest
 import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
+from models_library.products import ProductName
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -62,29 +63,47 @@ async def notification_redis_client(
     await redis_client.flushall()
 
 
-@asynccontextmanager
-async def _create_notifications(
-    redis_client: aioredis.Redis, logged_user: UserInfoDict, count: int
-) -> AsyncIterator[list[UserNotification]]:
+def _create_notification(
+    logged_user: UserInfoDict,
+    product_name: ProductName,
+) -> UserNotification:
     user_id = logged_user["id"]
     notification_categories = tuple(NotificationCategory)
 
+    notification: UserNotification = UserNotification.create_from_request_data(
+        UserNotificationCreate.parse_obj(
+            {
+                "user_id": user_id,
+                "category": random.choice(notification_categories),
+                "actionable_path": "a/path",
+                "title": "test_title",
+                "text": "text_text",
+                "date": datetime.now(timezone.utc).isoformat(),
+                "product": product_name,
+            }
+        )
+    )
+
+    return notification
+
+
+@asynccontextmanager
+async def _create_notifications(
+    redis_client: aioredis.Redis,
+    logged_user: UserInfoDict,
+    product_name: ProductName,
+    count: int
+) -> AsyncIterator[list[UserNotification]]:
+
     user_notifications: list[UserNotification] = [
-        UserNotification.create_from_request_data(
-            UserNotificationCreate.parse_obj(
-                {
-                    "user_id": user_id,
-                    "category": random.choice(notification_categories),
-                    "actionable_path": "a/path",
-                    "title": "test_title",
-                    "text": "text_text",
-                    "date": datetime.now(timezone.utc).isoformat(),
-                }
-            )
+        _create_notification(
+            logged_user=logged_user,
+            product_name=product_name
         )
         for _ in range(count)
     ]
 
+    user_id = logged_user["id"]
     redis_key = get_notification_key(user_id)
     if user_notifications:
         for notification in user_notifications:
@@ -130,7 +149,10 @@ async def test_list_user_notifications(
         assert not error
 
         async with _create_notifications(
-            notification_redis_client, logged_user, notification_count
+            redis_client=notification_redis_client,
+            logged_user=logged_user,
+            product_name="osparc",
+            count=notification_count,
         ) as created_notifications:
             response = await client.get(url.path)
             json_response = await response.json()
@@ -162,6 +184,7 @@ async def test_list_user_notifications(
                 "title": "New organization",
                 "text": "You're now member of a new Organization",
                 "date": "2023-02-23T16:23:13.122Z",
+                "product": "osparc",
             },
             id="with_expected_data",
         ),
@@ -174,6 +197,7 @@ async def test_list_user_notifications(
                 "title": "New organization",
                 "text": "You're now member of a new Organization",
                 "date": "2023-02-23T16:23:13.122Z",
+                "product": "osparc",
                 "read": True,
             },
             id="with_extra_params_that_will_get_overwritten",
@@ -198,7 +222,9 @@ async def test_create_user_notification(
     if not error:
         user_id = logged_user["id"]
         user_notifications = await _get_user_notifications(
-            notification_redis_client, user_id
+            redis_client=notification_redis_client,
+            user_id=user_id,
+            product_name="osparc",
         )
         assert len(user_notifications) == 1
         # these are always generated and overwritten, even if provided by the user, since
@@ -241,6 +267,7 @@ async def test_create_user_notification_capped_list_length(
                     "title": "New organization",
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
+                    "product": "osparc",
                 },
             )
             for _ in range(notification_count)
@@ -255,9 +282,53 @@ async def test_create_user_notification_capped_list_length(
 
     user_id = logged_user["id"]
     user_notifications = await _get_user_notifications(
-        notification_redis_client, user_id
+        redis_client=notification_redis_client,
+        user_id=user_id,
+        product_name="osparc",
     )
     assert len(user_notifications) <= MAX_NOTIFICATIONS_FOR_USER_TO_KEEP
+
+
+@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+async def test_create_user_notification_per_product(
+    logged_user: UserInfoDict,
+    notification_redis_client: aioredis.Redis,
+    client: TestClient,
+):
+    assert client.app
+    n_notifications_per_product = 2
+
+    async with (
+        # create notifications in "osparc"
+        _create_notifications(
+            redis_client=notification_redis_client,
+            logged_user=logged_user,
+            product_name="osparc",
+            count=n_notifications_per_product,
+        ) as _,
+        # create notifications in "s4l"
+        _create_notifications(
+            redis_client=notification_redis_client,
+            logged_user=logged_user,
+            product_name="s4l",
+            count=n_notifications_per_product,
+        ) as _
+    ):
+        user_id = logged_user["id"]
+
+        osparc_notifications = await _get_user_notifications(
+            redis_client=notification_redis_client,
+            user_id=user_id,
+            product_name="osparc",
+        )
+        assert len(osparc_notifications) == n_notifications_per_product
+
+        s4l_notifications = await _get_user_notifications(
+            redis_client=notification_redis_client,
+            user_id=user_id,
+            product_name="s4l",
+        )
+        assert len(s4l_notifications) == n_notifications_per_product
 
 
 @pytest.mark.parametrize(
@@ -276,7 +347,10 @@ async def test_update_user_notification(
     expected_response: HTTPStatus,
 ):
     async with _create_notifications(
-        notification_redis_client, logged_user, 1
+        redis_client=notification_redis_client,
+        logged_user=logged_user,
+        product_name="osparc",
+        count=1,
     ) as created_notifications:
         assert client.app
         for notification in created_notifications:
@@ -321,7 +395,10 @@ async def test_update_user_notification_at_correct_index(
         return results
 
     async with _create_notifications(
-        notification_redis_client, logged_user, notification_count
+        redis_client=notification_redis_client,
+        logged_user=logged_user,
+        product_name="osparc",
+        count=notification_count,
     ) as created_notifications:
         notifications_before_update = await _get_stored_notifications()
         for notification in created_notifications:

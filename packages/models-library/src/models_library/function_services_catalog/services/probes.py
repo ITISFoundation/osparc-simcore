@@ -1,6 +1,6 @@
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
-from .._utils import OM, FunctionServices, create_fake_thumbnail_url
+from .._utils import OM, WVG, FunctionServices, create_fake_thumbnail_url
 
 
 def create_metadata(type_name: str, prefix: str | None = None) -> ServiceDockerData:
@@ -66,7 +66,30 @@ META_ARRAY = ServiceDockerData.parse_obj(
     }
 )
 
+META_FILE = ServiceDockerData.parse_obj(
+    {
+        "integration-version": LATEST_INTEGRATION_VERSION,
+        "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/file",
+        "version": "1.0.0",
+        "type": ServiceType.FRONTEND,
+        "name": "File probe",
+        "description": "Probes its input for files",
+        "thumbnail": create_fake_thumbnail_url("file"),
+        "authors": [
+            WVG,
+        ],
+        "contact": WVG.email,
+        "inputs": {
+            "in_1": {
+                "label": "file",
+                "description": "file",
+                "type": "data:*/*",
+            }
+        },
+        "outputs": {},
+    }
+)
 
 services = FunctionServices()
-for m in (META_NUMBER, META_BOOL, META_INT, META_STR, META_ARRAY):
+for m in (META_NUMBER, META_BOOL, META_INT, META_STR, META_ARRAY, META_FILE):
     services.add(meta=m)
