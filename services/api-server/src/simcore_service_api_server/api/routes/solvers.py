@@ -71,7 +71,6 @@ async def list_solvers(
     response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_solvers_page(
     page_params: Annotated[PaginationParams, Depends()],
@@ -115,7 +114,6 @@ async def list_solvers_releases(
     response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_solvers_releases_page(
     page_params: Annotated[PaginationParams, Depends()],
@@ -190,7 +188,6 @@ async def list_solver_releases(
     response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_solver_releases_page(
     solver_key: SolverKeyId,

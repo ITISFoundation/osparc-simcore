@@ -61,7 +61,6 @@ def _compose_job_resource_name(study_key, job_id) -> str:
     response_model=Page[Job],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def list_study_jobs(
     study_id: StudyID,
@@ -129,7 +128,6 @@ async def create_study_job(
     response_model=Job,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_study_job(
     study_id: StudyID,
@@ -253,7 +251,6 @@ async def get_study_job_outputs(
     response_class=RedirectResponse,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
     msg = f"get study job output logfile study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
@@ -265,7 +262,6 @@ async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
     response_model=JobMetadata,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_study_job_custom_metadata(
     study_id: StudyID,
@@ -280,7 +276,6 @@ async def get_study_job_custom_metadata(
     "/{study_id}/jobs/{job_id}/metadata",
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def replace_study_job_custom_metadata(
     study_id: StudyID, job_id: JobID, replace: JobMetadataUpdate

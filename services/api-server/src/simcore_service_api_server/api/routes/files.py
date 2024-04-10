@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import io
 import logging
-from http import HTTPStatus
 from textwrap import dedent
 from typing import IO, Annotated, Any
 from uuid import UUID
@@ -143,7 +142,6 @@ async def list_files(
     response_model=Page[File],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description=HTTPStatus(status.HTTP_501_NOT_IMPLEMENTED).description,
 )
 async def get_files_page(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
