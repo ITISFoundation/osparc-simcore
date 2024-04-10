@@ -565,7 +565,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __startAutoSaveTimer: function() {
       // Save every 3 seconds
-      let timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
+      const timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
       timer.addListener("interval", () => {
         if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
           return;
@@ -583,7 +583,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __restartAutoSaveTimer: function() {
-      // Save every 3 seconds
       if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
         this.__autoSaveTimer.restart();
       }
