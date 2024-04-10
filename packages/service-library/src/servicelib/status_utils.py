@@ -41,9 +41,9 @@ def get_code_display_name(status_code: int) -> str:
         return _INVALID_STATUS_CODE_MSG
 
 
-_MOZILLA_STATUS_DOC_URL: Final[
+_CODE_DESCRIPTION_TEMPLATE: Final[
     str
-] = "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status"
+] = "{description}. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status{url_suffix}"
 
 
 def get_code_description(status_code: int) -> str:
@@ -54,13 +54,15 @@ def get_code_description(status_code: int) -> str:
 
     match status_code:
         case 305:
-            doc_url = f"{_MOZILLA_STATUS_DOC_URL}#305_use_proxy"
+            url_suffix = "#305_use_proxy"
         case 306:
-            doc_url = f"{_MOZILLA_STATUS_DOC_URL}#306_unused"
+            url_suffix = "#306_unused"
         case _:
-            doc_url = f"{_MOZILLA_STATUS_DOC_URL}/{status_code}"
+            url_suffix = f"/{status_code}"
 
-    return f"{description}. SEE {doc_url}"
+    return _CODE_DESCRIPTION_TEMPLATE.format(
+        description=description, url_suffix=url_suffix
+    )
 
 
 def is_informational(status_code: int) -> bool:

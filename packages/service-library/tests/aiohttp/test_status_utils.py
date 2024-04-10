@@ -3,7 +3,6 @@ from http import HTTPStatus
 from servicelib.aiohttp import status
 from servicelib.status_utils import (
     _INVALID_STATUS_CODE_MSG,
-    _MOZILLA_STATUS_DOC_URL,
     get_code_description,
     get_code_display_name,
     get_http_status_codes,
@@ -23,9 +22,10 @@ def test_display():
 
 
 def test_description():
+    # SEE https://github.com/python/cpython/blob/main/Lib/http/__init__.py#L54-L171
     assert (
         get_code_description(status.HTTP_200_OK)
-        == f"OK. SEE {_MOZILLA_STATUS_DOC_URL}/200"
+        == "Request fulfilled, document follows. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/200"
     )
 
 
