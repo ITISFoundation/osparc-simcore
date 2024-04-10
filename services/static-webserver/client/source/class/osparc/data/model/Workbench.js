@@ -260,11 +260,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return node;
     },
 
-    createNode: function(key, version, uuid) {
-      const existingNode = this.getNode(uuid);
-      if (existingNode) {
-        return existingNode;
-      }
+    createNode: function(key, version) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("You are not allowed to add nodes"), "ERROR");
         return null;
