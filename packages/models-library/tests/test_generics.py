@@ -1,10 +1,16 @@
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 from pathlib import Path
 from typing import Any
 
 import pytest
 from faker import Faker
 from models_library.generics import DictModel, Envelope
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 
 def test_dict_base_model():
@@ -40,23 +46,44 @@ def test_dict_base_model():
     assert some_instance["a new key"] == 23
 
 
-def test_data_enveloped(faker: Faker):
-    some_enveloped_string = Envelope[str]()
-    assert some_enveloped_string
-    assert not some_enveloped_string.data
-    assert not some_enveloped_string.error
-
-    random_float = faker.pyfloat()
-    some_enveloped_float = Envelope[float](data=random_float)
-    assert some_enveloped_float
-    assert some_enveloped_float.data == random_float
-    assert not some_enveloped_float.error
-
+def test_enveloped_error_str(faker: Faker):
     random_text = faker.text()
     some_enveloped_bool = Envelope[bool](error=random_text)
     assert some_enveloped_bool
     assert not some_enveloped_bool.data
     assert some_enveloped_bool.error == random_text
+
+
+@pytest.fixture
+def builtin_value(faker: Faker, builtin_type: type) -> Any:
+    return {"str": faker.pystr(), "float": faker.pyfloat(), "int": faker.pyint()}[
+        builtin_type.__name__
+    ]
+
+
+@pytest.mark.parametrize("builtin_type", [str, float, int])
+def test_enveloped_data_builtin(builtin_type: type, builtin_value: Any):
+    # constructors
+    envelope = Envelope[builtin_type](data=builtin_value)
+
+    assert envelope == Envelope[builtin_type].parse_data(builtin_value)
+
+    # exports
+    assert envelope.dict(exclude_unset=True, exclude_none=True) == {
+        "data": builtin_value
+    }
+    assert envelope.dict() == {"data": builtin_value, "error": None}
+
+
+def test_enveloped_data_model():
+    class User(BaseModel):
+        id: int
+        name = "Jane Doe"
+
+    enveloped = Envelope[User](data={"id": 3})
+
+    assert isinstance(enveloped.data, User)
+    assert enveloped.dict(exclude_unset=True, exclude_none=True) == {"data": {"id": 3}}
 
 
 def test_enveloped_data_dict():
@@ -76,4 +103,24 @@ def test_enveloped_data_dict():
     # empty dict
     enveloped = Envelope[dict](data={})
     assert enveloped.data == {}
+    assert enveloped.error is None
+
+
+def test_enveloped_data_list():
+    # error
+    with pytest.raises(ValidationError) as err_info:
+        Envelope[list](data="not-a-list")
+
+    error: ValidationError = err_info.value
+    assert error.errors() == [
+        {
+            "loc": ("data",),
+            "msg": "value is not a valid list",
+            "type": "type_error.list",
+        }
+    ]
+
+    # empty list
+    enveloped = Envelope[list](data=[])
+    assert enveloped.data == []
     assert enveloped.error is None

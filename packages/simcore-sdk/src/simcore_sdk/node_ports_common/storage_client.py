@@ -169,10 +169,7 @@ async def get_download_file_link(
         presigned_link_enveloped = Envelope[PresignedLink].parse_obj(
             await response.json()
         )
-        if (
-            presigned_link_enveloped.data is None
-            or not presigned_link_enveloped.data.link
-        ):
+        if not presigned_link_enveloped.data or not presigned_link_enveloped.data.link:
             msg = f"file {location_id}@{file_id} not found"
             raise exceptions.S3InvalidPathError(msg)
         url: AnyUrl = presigned_link_enveloped.data.link
