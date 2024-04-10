@@ -51,13 +51,13 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWasNotFoundError,
 )
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.groups.exceptions import GroupNotFoundError
 
 from .._meta import API_VTAG as VTAG
 from ..catalog import client as catalog_client
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..groups.api import get_group_from_gid, list_user_groups
+from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
@@ -69,6 +69,7 @@ from ._common_models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots
 from .db import ProjectDBAPI
 from .exceptions import (
+    ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
     ProjectNodeResourcesInsufficientRightsError,
@@ -288,6 +289,8 @@ async def start_node(request: web.Request) -> web.Response:
 
     except ProjectStartsTooManyDynamicNodesError as exc:
         raise web.HTTPConflict(reason=f"{exc}") from exc
+    except ClustersKeeperNotAvailableError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
 
 async def _stop_dynamic_service_task(
