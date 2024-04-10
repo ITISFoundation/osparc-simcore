@@ -260,58 +260,54 @@ qx.Class.define("osparc.data.model.Workbench", {
       return node;
     },
 
-    createNode: function(key, version) {
-      return new Promise((resolve, reject) => {
-        if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
-          osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("You are not allowed to add nodes"), "ERROR");
-          reject();
+    createNode: async function(key, version) {
+      if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
+        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("You are not allowed to add nodes"), "ERROR");
+        return null;
+      }
+      if (this.getStudy().isPipelineRunning()) {
+        osparc.FlashMessenger.getInstance().logAs(this.self().CANT_ADD_NODE, "ERROR");
+        return null;
+      }
+
+      // create the node in the backend first
+      const nodeId = osparc.utils.Utils.uuidV4()
+      const params = {
+        url: {
+          studyId: this.getStudy().getUuid()
+        },
+        data: {
+          "service_id": nodeId,
+          "service_key": key,
+          "service_version": version
         }
-        if (this.getStudy().isPipelineRunning()) {
-          osparc.FlashMessenger.getInstance().logAs(this.self().CANT_ADD_NODE, "ERROR");
-          reject();
+      };
+      await osparc.data.Resources.fetch("studies", "addNode", params).catch(err => {
+        let errorMsg = this.tr("Error when creating ") + key + ":" + version;
+        this.getStatus().setInteractive("failed");
+        if ("status" in err && err.status === 406) {
+          errorMsg = this.getKey() + ":" + this.getVersion() + this.tr(" is retired");
+          this.getStatus().setInteractive("retired");
         }
-        // create the node in the backend first
-        const nodeId = osparc.utils.Utils.uuidV4()
-        const params = {
-          url: {
-            studyId: this.getStudy().getUuid()
-          },
-          data: {
-            "service_id": nodeId,
-            "service_key": key,
-            "service_version": version
-          }
+        const errorMsgData = {
+          nodeId: this.getNodeId(),
+          msg: errorMsg,
+          level: "ERROR"
         };
-        osparc.data.Resources.fetch("studies", "addNode", params)
-          .then(() => {
-            const node = this.__createNode(this.getStudy(), key, version, nodeId);
-            this.addNode(node);
-
-            this.__initNodeSignals(node);
-
-            node.populateNodeData();
-            this.giveUniqueNameToNode(node, node.getLabel());
-            node.startDynamicService();
-
-            resolve(node);
-          })
-          .catch(err => {
-            let errorMsg = this.tr("Error when creating ") + key + ":" + version;
-            this.getStatus().setInteractive("failed");
-            if ("status" in err && err.status === 406) {
-              errorMsg = this.getKey() + ":" + this.getVersion() + this.tr(" is retired");
-              this.getStatus().setInteractive("retired");
-            }
-            const errorMsgData = {
-              nodeId: this.getNodeId(),
-              msg: errorMsg,
-              level: "ERROR"
-            };
-            this.fireDataEvent("showInLogger", errorMsgData);
-            osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
-            reject();
-          });
+        this.fireDataEvent("showInLogger", errorMsgData);
+        osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+        return null;
       });
+
+      const node = this.__createNode(this.getStudy(), key, version, nodeId);
+      this.__initNodeSignals(node);
+      this.__addNode(node);
+
+      node.populateNodeData();
+      this.giveUniqueNameToNode(node, node.getLabel());
+      node.startDynamicService();
+
+      return node;
     },
 
     __initNodeSignals: function(node) {
@@ -406,10 +402,10 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __filePickerNodeRequested: async function(nodeId, portId, file) {
       const filePickerMetadata = osparc.service.Utils.getFilePicker();
-      const filePicker = await this.createNode(filePickerMetadata["key"], filePickerMetadata["version"]).catch(err => {
-        console.error(err);
-        return null;
-      });
+      const filePicker = await this.createNode(filePickerMetadata["key"], filePickerMetadata["version"]);
+      if (filePicker === null) {
+        return;
+      }
 
       const requesterNode = this.getNode(nodeId);
       const freePos = this.getFreePosition(requesterNode);
@@ -450,10 +446,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["inputs"], portId);
       const parameterMetadata = osparc.service.Utils.getParameterMetadata(type);
       if (parameterMetadata) {
-        const parameterNode = await this.createNode(parameterMetadata["key"], parameterMetadata["version"]).catch(err => {
-          console.error(err);
-          return null;
-        });
+        const parameterNode = await this.createNode(parameterMetadata["key"], parameterMetadata["version"]);
+        if (parameterNode === null) {
+          return;
+        }
 
         // do not overlap the new Parameter Node with other nodes
         const freePos = this.getFreePosition(requesterNode);
@@ -480,10 +476,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["outputs"], portId);
       const probeMetadata = osparc.service.Utils.getProbeMetadata(type);
       if (probeMetadata) {
-        const probeNode = await this.createNode(probeMetadata["key"], probeMetadata["version"]).catch(err => {
-          console.error(err);
-          return null;
-        });
+        const probeNode = await this.createNode(probeMetadata["key"], probeMetadata["version"]);
+        if (probeNode === null) {
+          return;
+        }
 
         probeNode.setLabel(requesterPortMD.label);
 
@@ -504,7 +500,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    addNode: function(node) {
+    __addNode: function(node) {
       const nodeId = node.getNodeId();
       this.__rootNodes[nodeId] = node;
       this.fireEvent("pipelineChanged");
@@ -545,10 +541,10 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     addServiceBetween: async function(service, leftNodeId, rightNodeId) {
       // create node
-      const node = await this.createNode(service.getKey(), service.getVersion()).catch(err => {
-        console.error(err);
+      const node = await this.createNode(service.getKey(), service.getVersion());
+      if (node === null) {
         return null;
-      });
+      }
       if (leftNodeId) {
         const leftNode = this.getNode(leftNodeId);
         node.setPosition(this.getFreePosition(leftNode, false));
@@ -626,7 +622,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const nodeData = workbenchData[nodeId];
         const node = this.__createNode(this.getStudy(), nodeData.key, nodeData.version, nodeId);
         this.__initNodeSignals(node);
-        this.addNode(node);
+        this.__addNode(node);
       }
 
       // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
