@@ -132,12 +132,7 @@ qx.Class.define("osparc.info.StudyMedium", {
       ) {
         extraInfo.push({
           label: this.tr("QUALITY"),
-          view: osparc.info.StudyUtils.createQuality(this.getStudy()),
-          action: {
-            button: osparc.utils.Utils.getEditButton(),
-            callback: this.__openQuality,
-            ctx: this
-          }
+          view: osparc.info.StudyUtils.createQuality(this.getStudy())
         });
       }
 
@@ -159,22 +154,6 @@ qx.Class.define("osparc.info.StudyMedium", {
         return osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
       }
       return null;
-    },
-
-    __openAccessRights: function() {
-      const permissionsView = osparc.info.StudyUtils.openAccessRights(this.getStudy().serialize());
-      permissionsView.addListener("updateAccessRights", e => {
-        const updatedData = e.getData();
-        this.getStudy().setAccessRights(updatedData["accessRights"]);
-      });
-    },
-
-    __openQuality: function() {
-      const qualityEditor = osparc.info.StudyUtils.openQuality(this.getStudy().serialize());
-      qualityEditor.addListener("updateQuality", e => {
-        const updatedData = e.getData();
-        this.getStudy().setQuality(updatedData["quality"]);
-      });
     },
 
     __openStudyDetails: function() {
