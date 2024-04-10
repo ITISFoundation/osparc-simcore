@@ -705,8 +705,12 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         if (this.__tempEdgeNodeId === dragNodeId) {
           const winPos = this.__unscaleCoordinates(this.__pointerPos.x, this.__pointerPos.y);
           const srvCat = this.openServiceCatalog(winPos, this.__pointerPos);
-          this.__tempEdgeIsInput === true ? srvCat.setContext(null, dragNodeId) : srvCat.setContext(dragNodeId, null);
-          srvCat.addListener("close", () => this.__removeTempEdge(), this);
+          if (srvCat) {
+            this.__tempEdgeIsInput === true ? srvCat.setContext(null, dragNodeId) : srvCat.setContext(dragNodeId, null);
+            srvCat.addListener("close", () => this.__removeTempEdge(), this);
+          } else {
+            this.__removeTempEdge();
+          }
         }
         this.__removePointerMoveListener();
       }, this);
@@ -1253,7 +1257,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               x: 50,
               y: 50
             }, freePos);
-            srvCat.setContext(null, nodeUI.getNodeId());
+            if (srvCat) {
+              srvCat.setContext(null, nodeUI.getNodeId());
+            }
           }
         },
         addServiceOutput: {
@@ -1264,7 +1270,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               x: 50,
               y: 50
             }, freePos);
-            srvCat.setContext(nodeUI.getNodeId(), null);
+            if (srvCat) {
+              srvCat.setContext(nodeUI.getNodeId(), null);
+            }
           }
         },
         noAction: {
