@@ -3,7 +3,9 @@ from http import HTTPStatus
 from servicelib.aiohttp import status
 from servicelib.status_utils import (
     _INVALID_STATUS_CODE_MSG,
-    get_display_name,
+    _MOZILLA_STATUS_DOC_URL,
+    get_code_description,
+    get_code_display_name,
     get_http_status_codes,
     is_client_error,
     is_error,
@@ -15,9 +17,16 @@ from servicelib.status_utils import (
 
 
 def test_display():
-    assert get_display_name(status.HTTP_200_OK) == "HTTP_200_OK"
-    assert get_display_name(status.HTTP_306_RESERVED) == "HTTP_306_RESERVED"
-    assert get_display_name(11) == _INVALID_STATUS_CODE_MSG
+    assert get_code_display_name(status.HTTP_200_OK) == "HTTP_200_OK"
+    assert get_code_display_name(status.HTTP_306_RESERVED) == "HTTP_306_RESERVED"
+    assert get_code_display_name(11) == _INVALID_STATUS_CODE_MSG
+
+
+def test_description():
+    assert (
+        get_code_description(status.HTTP_200_OK)
+        == f"OK. SEE {_MOZILLA_STATUS_DOC_URL}/200"
+    )
 
 
 def test_status_codes_checks():
