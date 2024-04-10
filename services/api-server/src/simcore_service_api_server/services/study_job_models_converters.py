@@ -2,7 +2,9 @@
     Helper functions to convert models used in
     services/api-server/src/simcore_service_api_server/api/routes/studies_jobs.py
 """
-from typing import NamedTuple
+import collections.abc
+from typing import Any, NamedTuple
+from uuid import UUID
 
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.api_schemas_webserver.projects_ports import (
@@ -15,8 +17,9 @@ from models_library.projects_nodes_io import SimcoreS3FileID
 
 from ..models.domain.projects import InputTypes, SimCoreFileLink
 from ..models.schemas.files import File
-from ..models.schemas.jobs import Job, JobInputs
+from ..models.schemas.jobs import ArgumentTypes, Job, JobInputs, JobOutputs
 from ..models.schemas.studies import Study, StudyID
+from .storage import to_file_api_model
 
 
 class ProjectInputs(NamedTuple):
@@ -80,3 +83,40 @@ def create_job_from_study(
     )
 
     return new_job
+
+
+async def create_job_outputs_from_project_outputs(
+    job_id: StudyID,
+    project_outputs: dict[NodeID, dict[str, Any]],
+    user_id,
+    storage_client,
+) -> JobOutputs:
+    results: dict[str, ArgumentTypes] = {}
+
+    for _, node_dict in project_outputs.items():
+        name = node_dict["label"]
+        value = node_dict["value"]
+        if (
+            value and isinstance(value, collections.abc.Mapping) and "store" in value
+        ):  # TODO make this more robust
+            path = value["path"]
+            file_id: UUID = File.create_id(*path.split("/"))
+
+            found = await storage_client.search_files(
+                user_id=user_id,
+                file_id=file_id,
+                sha256_checksum=None,
+                access_right="read",
+            )
+            if found:
+                assert len(found) == 1  # nosec
+                results[name] = to_file_api_model(found[0])
+            else:
+                api_file: File = await storage_client.create_soft_link(
+                    user_id, path, file_id
+                )
+                results[name] = api_file
+        else:
+            results[name] = value
+    job_outputs = JobOutputs(job_id=job_id, results=results)
+    return job_outputs

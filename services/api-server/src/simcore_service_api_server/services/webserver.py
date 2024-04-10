@@ -451,6 +451,21 @@ class AuthSession:
         )
         return {} if data is None else data
 
+    @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
+    async def get_project_outputs(
+        self, project_id: ProjectID
+    ) -> dict[NodeID, dict[str, Any]]:
+        response = await self.client.get(
+            f"/projects/{project_id}/outputs",
+            cookies=self.session_cookies,
+        )
+
+        response.raise_for_status()
+        data = Envelope[dict[NodeID, dict[str, Any]]].parse_raw(response.text).data
+        assert data is not None  # nosec
+
+        return data
+
     @_exception_mapper({})
     async def update_node_outputs(
         self, project_id: UUID, node_id: UUID, new_node_outputs: NodeOutputs

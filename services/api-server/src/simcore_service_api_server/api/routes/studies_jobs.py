@@ -33,8 +33,10 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.studies import Study, StudyID
+from ...services.storage import StorageApi
 from ...services.study_job_models_converters import (
     create_job_from_study,
+    create_job_outputs_from_project_outputs,
     get_project_and_file_inputs_from_job_inputs,
 )
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
@@ -231,15 +233,23 @@ async def inspect_study_job(
     "/{study_id}/jobs/{job_id}/outputs",
     response_model=JobOutputs,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
-    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_study_job_outputs(
     study_id: StudyID,
     job_id: JobID,
+    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    msg = f"get study job outputs study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-    raise NotImplementedError(msg)
+    job_name = _compose_job_resource_name(study_id, job_id)
+    _logger.debug("Getting Job Outputs for '%s'", job_name)
+
+    project_outputs = await webserver_api.get_project_outputs(job_id)
+    job_outputs: JobOutputs = await create_job_outputs_from_project_outputs(
+        job_id, project_outputs, user_id, storage_client
+    )
+
+    return job_outputs
 
 
 @router.post(
