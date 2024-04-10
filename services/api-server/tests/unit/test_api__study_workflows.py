@@ -69,6 +69,13 @@ class StudiesApi(_BaseApi):
     async def get_study_job_outputs(self, study_id, job_id) -> JobOutputs:
         raise NotImplementedError
 
+    async def delete_study_job(self, study_id, job_id) -> None:
+        resp = await self._client.delete(
+            f"{API_VTAG}/studies/{study_id}/jobs/{job_id}",
+            auth=self._auth,
+        )
+        resp.raise_for_status()
+
 
 @pytest.fixture
 def input_json_path(tmp_path: Path) -> Path:
@@ -140,8 +147,10 @@ async def test_run_study_workflow(
     files_api = FilesApi(client, auth, tmp_path)
     studies_api = StudiesApi(client, auth)
 
-    print(studies_api.list_study_ports(study_id=template_id))
+    # lists
+    print(await studies_api.list_study_ports(study_id=template_id))
 
+    # uploads input files
     test_py_file = await files_api.upload_file(file=test_py_path)
     assert test_py_file
 
@@ -150,6 +159,7 @@ async def test_run_study_workflow(
 
     test_json_file = await files_api.upload_file(file=input_json_path)
 
+    # creates job
     new_job = await studies_api.create_study_job(
         study_id=template_id,
         job_inputs={
@@ -161,6 +171,7 @@ async def test_run_study_workflow(
         },
     )
 
+    # start & inspect job until done
     await studies_api.start_study_job(study_id=template_id, job_id=new_job.id)
 
     job_status = await studies_api.inspect_study_job(
@@ -177,6 +188,7 @@ async def test_run_study_workflow(
 
     print(await studies_api.inspect_study_job(study_id=template_id, job_id=new_job.id))
 
+    # get outputs
     job_results = await studies_api.get_study_job_outputs(
         study_id=template_id, job_id=new_job.id
     ).results
@@ -190,3 +202,6 @@ async def test_run_study_workflow(
         )
     )
     assert output_file.exists()
+
+    # deletes
+    await studies_api.delete_study_job(study_id=template_id, job_id=new_job.id)
