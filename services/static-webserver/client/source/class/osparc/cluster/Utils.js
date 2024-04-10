@@ -80,7 +80,6 @@ qx.Class.define("osparc.cluster.Utils", {
           clustersSelectBox.add(item);
         });
       }
-      return clusters;
     }
   },
 

@@ -50,7 +50,6 @@ qx.Class.define("osparc.data.model.Node", {
     this.base(arguments);
 
     this.__metaData = osparc.service.Utils.getMetaData(key, version);
-    this.__innerNodes = {};
     this.setOutputs({});
 
     this.__inputNodes = [];
@@ -104,11 +103,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     inputAccess: {
       check: "Object",
-      nullable: true
-    },
-
-    parentNodeId: {
-      check: "String",
       nullable: true
     },
 
@@ -326,7 +320,6 @@ qx.Class.define("osparc.data.model.Node", {
 
   members: {
     __metaData: null,
-    __innerNodes: null,
     __inputNodes: null,
     __exposedNodes: null,
     __settingsForm: null,
@@ -442,21 +435,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     hasOutputs: function() {
       return Object.keys(this.getOutputs()).length;
-    },
-
-    getInnerNodes: function(recursive = false) {
-      let innerNodes = Object.assign({}, this.__innerNodes);
-      if (recursive) {
-        for (const innerNodeId in this.__innerNodes) {
-          let myInnerNodes = this.__innerNodes[innerNodeId].getInnerNodes(true);
-          innerNodes = Object.assign(innerNodes, myInnerNodes);
-        }
-      }
-      return innerNodes;
-    },
-
-    addInnerNode: function(innerNodeId, innerNode) {
-      this.__innerNodes[innerNodeId] = innerNode;
     },
 
     populateWithMetadata: function() {
@@ -1592,7 +1570,6 @@ qx.Class.define("osparc.data.model.Node", {
         inputsUnits: this.__getInputUnits(),
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
-        parent: this.getParentNodeId(),
         thumbnail: this.getThumbnail(),
         bootOptions: this.getBootOptions()
       };
@@ -1612,7 +1589,7 @@ qx.Class.define("osparc.data.model.Node", {
       // remove null entries from the payload
       let filteredNodeEntry = {};
       for (const key in nodeEntry) {
-        if (nodeEntry[key] !== null || key === "parent") {
+        if (nodeEntry[key] !== null) {
           filteredNodeEntry[key] = nodeEntry[key];
         }
       }
