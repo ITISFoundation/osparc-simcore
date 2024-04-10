@@ -404,12 +404,12 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
     },
 
-    __filePickerNodeRequested: function(nodeId, portId, file) {
+    __filePickerNodeRequested: async function(nodeId, portId, file) {
       const filePickerMetadata = osparc.service.Utils.getFilePicker();
-      const filePicker = this.createNode(filePickerMetadata["key"], filePickerMetadata["version"]);
-      if (filePicker === null) {
-        return;
-      }
+      const filePicker = await this.createNode(filePickerMetadata["key"], filePickerMetadata["version"]).catch(err => {
+        console.error(err);
+        return null;
+      });
 
       const requesterNode = this.getNode(nodeId);
       const freePos = this.getFreePosition(requesterNode);
@@ -443,17 +443,17 @@ qx.Class.define("osparc.data.model.Workbench", {
         });
     },
 
-    __parameterNodeRequested: function(nodeId, portId) {
+    __parameterNodeRequested: async function(nodeId, portId) {
       const requesterNode = this.getNode(nodeId);
 
       // create a new ParameterNode
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["inputs"], portId);
       const parameterMetadata = osparc.service.Utils.getParameterMetadata(type);
       if (parameterMetadata) {
-        const parameterNode = this.createNode(parameterMetadata["key"], parameterMetadata["version"]);
-        if (parameterNode === null) {
-          return;
-        }
+        const parameterNode = await this.createNode(parameterMetadata["key"], parameterMetadata["version"]).catch(err => {
+          console.error(err);
+          return null;
+        });
 
         // do not overlap the new Parameter Node with other nodes
         const freePos = this.getFreePosition(requesterNode);
@@ -472,7 +472,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    __probeNodeRequested: function(nodeId, portId) {
+    __probeNodeRequested: async function(nodeId, portId) {
       const requesterNode = this.getNode(nodeId);
 
       // create a new ProbeNode
@@ -480,10 +480,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       const type = osparc.utils.Ports.getPortType(requesterNode.getMetaData()["outputs"], portId);
       const probeMetadata = osparc.service.Utils.getProbeMetadata(type);
       if (probeMetadata) {
-        const probeNode = this.createNode(probeMetadata["key"], probeMetadata["version"]);
-        if (probeNode === null) {
-          return;
-        }
+        const probeNode = await this.createNode(probeMetadata["key"], probeMetadata["version"]).catch(err => {
+          console.error(err);
+          return null;
+        });
 
         probeNode.setLabel(requesterPortMD.label);
 
@@ -543,12 +543,12 @@ qx.Class.define("osparc.data.model.Workbench", {
       return false;
     },
 
-    addServiceBetween: function(service, leftNodeId, rightNodeId) {
+    addServiceBetween: async function(service, leftNodeId, rightNodeId) {
       // create node
-      const node = this.createNode(service.getKey(), service.getVersion());
-      if (node === null) {
+      const node = await this.createNode(service.getKey(), service.getVersion()).catch(err => {
+        console.error(err);
         return null;
-      }
+      });
       if (leftNodeId) {
         const leftNode = this.getNode(leftNodeId);
         node.setPosition(this.getFreePosition(leftNode, false));

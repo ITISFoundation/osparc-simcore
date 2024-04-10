@@ -322,7 +322,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __addNode: async function(service, pos) {
-      const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion(), null).catch(err => {
+      const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion()).catch(err => {
         console.error(err);
         return null;
       });
