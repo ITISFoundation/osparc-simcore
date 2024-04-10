@@ -2,9 +2,10 @@
 
 import logging
 import urllib.parse
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Mapping
+from typing import Any
 from uuid import UUID
 
 from cryptography import fernet
@@ -188,7 +189,7 @@ class AuthSession:
                 )
                 get_response.raise_for_status()
                 task_status = Envelope[TaskStatus].parse_raw(get_response.text).data
-                assert task_status is not None
+                assert task_status is not None  # nosec
                 if not task_status.done:
                     msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
                     raise TryAgain(msg)
@@ -206,7 +207,7 @@ class AuthSession:
         response = await self.client.get("/me", cookies=self.session_cookies)
         response.raise_for_status()
         profile: Profile | None = Envelope[Profile].parse_raw(response.text).data
-        assert profile is not None
+        assert profile is not None  # nosec
         return profile
 
     @_exception_mapper(_PROFILE_STATUS_MAP)
@@ -259,7 +260,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[ProjectGet].parse_raw(response.text).data
-        assert data is not None
+        assert data is not None  # nosec
         return data
 
     async def get_projects_w_solver_page(
@@ -310,8 +311,8 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[list[StudyPort]].parse_raw(response.text).data
-        assert data is not None
-        assert isinstance(data, list)
+        assert data is not None  # nosec
+        assert isinstance(data, list)  # nosec
         return data
 
     @_exception_mapper(
@@ -329,7 +330,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
-        assert data  # nosec
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper(_JOB_STATUS_MAP)
@@ -372,7 +373,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
-        assert data  # nosec
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
@@ -386,6 +387,7 @@ class AuthSession:
 
         response.raise_for_status()
         data = Envelope[PricingUnitGet].parse_raw(response.text).data
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
@@ -432,7 +434,7 @@ class AuthSession:
         data: dict[NodeID, ProjectInputGet] | None = (
             Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
         )
-        assert data  # nosec
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper({})
@@ -449,7 +451,8 @@ class AuthSession:
         data: dict[NodeID, ProjectInputGet] | None = (
             Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
         )
-        return {} if data is None else data
+        assert data is not None  # nosec
+        return data
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_project_outputs(
@@ -462,7 +465,9 @@ class AuthSession:
 
         response.raise_for_status()
 
-        data = Envelope[dict[NodeID, dict[str, Any]]].parse_raw(response.text).data
+        data: dict[NodeID, dict[str, Any]] | None = (
+            Envelope[dict[NodeID, dict[str, Any]]].parse_raw(response.text).data
+        )
         assert data is not None  # nosec
         return data
 
@@ -477,7 +482,8 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[NodeOutputs].parse_raw(response.text).data
-        return NodeOutputs(outputs={}) if data is None else data
+        assert data is not None  # nosec
+        return data
 
     # WALLETS -------------------------------------------------
 
@@ -489,7 +495,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
-        assert data  # nosec
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper(_WALLET_STATUS_MAP)
@@ -500,7 +506,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
-        assert data  # nosec
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper(_WALLET_STATUS_MAP)
