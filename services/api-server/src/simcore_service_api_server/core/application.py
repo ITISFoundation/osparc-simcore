@@ -27,8 +27,8 @@ from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..services import catalog, director_v2, storage, webserver
 from ..services.rabbitmq import setup_rabbitmq
-from ._health_checker import setup_health_checker
 from .events import create_start_app_handler, create_stop_app_handler
+from .health_checker import setup_health_checker
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .settings import ApplicationSettings
 

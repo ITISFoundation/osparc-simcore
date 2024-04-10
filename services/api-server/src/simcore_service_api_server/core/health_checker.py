@@ -1,14 +1,16 @@
 import asyncio
 import logging
 from datetime import timedelta
-from typing import Final, cast
+from typing import Annotated, Final, cast
 from uuid import uuid4
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from models_library.rabbitmq_messages import LoggerRabbitMessage
+from models_library.users import UserID
 from prometheus_client import CollectorRegistry, Gauge
-from pydantic import PositiveInt
+from pydantic import PositiveFloat
 from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.fastapi.dependencies import get_app
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation as setup_rest_instrumentation,
 )
@@ -32,6 +34,7 @@ _logger = logging.getLogger(__name__)
 class ApiServerHealthChecker:
     def __init__(
         self,
+        *,
         registry: CollectorRegistry,
         log_distributor: LogDistributor,
         rabbit_client: RabbitMQClient,
@@ -52,14 +55,14 @@ class ApiServerHealthChecker:
         self._dummy_job_id: JobID = uuid4()
         self._dummy_queue: asyncio.Queue[JobLog] = asyncio.Queue(maxsize=1)
         self._dummy_message = LoggerRabbitMessage(
-            user_id=0,
+            user_id=UserID(456123),
             project_id=self._dummy_job_id,
             node_id=uuid4(),
-            messages=["dummy message"],
+            messages=["Api-server health check message"],
         )
         _logger.info("Api server health check dummy job_id=%s", f"{self._dummy_job_id}")
 
-    async def setup(self, health_check_task_period_seconds: PositiveInt):
+    async def setup(self, health_check_task_period_seconds: PositiveFloat):
         await self._log_distributor.register(
             job_id=self._dummy_job_id, queue=self._dummy_queue
         )
@@ -70,8 +73,8 @@ class ApiServerHealthChecker:
         )
 
     async def teardown(self):
-        await self._log_distributor.deregister(job_id=self._dummy_job_id)
         await stop_periodic_task(self._background_task)
+        await self._log_distributor.deregister(job_id=self._dummy_job_id)
 
     def healthy(self) -> bool:
         return self._healthy
@@ -87,7 +90,7 @@ class ApiServerHealthChecker:
         while self._dummy_queue.qsize() > 0:
             _ = self._dummy_queue.get_nowait()
         await self._rabbit_client.publish(
-            LoggerRabbitMessage.get_channel_name(), self._dummy_message
+            self._dummy_message.channel_name, self._dummy_message
         )
         try:
             _ = await asyncio.wait_for(
@@ -122,7 +125,9 @@ def setup_health_checker(app: FastAPI):
     app.add_event_handler("shutdown", on_shutdown)
 
 
-def get_healtch_checker(app: FastAPI) -> ApiServerHealthChecker:
+def get_health_checker(
+    app: Annotated[FastAPI, Depends(get_app)],
+) -> ApiServerHealthChecker:
     assert (
         app.state.health_checker
     ), "Api-server healthchecker is not setup. Please check the configuration"  # nosec

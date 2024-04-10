@@ -35,6 +35,7 @@ from pytest_simcore.helpers.utils_envs import (
 )
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
+from simcore_service_api_server.core.health_checker import get_health_checker
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 from simcore_service_api_server.services.director_v2 import (
     ComputationTaskGet,
@@ -475,3 +476,15 @@ async def test_log_generator_context(mocker: MockFixture, faker: Faker):
     with pytest.raises(LogStreamerNotRegistered):
         async for log in log_streamer.log_generator():
             print(log)
+
+
+async def test_logstreaming_health_checker(
+    client: httpx.AsyncClient,
+    app: FastAPI,
+):
+    async def distribute_logs_mock(data: bytes):
+        print("something")
+
+    # get_log_distributor(app)._distribute_logs = AsyncMock(side_effect=distribute_logs_mock)
+    health_checker = get_health_checker(app)
+    assert health_checker.healthy(), "Health check failed"
