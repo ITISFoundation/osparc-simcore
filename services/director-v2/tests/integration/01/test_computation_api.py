@@ -45,6 +45,7 @@ pytest_simcore_core_services_selection = [
     "postgres",
     "rabbit",
     "storage",
+    "redis",
 ]
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
@@ -73,6 +74,7 @@ def mock_env(
             "R_CLONE_PROVIDER": "MINIO",
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
+            "STORAGE_CLEANER_INTERVAL_S": "0",
         },
     )
 
