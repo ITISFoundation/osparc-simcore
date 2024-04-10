@@ -261,16 +261,15 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     createNode: function(key, version) {
-      if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
-        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("You are not allowed to add nodes"), "ERROR");
-        return null;
-      }
-      if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.getInstance().logAs(this.self().CANT_ADD_NODE, "ERROR");
-        return null;
-      }
-
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
+        if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
+          osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("You are not allowed to add nodes"), "ERROR");
+          reject();
+        }
+        if (this.getStudy().isPipelineRunning()) {
+          osparc.FlashMessenger.getInstance().logAs(this.self().CANT_ADD_NODE, "ERROR");
+          reject();
+        }
         // create the node in the backend first
         const nodeId = osparc.utils.Utils.uuidV4()
         const params = {
@@ -310,6 +309,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             };
             this.fireDataEvent("showInLogger", errorMsgData);
             osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+            reject();
           });
       });
     },
