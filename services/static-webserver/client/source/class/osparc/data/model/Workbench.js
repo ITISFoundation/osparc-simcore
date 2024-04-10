@@ -49,6 +49,7 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   events: {
+    "restartAutoSaveTimer": "qx.event.type.Event",
     "pipelineChanged": "qx.event.type.Event",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
@@ -270,6 +271,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         return null;
       }
 
+      this.fireEvent("restartAutoSaveTimer");
       // create the node in the backend first
       const nodeId = osparc.utils.Utils.uuidV4()
       const params = {
@@ -510,6 +512,8 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       let node = this.getNode(nodeId);
       if (node) {
+        this.fireEvent("restartAutoSaveTimer");
+        // remove the node in the backend first
         const removed = await node.removeNode();
         if (removed) {
           // remove first the connected edges

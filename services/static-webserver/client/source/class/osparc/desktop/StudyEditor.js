@@ -242,6 +242,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const nodeId = e.getData();
             this.nodeSelected(nodeId);
           }, this);
+
+          workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
         })
         .catch(err => {
           let msg = "";
@@ -577,6 +579,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
         this.__autoSaveTimer.stop();
         this.__autoSaveTimer.setEnabled(false);
+      }
+    },
+
+    __restartAutoSaveTimer: function() {
+      // Save every 3 seconds
+      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
+        this.__autoSaveTimer.restart();
       }
     },
 
