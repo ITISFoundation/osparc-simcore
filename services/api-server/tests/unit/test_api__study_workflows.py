@@ -13,7 +13,9 @@ from attr import dataclass
 from models_library.generated_models.docker_rest_api import File, JobStatus
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.models.pagination import OnePage
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
+from simcore_service_api_server.models.schemas.studies import StudyPort
 
 
 @dataclass(frozen=True)
@@ -51,7 +53,12 @@ class FilesApi(_BaseApi):
 
 class StudiesApi(_BaseApi):
     async def list_study_ports(self, study_id):
-        ...
+        resp = await self._client.get(
+            f"/v0/studies/{study_id}/ports",
+            auth=self._auth,
+        )
+        resp.raise_for_status()
+        return OnePage[StudyPort](**resp.json())
 
     async def create_study_job(self, study_id, job_inputs: dict) -> Job:
         resp: httpx.Response = await self._client.post(
@@ -61,13 +68,28 @@ class StudiesApi(_BaseApi):
         return Job(**resp.json())
 
     async def start_study_job(self, study_id, job_id) -> JobStatus:
-        raise NotImplementedError
+        resp = await self._client.post(
+            f"{API_VTAG}/studies/{study_id}/jobs/{job_id}:start",
+            auth=self._auth,
+        )
+        resp.raise_for_status()
+        return JobStatus(**resp.json())
 
     async def inspect_study_job(self, study_id, job_id) -> JobStatus:
-        raise NotImplementedError
+        resp = await self._client.get(
+            f"/v0/studies/{study_id}/jobs/{job_id}:inspect",
+            auth=self._auth,
+        )
+        resp.raise_for_status()
+        return JobStatus(**resp.json())
 
     async def get_study_job_outputs(self, study_id, job_id) -> JobOutputs:
-        raise NotImplementedError
+        resp = await self._client.post(
+            f"{API_VTAG}/studies/{study_id}/jobs/{job_id}/outputs",
+            auth=self._auth,
+        )
+        resp.raise_for_status()
+        return JobOutputs(**resp.json())
 
     async def delete_study_job(self, study_id, job_id) -> None:
         resp = await self._client.delete(
