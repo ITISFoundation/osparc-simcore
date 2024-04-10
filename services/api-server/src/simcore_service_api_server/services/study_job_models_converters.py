@@ -93,7 +93,7 @@ async def create_job_outputs_from_project_outputs(
 ) -> JobOutputs:
     results: dict[str, ArgumentTypes] = {}
 
-    for _, node_dict in project_outputs.items():
+    for node_dict in project_outputs.values():
         name = node_dict["label"]
         value = node_dict["value"]
         if (
