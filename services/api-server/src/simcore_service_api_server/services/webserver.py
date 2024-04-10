@@ -461,6 +461,8 @@ class AuthSession:
         )
 
         response.raise_for_status()
+
+        # TODO: fix Envelope[dict].parse_obj({"data":{}}).data == {}
         data = Envelope[dict[NodeID, dict[str, Any]]].parse_raw(response.text).data
 
         return data or {}

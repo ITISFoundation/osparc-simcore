@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.generics import DictModel, Envelope
+from pydantic import ValidationError
 
 
 def test_dict_base_model():
@@ -17,16 +18,16 @@ def test_dict_base_model():
 
     # test some typical dict methods
     assert len(some_instance) == 3
-    for k, k2 in zip(some_dict, some_instance):
+    for k, k2 in zip(some_dict, some_instance, strict=False):
         assert k == k2
 
-    for k, k2 in zip(some_dict.keys(), some_instance.keys()):
+    for k, k2 in zip(some_dict.keys(), some_instance.keys(), strict=False):
         assert k == k2
 
-    for v, v2 in zip(some_dict.values(), some_instance.values()):
+    for v, v2 in zip(some_dict.values(), some_instance.values(), strict=False):
         assert v == v2
 
-    for i, i2 in zip(some_dict.items(), some_instance.items()):
+    for i, i2 in zip(some_dict.items(), some_instance.items(), strict=False):
         assert i == i2
 
     assert some_instance.get("a key") == 123
@@ -56,3 +57,23 @@ def test_data_enveloped(faker: Faker):
     assert some_enveloped_bool
     assert not some_enveloped_bool.data
     assert some_enveloped_bool.error == random_text
+
+
+def test_enveloped_data_dict():
+    # error
+    with pytest.raises(ValidationError) as err_info:
+        Envelope[dict](data="not-a-dict")
+
+    error: ValidationError = err_info.value
+    assert error.errors() == [
+        {
+            "loc": ("data",),
+            "msg": "value is not a valid dict",
+            "type": "type_error.dict",
+        }
+    ]
+
+    # empty dict
+    enveloped = Envelope[dict](data={})
+    assert enveloped.data == {}
+    assert enveloped.error is None

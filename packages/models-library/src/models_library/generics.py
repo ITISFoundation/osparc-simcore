@@ -69,6 +69,7 @@ class Envelope(GenericModel, Generic[DataT]):
     @validator("data", pre=True)
     @classmethod
     def empty_dict_is_none(cls, v):
+        # FIXME: this is indeed problematic if DataT is a dict!!
         if v == {}:
             return None
         return v
