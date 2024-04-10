@@ -67,6 +67,7 @@ def setup_dsm_cleaner(app: web.Application):
                 get_redis_client(app),
                 dsm_cleaner_task,
                 task_period=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
+                retry_after=timedelta(minutes=5),
                 task_name=_TASK_NAME_PERIODICALY_CLEAN_DSM,
                 app=app,
             )
