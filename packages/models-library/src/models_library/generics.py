@@ -62,6 +62,5 @@ class Envelope(GenericModel, Generic[DataT]):
     error: Any | None = None
 
     @classmethod
-    def parse_data(cls, obj: Any) -> "Envelope":
-        """analogous to parse_obj"""
+    def from_data(cls, obj: Any) -> "Envelope":
         return cls.parse_obj({"data": obj})

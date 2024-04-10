@@ -66,7 +66,7 @@ def test_enveloped_data_builtin(builtin_type: type, builtin_value: Any):
     # constructors
     envelope = Envelope[builtin_type](data=builtin_value)
 
-    assert envelope == Envelope[builtin_type].parse_data(builtin_value)
+    assert envelope == Envelope[builtin_type].from_data(builtin_value)
 
     # exports
     assert envelope.dict(exclude_unset=True, exclude_none=True) == {
