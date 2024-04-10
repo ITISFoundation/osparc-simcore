@@ -516,8 +516,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[WalletGet].parse_raw(response.text).data
-        return data
+        return Envelope[WalletGet].parse_raw(response.text).data
 
     # PRODUCTS -------------------------------------------------
 

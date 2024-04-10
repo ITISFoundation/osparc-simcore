@@ -170,7 +170,7 @@ async def upload_file(
     request: Request,
     file: Annotated[UploadFile, FileParam(...)],
     user_id: Annotated[int, Depends(get_current_user_id)],
-    content_length: str | None = Header(None),  # noqa: B008
+    content_length: str | None = Header(None),
 ):
     """Uploads a single file to the system"""
     # TODO: For the moment we upload file here and re-upload to S3

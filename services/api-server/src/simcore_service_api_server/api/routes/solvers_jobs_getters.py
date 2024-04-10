@@ -232,14 +232,12 @@ async def get_job_outputs(
     if product_price is not None:
         wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
         if wallet is None:
-            raise MissingWallet(
-                f"Job {project.uuid} does not have an associated wallet."
-            )
+            msg = f"Job {project.uuid} does not have an associated wallet."
+            raise MissingWallet(msg)
         wallet_with_credits = await webserver_api.get_wallet(wallet_id=wallet.wallet_id)
         if wallet_with_credits.available_credits < 0.0:
-            raise InsufficientCredits(
-                f"Wallet '{wallet_with_credits.name}' does not have any credits. Please add some before requesting solver ouputs"
-            )
+            msg = f"Wallet '{wallet_with_credits.name}' does not have any credits. Please add some before requesting solver ouputs"
+            raise InsufficientCredits(msg)
 
     outputs: dict[str, ResultsTypes] = await get_solver_output_results(
         user_id=user_id,

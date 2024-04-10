@@ -374,7 +374,7 @@ def mocked_catalog_service_api_base(
 
 
 @pytest.fixture
-def mocked_solver_job_outputs(mocker):
+def mocked_solver_job_outputs(mocker) -> None:
     result: dict[str, ResultsTypes] = {}
     result["output_1"] = 0.6
     result["output_2"] = BaseFileLink(
@@ -390,7 +390,6 @@ def mocked_solver_job_outputs(mocker):
         autospec=True,
         return_value=result,
     )
-    yield
 
 
 @pytest.fixture

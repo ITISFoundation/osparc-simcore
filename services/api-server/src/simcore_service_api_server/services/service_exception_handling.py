@@ -1,7 +1,8 @@
 import logging
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, Callable, Mapping
+from typing import Any
 
 import httpx
 from fastapi import HTTPException, status
