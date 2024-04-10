@@ -124,7 +124,6 @@ async def create_study_job(
         project_inputs, file_inputs, job_inputs
     )
 
-    # TODO: error if mismatch between job inputs and project inputs
     for node_label, file_link in new_project_file_inputs.items():
         node_id = file_param_nodes[node_label]
 
