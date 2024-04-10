@@ -508,14 +508,14 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     __stopRequestingStatus: function() {
-      const nodes = this.getWorkbench().getNodes(true);
+      const nodes = this.getWorkbench().getNodes();
       for (const node of Object.values(nodes)) {
         node.stopRequestingStatus();
       }
     },
 
     __stopFileUploads: function() {
-      const nodes = this.getWorkbench().getNodes(true);
+      const nodes = this.getWorkbench().getNodes();
       for (const node of Object.values(nodes)) {
         if (node.isFilePicker()) {
           node.requestFileUploadAbort();
@@ -524,7 +524,7 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     __removeIFrames: function() {
-      const nodes = this.getWorkbench().getNodes(true);
+      const nodes = this.getWorkbench().getNodes();
       for (const node of Object.values(nodes)) {
         node.removeIFrame();
       }
@@ -532,7 +532,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     getParameters: function() {
       const parameters = [];
-      const nodes = this.getWorkbench().getNodes(true);
+      const nodes = this.getWorkbench().getNodes();
       Object.values(nodes).forEach(node => {
         if (node.isParameter()) {
           parameters.push(node);
@@ -608,7 +608,7 @@ qx.Class.define("osparc.data.model.Study", {
         ui: this.getUi()
       });
 
-      const nodes = this.getWorkbench().getNodes(true);
+      const nodes = this.getWorkbench().getNodes();
       Object.values(nodes).forEach(node => {
         const nodeId = node.getNodeId();
         if (nodeId in data.workbench) {

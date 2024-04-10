@@ -46,8 +46,7 @@ qx.Class.define("osparc.test.data.Permissions", {
       const key = null;
       const version = null;
       const uuid = null;
-      const parent = null;
-      return this.__workbench.createNode(key, version, uuid, parent);
+      return this.__workbench.createNode(key, version, uuid);
     },
 
     /*
