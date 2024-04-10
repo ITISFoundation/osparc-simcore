@@ -56,12 +56,18 @@ def test_enveloped_error_str(faker: Faker):
 
 @pytest.fixture
 def builtin_value(faker: Faker, builtin_type: type) -> Any:
-    return {"str": faker.pystr(), "float": faker.pyfloat(), "int": faker.pyint()}[
-        builtin_type.__name__
-    ]
+    return {
+        "str": faker.pystr(),
+        "float": faker.pyfloat(),
+        "int": faker.pyint(),
+        "bool": faker.pybool(),
+        "dict": faker.pydict(),
+        "tuple": faker.pytuple(),
+        "set": faker.pyset(),
+    }[builtin_type.__name__]
 
 
-@pytest.mark.parametrize("builtin_type", [str, float, int])
+@pytest.mark.parametrize("builtin_type", [str, float, int, bool, tuple, set])
 def test_enveloped_data_builtin(builtin_type: type, builtin_value: Any):
     # constructors
     envelope = Envelope[builtin_type](data=builtin_value)
