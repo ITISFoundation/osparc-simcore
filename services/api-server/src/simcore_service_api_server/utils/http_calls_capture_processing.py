@@ -5,7 +5,8 @@ from urllib.parse import unquote
 import httpx
 import jsonref
 from pydantic import BaseModel, Field, parse_obj_as, root_validator, validator
-from simcore_service_api_server.core.settings import (
+
+from ..core.settings import (
     CatalogSettings,
     DirectorV2Settings,
     StorageSettings,

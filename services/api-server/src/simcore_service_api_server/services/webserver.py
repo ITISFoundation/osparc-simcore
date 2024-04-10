@@ -44,8 +44,6 @@ from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
-from simcore_service_api_server.models.schemas.solvers import SolverKeyId
-from simcore_service_api_server.models.schemas.studies import StudyPort
 from starlette import status
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -58,6 +56,8 @@ from ..models.basic_types import VersionStr
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
 from ..models.schemas.profiles import Profile, ProfileUpdate
+from ..models.schemas.solvers import SolverKeyId
+from ..models.schemas.studies import StudyPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 from .service_exception_handling import (
     backend_service_exception_handler,

@@ -10,19 +10,12 @@ from models_library.function_services_catalog.services import file_picker
 from models_library.projects_nodes import InputID, InputTypes
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.api.dependencies.authentication import (
-    get_current_user_id,
-)
-from simcore_service_api_server.api.dependencies.services import get_api_client
-from simcore_service_api_server.api.dependencies.webserver import get_webserver_session
-from simcore_service_api_server.models.schemas.errors import ErrorGet
-from simcore_service_api_server.services.director_v2 import DirectorV2Api
-from simcore_service_api_server.services.solver_job_models_converters import (
-    create_jobstatus_from_task,
-)
-from simcore_service_api_server.services.webserver import AuthSession
 
+from ...api.dependencies.authentication import get_current_user_id
+from ...api.dependencies.services import get_api_client
+from ...api.dependencies.webserver import get_webserver_session
 from ...models.pagination import Page, PaginationParams
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
     Job,
     JobID,
@@ -33,12 +26,15 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.studies import Study, StudyID
+from ...services.director_v2 import DirectorV2Api
+from ...services.solver_job_models_converters import create_jobstatus_from_task
 from ...services.storage import StorageApi
 from ...services.study_job_models_converters import (
     create_job_from_study,
     create_job_outputs_from_project_outputs,
     get_project_and_file_inputs_from_job_inputs,
 )
+from ...services.webserver import AuthSession
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._jobs import start_project, stop_project
 

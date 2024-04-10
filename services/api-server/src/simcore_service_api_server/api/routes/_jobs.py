@@ -7,21 +7,14 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.clusters import ClusterID
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.api.dependencies.authentication import (
-    get_current_user_id,
-)
-from simcore_service_api_server.api.dependencies.services import get_api_client
-from simcore_service_api_server.api.dependencies.webserver import get_webserver_session
-from simcore_service_api_server.models.schemas.jobs import (
-    JobID,
-    JobPricingSpecification,
-    JobStatus,
-)
-from simcore_service_api_server.services.director_v2 import DirectorV2Api
-from simcore_service_api_server.services.solver_job_models_converters import (
-    create_jobstatus_from_task,
-)
-from simcore_service_api_server.services.webserver import AuthSession
+
+from ...models.schemas.jobs import JobID, JobPricingSpecification, JobStatus
+from ...services.director_v2 import DirectorV2Api
+from ...services.solver_job_models_converters import create_jobstatus_from_task
+from ...services.webserver import AuthSession
+from ..dependencies.authentication import get_current_user_id
+from ..dependencies.services import get_api_client
+from ..dependencies.webserver import get_webserver_session
 
 _logger = logging.getLogger(__name__)
 

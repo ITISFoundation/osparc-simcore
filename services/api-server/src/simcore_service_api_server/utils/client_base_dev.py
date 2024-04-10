@@ -7,9 +7,8 @@ from fastapi.encoders import jsonable_encoder
 from httpx._types import URLTypes
 from jsonschema import ValidationError
 from pydantic import parse_file_as
-from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 
-from .http_calls_capture import get_captured
+from .http_calls_capture import HttpApiCallCaptureModel, get_captured
 from .http_calls_capture_processing import CaptureProcessingException
 
 _logger = logging.getLogger(__name__)
