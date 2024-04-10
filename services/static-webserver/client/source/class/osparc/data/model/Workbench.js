@@ -284,13 +284,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
       await osparc.data.Resources.fetch("studies", "addNode", params).catch(err => {
         let errorMsg = this.tr("Error when creating ") + key + ":" + version;
-        this.getStatus().setInteractive("failed");
         if ("status" in err && err.status === 406) {
           errorMsg = this.getKey() + ":" + this.getVersion() + this.tr(" is retired");
-          this.getStatus().setInteractive("retired");
         }
         const errorMsgData = {
-          nodeId: this.getNodeId(),
           msg: errorMsg,
           level: "ERROR"
         };

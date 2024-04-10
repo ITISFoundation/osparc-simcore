@@ -1300,7 +1300,7 @@ qx.Class.define("osparc.data.model.Node", {
           if ("status" in err && err.status === 406) {
             errorMsg = this.getKey() + ":" + this.getVersion() + "is retired";
             this.getStatus().setInteractive("retired");
-            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.getLabel() + this.tr(" is retired"), "ERROR");
           }
           const errorMsgData = {
             nodeId: this.getNodeId(),
@@ -1324,7 +1324,7 @@ qx.Class.define("osparc.data.model.Node", {
             setTimeout(() => this.__nodeState(), interval);
           } else {
             this.getStatus().setInteractive("failed");
-            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error starting") + " " + this.getLabel(), "ERROR");
           }
         });
     },
