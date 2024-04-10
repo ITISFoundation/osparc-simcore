@@ -270,16 +270,48 @@ qx.Class.define("osparc.data.model.Workbench", {
         return null;
       }
 
-      const node = this.__createNode(this.getStudy(), key, version, uuid);
-      this.addNode(node);
+      return new Promise(resolve => {
+        // create the node in the backend first
+        const nodeId = osparc.utils.Utils.uuidV4()
+        const params = {
+          url: {
+            studyId: this.getStudy().getUuid()
+          },
+          data: {
+            "service_id": nodeId,
+            "service_key": key,
+            "service_version": version
+          }
+        };
+        osparc.data.Resources.fetch("studies", "addNode", params)
+          .then(() => {
+            const node = this.__createNode(this.getStudy(), key, version, nodeId);
+            this.addNode(node);
 
-      this.__initNodeSignals(node);
+            this.__initNodeSignals(node);
 
-      node.populateNodeData();
-      this.giveUniqueNameToNode(node, node.getLabel());
-      node.startInBackend();
+            node.populateNodeData();
+            this.giveUniqueNameToNode(node, node.getLabel());
+            node.startDynamicService();
 
-      return node;
+            resolve(node);
+          })
+          .catch(err => {
+            let errorMsg = this.tr("Error when creating ") + key + ":" + version;
+            this.getStatus().setInteractive("failed");
+            if ("status" in err && err.status === 406) {
+              errorMsg = this.getKey() + ":" + this.getVersion() + this.tr(" is retired");
+              this.getStatus().setInteractive("retired");
+            }
+            const errorMsgData = {
+              nodeId: this.getNodeId(),
+              msg: errorMsg,
+              level: "ERROR"
+            };
+            this.fireDataEvent("showInLogger", errorMsgData);
+            osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
+          });
+      });
     },
 
     __initNodeSignals: function(node) {
