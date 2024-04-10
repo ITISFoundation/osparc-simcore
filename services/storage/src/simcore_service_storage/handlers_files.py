@@ -100,7 +100,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_enveloped.py#L34
 
         return web.json_response(
-            {"error": "No result found", "data": {}}, dumps=json_dumps
+            {"error": "No result found", "data": None}, dumps=json_dumps
         )
 
     if request.headers.get("User-Agent") == "OpenAPI-Generator/0.1.0/python":
