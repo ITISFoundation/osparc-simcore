@@ -120,7 +120,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           buildLayout: this.__createServiceBrowser
         });
       }
-      if (permissions.canDo("dashboard.data.read")) {
+      if (permissions.canDo("dashboard.data.read") && osparc.product.Utils.isProduct("osparc")) {
         tabs.push({
           id: "dataTabBtn",
           label: this.tr("DATA"),

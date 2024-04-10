@@ -1,10 +1,11 @@
 from datetime import datetime
 from enum import auto
-from typing import Any, ClassVar, Final
+from typing import Any, ClassVar, Final, Literal
 from uuid import uuid4
 
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
+from models_library.products import ProductName
 from pydantic import BaseModel, NonNegativeInt, validator
 
 MAX_NOTIFICATIONS_FOR_USER_TO_SHOW: Final[NonNegativeInt] = 10
@@ -30,6 +31,7 @@ class BaseUserNotification(BaseModel):
     title: str
     text: str
     date: datetime
+    product: Literal["UNDEFINED"] | ProductName
 
     @validator("category", pre=True)
     @classmethod
@@ -69,6 +71,7 @@ class UserNotification(BaseUserNotification):
                     "title": "New organization",
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
+                    "product": "osparc",
                     "read": True,
                 },
                 {
@@ -79,6 +82,7 @@ class UserNotification(BaseUserNotification):
                     "title": "Study shared",
                     "text": "A study was shared with you",
                     "date": "2023-02-23T16:25:13.122Z",
+                    "product": "osparc",
                     "read": False,
                 },
                 {
@@ -89,6 +93,7 @@ class UserNotification(BaseUserNotification):
                     "title": "Template shared",
                     "text": "A template was shared with you",
                     "date": "2023-02-23T16:28:13.122Z",
+                    "product": "osparc",
                     "read": False,
                 },
                 {
@@ -99,6 +104,7 @@ class UserNotification(BaseUserNotification):
                     "title": "Note added",
                     "text": "A Note was added for you",
                     "date": "2023-02-23T16:28:13.122Z",
+                    "product": "s4l",
                     "read": False,
                 },
                 {
@@ -109,6 +115,7 @@ class UserNotification(BaseUserNotification):
                     "title": "Credits shared",
                     "text": "A Credit account was shared with you",
                     "date": "2023-09-29T16:28:13.122Z",
+                    "product": "tis",
                     "read": False,
                 },
             ]
