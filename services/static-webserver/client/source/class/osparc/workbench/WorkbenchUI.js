@@ -295,6 +295,10 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       if (this.getStudy().isReadOnly()) {
         return null;
       }
+      if (this.getStudy().isPipelineRunning()) {
+        osparc.FlashMessenger.getInstance().logAs(osparc.data.model.Workbench.CANT_ADD_NODE, "ERROR");
+        return null;
+      }
       const srvCat = new osparc.workbench.ServiceCatalog();
       const maxLeft = this.getBounds().width - osparc.workbench.ServiceCatalog.Width;
       const maxHeight = this.getBounds().height - osparc.workbench.ServiceCatalog.Height;

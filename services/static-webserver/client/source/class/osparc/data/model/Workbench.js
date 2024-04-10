@@ -66,6 +66,10 @@ qx.Class.define("osparc.data.model.Workbench", {
     }
   },
 
+  statics: {
+    CANT_ADD_NODE: qx.locale.Manager.tr("Nodes can't be added while the pipeline is running")
+  },
+
   members: {
     __workbenchInitData: null,
     __workbenchUIInitData: null,
@@ -266,7 +270,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         return null;
       }
       if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.getInstance().logAs(qx.locale.Manager.tr("Nodes can't be added while the pipeline is running"), "ERROR");
+        osparc.FlashMessenger.getInstance().logAs(this.self().CANT_ADD_NODE, "ERROR");
         return null;
       }
 

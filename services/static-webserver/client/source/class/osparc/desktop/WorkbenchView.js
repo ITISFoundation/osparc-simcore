@@ -350,6 +350,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         alignX: "center",
         marginLeft: 10
       });
+      this.getStudy().bind("pipelineRunning", addNewNodeBtn, "enabled", {
+        converter: running => !running
+      });
       osparc.utils.Utils.setIdToWidget(addNewNodeBtn, "newNodeBtn");
       addNewNodeBtn.addListener("execute", () => {
         this.__workbenchUI.openServiceCatalog({
