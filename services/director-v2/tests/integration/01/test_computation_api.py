@@ -74,7 +74,6 @@ def mock_env(
             "R_CLONE_PROVIDER": "MINIO",
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
-            "STORAGE_CLEANER_INTERVAL_S": "0",
         },
     )
 
