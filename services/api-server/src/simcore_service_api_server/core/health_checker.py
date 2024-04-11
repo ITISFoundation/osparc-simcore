@@ -38,10 +38,15 @@ class ApiServerHealthChecker:
         self._timeout_seconds = timeout_seconds
         self._allowed_health_check_failures = allowed_health_check_failures
 
-        self._logstreaming_queues = Gauge(
+        self._logstreaming_queues_gauge = Gauge(
             "log_stream_queue_length",
             "#Logs in log streaming queue",
             ["job_id"],
+            namespace=METRICS_NAMESPACE,
+        )
+        self._health_check_qauge = Gauge(
+            "log_stream_health_check",
+            "#Failurs of log stream health check",
             namespace=METRICS_NAMESPACE,
         )
         self._health_check_failure_count: NonNegativeInt = 0
@@ -78,10 +83,12 @@ class ApiServerHealthChecker:
 
     async def _background_task_method(self):
         # update prometheus metrics
-        self._logstreaming_queues.clear()
+        self._health_check_qauge.clear()
+        self._health_check_qauge.set(self._health_check_failure_count)
+        self._logstreaming_queues_gauge.clear()
         log_queue_sizes = self._log_distributor.get_log_queue_sizes()
         for job_id, length in log_queue_sizes.items():
-            self._logstreaming_queues.labels(job_id=job_id).set(length)
+            self._logstreaming_queues_gauge.labels(job_id=job_id).set(length)
 
         # check health
         while self._dummy_queue.qsize() > 0:
