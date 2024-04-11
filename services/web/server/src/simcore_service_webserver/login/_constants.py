@@ -72,9 +72,10 @@ MSG_INVITATIONS_CONTACT_SUFFIX: Final[
 
 # Login Accepted Response Codes:
 #  - These string codes are used to identify next step in the login (e.g. login_2fa or register_phone?)
-#  - The frontend uses them alwo to determine what page/form has to display to the user for next step
+#  - The frontend uses them also to determine what page/form has to display to the user for next step
 CODE_PHONE_NUMBER_REQUIRED: Final[str] = "PHONE_NUMBER_REQUIRED"
-CODE_2FA_CODE_REQUIRED: Final[str] = "SMS_CODE_REQUIRED"
+CODE_2FA_SMS_CODE_REQUIRED: Final[str] = "SMS_CODE_REQUIRED"
+CODE_2FA_EMAIL_CODE_REQUIRED: Final[str] = "EMAIL_CODE_REQUIRED"
 
 
 # App keys for login plugin

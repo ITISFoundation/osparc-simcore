@@ -14,7 +14,7 @@ from servicelib.aiohttp import status
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.login._auth_handlers import LoginNextPage
-from simcore_service_webserver.login._constants import CODE_2FA_CODE_REQUIRED
+from simcore_service_webserver.login._constants import CODE_2FA_SMS_CODE_REQUIRED
 
 
 @pytest.fixture
@@ -106,7 +106,7 @@ async def test_resend_2fa_workflow(
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
     next_page = LoginNextPage.parse_obj(data)
-    assert next_page.name == CODE_2FA_CODE_REQUIRED
+    assert next_page.name == CODE_2FA_SMS_CODE_REQUIRED
     assert next_page.parameters.retry_2fa_after > 0
 
     # resend code via SMS

@@ -13,8 +13,9 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ..products.api import Product, get_current_product
 from ..session.access_policies import session_access_required
-from ._2fa import (
+from ._2fa_api import (
     create_2fa_code,
+    delete_2fa_code,
     get_2fa_code,
     mask_phone_number,
     send_email_code,
@@ -74,6 +75,13 @@ async def resend_2fa_code(request: web.Request):
         request.app, product_name=product.name
     )
     db: AsyncpgStorage = get_plugin_storage(request.app)
+    resend_2fa_ = await parse_request_body_as(Resend2faBody, request)
+
+    user = await db.get_user({"email": resend_2fa_.email})
+    if not user:
+        raise web.HTTPUnauthorized(
+            reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
+        )
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
@@ -81,20 +89,10 @@ async def resend_2fa_code(request: web.Request):
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
-    resend_2fa_ = await parse_request_body_as(Resend2faBody, request)
-
     # Already a code?
     previous_code = await get_2fa_code(request.app, user_email=resend_2fa_.email)
     if previous_code is not None:
-        raise web.HTTPUnauthorized(
-            reason="Cannot issue a new code until previous code has expired or was consumed"
-        )
-
-    user = await db.get_user({"email": resend_2fa_.email})
-    if not user:
-        raise web.HTTPUnauthorized(
-            reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
-        )
+        await delete_2fa_code(request.app, user_email=resend_2fa_.email)
 
     with handling_send_errors(user):
         # guaranteed by LoginSettingsForProduct
@@ -143,7 +141,10 @@ async def resend_2fa_code(request: web.Request):
 
             response = envelope_response(
                 {
+                    "name": "SMS_CODE_REQUIRED",
                     "reason": MSG_EMAIL_SENT.format(email=user["email"]),
+                    "parameters": {"expiration_time": 120},
+                    "code": "SMS_CODE_REQUIRED",
                 },
                 status=status.HTTP_200_OK,
             )

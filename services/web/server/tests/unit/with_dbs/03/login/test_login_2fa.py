@@ -20,7 +20,7 @@ from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.db.models import UserStatus
-from simcore_service_webserver.login._2fa import (
+from simcore_service_webserver.login._2fa_api import (
     _do_create_2fa_code,
     create_2fa_code,
     delete_2fa_code,
@@ -29,7 +29,7 @@ from simcore_service_webserver.login._2fa import (
     send_email_code,
 )
 from simcore_service_webserver.login._constants import (
-    CODE_2FA_CODE_REQUIRED,
+    CODE_2FA_SMS_CODE_REQUIRED,
     MSG_2FA_UNAVAILABLE_OEC,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
@@ -298,7 +298,7 @@ async def test_can_register_same_phone_in_different_accounts(
         data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
         assert data
         assert "Code" in data["message"]
-        assert data["name"] == CODE_2FA_CODE_REQUIRED
+        assert data["name"] == CODE_2FA_SMS_CODE_REQUIRED
         assert not error
 
 
