@@ -485,6 +485,7 @@ async def test_logstreaming_health_checker(
 ):
     health_checker = get_health_checker(app)
     health_checker._timeout_seconds = 0.5
+    health_checker._allowed_health_check_failures = 0
     put_method = health_checker._dummy_queue.put
 
     async def put_mock(log: JobLog):
@@ -494,7 +495,7 @@ async def test_logstreaming_health_checker(
 
     put_mock.called = False
     mocker.patch.object(health_checker._dummy_queue, "put", put_mock)
-    health_setter = mocker.spy(health_checker, "set_healthy")
+    health_setter = mocker.spy(health_checker, "_increment_health_check_failure_count")
     async for attempt in AsyncRetrying(
         reraise=True,
         stop=stop_after_delay(5),
@@ -503,6 +504,9 @@ async def test_logstreaming_health_checker(
         with attempt:
             await asyncio.sleep(1)
             assert put_mock.called
-            health_setter.assert_called_with(is_healthy)
+            if is_healthy:
+                health_setter.assert_not_called()
+            else:
+                health_setter.assert_called()
 
     assert health_checker.healthy == is_healthy, "Health check failed"

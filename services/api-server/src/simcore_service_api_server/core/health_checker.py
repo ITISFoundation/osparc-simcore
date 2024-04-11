@@ -8,7 +8,7 @@ from fastapi import Depends, FastAPI
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from prometheus_client import CollectorRegistry, Gauge
-from pydantic import PositiveFloat
+from pydantic import NonNegativeInt, PositiveFloat, PositiveInt
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.dependencies import get_app
 from servicelib.rabbitmq import RabbitMQClient
@@ -30,11 +30,13 @@ class ApiServerHealthChecker:
         log_distributor: LogDistributor,
         rabbit_client: RabbitMQClient,
         timeout_seconds: PositiveFloat,
+        allowed_health_check_failures: PositiveInt,
     ) -> None:
         self._registry = registry
         self._log_distributor: LogDistributor = log_distributor
         self._rabbit_client: RabbitMQClient = rabbit_client
         self._timeout_seconds = timeout_seconds
+        self._allowed_health_check_failures = allowed_health_check_failures
 
         self._logstreaming_queues = Gauge(
             "log_stream_queue_length",
@@ -42,7 +44,7 @@ class ApiServerHealthChecker:
             ["job_id"],
             namespace=METRICS_NAMESPACE,
         )
-        self._healthy: bool = True
+        self._health_check_failure_count: NonNegativeInt = 0
         self._dummy_job_id: JobID = uuid4()
         self._dummy_queue: asyncio.Queue[JobLog] = asyncio.Queue()
         self._dummy_message = LoggerRabbitMessage(
@@ -69,10 +71,10 @@ class ApiServerHealthChecker:
 
     @property
     def healthy(self) -> bool:
-        return self._healthy
+        return self._health_check_failure_count <= self._allowed_health_check_failures
 
-    def set_healthy(self, value: bool):
-        self._healthy = value
+    def _increment_health_check_failure_count(self):
+        self._health_check_failure_count += 1
 
     async def _background_task_method(self):
         # update prometheus metrics
@@ -94,9 +96,8 @@ class ApiServerHealthChecker:
             _ = await asyncio.wait_for(
                 self._dummy_queue.get(), timeout=self._timeout_seconds
             )
-            self.set_healthy(True)
         except asyncio.TimeoutError:
-            self.set_healthy(False)
+            self._increment_health_check_failure_count()
 
 
 def get_health_checker(

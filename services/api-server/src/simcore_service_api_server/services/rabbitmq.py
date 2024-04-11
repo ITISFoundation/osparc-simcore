@@ -39,6 +39,7 @@ def setup_rabbitmq(app: FastAPI) -> None:
                 log_distributor=get_log_distributor(app),
                 rabbit_client=get_rabbitmq_client(app),
                 timeout_seconds=app.state.settings.API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS,
+                allowed_health_check_failures=app.state.settings.API_SERVER_ALLOWED_HEALTH_CHECK_FAILURES,
             )
             await app.state.health_checker.setup(
                 app.state.settings.API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS
