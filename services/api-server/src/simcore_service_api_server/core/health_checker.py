@@ -58,6 +58,7 @@ class ApiServerHealthChecker:
             node_id=uuid4(),
             messages=["Api-server health check message"],
         )
+        self._background_task: asyncio.Task | None = None
         _logger.info("Api server health check dummy job_id=%s", f"{self._dummy_job_id}")
 
     async def setup(self, health_check_task_period_seconds: PositiveFloat):
@@ -71,7 +72,8 @@ class ApiServerHealthChecker:
         )
 
     async def teardown(self, timeout_seconds: PositiveFloat):
-        await stop_periodic_task(self._background_task, timeout=timeout_seconds)
+        if self._background_task:
+            await stop_periodic_task(self._background_task, timeout=timeout_seconds)
         await self._log_distributor.deregister(job_id=self._dummy_job_id)
 
     @property
