@@ -53,7 +53,7 @@ class ApiServerHealthChecker:
         self._dummy_job_id: JobID = uuid4()
         self._dummy_queue: asyncio.Queue[JobLog] = asyncio.Queue()
         self._dummy_message = LoggerRabbitMessage(
-            user_id=UserID(456123),
+            user_id=UserID(123456789),
             project_id=self._dummy_job_id,
             node_id=uuid4(),
             messages=["Api-server health check message"],
