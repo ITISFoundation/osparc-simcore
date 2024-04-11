@@ -95,13 +95,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           const progress = credits > 0 ? osparc.desktop.credits.Utils.normalizeCredits(credits) : 100; // make hallo red
           const creditsColor = osparc.desktop.credits.Utils.creditsToColor(credits, "strong-main");
           const color1 = qx.theme.manager.Color.getInstance().resolve(creditsColor);
-          const textColor = qx.theme.manager.Color.getInstance().resolve("text");
-          const arr = qx.util.ColorUtil.stringToRgb(textColor);
-          arr[3] = 0.5;
-          const color2 = qx.util.ColorUtil.rgbToRgbString(arr);
-          this.getContentElement().setStyles({
-            "background": `radial-gradient(closest-side, white 79%, transparent 80% 100%), conic-gradient(${color1} ${progress}%, ${color2} 0)`
-          });
+          osparc.service.StatusUI.getStatusHalo(this, color1, progress);
         }
       }
     },
