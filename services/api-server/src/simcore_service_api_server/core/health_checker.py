@@ -11,16 +11,7 @@ from prometheus_client import CollectorRegistry, Gauge
 from pydantic import PositiveFloat
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.dependencies import get_app
-from servicelib.fastapi.prometheus_instrumentation import (
-    setup_prometheus_instrumentation as setup_rest_instrumentation,
-)
-from servicelib.fastapi.rabbitmq import get_rabbitmq_client
 from servicelib.rabbitmq import RabbitMQClient
-from simcore_service_api_server.api.dependencies.rabbitmq import (
-    get_log_distributor,
-    wait_till_log_distributor_ready,
-    wait_till_rabbitmq_ready,
-)
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 from simcore_service_api_server.services.log_streaming import LogDistributor
 
@@ -38,7 +29,7 @@ class ApiServerHealthChecker:
         registry: CollectorRegistry,
         log_distributor: LogDistributor,
         rabbit_client: RabbitMQClient,
-        timeout_seconds: int,
+        timeout_seconds: PositiveFloat,
     ) -> None:
         self._registry = registry
         self._log_distributor: LogDistributor = log_distributor
@@ -53,7 +44,7 @@ class ApiServerHealthChecker:
         )
         self._healthy: bool = True
         self._dummy_job_id: JobID = uuid4()
-        self._dummy_queue: asyncio.Queue[JobLog] = asyncio.Queue(maxsize=1)
+        self._dummy_queue: asyncio.Queue[JobLog] = asyncio.Queue()
         self._dummy_message = LoggerRabbitMessage(
             user_id=UserID(456123),
             project_id=self._dummy_job_id,
@@ -72,12 +63,16 @@ class ApiServerHealthChecker:
             task_name="api_server_health_check_task",
         )
 
-    async def teardown(self):
-        await stop_periodic_task(self._background_task)
+    async def teardown(self, timeout_seconds: PositiveFloat):
+        await stop_periodic_task(self._background_task, timeout=timeout_seconds)
         await self._log_distributor.deregister(job_id=self._dummy_job_id)
 
+    @property
     def healthy(self) -> bool:
         return self._healthy
+
+    def set_healthy(self, value: bool):
+        self._healthy = value
 
     async def _background_task_method(self):
         # update prometheus metrics
@@ -89,40 +84,19 @@ class ApiServerHealthChecker:
         # check health
         while self._dummy_queue.qsize() > 0:
             _ = self._dummy_queue.get_nowait()
-        await self._rabbit_client.publish(
-            self._dummy_message.channel_name, self._dummy_message
-        )
         try:
+            await asyncio.wait_for(
+                self._rabbit_client.publish(
+                    self._dummy_message.channel_name, self._dummy_message
+                ),
+                timeout=self._timeout_seconds,
+            )
             _ = await asyncio.wait_for(
                 self._dummy_queue.get(), timeout=self._timeout_seconds
             )
-            self._healthy = True
+            self.set_healthy(True)
         except asyncio.TimeoutError:
-            self._healthy = False
-
-
-def setup_health_checker(app: FastAPI):
-    instrumentator = setup_rest_instrumentation(app)
-
-    async def on_startup() -> None:
-        await wait_till_rabbitmq_ready(app)
-        await wait_till_log_distributor_ready(app)
-        app.state.health_checker = ApiServerHealthChecker(
-            registry=instrumentator.registry,
-            log_distributor=get_log_distributor(app),
-            rabbit_client=get_rabbitmq_client(app),
-            timeout_seconds=app.state.settings.API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS,
-        )
-        await app.state.health_checker.setup(
-            app.state.settings.API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS
-        )
-
-    async def on_shutdown() -> None:
-        assert app.state.health_checker  # nosec
-        await app.state.health_checker.teardown()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+            self.set_healthy(False)
 
 
 def get_health_checker(

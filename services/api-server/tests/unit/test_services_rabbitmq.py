@@ -47,6 +47,7 @@ from simcore_service_api_server.services.log_streaming import (
     LogStreamerNotRegistered,
     LogStreamerRegistionConflict,
 )
+from tenacity import AsyncRetrying, retry_if_not_exception_type, stop_after_delay
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -478,13 +479,30 @@ async def test_log_generator_context(mocker: MockFixture, faker: Faker):
             print(log)
 
 
+@pytest.mark.parametrize("is_healthy", [True, False])
 async def test_logstreaming_health_checker(
-    client: httpx.AsyncClient,
-    app: FastAPI,
+    mocker: MockFixture, client: httpx.AsyncClient, app: FastAPI, is_healthy: bool
 ):
-    async def distribute_logs_mock(data: bytes):
-        print("something")
-
-    # get_log_distributor(app)._distribute_logs = AsyncMock(side_effect=distribute_logs_mock)
     health_checker = get_health_checker(app)
-    assert health_checker.healthy(), "Health check failed"
+    health_checker._timeout_seconds = 0.5
+    put_method = health_checker._dummy_queue.put
+
+    async def put_mock(log: JobLog):
+        put_mock.called = True
+        if is_healthy:
+            await put_method(log)
+
+    put_mock.called = False
+    mocker.patch.object(health_checker._dummy_queue, "put", put_mock)
+    health_setter = mocker.spy(health_checker, "set_healthy")
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        stop=stop_after_delay(5),
+        retry=retry_if_not_exception_type(AssertionError),
+    ):
+        with attempt:
+            await asyncio.sleep(1)
+            assert put_mock.called
+            health_setter.assert_called_with(is_healthy)
+
+    assert health_checker.healthy == is_healthy, "Health check failed"
