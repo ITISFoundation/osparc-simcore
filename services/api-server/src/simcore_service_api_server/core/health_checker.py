@@ -1,3 +1,4 @@
+# pylint: disable=R0902
 import asyncio
 import logging
 from datetime import timedelta
