@@ -24,7 +24,8 @@ qx.Class.define("osparc.ui.window.TabbedView", {
     this._setLayout(new qx.ui.layout.VBox());
 
     this.set({
-      padding: 10
+      padding: 20,
+      paddingLeft: 10
     });
 
     this.getChildControl("tabs-view");
@@ -65,6 +66,7 @@ qx.Class.define("osparc.ui.window.TabbedView", {
     addTab: function(title, iconSrc, widget) {
       const page = this.__widgetToPage(title, iconSrc, widget);
       this.getChildControl("tabs-view").add(page);
+      return page;
     }
   }
 });

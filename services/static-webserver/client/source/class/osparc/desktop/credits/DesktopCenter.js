@@ -27,6 +27,6 @@ qx.Class.define("osparc.desktop.credits.DesktopCenter", {
 
     const page = new osparc.desktop.credits.ProfilePage();
     const profilePos = 2; // 0: Miniview, 1: Summary
-    this._tabsView.addAt(page, profilePos);
+    this.getChildControl("tabs-view").addAt(page, profilePos);
   }
 });

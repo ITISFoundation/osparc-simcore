@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.credits.MyAccountWindow", {
     const height = 600;
     this.set({
       width,
-      viewHeight: height
+      height
     });
 
     const myAccount = this.__myAccount = new osparc.desktop.credits.MyAccount();
