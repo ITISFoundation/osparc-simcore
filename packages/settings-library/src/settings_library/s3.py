@@ -14,7 +14,6 @@ class S3Settings(BaseCustomSettings):
     )
     S3_REGION: str
     S3_SECRET_KEY: str
-    S3_SECURE: bool
 
     class Config(BaseCustomSettings.Config):
         schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
@@ -25,14 +24,12 @@ class S3Settings(BaseCustomSettings):
                     "S3_ENDPOINT": "https://my_s3_endpoint.com",
                     "S3_REGION": "us-east-1",
                     "S3_SECRET_KEY": "my_secret_access_key",
-                    "S3_SECURE": "true",
                 },
                 {
                     "S3_ACCESS_KEY": "my_access_key_id",
                     "S3_BUCKET_NAME": "some-s3-bucket",
                     "S3_REGION": "us-east-2",
                     "S3_SECRET_KEY": "my_secret_access_key",
-                    "S3_SECURE": "true",
                 },
             ],
         }
