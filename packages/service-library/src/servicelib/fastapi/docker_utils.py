@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import httpx
@@ -11,10 +12,13 @@ from ..docker_utils import (
     DOCKER_HUB_HOST,
     DockerImageManifestsV2,
     DockerImageMultiArchManifestsV2,
+    LogCB,
     get_image_complete_url,
     get_image_name_and_tag,
+    pull_image,
 )
 from ..logging_utils import log_catch
+from ..progress_bar import AsyncReportCB, ProgressBarData
 
 _logger = logging.getLogger(__name__)
 
@@ -92,3 +96,63 @@ async def retrieve_image_layer_information(
             except ValidationError:
                 return parse_obj_as(DockerImageManifestsV2, json_response)
     return None
+
+
+async def _pull_image(
+    image: DockerGenericTag,
+    *,
+    registry_settings: RegistrySettings,
+    pbar: ProgressBarData,
+    log_cb: LogCB,
+) -> None:
+    layer_information = await retrieve_image_layer_information(image, registry_settings)
+    await pull_image(image, registry_settings, pbar, log_cb, layer_information)
+
+
+async def pull_images(
+    images: set[DockerGenericTag],
+    registry_settings: RegistrySettings,
+    progress_cb: AsyncReportCB,
+    log_cb: LogCB,
+) -> None:
+    images_layer_information = await asyncio.gather(
+        *[
+            retrieve_image_layer_information(image, registry_settings)
+            for image in images
+        ]
+    )
+    step_weights = {
+        image: info.layers_total_size.human_readable() if info else 1.0
+        for info, image in zip(images_layer_information, images, strict=True)
+    }
+    _logger.error(
+        "progress step weights: %s",
+        step_weights,
+    )
+    progress_step_weights = [
+        float(i.layers_total_size) if i else 1.0 for i in images_layer_information
+    ]
+
+    async with ProgressBarData(
+        num_steps=len(images),
+        step_weights=progress_step_weights,
+        progress_report_cb=progress_cb,
+    ) as pbar:
+        for image in images:
+            await _pull_image(
+                image,
+                registry_settings=registry_settings,
+                pbar=pbar,
+                log_cb=log_cb,
+            )
+        # await asyncio.gather(
+        #     *(
+        #         _pull_image(
+        #             image,
+        #             registry_settings=registry_settings,
+        #             pbar=pbar,
+        #             log_cb=log_cb,
+        #         )
+        #         for image in images
+        #     )
+        # )
