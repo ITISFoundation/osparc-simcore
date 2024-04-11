@@ -46,7 +46,7 @@ class ApiServerHealthChecker:
         )
         self._health_check_qauge = Gauge(
             "log_stream_health_check",
-            "#Failurs of log stream health check",
+            "#Failures of log stream health check",
             namespace=METRICS_NAMESPACE,
         )
         self._health_check_failure_count: NonNegativeInt = 0
