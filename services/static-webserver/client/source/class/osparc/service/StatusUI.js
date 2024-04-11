@@ -110,6 +110,19 @@ qx.Class.define("osparc.service.StatusUI", {
       }
     },
 
+    getStatusHalo: function(element, progressColor, progress) {
+      console.log("element", element.getHeight())
+      // element.set({
+      //   textColor: "transparent"
+      // })
+      const runnerColor = qx.theme.manager.Color.getInstance().resolve("haloProgressbar-runner");
+      const fillColor = qx.theme.manager.Color.getInstance().resolve("haloProgressbar-fill");
+      element.getContentElement().setStyles({
+        "border-radius": `${element.getHeight() / 2}px`,
+        "background": `radial-gradient(closest-side, ${fillColor} 84%, transparent 84% 100%), conic-gradient(${progressColor} ${progress}%, ${runnerColor} 0)`
+      })
+    },
+
     getLabelValue: function(state) {
       switch (state) {
         // computationals
