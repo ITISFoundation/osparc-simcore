@@ -67,6 +67,14 @@ qx.Class.define("osparc.ui.window.TabbedView", {
       const page = this.__widgetToPage(title, iconSrc, widget);
       this.getChildControl("tabs-view").add(page);
       return page;
-    }
+    },
+
+    _openPage: function(page) {
+      if (page) {
+        this.getChildControl("tabs-view").setSelection([page]);
+        return true;
+      }
+      return false;
+    },
   }
 });

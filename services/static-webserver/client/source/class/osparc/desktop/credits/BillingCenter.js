@@ -95,17 +95,9 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       return page;
     },
 
-    __openPage: function(page) {
-      if (page) {
-        this.getChildControl("tabs-view").setSelection([page]);
-        return true;
-      }
-      return false;
-    },
-
     openWallets: function() {
       if (this.__walletsPage) {
-        return this.__openPage(this.__walletsPage);
+        return this._openPage(this.__walletsPage);
       }
       return false;
     },
@@ -129,20 +121,20 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
     },
 
     openPaymentMethods: function() {
-      this.__openPage(this.__paymentMethodsPage);
+      this._openPage(this.__paymentMethodsPage);
     },
 
     openTransactions: function(fetchTransactions = false) {
       if (fetchTransactions) {
         this.__transactionsTable.refresh();
-        this.__openPage(this.__transactionsPage);
+        this._openPage(this.__transactionsPage);
       } else {
-        this.__openPage(this.__transactionsPage);
+        this._openPage(this.__transactionsPage);
       }
     },
 
     openUsage: function() {
-      this.__openPage(this.__usagePage);
+      this._openPage(this.__usagePage);
     }
   }
 });
