@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections.abc import AsyncGenerator, Iterable
 from contextlib import asynccontextmanager
@@ -13,11 +12,7 @@ from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.services import RunID
 from pydantic import PositiveInt
-from servicelib import progress_bar
-from servicelib.docker_utils import LogCB, pull_image
-from servicelib.fastapi.docker_utils import retrieve_image_layer_information
 from servicelib.utils import logged_gather
-from settings_library.docker_registry import RegistrySettings
 from starlette import status as http_status
 
 from .errors import UnexpectedDockerError, VolumeNotFoundError
@@ -132,36 +127,3 @@ def get_docker_service_images(compose_spec_yaml: str) -> set[DockerGenericTag]:
         DockerGenericTag(service_data["image"])
         for service_data in docker_compose_spec["services"].values()
     }
-
-
-async def _pull_image(
-    image: DockerGenericTag,
-    *,
-    registry_settings: RegistrySettings,
-    pbar: progress_bar.ProgressBarData,
-    log_cb: LogCB,
-) -> None:
-    layer_information = await retrieve_image_layer_information(image, registry_settings)
-    await pull_image(image, registry_settings, pbar, log_cb, layer_information)
-
-
-async def pull_images(
-    images: set[DockerGenericTag],
-    registry_settings: RegistrySettings,
-    progress_cb: progress_bar.AsyncReportCB,
-    log_cb: LogCB,
-) -> None:
-    async with progress_bar.ProgressBarData(
-        num_steps=len(images), progress_report_cb=progress_cb
-    ) as pbar:
-        await asyncio.gather(
-            *(
-                _pull_image(
-                    image,
-                    registry_settings=registry_settings,
-                    pbar=pbar,
-                    log_cb=log_cb,
-                )
-                for image in images
-            )
-        )
