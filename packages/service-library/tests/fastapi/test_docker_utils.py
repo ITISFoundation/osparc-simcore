@@ -9,7 +9,10 @@ from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from servicelib import progress_bar
 from servicelib.docker_utils import pull_image
-from servicelib.fastapi.docker_utils import retrieve_image_layer_information
+from servicelib.fastapi.docker_utils import (
+    pull_images,
+    retrieve_image_layer_information,
+)
 from settings_library.docker_registry import RegistrySettings
 
 
@@ -118,5 +121,37 @@ async def test_pull_image(
     assert fake_progress_report_cb.call_args_list[0] == call(0.0)
     fake_progress_report_cb.assert_called_with(1.0)
     # check there were no warnings
+    for record in caplog.records:
+        assert record.levelname != "WARNING", record.message
+
+
+@pytest.mark.parametrize(
+    "images_set",
+    [{"itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"}],
+)
+async def test_pull_images(
+    remove_images_from_host: Callable[[list[str]], Awaitable[None]],
+    images_set: set[DockerGenericTag],
+    registry_settings: RegistrySettings,
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+):
+    await remove_images_from_host(list(images_set))
+
+    async def _log_cb(*args, **kwargs) -> None:
+        print(f"received log: {args}, {kwargs}")
+
+    fake_progress_report_cb = mocker.AsyncMock()
+    fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
+    await pull_images(
+        images_set, registry_settings, fake_progress_report_cb, fake_log_cb
+    )
+    fake_log_cb.assert_called()
+    assert fake_progress_report_cb.call_args_list[0] == call(0.0)
+    assert fake_progress_report_cb.call_args_list[-1] == call(1.0)
+    fake_progress_report_cb.reset_mock()
+
+    # check there were no warnings
+    # NOTE: this would pop up in case docker changes its pulling statuses
     for record in caplog.records:
         assert record.levelname != "WARNING", record.message
