@@ -128,7 +128,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __selectedItemId: null,
     __startHint: null,
     __toolHint: null,
-    __dropMe: null,
+    __dropHereNodeUI: null,
     __selectionRectInitPos: null,
     __selectionRectRepr: null,
     __panning: null,
@@ -1745,16 +1745,16 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __updateWidgets: function(dragging, posX, posY) {
       const boxWidth = 120;
       const boxHeight = 60;
-      if (this.__dropMe === null) {
-        const dropHint = this.__dropMe = new qx.ui.basic.Label(this.tr("Drop me")).set({
+      if (this.__dropHereNodeUI === null) {
+        const dropHereNodeUI = this.__dropHereNodeUI = new qx.ui.basic.Label(this.tr("Drop here")).set({
           font: "workbench-start-hint",
           textColor: "workbench-start-hint"
         });
-        dropHint.exclude();
-        this.__workbenchLayout.add(dropHint);
-        dropHint.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
+        dropHereNodeUI.exclude();
+        this.__workbenchLayout.add(dropHereNodeUI);
+        dropHereNodeUI.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
       }
-      const dropMe = this.__dropMe;
+      const dropMe = this.__dropHereNodeUI;
       if (dragging) {
         dropMe.show();
         const dropMeBounds = dropMe.getBounds() || dropMe.getSizeHint();
@@ -1963,9 +1963,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __removeDropHint: function() {
-      this.__dropMe.setVisibility("excluded");
-      osparc.wrapper.Svg.removeItem(this.__dropMe.rect);
-      this.__dropMe = null;
+      this.__dropHereNodeUI.setVisibility("excluded");
+      osparc.wrapper.Svg.removeItem(this.__dropHereNodeUI.rect);
+      this.__dropHereNodeUI = null;
     }
   }
 });
