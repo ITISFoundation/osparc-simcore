@@ -9,6 +9,7 @@ from typing import Any, cast
 
 import pytest
 import respx
+from faker import Faker
 from fastapi import FastAPI
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.callbacks_mapping import CallbacksMapping
@@ -42,7 +43,10 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 @pytest.fixture
 def mock_env(
-    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, disable_postgres: None
+    monkeypatch: pytest.MonkeyPatch,
+    mock_env: EnvVarsDict,
+    disable_postgres: None,
+    faker: Faker,
 ) -> EnvVarsDict:
     """overrides unit/conftest:mock_env fixture"""
     env_vars = mock_env.copy()
@@ -70,6 +74,7 @@ def mock_env(
             "S3_ACCESS_KEY": "12345678",
             "S3_BUCKET_NAME": "simcore",
             "S3_ENDPOINT": "http://172.17.0.1:9001",
+            "S3_REGION": faker.pystr(),
             "S3_SECRET_KEY": "12345678",
             "SC_BOOT_MODE": "production",
             "SIMCORE_SERVICES_NETWORK_NAME": "simcore_services_network_name",
@@ -117,6 +122,7 @@ def expected_dynamic_sidecar_spec(
     osparc_product_name: str,
     request_simcore_user_agent: str,
     hardware_info: HardwareInfo,
+    faker: Faker,
 ) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
@@ -261,6 +267,7 @@ def expected_dynamic_sidecar_spec(
                     "S3_ACCESS_KEY": "12345678",
                     "S3_BUCKET_NAME": "simcore",
                     "S3_ENDPOINT": "http://172.17.0.1:9001",
+                    "S3_REGION": faker.pystr(),
                     "S3_SECRET_KEY": "12345678",
                     "SC_BOOT_MODE": "production",
                     "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",

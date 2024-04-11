@@ -57,12 +57,14 @@ def mock_env(
     monkeypatch: pytest.MonkeyPatch,
     mock_env: EnvVarsDict,
     rabbit_service: RabbitSettings,
+    faker: Faker,
 ) -> EnvVarsDict:
     setenvs_from_dict(
         monkeypatch,
         {
             "S3_ENDPOINT": "test-s3",
             "S3_ACCESS_KEY": "",
+            "S3_REGION": faker.pystr(),
             "S3_SECRET_KEY": "",
             "S3_BUCKET_NAME": "",
             "DIRECTOR_ENABLED": "0",
