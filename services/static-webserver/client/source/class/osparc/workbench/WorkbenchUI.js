@@ -321,19 +321,19 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       return srvCat;
     },
 
-    __createTemporaryNodeUI: function(text, pos) {
+    __createTemporaryNodeUI: function(pos) {
       const boxWidth = osparc.workbench.NodeUI.NODE_WIDTH;
       const boxHeight = osparc.workbench.NodeUI.NODE_HEIGHT;
-
-      const temporaryNodeUI = new qx.ui.basic.Label(text).set({
-        font: "workbench-start-hint",
-        textColor: "workbench-start-hint"
+      const circleSize = 26;
+      const temporaryNodeUI = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/"+circleSize).set({
+        opacity: 0.8
       });
+      temporaryNodeUI.getContentElement().addClass("rotate");
       this.__workbenchLayout.add(temporaryNodeUI);
       temporaryNodeUI.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
       temporaryNodeUI.setLayoutProperties({
-        left: pos.x + parseInt(boxWidth/2),
-        top: pos.y + parseInt(boxHeight/2)
+        left: pos.x + parseInt(boxWidth/2) - parseInt(circleSize/2),
+        top: pos.y + parseInt(boxHeight/2) - parseInt(circleSize/2)
       });
       osparc.wrapper.Svg.updateItemPos(temporaryNodeUI.rect, pos.x, pos.y);
 
@@ -341,6 +341,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __removeTemporaryNodeUI: function(temporaryNodeUI) {
+      temporaryNodeUI.exclude();
       osparc.wrapper.Svg.removeItem(temporaryNodeUI.rect);
       this.__workbenchLayout.add(temporaryNodeUI);
       temporaryNodeUI = null;
@@ -348,7 +349,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addNode: async function(service, pos) {
       // render temporary node
-      let tempNodeUI = this.__createTemporaryNodeUI("", pos);
+      let tempNodeUI = this.__createTemporaryNodeUI(pos);
 
       let nodeUI = null;
       try {
