@@ -89,7 +89,7 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
     if settings.API_SERVER_RABBITMQ is None:
         mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
         mocker.patch(
-            "simcore_service_api_server.core.application.setup_prometheus_instrumentation"
+            "simcore_service_api_server.services.rabbitmq.setup_prometheus_instrumentation"
         )
     return app_environment
 
