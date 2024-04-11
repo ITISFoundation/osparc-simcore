@@ -35,7 +35,7 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
       showStatusbar: false,
       resizable: false,
       allowMaximize: false,
-      contentPadding: 2
+      contentPadding: this.self().CONTENT_PADDING
     });
 
     this.getContentElement().setStyles({
@@ -93,6 +93,7 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
   statics: {
     PORT_HEIGHT: 18,
     PORT_WIDTH: 11,
+    CONTENT_PADDING: 2,
     PORT_CONNECTED: "@FontAwesome5Regular/dot-circle/18",
     PORT_DISCONNECTED: "@FontAwesome5Regular/circle/18",
 
@@ -188,7 +189,6 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
     _createPort: function(isInput, placeholder = false) {
       let port = null;
       const width = this.self().PORT_HEIGHT;
-      const portMargin = this.self().PORT_HEIGHT - this.self().PORT_WIDTH + 2;
       if (placeholder) {
         port = new qx.ui.core.Spacer(width, width);
       } else {
@@ -207,9 +207,10 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
         });
         port.isInput = isInput;
       }
+      // make the ports exit the NodeUI
       port.set({
-        marginLeft: isInput ? -portMargin : 0,
-        marginRight: isInput ? 0 : -portMargin
+        marginLeft: isInput ? (-10 + this.self().CONTENT_PADDING) : 0,
+        marginRight: isInput ? 0 : (-10 - this.self().CONTENT_PADDING)
       });
 
       this.add(port, {
