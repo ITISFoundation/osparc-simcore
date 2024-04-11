@@ -295,21 +295,25 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       if (this.getStudy().isReadOnly()) {
         return null;
       }
+      if (this.getStudy().isPipelineRunning()) {
+        osparc.FlashMessenger.getInstance().logAs(osparc.data.model.Workbench.CANT_ADD_NODE, "ERROR");
+        return null;
+      }
       const srvCat = new osparc.workbench.ServiceCatalog();
       const maxLeft = this.getBounds().width - osparc.workbench.ServiceCatalog.Width;
       const maxHeight = this.getBounds().height - osparc.workbench.ServiceCatalog.Height;
       const posX = Math.min(winPos.x, maxLeft);
       const posY = Math.min(winPos.y, maxHeight);
       srvCat.moveTo(posX + this.__getLeftOffset(), posY + this.__getTopOffset());
-      srvCat.addListener("addService", e => {
+      srvCat.addListener("addService", async e => {
         const {
           service,
           nodeLeftId,
           nodeRightId
         } = e.getData();
-        const newNodeUI = this.__addNode(service, nodePos);
-        if (nodeLeftId !== null || nodeRightId !== null) {
-          const newNodeId = newNodeUI.getNodeId();
+        const nodeUI = await this.__addNode(service, nodePos);
+        if (nodeUI && nodeLeftId !== null || nodeRightId !== null) {
+          const newNodeId = nodeUI.getNodeId();
           this._createEdgeBetweenNodes(nodeLeftId ? nodeLeftId : newNodeId, nodeRightId ? nodeRightId : newNodeId, true);
         }
       }, this);
@@ -317,12 +321,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       return srvCat;
     },
 
-    __addNode: function(service, pos) {
-      const node = this.__getWorkbench().createNode(service.getKey(), service.getVersion(), null);
-      if (node === null) {
+    __addNode: async function(service, pos) {
+      const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion()).catch(err => {
+        console.error(err);
         return null;
-      }
-
+      });
       const newNodeUI = this._createNodeUI(node.getNodeId());
       this._addNodeUIToWorkbench(newNodeUI, pos);
       qx.ui.core.queue.Layout.flush();
@@ -701,8 +704,12 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         if (this.__tempEdgeNodeId === dragNodeId) {
           const winPos = this.__unscaleCoordinates(this.__pointerPos.x, this.__pointerPos.y);
           const srvCat = this.openServiceCatalog(winPos, this.__pointerPos);
-          this.__tempEdgeIsInput === true ? srvCat.setContext(null, dragNodeId) : srvCat.setContext(dragNodeId, null);
-          srvCat.addListener("close", () => this.__removeTempEdge(), this);
+          if (srvCat) {
+            this.__tempEdgeIsInput === true ? srvCat.setContext(null, dragNodeId) : srvCat.setContext(dragNodeId, null);
+            srvCat.addListener("close", () => this.__removeTempEdge(), this);
+          } else {
+            this.__removeTempEdge();
+          }
         }
         this.__removePointerMoveListener();
       }, this);
@@ -1249,7 +1256,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               x: 50,
               y: 50
             }, freePos);
-            srvCat.setContext(null, nodeUI.getNodeId());
+            if (srvCat) {
+              srvCat.setContext(null, nodeUI.getNodeId());
+            }
           }
         },
         addServiceOutput: {
@@ -1260,7 +1269,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               x: 50,
               y: 50
             }, freePos);
-            srvCat.setContext(nodeUI.getNodeId(), null);
+            if (srvCat) {
+              srvCat.setContext(nodeUI.getNodeId(), null);
+            }
           }
         },
         noAction: {
@@ -1889,7 +1900,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }
     },
 
-    __dropFile: function(e) {
+    __dropFile: async function(e) {
       this.__draggingFile(e, false);
 
       if ("dataTransfer" in e) {
@@ -1903,10 +1914,12 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           const fileList = e.dataTransfer.files;
           if (fileList.length) {
             const service = qx.data.marshal.Json.createModel(osparc.service.Utils.getFilePicker());
-            const nodeUI = this.__addNode(service, pos);
-            const filePicker = new osparc.file.FilePicker(nodeUI.getNode(), "workbench");
-            filePicker.uploadPendingFiles(fileList);
-            filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
+            const nodeUI = await this.__addNode(service, pos);
+            if (nodeUI) {
+              const filePicker = new osparc.file.FilePicker(nodeUI.getNode(), "workbench");
+              filePicker.uploadPendingFiles(fileList);
+              filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
+            }
           }
         } else {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
@@ -1914,19 +1927,19 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }
     },
 
-    __dropLink: function(e) {
+    __dropLink: async function(e) {
       this.__draggingLink(e, false);
 
       if (this.__isDraggingLink && "dragData" in this.__isDraggingLink) {
-        const data = this.__isDraggingLink["dragData"];
         const pos = this.__pointerEventToWorkbenchPos(e, false);
         const service = qx.data.marshal.Json.createModel(osparc.service.Utils.getFilePicker());
         const nodeUI = this.__addNode(service, pos);
-        const node = nodeUI.getNode();
-        // const filePicker = new osparc.file.FilePicker(node, "workbench");
-        // filePicker.buildLayout();
-        osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
-        this.__isDraggingLink = null;
+        if (nodeUI) {
+          const node = nodeUI.getNode();
+          const data = this.__isDraggingLink["dragData"];
+          osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+          this.__isDraggingLink = null;
+        }
       }
     },
 

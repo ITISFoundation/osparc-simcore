@@ -413,10 +413,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       srvCat.open();
     },
 
-    __addServiceBetween: function(service, leftNodeId, rightNodeId) {
+    __addServiceBetween: async function(service, leftNodeId, rightNodeId) {
       const workbench = this.getStudy().getWorkbench();
 
-      const node = workbench.addServiceBetween(service, leftNodeId, rightNodeId);
+      const node = await workbench.addServiceBetween(service, leftNodeId, rightNodeId);
       if (node === null) {
         return;
       }
