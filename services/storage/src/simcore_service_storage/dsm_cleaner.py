@@ -20,54 +20,60 @@
 
 import asyncio
 import logging
-import os
-import socket
-from contextlib import suppress
+from datetime import timedelta
 from typing import cast
 
 from aiohttp import web
+from servicelib.background_task import stop_periodic_task
+from servicelib.logging_utils import log_catch, log_context
+from servicelib.redis_utils import start_exclusive_periodic_task
 
 from .constants import APP_CONFIG_KEY, APP_DSM_KEY
 from .dsm_factory import DataManagerProvider
+from .redis import get_redis_client
 from .settings import Settings
 from .simcore_s3_dsm import SimcoreS3DataManager
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+_TASK_NAME_PERIODICALY_CLEAN_DSM = "periodic_cleanup_of_dsm"
 
 
 async def dsm_cleaner_task(app: web.Application) -> None:
-    logger.info("starting dsm cleaner task...")
-    cfg: Settings = app[APP_CONFIG_KEY]
+    _logger.info("starting dsm cleaner task...")
     dsm: DataManagerProvider = app[APP_DSM_KEY]
     simcore_s3_dsm: SimcoreS3DataManager = cast(
         SimcoreS3DataManager, dsm.get(SimcoreS3DataManager.get_location_id())
     )
-    assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
-    while await asyncio.sleep(cfg.STORAGE_CLEANER_INTERVAL_S, result=True):
-        try:
-            await simcore_s3_dsm.clean_expired_uploads()
+    try:
+        await simcore_s3_dsm.clean_expired_uploads()
 
-        except asyncio.CancelledError:  # noqa: PERF203
-            logger.info("cancelled dsm cleaner task")
-            raise
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Unhandled error in dsm cleaner task, restarting task...")
+    except asyncio.CancelledError:  # noqa: PERF203
+        _logger.info("cancelled dsm cleaner task")
+        raise
+    except Exception:  # pylint: disable=broad-except
+        _logger.exception("Unhandled error in dsm cleaner task, restarting task...")
 
 
 def setup_dsm_cleaner(app: web.Application):
     async def _setup(app: web.Application):
-        task = asyncio.create_task(
-            dsm_cleaner_task(app),
-            name=f"dsm_cleaner_task_{socket.gethostname()}_{os.getpid()}",
-        )
-        logger.info("%s created", f"{task=}")
+        with log_context(_logger, logging.INFO, msg="setup dsm cleaner"), log_catch(
+            _logger, reraise=False
+        ):
+            cfg: Settings = app[APP_CONFIG_KEY]
+            assert cfg.STORAGE_CLEANER_INTERVAL_S  # nosec
 
-        yield
+            storage_background_task = start_exclusive_periodic_task(
+                get_redis_client(app),
+                dsm_cleaner_task,
+                task_period=timedelta(seconds=cfg.STORAGE_CLEANER_INTERVAL_S),
+                retry_after=timedelta(minutes=5),
+                task_name=_TASK_NAME_PERIODICALY_CLEAN_DSM,
+                app=app,
+            )
 
-        logger.debug("stopping %s...", f"{task=}")
-        task.cancel()
-        with suppress(asyncio.CancelledError):
-            await task
-        logger.info("%s stopped.", f"{task=}")
+            yield
+
+            await stop_periodic_task(storage_background_task)
 
     app.cleanup_ctx.append(_setup)

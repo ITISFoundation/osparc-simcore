@@ -2,6 +2,7 @@ from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.postgres import PostgresSettings
+from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -32,6 +33,8 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     STORAGE_POSTGRES: PostgresSettings | None = Field(auto_default_from_env=True)
+
+    STORAGE_REDIS: RedisSettings | None = Field(auto_default_from_env=True)
 
     STORAGE_S3: S3Settings | None = Field(auto_default_from_env=True)
 
