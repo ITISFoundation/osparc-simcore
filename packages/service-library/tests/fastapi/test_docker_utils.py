@@ -7,6 +7,7 @@ import pytest
 from models_library.docker import DockerGenericTag
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib import progress_bar
 from servicelib.docker_utils import pull_image
 from servicelib.fastapi.docker_utils import (
@@ -125,9 +126,41 @@ async def test_pull_image(
         assert record.levelname != "WARNING", record.message
 
 
+@pytest.fixture
+def external_registry_settings(
+    external_environment: EnvVarsDict,
+) -> RegistrySettings | None:
+    if external_environment:
+        config = {
+            field: external_environment.get(field, None)
+            for field in RegistrySettings.__fields__
+        }
+        return RegistrySettings.parse_obj(config)
+    return None
+
+
+@pytest.fixture
+def registry_settings(
+    registry_settings: RegistrySettings,
+    external_registry_settings: RegistrySettings | None,
+) -> RegistrySettings:
+    """overrides original registry settings to be able to use real data from deployments"""
+    if external_registry_settings:
+        return external_registry_settings
+    return registry_settings
+
+
 @pytest.mark.parametrize(
     "images_set",
-    [{"itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"}],
+    [
+        {"itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"},
+        {
+            "${REGISYTR_URL}/simcore/services/dynamic/s4l-core-8-0-0-dy:3.2.7",
+            "${REGISYTR_URL}/simcore/services/dynamic/sym-server-8-0-0-dy:3.2.7",
+            "${REGISYTR_URL}/simcore/services/dynamic/sim4life-8-0-0-dy:3.2.7",
+            "${REGISYTR_URL}/simcore/services/dynamic/s4l-stream-8-0-0-dy:3.2.7",
+        },
+    ],
 )
 async def test_pull_images(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
