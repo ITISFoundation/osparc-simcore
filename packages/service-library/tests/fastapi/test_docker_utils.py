@@ -141,7 +141,10 @@ async def test_pull_images(
     async def _log_cb(*args, **kwargs) -> None:
         print(f"received log: {args}, {kwargs}")
 
-    fake_progress_report_cb = mocker.AsyncMock()
+    async def _progress_cb(*args, **kwargs) -> None:
+        print(f"received progress: {args}, {kwargs}")
+
+    fake_progress_report_cb = mocker.AsyncMock(side_effect=_progress_cb)
     fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
     await pull_images(
         images_set, registry_settings, fake_progress_report_cb, fake_log_cb
