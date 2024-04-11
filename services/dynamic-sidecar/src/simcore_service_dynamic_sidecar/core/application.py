@@ -35,6 +35,13 @@ from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
 from .utils import volumes_fix_permissions
 
+_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+_NOISY_LOGGERS = (
+    "aio_pika",
+    "aiormq",
+    "httpcore",
+)
+
 logger = logging.getLogger(__name__)
 
 #
@@ -111,6 +118,13 @@ def setup_logger(settings: ApplicationSettings):
 
 
 def create_base_app() -> FastAPI:
+    # keep mostly quiet noisy loggers
+    quiet_level: int = max(
+        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+    )
+    for name in _NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(quiet_level)
+
     # settings
     settings = ApplicationSettings.create_from_envs()
     setup_logger(settings)
