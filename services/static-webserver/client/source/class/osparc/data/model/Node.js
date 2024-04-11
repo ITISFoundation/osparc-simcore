@@ -521,42 +521,6 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    startInBackend: function() {
-      // create the node in the backend here
-      const key = this.getKey();
-      const version = this.getVersion();
-      const params = {
-        url: {
-          studyId: this.getStudy().getUuid()
-        },
-        data: {
-          "service_id": this.getNodeId(),
-          "service_key": key,
-          "service_version": version
-        }
-      };
-      osparc.data.Resources.fetch("studies", "addNode", params)
-        .then(() => {
-          // a POST call on /nodes also triggers :start
-          this.startDynamicService();
-        })
-        .catch(err => {
-          let errorMsg = this.tr("Error when starting ") + key + ":" + version;
-          this.getStatus().setInteractive("failed");
-          if ("status" in err && err.status === 406) {
-            errorMsg = this.getKey() + ":" + this.getVersion() + this.tr(" is retired");
-            this.getStatus().setInteractive("retired");
-          }
-          const errorMsgData = {
-            nodeId: this.getNodeId(),
-            msg: errorMsg,
-            level: "ERROR"
-          };
-          this.fireDataEvent("showInLogger", errorMsgData);
-          osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
-        });
-    },
-
     __applyPropsForm: function() {
       const checkIsPipelineRunning = () => {
         const isPipelineRunning = this.getStudy().isPipelineRunning();
@@ -1336,7 +1300,7 @@ qx.Class.define("osparc.data.model.Node", {
           if ("status" in err && err.status === 406) {
             errorMsg = this.getKey() + ":" + this.getVersion() + "is retired";
             this.getStatus().setInteractive("retired");
-            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.getLabel() + this.tr(" is retired"), "ERROR");
           }
           const errorMsgData = {
             nodeId: this.getNodeId(),
@@ -1360,7 +1324,7 @@ qx.Class.define("osparc.data.model.Node", {
             setTimeout(() => this.__nodeState(), interval);
           } else {
             this.getStatus().setInteractive("failed");
-            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error starting") + " " + this.getLabel(), "ERROR");
           }
         });
     },
