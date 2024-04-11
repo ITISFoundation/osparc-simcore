@@ -27,7 +27,7 @@ class HealtchCheckException(RuntimeError):
 async def check_service_health(
     health_checker: Annotated[ApiServerHealthChecker, Depends(get_health_checker)]
 ):
-    if not health_checker.healthy():
+    if not health_checker.healthy:
         raise HealtchCheckException()
     return f"{__name__}@{datetime.datetime.now(tz=datetime.timezone.utc).isoformat()}"
 
