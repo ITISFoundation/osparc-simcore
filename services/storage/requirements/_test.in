@@ -10,6 +10,7 @@ aioresponses
 coverage
 docker
 faker
+fakeredis[lua]
 moto[server]
 pandas
 pytest
