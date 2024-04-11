@@ -22,6 +22,7 @@ import simcore_service_storage
 from aiohttp.test_utils import TestClient
 from aiopg.sa import Engine
 from faker import Faker
+from fakeredis.aioredis import FakeRedis
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -39,6 +40,7 @@ from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import ByteSize, parse_obj_as
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import status
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
@@ -197,11 +199,18 @@ def app_settings(mock_config) -> Settings:
 
 
 @pytest.fixture
+async def mocked_redis_server(mocker: MockerFixture) -> None:
+    mock_redis = FakeRedis()
+    mocker.patch("redis.asyncio.from_url", return_value=mock_redis)
+
+
+@pytest.fixture
 def client(
     event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable[..., int],
     app_settings: Settings,
+    mocked_redis_server,
 ) -> TestClient:
     app = create(app_settings)
     return event_loop.run_until_complete(
