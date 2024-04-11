@@ -19,6 +19,7 @@ from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from faker import Faker
 from fastapi import FastAPI, status
+from httpx import ASGITransport
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskProgress,
@@ -107,9 +108,9 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 
     # LifespanManager will trigger app's startup&shutown event handlers
     async with LifespanManager(app), httpx.AsyncClient(
-        app=app,
         base_url="http://api.testserver.io",
         headers={"Content-Type": "application/json"},
+        transport=ASGITransport(app=app),
     ) as httpx_async_client:
         yield httpx_async_client
 

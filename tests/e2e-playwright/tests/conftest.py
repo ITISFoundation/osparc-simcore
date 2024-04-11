@@ -272,11 +272,11 @@ def create_new_project_and_delete(
     product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
-) -> Iterator[Callable[[bool], None]]:
+) -> Iterator[Callable[[bool], str]]:
     """The first available service currently displayed in the dashboard will be opened"""
     created_project_uuids = []
 
-    def _do(auto_delete: bool) -> None:
+    def _do(auto_delete: bool) -> str:
 
         with log_context(
             logging.INFO,
@@ -302,6 +302,7 @@ def create_new_project_and_delete(
             )
             if auto_delete:
                 created_project_uuids.append(project_uuid)
+            return project_uuid
 
     yield _do
 
