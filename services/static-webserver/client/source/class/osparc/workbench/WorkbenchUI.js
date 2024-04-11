@@ -321,16 +321,49 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       return srvCat;
     },
 
-    __addNode: async function(service, pos) {
-      const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion()).catch(err => {
-        console.error(err);
-        return null;
+    __createTemporaryNodeUI: function(text, pos) {
+      const boxWidth = osparc.workbench.NodeUI.NODE_WIDTH;
+      const boxHeight = osparc.workbench.NodeUI.NODE_HEIGHT;
+
+      const temporaryNodeUI = new qx.ui.basic.Label(text).set({
+        font: "workbench-start-hint",
+        textColor: "workbench-start-hint"
       });
-      const newNodeUI = this._createNodeUI(node.getNodeId());
-      this._addNodeUIToWorkbench(newNodeUI, pos);
-      qx.ui.core.queue.Layout.flush();
-      this.__createDragDropMechanism(newNodeUI);
-      return newNodeUI;
+      this.__workbenchLayout.add(temporaryNodeUI);
+      temporaryNodeUI.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
+      temporaryNodeUI.setLayoutProperties({
+        left: pos.x + parseInt(boxWidth/2),
+        top: pos.y + parseInt(boxHeight/2)
+      });
+      osparc.wrapper.Svg.updateItemPos(temporaryNodeUI.rect, pos.x, pos.y);
+
+      return temporaryNodeUI;
+    },
+
+    __removeTemporaryNodeUI: function(temporaryNodeUI) {
+      osparc.wrapper.Svg.removeItem(temporaryNodeUI.rect);
+      this.__workbenchLayout.add(temporaryNodeUI);
+      temporaryNodeUI = null;
+    },
+
+    __addNode: async function(service, pos) {
+      // render temporary node
+      let tempNodeUI = this.__createTemporaryNodeUI("", pos);
+
+      let nodeUI = null;
+      try {
+        const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
+        nodeUI = this._createNodeUI(node.getNodeId());
+        this._addNodeUIToWorkbench(nodeUI, pos);
+        qx.ui.core.queue.Layout.flush();
+        this.__createDragDropMechanism(nodeUI);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        // remove temporary node
+        this.__removeTemporaryNodeUI(tempNodeUI);
+      }
+      return nodeUI;
     },
 
     __getNodesBounds: function() {
