@@ -260,7 +260,6 @@ def mock_environment(
             "S3_BUCKET_NAME": "bucket_name",
             "S3_ENDPOINT": "endpoint",
             "S3_SECRET_KEY": "secret_key",
-            "S3_SECURE": "false",
         },
     )
 

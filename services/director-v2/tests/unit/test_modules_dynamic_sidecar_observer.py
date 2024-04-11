@@ -80,7 +80,6 @@ def mock_env(
             "S3_ACCESS_KEY": "access_key",
             "S3_SECRET_KEY": "secret_key",
             "S3_BUCKET_NAME": "bucket_name",
-            "S3_SECURE": "false",
         },
     )
 

@@ -19,7 +19,6 @@ def r_clone_settings(
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
     monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
     monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
-    monkeypatch.setenv("S3_SECURE", f"{faker.pybool()}")
     monkeypatch.setenv("S3_REGION", faker.pystr())
     return RCloneSettings.create_from_envs()
 

@@ -174,7 +174,6 @@ async def director_v2_client(
             "S3_ACCESS_KEY": "access_key",
             "S3_SECRET_KEY": "secret_key",
             "S3_BUCKET_NAME": "bucket_name",
-            "S3_SECURE": "false",
             # patch host for dynamic-sidecar, not reachable via localhost
             # the dynamic-sidecar (running inside a container) will use
             # this address to reach the rabbit service

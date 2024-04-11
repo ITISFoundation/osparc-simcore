@@ -4,7 +4,6 @@
 
 import pytest
 from faker import Faker
-from pydantic import parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_docker import get_service_published_port
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -22,8 +21,8 @@ def minio_s3_settings(
         S3_ACCESS_KEY=testing_environ_vars["S3_ACCESS_KEY"],
         S3_SECRET_KEY=testing_environ_vars["S3_SECRET_KEY"],
         S3_ENDPOINT=f"{get_localhost_ip()}:{get_service_published_port('minio')}",
-        S3_SECURE=parse_obj_as(bool, testing_environ_vars["S3_SECURE"]),
         S3_BUCKET_NAME=testing_environ_vars["S3_BUCKET_NAME"],
+        S3_REGION="us-east-1",
     )
 
 

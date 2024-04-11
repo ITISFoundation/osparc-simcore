@@ -49,7 +49,6 @@ def minimal_configuration(
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
 
 
 @pytest.fixture

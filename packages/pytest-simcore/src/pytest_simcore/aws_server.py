@@ -81,7 +81,7 @@ def mocked_s3_server_settings(
         S3_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access # noqa: SLF001
         S3_SECRET_KEY="xxx",  # noqa: S106
         S3_BUCKET_NAME=f"pytest{faker.pystr().lower()}",
-        S3_SECURE=False,
+        S3_REGION="us-east-1",
     )
 
 

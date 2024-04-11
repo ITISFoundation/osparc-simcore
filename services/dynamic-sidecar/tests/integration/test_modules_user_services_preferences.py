@@ -79,7 +79,6 @@ def mock_environment(  # pylint:disable=too-many-arguments
         "S3_ACCESS_KEY": "test",
         "S3_SECRET_KEY": "test",
         "S3_BUCKET_NAME": "test",
-        "S3_SECURE": "false",
         "RABBIT_HOST": "test",
         "RABBIT_PASSWORD": "test",
         "RABBIT_SECURE": "0",

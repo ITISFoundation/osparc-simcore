@@ -47,7 +47,6 @@ def test_expected_s3_endpoint(
 ) -> None:
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", endpoint)
-    monkeypatch.setenv("S3_SECURE", "true" if is_secure else "false")
     monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
     monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
     monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
