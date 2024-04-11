@@ -124,12 +124,11 @@ class ProgressBarData:
 
     def _compute_progress(self, steps: float) -> float:
         if not self.step_weights:
-            return round(steps / self.num_steps, ndigits=2)
+            return steps / self.num_steps
         weight_index = int(steps)
-        return round(
+        return (
             sum(self.step_weights[:weight_index])
-            + steps % 1 * self.step_weights[weight_index],
-            ndigits=2,
+            + steps % 1 * self.step_weights[weight_index]
         )
 
     async def update(self, steps: float = 1) -> None:
@@ -152,9 +151,7 @@ class ProgressBarData:
             new_progress_value = self._compute_progress(new_steps_value)
             if self._current_steps != _INITIAL_VALUE:
                 old_progress_value = self._compute_progress(self._current_steps)
-                parent_update_value = round(
-                    new_progress_value - old_progress_value, ndigits=2
-                )
+                parent_update_value = new_progress_value - old_progress_value
             self._current_steps = new_steps_value
 
         if parent_update_value:
