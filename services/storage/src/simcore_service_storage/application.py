@@ -17,6 +17,7 @@ from .db import setup_db
 from .dsm import setup_dsm
 from .dsm_cleaner import setup_dsm_cleaner
 from .long_running_tasks import setup_long_running_tasks
+from .redis import setup_redis
 from .rest import setup_rest
 from .s3 import setup_s3
 from .settings import Settings
@@ -63,6 +64,7 @@ def create(settings: Settings) -> web.Application:
 
     setup_long_running_tasks(app)
     setup_rest(app)
+    setup_redis(app)
 
     if settings.STORAGE_POSTGRES and settings.STORAGE_S3:
         setup_dsm(app)  # core subsystem. Needs s3 and db setups done

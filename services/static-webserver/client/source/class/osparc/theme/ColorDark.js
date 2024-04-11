@@ -183,6 +183,11 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "progressbar-disabled": "rgba(113, 157, 181, 0.25)",
     "progressbar-runner": "rgba(228, 234, 237, 0.5)",
 
+    "haloProgressbar": "progressbar",
+    "haloProgressbar-disabled": "progressbar-disabled",
+    "haloProgressbar-runner": "progressbar-runner",
+    "haloProgressbar-fill": "background-card-overlay",
+
     "loading-page-background-color": "#202020",
     "loading-page-text": "#FFFFFF",
     "loading-page-spinner": "#DDDDDD"

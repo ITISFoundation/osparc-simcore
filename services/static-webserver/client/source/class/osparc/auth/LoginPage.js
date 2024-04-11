@@ -171,7 +171,11 @@ qx.Class.define("osparc.auth.LoginPage", {
     _getMainLayout: function() {
       const mainLayout = this.getChildControl("main-layout");
       this.getChildControl("top-spacer");
-      this.getChildControl("logo-w-platform");
+      const logo = this.getChildControl("logo-w-platform");
+      if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
+        logo.setCursor("pointer");
+        logo.addListener("tap", () => window.open("https://sim4life.swiss/", "_blank"));
+      }
       if (osparc.product.Utils.isProduct("s4lacad")) {
         this.getChildControl("science-text-image");
       }
