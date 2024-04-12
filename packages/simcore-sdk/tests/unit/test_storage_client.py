@@ -196,7 +196,7 @@ def storage_v0_service_mock_get_file_meta_data_not_found(
         aioresponses_mocker.get(
             get_file_metadata_pattern,
             status=status.HTTP_200_OK,
-            payload={"error": "No result found", "data": None},
+            payload={"error": "No result found", "data": {}},
             repeat=True,
         )
     else:
