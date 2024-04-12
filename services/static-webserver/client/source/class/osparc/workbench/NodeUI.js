@@ -68,7 +68,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
   statics: {
     NODE_WIDTH: 180,
-    NODE_HEIGHT: 80
+    NODE_HEIGHT: 80,
+    FILE_NODE_WIDTH: 120,
   },
 
   events: {
@@ -371,7 +372,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __turnIntoFileUI: function() {
-      const width = 120;
+      const width = this.self().FILE_NODE_WIDTH;
       this.__setNodeUIWidth(width);
 
       const chipContainer = this.getChildControl("chips");
@@ -496,8 +497,31 @@ qx.Class.define("osparc.workbench.NodeUI", {
             converter: outputs => {
               if (portKey in outputs && "value" in outputs[portKey]) {
                 const val = outputs[portKey]["value"];
-                if (Array.isArray(val)) {
+                if (this.getNode().getMetaData()["key"].includes("probe/array")) {
                   return "[" + val.join(",") + "]";
+                } else if (this.getNode().getMetaData()["key"].includes("probe/file")) {
+                  const download = true;
+                  const locationId = val.store;
+                  const fileId = val.path;
+                  const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
+                  label.set({
+                    font: "text-12",
+                    rich: true
+                  });
+                  osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
+                    .then(presignedLinkData => {
+                      if ("resp" in presignedLinkData && presignedLinkData.resp) {
+                        const linkColor = qx.theme.manager.Color.getInstance().resolve("text");
+                        const downloadLink = `<a href="${presignedLinkData.resp.link}" style="color:${linkColor}" target="_blank">${filename}</a>`;
+                        label.set({
+                          value: downloadLink,
+                          cursor: "pointer",
+                          font: "link-label-12",
+                          rich: true
+                        });
+                      }
+                    });
+                  return filename;
                 }
                 return String(val);
               }
