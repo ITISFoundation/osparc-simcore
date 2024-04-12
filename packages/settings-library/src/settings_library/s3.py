@@ -19,13 +19,15 @@ class S3Settings(BaseCustomSettings):
         schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
             "examples": [
                 {
+                    # non AWS use-case
                     "S3_ACCESS_KEY": "my_access_key_id",
                     "S3_BUCKET_NAME": "some-s3-bucket",
-                    "S3_ENDPOINT": "https://my_s3_endpoint.com",
+                    "S3_ENDPOINT": "https://non-aws-s3_endpoint.com",
                     "S3_REGION": "us-east-1",
                     "S3_SECRET_KEY": "my_secret_access_key",
                 },
                 {
+                    # AWS use-case
                     "S3_ACCESS_KEY": "my_access_key_id",
                     "S3_BUCKET_NAME": "some-s3-bucket",
                     "S3_REGION": "us-east-2",
