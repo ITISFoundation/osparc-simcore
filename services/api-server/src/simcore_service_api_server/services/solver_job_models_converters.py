@@ -205,7 +205,7 @@ def create_job_from_project(
     assert urllib.parse.quote_plus(solver_key) in project.name  # nosec
 
     # get solver node
-    node_id = list(project.workbench.keys())[0]
+    node_id = next(iter(project.workbench.keys()))
     solver_node: Node = project.workbench[node_id]
     job_inputs: JobInputs = create_job_inputs_from_node_inputs(
         inputs=solver_node.inputs or {}

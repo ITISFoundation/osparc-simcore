@@ -2,7 +2,7 @@ from typing import NamedTuple
 from unittest import mock
 
 from servicelib.aiohttp import status
-from servicelib.status_utils import get_display_name
+from servicelib.status_utils import get_code_display_name
 from simcore_postgres_database.models.users import UserRole
 
 
@@ -28,7 +28,7 @@ class ExpectedResponse(NamedTuple):
     def __str__(self) -> str:
         # pylint: disable=no-member
         items = ", ".join(
-            f"{k}={get_display_name(c)}" for k, c in self._asdict().items()
+            f"{k}={get_code_display_name(c)}" for k, c in self._asdict().items()
         )
         return f"{self.__class__.__name__}({items})"
 

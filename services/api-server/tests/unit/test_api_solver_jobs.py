@@ -93,7 +93,7 @@ async def test_get_solver_job_wallet(
             response["data"]["walletId"] = _wallet_id
         return response
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / capture,
         [_get_job_wallet_side_effect, _get_wallet_side_effect],
@@ -171,7 +171,7 @@ async def test_get_solver_job_pricing_unit(
     ) -> Any:
         return capture.response_body
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / capture_file,
         [_get_job_side_effect, _get_pricing_unit_side_effect]
@@ -255,7 +255,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
         callbacks.append(get_inspect_job_side_effect(job_id=_job_id))
 
     _put_pricing_plan_and_unit_side_effect.was_called = False
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
         project_tests_dir / "mocks" / capture_name,
         callbacks,
@@ -292,7 +292,7 @@ async def test_get_solver_job_pricing_unit_no_payment(
     _version: str = "2.1.24"
     _job_id: str = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_directorv2_service_api_base, mocked_webserver_service_api_base],
         project_tests_dir / "mocks" / "start_job_no_payment.json",
         [_start_job_side_effect, get_inspect_job_side_effect(job_id=_job_id)],
@@ -333,7 +333,7 @@ async def test_stop_job(
 
         return jsonable_encoder(task)
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_directorv2_service_api_base],
         project_tests_dir / "mocks" / "stop_job.json",
         [_stop_job_side_effect, get_inspect_job_side_effect(job_id=_job_id)],
@@ -391,7 +391,7 @@ async def test_get_solver_job_outputs(
         envelope.data = wallet
         return jsonable_encoder(envelope)
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_webserver_service_api_base, mocked_storage_service_api_base],
         project_tests_dir / "mocks" / "get_solver_outputs.json",
         [_sf, _sf, _sf, _wallet_side_effect, _sf],

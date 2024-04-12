@@ -8,13 +8,13 @@ from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation as setup_rest_instrumentation,
 )
-from simcore_service_api_server.api.dependencies.rabbitmq import (
+
+from .._meta import PROJECT_NAME
+from ..api.dependencies.rabbitmq import (
     get_log_distributor,
     wait_till_log_distributor_ready,
 )
-from simcore_service_api_server.models.schemas.jobs import JobID
-
-from .._meta import PROJECT_NAME
+from ..models.schemas.jobs import JobID
 
 METRICS_NAMESPACE: Final[str] = PROJECT_NAME.replace("-", "_")
 

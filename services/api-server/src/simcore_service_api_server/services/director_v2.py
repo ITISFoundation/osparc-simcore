@@ -9,12 +9,10 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as
-from simcore_service_api_server.db.repositories.groups_extra_properties import (
-    GroupsExtraPropertiesRepository,
-)
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
+from ..db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ..models.schemas.jobs import PercentageInt
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 from .service_exception_handling import service_exception_mapper

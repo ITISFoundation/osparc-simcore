@@ -9,15 +9,13 @@ from models_library.api_schemas_api_server.pricing_plans import ServicePricingPl
 from pydantic import ValidationError
 from pydantic.errors import PydanticValueError
 from servicelib.error_codes import create_error_code
-from simcore_service_api_server.models.schemas.errors import ErrorGet
-from simcore_service_api_server.services.service_exception_handling import (
-    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
-)
 
 from ...models.basic_types import VersionStr
 from ...models.pagination import OnePage, Page, PaginationParams
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.solvers import Solver, SolverKeyId, SolverPort
 from ...services.catalog import CatalogApi
+from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
@@ -73,7 +71,6 @@ async def list_solvers(
     response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_solvers_page(
     page_params: Annotated[PaginationParams, Depends()],
@@ -117,7 +114,6 @@ async def list_solvers_releases(
     response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_solvers_releases_page(
     page_params: Annotated[PaginationParams, Depends()],
@@ -192,7 +188,6 @@ async def list_solver_releases(
     response_model=Page[Solver],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_solver_releases_page(
     solver_key: SolverKeyId,

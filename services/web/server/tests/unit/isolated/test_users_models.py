@@ -25,10 +25,10 @@ def test_user_models_examples(
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
 
-        model_enveloped = Envelope[model_cls].parse_data(
+        model_enveloped = Envelope[model_cls].from_data(
             model_instance.dict(by_alias=True)
         )
-        model_array_enveloped = Envelope[list[model_cls]].parse_data(
+        model_array_enveloped = Envelope[list[model_cls]].from_data(
             [
                 model_instance.dict(by_alias=True),
                 model_instance.dict(by_alias=True),
