@@ -474,16 +474,13 @@ class AuthSession:
     @_exception_mapper({})
     async def update_node_outputs(
         self, project_id: UUID, node_id: UUID, new_node_outputs: NodeOutputs
-    ) -> NodeOutputs:
+    ) -> None:
         response = await self.client.patch(
             f"/projects/{project_id}/nodes/{node_id}/outputs",
             cookies=self.session_cookies,
             json=jsonable_encoder(new_node_outputs),
         )
         response.raise_for_status()
-        data = Envelope[NodeOutputs].parse_raw(response.text).data
-        assert data is not None  # nosec
-        return data
 
     # WALLETS -------------------------------------------------
 
