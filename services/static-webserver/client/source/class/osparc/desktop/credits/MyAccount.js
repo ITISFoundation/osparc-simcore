@@ -94,10 +94,10 @@ qx.Class.define("osparc.desktop.credits.MyAccount", {
     __usagePage: null,
 
     __addProfilePage: function() {
-      const iconSrc = "@FontAwesome5Solid/user/24";
       const title = this.tr("Profile");
+      const iconSrc = "@FontAwesome5Solid/user/24";
       const profile = new osparc.desktop.credits.ProfilePage();
-      const page = this.addTab(iconSrc, title, profile);
+      const page = this.addTab(title, iconSrc, profile);
       return page;
     },
 
