@@ -93,11 +93,15 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       LABEL: 0,
       HALO: 1,
     },
+
     createTitleAtom: function(label) {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
-      }));
-      const lbl = this.__label = new qx.ui.basic.Label(label);
+      })).set({
+        padding: [2, 10]
+      });
+
+      const lbl = new qx.ui.basic.Label(label);
       lbl.set({
         textColor: "text",
         allowGrowX: true,
@@ -107,7 +111,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         flex: 1
       });
 
-      const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+      const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
         alignY: "middle",
         alignX: "center",
       })).set({
@@ -116,18 +120,15 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         allowGrowY: false,
         allowGrowX: false,
       });
-      const icon = this.__ICON = new qx.ui.basic.Image(
-        "@FontAwesome5Solid/check/14"
-      ).set({
-        visibility: "excluded"
+      const icon = new qx.ui.basic.Image("@FontAwesome5Solid/check/10").set({
+        visibility: "excluded",
+        textColor: "success"
       });
       iconContainer.add(icon);
       const progressColor = qx.theme.manager.Color.getInstance().resolve("progressbar");
       osparc.service.StatusUI.getStatusHalo(iconContainer, progressColor, 0);
       layout.addAt(iconContainer, this.NODE_INDEX.HALO);
-      layout.set({
-        padding: [2, 10]
-      })
+
       return layout;
     },
 
@@ -150,15 +151,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       if (atom) {
         const halo = atom.getChildren()[this.NODE_INDEX.HALO];
         const icon = halo.getChildren()[0];
-        if (value === 1) {
-          icon.set({
-            visibility: "visible"
-          });
-        } else {
-          icon.set({
-            visibility: "excluded"
-          });
-        }
+        icon.setVisibility(value === 1 ? "visible" : "excluded");
         const progressColor = qx.theme.manager.Color.getInstance().resolve("progressbar")
         osparc.service.StatusUI.getStatusHalo(halo, progressColor, value * 100);
       }
