@@ -39,20 +39,6 @@ async def wait_till_log_distributor_ready(app) -> None:
     return
 
 
-@retry(
-    wait=wait_fixed(2),
-    stop=stop_after_delay(_MAX_WAIT_FOR_LOG_DISTRIBUTOR_SECONDS),
-    before_sleep=before_sleep_log(_logger, logging.WARNING),
-    reraise=True,
-)
-async def wait_till_rabbitmq_ready(app) -> None:
-    if not hasattr(app.state, "rabbitmq_client"):
-        raise ApplicationSetupError(
-            f"Api server's RabbitMQ client was not ready within {_MAX_WAIT_FOR_LOG_DISTRIBUTOR_SECONDS=} seconds"
-        )
-    return
-
-
 def get_log_check_timeout(app: Annotated[FastAPI, Depends(get_app)]) -> NonNegativeInt:
     assert app.state.settings  # nosec
     return cast(NonNegativeInt, app.state.settings.API_SERVER_LOG_CHECK_TIMEOUT_SECONDS)
