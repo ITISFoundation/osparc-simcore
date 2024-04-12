@@ -1,6 +1,6 @@
 from typing import Any, ClassVar
 
-from pydantic import Field
+from pydantic import AnyHttpUrl, Field
 
 from .base import BaseCustomSettings
 
@@ -9,7 +9,7 @@ class S3Settings(BaseCustomSettings):
     S3_ACCESS_KEY: str
     S3_ACCESS_TOKEN: str | None = None
     S3_BUCKET_NAME: str
-    S3_ENDPOINT: str | None = Field(
+    S3_ENDPOINT: AnyHttpUrl | None = Field(
         default=None, description="do not define if using standard AWS"
     )
     S3_REGION: str

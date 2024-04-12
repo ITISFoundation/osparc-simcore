@@ -15,7 +15,7 @@ def r_clone_settings(
     request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch, faker: Faker
 ) -> RCloneSettings:
     monkeypatch.setenv("R_CLONE_PROVIDER", request.param)
-    monkeypatch.setenv("S3_ENDPOINT", faker.pystr())
+    monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
     monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
     monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
