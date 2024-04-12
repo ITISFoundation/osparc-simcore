@@ -6,14 +6,14 @@ from .base import BaseCustomSettings
 
 
 class S3Settings(BaseCustomSettings):
-    S3_ACCESS_KEY: str
-    S3_ACCESS_TOKEN: str | None = None
-    S3_BUCKET_NAME: str
+    S3_ACCESS_KEY: str = Field(min_items=1)
+    S3_ACCESS_TOKEN: str | None = Field(default=None, min_items=1)
+    S3_BUCKET_NAME: str = Field(min_items=1)
     S3_ENDPOINT: AnyHttpUrl | None = Field(
         default=None, description="do not define if using standard AWS"
     )
-    S3_REGION: str
-    S3_SECRET_KEY: str
+    S3_REGION: str = Field(min_items=1)
+    S3_SECRET_KEY: str = Field(min_items=1)
 
     class Config(BaseCustomSettings.Config):
         schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
