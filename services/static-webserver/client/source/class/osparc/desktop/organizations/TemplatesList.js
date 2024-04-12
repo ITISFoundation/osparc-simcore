@@ -91,10 +91,10 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
                 const templateData = templates.find(t => t.uuid === templateId);
                 if (templateData) {
                   templateData["resourceType"] = "template";
-                  const moreOpts = new osparc.dashboard.ResourceDetails(templateData).set({
+                  const win = osparc.dashboard.ResourceDetailsWindow.openWindow(templateData);
+                  win.getResourceDetails().set({
                     showOpenButton: false
                   });
-                  osparc.dashboard.ResourceDetails.popUpInWindow(moreOpts);
                 }
               });
           });

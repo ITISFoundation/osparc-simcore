@@ -17,6 +17,7 @@
 
 qx.Class.define("osparc.ui.window.TabbedWindow", {
   extend: osparc.ui.window.SingletonWindow,
+  type: "abstract",
 
   construct: function(id, caption) {
     this.base(arguments, id, caption);
