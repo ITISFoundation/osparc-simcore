@@ -728,7 +728,7 @@ async def test_ping_invalid_cluster_raises_422(
 
     # calling with correct data but non existing cluster also raises
     some_fake_cluster = ClusterPing(
-        endpoint=faker.uri(),
+        endpoint=faker.url(),
         authentication=parse_obj_as(
             ClusterAuthentication, cluster_simple_authentication()
         ),
