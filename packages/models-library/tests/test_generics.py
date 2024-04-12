@@ -67,7 +67,9 @@ def builtin_value(faker: Faker, builtin_type: type) -> Any:
     }[builtin_type.__name__]
 
 
-@pytest.mark.parametrize("builtin_type", [str, float, int, bool, tuple, set])
+@pytest.mark.parametrize(
+    "builtin_type", [str, float, int, bool, tuple, set], ids=lambda x: x.__name__
+)
 def test_enveloped_data_builtin(builtin_type: type, builtin_value: Any):
     # constructors
     envelope = Envelope[builtin_type](data=builtin_value)
@@ -83,13 +85,13 @@ def test_enveloped_data_builtin(builtin_type: type, builtin_value: Any):
 
 def test_enveloped_data_model():
     class User(BaseModel):
-        id: int
+        idr: int
         name = "Jane Doe"
 
-    enveloped = Envelope[User](data={"id": 3})
+    enveloped = Envelope[User](data={"idr": 3})
 
     assert isinstance(enveloped.data, User)
-    assert enveloped.dict(exclude_unset=True, exclude_none=True) == {"data": {"id": 3}}
+    assert enveloped.dict(exclude_unset=True, exclude_none=True) == {"data": {"idr": 3}}
 
 
 def test_enveloped_data_dict():

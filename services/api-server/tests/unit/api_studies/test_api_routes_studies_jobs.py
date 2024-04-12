@@ -197,7 +197,6 @@ async def test_create_study_job(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     fake_study_id: UUID,
-    faker: Faker,
 ):
     _capture_file: Final[Path] = project_tests_dir / "mocks" / "create_study_job.json"
 
