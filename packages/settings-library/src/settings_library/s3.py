@@ -1,9 +1,9 @@
 from typing import Any, ClassVar
 
-from models_library.basic_types import IDStr
 from pydantic import AnyHttpUrl, Field
 
 from .base import BaseCustomSettings
+from .basic_types import IDStr
 
 
 class S3Settings(BaseCustomSettings):
