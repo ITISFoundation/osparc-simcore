@@ -1,19 +1,20 @@
 from typing import Any, ClassVar
 
+from models_library.basic_types import IDStr
 from pydantic import AnyHttpUrl, Field
 
 from .base import BaseCustomSettings
 
 
 class S3Settings(BaseCustomSettings):
-    S3_ACCESS_KEY: str = Field(min_items=1)
-    S3_ACCESS_TOKEN: str | None = Field(default=None, min_items=1)
-    S3_BUCKET_NAME: str = Field(min_items=1)
+    S3_ACCESS_KEY: IDStr
+    S3_ACCESS_TOKEN: IDStr | None = None
+    S3_BUCKET_NAME: IDStr
     S3_ENDPOINT: AnyHttpUrl | None = Field(
         default=None, description="do not define if using standard AWS"
     )
-    S3_REGION: str = Field(min_items=1)
-    S3_SECRET_KEY: str = Field(min_items=1)
+    S3_REGION: IDStr
+    S3_SECRET_KEY: IDStr
 
     class Config(BaseCustomSettings.Config):
         schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
