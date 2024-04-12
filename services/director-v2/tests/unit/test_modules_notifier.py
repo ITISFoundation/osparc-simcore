@@ -62,11 +62,11 @@ def mock_env(
     setenvs_from_dict(
         monkeypatch,
         {
-            "S3_ENDPOINT": "test-s3",
-            "S3_ACCESS_KEY": "",
+            "S3_ENDPOINT": faker.url(),
+            "S3_ACCESS_KEY": faker.pystr(),
             "S3_REGION": faker.pystr(),
-            "S3_SECRET_KEY": "",
-            "S3_BUCKET_NAME": "",
+            "S3_SECRET_KEY": faker.pystr(),
+            "S3_BUCKET_NAME": faker.pystr(),
             "DIRECTOR_ENABLED": "0",
             "DIRECTOR_V0_ENABLED": "0",
             "DIRECTOR_V2_CATALOG": "null",

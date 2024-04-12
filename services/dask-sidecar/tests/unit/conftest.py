@@ -168,6 +168,7 @@ def s3_settings(mocked_s3_server_envs: None) -> S3Settings:
 
 @pytest.fixture
 def s3_endpoint_url(s3_settings: S3Settings) -> AnyUrl:
+    assert s3_settings.S3_ENDPOINT
     return parse_obj_as(
         AnyUrl,
         f"{s3_settings.S3_ENDPOINT}",

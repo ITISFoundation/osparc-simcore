@@ -77,7 +77,7 @@ def mock_environment(  # pylint:disable=too-many-arguments
     envs: EnvVarsDict = {
         "DY_SIDECAR_USER_ID": f"{user_id}",
         "DY_SIDECAR_PROJECT_ID": f"{project_id}",
-        "S3_ENDPOINT": faker.pystr(),
+        "S3_ENDPOINT": faker.url(),
         "S3_ACCESS_KEY": faker.pystr(),
         "S3_REGION": faker.pystr(),
         "S3_SECRET_KEY": faker.pystr(),

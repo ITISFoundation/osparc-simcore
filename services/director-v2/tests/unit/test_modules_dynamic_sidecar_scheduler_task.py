@@ -51,11 +51,11 @@ def mock_env(
     faker: Faker,
 ) -> None:
     disabled_services_envs = {
-        "S3_ENDPOINT": "",
-        "S3_ACCESS_KEY": "",
+        "S3_ENDPOINT": faker.url(),
+        "S3_ACCESS_KEY": faker.pystr(),
         "S3_REGION": faker.pystr(),
-        "S3_SECRET_KEY": "",
-        "S3_BUCKET_NAME": "",
+        "S3_SECRET_KEY": faker.pystr(),
+        "S3_BUCKET_NAME": faker.pystr(),
         "POSTGRES_HOST": "",
         "POSTGRES_USER": "",
         "POSTGRES_PASSWORD": "",

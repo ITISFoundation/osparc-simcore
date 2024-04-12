@@ -171,7 +171,7 @@ async def director_v2_client(
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
             "COMPUTATIONAL_BACKEND_ENABLED": "false",
             "R_CLONE_PROVIDER": "MINIO",
-            "S3_ENDPOINT": faker.pystr(),
+            "S3_ENDPOINT": faker.url(),
             "S3_ACCESS_KEY": faker.pystr(),
             "S3_REGION": faker.pystr(),
             "S3_SECRET_KEY": faker.pystr(),

@@ -46,7 +46,7 @@ def mock_environment(
             "RABBIT_USER": "test",
             "STORAGE_USERNAME": "test",
             "STORAGE_PASSWORD": "test",
-            "S3_ENDPOINT": faker.pystr(),
+            "S3_ENDPOINT": faker.url(),
             "S3_ACCESS_KEY": faker.pystr(),
             "S3_REGION": faker.pystr(),
             "S3_SECRET_KEY": faker.pystr(),
