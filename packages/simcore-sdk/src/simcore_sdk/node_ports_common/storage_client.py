@@ -232,10 +232,13 @@ async def get_file_metadata(
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}"},
     ) as response:
+
         payload = await response.json()
-        file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(payload)
-        if not file_metadata_enveloped.data:
+        if not payload.get("data"):
+            # NOTE: keeps backwards compatibility
             raise exceptions.S3InvalidPathError(file_id)
+
+        file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(payload)
         return file_metadata_enveloped.data
 
 
