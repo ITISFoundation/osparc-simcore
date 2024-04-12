@@ -61,10 +61,7 @@ class ApiServerHealthChecker:
     async def teardown(self, timeout_seconds: PositiveFloat):
         await self._log_distributor.deregister(job_id=self._dummy_job_id)
         if self._background_task:
-            try:
-                await stop_periodic_task(self._background_task)
-            except Exception as exc:
-                print(exc)
+            await stop_periodic_task(self._background_task, timeout=timeout_seconds)
 
     @property
     def healthy(self) -> bool:
@@ -78,29 +75,24 @@ class ApiServerHealthChecker:
         self._health_check_failure_count += 1
 
     async def _background_task_method(self):
+        while self._dummy_queue.qsize() > 0:
+            _ = self._dummy_queue.get_nowait()
         try:
-            while self._dummy_queue.qsize() > 0:
-                _ = self._dummy_queue.get_nowait()
-            try:
-                if not self._rabbit_client.healthy:
-                    self._increment_health_check_failure_count()
-                    return
-                await asyncio.wait_for(
-                    self._rabbit_client.publish(
-                        self._dummy_message.channel_name, self._dummy_message
-                    ),
-                    timeout=self._timeout_seconds,
-                )
-                _ = await asyncio.wait_for(
-                    self._dummy_queue.get(), timeout=self._timeout_seconds
-                )
-                self._health_check_failure_count = 0
-            except asyncio.TimeoutError:
+            if not self._rabbit_client.healthy:
                 self._increment_health_check_failure_count()
-        except asyncio.CancelledError:
-            pass
-        except Exception as exc:
-            print(exc)
+                return
+            await asyncio.wait_for(
+                self._rabbit_client.publish(
+                    self._dummy_message.channel_name, self._dummy_message
+                ),
+                timeout=self._timeout_seconds,
+            )
+            _ = await asyncio.wait_for(
+                self._dummy_queue.get(), timeout=self._timeout_seconds
+            )
+            self._health_check_failure_count = 0
+        except asyncio.TimeoutError:
+            self._increment_health_check_failure_count()
 
 
 def get_health_checker(
