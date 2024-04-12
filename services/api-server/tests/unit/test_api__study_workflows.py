@@ -9,7 +9,6 @@ from pathlib import Path
 
 import httpx
 import pytest
-from attr import dataclass
 from models_library.generated_models.docker_rest_api import File, JobStatus
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
@@ -18,11 +17,13 @@ from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
 from simcore_service_api_server.models.schemas.studies import StudyPort
 
 
-@dataclass(frozen=True)
 class _BaseApi:
-    _client: httpx.AsyncClient
-    _auth: httpx.BasicAuth
-    _tmp_path: Path | None = None
+    def __init__(
+        self, client: httpx.AsyncClient, tmp_path: Path | None = None, **request_kwargs
+    ):
+        self._client = client
+        self._req_kw = request_kwargs
+        self._tmp_path = tmp_path
 
 
 class FilesApi(_BaseApi):
@@ -30,7 +31,7 @@ class FilesApi(_BaseApi):
         resp: httpx.Response = await self._client.put(
             f"{API_VTAG}/files/content",
             files={"upload-file": file.open("rb")},
-            auth=self._auth,
+            **self._req_kw,
         )
         resp.raise_for_status()
         return File(**resp.json())
@@ -41,7 +42,9 @@ class FilesApi(_BaseApi):
         path_to_save = self._tmp_path / f"{file_id}{suffix}"
 
         async with self._client.stream(
-            "GET", f"{API_VTAG}/files/{file_id}/content"
+            "GET",
+            f"{API_VTAG}/files/{file_id}/content",
+            **self._req_kw,
         ) as resp:
             resp.raise_for_status()
             with path_to_save.open("wb") as file:
@@ -55,14 +58,16 @@ class StudiesApi(_BaseApi):
     async def list_study_ports(self, study_id):
         resp = await self._client.get(
             f"/v0/studies/{study_id}/ports",
-            auth=self._auth,
+            **self._req_kw,
         )
         resp.raise_for_status()
         return OnePage[StudyPort](**resp.json())
 
     async def create_study_job(self, study_id, job_inputs: dict) -> Job:
-        resp: httpx.Response = await self._client.post(
-            f"{API_VTAG}/studies/{study_id}/jobs", json=job_inputs, auth=self._auth
+        resp = await self._client.post(
+            f"{API_VTAG}/studies/{study_id}/jobs",
+            json=job_inputs,
+            **self._req_kw,
         )
         resp.raise_for_status()
         return Job(**resp.json())
@@ -70,7 +75,7 @@ class StudiesApi(_BaseApi):
     async def start_study_job(self, study_id, job_id) -> JobStatus:
         resp = await self._client.post(
             f"{API_VTAG}/studies/{study_id}/jobs/{job_id}:start",
-            auth=self._auth,
+            **self._req_kw,
         )
         resp.raise_for_status()
         return JobStatus(**resp.json())
@@ -78,7 +83,7 @@ class StudiesApi(_BaseApi):
     async def inspect_study_job(self, study_id, job_id) -> JobStatus:
         resp = await self._client.get(
             f"/v0/studies/{study_id}/jobs/{job_id}:inspect",
-            auth=self._auth,
+            **self._req_kw,
         )
         resp.raise_for_status()
         return JobStatus(**resp.json())
@@ -86,7 +91,7 @@ class StudiesApi(_BaseApi):
     async def get_study_job_outputs(self, study_id, job_id) -> JobOutputs:
         resp = await self._client.post(
             f"{API_VTAG}/studies/{study_id}/jobs/{job_id}/outputs",
-            auth=self._auth,
+            **self._req_kw,
         )
         resp.raise_for_status()
         return JobOutputs(**resp.json())
@@ -94,7 +99,7 @@ class StudiesApi(_BaseApi):
     async def delete_study_job(self, study_id, job_id) -> None:
         resp = await self._client.delete(
             f"{API_VTAG}/studies/{study_id}/jobs/{job_id}",
-            auth=self._auth,
+            **self._req_kw,
         )
         resp.raise_for_status()
 
@@ -166,11 +171,12 @@ async def test_run_study_workflow(
 ):
     template_id = "5b01fb90-f59f-11ee-9635-02420a140047"
 
-    files_api = FilesApi(client, auth, tmp_path)
-    studies_api = StudiesApi(client, auth)
+    files_api = FilesApi(client, tmp_path, auth=auth)
+    studies_api = StudiesApi(client, auth=auth)
 
     # lists
-    print(await studies_api.list_study_ports(study_id=template_id))
+    study_ports = await studies_api.list_study_ports(study_id=template_id)
+    assert study_ports.total == 2
 
     # uploads input files
     test_py_file = await files_api.upload_file(file=test_py_path)
