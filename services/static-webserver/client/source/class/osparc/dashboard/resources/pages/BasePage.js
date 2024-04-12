@@ -16,10 +16,10 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.dashboard.resources.pages.BasePage", {
-  extend: qx.ui.tabview.Page,
+  extend: osparc.desktop.preferences.pages.BasePage,
 
   construct: function(title, iconSrc = null, id) {
-    this.base(arguments, null, iconSrc);
+    this.base(arguments, title, iconSrc);
 
     this.tabId = id;
 
@@ -33,14 +33,6 @@ qx.Class.define("osparc.dashboard.resources.pages.BasePage", {
     grid.setRowAlign(0, "right", "top"); // footer
 
     this.setLayout(grid);
-
-    this.__showLabelOnTab(title);
-
-    this.set({
-      backgroundColor: "window-popup-background",
-      paddingTop: 0,
-      paddingLeft: 15
-    });
   },
 
   statics: {
@@ -58,38 +50,6 @@ qx.Class.define("osparc.dashboard.resources.pages.BasePage", {
   },
 
   members: {
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "title": {
-          control = new qx.ui.basic.Label().set({
-            font: "title-14",
-            alignX: "left"
-          });
-          this.add(control);
-          break;
-        }
-      }
-      return control || this.base(arguments, id);
-    },
-
-    __showLabelOnTab: function(tabTitle) {
-      this.getChildControl("title").set({
-        visibility: "excluded"
-      });
-
-      const tabButton = this.getChildControl("button");
-      tabButton.set({
-        label: tabTitle,
-        font: "text-14"
-      });
-      // eslint-disable-next-line no-underscore-dangle
-      const buttonLayout = tabButton._getLayout();
-      buttonLayout.setColumnAlign(0, "center", "middle"); // center icon
-      buttonLayout.setColumnWidth(0, 24); // align texts
-      buttonLayout.setSpacingX(5);
-    },
-
     addToHeader: function(widget) {
       this.add(widget, {
         column: 0,

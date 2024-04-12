@@ -46,6 +46,19 @@ qx.Class.define("osparc.ui.window.TabbedView", {
       });
       box.setLayout(new qx.ui.layout.VBox(10));
       return box;
+    },
+
+    /**
+     * Common layout for tooltip label
+     */
+    createHelpLabel: function(message=null, font="text-13") {
+      const label = new qx.ui.basic.Label().set({
+        value: message,
+        alignX: "left",
+        rich: true,
+        font: font
+      });
+      return label;
     }
   },
 
