@@ -240,7 +240,6 @@ class Product(BaseModel):
                 "support": True,
                 "is_payment_enabled": True,
                 "is_dynamic_services_telemetry_enabled": True,
-                "login_settings": {"LOGIN_2FA_REQUIRED"},
             },
             exclude_none=True,
             exclude_unset=True,

@@ -38,7 +38,6 @@ def test_product_to_static():
     assert product.to_statics() == {
         "displayName": "o²S²PARC",
         "supportEmail": "support@osparc.io",
-        "loginSettings": {"LOGIN_2FA_REQUIRED": False},
     }
 
     product = Product.parse_obj(Product.Config.schema_extra["examples"][2])
@@ -75,5 +74,4 @@ def test_product_to_static():
             {"kind": "web", "label": "web-form", "url": "support.acme.com"},
         ],
         "isPaymentEnabled": False,
-        "loginSettings": {"LOGIN_2FA_REQUIRED": False},
     }

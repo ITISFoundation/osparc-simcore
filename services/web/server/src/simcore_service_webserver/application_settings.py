@@ -381,7 +381,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
                 "WEBSERVER_PROJECTS": {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES"},
-                "WEBSERVER_LOGIN": {"LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"},
+                "WEBSERVER_LOGIN": {
+                    "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
+                    "LOGIN_2FA_REQUIRED",
+                },
                 "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
             },
             exclude_none=True,

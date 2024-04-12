@@ -100,30 +100,31 @@ async def login(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
-    login_ = await parse_request_body_as(LoginBody, request)
+    login_data = await parse_request_body_as(LoginBody, request)
 
-    # auth user and has access to product
+    # Authenticate user and verify access to the product
     user = await check_authorized_user_credentials_or_raise(
-        user=await get_user_by_email(request.app, email=login_.email),
-        password=login_.password.get_secret_value(),
+        user=await get_user_by_email(request.app, email=login_data.email),
+        password=login_data.password.get_secret_value(),
         product=product,
     )
     await check_authorized_user_in_product_or_raise(
         request.app, user=user, product=product
     )
 
-    # Some roles have login privileges
-    skip_2fa: bool = UserRole(user["role"]) == UserRole.TESTER
+    # Check if user role allows skipping 2FA or if 2FA is not required
+    skip_2fa = UserRole(user["role"]) == UserRole.TESTER
     if skip_2fa or not settings.LOGIN_2FA_REQUIRED:
         return await login_granted_response(request, user=user)
 
-    # 2FA login (continuation)
+    # 2FA login process continuation
     user_2fa_preference = await user_preferences_api.get_frontend_user_preference(
         request.app,
         user_id=user["id"],
         product_name=product.name,
         preference_class=user_preferences_api.TwoFAFrontendUserPreference,
     )
+
     if not user_2fa_preference:
         preference_id = (
             user_preferences_api.TwoFAFrontendUserPreference().preference_identifier
@@ -136,6 +137,7 @@ async def login(request: web.Request):
             value=TwoFAAuthentificationMethod.sms,
         )
     assert user_2fa_preference  # nosec
+
     user_2fa_authentification_method = parse_obj_as(
         TwoFAAuthentificationMethod, user_2fa_preference.value
     )
@@ -143,7 +145,7 @@ async def login(request: web.Request):
     if user_2fa_authentification_method == TwoFAAuthentificationMethod.disabled:
         return await login_granted_response(request, user=user)
 
-    # check phone
+    # Check phone for SMS authentication
     if (
         user_2fa_authentification_method == TwoFAAuthentificationMethod.sms
         and not user["phone"]
