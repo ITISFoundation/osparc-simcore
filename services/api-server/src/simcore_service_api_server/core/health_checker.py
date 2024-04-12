@@ -8,15 +8,14 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
-from prometheus_client import CollectorRegistry, Gauge
 from pydantic import NonNegativeInt, PositiveFloat, PositiveInt
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.dependencies import get_app
 from servicelib.rabbitmq import RabbitMQClient
-from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
-from simcore_service_api_server.services.log_streaming import LogDistributor
 
 from .._meta import PROJECT_NAME
+from ..models.schemas.jobs import JobID, JobLog
+from ..services.log_streaming import LogDistributor
 
 METRICS_NAMESPACE: Final[str] = PROJECT_NAME.replace("-", "_")
 
@@ -27,29 +26,16 @@ class ApiServerHealthChecker:
     def __init__(
         self,
         *,
-        registry: CollectorRegistry,
         log_distributor: LogDistributor,
         rabbit_client: RabbitMQClient,
         timeout_seconds: PositiveFloat,
         allowed_health_check_failures: PositiveInt,
     ) -> None:
-        self._registry = registry
         self._log_distributor: LogDistributor = log_distributor
         self._rabbit_client: RabbitMQClient = rabbit_client
         self._timeout_seconds = timeout_seconds
         self._allowed_health_check_failures = allowed_health_check_failures
 
-        self._logstreaming_queues_gauge = Gauge(
-            "log_stream_queue_length",
-            "#Logs in log streaming queue",
-            ["job_id"],
-            namespace=METRICS_NAMESPACE,
-        )
-        self._health_check_qauge = Gauge(
-            "log_stream_health_check",
-            "#Failures of log stream health check",
-            namespace=METRICS_NAMESPACE,
-        )
         self._health_check_failure_count: NonNegativeInt = 0
         self._dummy_job_id: JobID = uuid4()
         self._dummy_queue: asyncio.Queue[JobLog] = asyncio.Queue()
@@ -81,19 +67,14 @@ class ApiServerHealthChecker:
     def healthy(self) -> bool:
         return self._health_check_failure_count <= self._allowed_health_check_failures
 
+    @property
+    def health_check_failure_count(self) -> NonNegativeInt:
+        return self._health_check_failure_count
+
     def _increment_health_check_failure_count(self):
         self._health_check_failure_count += 1
 
     async def _background_task_method(self):
-        # update prometheus metrics
-        self._health_check_qauge.clear()
-        self._health_check_qauge.set(self._health_check_failure_count)
-        self._logstreaming_queues_gauge.clear()
-        log_queue_sizes = self._log_distributor.get_log_queue_sizes()
-        for job_id, length in log_queue_sizes.items():
-            self._logstreaming_queues_gauge.labels(job_id=job_id).set(length)
-
-        # check health
         while self._dummy_queue.qsize() > 0:
             _ = self._dummy_queue.get_nowait()
         try:

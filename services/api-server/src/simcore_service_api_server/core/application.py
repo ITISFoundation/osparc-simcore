@@ -27,6 +27,7 @@ from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..services import catalog, director_v2, storage, webserver
 from ..services.rabbitmq import setup_rabbitmq
+from ._prometheus_instrumentation import setup_prometheus_instrumentation
 from .events import create_start_app_handler, create_stop_app_handler
 from .openapi import override_openapi_method, use_route_names_as_operation_ids
 from .settings import ApplicationSettings
@@ -125,6 +126,9 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         from ._profiler_middleware import ApiServerProfilerMiddleware
 
         app.add_middleware(ApiServerProfilerMiddleware)
+
+    if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        instrumentator = setup_prometheus_instrumentation(app)
 
     # routing
 

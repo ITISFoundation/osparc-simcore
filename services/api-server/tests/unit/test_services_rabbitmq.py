@@ -47,7 +47,12 @@ from simcore_service_api_server.services.log_streaming import (
     LogStreamerNotRegistered,
     LogStreamerRegistionConflict,
 )
-from tenacity import AsyncRetrying, retry_if_not_exception_type, stop_after_delay
+from tenacity import (
+    AsyncRetrying,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    stop_after_delay,
+)
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -73,6 +78,8 @@ def app_environment(
         {
             **rabbit_env_vars_dict,
             "API_SERVER_POSTGRES": "null",
+            "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
+            "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
         },
     )
 
@@ -275,7 +282,9 @@ async def test_log_distributor_register_deregister(
     await asyncio.sleep(0.5)
     await log_distributor.deregister(project_id)
 
-    assert len(log_distributor._log_streamers.keys()) == 0
+    assert (
+        len(log_distributor._log_streamers.keys()) == 1
+    )  # the health check log queu is still there
     assert len(collected_logs) > 0
     assert set(collected_logs).issubset(
         set(published_logs)
@@ -404,8 +413,18 @@ async def test_log_streamer_with_distributor(
         collected_messages.append(job_log.messages[0])
 
     publish_task.cancel()
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        stop=stop_after_attempt(5),
+        retry=retry_if_not_exception_type(AssertionError),
+    ):
+        with attempt:
+            await asyncio.sleep(10)
+            assert publish_task.cancelled() == True
+
     assert len(published_logs) > 0
     assert published_logs == collected_messages
+    print("this")
 
 
 async def test_log_streamer_not_raise_with_distributor(
