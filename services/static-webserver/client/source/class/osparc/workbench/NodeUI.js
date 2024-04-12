@@ -487,6 +487,24 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __setProbeValue: function(label) {
+      const replaceByLinkLabel = val => {
+        const download = true;
+        const locationId = val.store;
+        const fileId = val.path;
+        osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
+          .then(presignedLinkData => {
+            if ("resp" in presignedLinkData && presignedLinkData.resp) {
+              const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
+              const linkLabel = new osparc.ui.basic.LinkLabel(filename, presignedLinkData.resp.link).set({
+                font: "link-label-12"
+              });
+              const chipContainer = this.getChildControl("chips");
+              chipContainer.remove(label);
+              chipContainer.add(linkLabel);
+            }
+          });
+      }
+
       const link = this.getNode().getLink("in_1");
       if (link && "nodeUuid" in link) {
         const inputNodeId = link["nodeUuid"];
@@ -500,27 +518,12 @@ qx.Class.define("osparc.workbench.NodeUI", {
                 if (this.getNode().getMetaData()["key"].includes("probe/array")) {
                   return "[" + val.join(",") + "]";
                 } else if (this.getNode().getMetaData()["key"].includes("probe/file")) {
-                  const download = true;
-                  const locationId = val.store;
-                  const fileId = val.path;
                   const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
                   label.set({
                     font: "text-12",
                     rich: true
                   });
-                  osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
-                    .then(presignedLinkData => {
-                      if ("resp" in presignedLinkData && presignedLinkData.resp) {
-                        const linkColor = qx.theme.manager.Color.getInstance().resolve("text");
-                        const downloadLink = `<a href="${presignedLinkData.resp.link}" style="color:${linkColor}" target="_blank">${filename}</a>`;
-                        label.set({
-                          value: downloadLink,
-                          cursor: "pointer",
-                          font: "link-label-12",
-                          rich: true
-                        });
-                      }
-                    });
+                  replaceByLinkLabel(val);
                   return filename;
                 }
                 return String(val);
