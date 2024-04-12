@@ -7,8 +7,7 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, PositiveInt, SecretStr, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.error_codes import create_error_code
-from servicelib.logging_utils import LogExtra, get_log_record_extra, log_context
+from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
@@ -42,7 +41,6 @@ from ._constants import (
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
     MSG_2FA_CODE_SENT,
-    MSG_2FA_UNAVAILABLE_OEC,
     MSG_EMAIL_SENT,
     MSG_LOGGED_OUT,
     MSG_PHONE_MISSING,
@@ -52,6 +50,7 @@ from ._constants import (
 from ._models import InputSchema
 from ._security import login_granted_response
 from .decorators import login_required
+from .errors import handle_login_exceptions
 from .settings import LoginSettingsForProduct, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import envelope_response, flash_response, notify_user_logout
@@ -91,6 +90,7 @@ class LoginNextPage(NextPage[CodePageParams]):
     name="auth_resend_2fa_code",
     max_access_count=MAX_2FA_CODE_RESEND,
 )
+@handle_login_exceptions
 async def login(request: web.Request):
     """Login: user submits an email (identification) and a password
 
@@ -158,7 +158,7 @@ async def login(request: web.Request):
                     "message": MSG_PHONE_MISSING,
                     "next_url": f"{request.app.router['auth_register_phone'].url_for()}",
                 },
-                # TODO: MD: REMOVE (everywhere also bellow)
+                # NOTE: REMOVE when frontend is refactored
                 "code": CODE_PHONE_NUMBER_REQUIRED,
                 "reason": MSG_PHONE_MISSING,
             },
@@ -178,48 +178,34 @@ async def login(request: web.Request):
         assert settings.LOGIN_TWILIO  # nosec
         assert product.twilio_messaging_sid  # nosec
 
-        try:
-            await send_sms_code(
-                phone_number=user["phone"],
-                code=code,
-                twilo_auth=settings.LOGIN_TWILIO,
-                twilio_messaging_sid=product.twilio_messaging_sid,
-                twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-                first_name=user["first_name"],
-            )
+        await send_sms_code(
+            phone_number=user["phone"],
+            code=code,
+            twilo_auth=settings.LOGIN_TWILIO,
+            twilio_messaging_sid=product.twilio_messaging_sid,
+            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
+            first_name=user["first_name"],
+            user_id=user["id"],
+        )
 
-            return envelope_response(
-                # LoginNextPage
-                {
-                    "name": CODE_2FA_SMS_CODE_REQUIRED,
-                    "parameters": {
-                        "message": MSG_2FA_CODE_SENT.format(
-                            phone_number=mask_phone_number(user["phone"])
-                        ),
-                        "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-                    },
-                    "code": CODE_2FA_SMS_CODE_REQUIRED,
-                    "reason": MSG_2FA_CODE_SENT.format(
+        return envelope_response(
+            # LoginNextPage
+            {
+                "name": CODE_2FA_SMS_CODE_REQUIRED,
+                "parameters": {
+                    "message": MSG_2FA_CODE_SENT.format(
                         phone_number=mask_phone_number(user["phone"])
                     ),
+                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
-                status=status.HTTP_202_ACCEPTED,
-            )
-
-        except Exception as exc:
-            error_code = create_error_code(exc)
-            more_extra: LogExtra = get_log_record_extra(user_id=user.get("id")) or {}
-            log.exception(
-                "Failed while setting up 2FA code and sending SMS to %s [%s]",
-                mask_phone_number(user.get("phone", "Unknown")),
-                f"{error_code}",
-                extra={"error_code": error_code, **more_extra},
-            )
-            raise web.HTTPServiceUnavailable(
-                reason=MSG_2FA_UNAVAILABLE_OEC.format(error_code=error_code),
-                content_type=MIMETYPE_APPLICATION_JSON,
-            ) from exc
-
+                # NOTE: REMOVE when frontend is refactored
+                "code": CODE_2FA_SMS_CODE_REQUIRED,
+                "reason": MSG_2FA_CODE_SENT.format(
+                    phone_number=mask_phone_number(user["phone"])
+                ),
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
     else:
         assert (
             user_2fa_authentification_method == TwoFAAuthentificationMethod.email
@@ -231,6 +217,7 @@ async def login(request: web.Request):
             code=code,
             first_name=user["first_name"] or user["name"],
             product=product,
+            user_id=user["id"],
         )
         return envelope_response(
             {
@@ -239,6 +226,7 @@ async def login(request: web.Request):
                     "message": MSG_EMAIL_SENT.format(email=user["email"]),
                     "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
+                # NOTE: REMOVE when frontend is refactored
                 "code": CODE_2FA_EMAIL_CODE_REQUIRED,
                 "reason": MSG_EMAIL_SENT.format(email=user["email"]),
             },

@@ -1,6 +1,5 @@
 import logging
-from contextlib import contextmanager
-from typing import Any, Literal
+from typing import Literal
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -8,7 +7,6 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ..products.api import Product, get_current_product
@@ -23,36 +21,12 @@ from ._2fa_api import (
 )
 from ._constants import MSG_2FA_CODE_SENT, MSG_EMAIL_SENT, MSG_UNKNOWN_EMAIL
 from ._models import InputSchema
+from .errors import handle_login_exceptions
 from .settings import LoginSettingsForProduct, get_plugin_settings
 from .storage import AsyncpgStorage, get_plugin_storage
 from .utils import envelope_response
 
-log = logging.getLogger(__name__)
-
-
-@contextmanager
-def handling_send_errors(user: dict[str, Any]):
-    try:
-
-        yield
-
-    except web.HTTPException:
-        raise
-
-    except Exception as err:  # pylint: disable=broad-except
-        # Unhandled errors -> 503
-        error_code = create_error_code(err)
-        log.exception(
-            "Failed to send 2FA via SMS or Email %s [%s]",
-            f"{user=}",
-            f"{error_code}",
-            extra={"error_code": error_code},
-        )
-
-        raise web.HTTPServiceUnavailable(
-            reason=f"Currently we cannot resend 2FA code ({error_code})",
-            content_type=MIMETYPE_APPLICATION_JSON,
-        ) from err
+_logger = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
@@ -68,6 +42,7 @@ class Resend2faBody(InputSchema):
     name="auth_resend_2fa_code",
     one_time_access=False,
 )
+@handle_login_exceptions
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email"""
     product: Product = get_current_product(request)
@@ -94,59 +69,60 @@ async def resend_2fa_code(request: web.Request):
     if previous_code is not None:
         await delete_2fa_code(request.app, user_email=resend_2fa_.email)
 
-    with handling_send_errors(user):
-        # guaranteed by LoginSettingsForProduct
-        assert settings.LOGIN_2FA_REQUIRED  # nosec
-        assert settings.LOGIN_TWILIO  # nosec
-        assert product.twilio_messaging_sid  # nosec
+    # guaranteed by LoginSettingsForProduct
+    assert settings.LOGIN_2FA_REQUIRED  # nosec
+    assert settings.LOGIN_TWILIO  # nosec
+    assert product.twilio_messaging_sid  # nosec
 
-        # creates and stores code
-        code = await create_2fa_code(
-            request.app,
-            user_email=user["email"],
-            expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+    # creates and stores code
+    code = await create_2fa_code(
+        request.app,
+        user_email=user["email"],
+        expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+    )
+
+    # sends via SMS
+    if resend_2fa_.via == "SMS":
+        await send_sms_code(
+            phone_number=user["phone"],
+            code=code,
+            twilo_auth=settings.LOGIN_TWILIO,
+            twilio_messaging_sid=product.twilio_messaging_sid,
+            twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
+            first_name=user["first_name"] or user["name"],
+            user_id=user["id"],
         )
 
-        # sends via SMS
-        if resend_2fa_.via == "SMS":
-            await send_sms_code(
-                phone_number=user["phone"],
-                code=code,
-                twilo_auth=settings.LOGIN_TWILIO,
-                twilio_messaging_sid=product.twilio_messaging_sid,
-                twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-                first_name=user["first_name"] or user["name"],
-            )
+        response = envelope_response(
+            {
+                "reason": MSG_2FA_CODE_SENT.format(
+                    phone_number=mask_phone_number(user["phone"])
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
 
-            response = envelope_response(
-                {
-                    "reason": MSG_2FA_CODE_SENT.format(
-                        phone_number=mask_phone_number(user["phone"])
-                    ),
-                },
-                status=status.HTTP_200_OK,
-            )
+    # sends via Email
+    else:
+        assert resend_2fa_.via == "Email"  # nosec
+        await send_email_code(
+            request,
+            user_email=user["email"],
+            support_email=product.support_email,
+            code=code,
+            first_name=user["first_name"] or user["name"],
+            product=product,
+            user_id=user["id"],
+        )
 
-        # sends via Email
-        else:
-            assert resend_2fa_.via == "Email"  # nosec
-            await send_email_code(
-                request,
-                user_email=user["email"],
-                support_email=product.support_email,
-                code=code,
-                first_name=user["first_name"] or user["name"],
-                product=product,
-            )
+        response = envelope_response(
+            {
+                "name": "SMS_CODE_REQUIRED",
+                "reason": MSG_EMAIL_SENT.format(email=user["email"]),
+                "parameters": {"expiration_time": 120},
+                "code": "SMS_CODE_REQUIRED",
+            },
+            status=status.HTTP_200_OK,
+        )
 
-            response = envelope_response(
-                {
-                    "name": "SMS_CODE_REQUIRED",
-                    "reason": MSG_EMAIL_SENT.format(email=user["email"]),
-                    "parameters": {"expiration_time": 120},
-                    "code": "SMS_CODE_REQUIRED",
-                },
-                status=status.HTTP_200_OK,
-            )
-
-        return response
+    return response
