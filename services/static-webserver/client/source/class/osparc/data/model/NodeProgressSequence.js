@@ -95,7 +95,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       HALO: 1,
     },
 
-    createTitleAtom: function(label) {
+    createTaskLayout: function(label) {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
       })).set({
@@ -175,12 +175,12 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
   members: {
     __mainLoadingPage: null,
     __overallProgressBar: null,
-    __clusterUpScalingTitle: null,
-    __pullingSidecarTitle: null,
-    __pullingOutputsTitle: null,
-    __pullingStateTitle: null,
-    __pullingImagesTitle: null,
-    __pullingInputsTitle: null,
+    __clusterUpScalingLayout: null,
+    __pullingSidecarLayout: null,
+    __pullingOutputsLayout: null,
+    __pullingStateLayout: null,
+    __pullingImagesLayout: null,
+    __pullingInputsLayout: null,
     __disclaimerText: null,
 
     getWidgetForLoadingPage: function() {
@@ -256,23 +256,23 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       disclaimerText.exclude();
 
 
-      const scalingTitle = this.__clusterUpScalingTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Increasing system capacity..."));
-      sequenceLoadingPage.add(scalingTitle);
+      const scalingLayout = this.__clusterUpScalingLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Increasing system capacity..."));
+      sequenceLoadingPage.add(scalingLayout);
 
-      const pullingInputsTitle = this.__pullingInputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your input data..."));
-      sequenceLoadingPage.add(pullingInputsTitle);
+      const pullingInputsLayout = this.__pullingInputsLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your input data..."));
+      sequenceLoadingPage.add(pullingInputsLayout);
 
-      const pullingSidecarTitle = this.__pullingSidecarTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Setting up key components..."));
-      sequenceLoadingPage.add(pullingSidecarTitle);
+      const pullingSidecarLayout = this.__pullingSidecarLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Setting up key components..."));
+      sequenceLoadingPage.add(pullingSidecarLayout);
 
-      const pullingOutputsTitle = this.__pullingOutputsTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your output data..."));
-      sequenceLoadingPage.add(pullingOutputsTitle);
+      const pullingOutputsLayout = this.__pullingOutputsLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your output data..."));
+      sequenceLoadingPage.add(pullingOutputsLayout);
 
-      const pullingStateTitle = this.__pullingStateTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Retrieving your work..."));
-      sequenceLoadingPage.add(pullingStateTitle);
+      const pullingStateLayout = this.__pullingStateLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your work..."));
+      sequenceLoadingPage.add(pullingStateLayout);
 
-      const pullingImagesTitle = this.__pullingImagesTitle = this.self().createTitleAtom(qx.locale.Manager.tr("Installing software..."));
-      sequenceLoadingPage.add(pullingImagesTitle);
+      const pullingImagesLayout = this.__pullingImagesLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Installing software..."));
+      sequenceLoadingPage.add(pullingImagesLayout);
 
       this.__mainLoadingPage.addAt(sequenceLoadingPage, 0, {
         flex: 1
@@ -305,7 +305,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __applyClusterUpScaling: function(value) {
-      this.self().updateProgressLabel(this.__clusterUpScalingTitle, value);
+      this.self().updateProgressLabel(this.__clusterUpScalingLayout, value);
 
       this.__computeOverallProgress();
     },
@@ -314,7 +314,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       if (value > 0) {
         this.setClusterUpScaling(1);
       }
-      this.self().updateProgressLabel(this.__pullingSidecarTitle, value);
+      this.self().updateProgressLabel(this.__pullingSidecarLayout, value);
 
       this.__computeOverallProgress();
     },
@@ -323,7 +323,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       if (value > 0) {
         this.setSidecarPulling(1);
       }
-      this.self().updateProgressLabel(this.__pullingOutputsTitle, value);
+      this.self().updateProgressLabel(this.__pullingOutputsLayout, value);
 
       this.__computeOverallProgress();
     },
@@ -332,7 +332,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       if (value > 0) {
         this.setSidecarPulling(1);
       }
-      this.self().updateProgressLabel(this.__pullingStateTitle, value);
+      this.self().updateProgressLabel(this.__pullingStateLayout, value);
 
       this.__computeOverallProgress();
     },
@@ -341,7 +341,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       if (value > 0) {
         this.setSidecarPulling(1);
       }
-      this.self().updateProgressLabel(this.__pullingImagesTitle, value);
+      this.self().updateProgressLabel(this.__pullingImagesLayout, value);
 
       this.__computeOverallProgress();
     },
@@ -350,7 +350,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       if (value > 0) {
         this.setSidecarPulling(1);
       }
-      this.self().updateProgressLabel(this.__pullingInputsTitle, value);
+      this.self().updateProgressLabel(this.__pullingInputsLayout, value);
 
       this.__computeOverallProgress();
     }
