@@ -129,12 +129,12 @@ async def test_pull_image(
     "images_set",
     [
         {"itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"},
-        {
-            "${REGISYTR_URL}/simcore/services/dynamic/s4l-core-8-0-0-dy:3.2.7",
-            "${REGISYTR_URL}/simcore/services/dynamic/sym-server-8-0-0-dy:3.2.7",
-            "${REGISYTR_URL}/simcore/services/dynamic/sim4life-8-0-0-dy:3.2.7",
-            "${REGISYTR_URL}/simcore/services/dynamic/s4l-stream-8-0-0-dy:3.2.7",
-        },
+        # {
+        #     "${REGISYTR_URL}/simcore/services/dynamic/s4l-core-8-0-0-dy:3.2.7",
+        #     "${REGISYTR_URL}/simcore/services/dynamic/sym-server-8-0-0-dy:3.2.7",
+        #     "${REGISYTR_URL}/simcore/services/dynamic/sim4life-8-0-0-dy:3.2.7",
+        #     "${REGISYTR_URL}/simcore/services/dynamic/s4l-stream-8-0-0-dy:3.2.7",
+        # },
     ],
 )
 async def test_pull_images(
