@@ -45,6 +45,7 @@ def r_clone_settings(faker: Faker) -> RCloneSettings:
             "R_CLONE_S3": {
                 "S3_ENDPOINT": faker.url(),
                 "S3_ACCESS_KEY": faker.pystr(),
+                "S3_REGION": faker.pystr(),
                 "S3_SECRET_KEY": faker.pystr(),
                 "S3_BUCKET_NAME": faker.pystr(),
             },
