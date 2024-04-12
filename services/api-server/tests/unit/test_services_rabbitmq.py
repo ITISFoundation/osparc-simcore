@@ -47,12 +47,7 @@ from simcore_service_api_server.services.log_streaming import (
     LogStreamerNotRegistered,
     LogStreamerRegistionConflict,
 )
-from tenacity import (
-    AsyncRetrying,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    stop_after_delay,
-)
+from tenacity import AsyncRetrying, retry_if_not_exception_type, stop_after_delay
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -108,14 +103,15 @@ def node_id(faker: Faker) -> NodeID:
 
 @pytest.fixture
 async def log_distributor(
-    client: httpx.AsyncClient, app: FastAPI
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ) -> AsyncIterable[LogDistributor]:
-    yield get_log_distributor(app)
+    log_distributor = LogDistributor(create_rabbitmq_client("log_distributor_client"))
+    await log_distributor.setup()
+    yield log_distributor
+    await log_distributor.teardown()
 
 
 async def test_subscribe_publish_receive_logs(
-    client: httpx.AsyncClient,
-    app: FastAPI,
     faker: Faker,
     user_id: UserID,
     project_id: ProjectID,
@@ -282,9 +278,7 @@ async def test_log_distributor_register_deregister(
     await asyncio.sleep(0.5)
     await log_distributor.deregister(project_id)
 
-    assert (
-        len(log_distributor._log_streamers.keys()) == 1
-    )  # the health check log queu is still there
+    assert len(log_distributor._log_streamers.keys()) == 0
     assert len(collected_logs) > 0
     assert set(collected_logs).issubset(
         set(published_logs)
@@ -386,8 +380,6 @@ async def log_streamer_with_distributor(
 
 
 async def test_log_streamer_with_distributor(
-    client: httpx.AsyncClient,
-    app: FastAPI,
     project_id: ProjectID,
     node_id: NodeID,
     produce_logs: Callable,
@@ -412,24 +404,18 @@ async def test_log_streamer_with_distributor(
         assert job_log.job_id == project_id
         collected_messages.append(job_log.messages[0])
 
-    publish_task.cancel()
-    async for attempt in AsyncRetrying(
-        reraise=True,
-        stop=stop_after_attempt(5),
-        retry=retry_if_not_exception_type(AssertionError),
-    ):
-        with attempt:
-            await asyncio.sleep(10)
-            assert publish_task.cancelled() == True
+    if not publish_task.done():
+        publish_task.cancel()
+        try:
+            await publish_task
+        except asyncio.CancelledError:
+            pass
 
     assert len(published_logs) > 0
     assert published_logs == collected_messages
-    print("this")
 
 
 async def test_log_streamer_not_raise_with_distributor(
-    client: httpx.AsyncClient,
-    app: FastAPI,
     user_id,
     project_id: ProjectID,
     node_id: NodeID,
