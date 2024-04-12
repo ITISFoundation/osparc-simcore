@@ -3,6 +3,8 @@
 # pylint: disable=unused-variable
 
 
+import functools
+import io
 import json
 import time
 from pathlib import Path
@@ -13,8 +15,30 @@ from models_library.generated_models.docker_rest_api import File, JobStatus
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.pagination import OnePage
+from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
 from simcore_service_api_server.models.schemas.studies import StudyPort
+
+
+def _handle_http_status_error(func):
+    @functools.wraps(func)
+    async def _handler(self, *args, **kwargs):
+        try:
+            return await func(self, *args, **kwargs)
+
+        except httpx.HTTPStatusError as exc:
+            # rewrite exception's message
+            with io.StringIO() as sio:
+                print(exc, file=sio)
+                for e in ErrorGet(**exc.response.json()).errors:
+                    print("\t", e, file=sio)
+                msg = sio.getvalue()
+
+            raise httpx.HTTPStatusError(
+                message=msg, request=exc.request, response=exc.response
+            ) from exc
+
+    return _handler
 
 
 class _BaseApi:
@@ -27,8 +51,9 @@ class _BaseApi:
 
 
 class FilesApi(_BaseApi):
+    @_handle_http_status_error
     async def upload_file(self, file: Path) -> File:
-        resp: httpx.Response = await self._client.put(
+        resp = await self._client.put(
             f"{API_VTAG}/files/content",
             files={"upload-file": file.open("rb")},
             **self._req_kw,
@@ -36,6 +61,7 @@ class FilesApi(_BaseApi):
         resp.raise_for_status()
         return File(**resp.json())
 
+    @_handle_http_status_error
     async def download_file(self, file_id, suffix=".downloaded") -> Path:
         assert self._tmp_path
 
@@ -55,6 +81,7 @@ class FilesApi(_BaseApi):
 
 
 class StudiesApi(_BaseApi):
+    @_handle_http_status_error
     async def list_study_ports(self, study_id):
         resp = await self._client.get(
             f"/v0/studies/{study_id}/ports",
@@ -63,6 +90,7 @@ class StudiesApi(_BaseApi):
         resp.raise_for_status()
         return OnePage[StudyPort](**resp.json())
 
+    @_handle_http_status_error
     async def create_study_job(self, study_id, job_inputs: dict) -> Job:
         resp = await self._client.post(
             f"{API_VTAG}/studies/{study_id}/jobs",
@@ -72,6 +100,7 @@ class StudiesApi(_BaseApi):
         resp.raise_for_status()
         return Job(**resp.json())
 
+    @_handle_http_status_error
     async def start_study_job(self, study_id, job_id) -> JobStatus:
         resp = await self._client.post(
             f"{API_VTAG}/studies/{study_id}/jobs/{job_id}:start",
@@ -80,6 +109,7 @@ class StudiesApi(_BaseApi):
         resp.raise_for_status()
         return JobStatus(**resp.json())
 
+    @_handle_http_status_error
     async def inspect_study_job(self, study_id, job_id) -> JobStatus:
         resp = await self._client.get(
             f"/v0/studies/{study_id}/jobs/{job_id}:inspect",
@@ -88,6 +118,7 @@ class StudiesApi(_BaseApi):
         resp.raise_for_status()
         return JobStatus(**resp.json())
 
+    @_handle_http_status_error
     async def get_study_job_outputs(self, study_id, job_id) -> JobOutputs:
         resp = await self._client.post(
             f"{API_VTAG}/studies/{study_id}/jobs/{job_id}/outputs",
@@ -96,6 +127,7 @@ class StudiesApi(_BaseApi):
         resp.raise_for_status()
         return JobOutputs(**resp.json())
 
+    @_handle_http_status_error
     async def delete_study_job(self, study_id, job_id) -> None:
         resp = await self._client.delete(
             f"{API_VTAG}/studies/{study_id}/jobs/{job_id}",
@@ -163,20 +195,28 @@ def test_py_path(tmp_path: Path) -> Path:
 async def test_run_study_workflow(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_webserver_service_api_base: MockRouter,
+    # mocked_webserver_service_api_base: MockRouter,
     tmp_path: Path,
     input_json_path: Path,
     input_data_path: Path,
     test_py_path: Path,
 ):
-    template_id = "5b01fb90-f59f-11ee-9635-02420a140047"
+    template_id = "aeab71fe-f71b-11ee-8fca-0242ac140008"
 
     files_api = FilesApi(client, tmp_path, auth=auth)
     studies_api = StudiesApi(client, auth=auth)
 
     # lists
     study_ports = await studies_api.list_study_ports(study_id=template_id)
-    assert study_ports.total == 2
+    assert study_ports.total == 3
+    # TODO: file-pickers are not considered ports  but can be set as inputs! This is inconsistent!
+    # TODO: Expose Models in web-server.
+    # TODO: file ports do not have schema !!
+    # {
+    #   "key": "0b8042c4-501a-4f9b-b2fa-17f860548b33",
+    #   "kind": "output",
+    #   "content_schema": null
+    # },
 
     # uploads input files
     test_py_file = await files_api.upload_file(file=test_py_path)
