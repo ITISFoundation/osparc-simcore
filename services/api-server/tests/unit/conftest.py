@@ -74,6 +74,8 @@ def app_environment(
             "API_SERVER_RABBITMQ": "null",
             "LOG_LEVEL": "debug",
             "SC_BOOT_MODE": "production",
+            "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
+            "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
         },
     )
 
@@ -89,7 +91,7 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
     if settings.API_SERVER_RABBITMQ is None:
         mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
         mocker.patch(
-            "simcore_service_api_server.core.application.setup_prometheus_instrumentation"
+            "simcore_service_api_server.core._prometheus_instrumentation.setup_prometheus_instrumentation"
         )
     return app_environment
 
@@ -107,7 +109,7 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     #
 
     # LifespanManager will trigger app's startup&shutown event handlers
-    async with LifespanManager(app), httpx.AsyncClient(
+    async with LifespanManager(app, shutdown_timeout=60), httpx.AsyncClient(
         base_url="http://api.testserver.io",
         headers={"Content-Type": "application/json"},
         transport=ASGITransport(app=app),

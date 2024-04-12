@@ -89,6 +89,7 @@ class LogDistributor:
         )
         del self._log_streamers[job_id]
 
+    @property
     def get_log_queue_sizes(self) -> dict[JobID, int]:
         return {k: v.qsize() for k, v in self._log_streamers.items()}
 
