@@ -128,7 +128,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __selectedItemId: null,
     __startHint: null,
     __toolHint: null,
-    __dropMe: null,
+    __dropHereNodeUI: null,
     __selectionRectInitPos: null,
     __selectionRectRepr: null,
     __panning: null,
@@ -321,16 +321,50 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       return srvCat;
     },
 
-    __addNode: async function(service, pos) {
-      const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion()).catch(err => {
-        console.error(err);
-        return null;
+    __createTemporaryNodeUI: function(pos) {
+      const boxWidth = osparc.workbench.NodeUI.NODE_WIDTH;
+      const boxHeight = osparc.workbench.NodeUI.NODE_HEIGHT;
+      const circleSize = 26;
+      const temporaryNodeUI = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/"+circleSize).set({
+        opacity: 0.8
       });
-      const newNodeUI = this._createNodeUI(node.getNodeId());
-      this._addNodeUIToWorkbench(newNodeUI, pos);
-      qx.ui.core.queue.Layout.flush();
-      this.__createDragDropMechanism(newNodeUI);
-      return newNodeUI;
+      temporaryNodeUI.getContentElement().addClass("rotate");
+      this.__workbenchLayout.add(temporaryNodeUI);
+      temporaryNodeUI.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
+      temporaryNodeUI.setLayoutProperties({
+        left: pos.x + parseInt(boxWidth/2) - parseInt(circleSize/2),
+        top: pos.y + parseInt(boxHeight/2) - parseInt(circleSize/2)
+      });
+      osparc.wrapper.Svg.updateItemPos(temporaryNodeUI.rect, pos.x, pos.y);
+
+      return temporaryNodeUI;
+    },
+
+    __removeTemporaryNodeUI: function(temporaryNodeUI) {
+      temporaryNodeUI.exclude();
+      osparc.wrapper.Svg.removeItem(temporaryNodeUI.rect);
+      this.__workbenchLayout.add(temporaryNodeUI);
+      temporaryNodeUI = null;
+    },
+
+    __addNode: async function(service, pos) {
+      // render temporary node
+      let tempNodeUI = this.__createTemporaryNodeUI(pos);
+
+      let nodeUI = null;
+      try {
+        const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
+        nodeUI = this._createNodeUI(node.getNodeId());
+        this._addNodeUIToWorkbench(nodeUI, pos);
+        qx.ui.core.queue.Layout.flush();
+        this.__createDragDropMechanism(nodeUI);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        // remove temporary node
+        this.__removeTemporaryNodeUI(tempNodeUI);
+      }
+      return nodeUI;
     },
 
     __getNodesBounds: function() {
@@ -1745,16 +1779,16 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __updateWidgets: function(dragging, posX, posY) {
       const boxWidth = 120;
       const boxHeight = 60;
-      if (this.__dropMe === null) {
-        const dropHint = this.__dropMe = new qx.ui.basic.Label(this.tr("Drop me")).set({
+      if (this.__dropHereNodeUI === null) {
+        const dropHereNodeUI = this.__dropHereNodeUI = new qx.ui.basic.Label(this.tr("Drop here")).set({
           font: "workbench-start-hint",
           textColor: "workbench-start-hint"
         });
-        dropHint.exclude();
-        this.__workbenchLayout.add(dropHint);
-        dropHint.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
+        dropHereNodeUI.exclude();
+        this.__workbenchLayout.add(dropHereNodeUI);
+        dropHereNodeUI.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
       }
-      const dropMe = this.__dropMe;
+      const dropMe = this.__dropHereNodeUI;
       if (dragging) {
         dropMe.show();
         const dropMeBounds = dropMe.getBounds() || dropMe.getSizeHint();
@@ -1963,9 +1997,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __removeDropHint: function() {
-      this.__dropMe.setVisibility("excluded");
-      osparc.wrapper.Svg.removeItem(this.__dropMe.rect);
-      this.__dropMe = null;
+      this.__dropHereNodeUI.setVisibility("excluded");
+      osparc.wrapper.Svg.removeItem(this.__dropHereNodeUI.rect);
+      this.__dropHereNodeUI = null;
     }
   }
 });

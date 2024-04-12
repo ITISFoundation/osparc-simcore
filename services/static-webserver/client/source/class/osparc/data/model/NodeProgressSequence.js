@@ -20,8 +20,7 @@
  *
  * [CLUSTER_UP_SCALING]
  * [SIDECARS_PULLING]
- * [SERVICE_OUTPUTS_PULLING, SERVICE_STATE_PULLING] (notice the parallelism here)
- * [SERVICE_IMAGES_PULLING]
+ * [SERVICE_OUTPUTS_PULLING, SERVICE_STATE_PULLING, SERVICE_IMAGES_PULLING] (notice the parallelism here)
  * [SERVICE_INPUTS_PULLING] (when this happens, the frontend has already loaded the service and is displaying it to the user) I would still keep it as is, when we decide to make inputs pulling part of the boot sequence this will be helpful.
  *
  * This class provides different widgets that render the progress status
@@ -90,27 +89,46 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
   },
 
   statics: {
+    NODE_INDEX: {
+      LABEL: 0,
+      HALO: 1,
+    },
     createTitleAtom: function(label) {
-      const atom = new qx.ui.basic.Atom().set({
-        label,
-        iconPosition: "right",
-        font: "text-14",
-        icon: "@FontAwesome5Solid/circle-notch/14",
-        gap: 15,
-        margin: [5, 10]
-      });
-      const lbl = atom.getChildControl("label");
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "middle"
+      }));
+      const lbl = this.__label = new qx.ui.basic.Label(label);
       lbl.set({
+        textColor: "text",
         allowGrowX: true,
-        allowShrinkX: true
-      })
-      const icon = atom.getChildControl("icon");
-      icon.set({
+        allowShrinkX: true,
+      });
+      layout.addAt(lbl, this.NODE_INDEX.LABEL, {
+        flex: 1
+      });
+
+      const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+        alignY: "middle",
+        alignX: "center",
+      })).set({
+        height: 18,
+        width: 18,
+        allowGrowY: false,
         allowGrowX: false,
-        allowShrinkX: false
+      });
+      const icon = this.__ICON = new qx.ui.basic.Image(
+        "@FontAwesome5Solid/check/14"
+      ).set({
+        visibility: "excluded"
+      });
+      iconContainer.add(icon);
+      const progressColor = qx.theme.manager.Color.getInstance().resolve("progressbar");
+      osparc.service.StatusUI.getStatusHalo(iconContainer, progressColor, 0);
+      layout.addAt(iconContainer, this.NODE_INDEX.HALO);
+      layout.set({
+        padding: [2, 10]
       })
-      osparc.service.StatusUI.updateCircleAnimation(icon);
-      return atom;
+      return layout;
     },
 
     createProgressBar: function(max = 1) {
@@ -130,13 +148,19 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       }
 
       if (atom) {
+        const halo = atom.getChildren()[this.NODE_INDEX.HALO];
+        const icon = halo.getChildren()[0];
         if (value === 1) {
-          atom.setIcon("@FontAwesome5Solid/check/14");
+          icon.set({
+            visibility: "visible"
+          });
         } else {
-          atom.setIcon("@FontAwesome5Solid/circle-notch/14");
+          icon.set({
+            visibility: "excluded"
+          });
         }
-        const icon = atom.getChildControl("icon");
-        osparc.service.StatusUI.updateCircleAnimation(icon);
+        const progressColor = qx.theme.manager.Color.getInstance().resolve("progressbar")
+        osparc.service.StatusUI.getStatusHalo(halo, progressColor, value * 100);
       }
     },
 
@@ -291,7 +315,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __applySidecarPulling: function(value) {
-      if (this.getClusterUpScaling() < 1) {
+      if (value === 1) {
         this.setClusterUpScaling(1);
         const progress = this.getDefaultProgress();
         this.setDefaultProgress(progress + 1);
@@ -318,15 +342,8 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __applyImagesPulling: function(value) {
-      // [SERVICE_OUTPUTS_PULLING, SERVICE_STATE_PULLING] (notice the parallelism here)
-      // As the two previous are running in parallel we can assume if this runs both should be done when we start pulling the images
-      if (this.getOutputsPulling() < 1) {
-        this.setOutputsPulling(1);
-        const progress = this.getDefaultProgress();
-        this.setDefaultProgress(progress + 1);
-      }
-      if (this.getStatePulling() < 1) {
-        this.setStatePulling(1);
+      if (this.getSidecarPulling() < 1) {
+        this.setSidecarPulling(1);
         const progress = this.getDefaultProgress();
         this.setDefaultProgress(progress + 1);
       }
@@ -334,8 +351,8 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __applyInputsPulling: function(value) {
-      if (this.getImagesPulling() < 1) {
-        this.setImagesPulling(1);
+      if (this.getSidecarPulling() < 1) {
+        this.setSidecarPulling(1);
         const progress = this.getDefaultProgress();
         this.setDefaultProgress(progress + 1);
       }
