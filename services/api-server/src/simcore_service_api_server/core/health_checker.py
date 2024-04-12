@@ -11,6 +11,7 @@ from models_library.users import UserID
 from pydantic import NonNegativeInt, PositiveFloat, PositiveInt
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.dependencies import get_app
+from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
 
 from .._meta import PROJECT_NAME
@@ -58,10 +59,13 @@ class ApiServerHealthChecker:
             task_name="api_server_health_check_task",
         )
 
-    async def teardown(self, timeout_seconds: PositiveFloat):
-        await self._log_distributor.deregister(job_id=self._dummy_job_id)
+    async def teardown(self):
         if self._background_task:
-            await stop_periodic_task(self._background_task, timeout=timeout_seconds)
+            with log_catch(_logger, reraise=False):
+                await stop_periodic_task(
+                    self._background_task, timeout=self._timeout_seconds
+                )
+        await self._log_distributor.deregister(job_id=self._dummy_job_id)
 
     @property
     def healthy(self) -> bool:

@@ -37,9 +37,7 @@ def setup_rabbitmq(app: FastAPI) -> None:
 
     async def _on_shutdown() -> None:
         if app.state.health_checker:
-            await app.state.health_checker.teardown(
-                timeout_seconds=app.state.settings.API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS
-            )
+            await app.state.health_checker.teardown()
         if app.state.log_distributor:
             await app.state.log_distributor.teardown()
         if app.state.rabbitmq_client:
