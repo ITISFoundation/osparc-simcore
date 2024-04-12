@@ -7,8 +7,9 @@
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable, Iterable
 from pprint import pprint
-from typing import Awaitable, Callable, Final, Iterable
+from typing import Final
 
 import httpx
 import pytest
@@ -84,7 +85,7 @@ def fake_project_for_streaming(
     mocker.patch(
         "simcore_service_api_server.api.routes.solvers_jobs_getters.raise_if_job_not_associated_with_solver"
     )
-    yield fake_project
+    return fake_project
 
 
 @pytest.mark.parametrize("disconnect", [True, False])

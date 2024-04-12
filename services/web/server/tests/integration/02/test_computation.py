@@ -20,7 +20,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.json_serialization import json_dumps
-from servicelib.status_utils import get_display_name
+from servicelib.status_utils import get_code_display_name
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects
@@ -90,7 +90,7 @@ class _ExpectedResponseTuple(NamedTuple):
     # pylint: disable=no-member
     def __str__(self) -> str:
         items = ", ".join(
-            f"{k}={get_display_name(c)}" for k, c in self._asdict().items()
+            f"{k}={get_code_display_name(c)}" for k, c in self._asdict().items()
         )
         return f"{self.__class__.__name__}({items})"
 

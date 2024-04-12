@@ -1,7 +1,6 @@
 from typing import Final
 
 from fastapi import APIRouter
-from simcore_service_api_server.api.routes import solvers_jobs_getters
 
 from ..core.settings import ApplicationSettings
 from .routes import (
@@ -10,6 +9,7 @@ from .routes import (
     meta,
     solvers,
     solvers_jobs,
+    solvers_jobs_getters,
     studies,
     studies_jobs,
     users,

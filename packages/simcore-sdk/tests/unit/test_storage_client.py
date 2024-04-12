@@ -4,8 +4,8 @@
 # pylint:disable=too-many-arguments
 
 import re
-from collections.abc import AsyncIterator
-from typing import Final, Iterable
+from collections.abc import AsyncIterator, Iterable
+from typing import Final
 from uuid import uuid4
 
 import aiohttp
@@ -190,7 +190,9 @@ def storage_v0_service_mock_get_file_meta_data_not_found(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$"
     )
     if request.param == "version1":
-        # NOTE: the old storage service did not consider using a 404 for when file is not found
+        #
+        # WARNING: this is a LEGACY test. Do not modify this response.
+        #   - The old storage service did not consider using a 404 for when file is not found
         aioresponses_mocker.get(
             get_file_metadata_pattern,
             status=status.HTTP_200_OK,
