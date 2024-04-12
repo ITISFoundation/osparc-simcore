@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
+qx.Class.define("osparc.dashboard.ResourceDetails", {
   extend: osparc.ui.window.TabbedView,
 
   construct: function(resourceData) {
