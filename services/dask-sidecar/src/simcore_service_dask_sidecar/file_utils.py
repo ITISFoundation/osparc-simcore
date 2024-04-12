@@ -56,7 +56,6 @@ class ClientKWArgsDict(TypedDict, total=False):
 class S3FsSettingsDict(TypedDict):
     key: str
     secret: str
-    token: str | None
     client_kwargs: ClientKWArgsDict
 
 
@@ -67,7 +66,6 @@ def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict
     s3fs_settings: S3FsSettingsDict = {
         "key": s3_settings.S3_ACCESS_KEY,
         "secret": s3_settings.S3_SECRET_KEY,
-        "token": s3_settings.S3_ACCESS_TOKEN,
         "client_kwargs": {},
     }
     if s3_settings.S3_REGION != _DEFAULT_AWS_REGION:

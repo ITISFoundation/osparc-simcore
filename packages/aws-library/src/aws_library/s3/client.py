@@ -35,7 +35,6 @@ class SimcoreS3API:
             endpoint_url=settings.S3_ENDPOINT,
             aws_access_key_id=settings.S3_ACCESS_KEY,
             aws_secret_access_key=settings.S3_SECRET_KEY,
-            aws_session_token=settings.S3_ACCESS_TOKEN,
             region_name=settings.S3_REGION,
             config=Config(signature_version="s3v4"),
         )

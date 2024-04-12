@@ -8,7 +8,6 @@ from .basic_types import IDStr
 
 class S3Settings(BaseCustomSettings):
     S3_ACCESS_KEY: IDStr
-    S3_ACCESS_TOKEN: IDStr | None = None
     S3_BUCKET_NAME: IDStr
     S3_ENDPOINT: AnyHttpUrl | None = Field(
         default=None, description="do not define if using standard AWS"
