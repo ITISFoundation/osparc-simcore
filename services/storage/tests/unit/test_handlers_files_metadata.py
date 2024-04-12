@@ -128,7 +128,7 @@ async def test_get_file_metadata(
 
     # NOTE: This needs to be a Ok response with empty data until ALL legacy services are gone, then it should be changed to 404! see test above
     assert response.status == status.HTTP_200_OK
-    assert await response.json() == {"data": {}, "error": "No result found"}
+    assert await response.json() == {"data": None, "error": "No result found"}
 
     # now add some stuff there
     NUM_FILES = 10

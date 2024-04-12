@@ -97,7 +97,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
         # dynamic services will FAIL (sic)
         # TODO: once all legacy services are gone, remove the try except, it will default to 404
         return web.json_response(
-            {"error": "No result found", "data": {}}, dumps=json_dumps
+            {"error": "No result found", "data": None}, dumps=json_dumps
         )
 
     if request.headers.get("User-Agent") == "OpenAPI-Generator/0.1.0/python":

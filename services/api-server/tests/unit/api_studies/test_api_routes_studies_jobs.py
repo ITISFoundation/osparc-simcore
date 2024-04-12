@@ -148,7 +148,7 @@ async def test_start_stop_delete_study_job(
         body["id"] = path_param_job_id
         return body
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
         capture_file,
         [_side_effect_no_project_id]
@@ -197,7 +197,6 @@ async def test_create_study_job(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     fake_study_id: UUID,
-    faker: Faker,
 ):
     _capture_file: Final[Path] = project_tests_dir / "mocks" / "create_study_job.json"
 
@@ -208,7 +207,7 @@ async def test_create_study_job(
     ) -> Any:
         return capture.response_body
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
         _capture_file,
         [_default_side_effect] * 7,

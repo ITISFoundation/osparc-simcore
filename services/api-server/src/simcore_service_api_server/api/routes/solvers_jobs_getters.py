@@ -20,20 +20,18 @@ from pydantic import NonNegativeInt
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.models.schemas.errors import ErrorGet
-from simcore_service_api_server.services.service_exception_handling import (
-    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
-)
 from starlette.background import BackgroundTask
 
 from ...models.basic_types import LogStreamingResponse, VersionStr
 from ...models.pagination import Page, PaginationParams
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentTypes, Job, JobID, JobMetadata, JobOutputs
 from ...models.schemas.solvers import SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api, DownloadLink, NodeName
 from ...services.log_streaming import LogDistributor, LogStreamer
+from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...services.solver_job_models_converters import create_job_from_project
 from ...services.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ...services.storage import StorageApi, to_file_api_model
@@ -234,14 +232,12 @@ async def get_job_outputs(
     if product_price is not None:
         wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
         if wallet is None:
-            raise MissingWallet(
-                f"Job {project.uuid} does not have an associated wallet."
-            )
+            msg = f"Job {project.uuid} does not have an associated wallet."
+            raise MissingWallet(msg)
         wallet_with_credits = await webserver_api.get_wallet(wallet_id=wallet.wallet_id)
         if wallet_with_credits.available_credits < 0.0:
-            raise InsufficientCredits(
-                f"Wallet '{wallet_with_credits.name}' does not have any credits. Please add some before requesting solver ouputs"
-            )
+            msg = f"Wallet '{wallet_with_credits.name}' does not have any credits. Please add some before requesting solver ouputs"
+            raise InsufficientCredits(msg)
 
     outputs: dict[str, ResultsTypes] = await get_solver_output_results(
         user_id=user_id,

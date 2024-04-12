@@ -10,19 +10,12 @@ from models_library.function_services_catalog.services import file_picker
 from models_library.projects_nodes import InputID, InputTypes
 from pydantic import PositiveInt
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.api.dependencies.authentication import (
-    get_current_user_id,
-)
-from simcore_service_api_server.api.dependencies.services import get_api_client
-from simcore_service_api_server.api.dependencies.webserver import get_webserver_session
-from simcore_service_api_server.models.schemas.errors import ErrorGet
-from simcore_service_api_server.services.director_v2 import DirectorV2Api
-from simcore_service_api_server.services.solver_job_models_converters import (
-    create_jobstatus_from_task,
-)
-from simcore_service_api_server.services.webserver import AuthSession
 
+from ...api.dependencies.authentication import get_current_user_id
+from ...api.dependencies.services import get_api_client
+from ...api.dependencies.webserver import get_webserver_session
 from ...models.pagination import Page, PaginationParams
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
     Job,
     JobID,
@@ -33,12 +26,15 @@ from ...models.schemas.jobs import (
     JobStatus,
 )
 from ...models.schemas.studies import Study, StudyID
+from ...services.director_v2 import DirectorV2Api
+from ...services.solver_job_models_converters import create_jobstatus_from_task
 from ...services.storage import StorageApi
 from ...services.study_job_models_converters import (
     create_job_from_study,
     create_job_outputs_from_project_outputs,
     get_project_and_file_inputs_from_job_inputs,
 )
+from ...services.webserver import AuthSession
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._jobs import start_project, stop_project
 
@@ -65,7 +61,6 @@ def _compose_job_resource_name(study_key, job_id) -> str:
     response_model=Page[Job],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def list_study_jobs(
     study_id: StudyID,
@@ -133,7 +128,6 @@ async def create_study_job(
     response_model=Job,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_study_job(
     study_id: StudyID,
@@ -257,7 +251,6 @@ async def get_study_job_outputs(
     response_class=RedirectResponse,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
     msg = f"get study job output logfile study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
@@ -269,7 +262,6 @@ async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
     response_model=JobMetadata,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def get_study_job_custom_metadata(
     study_id: StudyID,
@@ -284,7 +276,6 @@ async def get_study_job_custom_metadata(
     "/{study_id}/jobs/{job_id}/metadata",
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description="Not implemented",
 )
 async def replace_study_job_custom_metadata(
     study_id: StudyID, job_id: JobID, replace: JobMetadataUpdate
