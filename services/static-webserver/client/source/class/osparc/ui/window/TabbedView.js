@@ -31,6 +31,24 @@ qx.Class.define("osparc.ui.window.TabbedView", {
     this.getChildControl("tabs-view");
   },
 
+  statics: {
+    /**
+     * Common layout of section's box
+     * @param {page section's name} sectionName
+     */
+    createSectionBox: function(sectionName) {
+      const box = new qx.ui.groupbox.GroupBox(sectionName);
+      box.getChildControl("legend").set({
+        font: "text-14"
+      });
+      box.getChildControl("frame").set({
+        backgroundColor: "transparent"
+      });
+      box.setLayout(new qx.ui.layout.VBox(10));
+      return box;
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
