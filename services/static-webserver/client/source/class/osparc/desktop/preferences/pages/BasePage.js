@@ -12,7 +12,7 @@
 
    Authors:
      * Pedro Crespo (pcrespov)
-     * Odei Maiz (odei maiz)
+     * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
 
