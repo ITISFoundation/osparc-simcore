@@ -5,10 +5,8 @@ from typing import Any, Literal
 import httpx
 from fastapi import status
 from pydantic import BaseModel, Field
-from simcore_service_api_server.utils.http_calls_capture_processing import (
-    PathDescription,
-    enhance_from_openapi_spec,
-)
+
+from .http_calls_capture_processing import PathDescription, enhance_from_openapi_spec
 
 
 class HttpApiCallCaptureModel(BaseModel):

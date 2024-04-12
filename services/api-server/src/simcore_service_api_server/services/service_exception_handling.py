@@ -1,13 +1,15 @@
 import logging
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, Callable, Mapping
+from typing import Any
 
 import httpx
 from fastapi import HTTPException, status
 from pydantic import ValidationError
 from servicelib.error_codes import create_error_code
-from simcore_service_api_server.models.schemas.errors import ErrorGet
+
+from ..models.schemas.errors import ErrorGet
 
 _logger = logging.getLogger(__name__)
 

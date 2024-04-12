@@ -1,12 +1,13 @@
-import datetime
-
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+
+import datetime
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 from uuid import UUID
 
 import httpx
@@ -210,7 +211,7 @@ async def test_delete_file(
     ) -> Any:
         return capture.response_body
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_storage_service_api_base],
         project_tests_dir / "mocks" / "delete_file.json",
         [search_side_effect, delete_side_effect],
@@ -283,7 +284,7 @@ async def test_get_upload_links(
         )
         assert response.status_code == status.HTTP_200_OK
     else:
-        assert False
+        raise AssertionError
 
 
 @pytest.mark.parametrize(
@@ -327,10 +328,11 @@ async def test_search_file(
                 response["data"][0]["file_uuid"] = "/".join(file_uuid_parts)
                 response["data"][0]["file_id"] = "/".join(file_uuid_parts)
             else:
-                raise ValueError(f"Encountered unexpected {key=}")
+                msg = f"Encountered unexpected {key=}"
+                raise ValueError(msg)
         return response
 
-    respx_mock = respx_mock_from_capture(
+    respx_mock_from_capture(
         [mocked_storage_service_api_base],
         project_tests_dir / "mocks" / "search_file_checksum.json",
         [side_effect_callback],

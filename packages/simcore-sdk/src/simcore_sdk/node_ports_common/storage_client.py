@@ -169,10 +169,7 @@ async def get_download_file_link(
         presigned_link_enveloped = Envelope[PresignedLink].parse_obj(
             await response.json()
         )
-        if (
-            presigned_link_enveloped.data is None
-            or not presigned_link_enveloped.data.link
-        ):
+        if not presigned_link_enveloped.data or not presigned_link_enveloped.data.link:
             msg = f"file {location_id}@{file_id} not found"
             raise exceptions.S3InvalidPathError(msg)
         url: AnyUrl = presigned_link_enveloped.data.link
@@ -235,11 +232,13 @@ async def get_file_metadata(
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}"},
     ) as response:
-        file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(
-            await response.json()
-        )
-        if file_metadata_enveloped.data is None:
+
+        payload = await response.json()
+        if not payload.get("data"):
+            # NOTE: keeps backwards compatibility
             raise exceptions.S3InvalidPathError(file_id)
+
+        file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(payload)
         return file_metadata_enveloped.data
 
 

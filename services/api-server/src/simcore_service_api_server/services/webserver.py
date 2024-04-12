@@ -2,9 +2,10 @@
 
 import logging
 import urllib.parse
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Mapping
+from typing import Any
 from uuid import UUID
 
 from cryptography import fernet
@@ -44,8 +45,6 @@ from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
-from simcore_service_api_server.models.schemas.solvers import SolverKeyId
-from simcore_service_api_server.models.schemas.studies import StudyPort
 from starlette import status
 from tenacity import TryAgain
 from tenacity._asyncio import AsyncRetrying
@@ -58,6 +57,8 @@ from ..models.basic_types import VersionStr
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
 from ..models.schemas.profiles import Profile, ProfileUpdate
+from ..models.schemas.solvers import SolverKeyId
+from ..models.schemas.studies import StudyPort
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 from .service_exception_handling import (
     backend_service_exception_handler,
@@ -188,7 +189,7 @@ class AuthSession:
                 )
                 get_response.raise_for_status()
                 task_status = Envelope[TaskStatus].parse_raw(get_response.text).data
-                assert task_status is not None
+                assert task_status is not None  # nosec
                 if not task_status.done:
                     msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
                     raise TryAgain(msg)
@@ -206,7 +207,7 @@ class AuthSession:
         response = await self.client.get("/me", cookies=self.session_cookies)
         response.raise_for_status()
         profile: Profile | None = Envelope[Profile].parse_raw(response.text).data
-        assert profile is not None
+        assert profile is not None  # nosec
         return profile
 
     @_exception_mapper(_PROFILE_STATUS_MAP)
@@ -259,7 +260,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[ProjectGet].parse_raw(response.text).data
-        assert data is not None
+        assert data is not None  # nosec
         return data
 
     async def get_projects_w_solver_page(
@@ -310,8 +311,8 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[list[StudyPort]].parse_raw(response.text).data
-        assert data is not None
-        assert isinstance(data, list)
+        assert data is not None  # nosec
+        assert isinstance(data, list)  # nosec
         return data
 
     @_exception_mapper(
@@ -329,7 +330,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
-        assert data  # nosec
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper(_JOB_STATUS_MAP)
@@ -372,7 +373,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
-        assert data  # nosec
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
@@ -386,6 +387,7 @@ class AuthSession:
 
         response.raise_for_status()
         data = Envelope[PricingUnitGet].parse_raw(response.text).data
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
@@ -432,7 +434,7 @@ class AuthSession:
         data: dict[NodeID, ProjectInputGet] | None = (
             Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
         )
-        assert data  # nosec
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper({})
@@ -449,7 +451,8 @@ class AuthSession:
         data: dict[NodeID, ProjectInputGet] | None = (
             Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
         )
-        return {} if data is None else data
+        assert data is not None  # nosec
+        return data
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None)})
     async def get_project_outputs(
@@ -461,22 +464,23 @@ class AuthSession:
         )
 
         response.raise_for_status()
-        data = Envelope[dict[NodeID, dict[str, Any]]].parse_raw(response.text).data
 
-        return data or {}
+        data: dict[NodeID, dict[str, Any]] | None = (
+            Envelope[dict[NodeID, dict[str, Any]]].parse_raw(response.text).data
+        )
+        assert data is not None  # nosec
+        return data
 
     @_exception_mapper({})
     async def update_node_outputs(
         self, project_id: UUID, node_id: UUID, new_node_outputs: NodeOutputs
-    ) -> NodeOutputs:
+    ) -> None:
         response = await self.client.patch(
             f"/projects/{project_id}/nodes/{node_id}/outputs",
             cookies=self.session_cookies,
             json=jsonable_encoder(new_node_outputs),
         )
         response.raise_for_status()
-        data = Envelope[NodeOutputs].parse_raw(response.text).data
-        return NodeOutputs(outputs={}) if data is None else data
 
     # WALLETS -------------------------------------------------
 
@@ -488,7 +492,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
-        assert data  # nosec
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper(_WALLET_STATUS_MAP)
@@ -499,7 +503,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
-        assert data  # nosec
+        assert data is not None  # nosec
         return data
 
     @_exception_mapper(_WALLET_STATUS_MAP)
@@ -509,8 +513,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[WalletGet].parse_raw(response.text).data
-        return data
+        return Envelope[WalletGet].parse_raw(response.text).data
 
     # PRODUCTS -------------------------------------------------
 

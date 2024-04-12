@@ -33,10 +33,8 @@ def get_log_distributor(app: Annotated[FastAPI, Depends(get_app)]) -> LogDistrib
 )
 async def wait_till_log_distributor_ready(app) -> None:
     if not hasattr(app.state, "log_distributor"):
-        raise ApplicationSetupError(
-            f"Api server's log_distributor was not ready within {_MAX_WAIT_FOR_LOG_DISTRIBUTOR_SECONDS=} seconds"
-        )
-    return
+        msg = f"Api server's log_distributor was not ready within {_MAX_WAIT_FOR_LOG_DISTRIBUTOR_SECONDS=} seconds"
+        raise ApplicationSetupError(msg)
 
 
 def get_log_check_timeout(app: Annotated[FastAPI, Depends(get_app)]) -> NonNegativeInt:

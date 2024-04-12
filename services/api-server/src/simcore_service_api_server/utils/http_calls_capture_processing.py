@@ -5,7 +5,8 @@ from urllib.parse import unquote
 import httpx
 import jsonref
 from pydantic import BaseModel, Field, parse_obj_as, root_validator, validator
-from simcore_service_api_server.core.settings import (
+
+from ..core.settings import (
     CatalogSettings,
     DirectorV2Settings,
     StorageSettings,
@@ -56,18 +57,16 @@ class CapturedParameterSchema(BaseModel):
             type_ = "str"  # this default is introduced because we have started using json query params in the webserver
             values["type_"] = type_
         if type_ != "str" and any([pattern, format_]):
-            raise ValueError(
-                f"For {type_=} both {pattern=} and {format_=} must be None"
-            )
+            msg = f"For {type_=} both {pattern=} and {format_=} must be None"
+            raise ValueError(msg)
 
         def _check_no_recursion(v: list["CapturedParameterSchema"]):
             if v is not None and not all(
                 elm.anyOf is None and elm.oneOf is None and elm.allOf is None
                 for elm in v
             ):
-                raise ValueError(
-                    "For simplicity we only allow top level schema have oneOf, anyOf or allOf"
-                )
+                msg = "For simplicity we only allow top level schema have oneOf, anyOf or allOf"
+                raise ValueError(msg)
 
         _check_no_recursion(anyOf)
         _check_no_recursion(allOf)
@@ -78,9 +77,8 @@ class CapturedParameterSchema(BaseModel):
     def regex_pattern(self) -> str:
         # first deal with recursive types:
         if self.oneOf:
-            raise NotImplementedError(
-                "Current version cannot compute regex patterns in case of oneOf. Please go ahead and implement it yourself."
-            )
+            msg = "Current version cannot compute regex patterns in case of oneOf. Please go ahead and implement it yourself."
+            raise NotImplementedError(msg)
         if self.anyOf:
             return "|".join([elm.regex_pattern for elm in self.anyOf])
         if self.allOf:
@@ -101,9 +99,8 @@ class CapturedParameterSchema(BaseModel):
                 else:
                     pattern = r"[^/]*"  # should match any string not containing "/"
         if pattern is None:
-            raise OpenApiSpecIssue(
-                f"Encountered invalid {self.type_=} and {self.format_=} combination"
-            )
+            msg = f"Encountered invalid {self.type_=} and {self.format_=} combination"
+            raise OpenApiSpecIssue(msg)
         return pattern
 
 
@@ -175,9 +172,8 @@ def _get_openapi_specs(host: service_hosts) -> dict[str, Any]:
         settings = DirectorV2Settings()
         url = settings.base_url + "/api/v2/openapi.json"
     else:
-        raise OpenApiSpecIssue(
-            f"{host=} has not been added yet to the testing system. Please do so yourself"
-        )
+        msg = f"{host=} has not been added yet to the testing system. Please do so yourself"
+        raise OpenApiSpecIssue(msg)
     with httpx.Client() as session:
         # http://127.0.0.1:30010/dev/doc/swagger.json
         # http://127.0.0.1:8006/api/v0/openapi.json
@@ -224,9 +220,8 @@ def _determine_path(
             path=p,
             path_parameters=list(path_params.values()),
         )
-    raise PathNotInOpenApiSpecification(
-        f"Could not find a path matching {response_path} in "
-    )
+    msg = f"Could not find a path matching {response_path} in "
+    raise PathNotInOpenApiSpecification(msg)
 
 
 def _get_params(
@@ -235,15 +230,13 @@ def _get_params(
     """Returns all parameters for the method associated with a given resource (and optionally also a given method)"""
     endpoints: dict[str, Any] | None
     if (endpoints := openapi_spec["paths"].get(path)) is None:
-        raise PathNotInOpenApiSpecification(
-            f"{path} was not in the openapi specification"
-        )
+        msg = f"{path} was not in the openapi specification"
+        raise PathNotInOpenApiSpecification(msg)
     all_params: list[CapturedParameter] = []
     for verb in [method] if method is not None else list(endpoints):
         if (verb_spec := endpoints.get(verb)) is None:
-            raise VerbNotInPath(
-                f"the verb '{verb}' was not available in '{path}' in {openapi_spec}"
-            )
+            msg = f"the verb '{verb}' was not available in '{path}' in {openapi_spec}"
+            raise VerbNotInPath(msg)
         if (params := verb_spec.get("parameters")) is None:
             continue
         all_params += parse_obj_as(list[CapturedParameter], params)

@@ -9,12 +9,9 @@ from fastapi.exceptions import HTTPException
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.clusters import ClusterID
 from pydantic.types import PositiveInt
-from simcore_service_api_server.models.schemas.errors import ErrorGet
-from simcore_service_api_server.services.service_exception_handling import (
-    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
-)
 
 from ...models.basic_types import VersionStr
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import (
     Job,
     JobID,
@@ -26,6 +23,7 @@ from ...models.schemas.jobs import (
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api
+from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...services.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,
