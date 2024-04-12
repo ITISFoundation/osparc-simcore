@@ -7,7 +7,6 @@ import pytest
 from models_library.docker import DockerGenericTag
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib import progress_bar
 from servicelib.docker_utils import pull_image
 from servicelib.fastapi.docker_utils import (
@@ -124,30 +123,6 @@ async def test_pull_image(
     # check there were no warnings
     for record in caplog.records:
         assert record.levelname != "WARNING", record.message
-
-
-@pytest.fixture
-def external_registry_settings(
-    external_environment: EnvVarsDict,
-) -> RegistrySettings | None:
-    if external_environment:
-        config = {
-            field: external_environment.get(field, None)
-            for field in RegistrySettings.__fields__
-        }
-        return RegistrySettings.parse_obj(config)
-    return None
-
-
-@pytest.fixture
-def registry_settings(
-    registry_settings: RegistrySettings,
-    external_registry_settings: RegistrySettings | None,
-) -> RegistrySettings:
-    """overrides original registry settings to be able to use real data from deployments"""
-    if external_registry_settings:
-        return external_registry_settings
-    return registry_settings
 
 
 @pytest.mark.parametrize(
