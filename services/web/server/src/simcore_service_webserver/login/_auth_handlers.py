@@ -206,32 +206,33 @@ async def login(request: web.Request):
             },
             status=status.HTTP_202_ACCEPTED,
         )
-    else:
-        assert (
-            user_2fa_authentification_method == TwoFAAuthentificationMethod.email
-        )  # nosec
-        await send_email_code(
-            request,
-            user_email=user["email"],
-            support_email=product.support_email,
-            code=code,
-            first_name=user["first_name"] or user["name"],
-            product=product,
-            user_id=user["id"],
-        )
-        return envelope_response(
-            {
-                "name": CODE_2FA_EMAIL_CODE_REQUIRED,
-                "parameters": {
-                    "message": MSG_EMAIL_SENT.format(email=user["email"]),
-                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
-                },
-                # NOTE: REMOVE when frontend is refactored
-                "code": CODE_2FA_EMAIL_CODE_REQUIRED,
-                "reason": MSG_EMAIL_SENT.format(email=user["email"]),
+
+    # otherwise create email f2a
+    assert (
+        user_2fa_authentification_method == TwoFAAuthentificationMethod.email
+    )  # nosec
+    await send_email_code(
+        request,
+        user_email=user["email"],
+        support_email=product.support_email,
+        code=code,
+        first_name=user["first_name"] or user["name"],
+        product=product,
+        user_id=user["id"],
+    )
+    return envelope_response(
+        {
+            "name": CODE_2FA_EMAIL_CODE_REQUIRED,
+            "parameters": {
+                "message": MSG_EMAIL_SENT.format(email=user["email"]),
+                "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
             },
-            status=status.HTTP_202_ACCEPTED,
-        )
+            # NOTE: REMOVE when frontend is refactored
+            "code": CODE_2FA_EMAIL_CODE_REQUIRED,
+            "reason": MSG_EMAIL_SENT.format(email=user["email"]),
+        },
+        status=status.HTTP_202_ACCEPTED,
+    )
 
 
 class LoginTwoFactorAuthBody(InputSchema):
