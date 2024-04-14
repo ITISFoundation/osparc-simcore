@@ -137,7 +137,7 @@ async def send_sms_code(
             f"{error_code}",
             extra={"error_code": error_code, **more_extra},
         )
-        raise SendingVerificationSmsError from exc
+        raise SendingVerificationSmsError(reason=exc) from exc
 
 
 #
@@ -183,7 +183,7 @@ async def send_email_code(
             f"{error_code}",
             extra={"error_code": error_code, **more_extra},
         )
-        raise SendingVerificationEmailError from exc
+        raise SendingVerificationEmailError(reason=exc) from exc
 
 
 #

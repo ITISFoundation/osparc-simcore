@@ -19,7 +19,13 @@ from ._2fa_api import (
     send_email_code,
     send_sms_code,
 )
-from ._constants import MSG_2FA_CODE_SENT, MSG_EMAIL_SENT, MSG_UNKNOWN_EMAIL
+from ._constants import (
+    CODE_2FA_EMAIL_CODE_REQUIRED,
+    CODE_2FA_SMS_CODE_REQUIRED,
+    MSG_2FA_CODE_SENT,
+    MSG_EMAIL_SENT,
+    MSG_UNKNOWN_EMAIL,
+)
 from ._models import InputSchema
 from .errors import handle_login_exceptions
 from .settings import LoginSettingsForProduct, get_plugin_settings
@@ -95,6 +101,14 @@ async def resend_2fa_code(request: web.Request):
 
         response = envelope_response(
             {
+                "name": CODE_2FA_SMS_CODE_REQUIRED,
+                "parameters": {
+                    "message": MSG_2FA_CODE_SENT.format(
+                        phone_number=mask_phone_number(user["phone"])
+                    ),
+                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                },
+                # NOTE: REMOVE when frontend is refactored
                 "reason": MSG_2FA_CODE_SENT.format(
                     phone_number=mask_phone_number(user["phone"])
                 ),
@@ -117,10 +131,13 @@ async def resend_2fa_code(request: web.Request):
 
         response = envelope_response(
             {
-                "name": "SMS_CODE_REQUIRED",
+                "name": CODE_2FA_EMAIL_CODE_REQUIRED,
+                "parameters": {
+                    "message": MSG_EMAIL_SENT.format(email=user["email"]),
+                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                },
+                # NOTE: REMOVE when frontend is refactored
                 "reason": MSG_EMAIL_SENT.format(email=user["email"]),
-                "parameters": {"expiration_time": 120},
-                "code": "SMS_CODE_REQUIRED",
             },
             status=status.HTTP_200_OK,
         )

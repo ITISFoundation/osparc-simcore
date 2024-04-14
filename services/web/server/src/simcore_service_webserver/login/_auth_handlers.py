@@ -124,8 +124,8 @@ async def login(request: web.Request):
         product_name=product.name,
         preference_class=user_preferences_api.TwoFAFrontendUserPreference,
     )
-
     if not user_2fa_preference:
+        user_2fa_authentification_method = TwoFAAuthentificationMethod.sms
         preference_id = (
             user_preferences_api.TwoFAFrontendUserPreference().preference_identifier
         )
@@ -134,13 +134,12 @@ async def login(request: web.Request):
             user_id=user["id"],
             product_name=product.name,
             frontend_preference_identifier=preference_id,
-            value=TwoFAAuthentificationMethod.sms,
+            value=user_2fa_authentification_method,
         )
-    assert user_2fa_preference  # nosec
-
-    user_2fa_authentification_method = parse_obj_as(
-        TwoFAAuthentificationMethod, user_2fa_preference.value
-    )
+    else:
+        user_2fa_authentification_method = parse_obj_as(
+            TwoFAAuthentificationMethod, user_2fa_preference.value
+        )
 
     if user_2fa_authentification_method == TwoFAAuthentificationMethod.disabled:
         return await login_granted_response(request, user=user)
