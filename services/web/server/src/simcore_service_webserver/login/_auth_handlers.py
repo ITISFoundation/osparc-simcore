@@ -45,7 +45,8 @@ from ._constants import (
     MSG_LOGGED_OUT,
     MSG_PHONE_MISSING,
     MSG_UNAUTHORIZED_LOGIN_2FA,
-    MSG_WRONG_2FA_CODE,
+    MSG_WRONG_2FA_CODE__EXPIRED,
+    MSG_WRONG_2FA_CODE__INVALID,
 )
 from ._models import InputSchema
 from ._security import login_granted_response
@@ -263,10 +264,12 @@ async def login_2fa(request: web.Request):
     # validates code
     _redis_2fa_code = await get_2fa_code(request.app, login_2fa_.email)
     if not _redis_2fa_code:
-        raise ValueError("Expired")  # MD: improve
+        raise web.HTTPUnauthorized(
+            reason=MSG_WRONG_2FA_CODE__EXPIRED, content_type=MIMETYPE_APPLICATION_JSON
+        )
     if login_2fa_.code.get_secret_value() != _redis_2fa_code:
         raise web.HTTPUnauthorized(
-            reason=MSG_WRONG_2FA_CODE, content_type=MIMETYPE_APPLICATION_JSON
+            reason=MSG_WRONG_2FA_CODE__INVALID, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     user = await db.get_user({"email": login_2fa_.email})
