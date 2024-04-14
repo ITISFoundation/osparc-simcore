@@ -35,6 +35,7 @@ from pytest_simcore.helpers.utils_envs import (
 )
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
+from simcore_service_api_server.core.health_checker import get_health_checker
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 from simcore_service_api_server.services.director_v2 import (
     ComputationTaskGet,
@@ -46,6 +47,7 @@ from simcore_service_api_server.services.log_streaming import (
     LogStreamerNotRegistered,
     LogStreamerRegistionConflict,
 )
+from tenacity import AsyncRetrying, retry_if_not_exception_type, stop_after_delay
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -71,6 +73,8 @@ def app_environment(
         {
             **rabbit_env_vars_dict,
             "API_SERVER_POSTGRES": "null",
+            "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
+            "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
         },
     )
 
@@ -99,14 +103,15 @@ def node_id(faker: Faker) -> NodeID:
 
 @pytest.fixture
 async def log_distributor(
-    client: httpx.AsyncClient, app: FastAPI
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ) -> AsyncIterable[LogDistributor]:
-    return get_log_distributor(app)
+    log_distributor = LogDistributor(create_rabbitmq_client("log_distributor_client"))
+    await log_distributor.setup()
+    yield log_distributor
+    await log_distributor.teardown()
 
 
 async def test_subscribe_publish_receive_logs(
-    client: httpx.AsyncClient,
-    app: FastAPI,
     faker: Faker,
     user_id: UserID,
     project_id: ProjectID,
@@ -375,8 +380,6 @@ async def log_streamer_with_distributor(
 
 
 async def test_log_streamer_with_distributor(
-    client: httpx.AsyncClient,
-    app: FastAPI,
     project_id: ProjectID,
     node_id: NodeID,
     produce_logs: Callable,
@@ -401,14 +404,18 @@ async def test_log_streamer_with_distributor(
         assert job_log.job_id == project_id
         collected_messages.append(job_log.messages[0])
 
-    publish_task.cancel()
+    if not publish_task.done():
+        publish_task.cancel()
+        try:
+            await publish_task
+        except asyncio.CancelledError:
+            pass
+
     assert len(published_logs) > 0
     assert published_logs == collected_messages
 
 
 async def test_log_streamer_not_raise_with_distributor(
-    client: httpx.AsyncClient,
-    app: FastAPI,
     user_id,
     project_id: ProjectID,
     node_id: NodeID,
@@ -475,3 +482,36 @@ async def test_log_generator_context(mocker: MockFixture, faker: Faker):
     with pytest.raises(LogStreamerNotRegistered):
         async for log in log_streamer.log_generator():
             print(log)
+
+
+@pytest.mark.parametrize("is_healthy", [True, False])
+async def test_logstreaming_health_checker(
+    mocker: MockFixture, client: httpx.AsyncClient, app: FastAPI, is_healthy: bool
+):
+    health_checker = get_health_checker(app)
+    health_checker._timeout_seconds = 0.5
+    health_checker._allowed_health_check_failures = 0
+    put_method = health_checker._dummy_queue.put
+
+    async def put_mock(log: JobLog):
+        put_mock.called = True
+        if is_healthy:
+            await put_method(log)
+
+    put_mock.called = False
+    mocker.patch.object(health_checker._dummy_queue, "put", put_mock)
+    health_setter = mocker.spy(health_checker, "_increment_health_check_failure_count")
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        stop=stop_after_delay(5),
+        retry=retry_if_not_exception_type(AssertionError),
+    ):
+        with attempt:
+            await asyncio.sleep(1)
+            assert put_mock.called
+            if is_healthy:
+                health_setter.assert_not_called()
+            else:
+                health_setter.assert_called()
+
+    assert health_checker.healthy == is_healthy, "Health check failed"
