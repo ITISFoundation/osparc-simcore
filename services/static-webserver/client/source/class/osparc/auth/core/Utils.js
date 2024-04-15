@@ -73,7 +73,7 @@ qx.Class.define("osparc.auth.core.Utils", {
       const value = osparc.auth.core.Utils.findParameterInFragment(parameterName);
       if (value) {
         const removeMe = parameterName + "=" + value;
-        // In case the parameterhas an ampersand in front
+        // In case the parameter has an ampersand in front
         url = url.replace(";" + removeMe, "");
         url = url.replace(removeMe, "");
         if (url.slice(-1) === "#") {
@@ -96,6 +96,12 @@ qx.Class.define("osparc.auth.core.Utils", {
           enabled: count === 0
         });
       }, 1000);
+    },
+
+    extractRetryAfter: function(resp) {
+      const defaultRetry = 60;
+      const retry = "parameters" in resp && "retry_2fa_after" in resp["parameters"] ? resp["parameters"]["retry_2fa_after"] : defaultRetry;
+      return retry;
     }
   }
 });

@@ -146,10 +146,11 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         this.__itiInput.setEnabled(false);
         this.__verifyPhoneNumberBtn.setFetching(true);
         osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), this.__itiInput.getNumber())
-          .then(data => {
-            osparc.FlashMessenger.logAs(data.message, "INFO");
+          .then(resp => {
+            osparc.FlashMessenger.logAs(resp.message, "INFO");
             this.__verifyPhoneNumberBtn.setFetching(false);
-            osparc.auth.core.Utils.restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"));
+            const retryAfter = osparc.auth.core.Utils.extractRetryAfter(resp);
+            osparc.auth.core.Utils.restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"), retryAfter);
             this.__validateCodeTF.setEnabled(true);
           })
           .catch(err => {
