@@ -28,7 +28,6 @@ def _get_s3_volume_driver_config(
             "type": "s3",
             "s3-access_key_id": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
             "s3-secret_access_key": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
-            "s3-endpoint": r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
             "path": f"{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{project_id}/{node_uuid}/{storage_directory_name}",
             "allow-other": "true",
             "vfs-cache-mode": r_clone_settings.R_CLONE_VFS_CACHE_MODE.value,
@@ -40,6 +39,10 @@ def _get_s3_volume_driver_config(
             "poll-interval": f"{r_clone_settings.R_CLONE_POLL_INTERVAL_SECONDS}s",
         },
     }
+    if r_clone_settings.R_CLONE_S3.S3_ENDPOINT:
+        driver_config["Options"][
+            "s3-endpoint"
+        ] = r_clone_settings.R_CLONE_S3.S3_ENDPOINT
 
     extra_options: dict[str, str] | None = None
 
@@ -58,13 +61,12 @@ def _get_s3_volume_driver_config(
     elif r_clone_settings.R_CLONE_PROVIDER == S3Provider.AWS:
         extra_options = {
             "s3-provider": "AWS",
-            "s3-region": "us-east-1",
+            "s3-region": r_clone_settings.R_CLONE_S3.S3_REGION,
             "s3-acl": "private",
         }
     else:
-        raise DynamicSidecarError(
-            f"Unexpected, all {S3Provider.__name__} should be covered"
-        )
+        msg = f"Unexpected, all {S3Provider.__name__} should be covered"
+        raise DynamicSidecarError(msg)
 
     assert extra_options is not None  # nosec
     options: dict[str, Any] = driver_config["Options"]

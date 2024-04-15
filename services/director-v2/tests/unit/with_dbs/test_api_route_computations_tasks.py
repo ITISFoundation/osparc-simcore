@@ -41,13 +41,14 @@ def mock_env(
     mock_env: EnvVarsDict,  # sets default env vars
     postgres_host_config,  # sets postgres env vars
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ):
     # overrides mock_env
-    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("S3_ENDPOINT", faker.url())
+    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
+    monkeypatch.setenv("S3_REGION", faker.pystr())
+    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
+    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
 
 
 @pytest.fixture

@@ -5,6 +5,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Final
 
+from pydantic import AnyHttpUrl
 from settings_library.r_clone import S3Provider
 from settings_library.utils_r_clone import resolve_provider
 
@@ -24,7 +25,7 @@ VOLUME_NAME_FIXED_PORTION: Final[int] = 78
 
 
 def get_config_file_path(
-    s3_endpoint: str,
+    s3_endpoint: AnyHttpUrl | None,
     s3_access_key: str,
     s3_secret_key: str,
     s3_region: str,
@@ -116,7 +117,7 @@ def _log_expected_operation(
 async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
     volume_name: str,
     dyv_volume: dict,
-    s3_endpoint: str,
+    s3_endpoint: AnyHttpUrl | None,
     s3_access_key: str,
     s3_secret_key: str,
     s3_bucket: str,

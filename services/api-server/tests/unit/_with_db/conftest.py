@@ -154,7 +154,7 @@ def app_environment(
     """app environments WITH database settings"""
     mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
     mocker.patch(
-        "simcore_service_api_server.core.application.setup_prometheus_instrumentation"
+        "simcore_service_api_server.core._prometheus_instrumentation.setup_prometheus_instrumentation"
     )
 
     envs = setenvs_from_dict(monkeypatch, default_app_env_vars)

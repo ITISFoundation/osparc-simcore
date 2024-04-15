@@ -37,10 +37,13 @@ def dynamic_sidecar_endpoint() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mock_env(monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict) -> None:
-    monkeypatch.setenv("S3_ACCESS_KEY", "")
-    monkeypatch.setenv("S3_SECRET_KEY", "")
-    monkeypatch.setenv("S3_BUCKET_NAME", "")
+def mock_env(
+    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, faker: Faker
+) -> None:
+    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
+    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
+    monkeypatch.setenv("S3_REGION", faker.pystr())
+    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
 
     monkeypatch.setenv("POSTGRES_HOST", "")
@@ -50,7 +53,7 @@ def mock_env(monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict) -> None:
 
     # reduce number of retries to make more reliable
     monkeypatch.setenv("DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S", "3")
-    monkeypatch.setenv("S3_ENDPOINT", "")
+    monkeypatch.setenv("S3_ENDPOINT", faker.url())
 
 
 @pytest.fixture

@@ -1,21 +1,37 @@
-from pydantic import validator
+from typing import Any, ClassVar
+
+from pydantic import AnyHttpUrl, Field
 
 from .base import BaseCustomSettings
+from .basic_types import IDStr
 
 
 class S3Settings(BaseCustomSettings):
-    S3_SECURE: bool = False
-    S3_ENDPOINT: str
-    S3_ACCESS_KEY: str
-    S3_SECRET_KEY: str
-    S3_ACCESS_TOKEN: str | None = None
-    S3_BUCKET_NAME: str
-    S3_REGION: str = "us-east-1"
+    S3_ACCESS_KEY: IDStr
+    S3_BUCKET_NAME: IDStr
+    S3_ENDPOINT: AnyHttpUrl | None = Field(
+        default=None, description="do not define if using standard AWS"
+    )
+    S3_REGION: IDStr
+    S3_SECRET_KEY: IDStr
 
-    @validator("S3_ENDPOINT", pre=True)
-    @classmethod
-    def ensure_scheme(cls, v: str, values) -> str:
-        if not v.startswith("http"):
-            scheme = "https" if values.get("S3_SECURE") else "http"
-            return f"{scheme}://{v}"
-        return v
+    class Config(BaseCustomSettings.Config):
+        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+            "examples": [
+                {
+                    # non AWS use-case
+                    "S3_ACCESS_KEY": "my_access_key_id",
+                    "S3_BUCKET_NAME": "some-s3-bucket",
+                    "S3_ENDPOINT": "https://non-aws-s3_endpoint.com",
+                    "S3_REGION": "us-east-1",
+                    "S3_SECRET_KEY": "my_secret_access_key",
+                },
+                {
+                    # AWS use-case
+                    "S3_ACCESS_KEY": "my_access_key_id",
+                    "S3_BUCKET_NAME": "some-s3-bucket",
+                    "S3_REGION": "us-east-2",
+                    "S3_SECRET_KEY": "my_secret_access_key",
+                },
+            ],
+        }

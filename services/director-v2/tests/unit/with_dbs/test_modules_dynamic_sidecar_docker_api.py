@@ -84,18 +84,18 @@ def dynamic_services_scheduler_settings(
 
 @pytest.fixture
 def dynamic_sidecar_settings(
-    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, faker: Faker
 ) -> DynamicSidecarSettings:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
 
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("S3_ENDPOINT", faker.url())
+    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
+    monkeypatch.setenv("S3_REGION", faker.pystr())
+    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
+    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
     return DynamicSidecarSettings.create_from_envs()
 
 
