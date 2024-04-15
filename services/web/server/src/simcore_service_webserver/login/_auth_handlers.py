@@ -2,7 +2,7 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from models_library.authentification import TwoFAAuthentificationMethod
+from models_library.authentification import TwoFactorAuthentificationMethod
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field, PositiveInt, SecretStr, parse_obj_as
 from servicelib.aiohttp import status
@@ -126,7 +126,7 @@ async def login(request: web.Request):
         preference_class=user_preferences_api.TwoFAFrontendUserPreference,
     )
     if not user_2fa_preference:
-        user_2fa_authentification_method = TwoFAAuthentificationMethod.SMS
+        user_2fa_authentification_method = TwoFactorAuthentificationMethod.SMS
         preference_id = (
             user_preferences_api.TwoFAFrontendUserPreference().preference_identifier
         )
@@ -139,15 +139,15 @@ async def login(request: web.Request):
         )
     else:
         user_2fa_authentification_method = parse_obj_as(
-            TwoFAAuthentificationMethod, user_2fa_preference.value
+            TwoFactorAuthentificationMethod, user_2fa_preference.value
         )
 
-    if user_2fa_authentification_method == TwoFAAuthentificationMethod.DISABLED:
+    if user_2fa_authentification_method == TwoFactorAuthentificationMethod.DISABLED:
         return await login_granted_response(request, user=user)
 
     # Check phone for SMS authentication
     if (
-        user_2fa_authentification_method == TwoFAAuthentificationMethod.SMS
+        user_2fa_authentification_method == TwoFactorAuthentificationMethod.SMS
         and not user["phone"]
     ):
         return envelope_response(
@@ -171,7 +171,7 @@ async def login(request: web.Request):
         expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
     )
 
-    if user_2fa_authentification_method == TwoFAAuthentificationMethod.SMS:
+    if user_2fa_authentification_method == TwoFactorAuthentificationMethod.SMS:
         # create sms 2FA
         assert user["phone"]  # nosec
         assert settings.LOGIN_2FA_REQUIRED  # nosec
@@ -209,7 +209,7 @@ async def login(request: web.Request):
 
     # otherwise create email f2a
     assert (
-        user_2fa_authentification_method == TwoFAAuthentificationMethod.EMAIL
+        user_2fa_authentification_method == TwoFactorAuthentificationMethod.EMAIL
     )  # nosec
     await send_email_code(
         request,
@@ -263,12 +263,12 @@ async def login_2fa(request: web.Request):
     login_2fa_ = await parse_request_body_as(LoginTwoFactorAuthBody, request)
 
     # validates code
-    _redis_2fa_code = await get_2fa_code(request.app, login_2fa_.email)
-    if not _redis_2fa_code:
+    _expected_2fa_code = await get_2fa_code(request.app, login_2fa_.email)
+    if not _expected_2fa_code:
         raise web.HTTPUnauthorized(
             reason=MSG_WRONG_2FA_CODE__EXPIRED, content_type=MIMETYPE_APPLICATION_JSON
         )
-    if login_2fa_.code.get_secret_value() != _redis_2fa_code:
+    if login_2fa_.code.get_secret_value() != _expected_2fa_code:
         raise web.HTTPUnauthorized(
             reason=MSG_WRONG_2FA_CODE__INVALID, content_type=MIMETYPE_APPLICATION_JSON
         )
