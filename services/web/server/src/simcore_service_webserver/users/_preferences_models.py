@@ -1,6 +1,6 @@
 from typing import Final
 
-from models_library.authentification import TwoFAAuthentificationMethod
+from models_library.authentification import TwoFactorAuthentificationMethod
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
 )
@@ -98,7 +98,7 @@ class TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference(
 
 class TwoFAFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "twoFAPreference"
-    value: TwoFAAuthentificationMethod = TwoFAAuthentificationMethod.sms
+    value: TwoFactorAuthentificationMethod = TwoFactorAuthentificationMethod.SMS
 
 
 class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference):

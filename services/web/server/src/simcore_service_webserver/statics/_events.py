@@ -6,7 +6,6 @@ from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.json_serialization import json_dumps
-from simcore_postgres_database.models.products import ProductLoginSettingsDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before import before_log
 from tenacity.retry import retry_if_exception_type
@@ -116,9 +115,8 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
         data.update(product.to_statics())
 
         # Adds specifics to login settings
-        login_settings: ProductLoginSettingsDict = product.login_settings
-        if _value := login_settings.get("LOGIN_2FA_REQUIRED", None):
-            data["webserverLogin"].update({"LOGIN_2FA_REQUIRED": _value})
+        if (p := product.login_settings) and (v := p.get("LOGIN_2FA_REQUIRED", None)):
+            data["webserverLogin"].update({"LOGIN_2FA_REQUIRED": v})
 
         data_json = json_dumps(data)
         _logger.debug("Front-end statics.json: %s", data_json)
