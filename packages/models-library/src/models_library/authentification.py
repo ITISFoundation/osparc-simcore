@@ -4,6 +4,6 @@ from .utils.enums import StrAutoEnum
 
 
 class TwoFAAuthentificationMethod(StrAutoEnum):
-    sms = auto()
-    email = auto()
-    disabled = auto()
+    SMS = auto()
+    EMAIL = auto()
+    DISABLED = auto()
