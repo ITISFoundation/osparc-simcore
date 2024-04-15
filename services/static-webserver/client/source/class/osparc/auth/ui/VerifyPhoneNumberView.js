@@ -102,7 +102,13 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         minWidth: 80
       });
       validateCodeBtn.setEnabled(false);
-      validateCodeTF.addListener("input", e => validateCodeBtn.setEnabled(Boolean(e.getData())));
+      validateCodeTF.addListener("input", e => {
+        const valid = Boolean(e.getData());
+        validateCodeBtn.setEnabled(valid);
+        if (valid) {
+          this.__enableEnterCommand(validateCodeBtn)
+        }
+      });
       smsValidationLayout.add(validateCodeBtn);
       return smsValidationLayout;
     },
@@ -184,19 +190,24 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         .finally(() => this.__sendViaEmail.setFetching(false));
     },
 
-    _onAppear: function() {
-      // Listen to "Enter" key
-      const commandEnter = new qx.ui.command.Command("Enter");
-      this.__submitBtn.setCommand(commandEnter);
+    __enableEnterCommand: function(onBtn) {
+      this.__disableCommands();
 
-      // Listen to "Esc" key
-      const commandEsc = new qx.ui.command.Command("Esc");
-      this.__cancelBtn.setCommand(commandEsc);
+      const commandEnter = new qx.ui.command.Command("Enter");
+      onBtn.setCommand(commandEnter);
+    },
+
+    __disableCommands: function() {
+      this.__verifyPhoneNumberBtn.setCommand(null);
+      this.__validateCodeBtn.setCommand(null);
+    },
+
+    _onAppear: function() {
+      this.__enableEnterCommand(this.__verifyPhoneNumberBtn);
     },
 
     _onDisappear: function() {
-      this.__submitBtn.setCommand(null);
-      this.__cancelBtn.setCommand(null);
+      this.__disableCommands();
     }
   }
 });
