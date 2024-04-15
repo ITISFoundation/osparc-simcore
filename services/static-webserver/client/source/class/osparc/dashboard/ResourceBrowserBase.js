@@ -416,31 +416,31 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _openDetailsView: function(resourceData) {
-      const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
-      const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
-      moreOpts.addListener("updateStudy", e => this._updateStudyData(e.getData()));
-      moreOpts.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
-      moreOpts.addListener("updateService", e => this._updateServiceData(e.getData()));
-      moreOpts.addListener("publishTemplate", e => {
+      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+      const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+      resourceDetails.addListener("updateStudy", e => this._updateStudyData(e.getData()));
+      resourceDetails.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
+      resourceDetails.addListener("updateService", e => this._updateServiceData(e.getData()));
+      resourceDetails.addListener("publishTemplate", e => {
         win.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
-      moreOpts.addListener("openStudy", e => {
+      resourceDetails.addListener("openStudy", e => {
         const openCB = () => win.close();
         const studyId = e.getData()["uuid"];
         this._startStudyById(studyId, openCB, null);
       });
-      moreOpts.addListener("openTemplate", e => {
+      resourceDetails.addListener("openTemplate", e => {
         win.close();
         const templateData = e.getData();
         this._createStudyFromTemplate(templateData);
       });
-      moreOpts.addListener("openService", e => {
+      resourceDetails.addListener("openService", e => {
         win.close();
         const openServiceData = e.getData();
         this._createStudyFromService(openServiceData["key"], openServiceData["version"]);
       });
-      return moreOpts;
+      return resourceDetails;
     },
 
     _getShareMenuButton: function(card) {

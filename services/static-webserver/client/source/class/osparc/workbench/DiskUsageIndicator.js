@@ -32,6 +32,9 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
+    // hide until some info comes
+    this.hide();
+
     // Subscribe to disk space threshold - Default 5GB
     lowDiskSpacePreferencesSettings.addListener("changeLowDiskSpaceThreshold", e => {
       this.__lowDiskThreshold = e.getData();
@@ -129,6 +132,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
     },
 
     __updateDiskIndicator: function(diskUsage) {
+      this.show();
       if (diskUsage && diskUsage["node_id"]) {
         this.__lastDiskUsage[diskUsage["node_id"]] = diskUsage;
       }
