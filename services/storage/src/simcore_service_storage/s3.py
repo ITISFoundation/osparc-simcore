@@ -1,6 +1,7 @@
 """ Module to access s3 service
 
 """
+
 import json
 import logging
 from typing import cast
@@ -54,7 +55,9 @@ async def setup_s3_client(app):
 async def setup_s3_bucket(app: web.Application):
     storage_s3_settings = app[APP_CONFIG_KEY].STORAGE_S3
     client = get_s3_client(app)
-    await client.create_bucket(storage_s3_settings.S3_BUCKET_NAME)
+    await client.create_bucket(
+        storage_s3_settings.S3_BUCKET_NAME, storage_s3_settings.S3_REGION
+    )
     yield
 
 

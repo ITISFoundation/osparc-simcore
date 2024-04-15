@@ -163,6 +163,7 @@ def minimal_dask_scheduler_config(
     postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
     rabbit_service: RabbitSettings,
+    faker: Faker,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
@@ -170,11 +171,11 @@ def minimal_dask_scheduler_config(
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("S3_ENDPOINT", faker.url())
+    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
+    monkeypatch.setenv("S3_REGION", faker.pystr())
+    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
+    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
 
 
 @pytest.fixture
@@ -642,9 +643,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     async def _return_1st_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.PENDING_OR_STARTED
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.PENDING_OR_STARTED
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 
@@ -746,9 +749,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     # 4. the "worker" completed the task successfully
     async def _return_1st_task_success(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.SUCCESS
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.SUCCESS
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 
@@ -835,9 +840,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     async def _return_2nd_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.PENDING_OR_STARTED
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.PENDING_OR_STARTED
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 
@@ -883,9 +890,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     # 7. the task fails
     async def _return_2nd_task_failed(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.ERRED
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.ERRED
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 
@@ -926,9 +935,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     async def _return_3rd_task_success(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.SUCCESS
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.SUCCESS
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 
@@ -1296,9 +1307,11 @@ async def test_running_pipeline_triggers_heartbeat(
 
     async def _return_1st_task_running(job_ids: list[str]) -> list[DaskClientTaskState]:
         return [
-            DaskClientTaskState.PENDING_OR_STARTED
-            if job_id == exp_started_task.job_id
-            else DaskClientTaskState.PENDING
+            (
+                DaskClientTaskState.PENDING_OR_STARTED
+                if job_id == exp_started_task.job_id
+                else DaskClientTaskState.PENDING
+            )
             for job_id in job_ids
         ]
 

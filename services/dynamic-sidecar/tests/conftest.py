@@ -218,6 +218,7 @@ def mock_environment(
     outputs_dir: Path,
     dy_volumes: Path,
     shared_store_dir: Path,
+    faker: Faker,
 ) -> EnvVarsDict:
     """Main test environment used to build the application
 
@@ -256,11 +257,11 @@ def mock_environment(
             "REGISTRY_PW": "test",
             "REGISTRY_SSL": "false",
             "REGISTRY_USER": "test",
-            "S3_ACCESS_KEY": "access_key",
-            "S3_BUCKET_NAME": "bucket_name",
-            "S3_ENDPOINT": "endpoint",
-            "S3_SECRET_KEY": "secret_key",
-            "S3_SECURE": "false",
+            "S3_ACCESS_KEY": faker.pystr(),
+            "S3_BUCKET_NAME": faker.pystr(),
+            "S3_ENDPOINT": faker.url(),
+            "S3_REGION": faker.pystr(),
+            "S3_SECRET_KEY": faker.pystr(),
         },
     )
 

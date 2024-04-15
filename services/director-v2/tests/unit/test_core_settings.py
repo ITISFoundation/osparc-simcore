@@ -33,32 +33,6 @@ def test_supported_backends_did_not_change() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "endpoint, is_secure",
-    [
-        ("localhost", False),
-        ("s3_aws", False),
-        ("https://ceph.home", True),
-        ("http://local.dev", False),
-    ],
-)
-def test_expected_s3_endpoint(
-    endpoint: str, is_secure: bool, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", endpoint)
-    monkeypatch.setenv("S3_SECURE", "true" if is_secure else "false")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-
-    r_clone_settings = RCloneSettings.create_from_envs()
-
-    scheme = "https" if is_secure else "http"
-    assert r_clone_settings.R_CLONE_S3.S3_ENDPOINT.startswith(f"{scheme}://")
-    assert r_clone_settings.R_CLONE_S3.S3_ENDPOINT.endswith(endpoint)
-
-
 def test_enforce_r_clone_requirement(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("R_CLONE_POLL_INTERVAL_SECONDS", "11")

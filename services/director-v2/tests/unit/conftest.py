@@ -179,11 +179,11 @@ def tasks_file_link_type(request) -> FileLinkType:
 @pytest.fixture
 def fake_s3_settings(faker: Faker) -> S3Settings:
     return S3Settings(
-        S3_ENDPOINT=faker.uri(),
+        S3_ENDPOINT=faker.url(),
         S3_ACCESS_KEY=faker.uuid4(),
         S3_SECRET_KEY=faker.uuid4(),
-        S3_ACCESS_TOKEN=faker.uuid4(),
         S3_BUCKET_NAME=faker.pystr(),
+        S3_REGION=faker.pystr(),
     )
 
 
