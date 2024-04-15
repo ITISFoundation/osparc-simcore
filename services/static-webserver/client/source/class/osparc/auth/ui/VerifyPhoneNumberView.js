@@ -36,7 +36,6 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     __verifyPhoneNumberBtn: null,
     __validateCodeField: null,
     __validateCodeBtn: null,
-    __resendCodeBtn: null,
     __sendViaEmail: null,
 
     _buildPage: function() {
@@ -103,11 +102,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       });
       validateCodeBtn.setEnabled(false);
       validateCodeTF.addListener("input", e => {
-        const valid = Boolean(e.getData());
-        validateCodeBtn.setEnabled(valid);
-        if (valid) {
-          this.__enableEnterCommand(validateCodeBtn)
-        }
+        validateCodeBtn.setEnabled(Boolean(e.getData()));
       });
       smsValidationLayout.add(validateCodeBtn);
       return smsValidationLayout;
@@ -140,7 +135,11 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             this.__verifyPhoneNumberBtn.setFetching(false);
             const retryAfter = osparc.auth.core.Utils.extractRetryAfter(resp);
             osparc.auth.core.Utils.restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"), retryAfter);
+            // enable, focus and listen to Enter
             this.__validateCodeField.setEnabled(true);
+            this.__validateCodeField.focus();
+            this.__validateCodeField.activate();
+            this.__enableEnterCommand(this.__validateCodeBtn);
           })
           .catch(err => {
             osparc.FlashMessenger.logAs(err.message, "ERROR");
