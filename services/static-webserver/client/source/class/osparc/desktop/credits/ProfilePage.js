@@ -214,10 +214,10 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         allowGrowX: false
       });
       [{
-        id: "SMS",
+        id: "sms",
         label: "SMS"
       }, {
-        id: "Email",
+        id: "email",
         label: "e-mail"
       }, {
         id: "disabled",

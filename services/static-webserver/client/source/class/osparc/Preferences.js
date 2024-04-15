@@ -134,7 +134,7 @@ qx.Class.define("osparc.Preferences", {
 
     twoFAPreference: {
       nullable: true,
-      check: ["SMS", "Email", "disabled"],
+      check: ["sms", "email", "disabled"],
       init: "sms",
       event: "changeTwoFAPreference",
       apply: "__patchPreference"
