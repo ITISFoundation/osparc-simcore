@@ -204,7 +204,10 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
     __create2FASection: function() {
       // const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("2 Factor Authentication"));
-      const box = this._createSectionBox(this.tr("2 Factor Authentication"));
+      const box = this._createSectionBox(this.tr("Preferred 2FA method"));
+
+      const label = this._createHelpLabel(this.tr("Set your preferred method to use for two-factor authentication when signing in:"));
+      box.add(label);
 
       const form = new qx.ui.form.Form();
 
@@ -234,23 +237,31 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
       });
       twoFAPreferenceSB.addListener("changeValue", e => {
         const currentSelection = e.getData();
-        if (currentSelection.getModel() === "disabled") {
-          const rUSure = this.tr("Are you sure you?");
-          const win = new osparc.ui.window.Confirmation(rUSure).set({
-            confirmText: this.tr("Delete"),
+        const selectedId = currentSelection.getModel();
+        if (selectedId === "DISABLED") {
+          const discourageTitle = this.tr("You are about to disable the 2FA");
+          const discourageText = this.tr("\
+            The 2 Factor Authentication is one more measure to Prevent hackers from accessing your account with an additional layer of security. \
+            When you sign in, 2FA helps make sure that your resources and personal information stays private, safe and secure.\
+          ");
+          const win = new osparc.ui.window.Confirmation(discourageTitle).set({
+            caption: discourageTitle,
+            message: discourageText,
+            confirmText: this.tr("Yes, disable"),
             confirmAction: "delete"
           });
           win.center();
           win.open();
           win.addListener("close", () => {
             if (win.getConfirmed()) {
-              osparc.Preferences.patchPreferenceField("twoFAPreference", twoFAPreferenceSB, currentSelection.getModel());
+              osparc.Preferences.patchPreferenceField("twoFAPreference", twoFAPreferenceSB, selectedId);
             } else {
               console.log("backToPrevious");
             }
           }, this);
+        } else {
+          osparc.Preferences.patchPreferenceField("twoFAPreference", twoFAPreferenceSB, selectedId);
         }
-        osparc.Preferences.patchPreferenceField("twoFAPreference", twoFAPreferenceSB, currentSelection.getModel());
       });
       form.add(twoFAPreferenceSB, this.tr("2FA Preference"));
 
