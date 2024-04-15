@@ -94,14 +94,14 @@ async def test_create_bucket(storage_s3_client: StorageS3Client, faker: Faker):
     response = await storage_s3_client.client.list_buckets()
     assert not response["Buckets"]
     bucket = faker.pystr()
-    await storage_s3_client.create_bucket(bucket)
+    await storage_s3_client.create_bucket(bucket, "us-east-1")
     response = await storage_s3_client.client.list_buckets()
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
     assert "Name" in response["Buckets"][0]
     assert response["Buckets"][0]["Name"] == bucket
     # now we create the bucket again, it should silently work even if it exists already
-    await storage_s3_client.create_bucket(bucket)
+    await storage_s3_client.create_bucket(bucket, "us-east-1")
     response = await storage_s3_client.client.list_buckets()
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
@@ -114,7 +114,7 @@ async def storage_s3_bucket(storage_s3_client: StorageS3Client, faker: Faker) ->
     response = await storage_s3_client.client.list_buckets()
     assert not response["Buckets"]
     bucket_name = faker.pystr()
-    await storage_s3_client.create_bucket(bucket_name)
+    await storage_s3_client.create_bucket(bucket_name, "us-east-1")
     response = await storage_s3_client.client.list_buckets()
     assert response["Buckets"]
     assert bucket_name in [
