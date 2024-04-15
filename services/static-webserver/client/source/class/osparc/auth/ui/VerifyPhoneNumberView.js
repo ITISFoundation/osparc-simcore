@@ -31,23 +31,6 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     "skipPhoneRegistration": "qx.event.type.Data"
   },
 
-  statics: {
-    restartResendTimer: function(button, buttonText) {
-      let count = 60;
-      const refreshIntervalId = setInterval(() => {
-        if (count > 0) {
-          count--;
-        } else {
-          clearInterval(refreshIntervalId);
-        }
-        button.set({
-          label: count > 0 ? buttonText + ` (${count})` : buttonText,
-          enabled: count === 0
-        });
-      }, 1000);
-    }
-  },
-
   members: {
     __itiInput: null,
     __verifyPhoneNumberBtn: null,
@@ -199,6 +182,21 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
           osparc.FlashMessenger.logAs(err.message, "ERROR");
         })
         .finally(() => this.__sendViaEmail.setFetching(false));
+    },
+
+    _onAppear: function() {
+      // Listen to "Enter" key
+      const commandEnter = new qx.ui.command.Command("Enter");
+      this.__submitBtn.setCommand(commandEnter);
+
+      // Listen to "Esc" key
+      const commandEsc = new qx.ui.command.Command("Esc");
+      this.__cancelBtn.setCommand(commandEsc);
+    },
+
+    _onDisappear: function() {
+      this.__submitBtn.setCommand(null);
+      this.__cancelBtn.setCommand(null);
     }
   }
 });
