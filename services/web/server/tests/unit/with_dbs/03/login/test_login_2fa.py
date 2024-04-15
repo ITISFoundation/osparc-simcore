@@ -255,7 +255,7 @@ async def test_workflow_register_and_login_with_2fa(
         user_id=user["id"],
         product_name="osparc",
         frontend_preference_identifier=_preference_id,
-        value=TwoFAAuthentificationMethod.email,
+        value=TwoFAAuthentificationMethod.EMAIL,
     )
 
     url = client.app.router["auth_login"].url_for()
@@ -280,7 +280,7 @@ async def test_workflow_register_and_login_with_2fa(
         user_id=user["id"],
         product_name="osparc",
         frontend_preference_identifier=_preference_id,
-        value=TwoFAAuthentificationMethod.disabled,
+        value=TwoFAAuthentificationMethod.DISABLED,
     )
 
     url = client.app.router["auth_login"].url_for()

@@ -126,7 +126,7 @@ async def login(request: web.Request):
         preference_class=user_preferences_api.TwoFAFrontendUserPreference,
     )
     if not user_2fa_preference:
-        user_2fa_authentification_method = TwoFAAuthentificationMethod.sms
+        user_2fa_authentification_method = TwoFAAuthentificationMethod.SMS
         preference_id = (
             user_preferences_api.TwoFAFrontendUserPreference().preference_identifier
         )
@@ -142,12 +142,12 @@ async def login(request: web.Request):
             TwoFAAuthentificationMethod, user_2fa_preference.value
         )
 
-    if user_2fa_authentification_method == TwoFAAuthentificationMethod.disabled:
+    if user_2fa_authentification_method == TwoFAAuthentificationMethod.DISABLED:
         return await login_granted_response(request, user=user)
 
     # Check phone for SMS authentication
     if (
-        user_2fa_authentification_method == TwoFAAuthentificationMethod.sms
+        user_2fa_authentification_method == TwoFAAuthentificationMethod.SMS
         and not user["phone"]
     ):
         return envelope_response(
@@ -171,7 +171,7 @@ async def login(request: web.Request):
         expiration_in_seconds=settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
     )
 
-    if user_2fa_authentification_method == TwoFAAuthentificationMethod.sms:
+    if user_2fa_authentification_method == TwoFAAuthentificationMethod.SMS:
         # create sms 2FA
         assert user["phone"]  # nosec
         assert settings.LOGIN_2FA_REQUIRED  # nosec
@@ -209,7 +209,7 @@ async def login(request: web.Request):
 
     # otherwise create email f2a
     assert (
-        user_2fa_authentification_method == TwoFAAuthentificationMethod.email
+        user_2fa_authentification_method == TwoFAAuthentificationMethod.EMAIL
     )  # nosec
     await send_email_code(
         request,

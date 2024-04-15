@@ -98,7 +98,7 @@ class TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference(
 
 class TwoFAFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "twoFAPreference"
-    value: TwoFAAuthentificationMethod = TwoFAAuthentificationMethod.sms
+    value: TwoFAAuthentificationMethod = TwoFAAuthentificationMethod.SMS
 
 
 class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference):
