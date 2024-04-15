@@ -1,19 +1,24 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-
+# pylint: disable=too-many-arguments
 
 import functools
 import io
 import json
+import os
 import textwrap
 import time
+from collections.abc import Callable
 from contextlib import suppress
 from pathlib import Path
+from typing import TypedDict
 
 import httpx
 import pytest
+import respx
 from fastapi.encoders import jsonable_encoder
+from pydantic import parse_obj_as
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
@@ -22,6 +27,8 @@ from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs, JobStatus
 from simcore_service_api_server.models.schemas.studies import StudyPort
+from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
+from unit.conftest import SideEffectCallback
 
 
 def _handle_http_status_error(func):
@@ -192,24 +199,49 @@ def test_py_path(tmp_path: Path) -> Path:
     return p
 
 
-# TODO: this is just to get mocks -------------------------
-@pytest.fixture
-async def client():
-    async with httpx.AsyncClient(base_url=f"http://{get_localhost_ip()}:8006/") as cli:
-        yield cli
+class MockedBackendApiDict(TypedDict):
+    webserver: MockRouter | None
+    storage: MockRouter | None
+    director_v2: MockRouter | None
 
 
-@pytest.fixture
-def auth():
-    return httpx.BasicAuth("test", "test")
+if os.environ.get("API_SERVER_DEV_HTTP_CALLS_LOGS_PATH"):
 
+    @pytest.fixture
+    async def client():
+        async with httpx.AsyncClient(
+            base_url=f"http://{get_localhost_ip()}:8006/"
+        ) as cli:
+            yield cli
 
-@pytest.fixture
-def mocked_webserver_service_api_base() -> MockRouter | None:
-    return None
+    @pytest.fixture
+    def auth():
+        return httpx.BasicAuth("test", "test")
 
+    @pytest.fixture
+    def mocked_backend():
+        return None
 
-# --------------------------------------------------
+else:
+
+    @pytest.fixture
+    def mocked_backend(
+        project_tests_dir: Path,
+        mocked_webserver_service_api_base: MockRouter,
+        mocked_storage_service_api_base: MockRouter,
+        mocked_directorv2_service_api_base: MockRouter,
+        respx_mock_from_capture: Callable[
+            [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+            list[respx.MockRouter],
+        ],
+    ) -> MockedBackendApiDict | None:
+        capture_path = project_tests_dir / "mocks" / "run_study_workflow.json"
+
+        captures: list[HttpApiCallCaptureModel] = parse_obj_as(
+            list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
+        )
+
+        # TODO: invent something that can
 
 
 @pytest.mark.acceptance_test(
@@ -218,7 +250,7 @@ def mocked_webserver_service_api_base() -> MockRouter | None:
 async def test_run_study_workflow(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_webserver_service_api_base: MockRouter,
+    mocked_backend: MockedBackendApiDict,
     tmp_path: Path,
     input_json_path: Path,
     input_data_path: Path,
