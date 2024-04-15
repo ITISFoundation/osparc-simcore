@@ -101,9 +101,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         minWidth: 80
       });
       validateCodeBtn.setEnabled(false);
-      validateCodeTF.addListener("input", e => {
-        validateCodeBtn.setEnabled(Boolean(e.getData()));
-      });
+      validateCodeTF.addListener("input", e => validateCodeBtn.setEnabled(Boolean(e.getData())));
       smsValidationLayout.add(validateCodeBtn);
       return smsValidationLayout;
     },
