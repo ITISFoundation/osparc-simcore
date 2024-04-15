@@ -139,6 +139,8 @@ async def pull_images(
         for image, image_layer_info in zip(
             images, images_layer_information, strict=True
         ):
+            # TODO: use gather call here to pull faster
+            # problem with progress in concurrent calls
             await pull_image(
                 image,
                 registry_settings,
@@ -148,15 +150,3 @@ async def pull_images(
                 if isinstance(image_layer_info, DockerImageManifestsV2)
                 else None,
             )
-
-        # await asyncio.gather(
-        #     *(
-        #         _pull_image(
-        #             image,
-        #             registry_settings=registry_settings,
-        #             pbar=pbar,
-        #             log_cb=log_cb,
-        #         )
-        #         for image in images
-        #     )
-        # )
