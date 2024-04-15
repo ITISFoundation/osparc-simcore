@@ -46,7 +46,15 @@ class AsyncClientForDevelopmentOnly(httpx.AsyncClient):
             )
             serialized_captures.append(capture)
             self._capture_file.write_text(
-                json.dumps(jsonable_encoder(serialized_captures), indent=1)
+                json.dumps(
+                    jsonable_encoder(
+                        serialized_captures,
+                        # NOTE: reduces file size by relying on defaults
+                        exclude_unset=True,
+                        exclude_defaults=True,
+                    ),
+                    indent=1,
+                )
             )
         except (CaptureProcessingException, ValidationError, httpx.RequestError):
             _logger.exception(
