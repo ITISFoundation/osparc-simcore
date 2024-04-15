@@ -1,9 +1,10 @@
 import asyncio
 import logging
+from typing import Final
 
 import httpx
 from models_library.docker import DockerGenericTag
-from pydantic import ValidationError, parse_obj_as
+from pydantic import ByteSize, ValidationError, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 
@@ -109,6 +110,9 @@ async def _pull_image(
     await pull_image(image, registry_settings, pbar, log_cb, layer_information)
 
 
+_DEFAULT_IMAGE_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "50MiB")
+
+
 async def pull_images(
     images: set[DockerGenericTag],
     registry_settings: RegistrySettings,
@@ -121,30 +125,30 @@ async def pull_images(
             for image in images
         ]
     )
-    step_weights = {
-        image: info.layers_total_size.human_readable() if info else 1.0
-        for info, image in zip(images_layer_information, images, strict=True)
-    }
-    _logger.error(
-        "progress step weights: %s",
-        step_weights,
-    )
     progress_step_weights = [
-        float(i.layers_total_size) if i else 1.0 for i in images_layer_information
+        float(i.layers_total_size) if i else float(_DEFAULT_IMAGE_SIZE)
+        for i in images_layer_information
     ]
+    _logger.debug("images to pull sizes: %s", progress_step_weights)
 
     async with ProgressBarData(
         num_steps=len(images),
         step_weights=progress_step_weights,
         progress_report_cb=progress_cb,
     ) as pbar:
-        for image in images:
-            await _pull_image(
+        for image, image_layer_info in zip(
+            images, images_layer_information, strict=True
+        ):
+            await pull_image(
                 image,
-                registry_settings=registry_settings,
-                pbar=pbar,
-                log_cb=log_cb,
+                registry_settings,
+                pbar,
+                log_cb,
+                image_layer_info
+                if isinstance(image_layer_info, DockerImageManifestsV2)
+                else None,
             )
+
         # await asyncio.gather(
         #     *(
         #         _pull_image(
