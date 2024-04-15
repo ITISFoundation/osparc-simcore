@@ -214,21 +214,21 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         allowGrowX: false
       });
       [{
-        id: "sms",
+        id: "SMS",
         label: "SMS"
       }, {
-        id: "email",
+        id: "EMAIL",
         label: "e-mail"
       }, {
-        id: "disabled",
+        id: "DISABLED",
         label: "Disabled"
       }].forEach(options => {
         const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
         twoFAPreferenceSB.add(lItem);
       });
-      const value2 = preferencesSettings.getTwoFAPreference();
+      const value = preferencesSettings.getTwoFAPreference();
       twoFAPreferenceSB.getSelectables().forEach(selectable => {
-        if (selectable.getModel() === value2) {
+        if (selectable.getModel() === value) {
           twoFAPreferenceSB.setSelection([selectable]);
         }
       });
