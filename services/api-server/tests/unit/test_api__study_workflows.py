@@ -231,7 +231,7 @@ async def test_run_study_workflow(
 
     # lists
     study_ports = await studies_api.list_study_ports(study_id=template_id)
-    # assert study_ports.total == 3
+    assert study_ports.total == 11
     # TODO: file-pickers are not considered ports  but can be set as inputs! This is inconsistent!
     # TODO: Expose Models in web-server.
     # TODO: file ports do not have schema !!
