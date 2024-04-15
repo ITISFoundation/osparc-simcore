@@ -63,7 +63,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         });
         walletIndicatorVisibilitySB.addListener("changeValue", e => {
           const selectable = e.getData();
-          preferencesSettings.patchPreferenceField("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
+          osparc.Preferences.patchPreferenceField("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
         });
         form.add(walletIndicatorVisibilitySB, this.tr("Show indicator"));
 
@@ -74,7 +74,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
           allowGrowX: false
         });
         preferencesSettings.bind("creditsWarningThreshold", creditsWarningThresholdField, "value");
-        creditsWarningThresholdField.addListener("changeValue", e => preferencesSettings.patchPreferenceField("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
+        creditsWarningThresholdField.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
         form.add(creditsWarningThresholdField, this.tr("Show warning when credits below"));
 
         box.add(new qx.ui.form.renderer.Single(form));
@@ -102,8 +102,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         preferences.bind("userInactivityThreshold", inactivitySpinner, "value", {
           converter: value => Math.round(value / 60) // Stored in seconds, displayed in minutes
         });
-        const preferencesSettings = osparc.Preferences.getInstance();
-        inactivitySpinner.addListener("changeValue", e => preferencesSettings.patchPreferenceField("userInactivityThreshold", inactivitySpinner, e.getData() * 60));
+        inactivitySpinner.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("userInactivityThreshold", inactivitySpinner, e.getData() * 60));
         form.add(inactivitySpinner, this.tr("Idle time before closing (in minutes)"));
 
         box.add(new qx.ui.form.renderer.Single(form));
@@ -124,8 +123,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       });
       const preferences = osparc.Preferences.getInstance();
       preferences.bind("jobConcurrencyLimit", jobConcurrencySpinner, "value");
-      const preferencesSettings = osparc.Preferences.getInstance();
-      jobConcurrencySpinner.addListener("changeValue", e => preferencesSettings.patchPreferenceField("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
+      jobConcurrencySpinner.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
       form.add(jobConcurrencySpinner, this.tr("Maximum number of concurrent jobs"));
       box.add(new qx.ui.form.renderer.Single(form));
       this.add(box);
@@ -147,8 +145,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         });
         preferences.bind("lowDiskSpaceThreshold", diskUsageSpinner, "value");
 
-        const preferencesSettings = osparc.Preferences.getInstance();
-        diskUsageSpinner.addListener("changeValue", e => preferencesSettings.patchPreferenceField("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
+        diskUsageSpinner.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
         form.add(diskUsageSpinner, this.tr("Threshold (in GB)"));
         box.add(new qx.ui.form.renderer.Single(form));
         this.add(box);
@@ -166,7 +163,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
         const cbAllowMetricsCollection = new qx.ui.form.CheckBox(this.tr("Share usage data"));
         preferencesSettings.bind("allowMetricsCollection", cbAllowMetricsCollection, "value");
-        cbAllowMetricsCollection.addListener("changeValue", e => preferencesSettings.patchPreferenceField("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
+        cbAllowMetricsCollection.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
         box.add(cbAllowMetricsCollection);
 
         this.add(box);

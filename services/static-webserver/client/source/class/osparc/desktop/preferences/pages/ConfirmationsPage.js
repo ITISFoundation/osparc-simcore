@@ -52,7 +52,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
       const cbConfirmBackToDashboard = new qx.ui.form.CheckBox(this.tr("Go back to the Dashboard"));
       preferencesSettings.bind("confirmBackToDashboard", cbConfirmBackToDashboard, "value");
-      cbConfirmBackToDashboard.addListener("changeValue", e => preferencesSettings.patchPreferenceField("confirmBackToDashboard", cbConfirmBackToDashboard, e.getData()));
+      cbConfirmBackToDashboard.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("confirmBackToDashboard", cbConfirmBackToDashboard, e.getData()));
       box.add(cbConfirmBackToDashboard);
 
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
@@ -60,7 +60,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       preferencesSettings.bind("confirmDeleteStudy", cbConfirmDeleteStudy, "value");
       cbConfirmDeleteStudy.addListener("changeValue", e => {
         if (e.getData()) {
-          preferencesSettings.patchPreferenceField("confirmDeleteStudy", cbConfirmDeleteStudy, true);
+          osparc.Preferences.patchPreferenceField("confirmDeleteStudy", cbConfirmDeleteStudy, true);
         } else {
           const msg = this.tr("Warning: deleting a ") + studyAlias + this.tr(" cannot be undone");
           const win = new osparc.ui.window.Confirmation(msg).set({
@@ -71,7 +71,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
           win.open();
           win.addListener("close", () => {
             if (win.getConfirmed()) {
-              preferencesSettings.patchPreferenceField("confirmDeleteStudy", cbConfirmDeleteStudy, false);
+              osparc.Preferences.patchPreferenceField("confirmDeleteStudy", cbConfirmDeleteStudy, false);
             } else {
               cbConfirmDeleteStudy.setValue(true);
             }
@@ -85,7 +85,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         preferencesSettings.bind("confirmDeleteNode", cbConfirmDeleteNode, "value");
         cbConfirmDeleteNode.addListener("changeValue", e => {
           if (e.getData()) {
-            preferencesSettings.patchPreferenceField("confirmDeleteNode", cbConfirmDeleteNode, true);
+            osparc.Preferences.patchPreferenceField("confirmDeleteNode", cbConfirmDeleteNode, true);
           } else {
             const msg = this.tr("Warning: deleting a node cannot be undone");
             const win = new osparc.ui.window.Confirmation(msg).set({
@@ -96,7 +96,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
             win.open();
             win.addListener("close", () => {
               if (win.getConfirmed()) {
-                preferencesSettings.patchPreferenceField("confirmDeleteNode", cbConfirmDeleteNode, false);
+                osparc.Preferences.patchPreferenceField("confirmDeleteNode", cbConfirmDeleteNode, false);
               } else {
                 cbConfirmDeleteNode.setValue(true);
               }
@@ -107,12 +107,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
         const cbConfirmStopNode = new qx.ui.form.CheckBox(this.tr("Stop Node"));
         preferencesSettings.bind("confirmStopNode", cbConfirmStopNode, "value");
-        cbConfirmStopNode.addListener("changeValue", e => preferencesSettings.patchPreferenceField("confirmStopNode", cbConfirmStopNode, e.getData()));
+        cbConfirmStopNode.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("confirmStopNode", cbConfirmStopNode, e.getData()));
         box.add(cbConfirmStopNode);
 
         const cbSnapNodeToGrid = new qx.ui.form.CheckBox(this.tr("Snap Node to grid"));
         preferencesSettings.bind("snapNodeToGrid", cbSnapNodeToGrid, "value");
-        cbSnapNodeToGrid.addListener("changeValue", e => preferencesSettings.patchPreferenceField("snapNodeToGrid", cbSnapNodeToGrid, e.getData()));
+        cbSnapNodeToGrid.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("snapNodeToGrid", cbSnapNodeToGrid, e.getData()));
         box.add(cbSnapNodeToGrid);
       }
 
@@ -132,7 +132,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
       const cbAutoPorts = new qx.ui.form.CheckBox(this.tr("Connect ports automatically"));
       preferencesSettings.bind("autoConnectPorts", cbAutoPorts, "value");
-      cbAutoPorts.addListener("changeValue", e => preferencesSettings.patchPreferenceField("autoConnectPorts", cbAutoPorts, e.getData()));
+      cbAutoPorts.addListener("changeValue", e => osparc.Preferences.patchPreferenceField("autoConnectPorts", cbAutoPorts, e.getData()));
       box.add(cbAutoPorts);
 
       return box;

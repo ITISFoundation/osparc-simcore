@@ -36,6 +36,9 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
     this.__getProfile();
 
     this.add(this.__createProfileUser());
+    if (osparc.store.StaticInfo.getInstance().is2FARequired()) {
+      this.add(this.__create2FASection());
+    }
     this.add(this.__createPasswordSection());
     this.add(this.__createDeleteAccount());
   },
@@ -195,6 +198,63 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
           req.send();
         });
       }, this);
+
+      return box;
+    },
+
+    __create2FASection: function() {
+      // const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("2 Factor Authentication"));
+      const box = this._createSectionBox(this.tr("2 Factor Authentication"));
+
+      const form = new qx.ui.form.Form();
+
+      const preferencesSettings = osparc.Preferences.getInstance();
+
+      const twoFAPreferenceSB = new qx.ui.form.SelectBox().set({
+        allowGrowX: false
+      });
+      [{
+        id: "SMS",
+        label: "SMS"
+      }, {
+        id: "Email",
+        label: "e-mail"
+      }, {
+        id: "disabled",
+        label: "Disabled"
+      }].forEach(options => {
+        const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
+        twoFAPreferenceSB.add(lItem);
+      });
+      const value2 = preferencesSettings.getTwoFAPreference();
+      twoFAPreferenceSB.getSelectables().forEach(selectable => {
+        if (selectable.getModel() === value2) {
+          twoFAPreferenceSB.setSelection([selectable]);
+        }
+      });
+      twoFAPreferenceSB.addListener("changeValue", e => {
+        const currentSelection = e.getData();
+        if (currentSelection.getModel() === "disabled") {
+          const rUSure = this.tr("Are you sure you?");
+          const win = new osparc.ui.window.Confirmation(rUSure).set({
+            confirmText: this.tr("Delete"),
+            confirmAction: "delete"
+          });
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              osparc.Preferences.patchPreferenceField("twoFAPreference", twoFAPreferenceSB, currentSelection.getModel());
+            } else {
+              console.log("backToPrevious");
+            }
+          }, this);
+        }
+        osparc.Preferences.patchPreferenceField("twoFAPreference", twoFAPreferenceSB, currentSelection.getModel());
+      });
+      form.add(twoFAPreferenceSB, this.tr("2FA Preference"));
+
+      box.add(new qx.ui.form.renderer.Single(form));
 
       return box;
     },
