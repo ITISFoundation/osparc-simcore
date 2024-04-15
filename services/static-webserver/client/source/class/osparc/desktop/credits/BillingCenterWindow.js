@@ -16,28 +16,20 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.desktop.credits.BillingCenterWindow", {
-  extend: osparc.ui.window.SingletonWindow,
+  extend: osparc.ui.window.TabbedWindow,
 
   construct: function() {
-    const caption = this.tr("Billing Center");
-    this.base(arguments, "credits", caption);
+    this.base(arguments, "credits", this.tr("Billing Center"));
 
-    const viewWidth = 1035;
-    const viewHeight = 700;
-
+    const width = 1035;
+    const height = 700;
     this.set({
-      layout: new qx.ui.layout.Grow(),
-      modal: true,
-      width: viewWidth,
-      height: viewHeight,
-      showMaximize: false,
-      showMinimize: false,
-      resizable: true,
-      appearance: "service-window"
-    });
+      width,
+      height
+    })
 
     const billingCenter = this.__billingCenter = new osparc.desktop.credits.BillingCenter();
-    this.add(billingCenter);
+    this._setTabbedView(billingCenter);
   },
 
   statics: {

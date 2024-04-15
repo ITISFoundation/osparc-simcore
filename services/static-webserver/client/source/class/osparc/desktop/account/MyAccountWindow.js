@@ -15,34 +15,26 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.MyAccountWindow", {
-  extend: osparc.ui.window.SingletonWindow,
+qx.Class.define("osparc.desktop.account.MyAccountWindow", {
+  extend: osparc.ui.window.TabbedWindow,
 
   construct: function() {
-    const caption = this.tr("My Account");
-    this.base(arguments, "credits", caption);
+    this.base(arguments, "credits", this.tr("My Account"));
 
-    const viewWidth = 900;
-    const viewHeight = 600;
-
+    const width = 900;
+    const height = 600;
     this.set({
-      layout: new qx.ui.layout.Grow(),
-      modal: true,
-      width: viewWidth,
-      height: viewHeight,
-      showMaximize: false,
-      showMinimize: false,
-      resizable: true,
-      appearance: "service-window"
+      width,
+      height
     });
 
-    const myAccount = this.__myAccount = new osparc.desktop.credits.MyAccount();
-    this.add(myAccount);
+    const myAccount = this.__myAccount = new osparc.desktop.account.MyAccount();
+    this._setTabbedView(myAccount);
   },
 
   statics: {
     openWindow: function() {
-      const accountWindow = new osparc.desktop.credits.MyAccountWindow();
+      const accountWindow = new osparc.desktop.account.MyAccountWindow();
       accountWindow.center();
       accountWindow.open();
       return accountWindow;

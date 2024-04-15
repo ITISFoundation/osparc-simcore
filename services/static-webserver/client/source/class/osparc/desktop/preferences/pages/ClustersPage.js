@@ -21,13 +21,12 @@
  */
 
 qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
-  extend: osparc.desktop.preferences.pages.BasePage,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/server/24";
-    // const iconSrc = "@FontAwesome5Brands/hubspot/24";
-    const title = this.tr("Clusters");
-    this.base(arguments, title, iconSrc);
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
       alignX: "center"
@@ -36,9 +35,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       buttonsLayout.add(this.__getCreateClusterButton());
     }
     buttonsLayout.add(this.__getShowClustersDetailsButton());
-    this.add(buttonsLayout);
-    this.add(this.__getClustersSection());
-    this.add(this.__getOrgsAndMembersSection(), {
+    this._add(buttonsLayout);
+    this._add(this.__getClustersSection());
+    this._add(this.__getOrgsAndMembersSection(), {
       flex: 1
     });
 
@@ -84,7 +83,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     },
 
     __getClustersSection: function() {
-      const box = this._createSectionBox(this.tr("Clusters"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Clusters"));
       box.add(this.__getClustersList());
       box.setContentPadding(0);
       return box;
@@ -131,7 +130,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     },
 
     __getOrgsAndMembersSection: function() {
-      const box = this._createSectionBox(this.tr("Organization and Members"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Organization and Members"));
       box.add(this.__getOrgMembersFilter());
       box.add(this.__getMembersList(), {
         flex: 1

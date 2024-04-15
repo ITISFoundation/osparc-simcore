@@ -16,27 +16,20 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.admin.AdminCenterWindow", {
-  extend: osparc.ui.window.SingletonWindow,
+  extend: osparc.ui.window.TabbedWindow,
 
   construct: function() {
     this.base(arguments, "admin-center", this.tr("Admin Center"));
 
-    const viewWidth = 800;
-    const viewHeight = 600;
-
+    const width = 800;
+    const height = 600;
     this.set({
-      layout: new qx.ui.layout.Grow(),
-      modal: true,
-      width: viewWidth,
-      height: viewHeight,
-      showMaximize: false,
-      showMinimize: false,
-      resizable: true,
-      appearance: "service-window"
+      width: width,
+      height: height,
     });
 
     const adminCenter = new osparc.admin.AdminCenter();
-    this.add(adminCenter);
+    this._setTabbedView(adminCenter);
   },
 
   statics: {

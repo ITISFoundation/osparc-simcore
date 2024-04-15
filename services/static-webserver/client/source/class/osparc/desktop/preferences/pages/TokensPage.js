@@ -21,15 +21,15 @@
  */
 
 qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
-  extend: osparc.desktop.preferences.pages.BasePage,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/exchange-alt/24";
-    const title = this.tr("API Keys/Tokens");
-    this.base(arguments, title, iconSrc);
+    this.base(arguments);
 
-    this.add(this.__createAPIKeysSection());
-    this.add(this.__createTokensSection());
+    this._setLayout(new qx.ui.layout.VBox(15));
+
+    this._add(this.__createAPIKeysSection());
+    this._add(this.__createTokensSection());
 
     this.__rebuildAPIKeysList();
     this.__rebuildTokensList();
@@ -43,9 +43,9 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
     __createAPIKeysSection: function() {
       // layout
-      const box = this._createSectionBox(this.tr("API Keys"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("API Keys"));
 
-      const label = this._createHelpLabel(this.tr(
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr(
         "List API keys associated to your account."
       ));
       box.add(label);
@@ -170,15 +170,15 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
     __createTokensSection: function() {
       // layout
-      const box = this._createSectionBox(this.tr("External Service Tokens"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("External Service Tokens"));
 
-      const label = this._createHelpLabel(this.tr("Enter the API tokens to access external services."));
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Enter the API tokens to access external services."));
       box.add(label);
 
-      const validTokensGB = this.__validTokensGB = this._createSectionBox(this.tr("Exisiting Tokens"));
+      const validTokensGB = this.__validTokensGB = osparc.ui.window.TabbedView.createSectionBox(this.tr("Existing Tokens"));
       box.add(validTokensGB);
 
-      const supportedExternalsGB = this.__supportedExternalsGB = this._createSectionBox(this.tr("Supported services")).set({
+      const supportedExternalsGB = this.__supportedExternalsGB = osparc.ui.window.TabbedView.createSectionBox(this.tr("Supported services")).set({
         layout: new qx.ui.layout.Flow(5, 5)
       });
       box.add(supportedExternalsGB);
