@@ -168,9 +168,9 @@ qx.Class.define("osparc.auth.Manager", {
         if (xhr.status === 202) {
           const resp = JSON.parse(xhr.responseText);
           const data = resp.data;
-          if (data["code"] === "PHONE_NUMBER_REQUIRED") {
+          if (data["name"] === "PHONE_NUMBER_REQUIRED") {
             verifyPhoneCbk.call(context);
-          } else if (data["code"] === "SMS_CODE_REQUIRED") {
+          } else if (data["name"] === "SMS_CODE_REQUIRED") {
             twoFactorAuthCbk.call(context, data["reason"]);
           }
         } else if (xhr.status === 200) {
