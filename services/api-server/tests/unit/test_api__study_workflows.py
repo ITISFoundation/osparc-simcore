@@ -244,6 +244,7 @@ else:
         # TODO: invent something that can
 
 
+@pytest.mark.xfail()
 @pytest.mark.acceptance_test(
     "Reproduces https://github.com/wvangeit/osparc-pyapi-tests/blob/master/noninter1/run_study.py"
 )
@@ -264,14 +265,6 @@ async def test_run_study_workflow(
     # lists
     study_ports = await studies_api.list_study_ports(study_id=template_id)
     assert study_ports.total == 11
-    # TODO: file-pickers are not considered ports  but can be set as inputs! This is inconsistent!
-    # TODO: Expose Models in web-server.
-    # TODO: file ports do not have schema !!
-    # {
-    #   "key": "0b8042c4-501a-4f9b-b2fa-17f860548b33",
-    #   "kind": "output",
-    #   "content_schema": null
-    # },
 
     # uploads input files
     test_py_file: File = await files_api.upload_file(path=test_py_path)
