@@ -17,6 +17,7 @@ from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import LogExtra, get_log_record_extra, log_decorator
 from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
+from twilio.base.exceptions import TwilioException
 from twilio.rest import Client
 
 from ..login.errors import SendingVerificationEmailError, SendingVerificationSmsError
@@ -128,7 +129,7 @@ async def send_sms_code(
 
         await asyncio.get_event_loop().run_in_executor(executor=None, func=_sender)
 
-    except Exception as exc:
+    except TwilioException as exc:
         error_code = create_error_code(exc)
         more_extra: LogExtra = get_log_record_extra(user_id=user_id) or {}
         log.exception(
@@ -174,7 +175,7 @@ async def send_email_code(
                 "product": product,
             },
         )
-    except Exception as exc:
+    except TwilioException as exc:
         error_code = create_error_code(exc)
         more_extra: LogExtra = get_log_record_extra(user_id=user_id) or {}
         log.exception(
