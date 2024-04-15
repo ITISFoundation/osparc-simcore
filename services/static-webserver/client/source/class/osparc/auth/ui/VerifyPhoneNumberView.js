@@ -34,7 +34,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
   members: {
     __itiInput: null,
     __verifyPhoneNumberBtn: null,
-    __validateCodeTF: null,
+    __validateCodeField: null,
     __validateCodeBtn: null,
     __resendCodeBtn: null,
     __sendViaEmail: null,
@@ -89,7 +89,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
     __createValidationLayout: function() {
       const smsValidationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const validateCodeTF = this.__validateCodeTF = new qx.ui.form.TextField().set({
+      const validateCodeTF = this.__validateCodeField = new qx.ui.form.TextField().set({
         placeholder: this.tr("Type the SMS code"),
         enabled: false
       });
@@ -134,7 +134,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
             this.__verifyPhoneNumberBtn.setFetching(false);
             const retryAfter = osparc.auth.core.Utils.extractRetryAfter(resp);
             osparc.auth.core.Utils.restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"), retryAfter);
-            this.__validateCodeTF.setEnabled(true);
+            this.__validateCodeField.setEnabled(true);
           })
           .catch(err => {
             osparc.FlashMessenger.logAs(err.message, "ERROR");
@@ -150,7 +150,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       const loginFun = log => {
         osparc.FlashMessenger.logAs(log.message, "INFO");
         this.__validateCodeBtn.setFetching(false);
-        this.__validateCodeTF.setEnabled(false);
+        this.__validateCodeField.setEnabled(false);
         this.__validateCodeBtn.setEnabled(false);
         this.__validateCodeBtn.setIcon("@FontAwesome5Solid/check/12");
         this.fireDataEvent("done", log.message);
@@ -161,14 +161,14 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         this.__validateCodeBtn.setFetching(false);
         // TODO: can get field info from response here
         msg = String(msg) || this.tr("Invalid code");
-        this.__validateCodeTF.set({
+        this.__validateCodeField.set({
           invalidMessage: msg,
           valid: false
         });
       };
 
       const manager = osparc.auth.Manager.getInstance();
-      manager.validateCodeRegister(this.getUserEmail(), this.__itiInput.getNumber(), this.__validateCodeTF.getValue(), loginFun, failFun, this);
+      manager.validateCodeRegister(this.getUserEmail(), this.__itiInput.getNumber(), this.__validateCodeField.getValue(), loginFun, failFun, this);
     },
 
     __requestCodeViaEmail: function() {
