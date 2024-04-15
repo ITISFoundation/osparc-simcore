@@ -68,7 +68,7 @@ def mocked_backend(
 async def test_studies_read_workflow(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_backend: MockRouter,
+    mocked_backend: MockedBackendApiDict,
 ):
     study_id = StudyID("25531b1a-2565-11ee-ab43-02420a000031")
 
