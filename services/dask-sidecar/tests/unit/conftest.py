@@ -168,6 +168,7 @@ def s3_settings(mocked_s3_server_envs: None) -> S3Settings:
 
 @pytest.fixture
 def s3_endpoint_url(s3_settings: S3Settings) -> AnyUrl:
+    assert s3_settings.S3_ENDPOINT
     return parse_obj_as(
         AnyUrl,
         f"{s3_settings.S3_ENDPOINT}",
@@ -182,7 +183,7 @@ async def aiobotocore_s3_client(
     async with session.create_client(
         "s3",
         endpoint_url=f"{s3_endpoint_url}",
-        aws_secret_access_key="xxx",
+        aws_secret_access_key="xxx",  # noqa: S106
         aws_access_key_id="xxx",
     ) as client:
         yield client
@@ -279,10 +280,10 @@ def task_owner(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
-        parent_project_id=None
-        if request.param == "no_parent_node"
-        else faker.uuid4(cast_to=None),
-        parent_node_id=None
-        if request.param == "no_parent_node"
-        else faker.uuid4(cast_to=None),
+        parent_project_id=(
+            None if request.param == "no_parent_node" else faker.uuid4(cast_to=None)
+        ),
+        parent_node_id=(
+            None if request.param == "no_parent_node" else faker.uuid4(cast_to=None)
+        ),
     )

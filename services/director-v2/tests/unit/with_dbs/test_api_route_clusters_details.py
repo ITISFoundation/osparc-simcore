@@ -13,6 +13,7 @@ from _dask_helpers import DaskGatewayServer
 from dask_gateway import Gateway, GatewayCluster, auth
 from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
+from faker import Faker
 from models_library.api_schemas_directorv2.clusters import ClusterDetailsGet
 from models_library.clusters import Cluster, ClusterID, SimpleAuthentication
 from models_library.users import UserID
@@ -38,14 +39,15 @@ def clusters_config(
     postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
+    faker: Faker,
 ):
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("S3_ENDPOINT", faker.url())
+    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
+    monkeypatch.setenv("S3_REGION", faker.pystr())
+    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
+    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
 
 
 @pytest.mark.skip(

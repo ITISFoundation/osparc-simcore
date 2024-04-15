@@ -110,7 +110,7 @@ def _get_environment_variables(
 
     storage_config = _get_storage_config(app_settings)
 
-    return {
+    envs = {
         # These environments will be captured by
         # services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/core/settings.py::ApplicationSettings
         #
@@ -153,9 +153,8 @@ def _get_environment_variables(
         "REGISTRY_USER": f"{registry_settings.REGISTRY_USER}",
         "S3_ACCESS_KEY": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
         "S3_BUCKET_NAME": r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
-        "S3_ENDPOINT": r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
+        "S3_REGION": r_clone_settings.R_CLONE_S3.S3_REGION,
         "S3_SECRET_KEY": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
-        "S3_SECURE": f"{r_clone_settings.R_CLONE_S3.S3_SECURE}",
         "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_SC_BOOT_MODE}",
         "SSL_CERT_FILE": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
         # For background info on this special env-var above, see
@@ -172,6 +171,9 @@ def _get_environment_variables(
         "DY_SIDECAR_PRODUCT_NAME": f"{scheduler_data.product_name}",
         "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": f"{app_settings.DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS}",
     }
+    if r_clone_settings.R_CLONE_S3.S3_ENDPOINT is not None:
+        envs["S3_ENDPOINT"] = r_clone_settings.R_CLONE_S3.S3_ENDPOINT
+    return envs
 
 
 def get_prometheus_service_labels(
@@ -461,25 +463,27 @@ def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR091
                 "Init": True,
                 "Labels": standard_simcore_docker_labels,
                 "Mounts": mounts,
-                "Secrets": [
-                    {
-                        "SecretID": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID,
-                        "SecretName": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME,
-                        "File": {
-                            "Name": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
-                            "Mode": 444,
-                            "UID": "0",
-                            "GID": "0",
-                        },
-                    }
-                ]
-                if (
-                    app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME
-                    and app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID
-                    and app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME
-                    and app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
-                )
-                else None,
+                "Secrets": (
+                    [
+                        {
+                            "SecretID": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID,
+                            "SecretName": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME,
+                            "File": {
+                                "Name": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
+                                "Mode": 444,
+                                "UID": "0",
+                                "GID": "0",
+                            },
+                        }
+                    ]
+                    if (
+                        app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME
+                        and app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID
+                        and app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME
+                        and app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+                    )
+                    else None
+                ),
             },
             "Placement": {"Constraints": placement_constraints},
             "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,

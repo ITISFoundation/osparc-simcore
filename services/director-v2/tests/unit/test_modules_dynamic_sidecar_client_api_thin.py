@@ -6,6 +6,7 @@ from collections.abc import Callable
 from typing import Any, AsyncIterable
 
 import pytest
+from faker import Faker
 from fastapi import FastAPI, status
 from httpx import Response
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
@@ -34,11 +35,14 @@ def assert_responses(mocked: Response, result: Response | None) -> None:
 
 
 @pytest.fixture
-def mocked_app(monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict) -> FastAPI:
-    monkeypatch.setenv("S3_ENDPOINT", "")
-    monkeypatch.setenv("S3_ACCESS_KEY", "")
-    monkeypatch.setenv("S3_SECRET_KEY", "")
-    monkeypatch.setenv("S3_BUCKET_NAME", "")
+def mocked_app(
+    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, faker: Faker
+) -> FastAPI:
+    monkeypatch.setenv("S3_ENDPOINT", faker.url())
+    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
+    monkeypatch.setenv("S3_REGION", faker.pystr())
+    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
+    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
 
     monkeypatch.setenv("POSTGRES_HOST", "")

@@ -48,26 +48,33 @@ def _file_progress_cb(
 CHUNK_SIZE = 4 * 1024 * 1024
 
 
-class ClientKWArgsDict(TypedDict):
+class ClientKWArgsDict(TypedDict, total=False):
     endpoint_url: str
+    region_name: str
 
 
 class S3FsSettingsDict(TypedDict):
     key: str
     secret: str
-    token: str | None
-    use_ssl: bool
     client_kwargs: ClientKWArgsDict
 
 
+_DEFAULT_AWS_REGION: Final[str] = "us-east-1"
+
+
 def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict:
-    return {
+    s3fs_settings: S3FsSettingsDict = {
         "key": s3_settings.S3_ACCESS_KEY,
         "secret": s3_settings.S3_SECRET_KEY,
-        "token": s3_settings.S3_ACCESS_TOKEN,
-        "use_ssl": s3_settings.S3_SECURE,
-        "client_kwargs": {"endpoint_url": s3_settings.S3_ENDPOINT},
+        "client_kwargs": {},
     }
+    if s3_settings.S3_REGION != _DEFAULT_AWS_REGION:
+        # NOTE: see https://github.com/boto/boto3/issues/125 why this is so... (sic)
+        # setting it for the us-east-1 creates issue when creating buckets (which we do in tests)
+        s3fs_settings["client_kwargs"]["region_name"] = s3_settings.S3_REGION
+    if s3_settings.S3_ENDPOINT is not None:
+        s3fs_settings["client_kwargs"]["endpoint_url"] = s3_settings.S3_ENDPOINT
+    return s3fs_settings
 
 
 def _file_chunk_streamer(src: BytesIO, dst: BytesIO):

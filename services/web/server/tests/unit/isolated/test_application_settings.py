@@ -47,7 +47,7 @@ def mock_env_makefile(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
             "DIRECTOR_V2_API_VERSION": "2.0.0",
             "DOCKER_IMAGE_TAG": "production",
             "DOCKER_REGISTRY": "local",
-            "S3_ENDPOINT": "127.0.0.1:9001",
+            "S3_ENDPOINT": "http://127.0.0.1:9001",
             "STORAGE_API_VERSION": "0.2.1",
             "SWARM_HOSTS": "",
             "SWARM_STACK_NAME": "master-simcore",
