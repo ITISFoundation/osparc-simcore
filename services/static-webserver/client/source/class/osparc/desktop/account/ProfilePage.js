@@ -270,7 +270,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       return box;
     },
 
-    __getProfile: function() {
+    __fetchProfile: function() {
       osparc.data.Resources.getOne("profile", {}, null, false)
         .then(profile => {
           this.__setDataToModel(profile);
