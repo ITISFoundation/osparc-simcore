@@ -36,6 +36,27 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     "publishTemplate": "qx.event.type.Data"
   },
 
+
+  statics: {
+    WIDTH: 830,
+    HEIGHT: 700,
+
+    popUpInWindow: function(resourceDetails) {
+      // eslint-disable-next-line no-underscore-dangle
+      const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(resourceDetails.__resourceData["resourceType"]);
+      // eslint-disable-next-line no-underscore-dangle
+      const title = `${resourceAlias} ${qx.locale.Manager.tr("Details")} - ${resourceDetails.__resourceData.name}`;
+      const win = osparc.ui.window.Window.popUpInWindow(resourceDetails, title, this.WIDTH, this.HEIGHT).set({
+        layout: new qx.ui.layout.Grow(),
+      });
+      win.set(osparc.ui.window.TabbedWindow.DEFAULT_PROPS);
+      win.set({
+        width: this.WIDTH,
+        height: this.HEIGHT,
+      })
+    }
+  },
+
   properties: {
     showOpenButton: {
       check: "Boolean",

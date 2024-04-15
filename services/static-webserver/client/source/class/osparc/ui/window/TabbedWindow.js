@@ -22,18 +22,22 @@ qx.Class.define("osparc.ui.window.TabbedWindow", {
   construct: function(id, caption) {
     this.base(arguments, id, caption);
 
-    const width = 900;
-    const height = 600;
-    this.set({
-      layout: new qx.ui.layout.Grow(),
+    this.setLayout(new qx.ui.layout.Grow());
+
+    const defaultProps = this.self().DEFAULT_PROPS;
+    this.set(defaultProps);
+  },
+
+  statics: {
+    DEFAULT_PROPS: {
       modal: true,
-      width,
-      height,
+      width: 900,
+      height: 600,
       showMaximize: false,
       showMinimize: false,
       resizable: true,
       appearance: "service-window"
-    });
+    }
   },
 
   members: {
