@@ -12,7 +12,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
-from models_library.authentification import TwoFAAuthentificationMethod
+from models_library.authentification import TwoFactorAuthentificationMethod
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -255,7 +255,7 @@ async def test_workflow_register_and_login_with_2fa(
         user_id=user["id"],
         product_name="osparc",
         frontend_preference_identifier=_preference_id,
-        value=TwoFAAuthentificationMethod.EMAIL,
+        value=TwoFactorAuthentificationMethod.EMAIL,
     )
 
     url = client.app.router["auth_login"].url_for()
@@ -280,7 +280,7 @@ async def test_workflow_register_and_login_with_2fa(
         user_id=user["id"],
         product_name="osparc",
         frontend_preference_identifier=_preference_id,
-        value=TwoFAAuthentificationMethod.DISABLED,
+        value=TwoFactorAuthentificationMethod.DISABLED,
     )
 
     url = client.app.router["auth_login"].url_for()
