@@ -53,7 +53,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       win.set({
         width: this.WIDTH,
         height: this.HEIGHT,
-      })
+      });
+      return win;
     }
   },
 
