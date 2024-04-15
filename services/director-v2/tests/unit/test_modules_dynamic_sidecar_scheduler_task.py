@@ -12,6 +12,7 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import respx
+from faker import Faker
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -47,12 +48,14 @@ def mock_env(
     simcore_services_network_name: str,
     docker_swarm: None,
     mock_docker_api: None,
+    faker: Faker,
 ) -> None:
     disabled_services_envs = {
-        "S3_ENDPOINT": "",
-        "S3_ACCESS_KEY": "",
-        "S3_SECRET_KEY": "",
-        "S3_BUCKET_NAME": "",
+        "S3_ENDPOINT": faker.url(),
+        "S3_ACCESS_KEY": faker.pystr(),
+        "S3_REGION": faker.pystr(),
+        "S3_SECRET_KEY": faker.pystr(),
+        "S3_BUCKET_NAME": faker.pystr(),
         "POSTGRES_HOST": "",
         "POSTGRES_USER": "",
         "POSTGRES_PASSWORD": "",

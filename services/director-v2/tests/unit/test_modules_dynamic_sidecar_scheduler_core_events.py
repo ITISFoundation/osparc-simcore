@@ -7,6 +7,7 @@ from collections.abc import Iterable
 from typing import Final
 
 import pytest
+from faker import Faker
 from fastapi import FastAPI
 from pydantic import PositiveFloat, PositiveInt
 from pytest_mock import MockerFixture
@@ -33,15 +34,16 @@ def mock_env(
     disable_postgres: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ) -> None:
     setenvs_from_dict(
         monkeypatch,
         {
-            "S3_ENDPOINT": "",
-            "S3_ACCESS_KEY": "",
-            "S3_SECRET_KEY": "",
-            "S3_BUCKET_NAME": "",
-            "S3_SECURE": "false",
+            "S3_ENDPOINT": faker.url(),
+            "S3_ACCESS_KEY": faker.pystr(),
+            "S3_REGION": faker.pystr(),
+            "S3_SECRET_KEY": faker.pystr(),
+            "S3_BUCKET_NAME": faker.pystr(),
             "POSTGRES_HOST": "",
             "POSTGRES_USER": "",
             "POSTGRES_PASSWORD": "",

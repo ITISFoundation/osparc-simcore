@@ -305,7 +305,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: pytest.ExitCode) -
 def _minio_fix(service_environs: dict) -> dict:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:
-        service_environs["S3_ENDPOINT"] = f"{get_localhost_ip()}:9001"
+        service_environs["S3_ENDPOINT"] = f"http://{get_localhost_ip()}:9001"
     return service_environs
 
 
