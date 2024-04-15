@@ -31,27 +31,6 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     this.__addS4LUserPrivacySettings();
   },
 
-  statics: {
-    patchPreference: function(preferenceId, preferenceField, newValue) {
-      const preferencesSettings = osparc.Preferences.getInstance();
-
-      const oldValue = preferencesSettings.get(preferenceId);
-      if (newValue === oldValue) {
-        return;
-      }
-
-      preferenceField.setEnabled(false);
-      osparc.Preferences.patchPreference(preferenceId, newValue)
-        .then(() => preferencesSettings.set(preferenceId, newValue))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-          preferenceField.setValue(oldValue);
-        })
-        .finally(() => preferenceField.setEnabled(true));
-    }
-  },
-
   members: {
     __addCreditsIndicatorSettings: function() {
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
@@ -84,7 +63,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         });
         walletIndicatorVisibilitySB.addListener("changeValue", e => {
           const selectable = e.getData();
-          this.self().patchPreference("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
+          preferencesSettings.patchPreferenceField("walletIndicatorVisibility", walletIndicatorVisibilitySB, selectable.getModel());
         });
         form.add(walletIndicatorVisibilitySB, this.tr("Show indicator"));
 
@@ -95,7 +74,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
           allowGrowX: false
         });
         preferencesSettings.bind("creditsWarningThreshold", creditsWarningThresholdField, "value");
-        creditsWarningThresholdField.addListener("changeValue", e => this.self().patchPreference("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
+        creditsWarningThresholdField.addListener("changeValue", e => preferencesSettings.patchPreferenceField("creditsWarningThreshold", creditsWarningThresholdField, e.getData()));
         form.add(creditsWarningThresholdField, this.tr("Show warning when credits below"));
 
         box.add(new qx.ui.form.renderer.Single(form));
@@ -123,7 +102,8 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         preferences.bind("userInactivityThreshold", inactivitySpinner, "value", {
           converter: value => Math.round(value / 60) // Stored in seconds, displayed in minutes
         });
-        inactivitySpinner.addListener("changeValue", e => this.self().patchPreference("userInactivityThreshold", inactivitySpinner, e.getData() * 60));
+        const preferencesSettings = osparc.Preferences.getInstance();
+        inactivitySpinner.addListener("changeValue", e => preferencesSettings.patchPreferenceField("userInactivityThreshold", inactivitySpinner, e.getData() * 60));
         form.add(inactivitySpinner, this.tr("Idle time before closing (in minutes)"));
 
         box.add(new qx.ui.form.renderer.Single(form));
@@ -144,7 +124,8 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       });
       const preferences = osparc.Preferences.getInstance();
       preferences.bind("jobConcurrencyLimit", jobConcurrencySpinner, "value");
-      jobConcurrencySpinner.addListener("changeValue", e => this.self().patchPreference("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
+      const preferencesSettings = osparc.Preferences.getInstance();
+      jobConcurrencySpinner.addListener("changeValue", e => preferencesSettings.patchPreferenceField("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
       form.add(jobConcurrencySpinner, this.tr("Maximum number of concurrent jobs"));
       box.add(new qx.ui.form.renderer.Single(form));
       this.add(box);
@@ -166,7 +147,8 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         });
         preferences.bind("lowDiskSpaceThreshold", diskUsageSpinner, "value");
 
-        diskUsageSpinner.addListener("changeValue", e => this.self().patchPreference("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
+        const preferencesSettings = osparc.Preferences.getInstance();
+        diskUsageSpinner.addListener("changeValue", e => preferencesSettings.patchPreferenceField("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
         form.add(diskUsageSpinner, this.tr("Threshold (in GB)"));
         box.add(new qx.ui.form.renderer.Single(form));
         this.add(box);
@@ -184,7 +166,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
         const cbAllowMetricsCollection = new qx.ui.form.CheckBox(this.tr("Share usage data"));
         preferencesSettings.bind("allowMetricsCollection", cbAllowMetricsCollection, "value");
-        cbAllowMetricsCollection.addListener("changeValue", e => this.self().patchPreference("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
+        cbAllowMetricsCollection.addListener("changeValue", e => preferencesSettings.patchPreferenceField("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
         box.add(cbAllowMetricsCollection);
 
         this.add(box);

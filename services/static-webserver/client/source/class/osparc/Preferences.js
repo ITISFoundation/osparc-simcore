@@ -151,6 +151,25 @@ qx.Class.define("osparc.Preferences", {
         }
       };
       return osparc.data.Resources.fetch("preferences", "patch", params);
+    },
+
+    patchPreferenceField: function(preferenceId, preferenceField, newValue) {
+      const preferencesSettings = osparc.Preferences.getInstance();
+
+      const oldValue = preferencesSettings.get(preferenceId);
+      if (newValue === oldValue) {
+        return;
+      }
+
+      preferenceField.setEnabled(false);
+      osparc.Preferences.patchPreference(preferenceId, newValue)
+        .then(() => preferencesSettings.set(preferenceId, newValue))
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          preferenceField.setValue(oldValue);
+        })
+        .finally(() => preferenceField.setEnabled(true));
     }
   },
 
