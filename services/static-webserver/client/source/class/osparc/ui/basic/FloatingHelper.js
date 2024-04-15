@@ -3,7 +3,7 @@
  * Copyright: 2023 IT'IS Foundation - https://itis.swiss
  * License: MIT - https://opensource.org/licenses/MIT
  * Authors: Ignacio Pascual (ignapas)
- *          Odei Maiz (odei maiz)
+ *          Odei Maiz (odeimaiz)
  */
 
 /**

@@ -17,12 +17,12 @@
 
 
 qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
-  extend: osparc.desktop.preferences.pages.BasePage,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/cogs/24";
-    const title = this.tr("General Settings");
-    this.base(arguments, title, iconSrc);
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.__addCreditsIndicatorSettings();
     this.__addLowDiskSpaceSetting();
@@ -57,7 +57,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
       if (walletsEnabled) {
         // layout
-        const box = this._createSectionBox(this.tr("Credits Indicator"));
+        const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Credits Indicator"));
 
         const form = new qx.ui.form.Form();
 
@@ -100,16 +100,16 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
         box.add(new qx.ui.form.renderer.Single(form));
 
-        this.add(box);
+        this._add(box);
       }
     },
 
     __addInactivitySetting: function() {
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
       if (walletsEnabled) {
-        const box = this._createSectionBox(this.tr("Automatic Shutdown of Idle Instances"));
+        const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Automatic Shutdown of Idle Instances"));
 
-        const label = this._createHelpLabel(this.tr("Enter 0 to disable this function"), "text-13-italic");
+        const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Enter 0 to disable this function"), "text-13-italic");
         box.add(label);
 
         const form = new qx.ui.form.Form();
@@ -128,12 +128,12 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
         box.add(new qx.ui.form.renderer.Single(form));
 
-        this.add(box);
+        this._add(box);
       }
     },
 
     __addJobConcurrencySetting: function() {
-      const box = this._createSectionBox(this.tr("Job Concurrency"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Job Concurrency"));
       const form = new qx.ui.form.Form();
       const jobConcurrencySpinner = new qx.ui.form.Spinner().set({
         minimum: 1,
@@ -147,14 +147,14 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       jobConcurrencySpinner.addListener("changeValue", e => this.self().patchPreference("jobConcurrencyLimit", jobConcurrencySpinner, e.getData()));
       form.add(jobConcurrencySpinner, this.tr("Maximum number of concurrent jobs"));
       box.add(new qx.ui.form.renderer.Single(form));
-      this.add(box);
+      this._add(box);
     },
 
     __addLowDiskSpaceSetting: function() {
       const preferences = osparc.Preferences.getInstance();
       if (preferences.getLowDiskSpaceThreshold()) {
-        const box = this._createSectionBox(this.tr("Low Disk Space Threshold"));
-        const label = this._createHelpLabel(this.tr("Set the warning Threshold for low Disk Space availability."), "text-13-italic");
+        const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Low Disk Space Threshold"));
+        const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Set the warning Threshold for low Disk Space availability."), "text-13-italic");
         box.add(label);
         const form = new qx.ui.form.Form();
         const diskUsageSpinner = new qx.ui.form.Spinner().set({
@@ -169,15 +169,15 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         diskUsageSpinner.addListener("changeValue", e => this.self().patchPreference("lowDiskSpaceThreshold", diskUsageSpinner, e.getData()));
         form.add(diskUsageSpinner, this.tr("Threshold (in GB)"));
         box.add(new qx.ui.form.renderer.Single(form));
-        this.add(box);
+        this._add(box);
       }
     },
 
     __addS4LUserPrivacySettings: function() {
       if (osparc.product.Utils.isS4LProduct() || osparc.product.Utils.isProduct("s4llite")) {
-        const box = this._createSectionBox("Privacy Settings");
+        const box = osparc.ui.window.TabbedView.createSectionBox("Privacy Settings");
 
-        const label = this._createHelpLabel(this.tr("Help us improve Sim4Life user experience"), "text-13-italic");
+        const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Help us improve Sim4Life user experience"), "text-13-italic");
         box.add(label);
 
         const preferencesSettings = osparc.Preferences.getInstance();
@@ -187,7 +187,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
         cbAllowMetricsCollection.addListener("changeValue", e => this.self().patchPreference("allowMetricsCollection", cbAllowMetricsCollection, e.getData()));
         box.add(cbAllowMetricsCollection);
 
-        this.add(box);
+        this._add(box);
       }
     }
   }

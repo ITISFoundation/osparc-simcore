@@ -22,22 +22,22 @@
  *
  */
 
-qx.Class.define("osparc.desktop.credits.ProfilePage", {
-  extend: osparc.desktop.preferences.pages.BasePage,
+qx.Class.define("osparc.desktop.account.ProfilePage", {
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/user/24";
-    const title = this.tr("Profile");
-    this.base(arguments, title, iconSrc);
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.__userProfileData = null;
     this.__userProfileModel = null;
 
-    this.__getProfile();
+    this.__fetchProfile();
 
-    this.add(this.__createProfileUser());
-    this.add(this.__createPasswordSection());
-    this.add(this.__createDeleteAccount());
+    this._add(this.__createProfileUser());
+    this._add(this.__createPasswordSection());
+    this._add(this.__createDeleteAccount());
   },
 
   members: {
@@ -46,7 +46,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
     __createProfileUser: function() {
       // layout
-      const box = this._createSectionBox(this.tr("User"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("User"));
       box.set({
         alignX: "left",
         maxWidth: 500
@@ -199,7 +199,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
       return box;
     },
 
-    __getProfile: function() {
+    __fetchProfile: function() {
       osparc.data.Resources.getOne("profile", {}, null, false)
         .then(profile => {
           this.__setDataToModel(profile);
@@ -228,7 +228,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
     __createPasswordSection: function() {
       // layout
-      const box = this._createSectionBox(this.tr("Password"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Password"));
       box.set({
         alignX: "left",
         maxWidth: 500
@@ -300,7 +300,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
 
     __createDeleteAccount: function() {
       // layout
-      const box = this._createSectionBox(this.tr("Danger Zone")).set({
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Danger Zone")).set({
         alignX: "left",
         maxWidth: 500
       });
@@ -311,7 +311,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         allowGrowX: false
       });
       deleteBtn.addListener("execute", () => {
-        const deleteAccount = new osparc.desktop.credits.DeleteAccount();
+        const deleteAccount = new osparc.desktop.account.DeleteAccount();
         const win = osparc.ui.window.Window.popUpInWindow(deleteAccount, qx.locale.Manager.tr("Delete Account"), 430, null);
         deleteAccount.addListener("cancel", () => win.close());
         deleteAccount.addListener("deleted", () => win.close());

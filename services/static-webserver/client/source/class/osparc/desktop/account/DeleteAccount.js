@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.DeleteAccount", {
+qx.Class.define("osparc.desktop.account.DeleteAccount", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

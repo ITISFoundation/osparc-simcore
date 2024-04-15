@@ -22,6 +22,6 @@ qx.Class.define("osparc.navigation.MiniProfileMenuButton", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
-    this._add(osparc.desktop.credits.MyAccount.createMiniProfileView());
+    this._add(osparc.desktop.account.MyAccount.createMiniProfileView());
   }
 });
