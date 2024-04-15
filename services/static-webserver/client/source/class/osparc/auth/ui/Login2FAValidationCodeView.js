@@ -34,6 +34,10 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
     }
   },
 
+  statics: {
+    DIFFERENT_METHOD_TIMEOUT: 20
+  },
+
   members: {
     __validateCodeBtn: null,
     __resendCodeSMSBtn: null,
@@ -86,7 +90,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       resendLayout.add(resendButtonsLayout);
 
       const resendCodeSMSBtn = this.__resendCodeSMSBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Via SMS") + ` (60)`,
+        label: this.tr("Via SMS") + ` (${this.self().DIFFERENT_METHOD_TIMEOUT})`,
         enabled: false
       });
       this.bind("userPhoneNumber", resendCodeSMSBtn, "visibility", {
@@ -111,7 +115,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       }, this);
 
       const resendCodeEmailBtn = this.__resendCodeEmailBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Via email") + ` (60)`,
+        label: this.tr("Via email") + ` (${this.self().DIFFERENT_METHOD_TIMEOUT})`,
         enabled: false
       });
       resendButtonsLayout.add(resendCodeEmailBtn, {
@@ -136,9 +140,9 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
 
     __restartTimers: function() {
       if (this.getUserPhoneNumber()) {
-        osparc.auth.core.Utils.restartResendTimer(this.__resendCodeSMSBtn, this.tr("Via SMS"));
+        osparc.auth.core.Utils.restartResendTimer(this.__resendCodeSMSBtn, this.tr("Via SMS"), this.self().DIFFERENT_METHOD_TIMEOUT);
       }
-      osparc.auth.core.Utils.restartResendTimer(this.__resendCodeEmailBtn, this.tr("Via email"));
+      osparc.auth.core.Utils.restartResendTimer(this.__resendCodeEmailBtn, this.tr("Via email"), this.self().DIFFERENT_METHOD_TIMEOUT);
     },
 
     __validateCodeLogin: function() {

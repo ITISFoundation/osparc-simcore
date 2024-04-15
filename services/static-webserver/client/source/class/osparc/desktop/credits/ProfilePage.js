@@ -264,7 +264,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
           osparc.Preferences.patchPreferenceField("twoFAPreference", twoFAPreferenceSB, selectedId);
         }
       });
-      form.add(twoFAPreferenceSB, this.tr("2FA Preference"));
+      form.add(twoFAPreferenceSB, this.tr("2FA Method"));
 
       box.add(new qx.ui.form.renderer.Single(form));
 
