@@ -7,7 +7,7 @@
 
 from pathlib import Path
 
-from fastapi import status
+from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.app_diagnostics import AppStatusCheck
 from pydantic import parse_obj_as
@@ -15,7 +15,15 @@ from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 
 
-async def test_check_service_health(client: AsyncClient):
+async def test_check_service_health(
+    mocker: MockRouter, client: AsyncClient, app: FastAPI
+):
+    class MockHealthChecker:
+        @property
+        def healthy(self) -> bool:
+            return True
+
+    app.state.health_checker = MockHealthChecker()
     response = await client.get(f"{API_VTAG}/")
     assert response.status_code == status.HTTP_200_OK
     assert "health" in response.text

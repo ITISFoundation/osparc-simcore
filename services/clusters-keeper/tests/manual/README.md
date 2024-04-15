@@ -53,9 +53,8 @@ REGISTRY_USER=XXXXXXX
 ```bash
 S3_ACCESS_KEY=XXXXXXX
 S3_BUCKET_NAME=XXXXXXX
-S3_ENDPOINT=s3.amazonaws.com
+S3_ENDPOINT=https://s3.amazonaws.com
 S3_SECRET_KEY=XXXXXXX
-S3_SECURE=1
 ```
 
 4. prepare clusters-keeper:

@@ -5,6 +5,7 @@ from typing import Any, Callable, Iterator, cast
 
 import pytest
 import sqlalchemy as sa
+from faker import Faker
 from fastapi import FastAPI
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
@@ -32,6 +33,7 @@ def mock_env(
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
     postgres_db: sa.engine.Engine,
+    faker: Faker,
 ) -> EnvVarsDict:
     """overrides unit/conftest:mock_env fixture"""
     env_vars = mock_env.copy()
@@ -40,8 +42,8 @@ def mock_env(
             "S3_ACCESS_KEY": "12345678",
             "S3_BUCKET_NAME": "simcore",
             "S3_ENDPOINT": "http://172.17.0.1:9001",
+            "S3_REGION": faker.pystr(),
             "S3_SECRET_KEY": "12345678",
-            "S3_SECURE": "False",
             "POSTGRES_HOST": postgres_host_config["host"],
             "POSTGRES_USER": postgres_host_config["user"],
             "POSTGRES_PASSWORD": postgres_host_config["password"],

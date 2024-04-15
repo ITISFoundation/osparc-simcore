@@ -9,6 +9,7 @@ from pathlib import Path
 from shutil import copy, make_archive
 
 import pytest
+from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pytest_mock import MockerFixture
@@ -38,14 +39,15 @@ def create_files() -> Iterator[Callable[..., list[Path]]]:
 
 
 @pytest.fixture
-def r_clone_settings() -> RCloneSettings:
+def r_clone_settings(faker: Faker) -> RCloneSettings:
     return RCloneSettings.parse_obj(
         {
             "R_CLONE_S3": {
-                "S3_ENDPOINT": "",
-                "S3_ACCESS_KEY": "",
-                "S3_SECRET_KEY": "",
-                "S3_BUCKET_NAME": "",
+                "S3_ENDPOINT": faker.url(),
+                "S3_ACCESS_KEY": faker.pystr(),
+                "S3_REGION": faker.pystr(),
+                "S3_SECRET_KEY": faker.pystr(),
+                "S3_BUCKET_NAME": faker.pystr(),
             },
             "R_CLONE_PROVIDER": S3Provider.MINIO,
         }

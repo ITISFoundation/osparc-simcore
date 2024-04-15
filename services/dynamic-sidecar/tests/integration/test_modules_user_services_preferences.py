@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from asgi_lifespan import LifespanManager
+from faker import Faker
 from fastapi import FastAPI
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -71,15 +72,16 @@ def mock_environment(  # pylint:disable=too-many-arguments
     service_key: ServiceKey,
     service_version: ServiceVersion,
     product_name: ProductName,
+    faker: Faker,
 ) -> EnvVarsDict:
     envs: EnvVarsDict = {
         "DY_SIDECAR_USER_ID": f"{user_id}",
         "DY_SIDECAR_PROJECT_ID": f"{project_id}",
-        "S3_ENDPOINT": "test",
-        "S3_ACCESS_KEY": "test",
-        "S3_SECRET_KEY": "test",
-        "S3_BUCKET_NAME": "test",
-        "S3_SECURE": "false",
+        "S3_ENDPOINT": faker.url(),
+        "S3_ACCESS_KEY": faker.pystr(),
+        "S3_REGION": faker.pystr(),
+        "S3_SECRET_KEY": faker.pystr(),
+        "S3_BUCKET_NAME": faker.pystr(),
         "RABBIT_HOST": "test",
         "RABBIT_PASSWORD": "test",
         "RABBIT_SECURE": "0",

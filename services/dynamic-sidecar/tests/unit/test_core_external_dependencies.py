@@ -5,6 +5,7 @@ from datetime import timedelta
 
 import pytest
 from asgi_lifespan import LifespanManager
+from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from pytest_mock import MockerFixture
@@ -29,6 +30,7 @@ def mock_environment(
     base_mock_envs: EnvVarsDict,
     project_id: ProjectID,
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
@@ -44,10 +46,11 @@ def mock_environment(
             "RABBIT_USER": "test",
             "STORAGE_USERNAME": "test",
             "STORAGE_PASSWORD": "test",
-            "S3_ENDPOINT": "test",
-            "S3_ACCESS_KEY": "test",
-            "S3_SECRET_KEY": "test",
-            "S3_BUCKET_NAME": "test",
+            "S3_ENDPOINT": faker.url(),
+            "S3_ACCESS_KEY": faker.pystr(),
+            "S3_REGION": faker.pystr(),
+            "S3_SECRET_KEY": faker.pystr(),
+            "S3_BUCKET_NAME": faker.pystr(),
             "POSTGRES_HOST": "test",
             "POSTGRES_USER": "test",
             "POSTGRES_PASSWORD": "test",

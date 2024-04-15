@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
+from simcore_service_api_server.core.health_checker import ApiServerHealthChecker
 
 from ..services.log_streaming import LogDistributor
 
@@ -22,8 +23,19 @@ def setup_rabbitmq(app: FastAPI) -> None:
         )
         app.state.log_distributor = LogDistributor(app.state.rabbitmq_client)
         await app.state.log_distributor.setup()
+        app.state.health_checker = ApiServerHealthChecker(
+            log_distributor=app.state.log_distributor,
+            rabbit_client=app.state.rabbitmq_client,
+            timeout_seconds=app.state.settings.API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS,
+            allowed_health_check_failures=app.state.settings.API_SERVER_ALLOWED_HEALTH_CHECK_FAILURES,
+        )
+        await app.state.health_checker.setup(
+            app.state.settings.API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS
+        )
 
     async def _on_shutdown() -> None:
+        if app.state.health_checker:
+            await app.state.health_checker.teardown()
         if app.state.log_distributor:
             await app.state.log_distributor.teardown()
         if app.state.rabbitmq_client:

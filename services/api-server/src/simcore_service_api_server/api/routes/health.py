@@ -8,6 +8,7 @@ from fastapi.responses import PlainTextResponse
 from models_library.app_diagnostics import AppStatusCheck
 
 from ..._meta import API_VERSION, PROJECT_NAME
+from ...core.health_checker import ApiServerHealthChecker, get_health_checker
 from ...services.catalog import CatalogApi
 from ...services.director_v2 import DirectorV2Api
 from ...services.storage import StorageApi
@@ -18,8 +19,16 @@ from ..dependencies.services import get_api_client
 router = APIRouter()
 
 
+class HealtchCheckException(RuntimeError):
+    """Failed a health check"""
+
+
 @router.get("/", include_in_schema=False, response_class=PlainTextResponse)
-async def check_service_health():
+async def check_service_health(
+    health_checker: Annotated[ApiServerHealthChecker, Depends(get_health_checker)]
+):
+    if not health_checker.healthy:
+        raise HealtchCheckException()
     return f"{__name__}@{datetime.datetime.now(tz=datetime.timezone.utc).isoformat()}"
 
 
