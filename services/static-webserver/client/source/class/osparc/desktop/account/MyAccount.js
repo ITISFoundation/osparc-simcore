@@ -15,13 +15,13 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.MyAccount", {
+qx.Class.define("osparc.desktop.account.MyAccount", {
   extend: osparc.ui.window.TabbedView,
 
   construct: function() {
     this.base(arguments);
 
-    const miniProfile = osparc.desktop.credits.MyAccount.createMiniProfileView().set({
+    const miniProfile = osparc.desktop.account.MyAccount.createMiniProfileView().set({
       paddingRight: 10
     });
     this.addWidgetOnTopOfTheTabs(miniProfile);
@@ -96,7 +96,7 @@ qx.Class.define("osparc.desktop.credits.MyAccount", {
     __addProfilePage: function() {
       const title = this.tr("Profile");
       const iconSrc = "@FontAwesome5Solid/user/24";
-      const profile = new osparc.desktop.credits.ProfilePage();
+      const profile = new osparc.desktop.account.ProfilePage();
       const page = this.addTab(title, iconSrc, profile);
       return page;
     },

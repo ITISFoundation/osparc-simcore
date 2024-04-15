@@ -21,7 +21,7 @@ qx.Class.define("osparc.po.POCenter", {
   construct: function() {
     this.base(arguments);
 
-    const miniProfile = osparc.desktop.credits.MyAccount.createMiniProfileView().set({
+    const miniProfile = osparc.desktop.account.MyAccount.createMiniProfileView().set({
       paddingRight: 10
     });
     this.addWidgetOnTopOfTheTabs(miniProfile);

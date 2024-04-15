@@ -22,7 +22,7 @@
  *
  */
 
-qx.Class.define("osparc.desktop.credits.ProfilePage", {
+qx.Class.define("osparc.desktop.account.ProfilePage", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -311,7 +311,7 @@ qx.Class.define("osparc.desktop.credits.ProfilePage", {
         allowGrowX: false
       });
       deleteBtn.addListener("execute", () => {
-        const deleteAccount = new osparc.desktop.credits.DeleteAccount();
+        const deleteAccount = new osparc.desktop.account.DeleteAccount();
         const win = osparc.ui.window.Window.popUpInWindow(deleteAccount, qx.locale.Manager.tr("Delete Account"), 430, null);
         deleteAccount.addListener("cancel", () => win.close());
         deleteAccount.addListener("deleted", () => win.close());

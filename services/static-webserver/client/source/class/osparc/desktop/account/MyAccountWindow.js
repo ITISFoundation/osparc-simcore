@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.MyAccountWindow", {
+qx.Class.define("osparc.desktop.account.MyAccountWindow", {
   extend: osparc.ui.window.TabbedWindow,
 
   construct: function() {
@@ -28,13 +28,13 @@ qx.Class.define("osparc.desktop.credits.MyAccountWindow", {
       height
     });
 
-    const myAccount = this.__myAccount = new osparc.desktop.credits.MyAccount();
+    const myAccount = this.__myAccount = new osparc.desktop.account.MyAccount();
     this._setTabbedView(myAccount);
   },
 
   statics: {
     openWindow: function() {
-      const accountWindow = new osparc.desktop.credits.MyAccountWindow();
+      const accountWindow = new osparc.desktop.account.MyAccountWindow();
       accountWindow.center();
       accountWindow.open();
       return accountWindow;
