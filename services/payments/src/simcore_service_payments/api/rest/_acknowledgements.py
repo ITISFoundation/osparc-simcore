@@ -9,7 +9,6 @@ from models_library.api_schemas_payments.errors import (
 from servicelib.logging_utils import log_context
 
 from ..._constants import ACKED, PGDB
-from ...core.settings import ApplicationSettings
 from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...models.auth import SessionData
@@ -27,7 +26,6 @@ from ._dependencies import (
     get_current_session,
     get_from_app_state,
     get_rut_api,
-    get_settings,
 )
 
 _logger = logging.getLogger(__name__)
@@ -49,7 +47,6 @@ async def acknowledge_payment(
     ],
     rut_api: Annotated[ResourceUsageTrackerApi, Depends(get_rut_api)],
     notifier: Annotated[NotifierService, Depends(get_from_app_state(NotifierService))],
-    settings: Annotated[ApplicationSettings, Depends(get_settings)],
     background_tasks: BackgroundTasks,
 ):
     """completes (ie. ack) request initated by `/init` on the payments-gateway API"""

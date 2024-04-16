@@ -138,7 +138,6 @@ async def _perform_auto_recharge(
     payment_method_db: PaymentsMethodsDB,
     wallet_auto_recharge: GetWalletAutoRecharge,
 ):
-    settings: ApplicationSettings = app.state.settings
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
 
     result = await rabbitmq_rpc_client.request(
