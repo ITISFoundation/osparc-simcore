@@ -109,6 +109,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     __createSendViaEmailButton: function() {
       const txt = this.tr("Skip phone registration and send code via email");
       const sendViaEmail = this.__sendViaEmail = new osparc.ui.form.FetchButton(txt).set({
+        textColor: "text",
         zIndex: 1 // the countries list that goes on top has a z-index of 2
       });
       return sendViaEmail;
@@ -175,12 +176,14 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       this.__sendViaEmail.setFetching(true);
       osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
         .then(data => {
-          osparc.FlashMessenger.logAs(data.reason, "INFO");
-          this.fireDataEvent("skipPhoneRegistration", this.getUserEmail());
+          const message = osparc.auth.core.Utils.extractMessage(data);
+          osparc.FlashMessenger.logAs(message, "INFO");
+          this.fireDataEvent("skipPhoneRegistration", {
+            nextStep: data["name"],
+            message
+          });
         })
-        .catch(err => {
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))
         .finally(() => this.__sendViaEmail.setFetching(false));
     },
 

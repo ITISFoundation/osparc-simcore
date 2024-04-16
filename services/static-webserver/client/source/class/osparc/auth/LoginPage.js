@@ -265,20 +265,24 @@ qx.Class.define("osparc.auth.LoginPage", {
       }, this);
 
       login.addListener("to2FAValidationCode", e => {
-        const message = e.getData();
+        const data = e.getData();
         login2FAValidationCode.set({
           userEmail: login.getEmail(),
           smsEnabled: true,
-          message
+          message: data.message,
+          methodSent: data.nextStep === "SMS_CODE_REQUIRED" ? "SMS" : "EMAIL"
         });
         pages.setSelection([login2FAValidationCode]);
         login.resetValues();
       }, this);
 
       verifyPhoneNumber.addListener("skipPhoneRegistration", e => {
+        const data = e.getData();
         login2FAValidationCode.set({
-          userEmail: e.getData(),
-          smsEnabled: false
+          userEmail: login.getEmail(),
+          smsEnabled: false,
+          message: data.message,
+          methodSent: "EMAIL"
         });
         pages.setSelection([login2FAValidationCode]);
         login.resetValues();

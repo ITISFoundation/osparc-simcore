@@ -150,10 +150,13 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         window.history.replaceState(null, window.document.title, window.location.pathname);
       };
 
-      const twoFactorAuthCbk = msg => {
+      const twoFactorAuthCbk = (nextStep, msg) => {
         this.__loginBtn.setFetching(false);
         osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-        this.fireDataEvent("to2FAValidationCode", msg);
+        this.fireDataEvent("to2FAValidationCode", {
+          nextStep,
+          msg
+        });
         // we don't need the form any more, so remove it and mock-navigate-away
         // and thus tell the password manager to save the content
         this._form.dispose();
@@ -181,7 +184,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
             if (resp.nextStep === "PHONE_NUMBER_REQUIRED") {
               verifyPhoneCbk();
             } else if (["SMS_CODE_REQUIRED", "EMAIL_CODE_REQUIRED"].includes(resp.nextStep)) {
-              twoFactorAuthCbk(resp.message);
+              twoFactorAuthCbk(resp.nextStep, resp.message);
             }
           } else if (resp.status === 200) {
             loginFun(resp.message);
