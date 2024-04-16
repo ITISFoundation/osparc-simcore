@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import EmailStr
 from settings_library.email import EmailProtocol, SMTPSettings
 
 from ..db.payment_users_repo import PaymentsUsersRepo
@@ -215,7 +216,10 @@ class EmailProvider(NotificationProvider):
         )
 
     async def _create_successful_payments_message(
-        self, user_id: UserID, payment: PaymentTransaction
+        self,
+        user_id: UserID,
+        payment: PaymentTransaction,
+        finance_department_email: EmailStr | None,
     ) -> EmailMessage:
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
         data_vendor = data.vendor or {}
@@ -241,16 +245,23 @@ class EmailProvider(NotificationProvider):
             ),
         )
 
+        if finance_department_email:
+            msg["Bcc"] = finance_department_email
+
         return msg
 
     async def notify_payment_completed(
         self,
         user_id: UserID,
         payment: PaymentTransaction,
+        finance_department_email: EmailStr | None = None,
     ):
         # NOTE: we only have an email for successful payments
         if payment.state == "SUCCESS":
-            msg = await self._create_successful_payments_message(user_id, payment)
+            msg = await self._create_successful_payments_message(
+                user_id, payment, finance_department_email
+            )
+
             async with _create_email_session(self._settings) as smtp:
                 await smtp.send_message(msg)
         else:

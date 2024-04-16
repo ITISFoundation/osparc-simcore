@@ -21,6 +21,7 @@ from pydantic import EmailStr
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RPCRouter
 
+from ...core.settings import ApplicationSettings
 from ...db.payments_methods_repo import PaymentsMethodsRepo
 from ...db.payments_transactions_repo import PaymentsTransactionsRepo
 from ...services import payments, payments_methods
@@ -169,6 +170,7 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
     stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
 ):
+    settings: ApplicationSettings = app.state.settings
     with log_context(
         _logger,
         logging.INFO,
@@ -196,4 +198,5 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
             stripe_price_id=stripe_price_id,
             stripe_tax_rate_id=stripe_tax_rate_id,
             comment=comment,
+            finance_department_email=settings.PAYMENTS_FINANCE_DEPARTMENT_EMAIL,
         )

@@ -6,6 +6,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
 )
 from models_library.users import UserID
+from pydantic import EmailStr
 
 _logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ class NotificationProvider(ABC):
         self,
         user_id: UserID,
         payment: PaymentTransaction,
+        finance_department_email: EmailStr | None = None,
     ):
         ...
 
