@@ -177,10 +177,12 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
         .then(data => {
           const message = osparc.auth.core.Utils.extractMessage(data);
+          const retryAfter = osparc.auth.core.Utils.extractRetryAfter(data)
           osparc.FlashMessenger.logAs(message, "INFO");
           this.fireDataEvent("skipPhoneRegistration", {
-            nextStep: data["name"],
-            message
+            message,
+            retryAfter,
+            nextStep: data["name"]
           });
         })
         .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))

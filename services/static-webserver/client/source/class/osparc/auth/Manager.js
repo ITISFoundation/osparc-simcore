@@ -169,10 +169,13 @@ qx.Class.define("osparc.auth.Manager", {
           if (xhr.status === 202) {
             const resp = JSON.parse(xhr.responseText);
             const data = resp.data;
+            const message = osparc.auth.core.Utils.extractMessage(data);
+            const retryAfter = osparc.auth.core.Utils.extractRetryAfter(data)
             resolve({
               status: xhr.status,
-              nextStep: data["name"],
-              message: osparc.auth.core.Utils.extractMessage(data)
+              message,
+              retryAfter,
+              nextStep: data["name"]
             });
           } else if (xhr.status === 200) {
             const resp = JSON.parse(xhr.responseText);

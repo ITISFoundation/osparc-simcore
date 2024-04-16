@@ -269,9 +269,13 @@ qx.Class.define("osparc.auth.LoginPage", {
         login2FAValidationCode.set({
           userEmail: login.getEmail(),
           smsEnabled: true,
-          message: data.message,
-          methodSent: data.nextStep === "SMS_CODE_REQUIRED" ? "SMS" : "EMAIL"
+          message: data.message
         });
+        if (data.nextStep === "SMS_CODE_REQUIRED") {
+          login.restartSmsButton(data.retryAfter);
+        } else if (data.nextStep === "EMAIL_CODE_REQUIRED") {
+          login.restartEmailButton(data.retryAfter);
+        }
         pages.setSelection([login2FAValidationCode]);
         login.resetValues();
       }, this);
@@ -281,11 +285,11 @@ qx.Class.define("osparc.auth.LoginPage", {
         login2FAValidationCode.set({
           userEmail: login.getEmail(),
           smsEnabled: false,
-          message: data.message,
-          methodSent: "EMAIL"
+          message: data.message
         });
+        login2FAValidationCode.restartE
         pages.setSelection([login2FAValidationCode]);
-        login.resetValues();
+        login.restartEmailButton(data.retryAfter);
       }, this);
 
       login2FAValidationCode.addListener("done", msg => {
