@@ -145,7 +145,7 @@ async def pull_image(
     Arguments:
         image -- the docker image to pull
         registry_settings -- registry settings
-        progress_bar -- the current progress bar, subprogress bar will be created accordingly if image_information is passed.
+        progress_bar -- the current progress bar
         log_cb -- a callback function to send logs to
         image_information -- the image layer information. If this is None, then no fine progress will be retrieved.
     """
@@ -157,7 +157,6 @@ async def pull_image(
         }
     image_short_name = image.split("/")[-1]
     layer_id_to_size = {}
-    sub_progress = None
     async with AsyncExitStack() as exit_stack:
         # NOTE: docker pulls an image layer by layer
         # NOTE: each layer is first downloaded, then extracted. Extraction usually takes about 2/3 of the time
@@ -167,9 +166,6 @@ async def pull_image(
                 layer.digest.removeprefix("sha256:")[:12]: _PulledStatus(layer.size)
                 for layer in image_information.layers
             }
-            sub_progress = await exit_stack.enter_async_context(
-                progress_bar.sub_progress(image_information.layers_total_size * 3)
-            )
         else:
             _logger.warning(
                 "pulling image without layer information for %s. Progress will be approximative. TIP: check why this happens",
@@ -178,6 +174,7 @@ async def pull_image(
 
         client = await exit_stack.enter_async_context(aiodocker.Docker())
 
+        reported_progress = 0
         async for pull_progress in client.images.pull(
             image, stream=True, auth=registry_auth
         ):
@@ -233,11 +230,11 @@ async def pull_image(
             total_extracted_size = sum(
                 layer.extracted for layer in layer_id_to_size.values()
             )
-            if sub_progress is not None:
-                assert isinstance(sub_progress, ProgressBarData)
-                await sub_progress.set_(
-                    total_downloaded_size + 2 * total_extracted_size
-                )
+            total_progress = (total_downloaded_size + total_extracted_size) / 2.0
+            progress_to_report = total_progress - reported_progress
+            await progress_bar.update(progress_to_report)
+            reported_progress = total_progress
+
             await log_cb(
                 f"pulling {image_short_name}: {pull_progress}...",
                 logging.DEBUG,

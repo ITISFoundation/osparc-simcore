@@ -114,31 +114,31 @@ async def pull_images(
             for image in images
         ]
     )
-    progress_step_weights = [
-        float(i.layers_total_size) if i else float(_DEFAULT_MIN_IMAGE_SIZE)
+    images_total_size = sum(
+        i.layers_total_size if i else _DEFAULT_MIN_IMAGE_SIZE
         for i in images_layer_information
-    ]
-    _logger.debug("images to pull sizes: %s", progress_step_weights)
+    )
 
     async with ProgressBarData(
-        num_steps=len(images),
-        step_weights=progress_step_weights,
+        num_steps=images_total_size,
         progress_report_cb=progress_cb,
     ) as pbar:
-        for image, image_layer_info in zip(
-            images, images_layer_information, strict=True
-        ):
-            # NOTE: use gather call here to pull faster
-            # problem with progress in concurrent calls, needs to fix the progress bar
 
-            await pull_image(
-                image,
-                registry_settings,
-                pbar,
-                log_cb,
-                (
-                    image_layer_info
-                    if isinstance(image_layer_info, DockerImageManifestsV2)
-                    else None
-                ),
-            )
+        await asyncio.gather(
+            *[
+                pull_image(
+                    image,
+                    registry_settings,
+                    pbar,
+                    log_cb,
+                    (
+                        image_layer_info
+                        if isinstance(image_layer_info, DockerImageManifestsV2)
+                        else None
+                    ),
+                )
+                for image, image_layer_info in zip(
+                    images, images_layer_information, strict=True
+                )
+            ]
+        )
