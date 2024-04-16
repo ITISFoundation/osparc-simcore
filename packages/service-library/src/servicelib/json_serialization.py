@@ -1,4 +1,3 @@
-import json
 from collections.abc import Callable
 from typing import Any, Final, NamedTuple
 
@@ -9,18 +8,6 @@ from pydantic.json import pydantic_encoder
 class SeparatorTuple(NamedTuple):
     item_separator: str
     key_separator: str
-
-
-def json_dumps(obj: Any, **kwargs):
-    """As json.dumps but changes some of the defaults to provide a richer and more compact encodeing"""
-    # rich encoder
-    kwargs.setdefault("default", pydantic_encoder)
-    if "indent" not in kwargs:
-        # compact separators
-        kwargs.setdefault(
-            "separators", SeparatorTuple(item_separator=",", key_separator=":")
-        )
-    return json.dumps(obj, **kwargs)
 
 
 class OrJsonAdapter:
@@ -61,3 +48,15 @@ class OrJsonAdapter:
         return result
 
     loads = orjson.loads
+
+
+def json_dumps(obj: Any, **kwargs):
+    """As json.dumps but changes some of the defaults to provide a faster, richer and more compact encoding"""
+
+    kwargs.setdefault("default", pydantic_encoder)  # rich encoder
+    if "indent" not in kwargs:
+        kwargs.setdefault(
+            "separators",
+            SeparatorTuple(item_separator=",", key_separator=":"),  # compact separators
+        )
+    return OrJsonAdapter.dumps(obj, **kwargs)
