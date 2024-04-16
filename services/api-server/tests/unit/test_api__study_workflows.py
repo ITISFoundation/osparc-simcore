@@ -17,7 +17,6 @@ import httpx
 import pytest
 import respx
 from fastapi.encoders import jsonable_encoder
-from pydantic import parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.pagination import OnePage
@@ -25,7 +24,6 @@ from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs, JobStatus
 from simcore_service_api_server.models.schemas.studies import StudyPort
-from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from unit.conftest import SideEffectCallback
 
 
@@ -210,20 +208,27 @@ def mocked_backend(
     mocked_storage_service_api_base: MockRouter,
     mocked_directorv2_service_api_base: MockRouter,
     respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        [list[respx.MockRouter], Path, list[SideEffectCallback]],
         list[respx.MockRouter],
     ],
 ) -> MockedBackendApiDict | None:
-    capture_path = project_tests_dir / "mocks" / "run_study_workflow.json"
-
-    captures: list[HttpApiCallCaptureModel] = parse_obj_as(
-        list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
+    respx_mock_from_capture(
+        [
+            mocked_webserver_service_api_base,
+            mocked_storage_service_api_base,
+            mocked_directorv2_service_api_base,
+        ],
+        project_tests_dir / "mocks" / "run_study_workflow.json",
+        [],
     )
 
-    # TODO: invent something that can
+    return MockedBackendApiDict(
+        webserver=mocked_webserver_service_api_base,
+        storage=mocked_storage_service_api_base,
+        director_v2=mocked_directorv2_service_api_base,
+    )
 
 
-@pytest.mark.xfail()
 @pytest.mark.acceptance_test(
     "Reproduces https://github.com/wvangeit/osparc-pyapi-tests/blob/master/noninter1/run_study.py"
 )
@@ -292,11 +297,11 @@ async def test_run_study_workflow(
         study_id=template_id, job_id=new_job.id
     )
 
-    print(job_outputs.results)
-
     assert job_outputs.results["OutputInt"] == input_values["InputInt"]
+    assert job_outputs.results["OutputString"] == input_values["InputString"]
     assert job_outputs.results["OutputArray"] == input_values["InputArray"]
     assert job_outputs.results["OutputNumber"] == input_values["InputNumber"]
+    assert job_outputs.results["OutputBool"] == input_values["InputBool"]
 
     output_filename = job_outputs.results["OutputFile"].filename
     output_file = Path(
