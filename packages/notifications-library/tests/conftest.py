@@ -107,7 +107,7 @@ def user_email(user_email: EmailStr, external_user_email: EmailStr | None) -> Em
 
 @pytest.fixture(scope="session")
 def external_bcc_email(request: pytest.FixtureRequest) -> str | None:
-    email_or_none = request.config.getoption("--external-user-email", default=None)
+    email_or_none = request.config.getoption("--external-bcc-email", default=None)
     return parse_obj_as(EmailStr, email_or_none) if email_or_none else None
 
 
