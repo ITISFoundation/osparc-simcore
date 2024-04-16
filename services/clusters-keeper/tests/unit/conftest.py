@@ -209,10 +209,12 @@ def enabled_rabbitmq(
 
 
 @pytest.fixture
-async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
+async def initialized_app(
+    app_environment: EnvVarsDict, is_pdb_enabled: bool
+) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
     app = create_app(settings)
-    async with LifespanManager(app, shutdown_timeout=20):
+    async with LifespanManager(app, shutdown_timeout=None if is_pdb_enabled else 20):
         yield app
 
 
