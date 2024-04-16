@@ -99,18 +99,7 @@ async def retrieve_image_layer_information(
     return None
 
 
-async def _pull_image(
-    image: DockerGenericTag,
-    *,
-    registry_settings: RegistrySettings,
-    pbar: ProgressBarData,
-    log_cb: LogCB,
-) -> None:
-    layer_information = await retrieve_image_layer_information(image, registry_settings)
-    await pull_image(image, registry_settings, pbar, log_cb, layer_information)
-
-
-_DEFAULT_IMAGE_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "50MiB")
+_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "50MiB")
 
 
 async def pull_images(
@@ -126,7 +115,7 @@ async def pull_images(
         ]
     )
     progress_step_weights = [
-        float(i.layers_total_size) if i else float(_DEFAULT_IMAGE_SIZE)
+        float(i.layers_total_size) if i else float(_DEFAULT_MIN_IMAGE_SIZE)
         for i in images_layer_information
     ]
     _logger.debug("images to pull sizes: %s", progress_step_weights)
@@ -139,14 +128,17 @@ async def pull_images(
         for image, image_layer_info in zip(
             images, images_layer_information, strict=True
         ):
-            # TODO: use gather call here to pull faster
-            # problem with progress in concurrent calls
+            # NOTE: use gather call here to pull faster
+            # problem with progress in concurrent calls, needs to fix the progress bar
+
             await pull_image(
                 image,
                 registry_settings,
                 pbar,
                 log_cb,
-                image_layer_info
-                if isinstance(image_layer_info, DockerImageManifestsV2)
-                else None,
+                (
+                    image_layer_info
+                    if isinstance(image_layer_info, DockerImageManifestsV2)
+                    else None
+                ),
             )
