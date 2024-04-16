@@ -197,15 +197,19 @@ def test_create_job_from_project(faker: Faker):
     solver_key = "simcore/services/comp/itis/sleeper"
     solver_version = "2.0.2"
 
-    job = create_job_from_project(solver_key, solver_version, project)
+    def fake_url_for(*args, **kwargs):
+        return None
+
+    job = create_job_from_project(
+        solver_key, solver_version, project, url_for=fake_url_for
+    )
 
     assert job.id == project.uuid
     assert job.name == project.name
     assert not any(getattr(job, f) for f in job.__fields__ if f.startswith("url"))
 
-    assert (
-        job.inputs_checksum == expected_job.inputs_checksum
-    )  # this tends to be a problem
+    # this tends to be a problem
+    assert job.inputs_checksum == expected_job.inputs_checksum
     assert job == expected_job
 
 
