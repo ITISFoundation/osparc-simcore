@@ -11,9 +11,13 @@ from collections.abc import Iterator
 from ..services import ServiceDockerData
 from ._key_labels import is_function_service, is_iterator_service
 from ._registry import catalog
+from .services.parameters import is_parameter_service
+from .services.probes import is_probe_service
 
 assert catalog  # nosec
 assert is_iterator_service  # nosec
+assert is_parameter_service  # nosec
+assert is_probe_service  # nosec
 
 
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
@@ -28,5 +32,7 @@ __all__: tuple[str, ...] = (
     "catalog",
     "is_function_service",
     "is_iterator_service",
+    "is_parameter_service",
+    "is_probe_service",
     "iter_service_docker_data",
 )
