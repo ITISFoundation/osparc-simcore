@@ -30,7 +30,7 @@ def support_email(product_name: ProductName) -> EmailStr:
 
 
 @pytest.fixture
-def bbc_email(product_name: ProductName) -> EmailStr:
+def bcc_email(product_name: ProductName) -> EmailStr:
     return EmailStr(f"finance@{product_name}-department.info")
 
 

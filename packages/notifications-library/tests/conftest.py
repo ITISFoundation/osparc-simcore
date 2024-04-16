@@ -106,20 +106,20 @@ def user_email(user_email: EmailStr, external_user_email: EmailStr | None) -> Em
 
 
 @pytest.fixture(scope="session")
-def external_bbc_email(request: pytest.FixtureRequest) -> str | None:
+def external_bcc_email(request: pytest.FixtureRequest) -> str | None:
     email_or_none = request.config.getoption("--external-user-email", default=None)
     return parse_obj_as(EmailStr, email_or_none) if email_or_none else None
 
 
 @pytest.fixture
-def bbc_email(bbc_email: EmailStr, external_bbc_email: EmailStr | None) -> EmailStr:
-    """Overrides pytest_simcore.faker_users_data.user_email"""
-    if external_bbc_email:
+def bcc_email(bbc_email: EmailStr, external_bcc_email: EmailStr | None) -> EmailStr:
+    """Overrides pytest_simcore.faker_products_data.bcc_email"""
+    if external_bcc_email:
         print(
-            f"📧 EXTERNAL `bbc_email` detected. Setting bbc_email={external_user_email}"
+            f"📧 EXTERNAL `bcc_email` detected. Setting bcc_email={external_user_email}"
         )
-        return external_bbc_email
-    return bbc_email
+        return external_bcc_email
+    return bcc_email
 
 
 @pytest.fixture(scope="session")
@@ -132,7 +132,7 @@ def external_support_email(request: pytest.FixtureRequest) -> str | None:
 def support_email(
     support_email: EmailStr, external_support_email: EmailStr | None
 ) -> EmailStr:
-    """Overrides pytest_simcore.faker_users_data.support_email"""
+    """Overrides pytest_simcore.faker_products_data.support_email"""
     if external_support_email:
         print(
             f"📧 EXTERNAL `support_email` detected. Setting support_email={external_support_email}"
