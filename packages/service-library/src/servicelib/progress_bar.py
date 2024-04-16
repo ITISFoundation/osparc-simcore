@@ -160,8 +160,7 @@ class ProgressBarData:
         await self._report_external(new_progress_value)
 
     async def set_(self, new_value: float) -> None:
-        update_value = new_value - self._current_steps
-        await self.update(update_value)
+        await self.update(new_value - self._current_steps)
 
     async def finish(self) -> None:
         _logger.debug("finishing %s", f"{self.num_steps} progress")
