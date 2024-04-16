@@ -225,9 +225,7 @@ def create_job_from_project(
         ),
     )
 
-    assert all(
-        getattr(job, f) is None for f in job.__fields__ if f.startswith("url")
-    )  # nosec
+    assert all(getattr(job, f) for f in job.__fields__ if f.startswith("url"))  # nosec
 
     return job
 
