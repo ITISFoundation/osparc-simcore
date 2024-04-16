@@ -13,6 +13,7 @@ from models_library.products import ProductName
 from notifications_library._models import ProductData, UserData
 from notifications_library.payments import PaymentData
 from pydantic import EmailStr, parse_obj_as
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import Vendor
 
 pytest_plugins = [
@@ -53,6 +54,14 @@ def pytest_addoption(parser: pytest.Parser):
         default=None,
         help="Overrides `support_email` fixture",
     )
+
+
+@pytest.fixture(scope="session")
+def external_environment(external_environment: EnvVarsDict) -> EnvVarsDict:
+    if external_environment:
+        assert "PAYMENTS_GATEWAY_API_SECRET" in external_environment
+        assert "PAYMENTS_GATEWAY_URL" in external_environment
+    return external_environment
 
 
 @pytest.fixture(scope="session")
