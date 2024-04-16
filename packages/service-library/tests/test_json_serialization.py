@@ -30,13 +30,10 @@ def test_serialization_of_uuids(fake_data_dict: dict[str, Any]):
     # We should eventually fix this but adding a corresponding decoder?
 
     uuid_obj = uuid4()
-    # NOTE the quotes around expected value
     assert json_dumps(uuid_obj) == f'"{uuid_obj}"'
 
     obj = {"ids": [uuid4() for _ in range(3)]}
     dump = json_dumps(obj)
-
-    # NOTE: UUIDs are deserialized as strings, therefore we need to use jsonable_encoder
     assert json.loads(dump) == jsonable_encoder(obj)
 
 
@@ -45,7 +42,6 @@ def test_serialization_of_nested_dicts(fake_data_dict: dict[str, Any]):
     obj = {"data": fake_data_dict, "ids": [uuid4() for _ in range(3)]}
 
     dump = json_dumps(obj)
-    # NOTE: UUIDs are deserialized as strings, therefore we need to use jsonable_encoder
     assert json.loads(dump) == jsonable_encoder(obj)
 
 
@@ -60,7 +56,7 @@ def test_orjson_adapter_has_dumps_interface(
         fake_data_dict, sort_keys=sort_keys
     )
 
-    # e.g. engineio.packet has `self.json.dumps(self.data, separators=(',', ':'))`
+    # NOTE: e.g. engineio.packet has `self.json.dumps(self.data, separators=(',', ':'))`
     separators = ",", ":"
     assert OrJsonAdapter.dumps(fake_data_dict, separators=separators) == json_dumps(
         fake_data_dict, separators=separators
@@ -71,7 +67,8 @@ def test_orjson_adapter_has_dumps_interface(
         fake_data_dict, separators=separators
     )
 
-    indent = 2  # NOTE: only one-to-one with indent=2
+    # NOTE: only one-to-one with indent=2
+    indent = 2
     assert OrJsonAdapter.dumps(fake_data_dict, indent=indent) == json_dumps(
         fake_data_dict, indent=indent
     )
