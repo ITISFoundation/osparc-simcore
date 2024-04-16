@@ -41,6 +41,20 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
     }
   },
 
+  restartResendTimer: function(button, buttonText, count = 60) {
+    const refreshIntervalId = setInterval(() => {
+      if (count > 0) {
+        count--;
+      } else {
+        clearInterval(refreshIntervalId);
+      }
+      button.set({
+        label: count > 0 ? buttonText + ` (${count})` : buttonText,
+        enabled: count === 0
+      });
+    }, 1000);
+  },
+
   members: {
     __validateCodeBtn: null,
     __resendCodeSMSBtn: null,
@@ -136,11 +150,23 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
     },
 
     restartSMSButton: function(retryAfter) {
-      osparc.auth.core.Utils.restartResendTimer(this.__resendCodeSMSBtn, this.tr("Via SMS"), retryAfter);
+      // start SMS timer button
+      this.self().restartResendTimer(this.__resendCodeSMSBtn, this.tr("Via SMS"), retryAfter);
+      // and reset email button
+      this.__resendCodeEmailBtn.set({
+        label: this.tr("Via email"),
+        enabled: true
+      })
     },
 
     restartEmailButton: function(retryAfter) {
-      osparc.auth.core.Utils.restartResendTimer(this.__resendCodeEmailBtn, this.tr("Via email"), retryAfter);
+      // start Email timer button
+      this.self().restartResendTimer(this.__resendCodeEmailBtn, this.tr("Via email"), retryAfter);
+      // and reset SMS button
+      this.__resendCodeSMSBtn.set({
+        label: this.tr("Via SMS"),
+        enabled: true
+      })
     },
 
     __validateCodeLogin: function() {

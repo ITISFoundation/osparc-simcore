@@ -84,20 +84,6 @@ qx.Class.define("osparc.auth.core.Utils", {
       }
     },
 
-    restartResendTimer: function(button, buttonText, count = 60) {
-      const refreshIntervalId = setInterval(() => {
-        if (count > 0) {
-          count--;
-        } else {
-          clearInterval(refreshIntervalId);
-        }
-        button.set({
-          label: count > 0 ? buttonText + ` (${count})` : buttonText,
-          enabled: count === 0
-        });
-      }, 1000);
-    },
-
     extractMessage: function(resp) {
       const defaultMessage = "";
       const retry = "parameters" in resp && "message" in resp["parameters"] ? resp["parameters"]["message"] : defaultMessage;
