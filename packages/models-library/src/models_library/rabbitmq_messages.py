@@ -100,6 +100,8 @@ class ProgressMessageMixin(RabbitMessageBase):
         ProgressType.COMPUTATION_RUNNING
     )  # NOTE: backwards compatible
     progress: NonNegativeFloat
+    current_value: NonNegativeFloat | None = None
+    total: NonNegativeFloat | None = None
 
     def routing_key(self) -> str | None:
         return None

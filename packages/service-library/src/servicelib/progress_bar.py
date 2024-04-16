@@ -14,13 +14,17 @@ _FINAL_VALUE: Final[float] = 1.0
 
 @runtime_checkable
 class AsyncReportCB(Protocol):
-    async def __call__(self, progress_value: float) -> None:
+    async def __call__(
+        self, progress_value: float, current_value: float, total: float
+    ) -> None:
         ...
 
 
 @runtime_checkable
 class ReportCB(Protocol):
-    def __call__(self, progress_value: float) -> None:
+    def __call__(
+        self, progress_value: float, current_value: float, total: float
+    ) -> None:
         ...
 
 
@@ -112,7 +116,9 @@ class ProgressBarData:
                 or ((value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT)
                 or value == _FINAL_VALUE
             ):
-                call = self.progress_report_cb(value)
+                call = self.progress_report_cb(
+                    value, self._current_steps, self.num_steps
+                )
                 if isawaitable(call):
                     await call
                 self._last_report_value = value

@@ -50,7 +50,11 @@ async def post_log_message(
 
 
 async def post_progress_message(
-    app: FastAPI, progress_type: ProgressType, progress_value: NonNegativeFloat
+    app: FastAPI,
+    progress_type: ProgressType,
+    progress_value: NonNegativeFloat,
+    current_value: NonNegativeFloat | None = None,
+    total: NonNegativeFloat | None = None,
 ) -> None:
     app_settings: ApplicationSettings = app.state.settings
     message = ProgressRabbitMessageNode(
@@ -59,6 +63,8 @@ async def post_progress_message(
         project_id=app_settings.DY_SIDECAR_PROJECT_ID,
         progress_type=progress_type,
         progress=progress_value,
+        current_value=current_value,
+        total=total,
     )
     await _post_rabbit_message(app, message)
 
