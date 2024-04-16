@@ -9,7 +9,7 @@ from unittest import mock
 
 import pytest
 from pytest_mock import MockerFixture
-from servicelib.progress_bar import ProgressBarData
+from servicelib.progress_bar import _FINAL_VALUE, _INITIAL_VALUE, ProgressBarData
 
 
 @pytest.fixture
@@ -79,26 +79,52 @@ async def test_progress_bar(
         assert mocked_cb.call_count == 25
         assert mocked_cb.call_args_list[24].args[0] == pytest.approx(1)
         mocked_cb.reset_mock()
-    # we were already done here
-    mocked_cb.assert_not_called()
+    # we were not exactly at 1 here so it will get called now
+    mocked_cb.assert_called_once_with(_FINAL_VALUE)
 
 
-async def test_progress_bar_always_reports_0_on_creation(
+async def test_progress_bar_always_reports_0_on_creation_and_1_on_finish(
     mocked_progress_bar_cb: mock.Mock,
 ):
+    num_steps = 156587
     progress_bar = ProgressBarData(
-        num_steps=3, progress_report_cb=mocked_progress_bar_cb
+        num_steps=num_steps, progress_report_cb=mocked_progress_bar_cb
     )
-    assert progress_bar._current_steps == -1  # noqa: SLF001
+    assert progress_bar._current_steps == _INITIAL_VALUE  # noqa: SLF001
     async with progress_bar as root:
         assert root is progress_bar
         assert root._current_steps == 0  # noqa: SLF001
         mocked_progress_bar_cb.assert_called_once_with(0)
-        mocked_progress_bar_cb.reset_mock()
+
     # going out of scope always updates to final number of steps
-    assert progress_bar._current_steps == 3  # noqa: SLF001
-    mocked_progress_bar_cb.assert_called_once_with(1)
-    mocked_progress_bar_cb.reset_mock()
+    assert progress_bar._current_steps == num_steps  # noqa: SLF001
+    assert mocked_progress_bar_cb.call_args_list[-1] == mock.call(_FINAL_VALUE)
+
+
+async def test_progress_bar_always_reports_1_on_finish(
+    mocked_progress_bar_cb: mock.Mock,
+):
+    num_steps = 156587
+    chunks = 123.3
+
+    num_chunked_steps = int(num_steps / chunks)
+    last_step = num_steps % chunks
+    progress_bar = ProgressBarData(
+        num_steps=num_steps, progress_report_cb=mocked_progress_bar_cb
+    )
+    assert progress_bar._current_steps == _INITIAL_VALUE  # noqa: SLF001
+    async with progress_bar as root:
+        assert root is progress_bar
+        assert root._current_steps == 0  # noqa: SLF001
+        mocked_progress_bar_cb.assert_called_once_with(0)
+        for _ in range(num_chunked_steps):
+            await root.update(chunks)
+        await root.update(last_step)
+        assert progress_bar._current_steps == pytest.approx(num_steps)  # noqa: SLF001
+
+    # going out of scope always updates to final number of steps
+    assert progress_bar._current_steps == pytest.approx(num_steps)  # noqa: SLF001
+    assert mocked_progress_bar_cb.call_args_list[-1] == mock.call(_FINAL_VALUE)
 
 
 async def test_set_progress(

@@ -8,6 +8,7 @@ from .logging_utils import log_catch
 
 logger = logging.getLogger(__name__)
 _MIN_PROGRESS_UPDATE_PERCENT: Final[float] = 0.01
+_INITIAL_VALUE: Final[float] = -1.0
 _FINAL_VALUE: Final[float] = 1.0
 
 
@@ -28,9 +29,6 @@ def _normalize_weights(steps: int, weights: list[float]) -> list[float]:
     if total == 0:
         return [1] * steps
     return [weight / total for weight in weights]
-
-
-_INITIAL_VALUE: Final[float] = -1
 
 
 @dataclass(slots=True, kw_only=True)
@@ -159,8 +157,8 @@ class ProgressBarData:
         await self._report_external(new_progress_value)
 
     async def set_(self, new_value: float) -> None:
-        if update_value := round(new_value - self._current_steps):
-            await self.update(update_value)
+        update_value = new_value - self._current_steps
+        await self.update(update_value)
 
     async def finish(self) -> None:
         await self.set_(self.num_steps)
