@@ -65,7 +65,6 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       this.addListener("appear", () => {
         validateCodeTF.focus();
         validateCodeTF.activate();
-        this.__restartTimers();
       });
 
       this.beautifyFormFields();
@@ -113,7 +112,6 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
             const message = osparc.auth.core.Utils.extractMessage(data);
             osparc.FlashMessenger.logAs(message, "INFO");
             this.setMessage(message);
-            this.__restartTimers();
           })
           .catch(err => {
             resendCodeSMSBtn.setFetching(false);
@@ -136,7 +134,6 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
             const message = osparc.auth.core.Utils.extractMessage(data);
             osparc.FlashMessenger.logAs(message, "INFO");
             this.setMessage(message);
-            this.__restartTimers();
           })
           .catch(err => {
             resendCodeEmailBtn.setFetching(false);
@@ -144,13 +141,6 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
           });
       }, this);
       this.add(resendLayout);
-    },
-
-    __restartTimers: function() {
-      if (this.isSmsEnabled()) {
-        osparc.auth.core.Utils.restartResendTimer(this.__resendCodeSMSBtn, this.tr("Via SMS"), this.self().DIFFERENT_METHOD_TIMEOUT);
-      }
-      osparc.auth.core.Utils.restartResendTimer(this.__resendCodeEmailBtn, this.tr("Via email"), this.self().DIFFERENT_METHOD_TIMEOUT);
     },
 
     __validateCodeLogin: function() {
