@@ -91,10 +91,6 @@ qx.Class.define("osparc.service.StatusUI", {
           return "@FontAwesome5Solid/circle-notch/"+size;
         case "out-of-date":
           return "@FontAwesome5Solid/exclamation-circle/"+size;
-          /*
-        case "up-to-date":
-          return "@FontAwesome5Solid/check/"+size;
-          */
 
         default:
           return "";
@@ -111,15 +107,11 @@ qx.Class.define("osparc.service.StatusUI", {
     },
 
     getStatusHalo: function(element, progressColor, progress) {
-      console.log("element", element.getHeight())
-      // element.set({
-      //   textColor: "transparent"
-      // })
       const runnerColor = qx.theme.manager.Color.getInstance().resolve("haloProgressbar-runner");
       const fillColor = qx.theme.manager.Color.getInstance().resolve("haloProgressbar-fill");
       element.getContentElement().setStyles({
         "border-radius": `${element.getHeight() / 2}px`,
-        "background": `radial-gradient(closest-side, ${fillColor} 84%, transparent 84% 100%), conic-gradient(${progressColor} ${progress}%, ${runnerColor} 0)`
+        "background": `radial-gradient(closest-side, ${fillColor} 75%, transparent 84% 100%), conic-gradient(${progressColor} ${progress}%, ${runnerColor} 0)`
       })
     },
 

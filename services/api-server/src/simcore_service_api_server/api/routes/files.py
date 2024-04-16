@@ -413,7 +413,20 @@ async def complete_multipart_upload(
 
 
 @router.get(
-    "/{file_id}/content", response_class=RedirectResponse, responses=_FILE_STATUS_CODES
+    "/{file_id}/content",
+    response_class=RedirectResponse,
+    responses=_FILE_STATUS_CODES
+    | {
+        200: {
+            "content": {
+                "application/octet-stream": {
+                    "schema": {"type": "string", "format": "binary"}
+                },
+                "text/plain": {"schema": {"type": "string"}},
+            },
+            "description": "Returns a arbitrary binary data",
+        },
+    },
 )
 async def download_file(
     file_id: UUID,

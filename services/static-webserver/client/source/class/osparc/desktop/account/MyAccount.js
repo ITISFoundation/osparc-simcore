@@ -15,37 +15,22 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.desktop.credits.MyAccount", {
-  extend: qx.ui.core.Widget,
+qx.Class.define("osparc.desktop.account.MyAccount", {
+  extend: osparc.ui.window.TabbedView,
 
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
-
-    this.set({
-      padding: 20,
-      paddingLeft: 10
-    });
-
-    const tabViews = this.__tabsView = new qx.ui.tabview.TabView().set({
-      barPosition: "left",
-      contentPadding: 0
-    });
-    const miniProfile = osparc.desktop.credits.MyAccount.createMiniProfileView().set({
+    const miniProfile = osparc.desktop.account.MyAccount.createMiniProfileView().set({
       paddingRight: 10
     });
-    tabViews.getChildControl("bar").add(miniProfile);
+    this.addWidgetOnTopOfTheTabs(miniProfile);
 
-    const profilePage = this.__profilePage = this.__getProfilePage();
-    tabViews.add(profilePage);
+    this.__profilePage = this.__addProfilePage();
 
     if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
-      const usagePage = this.__usagePage = this.__getUsagePage();
-      tabViews.add(usagePage);
+      this.__usagePage = this.__addUsagePage();
     }
-
-    this._add(tabViews);
   },
 
   statics: {
@@ -105,37 +90,27 @@ qx.Class.define("osparc.desktop.credits.MyAccount", {
   },
 
   members: {
-    __tabsView: null,
     __profilePage: null,
     __usagePage: null,
 
-    __getProfilePage: function() {
-      const page = new osparc.desktop.credits.ProfilePage();
+    __addProfilePage: function() {
+      const title = this.tr("Profile");
+      const iconSrc = "@FontAwesome5Solid/user/24";
+      const profile = new osparc.desktop.account.ProfilePage();
+      const page = this.addTab(title, iconSrc, profile);
       return page;
     },
 
-    __getUsagePage: function() {
+    __addUsagePage: function() {
       const title = this.tr("Usage");
       const iconSrc = "@FontAwesome5Solid/list/22";
-      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       const usageOverview = new osparc.desktop.credits.Usage();
-      usageOverview.set({
-        margin: 10
-      });
-      page.add(usageOverview);
+      const page = this.addTab(title, iconSrc, usageOverview);
       return page;
-    },
-
-    __openPage: function(page) {
-      if (page) {
-        this.__tabsView.setSelection([page]);
-        return true;
-      }
-      return false;
     },
 
     openProfile: function() {
-      this.__openPage(this.__profilePage);
+      this._openPage(this.__profilePage);
       return true;
     }
   }

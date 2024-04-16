@@ -15,20 +15,15 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
-  extend: qx.ui.core.Widget,
+qx.Class.define("osparc.dashboard.ResourceDetails", {
+  extend: osparc.ui.window.TabbedView,
 
   construct: function(resourceData) {
     this.base(arguments);
 
     this.__resourceData = resourceData;
 
-    this._setLayout(new qx.ui.layout.VBox(10));
-    this.set({
-      padding: 20,
-      paddingLeft: 10
-    });
-    this.__addTabPagesView();
+    this.__addPages();
   },
 
   events: {
@@ -41,26 +36,25 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     "publishTemplate": "qx.event.type.Data"
   },
 
+
   statics: {
     WIDTH: 830,
     HEIGHT: 700,
 
-    popUpInWindow: function(moreOpts) {
+    popUpInWindow: function(resourceDetails) {
       // eslint-disable-next-line no-underscore-dangle
-      const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(moreOpts.__resourceData["resourceType"]);
+      const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(resourceDetails.__resourceData["resourceType"]);
       // eslint-disable-next-line no-underscore-dangle
-      const title = `${resourceAlias} ${qx.locale.Manager.tr("Details")} - ${moreOpts.__resourceData.name}`
-      return osparc.ui.window.Window.popUpInWindow(moreOpts, title, this.WIDTH, this.HEIGHT).set({
-        maxHeight: 1000,
+      const title = `${resourceAlias} ${qx.locale.Manager.tr("Details")} - ${resourceDetails.__resourceData.name}`;
+      const win = osparc.ui.window.Window.popUpInWindow(resourceDetails, title, this.WIDTH, this.HEIGHT).set({
         layout: new qx.ui.layout.Grow(),
-        modal: true,
+      });
+      win.set(osparc.ui.window.TabbedWindow.DEFAULT_PROPS);
+      win.set({
         width: this.WIDTH,
         height: this.HEIGHT,
-        showMaximize: false,
-        showMinimize: false,
-        resizable: true,
-        appearance: "service-window"
       });
+      return win;
     }
   },
 
@@ -75,7 +69,6 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
   members: {
     __resourceData: null,
-    __tabsView: null,
     __dataPage: null,
     __permissionsPage: null,
     __tagsPage: null,
@@ -174,7 +167,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       win.open();
       win.addListenerOnce("close", () => {
         if (win.getConfirmed()) {
-          this.__openPage(this.__servicesUpdatePage);
+          this._openPage(this.__servicesUpdatePage);
         } else {
           this.__openResource();
         }
@@ -195,50 +188,32 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       }
     },
 
-    __addTabPagesView: function() {
-      const tabsView = this.__tabsView = new qx.ui.tabview.TabView().set({
-        barPosition: "left",
-        contentPadding: 0
-      });
-      this._add(tabsView, {
-        flex: 1
-      });
-
-      this.__addPages();
-    },
-
-    __openPage: function(page) {
-      if (page) {
-        this.__tabsView.setSelection([page]);
-      }
-    },
-
     openData: function() {
-      this.__openPage(this.__dataPage);
+      this._openPage(this.__dataPage);
     },
 
     openAccessRights: function() {
-      this.__openPage(this.__permissionsPage);
+      this._openPage(this.__permissionsPage);
     },
 
     openTags: function() {
-      this.__openPage(this.__tagsPage);
+      this._openPage(this.__tagsPage);
     },
 
     openClassifiers: function() {
-      this.__openPage(this.__classifiersPage);
+      this._openPage(this.__classifiersPage);
     },
 
     openQuality: function() {
-      this.__openPage(this.__qualityPage);
+      this._openPage(this.__qualityPage);
     },
 
     openBillingSettings: function() {
-      this.__openPage(this.__billingSettings);
+      this._openPage(this.__billingSettings);
     },
 
     openUpdateServices: function() {
-      this.__openPage(this.__servicesUpdatePage);
+      this._openPage(this.__servicesUpdatePage);
     },
 
     __createServiceVersionSelector: function() {
@@ -288,7 +263,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __addPages: function() {
-      const tabsView = this.__tabsView;
+      const tabsView = this.getChildControl("tabs-view");
 
       // keep selected page
       const selection = tabsView.getSelection();

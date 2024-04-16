@@ -4,6 +4,8 @@
 # pylint: disable=unused-variable
 
 import json
+import os
+import subprocess
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
@@ -594,3 +596,15 @@ def respx_mock_from_capture() -> (
         return respx_mock
 
     return _generate_mock
+
+
+@pytest.fixture
+def openapi_dev_specs(project_slug_dir: Path) -> dict[str, Any]:
+    openapi_file = (project_slug_dir / "openapi-dev.json").resolve()
+    if openapi_file.is_file():
+        os.remove(openapi_file)
+    subprocess.run(
+        "make openapi-dev.json", cwd=project_slug_dir, shell=True, check=True
+    )
+    assert openapi_file.is_file()
+    return json.loads(openapi_file.read_text())
