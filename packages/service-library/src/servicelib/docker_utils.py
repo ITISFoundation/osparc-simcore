@@ -174,7 +174,7 @@ async def pull_image(
 
         client = await exit_stack.enter_async_context(aiodocker.Docker())
 
-        reported_progress = 0
+        reported_progress = 0.0
         async for pull_progress in client.images.pull(
             image, stream=True, auth=registry_auth
         ):
