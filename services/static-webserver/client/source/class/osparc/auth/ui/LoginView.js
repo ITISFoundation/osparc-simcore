@@ -175,7 +175,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       };
 
       const manager = osparc.auth.Manager.getInstance();
-      manager.login(email.getValue(), pass.getValue(), loginFun, verifyPhoneCbk, twoFactorAuthCbk, failFun, this)
+      manager.login(email.getValue(), pass.getValue())
         .then(resp => {
           if (resp.status === 202) {
             if (resp.nextStep === "PHONE_NUMBER_REQUIRED") {
