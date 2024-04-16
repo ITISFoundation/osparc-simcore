@@ -20,17 +20,40 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
   extend: osparc.auth.core.BaseAuthPage,
 
   properties: {
-    userPhoneNumber: {
-      check: "String",
-      init: null,
-      nullable: true,
-      event: "changeUserPhoneNumber"
-    },
-
     userEmail: {
       check: "String",
       init: "foo@mymail.com",
       nullable: false
+    },
+
+    smsEnabled: {
+      check: "Boolean",
+      init: false,
+      nullable: true,
+      event: "changeSmsEnabled"
+    },
+
+    message: {
+      check: "String",
+      init: "We just sent a 6-digit code",
+      nullable: false,
+      event: "changeMessage"
+    }
+  },
+
+  statics: {
+    restartResendTimer: function(button, buttonText, count = 60) {
+      const refreshIntervalId = setInterval(() => {
+        if (count > 0) {
+          count--;
+        } else {
+          clearInterval(refreshIntervalId);
+        }
+        button.set({
+          label: count > 0 ? buttonText + ` (${count})` : buttonText,
+          enabled: count === 0
+        });
+      }, 1000);
     }
   },
 
@@ -40,11 +63,10 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
     __resendCodeEmailBtn: null,
 
     _buildPage: function() {
-      const introText = new qx.ui.basic.Label();
-      const justSentText = this.tr("We just sent a 6-digit code to ");
-      this.bind("userPhoneNumber", introText, "value", {
-        converter: pNumber => justSentText + (pNumber ? pNumber : this.getUserEmail())
+      const introText = new qx.ui.basic.Label().set({
+        rich: true
       });
+      this.bind("message", introText, "value");
       this.add(introText);
 
       // form
@@ -55,7 +77,6 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       this.addListener("appear", () => {
         validateCodeTF.focus();
         validateCodeTF.activate();
-        this.__restartTimers();
       });
 
       this.beautifyFormFields();
@@ -85,12 +106,9 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       }));
       resendLayout.add(resendButtonsLayout);
 
-      const resendCodeSMSBtn = this.__resendCodeSMSBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Via SMS") + ` (60)`,
-        enabled: false
-      });
-      this.bind("userPhoneNumber", resendCodeSMSBtn, "visibility", {
-        converter: pNumber => pNumber ? "visible" : "excluded"
+      const resendCodeSMSBtn = this.__resendCodeSMSBtn = new osparc.ui.form.FetchButton(this.tr("Via SMS"));
+      this.bind("smsEnabled", resendCodeSMSBtn, "visibility", {
+        converter: smsEnabled => smsEnabled ? "visible" : "excluded"
       });
       resendButtonsLayout.add(resendCodeSMSBtn, {
         flex: 1
@@ -98,47 +116,59 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       resendCodeSMSBtn.addListener("execute", () => {
         resendCodeSMSBtn.setFetching(true);
         osparc.auth.Manager.getInstance().resendCodeViaSMS(this.getUserEmail())
-          .then(data => {
-            resendCodeSMSBtn.setFetching(false);
-            osparc.FlashMessenger.logAs(data.reason, "INFO");
-            introText.setValue(justSentText + this.getUserPhoneNumber());
-            this.__restartTimers();
+          .then(resp => {
+            const message = osparc.auth.core.Utils.extractMessage(resp);
+            const retryAfter = osparc.auth.core.Utils.extractRetryAfter(resp);
+            osparc.FlashMessenger.logAs(message, "INFO");
+            this.set({
+              message
+            });
+            this.restartSMSButton(retryAfter);
           })
-          .catch(err => {
-            resendCodeSMSBtn.setFetching(false);
-            osparc.FlashMessenger.logAs(err.message, "ERROR");
-          });
+          .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))
+          .finally(() => resendCodeSMSBtn.setFetching(false));
       }, this);
 
-      const resendCodeEmailBtn = this.__resendCodeEmailBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Via email") + ` (60)`,
-        enabled: false
-      });
+      const resendCodeEmailBtn = this.__resendCodeEmailBtn = new osparc.ui.form.FetchButton(this.tr("Via email"));
       resendButtonsLayout.add(resendCodeEmailBtn, {
         flex: 1
       });
       resendCodeEmailBtn.addListener("execute", () => {
         resendCodeEmailBtn.setFetching(true);
         osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
-          .then(data => {
-            resendCodeEmailBtn.setFetching(false);
-            osparc.FlashMessenger.logAs(data.reason, "INFO");
-            introText.setValue(justSentText + this.getUserEmail());
-            this.__restartTimers();
+          .then(resp => {
+            const message = osparc.auth.core.Utils.extractMessage(resp);
+            const retryAfter = osparc.auth.core.Utils.extractRetryAfter(resp);
+            osparc.FlashMessenger.logAs(message, "INFO");
+            this.set({
+              message
+            });
+            this.restartEmailButton(retryAfter);
           })
-          .catch(err => {
-            resendCodeEmailBtn.setFetching(false);
-            osparc.FlashMessenger.logAs(err.message, "ERROR");
-          });
+          .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))
+          .finally(() => resendCodeEmailBtn.setFetching(false));
       }, this);
       this.add(resendLayout);
     },
 
-    __restartTimers: function() {
-      if (this.getUserPhoneNumber()) {
-        osparc.auth.core.Utils.restartResendTimer(this.__resendCodeSMSBtn, this.tr("Via SMS"));
-      }
-      osparc.auth.core.Utils.restartResendTimer(this.__resendCodeEmailBtn, this.tr("Via email"));
+    restartSMSButton: function(retryAfter) {
+      // start SMS timer button
+      this.self().restartResendTimer(this.__resendCodeSMSBtn, this.tr("Via SMS"), retryAfter);
+      // and reset email button
+      this.__resendCodeEmailBtn.set({
+        label: this.tr("Via email"),
+        enabled: true
+      })
+    },
+
+    restartEmailButton: function(retryAfter) {
+      // start Email timer button
+      this.self().restartResendTimer(this.__resendCodeEmailBtn, this.tr("Via email"), retryAfter);
+      // and reset SMS button
+      this.__resendCodeSMSBtn.set({
+        label: this.tr("Via SMS"),
+        enabled: true
+      })
     },
 
     __validateCodeLogin: function() {
