@@ -3,6 +3,7 @@ from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from datetime import datetime
+from functools import cached_property
 from typing import Any, Final, Literal
 
 import aiodocker
@@ -52,9 +53,14 @@ class DockerImageManifestsV2(BaseModel):
     layers: list[DockerLayerSizeV2]
 
     class Config:
+        keep_untouched = (cached_property,)
         frozen = True
         alias_generator = snake_to_camel
         allow_population_by_field_name = True
+
+    @cached_property
+    def layers_total_size(self) -> ByteSize:
+        return parse_obj_as(ByteSize, sum(layer.size for layer in self.layers))
 
 
 class DockerImageMultiArchManifestsV2(BaseModel):
@@ -161,11 +167,8 @@ async def pull_image(
                 layer.digest.removeprefix("sha256:")[:12]: _PulledStatus(layer.size)
                 for layer in image_information.layers
             }
-            image_layers_total_size = (
-                sum(layer.size for layer in image_information.layers) * 3
-            )
             sub_progress = await exit_stack.enter_async_context(
-                progress_bar.sub_progress(image_layers_total_size)
+                progress_bar.sub_progress(image_information.layers_total_size * 3)
             )
         else:
             _logger.warning(
