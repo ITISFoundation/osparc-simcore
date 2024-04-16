@@ -283,7 +283,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       verifyPhoneNumber.addListener("skipPhoneRegistration", e => {
         const data = e.getData();
         login2FAValidationCode.set({
-          userEmail: login.getEmail(),
+          userEmail: data.userEmail,
           smsEnabled: false,
           message: data.message
         });

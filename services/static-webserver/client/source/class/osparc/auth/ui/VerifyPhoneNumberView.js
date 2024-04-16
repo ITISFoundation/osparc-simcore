@@ -180,9 +180,9 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
           const retryAfter = osparc.auth.core.Utils.extractRetryAfter(data)
           osparc.FlashMessenger.logAs(message, "INFO");
           this.fireDataEvent("skipPhoneRegistration", {
+            userEmail: this.getUserEmail(),
             message,
-            retryAfter,
-            nextStep: data["name"]
+            retryAfter
           });
         })
         .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))
