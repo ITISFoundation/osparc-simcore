@@ -6,7 +6,6 @@
 import functools
 import io
 import json
-import os
 import textwrap
 import time
 from collections.abc import Callable
@@ -19,7 +18,6 @@ import pytest
 import respx
 from fastapi.encoders import jsonable_encoder
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.utils_host import get_localhost_ip
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.pagination import OnePage
@@ -205,43 +203,24 @@ class MockedBackendApiDict(TypedDict):
     director_v2: MockRouter | None
 
 
-if os.environ.get("API_SERVER_DEV_HTTP_CALLS_LOGS_PATH"):
+@pytest.fixture
+def mocked_backend(
+    project_tests_dir: Path,
+    mocked_webserver_service_api_base: MockRouter,
+    mocked_storage_service_api_base: MockRouter,
+    mocked_directorv2_service_api_base: MockRouter,
+    respx_mock_from_capture: Callable[
+        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
+        list[respx.MockRouter],
+    ],
+) -> MockedBackendApiDict | None:
+    capture_path = project_tests_dir / "mocks" / "run_study_workflow.json"
 
-    @pytest.fixture
-    async def client():
-        async with httpx.AsyncClient(
-            base_url=f"http://{get_localhost_ip()}:8006/"
-        ) as cli:
-            yield cli
+    captures: list[HttpApiCallCaptureModel] = parse_obj_as(
+        list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
+    )
 
-    @pytest.fixture
-    def auth():
-        return httpx.BasicAuth("test", "test")
-
-    @pytest.fixture
-    def mocked_backend():
-        return None
-
-else:
-
-    @pytest.fixture
-    def mocked_backend(
-        project_tests_dir: Path,
-        mocked_webserver_service_api_base: MockRouter,
-        mocked_storage_service_api_base: MockRouter,
-        mocked_directorv2_service_api_base: MockRouter,
-        respx_mock_from_capture: Callable[
-            [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
-            list[respx.MockRouter],
-        ],
-    ) -> MockedBackendApiDict | None:
-        capture_path = project_tests_dir / "mocks" / "run_study_workflow.json"
-
-        captures: list[HttpApiCallCaptureModel] = parse_obj_as(
-            list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
-        )
-
-        # TODO: invent something that can
+    # TODO: invent something that can
 
 
 @pytest.mark.xfail()
