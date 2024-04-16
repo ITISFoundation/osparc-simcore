@@ -56,6 +56,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
         default: pricingUnitData.default
       });
       const extraInfo = osparc.utils.Utils.deepCloneObject(pricingUnitData.unitExtraInfo);
+      // extract the required fields from the unitExtraInfo
       this.set({
         unitExtraInfoCPU: extraInfo["CPU"],
         unitExtraInfoRAM: extraInfo["RAM"],
