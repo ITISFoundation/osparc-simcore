@@ -7,7 +7,6 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
 )
 from models_library.users import UserID
-from pydantic import EmailStr
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.utils import fire_and_forget_task
 
@@ -41,7 +40,6 @@ class NotifierService(SingletonInAppStateMixin):
         payment: PaymentTransaction,
         *,
         exclude: set | None = None,
-        finance_department_email: EmailStr | None = None,
     ):
         if payment.completed_at is None:
             msg = "Cannot notify incomplete payment"
@@ -55,7 +53,6 @@ class NotifierService(SingletonInAppStateMixin):
                 provider.notify_payment_completed(
                     user_id=user_id,
                     payment=payment,
-                    finance_department_email=finance_department_email,
                 ),
                 f"{provider.get_name()}_u_{user_id}_p_{payment.payment_id}",
             )
@@ -94,7 +91,9 @@ def setup_notifier(app: FastAPI):
         if email_settings := app_settings.PAYMENTS_EMAIL:
             providers.append(
                 EmailProvider(
-                    email_settings, users_repo=PaymentsUsersRepo(get_engine(app))
+                    email_settings,
+                    users_repo=PaymentsUsersRepo(get_engine(app)),
+                    finance_department_email=app_settings.PAYMENTS_FINANCE_DEPARTMENT_EMAIL,
                 )
             )
 

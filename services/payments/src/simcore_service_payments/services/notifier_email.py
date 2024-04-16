@@ -206,9 +206,15 @@ async def _create_email_session(
 
 
 class EmailProvider(NotificationProvider):
-    def __init__(self, settings: SMTPSettings, users_repo: PaymentsUsersRepo):
+    def __init__(
+        self,
+        settings: SMTPSettings,
+        users_repo: PaymentsUsersRepo,
+        finance_department_email: EmailStr | None = None,
+    ):
         self._users_repo = users_repo
         self._settings = settings
+        self._finance_department_email = finance_department_email
 
         self._jinja_env = Environment(
             loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
@@ -219,7 +225,6 @@ class EmailProvider(NotificationProvider):
         self,
         user_id: UserID,
         payment: PaymentTransaction,
-        finance_department_email: EmailStr | None,
     ) -> EmailMessage:
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
         data_vendor = data.vendor or {}
@@ -242,11 +247,12 @@ class EmailProvider(NotificationProvider):
                 display_name=data.display_name,
                 vendor_display_inline=f"{data_vendor.get('name', '')}. {data_vendor.get('address', '')}",
                 support_email=data.support_email,
+                #
             ),
         )
 
-        if finance_department_email:
-            msg["Bcc"] = finance_department_email
+        if self._finance_department_email:
+            msg["Bcc"] = self._finance_department_email
 
         return msg
 
@@ -254,13 +260,10 @@ class EmailProvider(NotificationProvider):
         self,
         user_id: UserID,
         payment: PaymentTransaction,
-        finance_department_email: EmailStr | None = None,
     ):
         # NOTE: we only have an email for successful payments
         if payment.state == "SUCCESS":
-            msg = await self._create_successful_payments_message(
-                user_id, payment, finance_department_email
-            )
+            msg = await self._create_successful_payments_message(user_id, payment)
 
             async with _create_email_session(self._settings) as smtp:
                 await smtp.send_message(msg)

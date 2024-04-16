@@ -173,7 +173,6 @@ async def on_payment_completed(
     rut_api: ResourceUsageTrackerApi,
     notifier: NotifierService,
     exclude: set | None = None,
-    finance_department_email: EmailStr | None = None,
 ):
     assert transaction.completed_at is not None  # nosec
     assert transaction.initiated_at < transaction.completed_at  # nosec
@@ -210,7 +209,6 @@ async def on_payment_completed(
         user_id=transaction.user_id,
         payment=to_payments_api_model(transaction),
         exclude=exclude,
-        finance_department_email=finance_department_email,
     )
 
 
@@ -234,7 +232,6 @@ async def pay_with_payment_method(  # noqa: PLR0913
     stripe_price_id: StripePriceID,
     stripe_tax_rate_id: StripeTaxRateID,
     comment: str | None = None,
-    finance_department_email: EmailStr | None = None,
 ) -> PaymentTransaction:
     initiated_at = arrow.utcnow().datetime
 
@@ -301,7 +298,6 @@ async def pay_with_payment_method(  # noqa: PLR0913
         rut,
         notifier=notifier,
         exclude={WebSocketProvider.get_name()},
-        finance_department_email=finance_department_email,
     )
 
     return to_payments_api_model(transaction)

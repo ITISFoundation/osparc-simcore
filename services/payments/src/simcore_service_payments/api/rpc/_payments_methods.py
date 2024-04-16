@@ -198,5 +198,4 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
             stripe_price_id=stripe_price_id,
             stripe_tax_rate_id=stripe_tax_rate_id,
             comment=comment,
-            finance_department_email=settings.PAYMENTS_FINANCE_DEPARTMENT_EMAIL,
         )

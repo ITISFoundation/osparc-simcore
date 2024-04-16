@@ -77,7 +77,6 @@ async def acknowledge_payment(
         transaction,
         rut_api,
         notifier=notifier,
-        finance_department_email=settings.PAYMENTS_FINANCE_DEPARTMENT_EMAIL,
     )
 
     if ack.saved:

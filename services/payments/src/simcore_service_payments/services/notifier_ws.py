@@ -12,7 +12,6 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
 )
 from models_library.users import UserID
-from pydantic import EmailStr
 
 from ..db.payment_users_repo import PaymentsUsersRepo
 from .notifier_abc import NotificationProvider
@@ -31,7 +30,6 @@ class WebSocketProvider(NotificationProvider):
         self,
         user_id: UserID,
         payment: PaymentTransaction,
-        finance_department_email: EmailStr | None = None,  # noqa: ARG002
     ):
         if payment.completed_at is None:
             msg = "Incomplete payment"
