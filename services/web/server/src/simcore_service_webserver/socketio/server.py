@@ -2,7 +2,7 @@ import logging
 from collections.abc import AsyncIterator
 
 from aiohttp import web
-from servicelib.json_serialization import OrJsonAdapted
+from servicelib.json_serialization import OrJsonAdapter
 from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
 from socketio import AsyncAioPikaManager, AsyncServer
 
@@ -30,7 +30,7 @@ async def _socketio_server_cleanup_ctx(app: web.Application) -> AsyncIterator[No
         logger=use_logger,
         engineio_logger=False,
         client_manager=server_manager,
-        json=OrJsonAdapted,
+        json=OrJsonAdapter,
     )
     sio_server.attach(app)
 
