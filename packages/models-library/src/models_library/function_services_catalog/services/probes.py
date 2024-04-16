@@ -21,8 +21,8 @@ def _create_metadata(type_name: str) -> ServiceDockerData:
             "contact": OM.email,
             "inputs": {
                 "in_1": {
-                    "label": f"Sensed {type_name}",
-                    "description": f"Captured {type_name} value",
+                    "label": f"{type_name}_probe",
+                    "description": f"Output {type_name} value",
                     # NOTE: no default provided to input probes
                     "type": type_name,
                 }

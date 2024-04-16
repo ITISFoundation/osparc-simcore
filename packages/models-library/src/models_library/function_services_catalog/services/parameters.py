@@ -27,8 +27,8 @@ def _create_metadata(type_name: str) -> ServiceDockerData:
             "inputs": {},
             "outputs": {
                 "out_1": {
-                    "label": f"Produced {type_name}",
-                    "description": f"Produced {type_name} value",
+                    "label": f"{type_name}_source",
+                    "description": f"Input {type_name} value",
                     "type": type_name,
                 }
             },
