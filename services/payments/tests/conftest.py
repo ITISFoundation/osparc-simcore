@@ -67,6 +67,14 @@ def pytest_addoption(parser: pytest.Parser):
     )
 
 
+@pytest.fixture(scope="session")
+def external_environment(external_environment: EnvVarsDict) -> EnvVarsDict:
+    if external_environment:
+        assert "PAYMENTS_GATEWAY_API_SECRET" in external_environment
+        assert "PAYMENTS_GATEWAY_URL" in external_environment
+    return external_environment
+
+
 @pytest.fixture
 def env_devel_dict(
     env_devel_dict: EnvVarsDict, external_environment: EnvVarsDict
