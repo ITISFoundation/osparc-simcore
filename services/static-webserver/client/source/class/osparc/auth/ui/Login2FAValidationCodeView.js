@@ -36,7 +36,8 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
     message: {
       check: "String",
       init: "We just sent a 6-digit code",
-      nullable: false
+      nullable: false,
+      event: "changeMessage"
     }
   },
 
@@ -50,8 +51,9 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
     __resendCodeEmailBtn: null,
 
     _buildPage: function() {
-      const introText = new qx.ui.basic.Label();
-      const justSentText = this.tr("We just sent a 6-digit code to ");
+      const introText = new qx.ui.basic.Label().set({
+        rich: true
+      });
       this.bind("message", introText, "value");
       this.add(introText);
 
@@ -108,8 +110,9 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         osparc.auth.Manager.getInstance().resendCodeViaSMS(this.getUserEmail())
           .then(data => {
             resendCodeSMSBtn.setFetching(false);
-            osparc.FlashMessenger.logAs(data.reason, "INFO");
-            introText.setValue(justSentText + this.getUserPhoneNumber());
+            const message = osparc.auth.core.Utils.extractMessage(data);
+            osparc.FlashMessenger.logAs(message, "INFO");
+            this.setMessage(message);
             this.__restartTimers();
           })
           .catch(err => {
@@ -130,8 +133,9 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
           .then(data => {
             resendCodeEmailBtn.setFetching(false);
-            osparc.FlashMessenger.logAs(data.reason, "INFO");
-            introText.setValue(justSentText + this.getUserEmail());
+            const message = osparc.auth.core.Utils.extractMessage(data);
+            osparc.FlashMessenger.logAs(message, "INFO");
+            this.setMessage(message);
             this.__restartTimers();
           })
           .catch(err => {

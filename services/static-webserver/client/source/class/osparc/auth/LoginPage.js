@@ -265,11 +265,11 @@ qx.Class.define("osparc.auth.LoginPage", {
       }, this);
 
       login.addListener("to2FAValidationCode", e => {
-        const msg = e.getData();
-        const startIdx = msg.indexOf("+");
+        const message = e.getData();
         login2FAValidationCode.set({
           userEmail: login.getEmail(),
-          userPhoneNumber: msg.substring(startIdx, msg.length)
+          userPhoneNumber: "+41766291766",
+          message
         });
         pages.setSelection([login2FAValidationCode]);
         login.resetValues();
