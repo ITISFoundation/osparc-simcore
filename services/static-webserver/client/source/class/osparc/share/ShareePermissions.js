@@ -46,15 +46,15 @@ qx.Class.define("osparc.share.ShareePermissions", {
                 const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
                   alignY: "middle"
                 });
-                const metaData = osparc.service.Utils.getMetaData(inaccessibleService.key, inaccessibleService.version);
+                const serviceData = osparc.service.Utils.getMetaData(inaccessibleService.key, inaccessibleService.version);
                 const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
                 infoButton.setAppearance("strong-button");
                 infoButton.addListener("execute", () => {
-                  const moreOpts = new osparc.dashboard.ResourceMoreOptions(metaData);
-                  osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
+                  const resourceDetails = new osparc.dashboard.ResourceDetails(serviceData);
+                  osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
                 }, this);
                 hBox.add(infoButton);
-                hBox.add(new qx.ui.basic.Label(metaData.name + " : " + metaData.version));
+                hBox.add(new qx.ui.basic.Label(serviceData.name + " : " + serviceData.version));
                 vBox.add(hBox);
               });
               layout.add(vBox, {

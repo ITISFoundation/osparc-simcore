@@ -9,19 +9,19 @@
  * Preferences page for managing the user's tags.
  */
 qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
-  extend: osparc.desktop.preferences.pages.BasePage,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/tags/24";
-    const title = this.tr("Create/Edit Tags");
-    this.base(arguments, title, iconSrc);
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     const studiesLabel = osparc.product.Utils.getStudyAlias({plural: true});
     const studyLabel = osparc.product.Utils.getStudyAlias();
     const msg = this.tr("\
     Tags are annotations to help users with grouping ") + studiesLabel + this.tr(" in the Dashboard. \
     Once the tags are created, they can be assigned to the ") + studyLabel + this.tr("  via 'More options...' on the ") + studyLabel + this.tr(" cards.");
-    const intro = this._createHelpLabel(msg);
+    const intro = osparc.ui.window.TabbedView.createHelpLabel(msg);
     this._add(intro);
 
     this._add(new qx.ui.core.Spacer(null, 10));
@@ -31,7 +31,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       paddingLeft: 10
     });
     const scroll = new qx.ui.container.Scroll(this.__container);
-    this.add(scroll);
+    this._add(scroll);
 
     this.__createComponents();
   },
