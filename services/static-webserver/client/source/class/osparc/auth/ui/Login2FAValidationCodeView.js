@@ -109,11 +109,11 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         osparc.auth.Manager.getInstance().resendCodeViaSMS(this.getUserEmail())
           .then(resp => {
             const message = osparc.auth.core.Utils.extractMessage(resp);
+            const retryAfter = osparc.auth.core.Utils.extractRetryAfter(resp);
             osparc.FlashMessenger.logAs(message, "INFO");
             this.set({
               message
             });
-            const retryAfter = osparc.auth.core.Utils.extractRetryAfter(resp);
             this.restartSMSButton(retryAfter);
           })
           .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))
@@ -132,11 +132,11 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
           .then(resp => {
             const message = osparc.auth.core.Utils.extractMessage(resp);
+            const retryAfter = osparc.auth.core.Utils.extractRetryAfter(resp);
             osparc.FlashMessenger.logAs(message, "INFO");
             this.set({
               message
             });
-            const retryAfter = osparc.auth.core.Utils.extractRetryAfter(resp);
             this.restartEmailButton(retryAfter);
           })
           .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))

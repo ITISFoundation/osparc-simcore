@@ -183,9 +183,10 @@ qx.Class.define("osparc.auth.Manager", {
               .then(profile => {
                 this.__loginUser(profile);
                 const data = resp.data;
+                const message = osparc.auth.core.Utils.extractMessage(data);
                 resolve({
                   status: xhr.status,
-                  message: osparc.auth.core.Utils.extractMessage(data)
+                  message
                 });
               })
               .catch(err => reject(err.message));
