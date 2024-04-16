@@ -164,5 +164,4 @@ async def test_pull_images(
 
     # check there were no warnings
     # NOTE: this would pop up in case docker changes its pulling statuses
-    for record in caplog.records:
-        assert record.levelname != "WARNING", record.message
+    assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
