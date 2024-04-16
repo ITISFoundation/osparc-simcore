@@ -1,7 +1,8 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-
 
 import functools
 import json
@@ -22,13 +23,13 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from servicelib.aiohttp import status
-from servicelib.json_serialization import safe_json_dumps
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver._resources import webserver_resources
 from simcore_service_webserver.email._core import _remove_comments, _render_template
 from simcore_service_webserver.email._handlers import EmailTestFailed, EmailTestPassed
 from simcore_service_webserver.email.plugin import setup_email
+from simcore_service_webserver.login._registration_api import _json_encoder_and_dumps
 from simcore_service_webserver.login._registration_handlers import _get_ipinfo
 
 
@@ -201,7 +202,7 @@ def test_render_templates(template_path: Path, faker: Faker):
             "link": faker.url(),
             "product": SimpleNamespace(name="foobar", display_name="Foo Bar"),
             "retention_days": 30,
-            "dumps": functools.partial(safe_json_dumps, indent=1),
+            "dumps": functools.partial(_json_encoder_and_dumps, indent=1),
             "request_form": fake_request_form,
             "ipinfo": _get_ipinfo(request),
         },
