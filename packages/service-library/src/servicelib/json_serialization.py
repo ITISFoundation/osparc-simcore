@@ -1,6 +1,6 @@
 import json
 from collections.abc import Callable
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 
 import orjson
 from pydantic.json import pydantic_encoder
@@ -30,7 +30,8 @@ class OrJsonAdapter:
     NOTE orjson performs better than json. SEE https://github.com/ijl/orjson?tab=readme-ov-file#performance
     """
 
-    _default_separator = SeparatorTuple(item_separator=",", key_separator=":")
+    # orjson always use (",". ":") as separators
+    _default_separator: Final = SeparatorTuple(item_separator=",", key_separator=":")
 
     @classmethod
     def dumps(
@@ -52,7 +53,6 @@ class OrJsonAdapter:
 
         if separators is not None:
             sep = SeparatorTuple(*separators)
-            # orjson uses (",". ":") separators already
             if sep != cls._default_separator:
                 result = result.replace(":", sep.key_separator).replace(
                     ",", sep.item_separator
