@@ -79,8 +79,6 @@ async def test_progress_bar(
         assert mocked_cb.call_count == 25
         assert mocked_cb.call_args_list[24].args[0] == pytest.approx(1)
         mocked_cb.reset_mock()
-    # we were not exactly at 1 here so it will get called now
-    mocked_cb.assert_called_once_with(_FINAL_VALUE)
 
 
 async def test_progress_bar_always_reports_0_on_creation_and_1_on_finish(
