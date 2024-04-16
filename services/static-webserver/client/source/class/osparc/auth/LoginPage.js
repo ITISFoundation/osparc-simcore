@@ -267,7 +267,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       login.addListener("to2FAValidationCode", e => {
         const data = e.getData();
         login2FAValidationCode.set({
-          userEmail: login.getEmail(),
+          userEmail: data.userEmail,
           smsEnabled: true,
           message: data.message
         });

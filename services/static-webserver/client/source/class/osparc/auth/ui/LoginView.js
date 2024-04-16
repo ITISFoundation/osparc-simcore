@@ -154,6 +154,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         this.__loginBtn.setFetching(false);
         osparc.FlashMessenger.getInstance().logAs(message, "INFO");
         this.fireDataEvent("to2FAValidationCode", {
+          userEmail: email.getValue(),
           nextStep,
           message,
           retryAfter

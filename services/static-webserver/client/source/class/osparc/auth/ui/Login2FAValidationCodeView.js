@@ -41,10 +41,6 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
     }
   },
 
-  statics: {
-    DIFFERENT_METHOD_TIMEOUT: 20
-  },
-
   members: {
     __validateCodeBtn: null,
     __resendCodeSMSBtn: null,
@@ -94,10 +90,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       }));
       resendLayout.add(resendButtonsLayout);
 
-      const resendCodeSMSBtn = this.__resendCodeSMSBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Via SMS") + ` (${this.self().DIFFERENT_METHOD_TIMEOUT})`,
-        enabled: false
-      });
+      const resendCodeSMSBtn = this.__resendCodeSMSBtn = new osparc.ui.form.FetchButton(this.tr("Via SMS"));
       this.bind("smsEnabled", resendCodeSMSBtn, "visibility", {
         converter: smsEnabled => smsEnabled ? "visible" : "excluded"
       });
@@ -120,10 +113,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
           .finally(() => resendCodeSMSBtn.setFetching(false));
       }, this);
 
-      const resendCodeEmailBtn = this.__resendCodeEmailBtn = new osparc.ui.form.FetchButton().set({
-        label: this.tr("Via email") + ` (${this.self().DIFFERENT_METHOD_TIMEOUT})`,
-        enabled: false
-      });
+      const resendCodeEmailBtn = this.__resendCodeEmailBtn = new osparc.ui.form.FetchButton(this.tr("Via email"));
       resendButtonsLayout.add(resendCodeEmailBtn, {
         flex: 1
       });
