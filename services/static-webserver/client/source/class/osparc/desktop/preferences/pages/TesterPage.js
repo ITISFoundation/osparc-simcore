@@ -20,20 +20,23 @@
  */
 
 qx.Class.define("osparc.desktop.preferences.pages.TesterPage", {
-  extend: osparc.desktop.preferences.pages.BasePage,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/user-md/24";
-    const title = this.tr("Tester");
-    this.base(arguments, title, iconSrc);
+    this.base(arguments);
 
-    this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    const scroll = new qx.ui.container.Scroll(this.__container);
+    this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.__createStaticsLayout();
-    this.__createLocalStorageLayout();
+    const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-    this.add(scroll, {
+    const statics = this.__createStaticsLayout();
+    container.add(statics);
+
+    const localStorage = this.__createLocalStorageLayout();
+    container.add(localStorage);
+
+    const scroll = new qx.ui.container.Scroll(container);
+    this._add(scroll, {
       flex: 1
     });
   },
@@ -41,9 +44,9 @@ qx.Class.define("osparc.desktop.preferences.pages.TesterPage", {
   members: {
     __createStaticsLayout: function() {
       // layout
-      const box = this._createSectionBox(this.tr("Statics"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Statics"));
 
-      const label = this._createHelpLabel(this.tr(
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr(
         "This is a list of the 'statics' resources"
       ));
       box.add(label);
@@ -59,12 +62,12 @@ qx.Class.define("osparc.desktop.preferences.pages.TesterPage", {
       }
       box.add(new qx.ui.form.renderer.Single(form));
 
-      this.__container.add(box);
+      return box;
     },
 
     __createLocalStorageLayout: function() {
       // layout
-      const box = this._createSectionBox(this.tr("Local Storage"));
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Local Storage"));
 
       const items = {
         ...window.localStorage
@@ -79,7 +82,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TesterPage", {
       }
       box.add(new qx.ui.form.renderer.Single(form));
 
-      this.__container.add(box);
+      return box;
     }
   }
 });

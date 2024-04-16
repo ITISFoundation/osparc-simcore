@@ -16,100 +16,57 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.po.POCenter", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.ui.window.TabbedView,
 
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
-
-    this.set({
-      padding: 10
-    });
-
-    const tabViews = new qx.ui.tabview.TabView().set({
-      barPosition: "left",
-      contentPadding: 0
-    });
-    const miniProfile = osparc.desktop.credits.MyAccount.createMiniProfileView().set({
+    const miniProfile = osparc.desktop.account.MyAccount.createMiniProfileView().set({
       paddingRight: 10
     });
-    tabViews.getChildControl("bar").add(miniProfile);
+    this.addWidgetOnTopOfTheTabs(miniProfile);
 
-    const usersPage = this.__getUsersPage();
-    tabViews.add(usersPage);
-
-    const preRegistration = this.__getPreRegistrationPage();
-    tabViews.add(preRegistration);
-
-    const invitationsPage = this.__getInvitationsPage();
-    tabViews.add(invitationsPage);
-
-    const productPage = this.__getProductPage();
-    tabViews.add(productPage);
-
-    const msgTemplatesPage = this.__getMsgTemplatesPage();
-    tabViews.add(msgTemplatesPage);
-
-    this._add(tabViews, {
-      flex: 1
-    });
+    this.__addUsersPage();
+    this.__addPreRegistrationPage();
+    this.__addInvitationsPage();
+    this.__addProductPage();
+    this.__addMsgTemplatesPage();
   },
 
   members: {
-    __widgetToPage: function(title, iconSrc, widget) {
-      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
-      widget.set({
-        margin: 10
-      });
-      page.add(widget, {
-        flex: 1
-      });
-      return page;
-    },
-
-    __getUsersPage: function() {
+    __addUsersPage: function() {
       const title = this.tr("Users");
       const iconSrc = "@FontAwesome5Solid/user/22";
       const users = new osparc.po.Users();
-      const page = this.__widgetToPage(title, iconSrc, users)
-      return page;
+      this.addTab(title, iconSrc, users);
     },
 
-    __getPreRegistrationPage: function() {
+    __addPreRegistrationPage: function() {
       const title = this.tr("PreRegistration");
       const iconSrc = "@FontAwesome5Solid/address-card/22";
-      const page = new osparc.desktop.preferences.pages.BasePage(title, iconSrc);
       const preRegistration = new osparc.po.PreRegistration();
-      preRegistration.set({
-        margin: 10
-      });
-      page.add(preRegistration);
-      return page;
+      this.addTab(title, iconSrc, preRegistration);
     },
 
-    __getInvitationsPage: function() {
+    __addInvitationsPage: function() {
       const title = this.tr("Invitations");
       const iconSrc = "@FontAwesome5Solid/envelope/22";
       const invitations = new osparc.po.Invitations();
-      const page = this.__widgetToPage(title, iconSrc, invitations);
-      return page;
+      this.addTab(title, iconSrc, invitations);
     },
 
-    __getProductPage: function() {
+    __addProductPage: function() {
       const title = this.tr("Product Info");
       const iconSrc = "@FontAwesome5Solid/info/22";
       const productInfo = new osparc.po.ProductInfo();
-      const page = this.__widgetToPage(title, iconSrc, productInfo);
-      return page;
+      this.addTab(title, iconSrc, productInfo);
     },
 
-    __getMsgTemplatesPage: function() {
+    __addMsgTemplatesPage: function() {
       const title = this.tr("Message Templates");
       const iconSrc = "@FontAwesome5Solid/envelope-open/22";
       const productInfo = new osparc.po.MessageTemplates();
-      const page = this.__widgetToPage(title, iconSrc, productInfo);
-      return page;
+      this.addTab(title, iconSrc, productInfo);
     }
   }
 });
