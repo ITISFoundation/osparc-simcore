@@ -259,9 +259,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       const scalingLayout = this.__clusterUpScalingLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Increasing system capacity..."));
       sequenceLoadingPage.add(scalingLayout);
 
-      const pullingInputsLayout = this.__pullingInputsLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your input data..."));
-      sequenceLoadingPage.add(pullingInputsLayout);
-
       const pullingSidecarLayout = this.__pullingSidecarLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Setting up key components..."));
       sequenceLoadingPage.add(pullingSidecarLayout);
 
@@ -273,6 +270,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
       const pullingImagesLayout = this.__pullingImagesLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Installing software..."));
       sequenceLoadingPage.add(pullingImagesLayout);
+
+      const pullingInputsLayout = this.__pullingInputsLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your input data..."));
+      sequenceLoadingPage.add(pullingInputsLayout);
 
       this.__mainLoadingPage.addAt(sequenceLoadingPage, 0, {
         flex: 1
