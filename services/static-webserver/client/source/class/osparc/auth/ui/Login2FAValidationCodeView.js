@@ -20,17 +20,17 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
   extend: osparc.auth.core.BaseAuthPage,
 
   properties: {
-    userPhoneNumber: {
-      check: "String",
-      init: null,
-      nullable: true,
-      event: "changeUserPhoneNumber"
-    },
-
     userEmail: {
       check: "String",
       init: "foo@mymail.com",
       nullable: false
+    },
+
+    smsEnabled: {
+      check: "Boolean",
+      init: false,
+      nullable: true,
+      event: "changeSmsEnabled"
     },
 
     message: {
@@ -99,8 +99,8 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
         label: this.tr("Via SMS") + ` (${this.self().DIFFERENT_METHOD_TIMEOUT})`,
         enabled: false
       });
-      this.bind("userPhoneNumber", resendCodeSMSBtn, "visibility", {
-        converter: pNumber => pNumber ? "visible" : "excluded"
+      this.bind("smsEnabled", resendCodeSMSBtn, "visibility", {
+        converter: smsEnabled => smsEnabled ? "visible" : "excluded"
       });
       resendButtonsLayout.add(resendCodeSMSBtn, {
         flex: 1
@@ -147,7 +147,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
     },
 
     __restartTimers: function() {
-      if (this.getUserPhoneNumber()) {
+      if (this.isSmsEnabled()) {
         osparc.auth.core.Utils.restartResendTimer(this.__resendCodeSMSBtn, this.tr("Via SMS"), this.self().DIFFERENT_METHOD_TIMEOUT);
       }
       osparc.auth.core.Utils.restartResendTimer(this.__resendCodeEmailBtn, this.tr("Via email"), this.self().DIFFERENT_METHOD_TIMEOUT);

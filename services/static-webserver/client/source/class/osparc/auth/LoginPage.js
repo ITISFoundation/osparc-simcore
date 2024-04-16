@@ -268,7 +268,7 @@ qx.Class.define("osparc.auth.LoginPage", {
         const message = e.getData();
         login2FAValidationCode.set({
           userEmail: login.getEmail(),
-          userPhoneNumber: "+41766291766",
+          smsEnabled: true,
           message
         });
         pages.setSelection([login2FAValidationCode]);
@@ -278,7 +278,7 @@ qx.Class.define("osparc.auth.LoginPage", {
       verifyPhoneNumber.addListener("skipPhoneRegistration", e => {
         login2FAValidationCode.set({
           userEmail: e.getData(),
-          userPhoneNumber: null
+          smsEnabled: false
         });
         pages.setSelection([login2FAValidationCode]);
         login.resetValues();
