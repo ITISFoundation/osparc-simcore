@@ -198,7 +198,7 @@ def test_create_job_from_project(faker: Faker):
     solver_version = "2.0.2"
 
     def fake_url_for(*args, **kwargs):
-        return None
+        return faker.url()
 
     job = create_job_from_project(
         solver_key, solver_version, project, url_for=fake_url_for
@@ -206,11 +206,15 @@ def test_create_job_from_project(faker: Faker):
 
     assert job.id == project.uuid
     assert job.name == project.name
-    assert not any(getattr(job, f) for f in job.__fields__ if f.startswith("url"))
+
+    url_field_names = {name for name in job.__fields__ if name.endswith("url")}
+    assert all(getattr(job, _) for _ in url_field_names)
 
     # this tends to be a problem
     assert job.inputs_checksum == expected_job.inputs_checksum
-    assert job == expected_job
+    assert job.dict(exclude=url_field_names) == expected_job.dict(
+        exclude=url_field_names
+    )
 
 
 @pytest.mark.skip(reason="TODO: next PR")
