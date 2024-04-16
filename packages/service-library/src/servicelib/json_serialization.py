@@ -3,19 +3,14 @@ from collections.abc import Callable
 from typing import Any
 
 import orjson
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic.json import pydantic_encoder
 
 
 def json_dumps(obj: Any, **kwargs):
-    """json.dumps including a rich encoder
+    """json.dumps including a rich encoder (e.g. supports UUID objs)
     A big applause for pydantic authors here!!!
     """
     return json.dumps(obj, default=pydantic_encoder, **kwargs)
-
-
-def safe_json_dumps(obj: Any, **kwargs):
-    return json_dumps(jsonable_encoder(obj), **kwargs)
 
 
 class OrJsonAdapter:
