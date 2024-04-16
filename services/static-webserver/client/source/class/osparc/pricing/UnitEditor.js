@@ -138,9 +138,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
 
     unitExtraInfo: {
       check: "Object",
-      init: {
-        "SSD": 0
-      },
+      init: {},
       nullable: false,
       event: "changeUnitExtraInfo"
     },
