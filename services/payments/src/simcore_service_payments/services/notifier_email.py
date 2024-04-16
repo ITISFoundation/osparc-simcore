@@ -115,6 +115,7 @@ class _ProductData:
     display_name: str
     vendor_display_inline: str
     support_email: str
+    finance_department_email: EmailStr | None
 
 
 @dataclass
@@ -148,6 +149,9 @@ async def _create_user_email(
         addr_spec=user.email,
     )
     msg["Subject"] = env.get_template("notify_payments-subject.txt").render(data)
+
+    if product.finance_department_email:
+        msg["Bcc"] = product.finance_department_email
 
     # Body
     text_template = env.get_template("notify_payments.txt")
@@ -247,12 +251,9 @@ class EmailProvider(NotificationProvider):
                 display_name=data.display_name,
                 vendor_display_inline=f"{data_vendor.get('name', '')}. {data_vendor.get('address', '')}",
                 support_email=data.support_email,
-                #
+                finance_department_email=self._finance_department_email,
             ),
         )
-
-        if self._finance_department_email:
-            msg["Bcc"] = self._finance_department_email
 
         return msg
 
