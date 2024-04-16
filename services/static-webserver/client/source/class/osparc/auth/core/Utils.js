@@ -99,8 +99,8 @@ qx.Class.define("osparc.auth.core.Utils", {
     },
 
     extractMessage: function(resp) {
-      const defaultRetry = 60;
-      const retry = "parameters" in resp && "message" in resp["parameters"] ? resp["message"]["retry_2fa_after"] : defaultRetry;
+      const defaultMessage = "";
+      const retry = "parameters" in resp && "message" in resp["parameters"] ? resp["message"]["retry_2fa_after"] : defaultMessage;
       return retry;
     },
 

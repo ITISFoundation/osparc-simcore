@@ -157,45 +157,49 @@ qx.Class.define("osparc.auth.Manager", {
       });
     },
 
-    login: function(email, password, loginCbk, verifyPhoneCbk, twoFactorAuthCbk, failCbk, context) {
-      const params = {
-        email,
-        password
-      };
-      const url = osparc.data.Resources.resources["auth"].endpoints["postLogin"].url;
-      const xhr = new XMLHttpRequest();
-      xhr.onload = () => {
-        if (xhr.status === 202) {
-          const resp = JSON.parse(xhr.responseText);
-          const data = resp.data;
-          if (data["name"] === "PHONE_NUMBER_REQUIRED") {
-            verifyPhoneCbk.call(context);
-          } else if (data["name"] === "SMS_CODE_REQUIRED") {
-            twoFactorAuthCbk.call(context, data["reason"]);
-          }
-        } else if (xhr.status === 200) {
-          const resp = JSON.parse(xhr.responseText);
-          osparc.data.Resources.getOne("profile", {}, null, false)
-            .then(profile => {
-              this.__loginUser(profile);
-              loginCbk.call(context, resp.data);
-            })
-            .catch(err => failCbk.call(context, err.message));
-        } else {
-          const resp = JSON.parse(xhr.responseText);
-          if ("error" in resp && resp["error"]) {
-            failCbk.call(context, resp["error"]["message"]);
+    login: function(email, password) {
+      return new Promise((resolve, reject) => {
+        const params = {
+          email,
+          password
+        };
+        const url = osparc.data.Resources.resources["auth"].endpoints["postLogin"].url;
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => {
+          if (xhr.status === 202) {
+            const resp = JSON.parse(xhr.responseText);
+            const data = resp.data;
+            resolve({
+              status: xhr.status,
+              nextStep: data["name"],
+              message: osparc.auth.core.Utils.extractMessage(data)
+            });
+          } else if (xhr.status === 200) {
+            const resp = JSON.parse(xhr.responseText);
+            osparc.data.Resources.getOne("profile", {}, null, false)
+              .then(profile => {
+                this.__loginUser(profile);
+                const data = resp.data;
+                resolve({
+                  status: xhr.status,
+                  message: osparc.auth.core.Utils.extractMessage(data)
+                });
+              })
+              .catch(err => reject(err.message));
           } else {
-            failCbk.call(context, this.tr("Login failed"));
+            const resp = JSON.parse(xhr.responseText);
+            if ("error" in resp && resp["error"]) {
+              reject(resp["error"]["message"]);
+            } else {
+              reject(this.tr("Login failed"));
+            }
           }
-        }
-      };
-      xhr.onerror = () => {
-        failCbk.call(context, this.tr("Login failed"));
-      };
-      xhr.open("POST", url, true);
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.send(JSON.stringify(params));
+        };
+        xhr.onerror = () => reject(this.tr("Login failed"));
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify(params));
+      });
     },
 
     logout: function() {

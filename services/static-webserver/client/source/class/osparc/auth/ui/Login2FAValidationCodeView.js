@@ -31,6 +31,12 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       check: "String",
       init: "foo@mymail.com",
       nullable: false
+    },
+
+    message: {
+      check: "String",
+      init: "We just sent a 6-digit code",
+      nullable: false
     }
   },
 
@@ -46,9 +52,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
     _buildPage: function() {
       const introText = new qx.ui.basic.Label();
       const justSentText = this.tr("We just sent a 6-digit code to ");
-      this.bind("userPhoneNumber", introText, "value", {
-        converter: pNumber => justSentText + (pNumber ? pNumber : this.getUserEmail())
-      });
+      this.bind("message", introText, "value");
       this.add(introText);
 
       // form
