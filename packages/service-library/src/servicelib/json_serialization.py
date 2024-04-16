@@ -8,7 +8,7 @@ from pydantic.json import pydantic_encoder
 
 
 def json_dumps(obj: Any, **kwargs):
-    """json.dumps with rich encoder.
+    """json.dumps including a rich encoder
     A big applause for pydantic authors here!!!
     """
     return json.dumps(obj, default=pydantic_encoder, **kwargs)
