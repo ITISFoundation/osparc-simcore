@@ -76,11 +76,7 @@ def iter_project_ports(
         is_output = filter_kind is None or filter_kind == "output"
 
         # node representing INPUT ports: can write this node's output
-        if (
-            is_input
-            and is_parameter_service(node.key)  # FIXME: file-picker is also input!
-            and node.outputs
-        ):
+        if is_input and is_parameter_service(node.key) and node.outputs:
             assert not node.inputs  # nosec
             assert list(node.outputs.keys()) == ["out_1"]  # nosec
 
