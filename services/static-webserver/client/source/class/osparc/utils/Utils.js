@@ -919,7 +919,7 @@ qx.Class.define("osparc.utils.Utils", {
     closeHangingWindows: function() {
       const children = qx.core.Init.getApplication().getRoot().getChildren();
       children.forEach(child => {
-        const isWindow = Object.keys(qx.util.PropertyUtil.getAllProperties(child.constructor)).includes("modal");
+        const isWindow = "modal" in qx.util.PropertyUtil.getAllProperties(child.constructor);
         if (isWindow) {
           child.close();
         }
