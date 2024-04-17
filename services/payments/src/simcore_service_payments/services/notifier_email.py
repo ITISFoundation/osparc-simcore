@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import EmailStr
 from settings_library.email import EmailProtocol, SMTPSettings
 
 from ..db.payment_users_repo import PaymentsUsersRepo
@@ -114,6 +115,7 @@ class _ProductData:
     display_name: str
     vendor_display_inline: str
     support_email: str
+    bcc_email: EmailStr | None = None
 
 
 @dataclass
@@ -147,6 +149,9 @@ async def _create_user_email(
         addr_spec=user.email,
     )
     msg["Subject"] = env.get_template("notify_payments-subject.txt").render(data)
+
+    if product.bcc_email:
+        msg["Bcc"] = product.bcc_email
 
     # Body
     text_template = env.get_template("notify_payments.txt")
@@ -205,9 +210,15 @@ async def _create_email_session(
 
 
 class EmailProvider(NotificationProvider):
-    def __init__(self, settings: SMTPSettings, users_repo: PaymentsUsersRepo):
+    def __init__(
+        self,
+        settings: SMTPSettings,
+        users_repo: PaymentsUsersRepo,
+        bcc_email: EmailStr | None = None,
+    ):
         self._users_repo = users_repo
         self._settings = settings
+        self._bcc_email = bcc_email
 
         self._jinja_env = Environment(
             loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
@@ -215,7 +226,9 @@ class EmailProvider(NotificationProvider):
         )
 
     async def _create_successful_payments_message(
-        self, user_id: UserID, payment: PaymentTransaction
+        self,
+        user_id: UserID,
+        payment: PaymentTransaction,
     ) -> EmailMessage:
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
         data_vendor = data.vendor or {}
@@ -238,6 +251,7 @@ class EmailProvider(NotificationProvider):
                 display_name=data.display_name,
                 vendor_display_inline=f"{data_vendor.get('name', '')}. {data_vendor.get('address', '')}",
                 support_email=data.support_email,
+                bcc_email=self._bcc_email,
             ),
         )
 
@@ -251,6 +265,7 @@ class EmailProvider(NotificationProvider):
         # NOTE: we only have an email for successful payments
         if payment.state == "SUCCESS":
             msg = await self._create_successful_payments_message(user_id, payment)
+
             async with _create_email_session(self._settings) as smtp:
                 await smtp.send_message(msg)
         else:

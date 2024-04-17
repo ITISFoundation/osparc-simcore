@@ -70,7 +70,10 @@ async def acknowledge_payment(
 
     assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
     background_tasks.add_task(
-        payments.on_payment_completed, transaction, rut_api, notifier=notifier
+        payments.on_payment_completed,
+        transaction,
+        rut_api,
+        notifier=notifier,
     )
 
     if ack.saved:
