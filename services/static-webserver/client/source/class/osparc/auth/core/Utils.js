@@ -73,7 +73,7 @@ qx.Class.define("osparc.auth.core.Utils", {
       const value = osparc.auth.core.Utils.findParameterInFragment(parameterName);
       if (value) {
         const removeMe = parameterName + "=" + value;
-        // In case the parameterhas an ampersand in front
+        // In case the parameter has an ampersand in front
         url = url.replace(";" + removeMe, "");
         url = url.replace(removeMe, "");
         if (url.slice(-1) === "#") {
@@ -84,18 +84,16 @@ qx.Class.define("osparc.auth.core.Utils", {
       }
     },
 
-    restartResendTimer: function(button, buttonText, count = 60) {
-      const refreshIntervalId = setInterval(() => {
-        if (count > 0) {
-          count--;
-        } else {
-          clearInterval(refreshIntervalId);
-        }
-        button.set({
-          label: count > 0 ? buttonText + ` (${count})` : buttonText,
-          enabled: count === 0
-        });
-      }, 1000);
+    extractMessage: function(resp) {
+      const defaultMessage = "";
+      const retry = "parameters" in resp && "message" in resp["parameters"] ? resp["parameters"]["message"] : defaultMessage;
+      return retry;
+    },
+
+    extractRetryAfter: function(resp) {
+      const defaultRetry = 60;
+      const retry = "parameters" in resp && "expiration_2fa" in resp["parameters"] ? resp["parameters"]["expiration_2fa"] : defaultRetry;
+      return retry;
     }
   }
 });

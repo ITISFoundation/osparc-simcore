@@ -52,7 +52,9 @@ def now_str() -> str:
 #
 
 
-def create_node_inputs_from_job_inputs(inputs: JobInputs) -> dict[InputID, InputTypes]:
+def create_node_inputs_from_job_inputs(
+    inputs: JobInputs,
+) -> dict[InputID, InputTypes]:
     # map Job inputs with solver inputs
     # TODO: ArgumentType -> InputTypes dispatcher
 
@@ -153,7 +155,12 @@ def create_new_project_for_job(
         workbench={solver_id: solver_service},
         ui=StudyUI(
             workbench={
-                f"{solver_id}": {"position": {"x": 633, "y": 229}},
+                f"{solver_id}": {
+                    "position": {
+                        "x": 633,
+                        "y": 229,
+                    },
+                },
             },
             slideshow={},
             currentNodeId=solver_id,
@@ -163,34 +170,11 @@ def create_new_project_for_job(
     )
 
 
-def _copy_n_update_urls(
-    job: Job, url_for: Callable, solver_key: SolverKeyId, version: VersionStr
-):
-    return job.copy(
-        update={
-            "url": url_for(
-                "get_job", solver_key=solver_key, version=version, job_id=job.id
-            ),
-            "runner_url": url_for(
-                "get_solver_release",
-                solver_key=solver_key,
-                version=version,
-            ),
-            "outputs_url": url_for(
-                "get_job_outputs",
-                solver_key=solver_key,
-                version=version,
-                job_id=job.id,
-            ),
-        }
-    )
-
-
 def create_job_from_project(
     solver_key: SolverKeyId,
     solver_version: VersionStr,
     project: ProjectGet,
-    url_for: Callable | None = None,
+    url_for: Callable,
 ) -> Job:
     """
     Given a project, creates a job
@@ -214,21 +198,34 @@ def create_job_from_project(
     # create solver's job
     solver_name = Solver.compose_resource_name(solver_key, solver_version)
 
+    job_id = project.uuid
+
     job = Job(
-        id=project.uuid,
+        id=job_id,
         name=project.name,
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,
         runner_name=solver_name,  # type: ignore
-        url=None,
-        runner_url=None,
-        outputs_url=None,
+        url=url_for(
+            "get_job",
+            solver_key=solver_key,
+            version=solver_version,
+            job_id=job_id,
+        ),
+        runner_url=url_for(
+            "get_solver_release",
+            solver_key=solver_key,
+            version=solver_version,
+        ),
+        outputs_url=url_for(
+            "get_job_outputs",
+            solver_key=solver_key,
+            version=solver_version,
+            job_id=job_id,
+        ),
     )
-    if url_for:
-        job = _copy_n_update_urls(job, url_for, solver_key, solver_version)
-        assert all(  # nosec
-            getattr(job, f) for f in job.__fields__ if f.startswith("url")
-        )  # nosec
+
+    assert all(getattr(job, f) for f in job.__fields__ if f.endswith("url"))  # nosec
 
     return job
 

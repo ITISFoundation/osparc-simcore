@@ -1,4 +1,4 @@
-# pylint: disable=R0904
+# pylint: disable=too-many-public-methods
 
 import logging
 import urllib.parse
@@ -119,7 +119,10 @@ class AuthSession:
 
     @classmethod
     def create(
-        cls, app: FastAPI, session_cookies: dict, product_header: dict[str, str]
+        cls,
+        app: FastAPI,
+        session_cookies: dict,
+        product_header: dict[str, str],
     ) -> "AuthSession":
         api = WebserverApi.get_instance(app)
         assert api  # nosec
@@ -138,7 +141,12 @@ class AuthSession:
         return self._api.client
 
     async def _page_projects(
-        self, *, limit: int, offset: int, show_hidden: bool, search: str | None = None
+        self,
+        *,
+        limit: int,
+        offset: int,
+        show_hidden: bool,
+        search: str | None = None,
     ):
         assert 1 <= limit <= MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE  # nosec
         assert offset >= 0  # nosec
@@ -152,7 +160,7 @@ class AuthSession:
             {
                 status.HTTP_404_NOT_FOUND: (
                     status.HTTP_404_NOT_FOUND,
-                    lambda kwargs: "Could not list jobs",
+                    lambda _: "Could not list jobs",
                 )
             },
         ):
@@ -513,7 +521,9 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        return Envelope[WalletGet].parse_raw(response.text).data
+        data = Envelope[WalletGet].parse_raw(response.text).data
+        assert data is not None  # nosec
+        return data
 
     # PRODUCTS -------------------------------------------------
 
@@ -525,7 +535,7 @@ class AuthSession:
         )
         response.raise_for_status()
         data = Envelope[GetCreditPrice].parse_raw(response.text).data
-        assert data is not None
+        assert data is not None  # nosec
         return data.usd_per_credit
 
     # SERVICES -------------------------------------------------
@@ -559,7 +569,10 @@ def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
     assert settings is not None  # nosec
 
     setup_client_instance(
-        app, WebserverApi, api_baseurl=settings.api_base_url, service_name="webserver"
+        app,
+        WebserverApi,
+        api_baseurl=settings.api_base_url,
+        service_name="webserver",
     )
 
     def _on_startup() -> None:

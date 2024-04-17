@@ -31,7 +31,7 @@ from ..session.access_policies import session_access_required
 from ..utils import MINUTE
 from ..utils_aiohttp import create_redirect_to_page_response
 from ..utils_rate_limiting import global_rate_limit_route
-from ._2fa import delete_2fa_code, get_2fa_code
+from ._2fa_api import delete_2fa_code, get_2fa_code
 from ._confirmation import validate_confirmation_code
 from ._constants import (
     MSG_PASSWORD_CHANGE_NOT_ALLOWED,

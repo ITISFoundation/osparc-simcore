@@ -6,8 +6,9 @@ from typing import Final, Optional, Protocol, runtime_checkable
 
 from .logging_utils import log_catch
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 _MIN_PROGRESS_UPDATE_PERCENT: Final[float] = 0.01
+_INITIAL_VALUE: Final[float] = -1.0
 _FINAL_VALUE: Final[float] = 1.0
 
 
@@ -28,9 +29,6 @@ def _normalize_weights(steps: int, weights: list[float]) -> list[float]:
     if total == 0:
         return [1] * steps
     return [weight / total for weight in weights]
-
-
-_INITIAL_VALUE: Final[float] = -1
 
 
 @dataclass(slots=True, kw_only=True)
@@ -107,7 +105,7 @@ class ProgressBarData:
         if not self.progress_report_cb:
             return
 
-        with log_catch(logger, reraise=False):
+        with log_catch(_logger, reraise=False):
             # NOTE: only report if at least a percent was increased
             if (
                 (force and value != self._last_report_value)
@@ -138,7 +136,7 @@ class ProgressBarData:
             if new_steps_value > self.num_steps:
                 new_steps_value = round(new_steps_value)
             if new_steps_value > self.num_steps:
-                logger.warning(
+                _logger.warning(
                     "%s",
                     f"Progress already reached maximum of {self.num_steps=}, "
                     f"cause: {self._current_steps=} is updated by {steps=}"
@@ -147,6 +145,9 @@ class ProgressBarData:
                 )
 
                 new_steps_value = self.num_steps
+
+            if new_steps_value == self._current_steps:
+                return
 
             new_progress_value = self._compute_progress(new_steps_value)
             if self._current_steps != _INITIAL_VALUE:
@@ -159,10 +160,10 @@ class ProgressBarData:
         await self._report_external(new_progress_value)
 
     async def set_(self, new_value: float) -> None:
-        if update_value := round(new_value - self._current_steps):
-            await self.update(update_value)
+        await self.update(new_value - self._current_steps)
 
     async def finish(self) -> None:
+        _logger.debug("finishing %s", f"{self.num_steps} progress")
         await self.set_(self.num_steps)
 
     def sub_progress(

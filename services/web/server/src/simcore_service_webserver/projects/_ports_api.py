@@ -2,7 +2,11 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from models_library.function_services_catalog.api import catalog
+from models_library.function_services_catalog.api import (
+    catalog,
+    is_parameter_service,
+    is_probe_service,
+)
 from models_library.projects_nodes import Node, NodeID
 from models_library.projects_nodes_io import PortLink
 from models_library.utils.json_schema import (
@@ -28,12 +32,18 @@ class ProjectPortData:
 
     def get_schema(self) -> JsonSchemaDict | None:
         node_meta = catalog.get_metadata(self.node.key, self.node.version)
-        if self.kind == "input" and node_meta.outputs:
-            if input_meta := node_meta.outputs[self.io_key]:
-                return self._get_port_schema(input_meta)
-        elif self.kind == "output" and node_meta.inputs:
-            if output_meta := node_meta.inputs[self.io_key]:
-                return self._get_port_schema(output_meta)
+        if (
+            self.kind == "input"
+            and node_meta.outputs
+            and (input_meta := node_meta.outputs[self.io_key])
+        ):
+            return self._get_port_schema(input_meta)
+        if (
+            self.kind == "output"
+            and node_meta.inputs
+            and (output_meta := node_meta.inputs[self.io_key])
+        ):
+            return self._get_port_schema(output_meta)
         return None
 
     def _get_port_schema(self, io_meta):
@@ -66,31 +76,21 @@ def iter_project_ports(
         is_output = filter_kind is None or filter_kind == "output"
 
         # node representing INPUT ports: can write this node's output
-        if (
-            is_input
-            and node.key.startswith("simcore/services/frontend/parameter/")
-            and node.outputs
-        ):
+        if is_input and is_parameter_service(node.key) and node.outputs:
             assert not node.inputs  # nosec
             assert list(node.outputs.keys()) == ["out_1"]  # nosec
 
-            for output_key in node.outputs.keys():
+            for output_key in node.outputs:
                 yield ProjectPortData(
                     kind="input", node_id=node_id, io_key=output_key, node=node
                 )
 
         # nodes representing OUTPUT ports: can read this node's input
-        elif (
-            is_output
-            and node.key.startswith(
-                "simcore/services/frontend/iterator-consumer/probe/"
-            )
-            and node.inputs
-        ):
+        elif is_output and is_probe_service(node.key) and node.inputs:
             assert not node.outputs  # nosec
             assert list(node.inputs.keys()) == ["in_1"]  # nosec
 
-            for inputs_key in node.inputs.keys():
+            for inputs_key in node.inputs:
                 yield ProjectPortData(
                     kind="output", node_id=node_id, io_key=inputs_key, node=node
                 )

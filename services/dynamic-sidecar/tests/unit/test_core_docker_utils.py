@@ -11,15 +11,13 @@ from aiodocker.containers import DockerContainer
 from faker import Faker
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.services import RunID
-from pydantic import PositiveInt, SecretStr
-from settings_library.docker_registry import RegistrySettings
+from pydantic import PositiveInt
 from simcore_service_dynamic_sidecar.core.docker_utils import (
     _get_containers_inspect_from_names,
     get_container_states,
     get_containers_count_from_names,
     get_docker_service_images,
     get_volume_by_label,
-    pull_images,
 )
 from simcore_service_dynamic_sidecar.core.errors import VolumeNotFoundError
 
@@ -167,27 +165,3 @@ def test_get_docker_service_images(compose_spec_yaml: str):
         "nginx:latest",
         "simcore/services/dynamic/jupyter-math:2.1.3",
     }
-
-
-@pytest.mark.parametrize("repeat", ["first-pull", "repeat-pull"])
-async def test_pull_image(repeat: str):
-    async def _print_progress(progress_value: float):
-        print("progress ->", f"{progress_value=}")
-
-    async def _print_log(msg, log_level):
-        assert "alpine" in msg
-        print(f"log: {log_level=}: {msg}")
-
-    await pull_images(
-        images={
-            "alpine:latest",
-        },
-        registry_settings=RegistrySettings(
-            REGISTRY_AUTH=False,
-            REGISTRY_USER="",
-            REGISTRY_PW=SecretStr(""),
-            REGISTRY_SSL=False,
-        ),
-        progress_cb=_print_progress,
-        log_cb=_print_log,
-    )
