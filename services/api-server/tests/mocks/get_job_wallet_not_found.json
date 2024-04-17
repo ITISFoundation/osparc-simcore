@@ -1,108 +1,108 @@
 [
-  {
-    "name": "GET /projects/87643648-3a38-44e2-9cfe-d86ac3d50629/wallet",
-    "description": "<Request('GET', 'http://webserver:8080/v0/projects/87643648-3a38-44e2-9cfe-d86ac3d50629/wallet')>",
-    "method": "GET",
-    "host": "webserver",
-    "path": {
-      "path": "/v0/projects/{project_id}/wallet",
-      "path_parameters": [
-        {
-          "in_": "path",
-          "name": "project_id",
-          "required": true,
-          "schema_": {
-            "title": "Project Id",
-            "type_": "str",
-            "pattern": null,
-            "format_": "uuid",
-            "exclusiveMinimum": null,
-            "minimum": null,
-            "anyOf": null,
-            "allOf": null,
-            "oneOf": null
-          },
-          "response_value": "87643648-3a38-44e2-9cfe-d86ac3d50629"
-        }
-      ]
-    },
-    "query": null,
-    "request_payload": null,
-    "response_body": {
-      "data": null,
-      "error": {
-        "logs": [
-          {
-            "message": "Project with uuid 87643648-3a38-44e2-9cfe-d86ac3d50629 not found.",
-            "level": "ERROR",
-            "logger": "user"
-          }
-        ],
-        "errors": [
-          {
-            "code": "HTTPNotFound",
-            "message": "Project with uuid 87643648-3a38-44e2-9cfe-d86ac3d50629 not found.",
-            "resource": null,
-            "field": null
-          }
-        ],
-        "status": 404,
-        "message": "Project with uuid 87643648-3a38-44e2-9cfe-d86ac3d50629 not found."
-      }
-    },
-    "status_code": 404
+ {
+  "name": "GET /projects/87643648-3a38-44e2-9cfe-d86ac3d50629/wallet",
+  "description": "<Request('GET', 'http://webserver:8080/v0/projects/87643648-3a38-44e2-9cfe-d86ac3d50629/wallet')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}/wallet",
+   "path_parameters": [
+    {
+     "in_": "path",
+     "name": "project_id",
+     "required": true,
+     "schema_": {
+      "title": "Project Id",
+      "type_": "str",
+      "pattern": null,
+      "format_": "uuid",
+      "exclusiveMinimum": null,
+      "minimum": null,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "87643648-3a38-44e2-9cfe-d86ac3d50629"
+    }
+   ]
   },
-  {
-    "name": "GET /wallets/8",
-    "description": "<Request('GET', 'http://webserver:8080/v0/wallets/8')>",
-    "method": "GET",
-    "host": "webserver",
-    "path": {
-      "path": "/v0/wallets/{wallet_id}",
-      "path_parameters": [
-        {
-          "in_": "path",
-          "name": "wallet_id",
-          "required": true,
-          "schema_": {
-            "title": "Wallet Id",
-            "type_": "int",
-            "pattern": null,
-            "format_": null,
-            "exclusiveMinimum": true,
-            "minimum": 0,
-            "anyOf": null,
-            "allOf": null,
-            "oneOf": null
-          },
-          "response_value": "wallets"
-        }
-      ]
-    },
-    "query": null,
-    "request_payload": null,
-    "response_body": {
-      "data": null,
-      "error": {
-        "logs": [
-          {
-            "message": "Wallet access forbidden. User does not have access to the wallet 8. Or wallet does not exist.",
-            "level": "ERROR",
-            "logger": "user"
-          }
-        ],
-        "errors": [
-          {
-            "code": "HTTPForbidden",
-            "message": "Wallet access forbidden. User does not have access to the wallet 8. Or wallet does not exist.",
-            "resource": null,
-            "field": null
-          }
-        ],
-        "status": 403,
-        "message": "Wallet access forbidden. User does not have access to the wallet 8. Or wallet does not exist."
-      }
-    },
-    "status_code": 403
-  }
+  "query": null,
+  "request_payload": null,
+  "response_body": {
+   "data": null,
+   "error": {
+    "logs": [
+     {
+      "message": "Project with uuid 87643648-3a38-44e2-9cfe-d86ac3d50629 not found.",
+      "level": "ERROR",
+      "logger": "user"
+     }
+    ],
+    "errors": [
+     {
+      "code": "HTTPNotFound",
+      "message": "Project with uuid 87643648-3a38-44e2-9cfe-d86ac3d50629 not found.",
+      "resource": null,
+      "field": null
+     }
+    ],
+    "status": 404,
+    "message": "Project with uuid 87643648-3a38-44e2-9cfe-d86ac3d50629 not found."
+   }
+  },
+  "status_code": 404
+ },
+ {
+  "name": "GET /wallets/8",
+  "description": "<Request('GET', 'http://webserver:8080/v0/wallets/8')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/wallets/{wallet_id}",
+   "path_parameters": [
+    {
+     "in_": "path",
+     "name": "wallet_id",
+     "required": true,
+     "schema_": {
+      "title": "Wallet Id",
+      "type_": "int",
+      "pattern": null,
+      "format_": null,
+      "exclusiveMinimum": true,
+      "minimum": 0,
+      "anyOf": null,
+      "allOf": null,
+      "oneOf": null
+     },
+     "response_value": "wallets"
+    }
+   ]
+  },
+  "query": null,
+  "request_payload": null,
+  "response_body": {
+   "data": null,
+   "error": {
+    "logs": [
+     {
+      "message": "Wallet access forbidden. User does not have access to the wallet 8. Or wallet does not exist.",
+      "level": "ERROR",
+      "logger": "user"
+     }
+    ],
+    "errors": [
+     {
+      "code": "HTTPForbidden",
+      "message": "Wallet access forbidden. User does not have access to the wallet 8. Or wallet does not exist.",
+      "resource": null,
+      "field": null
+     }
+    ],
+    "status": 403,
+    "message": "Wallet access forbidden. User does not have access to the wallet 8. Or wallet does not exist."
+   }
+  },
+  "status_code": 403
+ }
 ]
