@@ -496,7 +496,7 @@
       ]
      }
     },
-    "prjOwner": "crespo@itis.swiss",
+    "prjOwner": "thomashall@example.org",
     "accessRights": {
      "3": {
       "read": true,
@@ -964,7 +964,7 @@
       ]
      }
     },
-    "prjOwner": "crespo@itis.swiss",
+    "prjOwner": "pricemorgan@example.net",
     "accessRights": {
      "3": {
       "read": true,
@@ -1606,7 +1606,7 @@
      "bootOptions": null
     }
    },
-   "prjOwner": "crespo@itis.swiss",
+   "prjOwner": "leon77@example.com",
    "accessRights": {
     "3": {
      "read": true,
@@ -1868,7 +1868,7 @@
     "name": "studies/aeab71fe-f71b-11ee-8fca-0242ac140008/jobs/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
     "description": "",
     "thumbnail": "",
-    "prjOwner": "crespo@itis.swiss",
+    "prjOwner": "schmidtjennifer@example.net",
     "creationDate": "2024-04-15T15:50:28.196Z",
     "lastChangeDate": "2024-04-15T15:50:30.462Z",
     "workbench": {
