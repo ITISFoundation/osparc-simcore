@@ -294,7 +294,10 @@ async def pay_with_payment_method(  # noqa: PLR0913
 
     # NOTE: notifications here are done as background-task after responding `POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay`
     await on_payment_completed(
-        transaction, rut, notifier=notifier, exclude={WebSocketProvider.get_name()}
+        transaction,
+        rut,
+        notifier=notifier,
+        exclude={WebSocketProvider.get_name()},
     )
 
     return to_payments_api_model(transaction)
