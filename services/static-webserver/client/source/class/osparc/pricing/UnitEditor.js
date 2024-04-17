@@ -27,6 +27,9 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     const costPerUnit = this.getChildControl("cost-per-unit");
     this.getChildControl("comment");
     const specificInfo = this.getChildControl("specific-info");
+    const unitExtraInfoCPU = this.getChildControl("unit-extra-info-cpu");
+    const unitExtraInfoRAM = this.getChildControl("unit-extra-info-ram");
+    const unitExtraInfoVRAM = this.getChildControl("unit-extra-info-vram");
     const unitExtraInfo = this.getChildControl("unit-extra-info");
     this.getChildControl("is-default");
 
@@ -34,6 +37,9 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     unitName.setRequired(true);
     costPerUnit.setRequired(true);
     specificInfo.setRequired(true);
+    unitExtraInfoCPU.setRequired(true);
+    unitExtraInfoRAM.setRequired(true);
+    unitExtraInfoVRAM.setRequired(true);
     unitExtraInfo.setRequired(true);
     manager.add(unitName);
     manager.add(costPerUnit);
@@ -47,8 +53,20 @@ qx.Class.define("osparc.pricing.UnitEditor", {
         costPerUnit: pricingUnitData.currentCostPerUnit,
         comment: pricingUnitData.comment ? pricingUnitData.comment : "",
         specificInfo: pricingUnitData.specificInfo && pricingUnitData.specificInfo["aws_ec2_instances"] ? pricingUnitData.specificInfo["aws_ec2_instances"].toString() : "",
-        unitExtraInfo: pricingUnitData.unitExtraInfo,
         default: pricingUnitData.default
+      });
+      const extraInfo = osparc.utils.Utils.deepCloneObject(pricingUnitData.unitExtraInfo);
+      // extract the required fields from the unitExtraInfo
+      this.set({
+        unitExtraInfoCPU: extraInfo["CPU"],
+        unitExtraInfoRAM: extraInfo["RAM"],
+        unitExtraInfoVRAM: extraInfo["VRAM"]
+      });
+      delete extraInfo["CPU"];
+      delete extraInfo["RAM"];
+      delete extraInfo["VRAM"];
+      this.set({
+        unitExtraInfo: extraInfo
       });
       this.getChildControl("save");
     } else {
@@ -98,14 +116,30 @@ qx.Class.define("osparc.pricing.UnitEditor", {
       event: "changeSpecificInfo"
     },
 
+    unitExtraInfoCPU: {
+      check: "Number",
+      init: 0,
+      nullable: false,
+      event: "changeUnitExtraInfoCPU"
+    },
+
+    unitExtraInfoRAM: {
+      check: "Number",
+      init: 0,
+      nullable: false,
+      event: "changeUnitExtraInfoRAM"
+    },
+
+    unitExtraInfoVRAM: {
+      check: "Number",
+      init: 0,
+      nullable: false,
+      event: "changeUnitExtraInfoVRAM"
+    },
+
     unitExtraInfo: {
       check: "Object",
-      init: {
-        "CPU": 1,
-        "RAM": 1,
-        "SSD": 1,
-        "VRAM": 1
-      },
+      init: {},
       nullable: false,
       event: "changeUnitExtraInfo"
     },
@@ -129,14 +163,19 @@ qx.Class.define("osparc.pricing.UnitEditor", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "unit-form": {
+          control = new qx.ui.form.Form();
+          const formRenderer = new qx.ui.form.renderer.Single(control);
+          this._add(formRenderer);
+          break;
+        }
         case "unit-name":
           control = new qx.ui.form.TextField().set({
-            font: "text-14",
-            placeholder: this.tr("Unit Name")
+            font: "text-14"
           });
           this.bind("unitName", control, "value");
           control.bind("value", this, "unitName");
-          this._add(control);
+          this.getChildControl("unit-form").add(control, this.tr("Unit Name"));
           break;
         case "cost-per-unit":
           control = new qx.ui.form.Spinner().set({
@@ -145,16 +184,15 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           });
           this.bind("costPerUnit", control, "value");
           control.bind("value", this, "costPerUnit");
-          this._add(control);
+          this.getChildControl("unit-form").add(control, this.tr("Cost per unit"));
           break;
         case "comment":
           control = new qx.ui.form.TextField().set({
-            font: "text-14",
-            placeholder: this.tr("Comment")
+            font: "text-14"
           });
           this.bind("comment", control, "value");
           control.bind("value", this, "comment");
-          this._add(control);
+          this.getChildControl("unit-form").add(control, this.tr("Comment"));
           break;
         case "specific-info": {
           control = new qx.ui.form.TextArea().set({
@@ -162,7 +200,37 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           });
           this.bind("specificInfo", control, "value");
           control.bind("value", this, "specificInfo");
-          this._add(control);
+          this.getChildControl("unit-form").add(control, this.tr("Specific info"));
+          break;
+        }
+        case "unit-extra-info-cpu": {
+          control = new qx.ui.form.Spinner().set({
+            minimum: 0,
+            maximum: 10000
+          });
+          this.bind("unitExtraInfoCPU", control, "value");
+          control.bind("value", this, "unitExtraInfoCPU");
+          this.getChildControl("unit-form").add(control, this.tr("CPU"));
+          break;
+        }
+        case "unit-extra-info-ram": {
+          control = new qx.ui.form.Spinner().set({
+            minimum: 0,
+            maximum: 10000
+          });
+          this.bind("unitExtraInfoRAM", control, "value");
+          control.bind("value", this, "unitExtraInfoRAM");
+          this.getChildControl("unit-form").add(control, this.tr("RAM"));
+          break;
+        }
+        case "unit-extra-info-vram": {
+          control = new qx.ui.form.Spinner().set({
+            minimum: 0,
+            maximum: 10000
+          });
+          this.bind("unitExtraInfoVRAM", control, "value");
+          control.bind("value", this, "unitExtraInfoVRAM");
+          this.getChildControl("unit-form").add(control, this.tr("VRAM"));
           break;
         }
         case "unit-extra-info": {
@@ -175,7 +243,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           control.bind("value", this, "unitExtraInfo", {
             converter: v => JSON.parse(v)
           });
-          this._add(control);
+          this.getChildControl("unit-form").add(control, this.tr("More Extra Info"));
           break;
         }
         case "is-default": {
@@ -184,7 +252,7 @@ qx.Class.define("osparc.pricing.UnitEditor", {
           });
           this.bind("default", control, "value");
           control.bind("value", this, "default");
-          this._add(control);
+          this.getChildControl("unit-form").add(control, this.tr("Default"));
           break;
         }
         case "buttonsLayout": {
@@ -237,7 +305,11 @@ qx.Class.define("osparc.pricing.UnitEditor", {
       const costPerUnit = this.getCostPerUnit();
       const comment = this.getComment();
       const specificInfo = this.getSpecificInfo();
-      const extraInfo = this.getUnitExtraInfo();
+      const extraInfo = {};
+      extraInfo["CPU"] = this.getUnitExtraInfoCPU();
+      extraInfo["RAM"] = this.getUnitExtraInfoRAM();
+      extraInfo["VRAM"] = this.getUnitExtraInfoVRAM();
+      Object.assign(extraInfo, this.getUnitExtraInfo());
       const isDefault = this.getDefault();
       const params = {
         url: {
@@ -271,7 +343,11 @@ qx.Class.define("osparc.pricing.UnitEditor", {
       const costPerUnit = this.getCostPerUnit();
       const comment = this.getComment();
       const specificInfo = this.getSpecificInfo();
-      const extraInfo = this.getUnitExtraInfo();
+      const extraInfo = {};
+      extraInfo["CPU"] = this.getUnitExtraInfoCPU();
+      extraInfo["RAM"] = this.getUnitExtraInfoRAM();
+      extraInfo["VRAM"] = this.getUnitExtraInfoVRAM();
+      Object.assign(extraInfo, this.getUnitExtraInfo());
       const isDefault = this.getDefault();
 
       const params = {
