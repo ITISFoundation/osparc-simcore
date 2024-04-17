@@ -242,6 +242,9 @@ async def test_run_study_workflow(
     test_py_path: Path,
 ):
     template_id = "aeab71fe-f71b-11ee-8fca-0242ac140008"
+    # NOTE: fixture includes these. TODO: rm from fixture??
+    assert client.headers["Content-Type"] == "application/json"
+    client.headers.pop("Content-Type")
 
     files_api = FilesTestApi(client, tmp_path, auth=auth)
     studies_api = StudiesTestApi(client, auth=auth)
