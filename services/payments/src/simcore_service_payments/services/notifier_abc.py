@@ -1,11 +1,12 @@
 import logging
 from abc import ABC, abstractmethod
 
-from models_library.api_schemas_webserver.wallets import (
-    PaymentMethodTransaction,
-    PaymentTransaction,
-)
+from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.users import UserID
+
+from services.payments.src.simcore_service_payments.models.db import (
+    PaymentsTransactionsDB,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class NotificationProvider(ABC):
     async def notify_payment_completed(
         self,
         user_id: UserID,
-        payment: PaymentTransaction,
+        payment: PaymentsTransactionsDB,
     ):
         ...
 

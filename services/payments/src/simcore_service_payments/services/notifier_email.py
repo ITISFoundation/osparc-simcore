@@ -1,23 +1,27 @@
 import logging
 import mimetypes
+import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from email.headerregistry import Address
 from email.message import EmailMessage
+from email.mime.application import MIMEApplication
 from pathlib import Path
 from typing import Final, cast
 
+import httpx
 from aiosmtplib import SMTP
 from attr import dataclass
 from jinja2 import DictLoader, Environment, select_autoescape
-from models_library.api_schemas_webserver.wallets import (
-    PaymentMethodTransaction,
-    PaymentTransaction,
-)
+from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
 from settings_library.email import EmailProtocol, SMTPSettings
+
+from services.payments.src.simcore_service_payments.models.db import (
+    PaymentsTransactionsDB,
+)
 
 from ..db.payment_users_repo import PaymentsUsersRepo
 from .notifier_abc import NotificationProvider
@@ -123,6 +127,7 @@ class _PaymentData:
     price_dollars: str
     osparc_credits: str
     invoice_url: str
+    invoice_pdf: str
 
 
 async def _create_user_email(
@@ -150,8 +155,22 @@ async def _create_user_email(
     )
     msg["Subject"] = env.get_template("notify_payments-subject.txt").render(data)
 
-    if product.finance_department_email:
-        msg["Bcc"] = product.finance_department_email
+    if product.bcc_email:
+        msg["Bcc"] = product.bcc_email
+
+    # Invoice attachment
+    # MD: tenacity retry?
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        response = await client.get(payment.invoice_pdf)
+        response.raise_for_status()
+
+    pattern = re.compile(r'filename="(?P<filename>[^"]+)"')
+    match = pattern.search(response.headers["content-disposition"])
+    _file_name = match.group("filename")
+
+    attachment = MIMEApplication(response.content, Name=_file_name)
+    attachment["Content-Disposition"] = f"attachment; filename={_file_name}"
+    msg.attach(attachment)
 
     # Body
     text_template = env.get_template("notify_payments.txt")
@@ -219,7 +238,6 @@ class EmailProvider(NotificationProvider):
         self._users_repo = users_repo
         self._settings = settings
         self._bcc_email = bcc_email
-
         self._jinja_env = Environment(
             loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
             autoescape=select_autoescape(["html", "xml"]),
@@ -228,10 +246,12 @@ class EmailProvider(NotificationProvider):
     async def _create_successful_payments_message(
         self,
         user_id: UserID,
-        payment: PaymentTransaction,
+        payment: PaymentsTransactionsDB,
     ) -> EmailMessage:
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
         data_vendor = data.vendor or {}
+
+        # MD: Get invoice PDF url -> Should be in the Payment -> change by Transaction from DB
 
         # email for successful payment
         msg: EmailMessage = await _create_user_email(
@@ -245,6 +265,7 @@ class EmailProvider(NotificationProvider):
                 price_dollars=f"{payment.price_dollars:.2f}",
                 osparc_credits=f"{payment.osparc_credits:.2f}",
                 invoice_url=payment.invoice_url,
+                invoice_pdf=payment.invoice_pdf,
             ),
             product=_ProductData(
                 product_name=data.product_name,
@@ -260,7 +281,7 @@ class EmailProvider(NotificationProvider):
     async def notify_payment_completed(
         self,
         user_id: UserID,
-        payment: PaymentTransaction,
+        payment: PaymentsTransactionsDB,
     ):
         # NOTE: we only have an email for successful payments
         if payment.state == "SUCCESS":

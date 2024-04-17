@@ -2,13 +2,14 @@ import contextlib
 import logging
 
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.wallets import (
-    PaymentMethodTransaction,
-    PaymentTransaction,
-)
+from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.utils import fire_and_forget_task
+
+from services.payments.src.simcore_service_payments.models.db import (
+    PaymentsTransactionsDB,
+)
 
 from ..core.settings import ApplicationSettings
 from ..db.payment_users_repo import PaymentsUsersRepo
@@ -37,7 +38,7 @@ class NotifierService(SingletonInAppStateMixin):
     async def notify_payment_completed(
         self,
         user_id: UserID,
-        payment: PaymentTransaction,
+        payment: PaymentsTransactionsDB,
         *,
         exclude: set | None = None,
     ):

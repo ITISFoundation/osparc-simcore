@@ -26,6 +26,7 @@ class PaymentData:
     price_dollars: str
     osparc_credits: str
     invoice_url: str
+    invoice_pdf: str
 
 
 async def notify_payment_completed(
