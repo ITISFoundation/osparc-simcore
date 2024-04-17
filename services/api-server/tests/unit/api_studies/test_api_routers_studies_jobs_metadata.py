@@ -31,7 +31,7 @@ class MockedBackendApiDict(TypedDict):
 def mocked_backend(
     project_tests_dir: Path,
     mocked_webserver_service_api_base: MockRouter,
-    mocked_catalog_service_api: MockRouter,
+    mocked_catalog_service_api_base: MockRouter,
     respx_mock_from_capture: Callable[
         [list[respx.MockRouter], Path, list[SideEffectCallback]],
         list[respx.MockRouter],
@@ -41,7 +41,7 @@ def mocked_backend(
     respx_mock_from_capture(
         [
             mocked_webserver_service_api_base,
-            mocked_catalog_service_api,
+            mocked_catalog_service_api_base,
         ],
         project_tests_dir / "mocks" / "test_get_and_update_study_job_metadata.json",
         [],
@@ -49,7 +49,7 @@ def mocked_backend(
 
     return MockedBackendApiDict(
         webserver=mocked_webserver_service_api_base,
-        catalog=mocked_catalog_service_api,
+        catalog=mocked_catalog_service_api_base,
     )
 
 
