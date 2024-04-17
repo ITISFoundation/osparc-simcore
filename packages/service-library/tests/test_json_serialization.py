@@ -8,7 +8,6 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from faker import Faker
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.json_serialization import OrJsonAdapter, json_dumps
 
@@ -45,9 +44,7 @@ def test_serialization_of_nested_dicts(fake_data_dict: dict[str, Any]):
     assert json.loads(dump) == jsonable_encoder(obj)
 
 
-def test_orjson_adapter_has_dumps_interface(
-    fake_data_dict: dict[str, Any], faker: Faker
-):
+def test_orjson_adapter_has_dumps_interface(fake_data_dict: dict[str, Any]):
 
     assert OrJsonAdapter.dumps(fake_data_dict) == json_dumps(fake_data_dict)
 
