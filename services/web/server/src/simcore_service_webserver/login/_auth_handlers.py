@@ -74,8 +74,7 @@ class CodePageParams(BaseModel):
 
 
 class LoginNextPage(NextPage[CodePageParams]):
-    code: str = Field(deprecated=True)
-    reason: str = Field(deprecated=True)
+    ...
 
 
 @routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
@@ -178,7 +177,7 @@ async def login(request: web.Request):
         await send_sms_code(
             phone_number=user["phone"],
             code=code,
-            twilo_auth=settings.LOGIN_TWILIO,
+            twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=user["first_name"],

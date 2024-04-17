@@ -6,6 +6,7 @@
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from pydantic import parse_obj_as
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -13,7 +14,7 @@ from pytest_simcore.helpers.utils_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.login._auth_handlers import LoginNextPage
+from simcore_service_webserver.login._auth_handlers import CodePageParams, NextPage
 from simcore_service_webserver.login._constants import CODE_2FA_SMS_CODE_REQUIRED
 
 
@@ -105,7 +106,7 @@ async def test_resend_2fa_workflow(
         },
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
-    next_page = LoginNextPage.parse_obj(data)
+    next_page = parse_obj_as(NextPage[CodePageParams], data)
     assert next_page.name == CODE_2FA_SMS_CODE_REQUIRED
     assert next_page.parameters.expiration_2fa > 0
 
@@ -120,7 +121,10 @@ async def test_resend_2fa_workflow(
     )
 
     data, error = await assert_status(response, status.HTTP_200_OK)
-    assert data["reason"]
+    assert data["name"]
+    assert data["parameters"]
+    assert data["parameters"]["message"]
+    assert data["parameters"]["expiration_2fa"]
     assert not error
 
     assert mock_get_2fa_code.call_count == 1, "Emulates code expired"
@@ -136,7 +140,10 @@ async def test_resend_2fa_workflow(
     )
 
     data, error = await assert_status(response, status.HTTP_200_OK)
-    assert data["reason"]
+    assert data["name"]
+    assert data["parameters"]
+    assert data["parameters"]["message"]
+    assert data["parameters"]["expiration_2fa"]
     assert not error
 
     assert mock_get_2fa_code.call_count == 2, "Emulates code expired"

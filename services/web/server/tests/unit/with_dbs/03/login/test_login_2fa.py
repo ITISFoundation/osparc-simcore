@@ -219,7 +219,10 @@ async def test_workflow_register_and_login_with_2fa(
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
 
-    assert data["code"] == "SMS_CODE_REQUIRED"
+    assert data["name"] == "SMS_CODE_REQUIRED"
+    assert data["parameters"]
+    assert data["parameters"]["message"]
+    assert data["parameters"]["expiration_2fa"]
 
     # assert SMS was sent
     kwargs = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs
@@ -268,7 +271,11 @@ async def test_workflow_register_and_login_with_2fa(
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
 
-    assert data["code"] == "EMAIL_CODE_REQUIRED"
+    assert data["name"] == "EMAIL_CODE_REQUIRED"
+    assert data["parameters"]
+    assert data["parameters"]["message"]
+    assert data["parameters"]["expiration_2fa"]
+
     out, _ = capsys.readouterr()
     parsed_context = parse_test_marks(out)
     assert parsed_context["name"] == user["name"]

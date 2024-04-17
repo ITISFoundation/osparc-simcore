@@ -372,7 +372,7 @@ async def register_phone(request: web.Request):
         await send_sms_code(
             phone_number=registration.phone,
             code=code,
-            twilo_auth=settings.LOGIN_TWILIO,
+            twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
             first_name=get_user_name_from_email(registration.email),
