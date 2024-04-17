@@ -248,7 +248,7 @@ async def replace_job_custom_metadata(
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
-    await replace_custom_metadata(
+    return await replace_custom_metadata(
         job_name=job_name,
         job_id=job_id,
         update=update,
