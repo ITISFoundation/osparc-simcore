@@ -115,7 +115,7 @@ class _ProductData:
     display_name: str
     vendor_display_inline: str
     support_email: str
-    finance_department_email: EmailStr | None
+    bcc_email: EmailStr | None
 
 
 @dataclass
@@ -214,11 +214,11 @@ class EmailProvider(NotificationProvider):
         self,
         settings: SMTPSettings,
         users_repo: PaymentsUsersRepo,
-        finance_department_email: EmailStr | None = None,
+        bcc_email: EmailStr | None = None,
     ):
         self._users_repo = users_repo
         self._settings = settings
-        self._finance_department_email = finance_department_email
+        self._bcc_email = bcc_email
 
         self._jinja_env = Environment(
             loader=DictLoader(_PRODUCT_NOTIFICATIONS_TEMPLATES),
@@ -251,7 +251,7 @@ class EmailProvider(NotificationProvider):
                 display_name=data.display_name,
                 vendor_display_inline=f"{data_vendor.get('name', '')}. {data_vendor.get('address', '')}",
                 support_email=data.support_email,
-                finance_department_email=self._finance_department_email,
+                bcc_email=self._bcc_email,
             ),
         )
 

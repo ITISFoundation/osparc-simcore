@@ -93,7 +93,7 @@ def setup_notifier(app: FastAPI):
                 EmailProvider(
                     email_settings,
                     users_repo=PaymentsUsersRepo(get_engine(app)),
-                    finance_department_email=app_settings.PAYMENTS_FINANCE_DEPARTMENT_EMAIL,
+                    bcc_email=app_settings.PAYMENTS_BCC_EMAIL,
                 )
             )
 

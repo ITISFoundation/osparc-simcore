@@ -106,7 +106,7 @@ class ApplicationSettings(_BaseApplicationSettings):
         description="Based on this variable is the auto recharge functionality in Payment service enabled",
     )
 
-    PAYMENTS_FINANCE_DEPARTMENT_EMAIL: EmailStr | None = Field(
+    PAYMENTS_BCC_EMAIL: EmailStr | None = Field(
         default=None,
         description="Special email for finance department. Currently used to BCC invoices.",
     )
