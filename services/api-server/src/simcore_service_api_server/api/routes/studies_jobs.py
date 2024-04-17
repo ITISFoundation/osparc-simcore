@@ -49,12 +49,6 @@ _logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-#
-# - Study maps to project
-# - study-job maps to run??
-#
-
-
 def _compose_job_resource_name(study_key, job_id) -> str:
     """Creates a unique resource name for solver's jobs"""
     return Job.compose_resource_name(
