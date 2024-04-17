@@ -36,6 +36,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     this.__fetchProfile();
 
     this._add(this.__createProfileUser());
+    if (osparc.store.StaticInfo.getInstance().is2FARequired()) {
+      this._add(this.__create2FASection());
+    }
     this._add(this.__createPasswordSection());
     this._add(this.__createDeleteAccount());
   },
@@ -195,6 +198,74 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           req.send();
         });
       }, this);
+
+      return box;
+    },
+
+    __create2FASection: function() {
+      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("2 Factor Authentication"));
+
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Set your preferred method to use for two-factor authentication when signing in:"));
+      box.add(label);
+
+      const form = new qx.ui.form.Form();
+
+      const preferencesSettings = osparc.Preferences.getInstance();
+
+      const twoFAPreferenceSB = new qx.ui.form.SelectBox().set({
+        allowGrowX: false
+      });
+      [{
+        id: "SMS",
+        label: "SMS"
+      }, {
+        id: "EMAIL",
+        label: "e-mail"
+      }, {
+        id: "DISABLED",
+        label: "Disabled"
+      }].forEach(options => {
+        const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
+        twoFAPreferenceSB.add(lItem);
+      });
+      const value = preferencesSettings.getTwoFAPreference();
+      twoFAPreferenceSB.getSelectables().forEach(selectable => {
+        if (selectable.getModel() === value) {
+          twoFAPreferenceSB.setSelection([selectable]);
+        }
+      });
+      twoFAPreferenceSB.addListener("changeValue", e => {
+        const currentSelection = e.getData();
+        const lastSelection = e.getOldData();
+        const selectedId = currentSelection.getModel();
+        if (selectedId === "DISABLED") {
+          const discourageTitle = this.tr("You are about to disable the 2FA");
+          const discourageText = this.tr("\
+            The 2 Factor Authentication is one more measure to prevent hackers from accessing your account with an additional layer of security. \
+            When you sign in, 2FA helps make sure that your resources and personal information stays private, safe and secure.\
+          ");
+          const win = new osparc.ui.window.Confirmation(discourageTitle).set({
+            caption: discourageTitle,
+            message: discourageText,
+            confirmText: this.tr("Yes, disable"),
+            confirmAction: "delete"
+          });
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              osparc.Preferences.patchPreferenceField("twoFAPreference", twoFAPreferenceSB, selectedId);
+            } else {
+              twoFAPreferenceSB.setSelection([lastSelection]);
+            }
+          }, this);
+        } else {
+          osparc.Preferences.patchPreferenceField("twoFAPreference", twoFAPreferenceSB, selectedId);
+        }
+      });
+      form.add(twoFAPreferenceSB, this.tr("2FA Method"));
+
+      box.add(new qx.ui.form.renderer.Single(form));
 
       return box;
     },

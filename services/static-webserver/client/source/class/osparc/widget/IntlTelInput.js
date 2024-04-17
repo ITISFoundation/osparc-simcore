@@ -73,9 +73,9 @@ qx.Class.define("osparc.widget.IntlTelInput", {
   statics: {
     updateStyle: function(itiInput, checkIcon) {
       itiInput.a.style["width"] = checkIcon && checkIcon.isVisible() ? "185px" : "215px";
-      itiInput.a.style["height"] = "23px";
+      itiInput.a.style["height"] = "26px";
       itiInput.a.style["borderWidth"] = "0px";
-      itiInput.a.style["backgroundColor"] = qx.theme.manager.Meta.getInstance().getTheme().name.includes("Light") ? "#eaedef" : "#202426";
+      itiInput.a.style["backgroundColor"] = qx.theme.manager.Color.getInstance().resolve("input_background");
       itiInput.a.style["color"] = qx.theme.manager.Color.getInstance().resolve("text");
     }
   },
