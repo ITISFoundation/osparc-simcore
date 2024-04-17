@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.40.2
+  version: 0.40.3
 servers:
 - url: ''
   description: webserver
@@ -2638,11 +2638,8 @@ paths:
               $ref: '#/components/schemas/NodeOutputs'
         required: true
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema: {}
   /v0/projects/{project_id}/nodes/{node_id}/resources:
     get:
       tags:
@@ -2928,7 +2925,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -10745,6 +10742,7 @@ components:
       - title
       - text
       - date
+      - product
       - id
       - read
       type: object
@@ -10769,6 +10767,13 @@ components:
           title: Date
           type: string
           format: date-time
+        product:
+          title: Product
+          anyOf:
+          - enum:
+            - UNDEFINED
+            type: string
+          - type: string
         id:
           title: Id
           type: string
@@ -10784,6 +10789,7 @@ components:
       - title
       - text
       - date
+      - product
       type: object
       properties:
         user_id:
@@ -10806,6 +10812,13 @@ components:
           title: Date
           type: string
           format: date-time
+        product:
+          title: Product
+          anyOf:
+          - enum:
+            - UNDEFINED
+            type: string
+          - type: string
     UserNotificationPatch:
       title: UserNotificationPatch
       required:
