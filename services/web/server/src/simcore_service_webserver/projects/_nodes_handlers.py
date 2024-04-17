@@ -243,7 +243,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
     name="update_node_outputs",
 )
 @login_required
-@permission_required("project.node.create")
+@permission_required("project.node.update")
 @_handle_project_nodes_exceptions
 async def update_node_outputs(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
@@ -262,7 +262,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
         node_errors=None,
         ui_changed_keys=ui_changed_keys,
     )
-    raise web.HTTPAccepted()
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.post(
@@ -416,7 +416,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
     name="replace_node_resources",
 )
 @login_required
-@permission_required("project.node.create")
+@permission_required("project.node.update")
 @_handle_project_nodes_exceptions
 async def replace_node_resources(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
