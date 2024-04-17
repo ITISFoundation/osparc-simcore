@@ -286,15 +286,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__getQualityPage,
         this.__getClassifiersPage,
         this.__getPreviewPage
-      ].forEach((pageCallee, idx) => {
+      ].forEach(pageCallee => {
         if (pageCallee) {
-          const start = Date.now();
           const page = pageCallee.call(this);
           if (page) {
             tabsView.add(page);
           }
-          const timeTaken = Date.now() - start;
-          console.log(idx + " Total time taken : " + timeTaken + " milliseconds");
         }
       });
 
@@ -314,7 +311,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       this.__addOpenButton(page);
 
       const lazyLoadContent = () => {
-        console.log("lazyLoadContent Info");
         const resourceData = this.__resourceData;
         const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.info.ServiceLarge(resourceData, null, false) : new osparc.info.StudyLarge(resourceData, false);
         infoCard.addListener("openAccessRights", () => this.openAccessRights());
