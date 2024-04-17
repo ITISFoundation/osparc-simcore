@@ -41,7 +41,7 @@ class LoginSettings(BaseCustomSettings):
     )
 
     LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(
-        default=60, description="Expiration time for code [sec]"
+        default=120, description="Expiration time for code [sec]"
     )
 
     LOGIN_2FA_REQUIRED: bool = Field(

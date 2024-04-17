@@ -31,29 +31,11 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     "skipPhoneRegistration": "qx.event.type.Data"
   },
 
-  statics: {
-    restartResendTimer: function(button, buttonText) {
-      let count = 60;
-      const refreshIntervalId = setInterval(() => {
-        if (count > 0) {
-          count--;
-        } else {
-          clearInterval(refreshIntervalId);
-        }
-        button.set({
-          label: count > 0 ? buttonText + ` (${count})` : buttonText,
-          enabled: count === 0
-        });
-      }, 1000);
-    }
-  },
-
   members: {
     __itiInput: null,
     __verifyPhoneNumberBtn: null,
-    __validateCodeTF: null,
+    __validateCodeField: null,
     __validateCodeBtn: null,
-    __resendCodeBtn: null,
     __sendViaEmail: null,
 
     _buildPage: function() {
@@ -106,7 +88,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
     __createValidationLayout: function() {
       const smsValidationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const validateCodeTF = this.__validateCodeTF = new qx.ui.form.TextField().set({
+      const validateCodeTF = this.__validateCodeField = new qx.ui.form.TextField().set({
         placeholder: this.tr("Type the SMS code"),
         enabled: false
       });
@@ -126,8 +108,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
     __createSendViaEmailButton: function() {
       const txt = this.tr("Skip phone registration and send code via email");
-      const sendViaEmail = this.__sendViaEmail = new osparc.ui.form.LinkButton(txt).set({
-        iconPosition: "left",
+      const sendViaEmail = this.__sendViaEmail = new osparc.ui.form.FetchButton(txt).set({
+        textColor: "text",
         zIndex: 1 // the countries list that goes on top has a z-index of 2
       });
       return sendViaEmail;
@@ -146,11 +128,14 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         this.__itiInput.setEnabled(false);
         this.__verifyPhoneNumberBtn.setFetching(true);
         osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), this.__itiInput.getNumber())
-          .then(data => {
-            osparc.FlashMessenger.logAs(data.message, "INFO");
+          .then(resp => {
+            osparc.FlashMessenger.logAs(resp.message, "INFO");
             this.__verifyPhoneNumberBtn.setFetching(false);
-            osparc.auth.core.Utils.restartResendTimer(this.__verifyPhoneNumberBtn, this.tr("Send SMS"));
-            this.__validateCodeTF.setEnabled(true);
+            // enable, focus and listen to Enter
+            this.__validateCodeField.setEnabled(true);
+            this.__validateCodeField.focus();
+            this.__validateCodeField.activate();
+            this.__enableEnterCommand(this.__validateCodeBtn);
           })
           .catch(err => {
             osparc.FlashMessenger.logAs(err.message, "ERROR");
@@ -166,7 +151,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       const loginFun = log => {
         osparc.FlashMessenger.logAs(log.message, "INFO");
         this.__validateCodeBtn.setFetching(false);
-        this.__validateCodeTF.setEnabled(false);
+        this.__validateCodeField.setEnabled(false);
         this.__validateCodeBtn.setEnabled(false);
         this.__validateCodeBtn.setIcon("@FontAwesome5Solid/check/12");
         this.fireDataEvent("done", log.message);
@@ -177,27 +162,51 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         this.__validateCodeBtn.setFetching(false);
         // TODO: can get field info from response here
         msg = String(msg) || this.tr("Invalid code");
-        this.__validateCodeTF.set({
+        this.__validateCodeField.set({
           invalidMessage: msg,
           valid: false
         });
       };
 
       const manager = osparc.auth.Manager.getInstance();
-      manager.validateCodeRegister(this.getUserEmail(), this.__itiInput.getNumber(), this.__validateCodeTF.getValue(), loginFun, failFun, this);
+      manager.validateCodeRegister(this.getUserEmail(), this.__itiInput.getNumber(), this.__validateCodeField.getValue(), loginFun, failFun, this);
     },
 
     __requestCodeViaEmail: function() {
       this.__sendViaEmail.setFetching(true);
       osparc.auth.Manager.getInstance().resendCodeViaEmail(this.getUserEmail())
         .then(data => {
-          osparc.FlashMessenger.logAs(data.reason, "INFO");
-          this.fireDataEvent("skipPhoneRegistration", this.getUserEmail());
+          const message = osparc.auth.core.Utils.extractMessage(data);
+          const retryAfter = osparc.auth.core.Utils.extractRetryAfter(data)
+          osparc.FlashMessenger.logAs(message, "INFO");
+          this.fireDataEvent("skipPhoneRegistration", {
+            userEmail: this.getUserEmail(),
+            message,
+            retryAfter
+          });
         })
-        .catch(err => {
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        })
+        .catch(err => osparc.FlashMessenger.logAs(err.message, "ERROR"))
         .finally(() => this.__sendViaEmail.setFetching(false));
+    },
+
+    __enableEnterCommand: function(onBtn) {
+      this.__disableCommands();
+
+      const commandEnter = new qx.ui.command.Command("Enter");
+      onBtn.setCommand(commandEnter);
+    },
+
+    __disableCommands: function() {
+      this.__verifyPhoneNumberBtn.setCommand(null);
+      this.__validateCodeBtn.setCommand(null);
+    },
+
+    _onAppear: function() {
+      this.__enableEnterCommand(this.__verifyPhoneNumberBtn);
+    },
+
+    _onDisappear: function() {
+      this.__disableCommands();
     }
   }
 });

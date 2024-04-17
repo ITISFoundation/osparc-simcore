@@ -2925,7 +2925,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5603,8 +5603,8 @@ components:
         message:
           title: Message
           type: string
-        retry_2fa_after:
-          title: Retry 2Fa After
+        expiration_2fa:
+          title: Expiration 2Fa
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -7512,8 +7512,6 @@ components:
       title: LoginNextPage
       required:
       - name
-      - code
-      - reason
       type: object
       properties:
         name:
@@ -7522,14 +7520,6 @@ components:
           description: Code name to the front-end page. Ideally a PageStr
         parameters:
           $ref: '#/components/schemas/CodePageParams'
-        code:
-          title: Code
-          type: string
-          deprecated: true
-        reason:
-          title: Reason
-          type: string
-          deprecated: true
       description: 'This is the body of a 2XX response to pass the front-end
 
         what kind of page shall be display next and some information about it
@@ -11247,8 +11237,8 @@ components:
       title: _PageParams
       type: object
       properties:
-        retry_2fa_after:
-          title: Retry 2Fa After
+        expiration_2fa:
+          title: Expiration 2Fa
           exclusiveMinimum: true
           type: integer
           minimum: 0

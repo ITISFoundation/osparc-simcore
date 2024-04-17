@@ -79,6 +79,16 @@ qx.Class.define("osparc.store.StaticInfo", {
       return 30;
     },
 
+    is2FARequired: function() {
+      const staticKey = "webserverLogin";
+      const wsStaticData = this.getValue(staticKey);
+      const key = "LOGIN_2FA_REQUIRED";
+      if (key in wsStaticData) {
+        return wsStaticData[key];
+      }
+      return false;
+    },
+
     getCountries: function() {
       const staticKey = "countries";
       const metadata = this.getValue(staticKey);

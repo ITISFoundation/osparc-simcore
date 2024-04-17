@@ -227,6 +227,10 @@ def test_settings_to_client_statics_plugins(
         == settings.WEBSERVER_LOGIN.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS
     )
     assert (
+        statics["webserverLogin"]["LOGIN_2FA_REQUIRED"]
+        == settings.WEBSERVER_LOGIN.LOGIN_2FA_REQUIRED
+    )
+    assert (
         statics["webserverSession"].get("SESSION_COOKIE_MAX_AGE")
         == settings.WEBSERVER_SESSION.SESSION_COOKIE_MAX_AGE
     )
