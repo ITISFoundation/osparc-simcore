@@ -30,6 +30,11 @@ def support_email(product_name: ProductName) -> EmailStr:
 
 
 @pytest.fixture
+def bcc_email(product_name: ProductName) -> EmailStr:
+    return EmailStr(f"finance@{product_name}-department.info")
+
+
+@pytest.fixture
 def product(
     faker: Faker, product_name: ProductName, support_email: EmailStr
 ) -> dict[str, Any]:

@@ -2,7 +2,15 @@ from functools import cached_property
 from typing import cast
 
 from models_library.basic_types import NonNegativeDecimal
-from pydantic import Field, HttpUrl, PositiveFloat, SecretStr, parse_obj_as, validator
+from pydantic import (
+    EmailStr,
+    Field,
+    HttpUrl,
+    PositiveFloat,
+    SecretStr,
+    parse_obj_as,
+    validator,
+)
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.email import SMTPSettings
@@ -96,6 +104,11 @@ class ApplicationSettings(_BaseApplicationSettings):
     PAYMENTS_AUTORECHARGE_ENABLED: bool = Field(
         default=False,
         description="Based on this variable is the auto recharge functionality in Payment service enabled",
+    )
+
+    PAYMENTS_BCC_EMAIL: EmailStr | None = Field(
+        default=None,
+        description="Special email for finance department. Currently used to BCC invoices.",
     )
 
     PAYMENTS_RABBITMQ: RabbitSettings = Field(

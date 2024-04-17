@@ -20,12 +20,15 @@ def compose_email(
     content_text: str,
     content_html: str | None = None,
     reply_to: Address | None = None,
+    bcc: Address | None = None,
 ) -> EmailMessage:
     msg = EmailMessage()
     msg["From"] = from_
     msg["To"] = to
     if reply_to:
         msg["Reply-To"] = reply_to
+    if bcc:
+        msg["Bcc"] = bcc
 
     msg["Subject"] = subject
 
