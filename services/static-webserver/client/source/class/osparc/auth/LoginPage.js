@@ -39,6 +39,11 @@ qx.Class.define("osparc.auth.LoginPage", {
     "done": "qx.event.type.Data"
   },
 
+  statics: {
+    LOGO_WIDTH: 300,
+    LOGO_HEIGHT: 90
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -60,18 +65,29 @@ qx.Class.define("osparc.auth.LoginPage", {
             flex: 1
           });
           break;
-        case "logo-w-platform":
+        case "logo-w-platform": {
           control = new osparc.ui.basic.LogoWPlatform();
-          control.setSize({
-            width: 300,
-            height: 90
-          });
+          const productLogoPath = osparc.product.Utils.getLogoPath();
+          if (qx.util.ResourceManager.getInstance().getImageFormat(productLogoPath) === "png") {
+            // png images don't scale keeping the aspect ratio
+            const height = osparc.ui.basic.Logo.getHeightKeepingAspectRatio(productLogoPath, this.self().LOGO_WIDTH)
+            control.setSize({
+              width: this.self().LOGO_WIDTH,
+              height
+            });
+          } else {
+            control.setSize({
+              width: this.self().LOGO_WIDTH,
+              height: this.self().LOGO_HEIGHT
+            });
+          }
           control.setFont("text-18");
           this.getChildControl("main-layout").add(control);
           break;
+        }
         case "science-text-image":
           control = new qx.ui.basic.Image("osparc/Sim4Life_science_Subline.svg").set({
-            width: 300,
+            width: this.self().LOGO_WIDTH,
             height: 24,
             scale: true,
             alignX: "center",
