@@ -69,7 +69,7 @@ class LoginBody(InputSchema):
 
 class CodePageParams(BaseModel):
     message: str
-    retry_2fa_after: PositiveInt | None = None
+    expiration_2fa: PositiveInt | None = None
     next_url: str | None = None
 
 
@@ -158,9 +158,6 @@ async def login(request: web.Request):
                     "message": MSG_PHONE_MISSING,
                     "next_url": f"{request.app.router['auth_register_phone'].url_for()}",
                 },
-                # NOTE: REMOVE when frontend is refactored
-                "code": CODE_PHONE_NUMBER_REQUIRED,
-                "reason": MSG_PHONE_MISSING,
             },
             status=status.HTTP_202_ACCEPTED,
         )
@@ -196,13 +193,8 @@ async def login(request: web.Request):
                     "message": MSG_2FA_CODE_SENT.format(
                         phone_number=mask_phone_number(user["phone"])
                     ),
-                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                    "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
-                # NOTE: REMOVE when frontend is refactored
-                "code": CODE_2FA_SMS_CODE_REQUIRED,
-                "reason": MSG_2FA_CODE_SENT.format(
-                    phone_number=mask_phone_number(user["phone"])
-                ),
             },
             status=status.HTTP_202_ACCEPTED,
         )
@@ -225,11 +217,8 @@ async def login(request: web.Request):
             "name": CODE_2FA_EMAIL_CODE_REQUIRED,
             "parameters": {
                 "message": MSG_EMAIL_SENT.format(email=user["email"]),
-                "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
             },
-            # NOTE: REMOVE when frontend is refactored
-            "code": CODE_2FA_EMAIL_CODE_REQUIRED,
-            "reason": MSG_EMAIL_SENT.format(email=user["email"]),
         },
         status=status.HTTP_202_ACCEPTED,
     )

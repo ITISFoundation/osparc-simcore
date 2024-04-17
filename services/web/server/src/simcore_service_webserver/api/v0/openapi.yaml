@@ -5603,8 +5603,8 @@ components:
         message:
           title: Message
           type: string
-        retry_2fa_after:
-          title: Retry 2Fa After
+        expiration_2fa:
+          title: Expiration 2Fa
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -11247,8 +11247,8 @@ components:
       title: _PageParams
       type: object
       properties:
-        retry_2fa_after:
-          title: Retry 2Fa After
+        expiration_2fa:
+          title: Expiration 2Fa
           exclusiveMinimum: true
           type: integer
           minimum: 0

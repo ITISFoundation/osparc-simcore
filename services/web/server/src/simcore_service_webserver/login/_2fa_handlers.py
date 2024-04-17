@@ -106,12 +106,8 @@ async def resend_2fa_code(request: web.Request):
                     "message": MSG_2FA_CODE_SENT.format(
                         phone_number=mask_phone_number(user["phone"])
                     ),
-                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                    "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
-                # NOTE: REMOVE when frontend is refactored
-                "reason": MSG_2FA_CODE_SENT.format(
-                    phone_number=mask_phone_number(user["phone"])
-                ),
             },
             status=status.HTTP_200_OK,
         )
@@ -134,10 +130,8 @@ async def resend_2fa_code(request: web.Request):
                 "name": CODE_2FA_EMAIL_CODE_REQUIRED,
                 "parameters": {
                     "message": MSG_EMAIL_SENT.format(email=user["email"]),
-                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                    "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
-                # NOTE: REMOVE when frontend is refactored
-                "reason": MSG_EMAIL_SENT.format(email=user["email"]),
             },
             status=status.HTTP_200_OK,
         )

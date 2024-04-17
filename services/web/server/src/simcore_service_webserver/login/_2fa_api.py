@@ -95,7 +95,7 @@ class SMSError(RuntimeError):
 async def send_sms_code(
     phone_number: str,
     code: str,
-    twilo_auth: TwilioSettings,
+    twilio_auth: TwilioSettings,
     twilio_messaging_sid: str,
     twilio_alpha_numeric_sender: str,
     first_name: str,
@@ -107,7 +107,7 @@ async def send_sms_code(
             "to": phone_number,
             "body": f"Dear {first_name}, your verification code is {code}",
         }
-        if twilo_auth.is_alphanumeric_supported(phone_number):
+        if twilio_auth.is_alphanumeric_supported(phone_number):
             create_kwargs["from_"] = twilio_alpha_numeric_sender
 
         def _sender():
@@ -119,7 +119,9 @@ async def send_sms_code(
             #
             # SEE https://www.twilio.com/docs/sms/quickstart/python
             #
-            client = Client(twilo_auth.TWILIO_ACCOUNT_SID, twilo_auth.TWILIO_AUTH_TOKEN)
+            client = Client(
+                twilio_auth.TWILIO_ACCOUNT_SID, twilio_auth.TWILIO_AUTH_TOKEN
+            )
             message = client.messages.create(**create_kwargs)
 
             log.debug(
@@ -131,12 +133,12 @@ async def send_sms_code(
 
     except TwilioException as exc:
         error_code = create_error_code(exc)
-        more_extra: LogExtra = get_log_record_extra(user_id=user_id) or {}
+        log_extra: LogExtra = get_log_record_extra(user_id=user_id) or {}
         log.exception(
             "Failed while setting up 2FA code and sending SMS to %s [%s]",
             mask_phone_number(phone_number),
             f"{error_code}",
-            extra={"error_code": error_code, **more_extra},
+            extra={"error_code": error_code, **log_extra},
         )
         raise SendingVerificationSmsError(reason=exc) from exc
 
@@ -177,12 +179,12 @@ async def send_email_code(
         )
     except TwilioException as exc:
         error_code = create_error_code(exc)
-        more_extra: LogExtra = get_log_record_extra(user_id=user_id) or {}
+        log_extra: LogExtra = get_log_record_extra(user_id=user_id) or {}
         log.exception(
             "Failed while setting up 2FA code and sending Email to %s [%s]",
             user_email,
             f"{error_code}",
-            extra={"error_code": error_code, **more_extra},
+            extra={"error_code": error_code, **log_extra},
         )
         raise SendingVerificationEmailError(reason=exc) from exc
 

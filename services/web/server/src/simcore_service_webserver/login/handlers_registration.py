@@ -316,7 +316,7 @@ class RegisterPhoneBody(InputSchema):
 
 
 class _PageParams(BaseModel):
-    retry_2fa_after: PositiveInt | None = None
+    expiration_2fa: PositiveInt | None = None
 
 
 class RegisterPhoneNextPage(NextPage[_PageParams]):
@@ -383,7 +383,7 @@ async def register_phone(request: web.Request):
             data={
                 "name": CODE_2FA_SMS_CODE_REQUIRED,
                 "parameters": {
-                    "retry_2fa_after": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
+                    "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },
                 "message": MSG_2FA_CODE_SENT.format(
                     phone_number=mask_phone_number(registration.phone)
