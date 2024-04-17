@@ -16,7 +16,7 @@ from aiohttp import web
 from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
 from servicelib.aiohttp import status
 
-from ..json_serialization import json_dumps
+from ..json_serialization import orjson_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
@@ -79,7 +79,7 @@ def handle_validation_as_http_error(
                 }
                 for e in details
             ]
-            error_str = json_dumps(
+            error_str = orjson_dumps(
                 {
                     "error": {
                         "status": status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -89,7 +89,7 @@ def handle_validation_as_http_error(
             )
         else:
             # NEW proposed error for https://github.com/ITISFoundation/osparc-simcore/issues/443
-            error_str = json_dumps(
+            error_str = orjson_dumps(
                 {
                     "error": {
                         "msg": reason_msg,

@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 
 from aiohttp import ClientSession, ClientTimeout, web
 
-from ..json_serialization import json_dumps
+from ..json_serialization import orjson_dumps
 from ..utils import (
     get_http_client_request_aiohttp_connect_timeout,
     get_http_client_request_aiohttp_sock_connect_timeout,
@@ -31,7 +31,7 @@ async def persistent_client_session(app: web.Application) -> AsyncGenerator[None
 
     async with ClientSession(
         timeout=timeout_settings,
-        json_serialize=json_dumps,
+        json_serialize=orjson_dumps,
     ) as session:
         app[APP_CLIENT_SESSION_KEY] = session
         yield

@@ -50,13 +50,18 @@ class OrJsonAdapter:
     loads = orjson.loads
 
 
-def json_dumps(obj: Any, **kwargs):
-    """As json.dumps but changes some of the defaults to provide a faster, richer and more compact encoding"""
+def json_dumps(obj: Any, **json_dumps_kwargs):
+    """Keeps json.dump interface with different defaults"""
 
-    kwargs.setdefault("default", pydantic_encoder)  # rich encoder
-    if "indent" not in kwargs:
-        kwargs.setdefault(
+    json_dumps_kwargs.setdefault("default", pydantic_encoder)  # rich encoder
+    if "indent" not in json_dumps_kwargs:
+        json_dumps_kwargs.setdefault(
             "separators",
             SeparatorTuple(item_separator=",", key_separator=":"),  # compact separators
         )
-    return OrJsonAdapter.dumps(obj, **kwargs)
+    return OrJsonAdapter.dumps(obj, **json_dumps_kwargs)
+
+
+def orjson_dumps(obj: Any, **orjson_kwargs):
+    result: str = orjson.dumps(obj, **orjson_kwargs).decode("utf-8")
+    return result

@@ -4,7 +4,7 @@ from aiohttp import web
 from pydantic import BaseModel
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 
-from ...json_serialization import json_dumps
+from ...json_serialization import orjson_dumps
 from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundError
 from ...long_running_tasks._models import TaskGet, TaskId, TaskStatus
 from ...long_running_tasks._task import TrackedTask
@@ -40,7 +40,7 @@ async def list_tasks(request: web.Request) -> web.Response:
                 for t in tracked_tasks
             ]
         },
-        dumps=json_dumps,
+        dumps=orjson_dumps,
     )
 
 
@@ -53,7 +53,7 @@ async def get_task_status(request: web.Request) -> web.Response:
     task_status: TaskStatus = tasks_manager.get_task_status(
         task_id=path_params.task_id, with_task_context=task_context
     )
-    return web.json_response({"data": task_status}, dumps=json_dumps)
+    return web.json_response({"data": task_status}, dumps=orjson_dumps)
 
 
 @routes.get("/{task_id}/result", name="get_task_result")

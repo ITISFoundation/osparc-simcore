@@ -6,7 +6,7 @@ from typing import Any, AsyncGenerator, Callable
 from aiohttp import web
 from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.aiohttp import status
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 
 from ...long_running_tasks._models import TaskGet
 from ...long_running_tasks._task import (
@@ -87,7 +87,7 @@ async def start_long_running_task(
         return web.json_response(
             data={"data": task_get},
             status=status.HTTP_202_ACCEPTED,
-            dumps=json_dumps,
+            dumps=orjson_dumps,
         )
     except asyncio.CancelledError:
         # cancel the task, the client has disconnected
