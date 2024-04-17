@@ -6,9 +6,11 @@
 # pylint: disable=unnecessary-lambda
 
 import re
+import time
 from typing import Final
 
-from playwright.sync_api import Page
+from playwright.sync_api import APIRequestContext, Page
+from pydantic import AnyUrl
 from pytest_simcore.playwright_utils import on_web_socket_default_handler
 
 projects_uuid_pattern: Final[re.Pattern] = re.compile(
@@ -18,11 +20,14 @@ projects_uuid_pattern: Final[re.Pattern] = re.compile(
 
 def test_tip(
     page: Page,
+    log_in_and_out: None,
+    api_request_context: APIRequestContext,
+    product_url: AnyUrl,
 ):
     # connect and listen to websocket
     page.on("websocket", on_web_socket_default_handler)
 
-    # open services tab and filter for the service
+    # open studies tab and filter
     page.get_by_test_id("studiesTabBtn").click()
     _textbox = page.get_by_test_id("searchBarFilter-textField-study")
     _textbox.fill("Classic TI")
@@ -36,3 +41,25 @@ def test_tip(
     assert project_data
     project_uuid = project_data["data"]["uuid"]
     print("project uuid: ", project_uuid)
+
+    # Electrode Selector
+    start = time.time()
+    page.frame_locator(".qx-main-dark").get_by_test_id(
+        "TargetStructure_Selector"
+    ).select_option(label="TargetStructure_Target_(Targets_combined) Hypothalamus")
+    # at this point the Electrode Selector is ready
+    end = time.time()
+    print("Electrode Selector ready in ", end - start, "s")
+    page.get_by_test_id(
+        "TargetStructure_Target_(Targets_combined) Hypothalamus"
+    ).click()
+    electrode_selections = [
+        ["E1+", "FT9"],
+        ["E1-", "FT7"],
+        ["E2+", "T9"],
+        ["E2-", "T7"],
+    ]
+    for selection in electrode_selections:
+        page.get_by_test_id("ElectrodeGroup_" + selection[0] + "_Start").click()
+        page.get_by_test_id("Electrode_" + selection[1]).click()
+    page.get_by_test_id("FinishSetUp").click()
