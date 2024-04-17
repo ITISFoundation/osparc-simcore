@@ -299,6 +299,7 @@ async def get_study_job_custom_metadata(
 
 @router.put(
     "/{study_id}/jobs/{job_id}/metadata",
+    response_model=JobMetadata,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def replace_study_job_custom_metadata(
@@ -314,7 +315,7 @@ async def replace_study_job_custom_metadata(
     msg = f"Attaches metadata={replace.metadata!r} to study_id={study_id!r} job_id={job_id!r}.\njob_name={job_name!r}.\nSEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
     _logger.debug(msg)
 
-    await replace_custom_metadata(
+    return await replace_custom_metadata(
         job_name=job_name,
         job_id=job_id,
         update=replace,

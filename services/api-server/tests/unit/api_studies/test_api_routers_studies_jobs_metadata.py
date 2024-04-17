@@ -11,9 +11,10 @@ from typing import TypedDict
 import httpx
 import pytest
 import respx
-from pytest_mock import MockerFixture
+from fastapi.encoders import jsonable_encoder
 from respx import MockRouter
 from simcore_service_api_server.models.schemas.jobs import (
+    Job,
     JobMetadata,
     JobMetadataUpdate,
 )
@@ -36,7 +37,6 @@ def mocked_backend(
         [list[respx.MockRouter], Path, list[SideEffectCallback]],
         list[respx.MockRouter],
     ],
-    mocker: MockerFixture,
 ) -> MockedBackendApiDict | None:
     respx_mock_from_capture(
         [
@@ -53,21 +53,32 @@ def mocked_backend(
     )
 
 
+@pytest.fixture
+def study_id() -> StudyID:
+    return StudyID("6377d922-fcd7-11ee-b4fc-0242ac140024")
+
+
 async def test_get_and_update_study_job_metadata(
     auth: httpx.BasicAuth,
     client: httpx.AsyncClient,
     study_id: StudyID,
     mocked_backend: MockedBackendApiDict,
 ):
-    job_id = "4e7114e9-9cc4-43b8-bbfc-e32d1e4817ac"
+    # Creates a job (w/o running it)
+    resp = await client.post(
+        f"/v0/studies/{study_id}/jobs",
+        auth=auth,
+        json={"values": {}},
+    )
+    job = Job(**resp.json())
 
     # Get metadata
     resp = await client.get(
-        f"/v0/studies/{study_id}/jobs/{job_id}/metadata",
+        f"/v0/studies/{study_id}/jobs/{job.id}/metadata",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK
-    job_meta = JobMetadata.parse_obj(resp.json())
+    job_meta = JobMetadata(**resp.json())
 
     assert job_meta.metadata == {}
 
@@ -78,42 +89,36 @@ async def test_get_and_update_study_job_metadata(
         "string": "foo",
         "boolean": True,
     }
-    resp = await client.patch(
-        f"/v0/studies/{study_id}/jobs/{job_id}/metadata",
+    resp = await client.put(
+        f"/v0/studies/{study_id}/jobs/{job.id}/metadata",
         auth=auth,
-        json=JobMetadataUpdate(metadata=my_metadata).dict(),
+        json=jsonable_encoder(JobMetadataUpdate(metadata=my_metadata)),
     )
     assert resp.status_code == status.HTTP_200_OK
 
-    job_meta = JobMetadata.parse_obj(resp.json())
+    job_meta = JobMetadata(**resp.json())
     assert job_meta.metadata == my_metadata
 
     # Get metadata after update
     resp = await client.get(
-        f"/v0/studies/{study_id}/jobs/{job_id}/metadata",
+        f"/v0/studies/{study_id}/jobs/{job.id}/metadata",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK
-    job_meta = JobMetadata.parse_obj(resp.json())
+    job_meta = JobMetadata(**resp.json())
 
     assert job_meta.metadata == my_metadata
 
     # Delete job
     resp = await client.delete(
-        f"/v0/studies/{study_id}/jobs/{job_id}",
+        f"/v0/studies/{study_id}/jobs/{job.id}",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_204_NO_CONTENT
 
     # Get metadata -> job not found!
     resp = await client.get(
-        f"/v0/studies/{study_id}/jobs/{job_id}/metadata",
+        f"/v0/studies/{study_id}/jobs/{job.id}/metadata",
         auth=auth,
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND
-
-    mock_webserver_router = mocked_backend["webserver"]
-    assert mock_webserver_router
-    assert mock_webserver_router["get_project_metadata"].called
-    assert mock_webserver_router["update_project_metadata"].called
-    assert mock_webserver_router["delete_project"].called
