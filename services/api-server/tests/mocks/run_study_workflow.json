@@ -3375,7 +3375,7 @@
   "query": "user_id=1",
   "response_body": {
    "data": {
-    "link": "http://172.17.0.1:9001/simcore/api/d8bc0c02-c3ee-3cec-a562-e6fd3e00be4b/input.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=12345678%2F20240415%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240415T155039Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=79a5cbc9b23ebb4084f4156acd6f7e6f891197dbd5a088327c9131768bd1c610"
+    "link": "http://127.0.0.1:9001/simcore/api/d8bc0c02-c3ee-3cec-a562-e6fd3e00be4b/input.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=12345678%2F20240415%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240415T155039Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=79a5cbc9b23ebb4084f4156acd6f7e6f891197dbd5a088327c9131768bd1c610"
    }
   }
  },
