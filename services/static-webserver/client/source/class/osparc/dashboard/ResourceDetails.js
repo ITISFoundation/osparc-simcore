@@ -270,10 +270,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const selectedTabId = selection.length ? selection[0]["tabId"] : null;
 
       // removeAll
-      const pages = tabsView.getChildren().length;
-      for (let i=pages-1; i>=0; i--) {
-        tabsView.remove(tabsView.getChildren()[i]);
-      }
+      osparc.utils.Utils.removeAllChildren(tabsView);
 
       // add Open service button
       [

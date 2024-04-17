@@ -480,11 +480,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __removePages: function(tabView) {
-      const pages = tabView.getChildren();
       // remove pages
-      for (let i = pages.length - 1; i >= 0; i--) {
-        tabView.remove(pages[i]);
-      }
+      osparc.utils.Utils.removeAllChildren(tabView);
       // remove spacers
       const topBar = tabView.getChildControl("bar");
       topBar.removeAll();
