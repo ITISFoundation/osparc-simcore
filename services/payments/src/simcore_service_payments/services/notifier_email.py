@@ -115,7 +115,7 @@ class _ProductData:
     display_name: str
     vendor_display_inline: str
     support_email: str
-    bcc_email: EmailStr | None
+    bcc_email: EmailStr | None = None
 
 
 @dataclass
