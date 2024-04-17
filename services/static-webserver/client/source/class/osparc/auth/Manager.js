@@ -192,10 +192,10 @@ qx.Class.define("osparc.auth.Manager", {
               .catch(err => reject(err.message));
           } else {
             const resp = JSON.parse(xhr.responseText);
-            if ("error" in resp && resp["error"]) {
-              reject(resp["error"]["message"]);
-            } else {
+            if (resp.error == null) {
               reject(this.tr("Login failed"));
+            } else {
+              reject(resp.error.message);
             }
           }
         };
