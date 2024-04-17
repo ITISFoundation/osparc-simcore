@@ -23,7 +23,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
@@ -46,7 +46,7 @@ def _web_json_response_enveloped(data: Any):
         {
             "data": jsonable_encoder(data),
         },
-        dumps=json_dumps,
+        dumps=orjson_dumps,
     )
 
 

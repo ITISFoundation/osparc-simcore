@@ -10,7 +10,7 @@ from models_library.generics import Envelope
 from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
 from servicelib.common_headers import X_FORWARDED_PROTO
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from yarl import URL
@@ -71,7 +71,7 @@ def envelope_json_response(
         enveloped = Envelope[Any](data=obj)
 
     return web.Response(
-        text=json_dumps(enveloped.dict(**RESPONSE_MODEL_POLICY)),
+        text=orjson_dumps(enveloped.dict(**RESPONSE_MODEL_POLICY)),
         content_type=MIMETYPE_APPLICATION_JSON,
         status=status_cls.status_code,
     )

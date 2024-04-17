@@ -15,7 +15,7 @@ from models_library.docker import (
 from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from pydantic import ByteSize, parse_obj_as
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 from settings_library.node_ports import StorageAuthSettings
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
@@ -121,9 +121,9 @@ def _get_environment_variables(
         "DY_SIDECAR_RUN_ID": scheduler_data.run_id,
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
         "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": f"{telemetry_enabled}",
-        "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
+        "DY_SIDECAR_STATE_EXCLUDE": orjson_dumps(f"{x}" for x in state_exclude),
         "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.json(),
-        "DY_SIDECAR_STATE_PATHS": json_dumps(
+        "DY_SIDECAR_STATE_PATHS": orjson_dumps(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
         ),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",

@@ -43,7 +43,7 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
@@ -234,7 +234,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
         await director_v2_api.retrieve(
             request.app, f"{path_params.node_id}", retrieve.port_keys
         ),
-        dumps=json_dumps,
+        dumps=orjson_dumps,
     )
 
 

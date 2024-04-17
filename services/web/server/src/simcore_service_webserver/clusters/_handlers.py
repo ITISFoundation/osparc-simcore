@@ -18,7 +18,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import api_version_prefix
@@ -90,7 +90,7 @@ async def create_cluster(request: web.Request) -> web.Response:
     return web.json_response(
         data={"data": created_cluster},
         status=status.HTTP_201_CREATED,
-        dumps=json_dumps,
+        dumps=orjson_dumps,
     )
 
 

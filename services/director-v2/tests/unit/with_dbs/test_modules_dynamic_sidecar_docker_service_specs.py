@@ -27,7 +27,7 @@ from models_library.services import RunID, ServiceKeyVersion
 from models_library.wallets import WalletInfo
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 from settings_library.s3 import S3Settings
 from simcore_service_director_v2.core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -226,10 +226,10 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",  # noqa: S108
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",  # noqa: S108
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                    "DY_SIDECAR_STATE_EXCLUDE": json_dumps(
+                    "DY_SIDECAR_STATE_EXCLUDE": orjson_dumps(
                         {"*.py", "/tmp/strip_me/*"}  # noqa: S108
                     ),
-                    "DY_SIDECAR_STATE_PATHS": json_dumps(
+                    "DY_SIDECAR_STATE_PATHS": orjson_dumps(
                         ["/tmp/save_1", "/tmp_save_2"]  # noqa: S108
                     ),
                     "DY_SIDECAR_USER_ID": "234",

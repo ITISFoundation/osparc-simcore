@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable
 from typing import Any, Final, NamedTuple
 
@@ -59,9 +60,12 @@ def json_dumps(obj: Any, **json_dumps_kwargs):
             "separators",
             SeparatorTuple(item_separator=",", key_separator=":"),  # compact separators
         )
-    return OrJsonAdapter.dumps(obj, **json_dumps_kwargs)
+    return json.dumps(obj, **json_dumps_kwargs)
 
 
 def orjson_dumps(obj: Any, **orjson_kwargs):
+    orjson_kwargs.setdefault(
+        "default", pydantic_encoder
+    )  # TODO: remove and see customize only where needed
     result: str = orjson.dumps(obj, **orjson_kwargs).decode("utf-8")
     return result

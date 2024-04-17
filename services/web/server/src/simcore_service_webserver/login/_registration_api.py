@@ -9,7 +9,7 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from PIL.Image import Image
 from pydantic import EmailStr, PositiveInt, ValidationError, parse_obj_as
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 from servicelib.utils_secrets import generate_passcode
 
 from ..email.utils import send_email_from_template
@@ -52,7 +52,7 @@ async def send_close_account_email(
 
 def _json_encoder_and_dumps(obj: Any, **kwargs):
     # NOTE: equivalent json.dumps(obj, default=jsonable_encode(pydantic_encoder(.))
-    return json_dumps(jsonable_encoder(obj), **kwargs)
+    return orjson_dumps(jsonable_encoder(obj), **kwargs)
 
 
 async def send_account_request_email_to_support(

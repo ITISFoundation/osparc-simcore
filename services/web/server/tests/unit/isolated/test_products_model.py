@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 from pydantic import BaseModel
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 from simcore_service_webserver.products._db import Product
 
 
@@ -21,7 +21,7 @@ def test_product_examples(
     model_cls: type[BaseModel], model_cls_examples: dict[str, dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
-        print(name, ":", json_dumps(example, indent=1))
+        print(name, ":", orjson_dumps(example, indent=1))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
 

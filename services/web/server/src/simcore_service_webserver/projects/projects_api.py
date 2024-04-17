@@ -62,7 +62,7 @@ from servicelib.common_headers import (
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
@@ -777,7 +777,7 @@ async def update_project_node_outputs(
         node_id,
         project_id,
         user_id,
-        json_dumps(new_outputs),
+        orjson_dumps(new_outputs),
         new_run_hash,
         extra=get_log_record_extra(user_id=user_id),
     )

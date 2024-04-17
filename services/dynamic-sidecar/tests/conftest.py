@@ -25,7 +25,7 @@ from pytest_simcore.helpers.utils_envs import (
     setenvs_from_dict,
     setenvs_from_envfile,
 )
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 from simcore_service_dynamic_sidecar.core.reserved_space import (
     remove_reserved_disk_space,
 )
@@ -194,8 +194,8 @@ def base_mock_envs(
         "DY_SIDECAR_NODE_ID": f"{node_id}",
         "DY_SIDECAR_PATH_INPUTS": f"{inputs_dir}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{outputs_dir}",
-        "DY_SIDECAR_STATE_PATHS": json_dumps(state_paths_dirs),
-        "DY_SIDECAR_STATE_EXCLUDE": json_dumps(state_exclude_dirs),
+        "DY_SIDECAR_STATE_PATHS": orjson_dumps(state_paths_dirs),
+        "DY_SIDECAR_STATE_EXCLUDE": orjson_dumps(state_exclude_dirs),
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "false",
     }
 
@@ -239,8 +239,8 @@ def mock_environment(
             "DY_SIDECAR_PATH_OUTPUTS": f"{outputs_dir}",
             "DY_SIDECAR_PROJECT_ID": f"{project_id}",
             "DY_SIDECAR_RUN_ID": run_id,
-            "DY_SIDECAR_STATE_EXCLUDE": json_dumps(state_exclude_dirs),
-            "DY_SIDECAR_STATE_PATHS": json_dumps(state_paths_dirs),
+            "DY_SIDECAR_STATE_EXCLUDE": orjson_dumps(state_exclude_dirs),
+            "DY_SIDECAR_STATE_PATHS": orjson_dumps(state_paths_dirs),
             "DY_SIDECAR_USER_ID": f"{user_id}",
             "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": "false",
             "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,

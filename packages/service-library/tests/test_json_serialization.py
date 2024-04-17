@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import pytest
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from servicelib.json_serialization import OrJsonAdapter, json_dumps
+from servicelib.json_serialization import OrJsonAdapter, orjson_dumps
 
 
 def test_json_dump_variants():
@@ -21,7 +21,7 @@ def test_json_dump_variants():
 
     assert str(exc_info.value) == "Object of type UUID is not JSON serializable"
 
-    assert json_dumps(uuid_obj) == json.dumps(str(uuid_obj))
+    assert orjson_dumps(uuid_obj) == json.dumps(str(uuid_obj))
 
 
 def test_serialization_of_uuids(fake_data_dict: dict[str, Any]):
@@ -29,10 +29,10 @@ def test_serialization_of_uuids(fake_data_dict: dict[str, Any]):
     # We should eventually fix this but adding a corresponding decoder?
 
     uuid_obj = uuid4()
-    assert json_dumps(uuid_obj) == f'"{uuid_obj}"'
+    assert orjson_dumps(uuid_obj) == f'"{uuid_obj}"'
 
     obj = {"ids": [uuid4() for _ in range(3)]}
-    dump = json_dumps(obj)
+    dump = orjson_dumps(obj)
     assert json.loads(dump) == jsonable_encoder(obj)
 
 
@@ -40,32 +40,32 @@ def test_serialization_of_nested_dicts(fake_data_dict: dict[str, Any]):
 
     obj = {"data": fake_data_dict, "ids": [uuid4() for _ in range(3)]}
 
-    dump = json_dumps(obj)
+    dump = orjson_dumps(obj)
     assert json.loads(dump) == jsonable_encoder(obj)
 
 
 def test_orjson_adapter_has_dumps_interface(fake_data_dict: dict[str, Any]):
 
-    assert OrJsonAdapter.dumps(fake_data_dict) == json_dumps(fake_data_dict)
+    assert OrJsonAdapter.dumps(fake_data_dict) == orjson_dumps(fake_data_dict)
 
     sort_keys = True
-    assert OrJsonAdapter.dumps(fake_data_dict, sort_keys=sort_keys) == json_dumps(
+    assert OrJsonAdapter.dumps(fake_data_dict, sort_keys=sort_keys) == orjson_dumps(
         fake_data_dict, sort_keys=sort_keys
     )
 
     # NOTE: e.g. engineio.packet has `self.json.dumps(self.data, separators=(',', ':'))`
     separators = ",", ":"
-    assert OrJsonAdapter.dumps(fake_data_dict, separators=separators) == json_dumps(
+    assert OrJsonAdapter.dumps(fake_data_dict, separators=separators) == orjson_dumps(
         fake_data_dict, separators=separators
     )
 
     separators = " , ", " : "
-    assert OrJsonAdapter.dumps(fake_data_dict, separators=separators) == json_dumps(
+    assert OrJsonAdapter.dumps(fake_data_dict, separators=separators) == orjson_dumps(
         fake_data_dict, separators=separators
     )
 
     # NOTE: only one-to-one with indent=2
     indent = 2
-    assert OrJsonAdapter.dumps(fake_data_dict, indent=indent) == json_dumps(
+    assert OrJsonAdapter.dumps(fake_data_dict, indent=indent) == orjson_dumps(
         fake_data_dict, indent=indent
     )

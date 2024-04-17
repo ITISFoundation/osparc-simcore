@@ -15,7 +15,7 @@ from servicelib.aiohttp.client_session import (
     get_client_session,
     persistent_client_session,
 )
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 
 
 @pytest.fixture
@@ -59,5 +59,5 @@ async def test_app_client_session_json_serialize(
 
     got = await resp.json()
 
-    expected = json.loads(json_dumps(fake_data_dict))
+    expected = json.loads(orjson_dumps(fake_data_dict))
     assert got == expected

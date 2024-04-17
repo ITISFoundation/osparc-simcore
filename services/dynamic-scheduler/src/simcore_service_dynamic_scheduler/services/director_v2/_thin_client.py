@@ -18,7 +18,7 @@ from servicelib.fastapi.http_client_thin import (
     expect_status,
     retry_on_errors,
 )
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
     DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S,
 )
@@ -75,7 +75,7 @@ class DirectorV2ThinClient(BaseThinClient, AttachLifespanMixin):
 
         return await self.client.post(
             "/dynamic_services",
-            content=json_dumps(post_data),
+            content=orjson_dumps(post_data),
             headers=headers,
             follow_redirects=True,
         )

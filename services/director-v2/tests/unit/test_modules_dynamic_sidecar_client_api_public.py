@@ -14,7 +14,7 @@ from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.http_client_thin import ClientHttpError, UnexpectedStatusError
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     SidecarsClient,
@@ -364,7 +364,7 @@ async def test_get_service_activity(
     with get_patched_client(
         "get_containers_activity",
         return_value=Response(
-            status_code=status.HTTP_200_OK, text=json_dumps(mock_json)
+            status_code=status.HTTP_200_OK, text=orjson_dumps(mock_json)
         ),
     ) as client:
         assert await client.get_service_activity(dynamic_sidecar_endpoint) == mock_json

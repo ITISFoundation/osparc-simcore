@@ -5,7 +5,7 @@ from typing import Any
 from aiohttp import web
 from pydantic.error_wrappers import ValidationError
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.json_serialization import json_dumps
+from servicelib.json_serialization import orjson_dumps
 
 from ..projects.exceptions import ProjectNotFoundError
 from .errors import InvalidParameterError, NoCommitError, NotFoundError
@@ -33,7 +33,7 @@ def handle_request_errors(handler: Handler) -> Handler:
             #  NOTE: pydantic.validate_arguments parses and validates -> ValidationError
             _logger.debug(err, exc_info=True)
             raise web.HTTPUnprocessableEntity(
-                text=json_dumps({"error": err.errors()}),
+                text=orjson_dumps({"error": err.errors()}),
                 content_type="application/json",
             ) from err
 
