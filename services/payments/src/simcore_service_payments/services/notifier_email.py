@@ -150,8 +150,8 @@ async def _create_user_email(
     )
     msg["Subject"] = env.get_template("notify_payments-subject.txt").render(data)
 
-    if product.finance_department_email:
-        msg["Bcc"] = product.finance_department_email
+    if product.bcc_email:
+        msg["Bcc"] = product.bcc_email
 
     # Body
     text_template = env.get_template("notify_payments.txt")
