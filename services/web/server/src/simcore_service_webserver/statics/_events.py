@@ -114,6 +114,10 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
         _logger.debug("Product %s", product.name)
         data.update(product.to_statics())
 
+        # Adds specifics to login settings
+        if (p := product.login_settings) and (v := p.get("LOGIN_2FA_REQUIRED", None)):
+            data["webserverLogin"].update({"LOGIN_2FA_REQUIRED": v})
+
         data_json = json_dumps(data)
         _logger.debug("Front-end statics.json: %s", data_json)
 
