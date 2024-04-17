@@ -251,7 +251,6 @@ async def test_run_study_workflow(
     test_py_path: Path,
 ):
     template_id = "aeab71fe-f71b-11ee-8fca-0242ac140008"
-    # NOTE: fixture includes these. TODO: rm from fixture??
     assert client.headers["Content-Type"] == "application/json"
     client.headers.pop("Content-Type")
 
@@ -314,18 +313,6 @@ async def test_run_study_workflow(
     assert job_outputs.results["OutputArray"] == input_values["InputArray"]
     assert job_outputs.results["OutputNumber"] == input_values["InputNumber"]
     assert job_outputs.results["OutputBool"] == input_values["InputBool"]
-
-    # TODO: needs a fake s3 to which api-server redirects to download file
-    # output_filename = job_outputs.results["OutputFile"].filename
-    # output_file = Path(
-    #     await files_api.download_file(
-    #         job_outputs.results["OutputFile"].id, suffix=output_filename
-    #     )
-    # )
-    # assert output_file.exists()
-    # assert json.loads(output_file.read_text()) == json.loads(
-    #     input_json_path.read_text()
-    # )
 
     # deletes
     await studies_api.delete_study_job(study_id=template_id, job_id=new_job.id)
