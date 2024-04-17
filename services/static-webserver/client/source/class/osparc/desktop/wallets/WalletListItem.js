@@ -190,8 +190,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
         autorecharge.addListener("close", () => win.close());
         autorecharge.addListener("addNewPaymentMethod", () => {
           win.close()
-          const newBillingCenter = osparc.desktop.credits.BillingCenterWindow.openWindow()
-          newBillingCenter.openPaymentMethods()
+          const billingCenter = osparc.desktop.credits.BillingCenterWindow.openWindow()
+          billingCenter.openPaymentMethods()
         })
         // Revert default execute action (toggle the buttons's value)
         this.__autorechargeBtn.toggleValue();

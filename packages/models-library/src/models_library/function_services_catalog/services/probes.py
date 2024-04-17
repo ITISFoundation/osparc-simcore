@@ -1,20 +1,19 @@
+from typing import Final
+
 from ...services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, WVG, FunctionServices, create_fake_thumbnail_url
 
 
-def create_metadata(type_name: str, prefix: str | None = None) -> ServiceDockerData:
-    prefix = prefix or type_name
-    LABEL = f"{type_name.capitalize()} probe"
-
+def _create_metadata(type_name: str) -> ServiceDockerData:
     return ServiceDockerData.parse_obj(
         {
             "integration-version": LATEST_INTEGRATION_VERSION,
-            "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/{prefix}",
+            "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/{type_name}",
             "version": "1.0.0",
             "type": ServiceType.FRONTEND,
-            "name": LABEL,
-            "description": f"Probes its input for {type_name} values",
+            "name": f"{type_name.capitalize()} probe",
+            "description": f"Captures {type_name} values at its inputs",
             "thumbnail": create_fake_thumbnail_url(f"{type_name}"),
             "authors": [
                 OM,
@@ -22,9 +21,9 @@ def create_metadata(type_name: str, prefix: str | None = None) -> ServiceDockerD
             "contact": OM.email,
             "inputs": {
                 "in_1": {
-                    "label": f"{type_name} Probe",
-                    "description": f"Captures {type_name} values attached to it",
-                    "defaultValue": 0,
+                    "label": f"{type_name}_probe",
+                    "description": f"Output {type_name} value",
+                    # NOTE: no default provided to input probes
                     "type": type_name,
                 }
             },
@@ -33,11 +32,11 @@ def create_metadata(type_name: str, prefix: str | None = None) -> ServiceDockerD
     )
 
 
-META_NUMBER, META_BOOL, META_INT, META_STR = (
-    create_metadata(t) for t in ("number", "boolean", "integer", "string")
-)
-
-META_ARRAY = ServiceDockerData.parse_obj(
+META_NUMBER: Final = _create_metadata("number")
+META_BOOL: Final = _create_metadata("boolean")
+META_INT: Final = _create_metadata("integer")
+META_STR: Final = _create_metadata("string")
+META_ARRAY: Final = ServiceDockerData.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/array",
@@ -66,7 +65,7 @@ META_ARRAY = ServiceDockerData.parse_obj(
     }
 )
 
-META_FILE = ServiceDockerData.parse_obj(
+META_FILE: Final = ServiceDockerData.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/file",
@@ -90,6 +89,14 @@ META_FILE = ServiceDockerData.parse_obj(
     }
 )
 
+
+def is_probe_service(service_key: str) -> bool:
+    return service_key.startswith(
+        f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/"
+    )
+
+
 services = FunctionServices()
 for m in (META_NUMBER, META_BOOL, META_INT, META_STR, META_ARRAY, META_FILE):
+    assert is_probe_service(m.key)  # nosec
     services.add(meta=m)

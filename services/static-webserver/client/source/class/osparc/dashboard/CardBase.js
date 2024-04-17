@@ -694,25 +694,25 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __openMoreOptions: function() {
       const resourceData = this.getResourceData();
-      const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
-      const win = osparc.dashboard.ResourceMoreOptions.popUpInWindow(moreOpts);
+      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+      const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
       [
         "updateStudy",
         "updateTemplate",
         "updateService"
       ].forEach(ev => {
-        moreOpts.addListener(ev, e => this.fireDataEvent(ev, e.getData()));
+        resourceDetails.addListener(ev, e => this.fireDataEvent(ev, e.getData()));
       });
-      moreOpts.addListener("publishTemplate", e => {
+      resourceDetails.addListener("publishTemplate", e => {
         win.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
-      moreOpts.addListener("openStudy", e => {
+      resourceDetails.addListener("openStudy", e => {
         const openCB = () => win.close();
         const studyId = e.getData()["uuid"];
         this._startStudyById(studyId, openCB, null);
       });
-      return moreOpts;
+      return resourceDetails;
     },
 
     _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {

@@ -60,6 +60,7 @@ class ApiServerProfilerMiddleware:
         request: Request = Request(scope)
         request_headers = dict(request.headers)
         response_headers: dict[bytes, bytes] = {}
+
         if request_headers.get(self._profile_header_trigger) == "true":
             request_headers.pop(self._profile_header_trigger)
             scope["headers"] = [
@@ -68,7 +69,7 @@ class ApiServerProfilerMiddleware:
             profiler = Profiler(async_mode="enabled")
             profiler.start()
 
-        async def send_wrapper(message):
+        async def _send_wrapper(message):
             if isinstance(profiler, Profiler):
                 nonlocal response_headers
                 if message["type"] == "http.response.start":
@@ -85,4 +86,4 @@ class ApiServerProfilerMiddleware:
                         message["more_body"] = True
             await send(message)
 
-        await self._app(scope, receive, send_wrapper)
+        await self._app(scope, receive, _send_wrapper)

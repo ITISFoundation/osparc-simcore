@@ -20,19 +20,19 @@
  */
 
 qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
-  extend: osparc.desktop.preferences.pages.BasePage,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/question-circle/24";
-    const title = this.tr("Confirmation Settings");
-    this.base(arguments, title, iconSrc);
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     const confirmationSettings = this.__createConfirmationsSettings();
-    this.add(confirmationSettings);
+    this._add(confirmationSettings);
 
     if (osparc.product.Utils.showPreferencesExperimental()) {
       const experimentalSettings = this.__createExperimentalSettings();
-      this.add(experimentalSettings);
+      this._add(experimentalSettings);
     }
   },
 
@@ -60,10 +60,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
   members: {
     __createConfirmationsSettings: function() {
       // layout
-      const label = this._createHelpLabel(this.tr("Ask for confirmation for the following actions:"));
-      this.add(label);
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Ask for confirmation for the following actions:"));
+      this._add(label);
 
-      this.add(new qx.ui.core.Spacer(null, 10));
+      this._add(new qx.ui.core.Spacer(null, 10));
 
       const preferencesSettings = osparc.Preferences.getInstance();
 
@@ -142,9 +142,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
     __createExperimentalSettings: function() {
       // layout
-      const box = this._createSectionBox("Experimental preferences");
+      const box = osparc.ui.window.TabbedView.createSectionBox("Experimental preferences");
 
-      const label = this._createHelpLabel(this.tr(
+      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr(
         "This is a list of experimental preferences"
       ));
       box.add(label);

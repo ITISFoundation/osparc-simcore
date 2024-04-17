@@ -36,3 +36,24 @@ def all_env_devel_undefined(
     when some script was accidentaly injecting the entire .env-devel in the environment
     """
     delenvs_from_dict(monkeypatch, env_devel_dict, raising=False)
+
+
+@pytest.fixture(scope="session")
+def external_environment(request: pytest.FixtureRequest) -> EnvVarsDict:
+    """
+    If a file under test folder prefixed with `.env-secret` is present,
+    then this fixture captures it.
+
+    This technique allows reusing the same tests to check against
+    external development/production servers
+    """
+    envs = {}
+    if envfile := request.config.getoption("--external-envfile"):
+        print("🚨 EXTERNAL `envfile` option detected. Loading", envfile, "...")
+
+        assert isinstance(envfile, Path)
+        assert envfile.is_file()
+
+        envs = load_dotenv(envfile)
+
+    return envs
