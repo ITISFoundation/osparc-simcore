@@ -96,8 +96,12 @@ async def mocked_progress_cb(mocker: MockerFixture) -> mock.AsyncMock:
 def _assert_progress_report_values(
     mocked_progress_cb: mock.AsyncMock, *, total: float
 ) -> None:
-    assert mocked_progress_cb.call_args_list[0] == call(0.0, 0.0, total)
-    assert mocked_progress_cb.call_args_list[-1] == call(1.0, total, total)
+    assert mocked_progress_cb.call_args_list[0] == call(
+        progress_bar.ProgressReport(actual_value=0, total=total)
+    )
+    assert mocked_progress_cb.call_args_list[-1] == call(
+        progress_bar.ProgressReport(actual_value=total, total=total)
+    )
 
 
 @pytest.mark.parametrize(
