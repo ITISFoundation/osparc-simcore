@@ -126,7 +126,9 @@ class ProgressBarData:
             ):
                 call = self.progress_report_cb(
                     ProgressReport(
-                        actual_value=value * self.num_steps, total=self.num_steps
+                        # NOTE: here we convert back to actual value since this is weighted
+                        actual_value=value * self.num_steps,
+                        total=self.num_steps,
                     ),
                 )
                 if isawaitable(call):
