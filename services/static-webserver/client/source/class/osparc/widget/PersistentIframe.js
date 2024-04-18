@@ -198,6 +198,10 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       return standin;
     },
 
+    getIframe: function() {
+      return this.__iframe;
+    },
+
     getDiskUsageIndicator: function() {
       return this.__diskUsageIndicator;
     },
@@ -283,6 +287,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
       this.__iframe.release();
     }
   },
+
   destruct: function() {
     this.__iframe.exclude();
     this.__iframe.dispose();

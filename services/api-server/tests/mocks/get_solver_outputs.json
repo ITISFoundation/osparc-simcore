@@ -72,7 +72,7 @@
       }
      }
     },
-    "prjOwner": "bisgaard@itis.swiss",
+    "prjOwner": "ypatton@example.com",
     "accessRights": {
      "3": {
       "read": true,
@@ -162,7 +162,7 @@
   "response_body": {
    "data": {
     "walletId": 1,
-    "name": "Bisgaard Credits",
+    "name": "Hannah Johnson",
     "description": "Credits purchased by Bisgaard end up in here",
     "owner": 3,
     "thumbnail": null,
@@ -205,7 +205,7 @@
   "response_body": {
    "data": {
     "walletId": 1,
-    "name": "Bisgaard Credits",
+    "name": "Kimberly Hoffman",
     "description": "Credits purchased by Bisgaard end up in here",
     "owner": 3,
     "thumbnail": null,

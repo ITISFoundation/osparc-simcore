@@ -103,12 +103,18 @@ def disable_redis_setup(mocker: MockerFixture) -> None:
     mocker.patch(f"{base_path}.setup_redis")
 
 
+MAX_TIME_FOR_APP_TO_STARTUP = 10
+MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
+
+
 @pytest.fixture
-async def app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
+async def app(
+    app_environment: EnvVarsDict, is_pdb_enabled: bool
+) -> AsyncIterator[FastAPI]:
     test_app = create_app()
     async with LifespanManager(
         test_app,
-        startup_timeout=None,  # for debugging
-        shutdown_timeout=10,
+        startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
+        shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
     ):
         yield test_app

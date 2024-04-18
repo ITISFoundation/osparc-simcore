@@ -917,14 +917,10 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     closeHangingWindows: function() {
-      // close windows
       const children = qx.core.Init.getApplication().getRoot().getChildren();
       children.forEach(child => {
-        const closeClasses = [
-          "osparc.ui.window.Window",
-          "osparc.desktop.account.MyAccountWindow"
-        ];
-        if (closeClasses.includes(child.classname)) {
+        const isWindow = "modal" in qx.util.PropertyUtil.getAllProperties(child.constructor);
+        if (isWindow) {
           child.close();
         }
       });
