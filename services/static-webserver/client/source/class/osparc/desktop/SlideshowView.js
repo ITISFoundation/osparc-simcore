@@ -314,6 +314,14 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             flex: 1
           });
           this.__nodeView = view;
+
+          // Automatically try to start the dynamic service when the user gets to this step
+          if (node.isDynamic()) {
+            const status = node.getStatus().getInteractive();
+            if (["idle", "failed"].includes(status)) {
+              node.requestStartNode();
+            }
+          }
         }
 
         const upstreamDependencies = this.__getUpstreamCompDependencies(node);
