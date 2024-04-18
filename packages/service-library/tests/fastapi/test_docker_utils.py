@@ -85,20 +85,25 @@ async def test_pull_image(
 ):
     await remove_images_from_host([image])
     layer_information = await retrieve_image_layer_information(image, registry_settings)
+    assert layer_information
 
     async def _log_cb(*args, **kwargs) -> None:
         print(f"received log: {args}, {kwargs}")
 
     fake_progress_report_cb = mocker.AsyncMock()
     async with progress_bar.ProgressBarData(
-        num_steps=1, progress_report_cb=fake_progress_report_cb
+        num_steps=layer_information.layers_total_size,
+        progress_report_cb=fake_progress_report_cb,
     ) as main_progress_bar:
         fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
         await pull_image(
             image, registry_settings, main_progress_bar, fake_log_cb, layer_information
         )
         fake_log_cb.assert_called()
-        assert main_progress_bar._current_steps == 1  # noqa: SLF001
+        assert (
+            main_progress_bar._current_steps  # noqa: SLF001
+            == layer_information.layers_total_size
+        )
     assert fake_progress_report_cb.call_args_list[0] == call(0.0)
     fake_progress_report_cb.assert_called_with(1.0)
     fake_progress_report_cb.reset_mock()
@@ -110,14 +115,18 @@ async def test_pull_image(
 
     # pull a second time should, the image is already there
     async with progress_bar.ProgressBarData(
-        num_steps=1, progress_report_cb=fake_progress_report_cb
+        num_steps=layer_information.layers_total_size,
+        progress_report_cb=fake_progress_report_cb,
     ) as main_progress_bar:
         fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
         await pull_image(
             image, registry_settings, main_progress_bar, fake_log_cb, layer_information
         )
         fake_log_cb.assert_called()
-        assert main_progress_bar._current_steps == 1  # noqa: SLF001
+        assert (
+            main_progress_bar._current_steps  # noqa: SLF001
+            == layer_information.layers_total_size
+        )
     assert fake_progress_report_cb.call_args_list[0] == call(0.0)
     fake_progress_report_cb.assert_called_with(1.0)
     # check there were no warnings
