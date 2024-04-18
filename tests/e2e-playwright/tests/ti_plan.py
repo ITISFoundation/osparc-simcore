@@ -48,11 +48,13 @@ def test_tip(
         print("node_id: ", node_id)
         node_ids.append(node_id)
 
+    # Check there are 3 steps
+
     # Electrode Selector
     page.wait_for_timeout(30000)
-    electrode_selector_page = page.frame_locator(".qx-main-dark").first
-    electrode_selector_page.get_by_test_id("TargetStructure_Selector").click()
-    electrode_selector_page.get_by_test_id(
+    es_page = page.frame_locator(".qx-main-dark").nth(0)
+    es_page.get_by_test_id("TargetStructure_Selector").click()
+    es_page.get_by_test_id(
         "TargetStructure_Target_(Targets_combined) Hypothalamus"
     ).click()
     electrode_selections = [
@@ -64,7 +66,28 @@ def test_tip(
     for selection in electrode_selections:
         group_id = "ElectrodeGroup_" + selection[0] + "_Start"
         electrode_id = "Electrode_" + selection[1]
-        electrode_selector_page.get_by_test_id(group_id).click()
-        electrode_selector_page.get_by_test_id(electrode_id).click()
-    electrode_selector_page.get_by_test_id("FinishSetUp").click()
-    page.wait_for_timeout(10000)
+        es_page.get_by_test_id(group_id).click()
+        es_page.get_by_test_id(electrode_id).click()
+    es_page.get_by_test_id("FinishSetUp").click()
+    es_page.wait_for_timeout(10000)
+
+    # Move to next step
+    page.get_by_test_id("AppMode_NextBtn").click()
+
+    # Optimal Configuration Identification
+    page.wait_for_timeout(90000)
+    ti_page = page.frame_locator(".qx-main-dark").nth(1)
+    ti_page.get_by_role("button", name="Run Optimizer").click()
+    ti_page.wait_for_timeout(20000)
+    ti_page.get_by_role("button", name="Load Analysis").click()
+    ti_page.wait_for_timeout(20000)
+    ti_page.get_by_role("button", name="Load").nth(0).click()
+    ti_page.wait_for_timeout(20000)
+    ti_page.get_by_role("button", name="Add to Report (0)").nth(0).click()
+    ti_page.wait_for_timeout(10000)
+    ti_page.get_by_role("button", name="Export to S4L").click()
+    ti_page.wait_for_timeout(10000)
+    ti_page.get_by_role("button", name="Add to Report (1)").nth(1).click()
+    ti_page.wait_for_timeout(10000)
+    ti_page.get_by_role("button", name="Export Report").click()
+    ti_page.wait_for_timeout(10000)
