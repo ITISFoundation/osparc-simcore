@@ -9,75 +9,106 @@ from unittest import mock
 
 import pytest
 from pytest_mock import MockerFixture
-from servicelib.progress_bar import _FINAL_VALUE, _INITIAL_VALUE, ProgressBarData
+from servicelib.progress_bar import (
+    _INITIAL_VALUE,
+    _MIN_PROGRESS_UPDATE_PERCENT,
+    ProgressBarData,
+    ProgressReport,
+)
 
 
 @pytest.fixture
 def mocked_progress_bar_cb(mocker: MockerFixture) -> mock.Mock:
-    return mocker.Mock()
+    def _progress_cb(*args, **kwargs) -> None:
+        print(f"received progress: {args}, {kwargs}")
+
+    return mocker.Mock(side_effect=_progress_cb)
 
 
 @pytest.fixture
 def async_mocked_progress_bar_cb(mocker: MockerFixture) -> mock.AsyncMock:
-    return mocker.AsyncMock()
+    async def _progress_cb(*args, **kwargs) -> None:
+        print(f"received progress: {args}, {kwargs}")
+
+    return mocker.AsyncMock(side_effect=_progress_cb)
 
 
 @pytest.mark.parametrize(
     "progress_report_cb_type",
     ["mocked_progress_bar_cb", "async_mocked_progress_bar_cb"],
 )
-async def test_progress_bar(
+async def test_progress_bar_progress_report_cb(
     progress_report_cb_type: str,
     mocked_progress_bar_cb: mock.Mock,
     async_mocked_progress_bar_cb: mock.AsyncMock,
 ):
-    mocked_cb = {
+    mocked_cb: mock.Mock | mock.AsyncMock = {
         "mocked_progress_bar_cb": mocked_progress_bar_cb,
         "async_mocked_progress_bar_cb": async_mocked_progress_bar_cb,
     }[progress_report_cb_type]
-
-    async with ProgressBarData(num_steps=3, progress_report_cb=mocked_cb) as root:
-        assert root.num_steps == 3
+    outer_num_steps = 3
+    async with ProgressBarData(
+        num_steps=outer_num_steps, progress_report_cb=mocked_cb
+    ) as root:
+        assert root.num_steps == outer_num_steps
         assert root.step_weights is None  # i.e. all steps have equal weight
         assert root._current_steps == pytest.approx(0)  # noqa: SLF001
-        mocked_cb.assert_called_once_with(pytest.approx(0))
+        mocked_cb.assert_called_once_with(
+            ProgressReport(actual_value=0, total=outer_num_steps)
+        )
         mocked_cb.reset_mock()
         # first step is done right away
         await root.update()
         assert root._current_steps == pytest.approx(1)  # noqa: SLF001
-        mocked_cb.assert_called_once_with(pytest.approx(1 / 3))
+        mocked_cb.assert_called_once_with(
+            ProgressReport(actual_value=1, total=outer_num_steps)
+        )
         mocked_cb.reset_mock()
 
         # 2nd step is a sub progress bar of 10 steps
-        async with root.sub_progress(steps=10) as sub:
+        inner_num_steps_step2 = 100
+        async with root.sub_progress(steps=inner_num_steps_step2) as sub:
             assert sub._current_steps == pytest.approx(0)  # noqa: SLF001
             assert root._current_steps == pytest.approx(1)  # noqa: SLF001
-            for i in range(10):
+            for i in range(inner_num_steps_step2):
                 await sub.update()
                 assert sub._current_steps == pytest.approx(float(i + 1))  # noqa: SLF001
                 assert root._current_steps == pytest.approx(  # noqa: SLF001
-                    1 + float(i + 1) / 10.0
+                    1 + float(i + 1) / float(inner_num_steps_step2)
                 )
+        assert sub._current_steps == pytest.approx(  # noqa: SLF001
+            inner_num_steps_step2
+        )
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
         mocked_cb.assert_called()
-        assert mocked_cb.call_count == 10
-        assert mocked_cb.call_args_list[9].args[0] == pytest.approx(2 / 3)
+        assert mocked_cb.call_args_list[-1].args[0].percent_value == pytest.approx(
+            2 / 3
+        )
+        for call_index, call in enumerate(mocked_cb.call_args_list[1:-1]):
+            assert (
+                call.args[0].percent_value
+                - mocked_cb.call_args_list[call_index].args[0].percent_value
+            ) > _MIN_PROGRESS_UPDATE_PERCENT
+
         mocked_cb.reset_mock()
 
         # 3rd step is another subprogress of 50 steps
-        async with root.sub_progress(steps=50) as sub:
+        inner_num_steps_step3 = 50
+        async with root.sub_progress(steps=inner_num_steps_step3) as sub:
             assert sub._current_steps == pytest.approx(0)  # noqa: SLF001
             assert root._current_steps == pytest.approx(2)  # noqa: SLF001
-            for i in range(50):
+            for i in range(inner_num_steps_step3):
                 await sub.update()
                 assert sub._current_steps == pytest.approx(float(i + 1))  # noqa: SLF001
                 assert root._current_steps == pytest.approx(  # noqa: SLF001
-                    2 + float(i + 1) / 50.0
+                    2 + float(i + 1) / float(inner_num_steps_step3)
                 )
+        assert sub._current_steps == pytest.approx(  # noqa: SLF001
+            inner_num_steps_step3
+        )
         assert root._current_steps == pytest.approx(3)  # noqa: SLF001
         mocked_cb.assert_called()
-        assert mocked_cb.call_count == 25
-        assert mocked_cb.call_args_list[24].args[0] == pytest.approx(1)
+        assert mocked_cb.call_args_list[-1].args[0].percent_value == 1.0
         mocked_cb.reset_mock()
 
 
@@ -92,11 +123,15 @@ async def test_progress_bar_always_reports_0_on_creation_and_1_on_finish(
     async with progress_bar as root:
         assert root is progress_bar
         assert root._current_steps == 0  # noqa: SLF001
-        mocked_progress_bar_cb.assert_called_once_with(0)
+        mocked_progress_bar_cb.assert_called_once_with(
+            ProgressReport(actual_value=0, total=num_steps)
+        )
 
     # going out of scope always updates to final number of steps
     assert progress_bar._current_steps == num_steps  # noqa: SLF001
-    assert mocked_progress_bar_cb.call_args_list[-1] == mock.call(_FINAL_VALUE)
+    assert mocked_progress_bar_cb.call_args_list[-1] == mock.call(
+        ProgressReport(actual_value=num_steps, total=num_steps)
+    )
 
 
 async def test_progress_bar_always_reports_1_on_finish(
@@ -114,7 +149,9 @@ async def test_progress_bar_always_reports_1_on_finish(
     async with progress_bar as root:
         assert root is progress_bar
         assert root._current_steps == 0  # noqa: SLF001
-        mocked_progress_bar_cb.assert_called_once_with(0)
+        mocked_progress_bar_cb.assert_called_once_with(
+            ProgressReport(actual_value=0, total=num_steps)
+        )
         for _ in range(num_chunked_steps):
             await root.update(chunks)
         await root.update(last_step)
@@ -122,7 +159,9 @@ async def test_progress_bar_always_reports_1_on_finish(
 
     # going out of scope always updates to final number of steps
     assert progress_bar._current_steps == pytest.approx(num_steps)  # noqa: SLF001
-    assert mocked_progress_bar_cb.call_args_list[-1] == mock.call(_FINAL_VALUE)
+    assert mocked_progress_bar_cb.call_args_list[-1] == mock.call(
+        ProgressReport(actual_value=num_steps, total=num_steps)
+    )
 
 
 async def test_set_progress(
@@ -189,23 +228,33 @@ async def test_too_many_updates_does_not_raise_but_show_warning_with_stack(
 
 
 async def test_weighted_progress_bar(mocked_progress_bar_cb: mock.Mock):
+    outer_num_steps = 3
     async with ProgressBarData(
-        num_steps=3,
+        num_steps=outer_num_steps,
         step_weights=[1, 3, 1],
         progress_report_cb=mocked_progress_bar_cb,
     ) as root:
-        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(0))
+        mocked_progress_bar_cb.assert_called_once_with(
+            ProgressReport(actual_value=0, total=outer_num_steps)
+        )
         mocked_progress_bar_cb.reset_mock()
         assert root.step_weights == [1 / 5, 3 / 5, 1 / 5, 0]
         await root.update()
-        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(1 / 5))
+        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(
+            1 / 5
+        )
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(1)  # noqa: SLF001
         await root.update()
-        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(1 / 5 + 3 / 5))
+        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(
+            1 / 5 + 3 / 5
+        )
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
-    mocked_progress_bar_cb.assert_called_once_with(1)
+
+    mocked_progress_bar_cb.assert_called_once_with(
+        ProgressReport(actual_value=outer_num_steps, total=outer_num_steps)
+    )
     mocked_progress_bar_cb.reset_mock()
     assert root._current_steps == pytest.approx(3)  # noqa: SLF001
 
@@ -213,17 +262,22 @@ async def test_weighted_progress_bar(mocked_progress_bar_cb: mock.Mock):
 async def test_weighted_progress_bar_with_weighted_sub_progress(
     mocked_progress_bar_cb: mock.Mock,
 ):
+    outer_num_steps = 3
     async with ProgressBarData(
-        num_steps=3,
+        num_steps=outer_num_steps,
         step_weights=[1, 3, 1],
         progress_report_cb=mocked_progress_bar_cb,
     ) as root:
-        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(0))
+        mocked_progress_bar_cb.assert_called_once_with(
+            ProgressReport(actual_value=0, total=outer_num_steps)
+        )
         mocked_progress_bar_cb.reset_mock()
         assert root.step_weights == [1 / 5, 3 / 5, 1 / 5, 0]
         # first step
         await root.update()
-        mocked_progress_bar_cb.assert_called_once_with(pytest.approx(1 / 5))
+        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(
+            1 / 5
+        )
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(1)  # noqa: SLF001
 
@@ -263,12 +317,14 @@ async def test_weighted_progress_bar_with_weighted_sub_progress(
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
         mocked_progress_bar_cb.assert_called()
         assert mocked_progress_bar_cb.call_count == 5
-        assert mocked_progress_bar_cb.call_args_list[4].args[0] == pytest.approx(
-            1 / 5 + 3 / 5
-        )
+        assert mocked_progress_bar_cb.call_args_list[4].args[
+            0
+        ].percent_value == pytest.approx(1 / 5 + 3 / 5)
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
-    mocked_progress_bar_cb.assert_called_once_with(1)
+    mocked_progress_bar_cb.assert_called_once_with(
+        ProgressReport(actual_value=outer_num_steps, total=outer_num_steps)
+    )
     mocked_progress_bar_cb.reset_mock()
     assert root._current_steps == pytest.approx(3)  # noqa: SLF001
 

@@ -12,19 +12,27 @@ _INITIAL_VALUE: Final[float] = -1.0
 _FINAL_VALUE: Final[float] = 1.0
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ProgressReport:
+    actual_value: float
+    total: float
+
+    @property
+    def percent_value(self) -> float:
+        if self.total != 0:
+            return max(min(self.actual_value / self.total, 1.0), 0.0)
+        return 0
+
+
 @runtime_checkable
 class AsyncReportCB(Protocol):
-    async def __call__(
-        self, progress_value: float, current_value: float, total: float
-    ) -> None:
+    async def __call__(self, report: ProgressReport) -> None:
         ...
 
 
 @runtime_checkable
 class ReportCB(Protocol):
-    def __call__(
-        self, progress_value: float, current_value: float, total: float
-    ) -> None:
+    def __call__(self, report: ProgressReport) -> None:
         ...
 
 
@@ -117,7 +125,9 @@ class ProgressBarData:
                 or value == _FINAL_VALUE
             ):
                 call = self.progress_report_cb(
-                    value, self._current_steps, self.num_steps
+                    ProgressReport(
+                        actual_value=value * self.num_steps, total=self.num_steps
+                    ),
                 )
                 if isawaitable(call):
                     await call
