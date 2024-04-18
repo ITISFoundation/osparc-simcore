@@ -50,7 +50,7 @@ async def post_log_message(
 
 
 async def post_progress_message(
-    app: FastAPI, progress_type: ProgressType, progress_report: ProgressReport
+    app: FastAPI, progress_type: ProgressType, report: ProgressReport
 ) -> None:
     app_settings: ApplicationSettings = app.state.settings
     message = ProgressRabbitMessageNode.construct(
@@ -58,7 +58,7 @@ async def post_progress_message(
         user_id=app_settings.DY_SIDECAR_USER_ID,
         project_id=app_settings.DY_SIDECAR_PROJECT_ID,
         progress_type=progress_type,
-        report=progress_report,
+        report=report,
     )
     await _post_rabbit_message(app, message)
 
