@@ -154,4 +154,5 @@ def payment_data(successful_transaction: dict[str, Any]) -> PaymentData:
         price_dollars=successful_transaction["price_dollars"],
         osparc_credits=successful_transaction["osparc_credits"],
         invoice_url=successful_transaction["invoice_url"],
+        invoice_pdf=successful_transaction["invoice_pdf"],
     )

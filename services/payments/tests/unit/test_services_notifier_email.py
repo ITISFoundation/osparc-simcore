@@ -134,24 +134,6 @@ async def test_send_email_workflow(
     attachment = tmp_path / "test-attachment.txt"
     attachment.write_text(faker.text())
     _add_attachments(msg, [attachment])
-    # import re
-    # from email.mime.application import MIMEApplication
-    # import httpx
-
-    # async with httpx.AsyncClient(follow_redirects=True) as client:
-    #     response = await client.get(
-    #         ""
-    #     )
-    #     response.raise_for_status()  # This will raise an exception for failed requests
-
-    # # Attach the PDF
-    # pattern = re.compile(r'filename="(?P<filename>[^"]+)"')
-    # match = pattern.search(response.headers["content-disposition"])
-    # _file_name = match.group("filename")
-
-    # attachment = MIMEApplication(response.content, Name=_file_name)
-    # attachment["Content-Disposition"] = f"attachment; filename={_file_name}"
-    # msg.attach(attachment)
 
     async with _create_email_session(settings) as smtp:
         await smtp.send_message(msg)
