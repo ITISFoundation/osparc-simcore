@@ -281,10 +281,12 @@ def _setup_session_osparc_variables(app: FastAPI):
 
     # Registers some session osparc_variables
     # WARNING: context_name needs to match session_context!
+    # NOTE: please keep alphabetically ordered
     for name, context_name in [
+        ("OSPARC_VARIABLE_API_HOST", "api_server_base_url"),
+        ("OSPARC_VARIABLE_NODE_ID", "node_id"),
         ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
         ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
-        ("OSPARC_VARIABLE_NODE_ID", "node_id"),
         ("OSPARC_VARIABLE_USER_ID", "user_id"),
     ]:
         table.register_from_context(name, context_name)
