@@ -93,6 +93,13 @@ async def mocked_progress_cb(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.AsyncMock(side_effect=_progress_cb)
 
 
+def _assert_progress_report_values(
+    mocked_progress_cb: mock.AsyncMock, *, total: float
+) -> None:
+    assert mocked_progress_cb.call_args_list[0] == call(0.0, 0.0, total)
+    assert mocked_progress_cb.call_args_list[-1] == call(1.0, total, total)
+
+
 @pytest.mark.parametrize(
     "image",
     ["itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"],
@@ -126,8 +133,10 @@ async def test_pull_image(
             main_progress_bar._current_steps  # noqa: SLF001
             == layer_information.layers_total_size
         )
-    assert mocked_progress_cb.call_args_list[0] == call(0.0)
-    assert mocked_progress_cb.call_args_list[-1] == call(1.0)
+    _assert_progress_report_values(
+        mocked_progress_cb, total=layer_information.layers_total_size
+    )
+
     mocked_progress_cb.reset_mock()
     mocked_log_cb.reset_mock()
 
@@ -152,8 +161,9 @@ async def test_pull_image(
             main_progress_bar._current_steps  # noqa: SLF001
             == layer_information.layers_total_size
         )
-    assert mocked_progress_cb.call_args_list[0] == call(0.0)
-    assert mocked_progress_cb.call_args_list[-1] == call(1.0)
+    _assert_progress_report_values(
+        mocked_progress_cb, total=layer_information.layers_total_size
+    )
     # check there were no warnings
     assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
 
@@ -174,8 +184,10 @@ async def test_pull_image_without_layer_information(
     layer_information = await retrieve_image_layer_information(image, registry_settings)
     assert layer_information
 
+    fake_number_of_steps = parse_obj_as(ByteSize, "200MiB")
+    assert fake_number_of_steps > layer_information.layers_total_size
     async with progress_bar.ProgressBarData(
-        num_steps=parse_obj_as(ByteSize, "200MiB"),
+        num_steps=fake_number_of_steps,
         progress_report_cb=mocked_progress_cb,
     ) as main_progress_bar:
         await pull_image(
@@ -186,8 +198,7 @@ async def test_pull_image_without_layer_information(
             main_progress_bar._current_steps  # noqa: SLF001
             == layer_information.layers_total_size
         )
-    assert mocked_progress_cb.call_args_list[0] == call(0.0)
-    assert mocked_progress_cb.call_args_list[-1] == call(1.0)
+    _assert_progress_report_values(mocked_progress_cb, total=fake_number_of_steps)
     mocked_progress_cb.reset_mock()
     mocked_log_cb.reset_mock()
 
@@ -210,8 +221,7 @@ async def test_pull_image_without_layer_information(
         )
         mocked_log_cb.assert_called()
         assert main_progress_bar._current_steps == 0  # noqa: SLF001
-    assert mocked_progress_cb.call_args_list[0] == call(0.0)
-    assert mocked_progress_cb.call_args_list[-1] == call(1.0)
+    _assert_progress_report_values(mocked_progress_cb, total=1)
     # check there were no warnings
     assert not [
         r.message
@@ -238,8 +248,7 @@ async def test_pull_images_set(
 
     await pull_images(images_set, registry_settings, mocked_progress_cb, mocked_log_cb)
     mocked_log_cb.assert_called()
-    assert mocked_progress_cb.call_args_list[0] == call(0.0)
-    assert mocked_progress_cb.call_args_list[-1] == call(1.0)
+    _assert_progress_report_values(mocked_progress_cb, total=mock.ANY)
 
     # check there were no warnings
     # NOTE: this would pop up in case docker changes its pulling statuses
