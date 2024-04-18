@@ -5,7 +5,7 @@ from unittest.mock import call
 
 import pytest
 from models_library.docker import DockerGenericTag
-from pydantic import parse_obj_as
+from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from servicelib import progress_bar
 from servicelib.docker_utils import pull_image
@@ -110,8 +110,7 @@ async def test_pull_image(
 
     # check there were no warnings
     # NOTE: this would pop up in case docker changes its pulling statuses
-    for record in caplog.records:
-        assert record.levelname != "WARNING", record.message
+    assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
 
     # pull a second time should, the image is already there
     async with progress_bar.ProgressBarData(
@@ -130,8 +129,69 @@ async def test_pull_image(
     assert fake_progress_report_cb.call_args_list[0] == call(0.0)
     fake_progress_report_cb.assert_called_with(1.0)
     # check there were no warnings
-    for record in caplog.records:
-        assert record.levelname != "WARNING", record.message
+    assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
+
+
+@pytest.mark.parametrize(
+    "image",
+    ["itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"],
+)
+async def test_pull_image_without_layer_information(
+    remove_images_from_host: Callable[[list[str]], Awaitable[None]],
+    image: DockerGenericTag,
+    registry_settings: RegistrySettings,
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+):
+    await remove_images_from_host([image])
+    layer_information = await retrieve_image_layer_information(image, registry_settings)
+    assert layer_information
+
+    async def _log_cb(*args, **kwargs) -> None:
+        print(f"received log: {args}, {kwargs}")
+
+    fake_progress_report_cb = mocker.AsyncMock()
+    async with progress_bar.ProgressBarData(
+        num_steps=parse_obj_as(ByteSize, "200MiB"),
+        progress_report_cb=fake_progress_report_cb,
+    ) as main_progress_bar:
+        fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
+        await pull_image(image, registry_settings, main_progress_bar, fake_log_cb, None)
+        fake_log_cb.assert_called()
+        assert (
+            main_progress_bar._current_steps  # noqa: SLF001
+            == layer_information.layers_total_size
+        )
+    assert fake_progress_report_cb.call_args_list[0] == call(0.0)
+    fake_progress_report_cb.assert_called_with(1.0)
+    fake_progress_report_cb.reset_mock()
+
+    # check there were no warnings
+    # NOTE: this would pop up in case docker changes its pulling statuses
+    expected_warning = "pulling image without layer information"
+    assert not [
+        r.message
+        for r in caplog.records
+        if r.levelname == "WARNING" and not r.message.startswith(expected_warning)
+    ]
+
+    # pull a second time should, the image is already there, but the progress is then 0
+    async with progress_bar.ProgressBarData(
+        num_steps=1,
+        progress_report_cb=fake_progress_report_cb,
+    ) as main_progress_bar:
+        fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
+        await pull_image(image, registry_settings, main_progress_bar, fake_log_cb, None)
+        fake_log_cb.assert_called()
+        assert main_progress_bar._current_steps == 0  # noqa: SLF001
+    assert fake_progress_report_cb.call_args_list[0] == call(0.0)
+    fake_progress_report_cb.assert_called_with(1.0)
+    # check there were no warnings
+    assert not [
+        r.message
+        for r in caplog.records
+        if r.levelname == "WARNING" and not r.message.startswith(expected_warning)
+    ]
 
 
 @pytest.mark.parametrize(
@@ -140,7 +200,7 @@ async def test_pull_image(
         {"itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"},
     ],
 )
-async def test_pull_images(
+async def test_pull_images_set(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
     images_set: set[DockerGenericTag],
     registry_settings: RegistrySettings,
