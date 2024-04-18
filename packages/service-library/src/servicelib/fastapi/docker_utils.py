@@ -99,7 +99,7 @@ async def retrieve_image_layer_information(
     return None
 
 
-_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "50MiB")
+_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "200MiB")
 
 
 async def pull_images(
