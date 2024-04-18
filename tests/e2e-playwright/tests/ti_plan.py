@@ -44,6 +44,10 @@ def test_tip(
     assert project_data
     project_uuid = project_data["data"]["uuid"]
     print("project uuid: ", project_uuid)
+    node_ids = []
+    for node_id in project_data["data"]["workbench"].keys():
+        print("node_id: ", node_id)
+        node_ids.append(node_id)
 
     # Electrode Selector
     start = time.time()
