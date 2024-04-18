@@ -86,6 +86,14 @@ qx.Class.define("osparc.node.NodeView", {
       this._mainView.add(this._iFrameLayout, {
         flex: 1
       });
+
+      // Automatically try to start the service when the user gets to this step
+      this.addListener("appear", () => {
+        const status = this.getNode().getStatus().getInteractive();
+        if (["idle", "failed"].includes(status)) {
+          this.getNode().requestStartNode();
+        }
+      });
     },
 
     // overridden
