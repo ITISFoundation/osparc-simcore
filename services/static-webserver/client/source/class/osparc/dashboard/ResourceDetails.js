@@ -659,7 +659,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         });
         page.addToContent(servicesBootOpts);
 
-        if (osparc.utils.Resources.isStudy(resourceData)) {
+        if (osparc.utils.Resources.isStudy(resourceData) || osparc.utils.Resources.isTemplate(resourceData)) {
           if (osparc.product.Utils.showDisableServiceAutoStart()) {
             const study = new osparc.data.model.Study(resourceData);
             const autoStartButton = osparc.info.StudyUtils.createDisableServiceAutoStart(study);
