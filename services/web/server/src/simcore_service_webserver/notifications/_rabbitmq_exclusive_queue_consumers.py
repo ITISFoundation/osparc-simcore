@@ -63,7 +63,7 @@ async def _convert_to_node_update_event(
         if f"{message.node_id}" in project["workbench"]:
             # update the project node progress with the latest value
             project["workbench"][f"{message.node_id}"].update(
-                {"progress": round(message.progress * 100.0)}
+                {"progress": round(message.report.percent_value * 100.0)}
             )
             return SocketMessageDict(
                 event_type=SOCKET_IO_NODE_UPDATED_EVENT,
@@ -89,7 +89,7 @@ def _convert_to_node_progress_event(
             "node_id": message.node_id,
             "user_id": message.user_id,
             "progress_type": message.progress_type,
-            "progress": message.progress,
+            "progress": message.report.percent_value,
         },
     )
 

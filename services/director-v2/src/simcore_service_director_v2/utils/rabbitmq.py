@@ -1,5 +1,6 @@
 from typing import Any
 
+from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -165,7 +166,7 @@ async def publish_service_progress(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
-        progress=progress,
+        report=ProgressReport(actual_value=progress, total=1),
     )
     await rabbitmq_client.publish(message.channel_name, message)
 

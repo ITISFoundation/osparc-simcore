@@ -10,6 +10,7 @@ from unittest.mock import call
 
 import pytest
 from models_library.docker import DockerGenericTag
+from models_library.progress_bar import ProgressReport
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from servicelib import progress_bar
@@ -97,10 +98,10 @@ def _assert_progress_report_values(
     mocked_progress_cb: mock.AsyncMock, *, total: float
 ) -> None:
     assert mocked_progress_cb.call_args_list[0] == call(
-        progress_bar.ProgressReport(actual_value=0, total=total)
+        ProgressReport(actual_value=0, total=total)
     )
     assert mocked_progress_cb.call_args_list[-1] == call(
-        progress_bar.ProgressReport(actual_value=total, total=total)
+        ProgressReport(actual_value=total, total=total)
     )
 
 

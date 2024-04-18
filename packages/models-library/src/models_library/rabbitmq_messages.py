@@ -7,8 +7,8 @@ from typing import Any, Literal, TypeAlias
 
 import arrow
 from models_library.products import ProductName
+from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel, Field
-from pydantic.types import NonNegativeFloat
 
 from .projects import ProjectID
 from .projects_nodes_io import NodeID
@@ -99,9 +99,7 @@ class ProgressMessageMixin(RabbitMessageBase):
     progress_type: ProgressType = (
         ProgressType.COMPUTATION_RUNNING
     )  # NOTE: backwards compatible
-    progress: NonNegativeFloat
-    current_value: NonNegativeFloat | None = None
-    total: NonNegativeFloat | None = None
+    report: ProgressReport
 
     def routing_key(self) -> str | None:
         return None

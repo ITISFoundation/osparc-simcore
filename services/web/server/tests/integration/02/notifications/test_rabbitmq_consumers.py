@@ -16,6 +16,7 @@ import socketio
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -351,8 +352,8 @@ async def test_progress_non_computational_workflow(
         user_id=sender_user_id,
         project_id=user_project_id,
         node_id=random_node_id_in_user_project,
-        progress=0.3,
         progress_type=progress_type,
+        report=ProgressReport(actual_value=0.3, total=1),
     )
     await rabbitmq_publisher.publish(progress_message.channel_name, progress_message)
 
@@ -405,8 +406,8 @@ async def test_progress_computational_workflow(
         user_id=sender_user_id,
         project_id=user_project_id,
         node_id=random_node_id_in_user_project,
-        progress=0.3,
         progress_type=ProgressType.COMPUTATION_RUNNING,
+        report=ProgressReport(actual_value=0.3, total=1),
     )
     await rabbitmq_publisher.publish(progress_message.channel_name, progress_message)
 
@@ -418,7 +419,9 @@ async def test_progress_computational_workflow(
         expected_call |= {
             "data": user_project["workbench"][f"{random_node_id_in_user_project}"]
         }
-        expected_call["data"]["progress"] = int(progress_message.progress * 100)
+        expected_call["data"]["progress"] = int(
+            progress_message.report.percent_value * 100
+        )
         await _assert_handler_called_with_json(mock_progress_handler, expected_call)
     else:
         await _assert_handler_not_called(mock_progress_handler)

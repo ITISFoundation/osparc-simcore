@@ -8,12 +8,12 @@ import asyncio
 from unittest import mock
 
 import pytest
+from models_library.progress_bar import ProgressReport
 from pytest_mock import MockerFixture
 from servicelib.progress_bar import (
     _INITIAL_VALUE,
     _MIN_PROGRESS_UPDATE_PERCENT,
     ProgressBarData,
-    ProgressReport,
 )
 
 

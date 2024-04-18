@@ -4,24 +4,14 @@ from dataclasses import dataclass, field
 from inspect import isawaitable
 from typing import Final, Optional, Protocol, runtime_checkable
 
+from models_library.progress_bar import ProgressReport
+
 from .logging_utils import log_catch
 
 _logger = logging.getLogger(__name__)
 _MIN_PROGRESS_UPDATE_PERCENT: Final[float] = 0.01
 _INITIAL_VALUE: Final[float] = -1.0
 _FINAL_VALUE: Final[float] = 1.0
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ProgressReport:
-    actual_value: float
-    total: float
-
-    @property
-    def percent_value(self) -> float:
-        if self.total != 0:
-            return max(min(self.actual_value / self.total, 1.0), 0.0)
-        return 0
 
 
 @runtime_checkable

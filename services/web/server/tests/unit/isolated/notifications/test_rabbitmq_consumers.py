@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
+from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
@@ -31,7 +32,7 @@ _faker = Faker()
                 user_id=_faker.uuid4(cast_to=None),
                 node_id=_faker.uuid4(cast_to=None),
                 progress_type=ProgressType.SERVICE_OUTPUTS_PULLING,
-                progress=0.4,
+                report=ProgressReport(actual_value=0.4, total=1),
             ).json(),
             ProgressRabbitMessageNode,
             id="node_progress",
@@ -41,7 +42,7 @@ _faker = Faker()
                 project_id=_faker.uuid4(cast_to=None),
                 user_id=_faker.uuid4(cast_to=None),
                 progress_type=ProgressType.PROJECT_CLOSING,
-                progress=0.4,
+                report=ProgressReport(actual_value=0.4, total=1),
             ).json(),
             ProgressRabbitMessageProject,
             id="project_progress",
