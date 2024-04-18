@@ -18,6 +18,12 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
 from settings_library.email import EmailProtocol, SMTPSettings
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from services.payments.src.simcore_service_payments.models.db import (
     PaymentsTransactionsDB,
@@ -119,7 +125,7 @@ class _ProductData:
     display_name: str
     vendor_display_inline: str
     support_email: str
-    bcc_email: EmailStr | None
+    bcc_email: EmailStr | None = None
 
 
 @dataclass
@@ -128,6 +134,21 @@ class _PaymentData:
     osparc_credits: str
     invoice_url: str
     invoice_pdf: str
+
+
+transient_errors = (httpx.HTTPStatusError, httpx.ConnectError, httpx.ReadTimeout)
+
+
+@retry(
+    retry=retry_if_exception_type(transient_errors),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    stop=stop_after_attempt(5),
+)
+async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        _response = await client.get(invoice_pdf)
+        _response.raise_for_status()
+    return _response
 
 
 async def _create_user_email(
@@ -159,16 +180,13 @@ async def _create_user_email(
         msg["Bcc"] = product.bcc_email
 
     # Invoice attachment
-    # MD: tenacity retry?
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        response = await client.get(payment.invoice_pdf)
-        response.raise_for_status()
+    pdf_response = await _get_invoice_pdf(payment.invoice_pdf)
 
     pattern = re.compile(r'filename="(?P<filename>[^"]+)"')
-    match = pattern.search(response.headers["content-disposition"])
+    match = pattern.search(pdf_response.headers["content-disposition"])
     _file_name = match.group("filename")
 
-    attachment = MIMEApplication(response.content, Name=_file_name)
+    attachment = MIMEApplication(pdf_response.content, Name=_file_name)
     attachment["Content-Disposition"] = f"attachment; filename={_file_name}"
     msg.attach(attachment)
 
@@ -250,8 +268,6 @@ class EmailProvider(NotificationProvider):
     ) -> EmailMessage:
         data = await self._users_repo.get_notification_data(user_id, payment.payment_id)
         data_vendor = data.vendor or {}
-
-        # MD: Get invoice PDF url -> Should be in the Payment -> change by Transaction from DB
 
         # email for successful payment
         msg: EmailMessage = await _create_user_email(
