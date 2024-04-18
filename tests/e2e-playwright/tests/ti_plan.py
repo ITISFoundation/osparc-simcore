@@ -48,15 +48,11 @@ def test_tip(
         print("node_id: ", node_id)
         node_ids.append(node_id)
 
-    page.wait_for_timeout(30000)
-
     # Electrode Selector
+    page.wait_for_timeout(30000)
     electrode_selector_page = page.frame_locator(".qx-main-dark").first
     electrode_selector_page.get_by_test_id("TargetStructure_Selector").click()
     electrode_selector_page.get_by_test_id(
-        "TargetStructure_Target_(Targets_combined) Hypothalamus"
-    ).click()
-    page.get_by_test_id(
         "TargetStructure_Target_(Targets_combined) Hypothalamus"
     ).click()
     electrode_selections = [
@@ -66,8 +62,9 @@ def test_tip(
         ["E2-", "T7"],
     ]
     for selection in electrode_selections:
-        electrode_selector_page.get_by_test_id(
-            "ElectrodeGroup_" + selection[0] + "_Start"
-        ).click()
-        electrode_selector_page.get_by_test_id("Electrode_" + selection[1]).click()
+        group_id = "ElectrodeGroup_" + selection[0] + "_Start"
+        electrode_id = "Electrode_" + selection[1]
+        electrode_selector_page.get_by_test_id(group_id).click()
+        electrode_selector_page.get_by_test_id(electrode_id).click()
     electrode_selector_page.get_by_test_id("FinishSetUp").click()
+    page.wait_for_timeout(10000)
