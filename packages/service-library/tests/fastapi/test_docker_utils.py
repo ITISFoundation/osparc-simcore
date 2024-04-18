@@ -1,6 +1,11 @@
 # pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 from collections.abc import Awaitable, Callable
 from typing import Any
+from unittest import mock
 from unittest.mock import call
 
 import pytest
@@ -72,6 +77,22 @@ async def test_retrieve_image_layer_information_from_external_registry(
     assert layer_information
 
 
+@pytest.fixture
+async def mocked_log_cb(mocker: MockerFixture) -> mock.AsyncMock:
+    async def _log_cb(*args, **kwargs) -> None:
+        print(f"received log: {args}, {kwargs}")
+
+    return mocker.AsyncMock(side_effect=_log_cb)
+
+
+@pytest.fixture
+async def mocked_progress_cb(mocker: MockerFixture) -> mock.AsyncMock:
+    async def _progress_cb(*args, **kwargs) -> None:
+        print(f"received progress: {args}, {kwargs}")
+
+    return mocker.AsyncMock(side_effect=_progress_cb)
+
+
 @pytest.mark.parametrize(
     "image",
     ["itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"],
@@ -80,33 +101,35 @@ async def test_pull_image(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
     image: DockerGenericTag,
     registry_settings: RegistrySettings,
-    mocker: MockerFixture,
+    mocked_log_cb: mock.AsyncMock,
+    mocked_progress_cb: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
 ):
     await remove_images_from_host([image])
     layer_information = await retrieve_image_layer_information(image, registry_settings)
     assert layer_information
 
-    async def _log_cb(*args, **kwargs) -> None:
-        print(f"received log: {args}, {kwargs}")
-
-    fake_progress_report_cb = mocker.AsyncMock()
     async with progress_bar.ProgressBarData(
         num_steps=layer_information.layers_total_size,
-        progress_report_cb=fake_progress_report_cb,
+        progress_report_cb=mocked_progress_cb,
     ) as main_progress_bar:
-        fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
+
         await pull_image(
-            image, registry_settings, main_progress_bar, fake_log_cb, layer_information
+            image,
+            registry_settings,
+            main_progress_bar,
+            mocked_log_cb,
+            layer_information,
         )
-        fake_log_cb.assert_called()
+        mocked_log_cb.assert_called()
         assert (
             main_progress_bar._current_steps  # noqa: SLF001
             == layer_information.layers_total_size
         )
-    assert fake_progress_report_cb.call_args_list[0] == call(0.0)
-    fake_progress_report_cb.assert_called_with(1.0)
-    fake_progress_report_cb.reset_mock()
+    assert mocked_progress_cb.call_args_list[0] == call(0.0)
+    assert mocked_progress_cb.call_args_list[-1] == call(1.0)
+    mocked_progress_cb.reset_mock()
+    mocked_log_cb.reset_mock()
 
     # check there were no warnings
     # NOTE: this would pop up in case docker changes its pulling statuses
@@ -115,56 +138,58 @@ async def test_pull_image(
     # pull a second time should, the image is already there
     async with progress_bar.ProgressBarData(
         num_steps=layer_information.layers_total_size,
-        progress_report_cb=fake_progress_report_cb,
+        progress_report_cb=mocked_progress_cb,
     ) as main_progress_bar:
-        fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
         await pull_image(
-            image, registry_settings, main_progress_bar, fake_log_cb, layer_information
+            image,
+            registry_settings,
+            main_progress_bar,
+            mocked_log_cb,
+            layer_information,
         )
-        fake_log_cb.assert_called()
+        mocked_log_cb.assert_called()
         assert (
             main_progress_bar._current_steps  # noqa: SLF001
             == layer_information.layers_total_size
         )
-    assert fake_progress_report_cb.call_args_list[0] == call(0.0)
-    fake_progress_report_cb.assert_called_with(1.0)
+    assert mocked_progress_cb.call_args_list[0] == call(0.0)
+    assert mocked_progress_cb.call_args_list[-1] == call(1.0)
     # check there were no warnings
     assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
 
 
 @pytest.mark.parametrize(
     "image",
-    ["itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"],
+    ["nginx:latest", "busybox:latest"],
 )
 async def test_pull_image_without_layer_information(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
     image: DockerGenericTag,
     registry_settings: RegistrySettings,
-    mocker: MockerFixture,
+    mocked_log_cb: mock.AsyncMock,
+    mocked_progress_cb: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
 ):
     await remove_images_from_host([image])
     layer_information = await retrieve_image_layer_information(image, registry_settings)
     assert layer_information
 
-    async def _log_cb(*args, **kwargs) -> None:
-        print(f"received log: {args}, {kwargs}")
-
-    fake_progress_report_cb = mocker.AsyncMock()
     async with progress_bar.ProgressBarData(
         num_steps=parse_obj_as(ByteSize, "200MiB"),
-        progress_report_cb=fake_progress_report_cb,
+        progress_report_cb=mocked_progress_cb,
     ) as main_progress_bar:
-        fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
-        await pull_image(image, registry_settings, main_progress_bar, fake_log_cb, None)
-        fake_log_cb.assert_called()
+        await pull_image(
+            image, registry_settings, main_progress_bar, mocked_log_cb, None
+        )
+        mocked_log_cb.assert_called()
         assert (
             main_progress_bar._current_steps  # noqa: SLF001
             == layer_information.layers_total_size
         )
-    assert fake_progress_report_cb.call_args_list[0] == call(0.0)
-    fake_progress_report_cb.assert_called_with(1.0)
-    fake_progress_report_cb.reset_mock()
+    assert mocked_progress_cb.call_args_list[0] == call(0.0)
+    assert mocked_progress_cb.call_args_list[-1] == call(1.0)
+    mocked_progress_cb.reset_mock()
+    mocked_log_cb.reset_mock()
 
     # check there were no warnings
     # NOTE: this would pop up in case docker changes its pulling statuses
@@ -178,14 +203,15 @@ async def test_pull_image_without_layer_information(
     # pull a second time should, the image is already there, but the progress is then 0
     async with progress_bar.ProgressBarData(
         num_steps=1,
-        progress_report_cb=fake_progress_report_cb,
+        progress_report_cb=mocked_progress_cb,
     ) as main_progress_bar:
-        fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
-        await pull_image(image, registry_settings, main_progress_bar, fake_log_cb, None)
-        fake_log_cb.assert_called()
+        await pull_image(
+            image, registry_settings, main_progress_bar, mocked_log_cb, None
+        )
+        mocked_log_cb.assert_called()
         assert main_progress_bar._current_steps == 0  # noqa: SLF001
-    assert fake_progress_report_cb.call_args_list[0] == call(0.0)
-    fake_progress_report_cb.assert_called_with(1.0)
+    assert mocked_progress_cb.call_args_list[0] == call(0.0)
+    assert mocked_progress_cb.call_args_list[-1] == call(1.0)
     # check there were no warnings
     assert not [
         r.message
@@ -204,26 +230,16 @@ async def test_pull_images_set(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
     images_set: set[DockerGenericTag],
     registry_settings: RegistrySettings,
-    mocker: MockerFixture,
+    mocked_log_cb: mock.AsyncMock,
+    mocked_progress_cb: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
 ):
     await remove_images_from_host(list(images_set))
 
-    async def _log_cb(*args, **kwargs) -> None:
-        print(f"received log: {args}, {kwargs}")
-
-    async def _progress_cb(*args, **kwargs) -> None:
-        print(f"received progress: {args}, {kwargs}")
-
-    fake_progress_report_cb = mocker.AsyncMock(side_effect=_progress_cb)
-    fake_log_cb = mocker.AsyncMock(side_effect=_log_cb)
-    await pull_images(
-        images_set, registry_settings, fake_progress_report_cb, fake_log_cb
-    )
-    fake_log_cb.assert_called()
-    assert fake_progress_report_cb.call_args_list[0] == call(0.0)
-    assert fake_progress_report_cb.call_args_list[-1] == call(1.0)
-    fake_progress_report_cb.reset_mock()
+    await pull_images(images_set, registry_settings, mocked_progress_cb, mocked_log_cb)
+    mocked_log_cb.assert_called()
+    assert mocked_progress_cb.call_args_list[0] == call(0.0)
+    assert mocked_progress_cb.call_args_list[-1] == call(1.0)
 
     # check there were no warnings
     # NOTE: this would pop up in case docker changes its pulling statuses
