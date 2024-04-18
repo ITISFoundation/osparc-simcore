@@ -9,7 +9,6 @@
 # pylint: disable=unnecessary-lambda
 
 import re
-import time
 from typing import Final
 
 from playwright.sync_api import APIRequestContext, Page
@@ -49,14 +48,14 @@ def test_tip(
         print("node_id: ", node_id)
         node_ids.append(node_id)
 
+    page.wait_for_timeout(30000)
+
     # Electrode Selector
-    start = time.time()
-    page.frame_locator(".qx-main-dark").get_by_test_id(
-        "TargetStructure_Selector"
-    ).select_option(label="TargetStructure_Target_(Targets_combined) Hypothalamus")
-    # at this point the Electrode Selector is ready
-    end = time.time()
-    print("Electrode Selector ready in ", end - start, "s")
+    electrode_selector_page = page.frame_locator(".qx-main-dark").first
+    electrode_selector_page.get_by_test_id("TargetStructure_Selector").click()
+    electrode_selector_page.get_by_test_id(
+        "TargetStructure_Target_(Targets_combined) Hypothalamus"
+    ).click()
     page.get_by_test_id(
         "TargetStructure_Target_(Targets_combined) Hypothalamus"
     ).click()
@@ -67,6 +66,8 @@ def test_tip(
         ["E2-", "T7"],
     ]
     for selection in electrode_selections:
-        page.get_by_test_id("ElectrodeGroup_" + selection[0] + "_Start").click()
-        page.get_by_test_id("Electrode_" + selection[1]).click()
-    page.get_by_test_id("FinishSetUp").click()
+        electrode_selector_page.get_by_test_id(
+            "ElectrodeGroup_" + selection[0] + "_Start"
+        ).click()
+        electrode_selector_page.get_by_test_id("Electrode_" + selection[1]).click()
+    electrode_selector_page.get_by_test_id("FinishSetUp").click()
