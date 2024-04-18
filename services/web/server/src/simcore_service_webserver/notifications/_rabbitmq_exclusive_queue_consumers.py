@@ -48,7 +48,7 @@ def _convert_to_project_progress_event(
             "project_id": message.project_id,
             "user_id": message.user_id,
             "progress_type": message.progress_type,
-            "progress": message.progress,
+            "progress": message.report.percent_value,
         },
     )
 
