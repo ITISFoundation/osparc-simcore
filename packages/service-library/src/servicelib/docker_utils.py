@@ -187,9 +187,6 @@ async def pull_image(
                         "pulling fs layer",
                         "waiting",
                         "digest: ",
-                        "status: downloaded newer image for ",
-                        "status: image is up to date for ",
-                        "already exists",
                     ]
                 ):
                     # nothing to do here
@@ -218,6 +215,17 @@ async def pull_image(
                     layer_id_to_size[parsed_progress.id].extracted = layer_id_to_size[
                         parsed_progress.id
                     ].size
+                case progress_status if any(
+                    msg in progress_status
+                    for msg in [
+                        "status: downloaded newer image for ",
+                        "status: image is up to date for ",
+                        "already exists",
+                    ]
+                ):
+                    for layer_pull_status in layer_id_to_size.values():
+                        layer_pull_status.downloaded = layer_pull_status.size
+                        layer_pull_status.extracted = layer_pull_status.size
                 case _:
                     _logger.warning(
                         "unknown pull state: %s. Please check", f"{parsed_progress=}"
