@@ -116,7 +116,7 @@ class ProgressBarData:
             ):
                 call = self.progress_report_cb(
                     ProgressReport(
-                        # NOTE: here we convert back to actual value since this is weighted
+                        # NOTE: here we convert back to actual value since this is possibly weighted
                         actual_value=value * self.num_steps,
                         total=self.num_steps,
                     ),

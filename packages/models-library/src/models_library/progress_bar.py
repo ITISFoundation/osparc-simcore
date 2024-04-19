@@ -1,8 +1,7 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass(frozen=True, kw_only=True)
-class ProgressReport:
+class ProgressReport(BaseModel):
     actual_value: float
     total: float
 
@@ -11,3 +10,6 @@ class ProgressReport:
         if self.total != 0:
             return max(min(self.actual_value / self.total, 1.0), 0.0)
         return 0
+
+    class Config:
+        frozen = True
