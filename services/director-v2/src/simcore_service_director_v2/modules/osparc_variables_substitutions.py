@@ -97,6 +97,7 @@ async def resolve_and_substitute_session_variables_in_model(
                 product_name=product_name,
                 project_id=project_id,
                 node_id=node_id,
+                api_server_base_url=app.state.settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
             ),
         )
         _logger.debug("replacing with the identifiers=%s", identifiers)
@@ -170,6 +171,7 @@ async def resolve_and_substitute_session_variables_in_specs(
                     product_name=product_name,
                     project_id=project_id,
                     node_id=node_id,
+                    api_server_base_url=app.state.settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
                 ),
             )
 
@@ -206,6 +208,7 @@ async def resolve_and_substitute_service_lifetime_variables_in_specs(
                     user_id=user_id,
                     node_id=node_id,
                     run_id=run_id,
+                    api_server_base_url=app.state.settings.DIRECTOR_V2_PUBLIC_API_BASE_URL,
                 ),
                 # NOTE: the api key and secret cannot be resolved in parallel
                 # due to race conditions
@@ -281,11 +284,13 @@ def _setup_session_osparc_variables(app: FastAPI):
 
     # Registers some session osparc_variables
     # WARNING: context_name needs to match session_context!
+    # NOTE: please keep alphabetically ordered
     for name, context_name in [
+        ("OSPARC_VARIABLE_NODE_ID", "node_id"),
         ("OSPARC_VARIABLE_PRODUCT_NAME", "product_name"),
         ("OSPARC_VARIABLE_STUDY_UUID", "project_id"),
-        ("OSPARC_VARIABLE_NODE_ID", "node_id"),
         ("OSPARC_VARIABLE_USER_ID", "user_id"),
+        ("OSPARC_VARIABLE_API_HOST", "api_server_base_url"),
     ]:
         table.register_from_context(name, context_name)
 
