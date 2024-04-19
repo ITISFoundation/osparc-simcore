@@ -10,6 +10,7 @@ from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID, UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from servicelib.logging_utils import log_catch
 from socketio import AsyncServer
 
 from ._utils import get_socket_server
@@ -42,7 +43,7 @@ async def _safe_emit(
     # client without having to send his message first to rabbitMQ and then back to itself.
     #
     # NOTE 2: `emit` method is not designed to be used concurrently
-    try:
+    with log_catch(_logger, reraise=False):
         event = message["event_type"]
         data = jsonable_encoder(message["data"])
         await sio.emit(
@@ -50,14 +51,6 @@ async def _safe_emit(
             data=data,
             room=room,
             ignore_queue=ignore_queue,
-        )
-    except Exception:  # pylint: disable=broad-exception-caught
-        _logger.warning(
-            "Failed to deliver %s message to %s size=%d",
-            f"{event=}",
-            f"{room=}",
-            len(data),
-            exc_info=True,
         )
 
 
