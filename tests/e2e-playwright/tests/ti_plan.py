@@ -27,6 +27,7 @@ def test_tip(
     log_in_and_out: None,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
+    product_billable: bool,
 ):
     # connect and listen to websocket
     page.on("websocket", on_web_socket_default_handler)
@@ -39,6 +40,9 @@ def test_tip(
 
     with page.expect_response(re.compile(r"/projects/[^:]+:open")) as response_info:
         page.get_by_test_id("newTIPlanButton").click()
+        if product_billable:
+            # Open project with default resources
+            page.get_by_test_id("openWithResources").click()
         page.wait_for_timeout(1000)
 
     project_data = response_info.value.json()
