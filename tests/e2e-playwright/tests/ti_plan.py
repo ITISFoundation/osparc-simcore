@@ -111,11 +111,7 @@ def test_tip(
     # click on the mode button
     s4l_postpro_page.get_by_test_id("mode-button-postro").click()
     page.wait_for_timeout(5000)
-    # click on the first surface viewer
+    # click on the surface viewer
     s4l_postpro_page.get_by_test_id("tree-item-ti_field.cache").click()
-    s4l_postpro_page.get_by_test_id("tree-item-SurfaceViewer").nth(0).click()
-    page.wait_for_timeout(5000)
-    # click on the second surface viewer
-    s4l_postpro_page.get_by_test_id("tree-item-hf_field.cache").click()
-    s4l_postpro_page.get_by_test_id("tree-item-SurfaceViewer").nth(1).click()
+    s4l_postpro_page.get_by_test_id("tree-item-SurfaceViewer").click()
     page.wait_for_timeout(5000)
