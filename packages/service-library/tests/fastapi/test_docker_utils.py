@@ -203,9 +203,8 @@ async def test_pull_image_without_layer_information(
             image, registry_settings, main_progress_bar, mocked_log_cb, None
         )
         mocked_log_cb.assert_called()
-        assert (
-            main_progress_bar._current_steps  # noqa: SLF001
-            == layer_information.layers_total_size
+        assert main_progress_bar._current_steps == float(  # noqa: SLF001
+            layer_information.layers_total_size
         )
     _assert_progress_report_values(mocked_progress_cb, total=fake_number_of_steps)
     mocked_progress_cb.reset_mock()
