@@ -153,35 +153,37 @@ def mock_env(
 
     Do override/extend this fixture to change configurations
     """
-    env_vars: EnvVarsDict = {
-        "DYNAMIC_SIDECAR_IMAGE": f"{dynamic_sidecar_docker_image_name}",
-        "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
-        "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-        "SWARM_STACK_NAME": "test_swarm_name",
-        "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
-        "COMPUTATIONAL_BACKEND_ENABLED": "false",
-        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": f"{faker.url()}",
-        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": "{}",
-        "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "false",
-        "RABBIT_HOST": "mocked_host",
-        "RABBIT_SECURE": "false",
-        "RABBIT_USER": "mocked_user",
-        "RABBIT_PASSWORD": "mocked_password",
-        "REGISTRY_AUTH": "false",
-        "REGISTRY_USER": "test",
-        "REGISTRY_PW": "test",
-        "REGISTRY_SSL": "false",
-        "POSTGRES_HOST": "test",
-        "POSTGRES_USER": "test",
-        "POSTGRES_PASSWORD": "test",
-        "POSTGRES_DB": "test",
-        "R_CLONE_PROVIDER": "MINIO",
-        "SC_BOOT_MODE": "production",
-        "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
-        "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "0",
-    }
-    setenvs_from_dict(monkeypatch, env_vars)
-    return env_vars
+    return setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": "{}",
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": f"{faker.url()}",
+            "COMPUTATIONAL_BACKEND_ENABLED": "false",
+            "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "false",
+            "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "0",
+            "DIRECTOR_V2_PUBLIC_API_BASE_URL": "http://127.0.0.1:8006",
+            "DYNAMIC_SIDECAR_IMAGE": f"{dynamic_sidecar_docker_image_name}",
+            "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
+            "POSTGRES_DB": "test",
+            "POSTGRES_HOST": "test",
+            "POSTGRES_PASSWORD": "test",
+            "POSTGRES_USER": "test",
+            "R_CLONE_PROVIDER": "MINIO",
+            "RABBIT_HOST": "mocked_host",
+            "RABBIT_PASSWORD": "mocked_password",
+            "RABBIT_SECURE": "false",
+            "RABBIT_USER": "mocked_user",
+            "REGISTRY_AUTH": "false",
+            "REGISTRY_PW": "test",
+            "REGISTRY_SSL": "false",
+            "REGISTRY_USER": "test",
+            "SC_BOOT_MODE": "production",
+            "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
+            "SWARM_STACK_NAME": "test_swarm_name",
+            "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
+        },
+    )
 
 
 @pytest.fixture()
