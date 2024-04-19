@@ -3,6 +3,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 from unittest import mock
@@ -250,10 +251,18 @@ async def test_pull_images_set(
     caplog: pytest.LogCaptureFixture,
 ):
     await remove_images_from_host(list(images_set))
+    layer_informations = await asyncio.gather(
+        *[
+            retrieve_image_layer_information(image, registry_settings)
+            for image in images_set
+        ]
+    )
+    assert layer_informations
+    images_total_size = sum(_.layers_total_size for _ in layer_informations if _)
 
     await pull_images(images_set, registry_settings, mocked_progress_cb, mocked_log_cb)
     mocked_log_cb.assert_called()
-    _assert_progress_report_values(mocked_progress_cb, total=mock.ANY)
+    _assert_progress_report_values(mocked_progress_cb, total=images_total_size)
 
     # check there were no warnings
     # NOTE: this would pop up in case docker changes its pulling statuses
