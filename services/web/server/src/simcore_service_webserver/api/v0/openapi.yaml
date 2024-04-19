@@ -485,6 +485,7 @@ paths:
           content:
             application/json:
               schema: {}
+            image/png: {}
   /v0/catalog/services:
     get:
       tags:
@@ -2938,7 +2939,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
