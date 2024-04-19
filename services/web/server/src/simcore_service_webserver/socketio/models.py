@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import Literal
 
+from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import (
@@ -44,7 +45,7 @@ class _WebSocketUserMixin(BaseModel):
 
 class _WebSocketProgressMixin(BaseModel):
     progress_type: ProgressType
-    progress: float
+    progress_report: ProgressReport
 
 
 class WebSocketProjectProgress(
@@ -59,11 +60,11 @@ class WebSocketProjectProgress(
     def from_rabbit_message(
         cls, message: ProgressRabbitMessageProject
     ) -> "WebSocketProjectProgress":
-        return cls(
+        return cls.construct(
             user_id=message.user_id,
             project_id=message.project_id,
             progress_type=message.progress_type,
-            progress=message.report.percent_value,
+            progress_report=message.report,
         )
 
     def to_socket_dict(self) -> SocketMessageDict:
@@ -86,12 +87,12 @@ class WebSocketNodeProgress(
     def from_rabbit_message(
         cls, message: ProgressRabbitMessageNode
     ) -> "WebSocketNodeProgress":
-        return cls(
+        return cls.construct(
             user_id=message.user_id,
             project_id=message.project_id,
             node_id=message.node_id,
             progress_type=message.progress_type,
-            progress=message.report.percent_value,
+            progress_report=message.report,
         )
 
     def to_socket_dict(self) -> SocketMessageDict:

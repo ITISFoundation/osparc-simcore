@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from inspect import isawaitable
 from typing import Final, Optional, Protocol, runtime_checkable
 
-from models_library.progress_bar import ProgressReport
+from models_library.progress_bar import ProgressReport, ProgressUnit
 
 from .logging_utils import log_catch
 
@@ -75,6 +75,7 @@ class ProgressBarData:
             "description": "Optionally defines the step relative weight (defaults to steps of equal weights)"
         },
     )
+    progress_unit: ProgressUnit | None = None
     progress_report_cb: AsyncReportCB | ReportCB | None = None
     _current_steps: float = _INITIAL_VALUE
     _children: list = field(default_factory=list)
@@ -119,6 +120,7 @@ class ProgressBarData:
                         # NOTE: here we convert back to actual value since this is possibly weighted
                         actual_value=value * self.num_steps,
                         total=self.num_steps,
+                        unit=self.progress_unit,
                     ),
                 )
                 if isawaitable(call):

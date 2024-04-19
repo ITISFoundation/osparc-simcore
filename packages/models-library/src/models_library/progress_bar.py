@@ -1,9 +1,14 @@
+from typing import TypeAlias
+
 from pydantic import BaseModel
+
+ProgressUnit: TypeAlias = str
 
 
 class ProgressReport(BaseModel):
     actual_value: float
     total: float
+    unit: ProgressUnit | None = None
 
     @property
     def percent_value(self) -> float:
