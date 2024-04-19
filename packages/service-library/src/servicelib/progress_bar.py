@@ -5,6 +5,7 @@ from inspect import isawaitable
 from typing import Final, Optional, Protocol, runtime_checkable
 
 from models_library.progress_bar import ProgressReport, ProgressUnit
+from pydantic import parse_obj_as
 
 from .logging_utils import log_catch
 
@@ -84,6 +85,8 @@ class ProgressBarData:
     _last_report_value: float = _INITIAL_VALUE
 
     def __post_init__(self) -> None:
+        if self.progress_unit is not None:
+            parse_obj_as(ProgressUnit, self.progress_unit)  # type: ignore
         self._continuous_value_lock = asyncio.Lock()
         self.num_steps = max(1, self.num_steps)
         if self.step_weights:

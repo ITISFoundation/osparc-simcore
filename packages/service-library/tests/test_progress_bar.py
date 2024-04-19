@@ -9,6 +9,7 @@ from unittest import mock
 
 import pytest
 from models_library.progress_bar import ProgressReport
+from pydantic import ValidationError
 from pytest_mock import MockerFixture
 from servicelib.progress_bar import (
     _INITIAL_VALUE,
@@ -48,20 +49,20 @@ async def test_progress_bar_progress_report_cb(
     }[progress_report_cb_type]
     outer_num_steps = 3
     async with ProgressBarData(
-        num_steps=outer_num_steps, progress_report_cb=mocked_cb
+        num_steps=outer_num_steps, progress_report_cb=mocked_cb, progress_unit="Byte"
     ) as root:
         assert root.num_steps == outer_num_steps
         assert root.step_weights is None  # i.e. all steps have equal weight
         assert root._current_steps == pytest.approx(0)  # noqa: SLF001
         mocked_cb.assert_called_once_with(
-            ProgressReport(actual_value=0, total=outer_num_steps)
+            ProgressReport(actual_value=0, total=outer_num_steps, unit="Byte")
         )
         mocked_cb.reset_mock()
         # first step is done right away
         await root.update()
         assert root._current_steps == pytest.approx(1)  # noqa: SLF001
         mocked_cb.assert_called_once_with(
-            ProgressReport(actual_value=1, total=outer_num_steps)
+            ProgressReport(actual_value=1, total=outer_num_steps, unit="Byte")
         )
         mocked_cb.reset_mock()
 
@@ -110,6 +111,11 @@ async def test_progress_bar_progress_report_cb(
         mocked_cb.assert_called()
         assert mocked_cb.call_args_list[-1].args[0].percent_value == 1.0
         mocked_cb.reset_mock()
+
+
+def test_creating_progress_bar_with_invalid_unit_fails():
+    with pytest.raises(ValidationError):
+        ProgressBarData(num_steps=321, progress_unit="invalid")
 
 
 async def test_progress_bar_always_reports_0_on_creation_and_1_on_finish(
