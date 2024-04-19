@@ -6,10 +6,10 @@ from enum import Enum, IntEnum, auto
 from typing import Any, Literal, TypeAlias
 
 import arrow
-from models_library.products import ProductName
-from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel, Field
 
+from .products import ProductName
+from .progress_bar import ProgressReport
 from .projects import ProjectID
 from .projects_nodes_io import NodeID
 from .projects_state import RunningState
