@@ -122,6 +122,7 @@ async def pull_images(
     async with ProgressBarData(
         num_steps=images_total_size,
         progress_report_cb=progress_cb,
+        progress_unit="Byte",
     ) as pbar:
 
         await asyncio.gather(
