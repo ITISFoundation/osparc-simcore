@@ -99,10 +99,10 @@ def _assert_progress_report_values(
     mocked_progress_cb: mock.AsyncMock, *, total: float
 ) -> None:
     assert mocked_progress_cb.call_args_list[0] == call(
-        ProgressReport(actual_value=0, total=total)
+        ProgressReport(actual_value=0, total=total, unit="Byte")
     )
     assert mocked_progress_cb.call_args_list[-1] == call(
-        ProgressReport(actual_value=total, total=total)
+        ProgressReport(actual_value=total, total=total, unit="Byte")
     )
 
 
@@ -125,6 +125,7 @@ async def test_pull_image(
     async with progress_bar.ProgressBarData(
         num_steps=layer_information.layers_total_size,
         progress_report_cb=mocked_progress_cb,
+        progress_unit="Byte",
     ) as main_progress_bar:
 
         await pull_image(
@@ -154,6 +155,7 @@ async def test_pull_image(
     async with progress_bar.ProgressBarData(
         num_steps=layer_information.layers_total_size,
         progress_report_cb=mocked_progress_cb,
+        progress_unit="Byte",
     ) as main_progress_bar:
         await pull_image(
             image,
@@ -195,6 +197,7 @@ async def test_pull_image_without_layer_information(
     async with progress_bar.ProgressBarData(
         num_steps=fake_number_of_steps,
         progress_report_cb=mocked_progress_cb,
+        progress_unit="Byte",
     ) as main_progress_bar:
         await pull_image(
             image, registry_settings, main_progress_bar, mocked_log_cb, None
@@ -221,6 +224,7 @@ async def test_pull_image_without_layer_information(
     async with progress_bar.ProgressBarData(
         num_steps=1,
         progress_report_cb=mocked_progress_cb,
+        progress_unit="Byte",
     ) as main_progress_bar:
         await pull_image(
             image, registry_settings, main_progress_bar, mocked_log_cb, None
