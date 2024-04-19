@@ -68,10 +68,11 @@ async def request_product_account(request: web.Request):
     assert body.form  # nosec
     assert body.captcha  # nosec
 
-    if body.captcha != session[CAPTCHA_SESSION_KEY]:
+    if body.captcha != session.get(CAPTCHA_SESSION_KEY):
         raise web.HTTPUnprocessableEntity(
             reason=MSG_WRONG_CAPTCHA__INVALID, content_type=MIMETYPE_APPLICATION_JSON
         )
+    session.pop(CAPTCHA_SESSION_KEY, None)
 
     # send email to fogbugz or user itself
     fire_and_forget_task(
