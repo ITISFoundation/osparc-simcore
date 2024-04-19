@@ -9,7 +9,7 @@ import asyncio
 import json
 from collections.abc import AsyncIterable
 from contextlib import asynccontextmanager
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -137,9 +137,13 @@ def mock_user_repo(mocker: MockerFixture, mock_repo_db_engine: None) -> None:
 
 
 @pytest.fixture
-async def variables_app() -> AsyncIterable[FastAPI]:
+async def fake_app(faker: Faker) -> AsyncIterable[FastAPI]:
     app = FastAPI()
     app.state.engine = AsyncMock()
+
+    mock_settings = Mock()
+    mock_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL = faker.url()
+    app.state.settings = mock_settings
 
     osparc_variables_substitutions.setup(app)
 
@@ -148,7 +152,7 @@ async def variables_app() -> AsyncIterable[FastAPI]:
 
 
 async def test_resolve_and_substitute_session_variables_in_specs(
-    mock_user_repo: None, variables_app: FastAPI, faker: Faker
+    mock_user_repo: None, fake_app: FastAPI, faker: Faker
 ):
     specs = {
         "product_name": "${OSPARC_VARIABLE_PRODUCT_NAME}",
@@ -161,7 +165,7 @@ async def test_resolve_and_substitute_session_variables_in_specs(
     print("SPECS\n", specs)
 
     replaced_specs = await resolve_and_substitute_session_variables_in_specs(
-        variables_app,
+        fake_app,
         specs=specs,
         user_id=1,
         product_name="a_product",
@@ -182,7 +186,7 @@ def mock_api_key_manager(mocker: MockerFixture) -> None:
 
 
 async def test_resolve_and_substitute_service_lifetime_variables_in_specs(
-    mock_api_key_manager: None, variables_app: FastAPI, faker: Faker
+    mock_api_key_manager: None, fake_app: FastAPI, faker: Faker
 ):
     specs = {
         "api_key": "${OSPARC_VARIABLE_API_KEY}",
@@ -191,7 +195,7 @@ async def test_resolve_and_substitute_service_lifetime_variables_in_specs(
     print("SPECS\n", specs)
 
     replaced_specs = await resolve_and_substitute_service_lifetime_variables_in_specs(
-        variables_app,
+        fake_app,
         specs=specs,
         user_id=1,
         product_name="a_product",
@@ -216,7 +220,7 @@ def mock_get_vendor_secrets(mocker: MockerFixture, mock_repo_db_engine: None) ->
 
 
 async def test_substitute_vendor_secrets_in_specs(
-    mock_get_vendor_secrets: None, variables_app: FastAPI, faker: Faker
+    mock_get_vendor_secrets: None, fake_app: FastAPI, faker: Faker
 ):
     specs = {
         "api_key": "${OSPARC_VARIABLE_VENDOR_SECRET_ONE}",
@@ -225,7 +229,7 @@ async def test_substitute_vendor_secrets_in_specs(
     print("SPECS\n", specs)
 
     replaced_specs = await substitute_vendor_secrets_in_specs(
-        variables_app,
+        fake_app,
         specs=specs,
         product_name="a_product",
         service_key=ServiceKey("simcore/services/dynamic/fake"),
