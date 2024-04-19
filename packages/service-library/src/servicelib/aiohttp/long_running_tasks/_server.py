@@ -62,11 +62,12 @@ async def start_long_running_task(
             task_name=task_name,
             **task_kwargs,
         )
-        status_url = request_.app.router["get_task_status"].url_for(task_id=task_id)
-        result_url = request_.app.router["get_task_result"].url_for(task_id=task_id)
-        abort_url = request_.app.router["cancel_and_delete_task"].url_for(
-            task_id=task_id
-        )
+        ip_addr, port = request_.transport.get_extra_info(
+            "sockname"
+        )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
+        status_url = f"http://{ip_addr}:{port}{request_.app.router['get_task_status'].url_for(task_id=task_id)}"
+        result_url = f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}"
+        abort_url = f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}"
         task_get = TaskGet(
             task_id=task_id,
             task_name=task_name,

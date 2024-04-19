@@ -10,7 +10,7 @@ from uuid import UUID
 
 from cryptography import fernet
 from fastapi import FastAPI
-from httpx import AsyncClient, Response
+from httpx import AsyncClient
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
@@ -89,11 +89,6 @@ _WALLET_STATUS_MAP: Mapping = {
     status.HTTP_404_NOT_FOUND: (status.HTTP_404_NOT_FOUND, None),
     status.HTTP_403_FORBIDDEN: (status.HTTP_403_FORBIDDEN, None),
 }
-
-
-def _get_server_addr_from_response(response: Response):
-    ip_addr, port = response.extensions["network_stream"].get_extra_info("server_addr")
-    return f"http://{ip_addr}:{port}"
 
 
 class WebserverApi(BaseServiceClientApi):
@@ -188,11 +183,9 @@ class AuthSession:
 
             return Page[ProjectGet].parse_raw(resp.text)
 
-    async def _wait_for_long_running_task_results(
-        self, data: TaskGet, server_base_url: str
-    ):
-        status_url = server_base_url + data.status_href
-        result_url = server_base_url + data.result_href
+    async def _wait_for_long_running_task_results(self, data: TaskGet):
+        status_url = data.status_href
+        result_url = data.result_href
 
         # GET task status now until done
         async for attempt in AsyncRetrying(
@@ -254,9 +247,7 @@ class AuthSession:
         data = Envelope[TaskGet].parse_raw(response.text).data
         assert data is not None  # nosec
 
-        result = await self._wait_for_long_running_task_results(
-            data, _get_server_addr_from_response(response)
-        )
+        result = await self._wait_for_long_running_task_results(data)
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
@@ -269,9 +260,7 @@ class AuthSession:
         data = Envelope[TaskGet].parse_raw(response.text).data
         assert data is not None  # nosec
 
-        result = await self._wait_for_long_running_task_results(
-            data, _get_server_addr_from_response(response)
-        )
+        result = await self._wait_for_long_running_task_results(data)
         return ProjectGet.parse_obj(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
