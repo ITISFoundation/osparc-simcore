@@ -21,6 +21,7 @@ from settings_library.email import EmailProtocol, SMTPSettings
 from tenacity import (
     retry,
     retry_if_exception_type,
+    retry_if_result,
     stop_after_attempt,
     wait_exponential,
 )
@@ -130,18 +131,35 @@ class _PaymentData:
     price_dollars: str
     osparc_credits: str
     invoice_url: str
-    invoice_pdf: str
+    invoice_pdf_url: str
 
 
-transient_errors = (httpx.HTTPStatusError, httpx.ConnectError, httpx.ReadTimeout)
+invoice_file_name_pattern = re.compile(r'filename="(?P<filename>[^"]+)"')
+
+
+def retry_if_status_code(response):
+    return response.status_code in (
+        429,
+        500,
+        502,
+        503,
+        504,
+    )  # Retry for these common transient errors
+
+
+exception_retry_condition = retry_if_exception_type(
+    (httpx.ConnectError, httpx.ReadTimeout)
+)
+result_retry_condition = retry_if_result(retry_if_status_code)
 
 
 @retry(
-    retry=retry_if_exception_type(transient_errors),
+    retry=exception_retry_condition | result_retry_condition,
     wait=wait_exponential(multiplier=1, min=4, max=10),
     stop=stop_after_attempt(5),
+    retry_error_callback=lambda _: None,  # Return None if all retries fail
 )
-async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
+async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response | None:
     async with httpx.AsyncClient(follow_redirects=True) as client:
         _response = await client.get(invoice_pdf)
         _response.raise_for_status()
@@ -177,15 +195,15 @@ async def _create_user_email(
         msg["Bcc"] = product.bcc_email
 
     # Invoice attachment
-    pdf_response = await _get_invoice_pdf(payment.invoice_pdf)
+    if pdf_response := await _get_invoice_pdf(payment.invoice_pdf):
+        match = invoice_file_name_pattern.search(
+            pdf_response.headers["content-disposition"]
+        )
+        _file_name = match.group("filename")
 
-    pattern = re.compile(r'filename="(?P<filename>[^"]+)"')
-    match = pattern.search(pdf_response.headers["content-disposition"])
-    _file_name = match.group("filename")
-
-    attachment = MIMEApplication(pdf_response.content, Name=_file_name)
-    attachment["Content-Disposition"] = f"attachment; filename={_file_name}"
-    msg.attach(attachment)
+        attachment = MIMEApplication(pdf_response.content, Name=_file_name)
+        attachment["Content-Disposition"] = f"attachment; filename={_file_name}"
+        msg.attach(attachment)
 
     # Body
     text_template = env.get_template("notify_payments.txt")
@@ -278,7 +296,7 @@ class EmailProvider(NotificationProvider):
                 price_dollars=f"{payment.price_dollars:.2f}",
                 osparc_credits=f"{payment.osparc_credits:.2f}",
                 invoice_url=payment.invoice_url,
-                invoice_pdf=payment.invoice_pdf,
+                invoice_pdf_url=payment.invoice_pdf_url,
             ),
             product=_ProductData(
                 product_name=data.product_name,

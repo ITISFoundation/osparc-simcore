@@ -42,7 +42,7 @@ class PaymentsTransactionsDB(BaseModel):
     comment: str | None
     invoice_url: HttpUrl | None
     stripe_invoice_id: StripeInvoiceID | None
-    invoice_pdf: HttpUrl | None
+    invoice_pdf_url: HttpUrl | None
     initiated_at: datetime.datetime
     completed_at: datetime.datetime | None
     state: PaymentTransactionState
@@ -58,7 +58,7 @@ class PaymentsTransactionsDB(BaseModel):
                     **_EXAMPLE_AFTER_INIT,
                     "invoice_url": "https://my-fake-pdf-link.com",
                     "stripe_invoice_id": "12345",
-                    "invoice_pdf": "https://my-fake-pdf-link.com",
+                    "invoice_pdf_url": "https://my-fake-pdf-link.com",
                     "completed_at": "2023-09-27T10:00:10",
                     "state": "SUCCESS",
                     "state_message": "Payment completed successfully",

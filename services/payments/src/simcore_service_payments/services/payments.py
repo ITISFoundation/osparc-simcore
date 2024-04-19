@@ -146,7 +146,7 @@ async def cancel_one_time_payment(
         state_message=payment_cancelled.message,
         invoice_url=None,
         stripe_invoice_id=None,
-        invoice_pdf=None,
+        invoice_pdf_url=None,
     )
 
 
@@ -166,7 +166,7 @@ async def acknowledge_one_time_payment(
         state_message=ack.message,
         invoice_url=ack.invoice_url,
         stripe_invoice_id=ack.stripe_invoice_id,
-        invoice_pdf=ack.invoice_pdf,
+        invoice_pdf_url=ack.invoice_pdf_url,
     )
 
 
@@ -292,7 +292,7 @@ async def pay_with_payment_method(  # noqa: PLR0913
         state_message=ack.message,
         invoice_url=ack.invoice_url,
         stripe_invoice_id=ack.stripe_invoice_id,
-        invoice_pdf=ack.invoice_pdf,
+        invoice_pdf_url=ack.invoice_pdf_url,
     )
 
     # NOTE: notifications here are done as background-task after responding `POST /wallets/{wallet_id}/payments-methods/{payment_method_id}:pay`
