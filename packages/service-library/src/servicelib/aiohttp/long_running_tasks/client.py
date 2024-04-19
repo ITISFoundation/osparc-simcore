@@ -132,7 +132,7 @@ async def long_running_task_request(
         async for task_progress in _wait_for_completion(
             session,
             task.task_id,
-            url.with_path(task.status_href, encoded=True),
+            URL(task.status_href),
             client_timeout,
         ):
             last_progress = task_progress
@@ -140,9 +140,7 @@ async def long_running_task_request(
         assert last_progress  # nosec
         yield LRTask(
             progress=last_progress,
-            _result=_task_result(
-                session, url.with_path(task.result_href, encoded=True)
-            ),
+            _result=_task_result(session, URL(task.result_href)),
         )
 
     except (asyncio.CancelledError, asyncio.TimeoutError):
