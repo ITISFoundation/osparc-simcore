@@ -921,7 +921,9 @@ qx.Class.define("osparc.utils.Utils", {
       children.forEach(child => {
         const isWindow = "modal" in qx.util.PropertyUtil.getAllProperties(child.constructor);
         if (isWindow) {
-          child.close();
+          // Do not call .close(), it will trigger the close signal and it might not be handled correctly
+          child.hide();
+          child.dispose();
         }
       });
     },
