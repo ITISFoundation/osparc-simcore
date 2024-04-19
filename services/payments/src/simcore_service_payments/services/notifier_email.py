@@ -195,7 +195,7 @@ async def _create_user_email(
         msg["Bcc"] = product.bcc_email
 
     # Invoice attachment
-    if pdf_response := await _get_invoice_pdf(payment.invoice_pdf):
+    if pdf_response := await _get_invoice_pdf(payment.invoice_pdf_url):
         match = invoice_file_name_pattern.search(
             pdf_response.headers["content-disposition"]
         )
