@@ -24,13 +24,13 @@ from ..rabbitmq import get_rabbitmq_client
 from ..socketio.messages import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
-    SOCKET_IO_NODE_PROGRESS_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_PROGRESS_EVENT,
     SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
     send_message_to_standard_group,
     send_message_to_user,
 )
+from ..socketio.models import WebSocketNodeProgress
 from ..wallets import api as wallets_api
 from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rabbitmq
 
@@ -83,7 +83,7 @@ def _convert_to_node_progress_event(
     message: ProgressRabbitMessageNode,
 ) -> SocketMessageDict:
     return SocketMessageDict(
-        event_type=SOCKET_IO_NODE_PROGRESS_EVENT,
+        event_type=WebSocketNodeProgress.event_type,
         data={
             "project_id": message.project_id,
             "node_id": message.node_id,

@@ -64,5 +64,6 @@ async def test_regression_progress_message_parser(
     assert send_messages_to_user_mock.call_count == 1
     message = send_messages_to_user_mock.call_args.kwargs["message"]
 
+    # TODO: this test is wrong! that is not happening like that at all
     # check that all fields are sent as expected
     assert class_type.parse_obj(message["data"])

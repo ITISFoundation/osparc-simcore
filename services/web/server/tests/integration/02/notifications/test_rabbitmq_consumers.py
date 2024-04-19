@@ -58,9 +58,9 @@ from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.messages import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
-    SOCKET_IO_NODE_PROGRESS_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
 )
+from simcore_service_webserver.socketio.models import WebSocketNodeProgress
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from tenacity import RetryError
 from tenacity._asyncio import AsyncRetrying
@@ -342,7 +342,7 @@ async def test_progress_non_computational_workflow(
     socket_io_conn = await socketio_client_factory(None, client)
 
     mock_progress_handler = mocker.MagicMock()
-    socket_io_conn.on(SOCKET_IO_NODE_PROGRESS_EVENT, handler=mock_progress_handler)
+    socket_io_conn.on(WebSocketNodeProgress.event_type, handler=mock_progress_handler)
 
     if subscribe_to_logs:
         assert client.app

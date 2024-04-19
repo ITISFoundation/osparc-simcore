@@ -24,7 +24,7 @@ _logger = logging.getLogger(__name__)
 SOCKET_IO_EVENT: Final[str] = "event"
 SOCKET_IO_HEARTBEAT_EVENT: Final[str] = "set_heartbeat_emit_interval"
 SOCKET_IO_LOG_EVENT: Final[str] = "logger"
-SOCKET_IO_NODE_PROGRESS_EVENT: Final[str] = "nodeProgress"
+
 SOCKET_IO_NODE_UPDATED_EVENT: Final[str] = "nodeUpdated"
 SOCKET_IO_PROJECT_PROGRESS_EVENT: Final[str] = "projectProgress"
 SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
