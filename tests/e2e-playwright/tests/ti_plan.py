@@ -70,6 +70,8 @@ def test_tip(
         es_page.get_by_test_id(electrode_id).click()
     es_page.get_by_test_id("FinishSetUp").click()
     page.wait_for_timeout(10000)
+    # check outputs
+    es_page.get_by_test_id("outputsBtn").click()
 
     # Move to next step
     page.get_by_test_id("AppMode_NextBtn").click()
@@ -91,3 +93,11 @@ def test_tip(
     page.wait_for_timeout(10000)
     ti_page.get_by_role("button", name="Export Report").click()
     page.wait_for_timeout(10000)
+    # check outputs
+    es_page.get_by_test_id("outputsBtn").click()
+
+    # Move to next step
+    page.get_by_test_id("AppMode_NextBtn").click()
+
+    # Sim4Life PostPro
+    # make sure there is something in the postpro algorithm tree
