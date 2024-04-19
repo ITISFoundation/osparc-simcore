@@ -11,7 +11,7 @@
 import re
 from typing import Final
 
-from playwright.sync_api import APIRequestContext, Page
+from playwright.sync_api import APIRequestContext, Page, expect
 from pydantic import AnyUrl
 from pytest_simcore.playwright_utils import on_web_socket_default_handler
 
@@ -50,6 +50,8 @@ def test_tip(
 
     # Check there are 3 steps
 
+    # Start button might need to be pressed
+
     # Electrode Selector
     page.wait_for_timeout(30000)
     es_page = page.frame_locator(".qx-main-dark").nth(0)
@@ -71,7 +73,11 @@ def test_tip(
     es_page.get_by_test_id("FinishSetUp").click()
     page.wait_for_timeout(10000)
     # check outputs
-    es_page.get_by_test_id("outputsBtn").click()
+    expected_outputs = ["output.json"]
+    text_on_output_button = f"Outputs ({len(expected_outputs)})"
+    expect(
+        page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button)
+    ).to_be_visible()
 
     # Move to next step
     page.get_by_test_id("AppMode_NextBtn").click()
@@ -94,7 +100,7 @@ def test_tip(
     ti_page.get_by_role("button", name="Export Report").click()
     page.wait_for_timeout(10000)
     # check outputs
-    es_page.get_by_test_id("outputsBtn").click()
+    page.get_by_test_id("outputsBtn").click()
 
     # Move to next step
     page.get_by_test_id("AppMode_NextBtn").click()
