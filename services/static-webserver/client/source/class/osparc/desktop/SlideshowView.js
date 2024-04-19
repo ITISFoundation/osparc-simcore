@@ -314,6 +314,11 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             flex: 1
           });
           this.__nodeView = view;
+
+          // Automatically request to start the dynamic service when the user gets to this step
+          if (node.isDynamic()) {
+            node.requestStartNode();
+          }
         }
 
         const upstreamDependencies = this.__getUpstreamCompDependencies(node);
@@ -379,6 +384,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__moveToNode(currentNodeId);
       } else {
         this.__openFirstNode();
+      }
+
+      const node = this.__nodeView.getNode();
+      if (node.isDynamic()) {
+        // Start it. First wait a second because the function depends on the node's state which might not be available yet
+        setTimeout(() => node.requestStartNode(), 1000);
       }
     },
 

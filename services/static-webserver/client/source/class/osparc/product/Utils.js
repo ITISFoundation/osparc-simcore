@@ -205,7 +205,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showDisableServiceAutoStart: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+      if (this.isProduct("s4llite")) {
         return false;
       }
       return true;
