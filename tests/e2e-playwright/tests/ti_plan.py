@@ -6,11 +6,16 @@
 # pylint: disable=unnecessary-lambda
 
 import re
+from http import HTTPStatus
 from typing import Final
 
 from playwright.sync_api import APIRequestContext, Page
 from pydantic import AnyUrl
 from pytest_simcore.playwright_utils import on_web_socket_default_handler
+from tenacity import Retrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 projects_uuid_pattern: Final[re.Pattern] = re.compile(
     r"/projects/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
@@ -44,10 +49,6 @@ def test_tip(
     for node_id in project_data["data"]["workbench"].keys():
         print("node_id: ", node_id)
         node_ids.append(node_id)
-
-    # Check there are 3 steps
-
-    # Start button might need to be pressed
 
     # Electrode Selector
     page.wait_for_timeout(30000)
@@ -115,3 +116,25 @@ def test_tip(
     s4l_postpro_page.get_by_test_id("tree-item-ti_field.cache").click()
     s4l_postpro_page.get_by_test_id("tree-item-SurfaceViewer").click()
     page.wait_for_timeout(5000)
+
+    # Going back to dashboard
+    page.get_by_test_id("dashboardBtn").click()
+    page.get_by_test_id("confirmDashboardBtn").click()
+    page.wait_for_timeout(1000)
+
+    # Going back to projects/studies view (In Sim4life projects:=studies)
+    page.get_by_test_id("studiesTabBtn").click()
+    page.wait_for_timeout(1000)
+
+    # The project is closing, wait until it is closed and delete it (currently waits max=5 minutes)
+    for attempt in Retrying(
+        wait=wait_fixed(5),
+        stop=stop_after_attempt(60),  # 5*60= 300 seconds
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            resp = api_request_context.delete(
+                f"{product_url}v0/projects/{project_uuid}"
+            )
+            assert resp.status == HTTPStatus.NO_CONTENT
