@@ -1,8 +1,9 @@
-from typing import TypeAlias
+from typing import Any, ClassVar, Literal, TypeAlias
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
-ProgressUnit: TypeAlias = str
+# NOTE: keep a list of possible unit, and please use correct names
+ProgressUnit: TypeAlias = Literal["Byte"]
 
 
 class ProgressReport(BaseModel):
@@ -18,3 +19,19 @@ class ProgressReport(BaseModel):
 
     class Config:
         frozen = True
+        extra = Extra.forbid
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                # typical percent progress (no units)
+                {
+                    "actual_value": 0.3,
+                    "total": 1.0,
+                },
+                # typical byte progress
+                {
+                    "actual_value": 128.5,
+                    "total": 1024.0,
+                    "unit": "Byte",
+                },
+            ]
+        }
