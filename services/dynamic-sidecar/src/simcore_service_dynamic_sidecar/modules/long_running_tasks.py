@@ -318,6 +318,26 @@ async def task_runs_docker_compose_down(
     progress.update(message="done", percent=ProgressPercent(0.99))
 
 
+async def _restore_state_folder(
+    app: FastAPI,
+    *,
+    settings: ApplicationSettings,
+    progress_bar: ProgressBarData,
+    state_path: Path,
+) -> None:
+    await data_manager.pull(
+        user_id=settings.DY_SIDECAR_USER_ID,
+        project_id=settings.DY_SIDECAR_PROJECT_ID,
+        node_uuid=settings.DY_SIDECAR_NODE_ID,
+        destination_path=state_path,
+        io_log_redirect_cb=functools.partial(
+            post_sidecar_log_message, app, log_level=logging.INFO
+        ),
+        r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
+        progress_bar=progress_bar,
+    )
+
+
 async def task_restore_state(
     progress: TaskProgress,
     settings: ApplicationSettings,
@@ -334,19 +354,6 @@ async def task_restore_state(
     # NOTE: this implies that the legacy format will always be decompressed
     # until it is not removed.
 
-    async def _restore_state_folder(state_path: Path) -> None:
-        await data_manager.pull(
-            user_id=settings.DY_SIDECAR_USER_ID,
-            project_id=settings.DY_SIDECAR_PROJECT_ID,
-            node_uuid=settings.DY_SIDECAR_NODE_ID,
-            destination_path=state_path,
-            io_log_redirect_cb=functools.partial(
-                post_sidecar_log_message, app, log_level=logging.INFO
-            ),
-            r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
-            progress_bar=root_progress,
-        )
-
     progress.update(message="Downloading state", percent=ProgressPercent(0.05))
     state_paths = list(mounted_volumes.disk_state_paths_iter())
     await post_sidecar_log_message(
@@ -362,7 +369,9 @@ async def task_restore_state(
     ) as root_progress:
         await logged_gather(
             *(
-                _restore_state_folder(path)
+                _restore_state_folder(
+                    app, settings=settings, progress_bar=root_progress, state_path=path
+                )
                 for path in mounted_volumes.disk_state_paths_iter()
             ),
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
@@ -373,6 +382,28 @@ async def task_restore_state(
         app, "Finished state downloading", log_level=logging.INFO
     )
     progress.update(message="state restored", percent=ProgressPercent(0.99))
+
+
+async def _save_state_folder(
+    app: FastAPI,
+    *,
+    settings: ApplicationSettings,
+    progress_bar: ProgressBarData,
+    state_path: Path,
+    mounted_volumes: MountedVolumes,
+) -> None:
+    await data_manager.push(
+        user_id=settings.DY_SIDECAR_USER_ID,
+        project_id=settings.DY_SIDECAR_PROJECT_ID,
+        node_uuid=settings.DY_SIDECAR_NODE_ID,
+        source_path=state_path,
+        r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
+        exclude_patterns=mounted_volumes.state_exclude,
+        io_log_redirect_cb=functools.partial(
+            post_sidecar_log_message, app, log_level=logging.INFO
+        ),
+        progress_bar=progress_bar,
+    )
 
 
 async def task_save_state(
@@ -386,23 +417,6 @@ async def task_save_state(
     If a legacy archive is detected, it will be removed after
     saving the new format.
     """
-
-    async def _save_state_folder(
-        state_path: Path, root_progress: ProgressBarData
-    ) -> None:
-        await data_manager.push(
-            user_id=settings.DY_SIDECAR_USER_ID,
-            project_id=settings.DY_SIDECAR_PROJECT_ID,
-            node_uuid=settings.DY_SIDECAR_NODE_ID,
-            source_path=state_path,
-            r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
-            exclude_patterns=mounted_volumes.state_exclude,
-            io_log_redirect_cb=functools.partial(
-                post_sidecar_log_message, app, log_level=logging.INFO
-            ),
-            progress_bar=root_progress,
-        )
-
     progress.update(message="starting state save", percent=ProgressPercent(0.0))
     state_paths = list(mounted_volumes.disk_state_paths_iter())
     async with ProgressBarData(
@@ -413,7 +427,13 @@ async def task_save_state(
     ) as root_progress:
         await logged_gather(
             *[
-                _save_state_folder(state_path, root_progress)
+                _save_state_folder(
+                    app,
+                    settings=settings,
+                    progress_bar=root_progress,
+                    state_path=state_path,
+                    mounted_volumes=mounted_volumes,
+                )
                 for state_path in state_paths
             ],
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
