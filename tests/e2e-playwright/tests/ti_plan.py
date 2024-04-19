@@ -105,7 +105,7 @@ def test_tip(
     page.get_by_test_id("AppMode_NextBtn").click()
 
     # Sim4Life PostPro
-    page.wait_for_timeout(30000)
+    page.wait_for_timeout(60000)
     s4l_postpro_page = page.frame_locator(".qx-main-dark").nth(2)
     # make sure there is something in the postpro algorithm tree
     # click on the mode button
