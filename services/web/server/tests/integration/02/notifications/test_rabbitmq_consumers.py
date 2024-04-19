@@ -111,7 +111,7 @@ async def _assert_handler_called(handler: mock.Mock, expected_call: mock._Call) 
 
 
 async def _assert_handler_called_with_json(
-    handler: mock.Mock, expected_call: dict[str, Any] | list[dict[str, Any]]
+    handler: mock.Mock, expected_call: dict[str, Any]
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
@@ -361,7 +361,9 @@ async def test_progress_non_computational_workflow(
 
     call_expected = sender_same_user_id and subscribe_to_logs
     if call_expected:
-        expected_call = jsonable_encoder(progress_message, exclude={"channel_name"})
+        expected_call = WebSocketNodeProgress.from_rabbit_message(
+            progress_message
+        ).to_socket_dict()["data"]
         await _assert_handler_called_with_json(mock_progress_handler, expected_call)
     else:
         await _assert_handler_not_called(mock_progress_handler)
@@ -430,6 +432,7 @@ async def test_progress_computational_workflow(
 
     # check the database. doing it after the waiting calls above is safe
     async with aiopg_engine.acquire() as conn:
+        assert projects is not None
         result = await conn.execute(
             sa.select(projects.c.workbench).where(
                 projects.c.uuid == str(user_project_id)
