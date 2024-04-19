@@ -19,7 +19,8 @@ class WebSocketMessageBase(BaseModel):
 
     @classmethod
     def get_event_type(cls) -> str:
-        return cls.__fields__["event_type"].default
+        _event_type: str = cls.__fields__["event_type"].default
+        return _event_type
 
     @abstractmethod
     def to_socket_dict(self) -> SocketMessageDict:
