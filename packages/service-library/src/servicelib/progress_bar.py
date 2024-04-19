@@ -86,7 +86,7 @@ class ProgressBarData:
 
     def __post_init__(self) -> None:
         if self.progress_unit is not None:
-            parse_obj_as(ProgressUnit, self.progress_unit)  # type: ignore
+            parse_obj_as(ProgressUnit, self.progress_unit)
         self._continuous_value_lock = asyncio.Lock()
         self.num_steps = max(1, self.num_steps)
         if self.step_weights:
