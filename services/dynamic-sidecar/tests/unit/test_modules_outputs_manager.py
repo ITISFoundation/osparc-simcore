@@ -413,7 +413,7 @@ async def test_regression_io_log_redirect_cb(
 
         # ensure logger used in nodeports deos not change
         assert inspect.getfullargspec(LogRedirectCB.__call__) == FullArgSpec(
-            args=["self", "logs"],
+            args=["self", "log"],
             varargs=None,
             varkw=None,
             defaults=None,
