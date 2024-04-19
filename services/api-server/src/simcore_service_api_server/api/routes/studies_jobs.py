@@ -84,11 +84,9 @@ async def create_study_job(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ) -> Job:
     project = await webserver_api.clone_project(project_id=study_id, hidden=True)
-
     job = create_job_from_study(
         study_key=study_id, project=project, job_inputs=job_inputs
     )
-    # extends with urls
     job.url = url_for(
         "get_study_job",
         study_id=study_id,

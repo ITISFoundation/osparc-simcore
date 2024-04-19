@@ -28,6 +28,7 @@ class HttpApiCallCaptureModel(BaseModel):
     def create_from_response(
         cls,
         response: httpx.Response,
+        *,
         name: str,
         description: str = "",
         enhance_from_openapi_specs: bool = True,

@@ -38,6 +38,15 @@ qx.Class.define("osparc.ui.basic.Logo", {
     osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__resetSourcePath(), this);
   },
 
+  statics: {
+    getHeightKeepingAspectRatio: function(logoPath, width) {
+      const imgHeight = qx.util.ResourceManager.getInstance().getImageHeight(logoPath);
+      const imgWidth = qx.util.ResourceManager.getInstance().getImageWidth(logoPath);
+      const aspectRatio = imgWidth/imgHeight;
+      return parseInt(width/aspectRatio);
+    }
+  },
+
   members: {
     __resetSourcePath: function() {
       const long = !osparc.WindowSizeTracker.getInstance().isCompactVersion();

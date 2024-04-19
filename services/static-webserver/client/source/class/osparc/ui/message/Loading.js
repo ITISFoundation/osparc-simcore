@@ -118,19 +118,19 @@ qx.Class.define("osparc.ui.message.Loading", {
         flex: 1
       });
 
-      const defaultLogoPath = osparc.product.Utils.getLogoPath();
-      const logo = new osparc.ui.basic.Thumbnail(defaultLogoPath, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT).set({
+      const productLogoPath = osparc.product.Utils.getLogoPath();
+      const logo = new osparc.ui.basic.Thumbnail(productLogoPath, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT).set({
         alignX: "center"
       });
-      /*
-      // this is needed for svg images, but it breaks the GUI if the image source changes
-      logo.getChildControl("image").set({
-        minWidth: parseInt(this.self().LOGO_WIDTH/1.5),
-        minHeight: parseInt(this.self().LOGO_HEIGHT/1.5)
-      });
-      */
+      if (qx.util.ResourceManager.getInstance().getImageFormat(productLogoPath) === "png") {
+        const height = osparc.ui.basic.Logo.getHeightKeepingAspectRatio(productLogoPath, this.self().LOGO_WIDTH)
+        logo.getChildControl("image").set({
+          width: this.self().LOGO_WIDTH,
+          height
+        });
+      }
       this.bind("logo", logo, "source", {
-        converter: newPath => newPath ? newPath : defaultLogoPath
+        converter: newPath => newPath ? newPath : productLogoPath
       });
       mainLayout.addAt(logo, {
         column: 0,

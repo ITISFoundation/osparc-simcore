@@ -50,7 +50,10 @@ class NotifierService(SingletonInAppStateMixin):
 
         for provider in providers:
             self._run_in_background(
-                provider.notify_payment_completed(user_id=user_id, payment=payment),
+                provider.notify_payment_completed(
+                    user_id=user_id,
+                    payment=payment,
+                ),
                 f"{provider.get_name()}_u_{user_id}_p_{payment.payment_id}",
             )
 
@@ -88,7 +91,9 @@ def setup_notifier(app: FastAPI):
         if email_settings := app_settings.PAYMENTS_EMAIL:
             providers.append(
                 EmailProvider(
-                    email_settings, users_repo=PaymentsUsersRepo(get_engine(app))
+                    email_settings,
+                    users_repo=PaymentsUsersRepo(get_engine(app)),
+                    bcc_email=app_settings.PAYMENTS_BCC_EMAIL,
                 )
             )
 
