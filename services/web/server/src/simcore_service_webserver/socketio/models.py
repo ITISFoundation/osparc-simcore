@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 
 class WebSocketMessageBase(BaseModel):
-    event_type: str = Field(..., constr=True)
+    event_type: str = Field(..., const=True)
 
     @classmethod
     def get_event_type(cls) -> str:
