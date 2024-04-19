@@ -13,6 +13,7 @@ aiodebug
 aiodocker
 aiofiles
 arrow # date/time
+faststream
 pydantic
 pyinstrument
 pyyaml
