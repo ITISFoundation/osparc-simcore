@@ -25,32 +25,17 @@ from ..socketio.messages import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
-    SOCKET_IO_PROJECT_PROGRESS_EVENT,
     SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
     send_message_to_standard_group,
     send_message_to_user,
 )
-from ..socketio.models import WebSocketNodeProgress
+from ..socketio.models import WebSocketNodeProgress, WebSocketProjectProgress
 from ..wallets import api as wallets_api
 from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rabbitmq
 
 _logger = logging.getLogger(__name__)
 
 _APP_RABBITMQ_CONSUMERS_KEY: Final[str] = f"{__name__}.rabbit_consumers"
-
-
-def _convert_to_project_progress_event(
-    message: ProgressRabbitMessageProject,
-) -> SocketMessageDict:
-    return SocketMessageDict(
-        event_type=SOCKET_IO_PROJECT_PROGRESS_EVENT,
-        data={
-            "project_id": message.project_id,
-            "user_id": message.user_id,
-            "progress_type": message.progress_type,
-            "progress": message.report.percent_value,
-        },
-    )
 
 
 async def _convert_to_node_update_event(
@@ -79,34 +64,23 @@ async def _convert_to_node_update_event(
     return None
 
 
-def _convert_to_node_progress_event(
-    message: ProgressRabbitMessageNode,
-) -> SocketMessageDict:
-    return SocketMessageDict(
-        event_type=WebSocketNodeProgress.get_event_type(),
-        data={
-            "project_id": message.project_id,
-            "node_id": message.node_id,
-            "user_id": message.user_id,
-            "progress_type": message.progress_type,
-            "progress": message.report.percent_value,
-        },
-    )
-
-
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message: ProgressRabbitMessageNode | ProgressRabbitMessageProject = (
         parse_raw_as(ProgressRabbitMessageNode | ProgressRabbitMessageProject, data)
     )
     message: SocketMessageDict | None = None
     if isinstance(rabbit_message, ProgressRabbitMessageProject):
-        message = _convert_to_project_progress_event(rabbit_message)
+        message = WebSocketProjectProgress.from_rabbit_message(
+            rabbit_message
+        ).to_socket_dict()
 
     elif rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
         message = await _convert_to_node_update_event(app, rabbit_message)
 
     else:
-        message = _convert_to_node_progress_event(rabbit_message)
+        message = WebSocketNodeProgress.from_rabbit_message(
+            rabbit_message
+        ).to_socket_dict()
 
     if message:
         await send_message_to_user(
