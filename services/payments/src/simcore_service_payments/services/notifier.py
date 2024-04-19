@@ -7,12 +7,9 @@ from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.utils import fire_and_forget_task
 
-from services.payments.src.simcore_service_payments.models.db import (
-    PaymentsTransactionsDB,
-)
-
 from ..core.settings import ApplicationSettings
 from ..db.payment_users_repo import PaymentsUsersRepo
+from ..models.db import PaymentsTransactionsDB
 from .notifier_abc import NotificationProvider
 from .notifier_email import EmailProvider
 from .notifier_ws import WebSocketProvider

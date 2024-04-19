@@ -4,9 +4,7 @@ from abc import ABC, abstractmethod
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.users import UserID
 
-from services.payments.src.simcore_service_payments.models.db import (
-    PaymentsTransactionsDB,
-)
+from ..models.db import PaymentsTransactionsDB
 
 _logger = logging.getLogger(__name__)
 

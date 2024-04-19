@@ -25,11 +25,8 @@ from tenacity import (
     wait_exponential,
 )
 
-from services.payments.src.simcore_service_payments.models.db import (
-    PaymentsTransactionsDB,
-)
-
 from ..db.payment_users_repo import PaymentsUsersRepo
+from ..models.db import PaymentsTransactionsDB
 from .notifier_abc import NotificationProvider
 
 _logger = logging.getLogger(__name__)
