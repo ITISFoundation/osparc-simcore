@@ -10,6 +10,7 @@
 
 
 coverage
+faker
 pytest
 pytest-cov
 pytest-instafail

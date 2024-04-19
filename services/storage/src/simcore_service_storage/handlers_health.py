@@ -6,6 +6,7 @@
 import logging
 
 from aiohttp import web
+from aws_library.s3.errors import S3AccessError, S3BucketInvalidError
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from servicelib.json_serialization import json_dumps
@@ -15,7 +16,6 @@ from ._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
 from .constants import APP_CONFIG_KEY
 from .db import get_engine_state
 from .db import is_service_responsive as is_pg_responsive
-from .exceptions import S3AccessError, S3BucketInvalidError
 from .s3 import get_s3_client
 from .settings import Settings
 

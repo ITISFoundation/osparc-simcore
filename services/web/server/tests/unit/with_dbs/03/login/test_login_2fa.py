@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-statements
 
 import asyncio
 import logging
@@ -11,6 +12,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
+from models_library.authentification import TwoFactorAuthentificationMethod
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -20,7 +22,7 @@ from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.db.models import UserStatus
-from simcore_service_webserver.login._2fa import (
+from simcore_service_webserver.login._2fa_api import (
     _do_create_2fa_code,
     create_2fa_code,
     delete_2fa_code,
@@ -29,11 +31,12 @@ from simcore_service_webserver.login._2fa import (
     send_email_code,
 )
 from simcore_service_webserver.login._constants import (
-    CODE_2FA_CODE_REQUIRED,
+    CODE_2FA_SMS_CODE_REQUIRED,
     MSG_2FA_UNAVAILABLE_OEC,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.products.api import Product, get_current_product
+from simcore_service_webserver.users import preferences_api as user_preferences_api
 from twilio.base.exceptions import TwilioRestException
 
 
@@ -203,7 +206,7 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] == fake_user_phone_number
 
-    # login ---------------------------------------------------------
+    # login (via SMS) ---------------------------------------------------------
 
     # 1. check email/password then send SMS
     url = client.app.router["auth_login"].url_for()
@@ -216,7 +219,10 @@ async def test_workflow_register_and_login_with_2fa(
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
 
-    assert data["code"] == "SMS_CODE_REQUIRED"
+    assert data["name"] == "SMS_CODE_REQUIRED"
+    assert data["parameters"]
+    assert data["parameters"]["message"]
+    assert data["parameters"]["expiration_2fa"]
 
     # assert SMS was sent
     kwargs = mocked_twilio_service["send_sms_code_for_login"].call_args.kwargs
@@ -241,6 +247,59 @@ async def test_workflow_register_and_login_with_2fa(
     assert user["email"] == fake_user_email
     assert user["phone"] == fake_user_phone_number
     assert user["status"] == UserStatus.ACTIVE.value
+
+    # login (via EMAIL) ---------------------------------------------------------
+    # Change 2fa user preference
+    _preference_id = (
+        user_preferences_api.TwoFAFrontendUserPreference().preference_identifier
+    )
+    await user_preferences_api.set_frontend_user_preference(
+        client.app,
+        user_id=user["id"],
+        product_name="osparc",
+        frontend_preference_identifier=_preference_id,
+        value=TwoFactorAuthentificationMethod.EMAIL,
+    )
+
+    url = client.app.router["auth_login"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": fake_user_email,
+            "password": fake_user_password,
+        },
+    )
+    data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
+
+    assert data["name"] == "EMAIL_CODE_REQUIRED"
+    assert data["parameters"]
+    assert data["parameters"]["message"]
+    assert data["parameters"]["expiration_2fa"]
+
+    out, _ = capsys.readouterr()
+    parsed_context = parse_test_marks(out)
+    assert parsed_context["name"] == user["name"]
+    assert "support" in parsed_context["support_email"]
+
+    # login (2FA Disabled) ---------------------------------------------------------
+    await user_preferences_api.set_frontend_user_preference(
+        client.app,
+        user_id=user["id"],
+        product_name="osparc",
+        frontend_preference_identifier=_preference_id,
+        value=TwoFactorAuthentificationMethod.DISABLED,
+    )
+
+    url = client.app.router["auth_login"].url_for()
+    response = await client.post(
+        f"{url}",
+        json={
+            "email": fake_user_email,
+            "password": fake_user_password,
+        },
+    )
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+    assert data["message"] == "You are logged in"
 
 
 async def test_can_register_same_phone_in_different_accounts(
@@ -298,7 +357,7 @@ async def test_can_register_same_phone_in_different_accounts(
         data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
         assert data
         assert "Code" in data["message"]
-        assert data["name"] == CODE_2FA_CODE_REQUIRED
+        assert data["name"] == CODE_2FA_SMS_CODE_REQUIRED
         assert not error
 
 
@@ -360,7 +419,7 @@ async def test_2fa_sms_failure_during_login(
 
     # Mocks error in graylog https://monitoring.osparc.io/graylog/search/649e7619ce6e0838a96e9bf1?q=%222FA%22&rangetype=relative&from=172800
     mocker.patch(
-        "simcore_service_webserver.login._auth_handlers.send_sms_code",
+        "simcore_service_webserver.login._2fa_api.TwilioSettings.is_alphanumeric_supported",
         autospec=True,
         side_effect=TwilioRestException(
             status=400,

@@ -242,6 +242,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const nodeId = e.getData();
             this.nodeSelected(nodeId);
           }, this);
+
+          workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
         })
         .catch(err => {
           let msg = "";
@@ -563,7 +565,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __startAutoSaveTimer: function() {
       // Save every 3 seconds
-      let timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
+      const timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
       timer.addListener("interval", () => {
         if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
           return;
@@ -577,6 +579,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
         this.__autoSaveTimer.stop();
         this.__autoSaveTimer.setEnabled(false);
+      }
+    },
+
+    __restartAutoSaveTimer: function() {
+      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
+        this.__autoSaveTimer.restart();
       }
     },
 
@@ -667,7 +675,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.getStudy().stopStudy();
         this.__closeStudy();
       }
-      const clusterMiniView = this.__workbenchView.getStartStopButtons().getClusterMiniView();
+      const clusterMiniView = this.__workbenchView.getStartStopButtons().getChildControl("cluster-mini-view");
       if (clusterMiniView) {
         clusterMiniView.setClusterId(null);
       }

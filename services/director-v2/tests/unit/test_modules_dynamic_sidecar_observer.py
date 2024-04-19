@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
+from faker import Faker
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -69,6 +70,7 @@ def mock_env(
     docker_swarm: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ) -> None:
     setenvs_from_dict(
         monkeypatch,
@@ -76,11 +78,11 @@ def mock_env(
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network",
             "DIRECTOR_HOST": "mocked_out",
             "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "true",
-            "S3_ENDPOINT": "endpoint",
-            "S3_ACCESS_KEY": "access_key",
-            "S3_SECRET_KEY": "secret_key",
-            "S3_BUCKET_NAME": "bucket_name",
-            "S3_SECURE": "false",
+            "S3_ENDPOINT": faker.url(),
+            "S3_ACCESS_KEY": faker.pystr(),
+            "S3_REGION": faker.pystr(),
+            "S3_SECRET_KEY": faker.pystr(),
+            "S3_BUCKET_NAME": faker.pystr(),
         },
     )
 

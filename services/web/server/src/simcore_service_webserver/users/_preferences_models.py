@@ -1,5 +1,6 @@
 from typing import Final
 
+from models_library.authentification import TwoFactorAuthentificationMethod
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
 )
@@ -95,6 +96,11 @@ class TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference(
     value: int = 5  # in gigabytes
 
 
+class TwoFAFrontendUserPreference(FrontendUserPreference):
+    preference_identifier: PreferenceIdentifier = "twoFAPreference"
+    value: TwoFactorAuthentificationMethod = TwoFactorAuthentificationMethod.SMS
+
+
 class BillingCenterUsageColumnOrderFrontendUserPreference(FrontendUserPreference):
     preference_identifier: PreferenceIdentifier = "billingCenterUsageColumnOrder"
     value: list[int] | None = None
@@ -118,6 +124,7 @@ ALL_FRONTEND_PREFERENCES: list[type[FrontendUserPreference]] = [
     JobConcurrencyLimitFrontendUserPreference,
     AllowMetricsCollectionFrontendUserPreference,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
+    TwoFAFrontendUserPreference,
     BillingCenterUsageColumnOrderFrontendUserPreference,
 ]
 

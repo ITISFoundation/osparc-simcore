@@ -8,9 +8,8 @@ import os
 import shutil
 import subprocess
 import sys
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from pathlib import Path
-from typing import AsyncGenerator
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
@@ -155,7 +154,7 @@ def app_environment(
     """app environments WITH database settings"""
     mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
     mocker.patch(
-        "simcore_service_api_server.core.application.setup_prometheus_instrumentation"
+        "simcore_service_api_server.core._prometheus_instrumentation.setup_prometheus_instrumentation"
     )
 
     envs = setenvs_from_dict(monkeypatch, default_app_env_vars)

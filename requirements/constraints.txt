@@ -15,6 +15,7 @@ cryptography>=41.0.6                          # https://github.com/advisories/GH
 httpx>=0.23.0                                 # https://github.com/advisories/GHSA-h8pj-cxx2-jfg2 / CVE-2021-41945
 jinja2>=2.11.3                                # https://github.com/advisories/GHSA-g3rq-g295-4j3m
 mako>=1.2.2                                   # https://github.com/advisories/GHSA-v973-fxgf-6xhp
+orjson>=3.9.15                                # https://github.com/advisories/GHSA-pwr2-4v36-6qpr
 paramiko>=2.10.1                              # https://github.com/advisories/GHSA-f8q4-jwww-x3wv
 py>=1.11.0                                    # https://github.com/advisories/GHSA-w596-4wvx-j9j6 / CVE-2022-42969
 pydantic>=1.8.2                               # https://github.com/advisories/GHSA-5jqp-qgf6-3pvh

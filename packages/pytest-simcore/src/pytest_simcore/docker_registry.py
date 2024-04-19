@@ -16,6 +16,7 @@ import docker
 import jsonschema
 import pytest
 import tenacity
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.logging_utils import log_context
 from settings_library.docker_registry import RegistrySettings
 
@@ -99,7 +100,24 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
 
 
 @pytest.fixture
-def registry_settings(docker_registry: str) -> RegistrySettings:
+def external_registry_settings(
+    external_environment: EnvVarsDict,
+) -> RegistrySettings | None:
+    if external_environment:
+        config = {
+            field: external_environment.get(field, None)
+            for field in RegistrySettings.__fields__
+        }
+        return RegistrySettings.parse_obj(config)
+    return None
+
+
+@pytest.fixture
+def registry_settings(
+    docker_registry: str, external_registry_settings: RegistrySettings | None
+) -> RegistrySettings:
+    if external_registry_settings:
+        return external_registry_settings
     return RegistrySettings.create_from_envs()
 
 

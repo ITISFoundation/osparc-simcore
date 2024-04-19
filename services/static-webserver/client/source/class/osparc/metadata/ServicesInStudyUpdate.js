@@ -46,8 +46,8 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
     anyServiceInaccessible: async function(studyData) {
       if ("workbench" in studyData) {
         const store = osparc.store.Store.getInstance();
-        const inaccesibles = await store.getInaccessibleServices(studyData);
-        return inaccesibles.length;
+        const inaccessibles = await store.getInaccessibleServices(studyData);
+        return inaccessibles.length;
       }
       return false;
     },
@@ -178,7 +178,8 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14").set({
         appearance: "form-button",
         padding: [2, 5],
-        visibility: "excluded"
+        visibility: "excluded",
+        center: true
       });
       this._servicesGrid.add(updateAllButton, {
         row: 0,
@@ -259,7 +260,8 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
             updateButton.set({
               appearance: "form-button-outlined",
               padding: [2, 5],
-              label: this.tr("Update")
+              label: this.tr("Update"),
+              center: true
             });
           }
           updateButton.addListener("execute", () => this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton), this);

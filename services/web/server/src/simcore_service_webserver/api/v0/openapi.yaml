@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.40.2
+  version: 0.40.3
 servers:
 - url: ''
   description: webserver
@@ -2611,6 +2611,35 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/projects/{project_id}/nodes/{node_id}/outputs:
+    patch:
+      tags:
+      - projects
+      - nodes
+      summary: Update Node Outputs
+      operationId: update_node_outputs
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+        name: node_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeOutputs'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
   /v0/projects/{project_id}/nodes/{node_id}/resources:
     get:
       tags:
@@ -2776,7 +2805,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects._ports_handlers.ProjectInputGet__'
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__models_library.api_schemas_webserver.projects_ports.ProjectInputGet__'
     patch:
       tags:
       - projects
@@ -2807,7 +2836,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects._ports_handlers.ProjectInputGet__'
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__models_library.api_schemas_webserver.projects_ports.ProjectInputGet__'
   /v0/projects/{project_id}/outputs:
     get:
       tags:
@@ -2830,7 +2859,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__simcore_service_webserver.projects._ports_handlers.ProjectOutputGet__'
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__models_library.api_schemas_webserver.projects_ports.ProjectOutputGet__'
   /v0/projects/{project_id}/metadata/ports:
     get:
       tags:
@@ -5574,8 +5603,8 @@ components:
         message:
           title: Message
           type: string
-        retry_2fa_after:
-          title: Retry 2Fa After
+        expiration_2fa:
+          title: Expiration 2Fa
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -6383,8 +6412,8 @@ components:
             $ref: '#/components/schemas/Activity'
         error:
           title: Error
-    Envelope_dict_uuid.UUID__simcore_service_webserver.projects._ports_handlers.ProjectInputGet__:
-      title: Envelope[dict[uuid.UUID, simcore_service_webserver.projects._ports_handlers.ProjectInputGet]]
+    Envelope_dict_uuid.UUID__models_library.api_schemas_webserver.projects_ports.ProjectInputGet__:
+      title: Envelope[dict[uuid.UUID, models_library.api_schemas_webserver.projects_ports.ProjectInputGet]]
       type: object
       properties:
         data:
@@ -6394,8 +6423,8 @@ components:
             $ref: '#/components/schemas/ProjectInputGet'
         error:
           title: Error
-    Envelope_dict_uuid.UUID__simcore_service_webserver.projects._ports_handlers.ProjectOutputGet__:
-      title: Envelope[dict[uuid.UUID, simcore_service_webserver.projects._ports_handlers.ProjectOutputGet]]
+    Envelope_dict_uuid.UUID__models_library.api_schemas_webserver.projects_ports.ProjectOutputGet__:
+      title: Envelope[dict[uuid.UUID, models_library.api_schemas_webserver.projects_ports.ProjectOutputGet]]
       type: object
       properties:
         data:
@@ -7483,8 +7512,6 @@ components:
       title: LoginNextPage
       required:
       - name
-      - code
-      - reason
       type: object
       properties:
         name:
@@ -7493,14 +7520,6 @@ components:
           description: Code name to the front-end page. Ideally a PageStr
         parameters:
           $ref: '#/components/schemas/CodePageParams'
-        code:
-          title: Code
-          type: string
-          deprecated: true
-        reason:
-          title: Reason
-          type: string
-          deprecated: true
       description: 'This is the body of a 2XX response to pass the front-end
 
         what kind of page shall be display next and some information about it
@@ -7821,6 +7840,15 @@ components:
       example:
         service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         service_state: unknown
+    NodeOutputs:
+      title: NodeOutputs
+      required:
+      - outputs
+      type: object
+      properties:
+        outputs:
+          title: Outputs
+          type: object
     NodeRetrieve:
       title: NodeRetrieve
       type: object
@@ -10704,6 +10732,7 @@ components:
       - title
       - text
       - date
+      - product
       - id
       - read
       type: object
@@ -10728,6 +10757,13 @@ components:
           title: Date
           type: string
           format: date-time
+        product:
+          title: Product
+          anyOf:
+          - enum:
+            - UNDEFINED
+            type: string
+          - type: string
         id:
           title: Id
           type: string
@@ -10743,6 +10779,7 @@ components:
       - title
       - text
       - date
+      - product
       type: object
       properties:
         user_id:
@@ -10765,6 +10802,13 @@ components:
           title: Date
           type: string
           format: date-time
+        product:
+          title: Product
+          anyOf:
+          - enum:
+            - UNDEFINED
+            type: string
+          - type: string
     UserNotificationPatch:
       title: UserNotificationPatch
       required:
@@ -11193,8 +11237,8 @@ components:
       title: _PageParams
       type: object
       properties:
-        retry_2fa_after:
-          title: Retry 2Fa After
+        expiration_2fa:
+          title: Expiration 2Fa
           exclusiveMinimum: true
           type: integer
           minimum: 0

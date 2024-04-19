@@ -1,0 +1,3405 @@
+[
+ {
+  "name": "GET /projects/aeab71fe-f71b-11ee-8fca-0242ac140008/metadata/ports",
+  "description": "<Request('GET', 'http://webserver:8080/v0/projects/aeab71fe-f71b-11ee-8fca-0242ac140008/metadata/ports')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}/metadata/ports",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "projects"
+    }
+   ]
+  },
+  "response_body": {
+   "data": [
+    {
+     "key": "0b8042c4-501a-4f9b-b2fa-17f860548b33",
+     "kind": "output",
+     "content_schema": null
+    },
+    {
+     "key": "c0f304e0-228b-413c-937a-2b1b060c9e02",
+     "kind": "input",
+     "content_schema": {
+      "title": "InputInt",
+      "type": "integer",
+      "description": "Produced integer value"
+     }
+    },
+    {
+     "key": "d9069bdb-35ae-4ec3-a05a-a42d7a7b0579",
+     "kind": "output",
+     "content_schema": {
+      "title": "OutputInt",
+      "type": "integer",
+      "description": "Captured integer value"
+     }
+    },
+    {
+     "key": "50fd6b01-bb5d-4136-a932-73676a461680",
+     "kind": "output",
+     "content_schema": {
+      "title": "OutputString",
+      "type": "string",
+      "description": "Captured string value"
+     }
+    },
+    {
+     "key": "38985050-7476-4534-8c79-839a928ea2a8",
+     "kind": "input",
+     "content_schema": {
+      "title": "InputString",
+      "type": "string",
+      "description": "Produced string value"
+     }
+    },
+    {
+     "key": "8815eab9-9bd5-4dda-a65c-3c14a423bfb3",
+     "kind": "input",
+     "content_schema": {
+      "title": "InputArray",
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     }
+    },
+    {
+     "key": "22e7a091-2e4e-4e5a-93aa-c500457f5684",
+     "kind": "output",
+     "content_schema": {
+      "title": "OutputArray",
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     }
+    },
+    {
+     "key": "04de3b6f-668d-4826-822f-c58370c037ed",
+     "kind": "input",
+     "content_schema": {
+      "title": "InputNumber",
+      "type": "number",
+      "description": "Produced number value"
+     }
+    },
+    {
+     "key": "b227b053-1207-4b48-b6ee-71a0ff24b014",
+     "kind": "output",
+     "content_schema": {
+      "title": "OutputNumber",
+      "type": "number",
+      "description": "Captured number value"
+     }
+    },
+    {
+     "key": "72d5daac-f728-4603-b49e-9a407e4aa079",
+     "kind": "input",
+     "content_schema": {
+      "title": "InputBool",
+      "type": "boolean",
+      "description": "Produced boolean value"
+     }
+    },
+    {
+     "key": "f85418d5-45d8-41eb-a1ac-4f14a63ec890",
+     "kind": "output",
+     "content_schema": {
+      "title": "OutputBool",
+      "type": "boolean",
+      "description": "Captured boolean value"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "name": "POST /projects",
+  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=aeab71fe-f71b-11ee-8fca-0242ac140008&hidden=true')>",
+  "method": "POST",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects",
+   "path_parameters": []
+  },
+  "query": "from_study=aeab71fe-f71b-11ee-8fca-0242ac140008&hidden=true",
+  "response_body": {
+   "data": {
+    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Daeab71fe-f71b-11ee-8fca-0242ac140008%26hidden%3Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
+    "task_name": "POST /v0/projects?from_study=aeab71fe-f71b-11ee-8fca-0242ac140008&hidden=true",
+    "status_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
+    "result_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24/result",
+    "abort_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24"
+   }
+  },
+  "status_code": 202
+ },
+ {
+  "name": "GET tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
+  "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/tasks/{task_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "task_id",
+     "required": true,
+     "schema": {
+      "title": "Task Id",
+      "type": "str"
+     },
+     "response_value": "tasks"
+    }
+   ]
+  },
+  "response_body": {
+   "data": {
+    "task_progress": {
+     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Daeab71fe-f71b-11ee-8fca-0242ac140008%26hidden%3Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
+     "message": "inserted project new_project['uuid']='e19f9144-fb3f-11ee-b7b0-0242ac14001c' into the db",
+     "percent": 0.0
+    },
+    "done": false,
+    "started": "2024-04-15T15:50:28.173722"
+   }
+  }
+ },
+ {
+  "name": "GET tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
+  "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/tasks/{task_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "task_id",
+     "required": true,
+     "schema": {
+      "title": "Task Id",
+      "type": "str"
+     },
+     "response_value": "tasks"
+    }
+   ]
+  },
+  "response_body": {
+   "data": {
+    "task_progress": {
+     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Daeab71fe-f71b-11ee-8fca-0242ac140008%26hidden%3Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
+     "message": "Checking study access rights...",
+     "percent": 0.0
+    },
+    "done": false,
+    "started": "2024-04-15T15:50:28.173722"
+   }
+  }
+ },
+ {
+  "name": "GET tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
+  "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/tasks/{task_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "task_id",
+     "required": true,
+     "schema": {
+      "title": "Task Id",
+      "type": "str"
+     },
+     "response_value": "tasks"
+    }
+   ]
+  },
+  "response_body": {
+   "data": {
+    "task_progress": {
+     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Daeab71fe-f71b-11ee-8fca-0242ac140008%26hidden%3Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
+     "message": "updated network information in directorv2",
+     "percent": 1.0
+    },
+    "done": false,
+    "started": "2024-04-15T15:50:28.173722"
+   }
+  }
+ },
+ {
+  "name": "GET tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
+  "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/tasks/{task_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "task_id",
+     "required": true,
+     "schema": {
+      "title": "Task Id",
+      "type": "str"
+     },
+     "response_value": "tasks"
+    }
+   ]
+  },
+  "response_body": {
+   "data": {
+    "task_progress": {
+     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Daeab71fe-f71b-11ee-8fca-0242ac140008%26hidden%3Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
+     "message": "finished",
+     "percent": 1.0
+    },
+    "done": true,
+    "started": "2024-04-15T15:50:28.173722"
+   }
+  }
+ },
+ {
+  "name": "GET tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24/result",
+  "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24/result')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/tasks/{task_id}/result",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "task_id",
+     "required": true,
+     "schema": {
+      "title": "Task Id",
+      "type": "str"
+     },
+     "response_value": "tasks"
+    }
+   ]
+  },
+  "response_body": {
+   "data": {
+    "uuid": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+    "name": "test (Copy)",
+    "description": "",
+    "thumbnail": "",
+    "creationDate": "2024-04-15T15:50:28.196Z",
+    "lastChangeDate": "2024-04-15T15:50:28.196Z",
+    "workbench": {
+     "ab014072-a95f-5775-bb34-5582a13245a6": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/file",
+      "version": "1.0.0",
+      "label": "OutputFile",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca",
+        "output": "outFile"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca"
+      ],
+      "parent": null
+     },
+     "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca": {
+      "key": "simcore/services/frontend/file-picker",
+      "version": "1.0.0",
+      "label": "InputFile",
+      "thumbnail": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {}
+     },
+     "096acfb2-8c38-560a-91d3-8911f4334289": {
+      "key": "simcore/services/frontend/parameter/integer",
+      "version": "1.0.0",
+      "label": "InputInt",
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {
+       "out_1": 1
+      }
+     },
+     "3d4963ee-179f-5948-9086-dd9bef543f65": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/integer",
+      "version": "1.0.0",
+      "label": "OutputInt",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "096acfb2-8c38-560a-91d3-8911f4334289",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "096acfb2-8c38-560a-91d3-8911f4334289"
+      ]
+     },
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "key": "simcore/services/comp/itis/sleeper",
+      "version": "2.0.2",
+      "label": "sleeper",
+      "progress": 0.0,
+      "thumbnail": null,
+      "inputs": {
+       "input_2": 2,
+       "input_3": false
+      },
+      "inputsUnits": {},
+      "inputNodes": [],
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": null
+      }
+     },
+     "2a9452ac-d210-5e11-a631-1d73454bfd91": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/string",
+      "version": "1.0.0",
+      "label": "OutputString",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "bcc36381-7377-533f-bb04-f785c0f8e2be",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "bcc36381-7377-533f-bb04-f785c0f8e2be"
+      ]
+     },
+     "bcc36381-7377-533f-bb04-f785c0f8e2be": {
+      "key": "simcore/services/frontend/parameter/string",
+      "version": "1.0.0",
+      "label": "InputString",
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {
+       "out_1": "Foo"
+      }
+     },
+     "197ba9f7-d09c-5cf8-9290-284cd6c40fb3": {
+      "key": "simcore/services/frontend/parameter/array",
+      "version": "1.0.0",
+      "label": "InputArray",
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {
+       "out_1": [
+        1
+       ]
+      }
+     },
+     "cb5bc33d-6635-5680-98e3-a6ac57f908f4": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/array",
+      "version": "1.0.0",
+      "label": "OutputArray",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "197ba9f7-d09c-5cf8-9290-284cd6c40fb3",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "197ba9f7-d09c-5cf8-9290-284cd6c40fb3"
+      ]
+     },
+     "d43949c5-5143-5738-bae9-7d231dcabe7f": {
+      "key": "simcore/services/frontend/parameter/number",
+      "version": "1.0.0",
+      "label": "InputNumber",
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {
+       "out_1": 1
+      }
+     },
+     "cd7eacb5-6806-5956-86c8-9b30ec588402": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/number",
+      "version": "1.0.0",
+      "label": "OutputNumber",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "d43949c5-5143-5738-bae9-7d231dcabe7f",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "d43949c5-5143-5738-bae9-7d231dcabe7f"
+      ]
+     },
+     "584e44d4-9a78-571f-a2a4-7d9c7b2396e3": {
+      "key": "simcore/services/frontend/parameter/boolean",
+      "version": "1.0.0",
+      "label": "InputBool",
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {
+       "out_1": true
+      }
+     },
+     "efaaeabf-e4bc-5667-a757-d9b17ad606d9": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/boolean",
+      "version": "1.0.0",
+      "label": "OutputBool",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "584e44d4-9a78-571f-a2a4-7d9c7b2396e3",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "584e44d4-9a78-571f-a2a4-7d9c7b2396e3"
+      ]
+     }
+    },
+    "prjOwner": "thomashall@example.org",
+    "accessRights": {
+     "3": {
+      "read": true,
+      "write": true,
+      "delete": true
+     }
+    },
+    "tags": [],
+    "classifiers": [],
+    "state": {
+     "locked": {
+      "value": false,
+      "status": "CLOSED"
+     },
+     "state": {
+      "value": "NOT_STARTED"
+     }
+    },
+    "ui": {
+     "workbench": {
+      "096acfb2-8c38-560a-91d3-8911f4334289": {
+       "position": {
+        "x": 220,
+        "y": 40
+       }
+      },
+      "197ba9f7-d09c-5cf8-9290-284cd6c40fb3": {
+       "position": {
+        "x": 240,
+        "y": 400
+       }
+      },
+      "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+       "position": {
+        "x": 820,
+        "y": 360
+       }
+      },
+      "2a9452ac-d210-5e11-a631-1d73454bfd91": {
+       "position": {
+        "x": 580,
+        "y": 200
+       }
+      },
+      "3d4963ee-179f-5948-9086-dd9bef543f65": {
+       "position": {
+        "x": 580,
+        "y": 40
+       }
+      },
+      "584e44d4-9a78-571f-a2a4-7d9c7b2396e3": {
+       "position": {
+        "x": 278,
+        "y": 733
+       }
+      },
+      "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca": {
+       "position": {
+        "x": 200,
+        "y": 840
+       }
+      },
+      "ab014072-a95f-5775-bb34-5582a13245a6": {
+       "position": {
+        "x": 700,
+        "y": 840
+       }
+      },
+      "bcc36381-7377-533f-bb04-f785c0f8e2be": {
+       "position": {
+        "x": 220,
+        "y": 200
+       }
+      },
+      "cb5bc33d-6635-5680-98e3-a6ac57f908f4": {
+       "position": {
+        "x": 580,
+        "y": 420
+       }
+      },
+      "cd7eacb5-6806-5956-86c8-9b30ec588402": {
+       "position": {
+        "x": 562,
+        "y": 586
+       }
+      },
+      "d43949c5-5143-5738-bae9-7d231dcabe7f": {
+       "position": {
+        "x": 271,
+        "y": 621
+       }
+      },
+      "efaaeabf-e4bc-5667-a757-d9b17ad606d9": {
+       "position": {
+        "x": 656,
+        "y": 720
+       }
+      }
+     },
+     "slideshow": {},
+     "currentNodeId": "aeab71fe-f71b-11ee-8fca-0242ac140008",
+     "mode": "workbench"
+    },
+    "quality": {
+     "enabled": true,
+     "tsr_target": {
+      "r01": {
+       "level": 4,
+       "references": ""
+      },
+      "r02": {
+       "level": 4,
+       "references": ""
+      },
+      "r03": {
+       "level": 4,
+       "references": ""
+      },
+      "r04": {
+       "level": 4,
+       "references": ""
+      },
+      "r05": {
+       "level": 4,
+       "references": ""
+      },
+      "r06": {
+       "level": 4,
+       "references": ""
+      },
+      "r07": {
+       "level": 4,
+       "references": ""
+      },
+      "r08": {
+       "level": 4,
+       "references": ""
+      },
+      "r09": {
+       "level": 4,
+       "references": ""
+      },
+      "r10": {
+       "level": 4,
+       "references": ""
+      },
+      "r03b": {
+       "references": ""
+      },
+      "r03c": {
+       "references": ""
+      },
+      "r07b": {
+       "references": ""
+      },
+      "r07c": {
+       "references": ""
+      },
+      "r07d": {
+       "references": ""
+      },
+      "r07e": {
+       "references": ""
+      },
+      "r08b": {
+       "references": ""
+      },
+      "r10b": {
+       "references": ""
+      }
+     },
+     "tsr_current": {
+      "r01": {
+       "level": 0,
+       "references": ""
+      },
+      "r02": {
+       "level": 0,
+       "references": ""
+      },
+      "r03": {
+       "level": 0,
+       "references": ""
+      },
+      "r04": {
+       "level": 0,
+       "references": ""
+      },
+      "r05": {
+       "level": 0,
+       "references": ""
+      },
+      "r06": {
+       "level": 0,
+       "references": ""
+      },
+      "r07": {
+       "level": 0,
+       "references": ""
+      },
+      "r08": {
+       "level": 0,
+       "references": ""
+      },
+      "r09": {
+       "level": 0,
+       "references": ""
+      },
+      "r10": {
+       "level": 0,
+       "references": ""
+      },
+      "r03b": {
+       "references": ""
+      },
+      "r03c": {
+       "references": ""
+      },
+      "r07b": {
+       "references": ""
+      },
+      "r07c": {
+       "references": ""
+      },
+      "r07d": {
+       "references": ""
+      },
+      "r07e": {
+       "references": ""
+      },
+      "r08b": {
+       "references": ""
+      },
+      "r10b": {
+       "references": ""
+      }
+     }
+    },
+    "dev": {}
+   }
+  },
+  "status_code": 201
+ },
+ {
+  "name": "GET /projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('GET', 'http://webserver:8080/v0/projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "projects"
+    }
+   ]
+  },
+  "response_body": {
+   "data": {
+    "uuid": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+    "name": "test (Copy)",
+    "description": "",
+    "thumbnail": "",
+    "creationDate": "2024-04-15T15:50:28.196Z",
+    "lastChangeDate": "2024-04-15T15:50:28.196Z",
+    "workbench": {
+     "ab014072-a95f-5775-bb34-5582a13245a6": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/file",
+      "version": "1.0.0",
+      "label": "OutputFile",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca",
+        "output": "outFile"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca"
+      ],
+      "parent": null
+     },
+     "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca": {
+      "key": "simcore/services/frontend/file-picker",
+      "version": "1.0.0",
+      "label": "InputFile",
+      "thumbnail": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {}
+     },
+     "096acfb2-8c38-560a-91d3-8911f4334289": {
+      "key": "simcore/services/frontend/parameter/integer",
+      "version": "1.0.0",
+      "label": "InputInt",
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {
+       "out_1": 1
+      }
+     },
+     "3d4963ee-179f-5948-9086-dd9bef543f65": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/integer",
+      "version": "1.0.0",
+      "label": "OutputInt",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "096acfb2-8c38-560a-91d3-8911f4334289",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "096acfb2-8c38-560a-91d3-8911f4334289"
+      ]
+     },
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "key": "simcore/services/comp/itis/sleeper",
+      "version": "2.0.2",
+      "label": "sleeper",
+      "progress": 0.0,
+      "thumbnail": null,
+      "inputs": {
+       "input_2": 2,
+       "input_3": false
+      },
+      "inputsUnits": {},
+      "inputNodes": [],
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": null
+      }
+     },
+     "2a9452ac-d210-5e11-a631-1d73454bfd91": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/string",
+      "version": "1.0.0",
+      "label": "OutputString",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "bcc36381-7377-533f-bb04-f785c0f8e2be",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "bcc36381-7377-533f-bb04-f785c0f8e2be"
+      ]
+     },
+     "bcc36381-7377-533f-bb04-f785c0f8e2be": {
+      "key": "simcore/services/frontend/parameter/string",
+      "version": "1.0.0",
+      "label": "InputString",
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {
+       "out_1": "Foo"
+      }
+     },
+     "197ba9f7-d09c-5cf8-9290-284cd6c40fb3": {
+      "key": "simcore/services/frontend/parameter/array",
+      "version": "1.0.0",
+      "label": "InputArray",
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {
+       "out_1": [
+        1
+       ]
+      }
+     },
+     "cb5bc33d-6635-5680-98e3-a6ac57f908f4": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/array",
+      "version": "1.0.0",
+      "label": "OutputArray",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "197ba9f7-d09c-5cf8-9290-284cd6c40fb3",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "197ba9f7-d09c-5cf8-9290-284cd6c40fb3"
+      ]
+     },
+     "d43949c5-5143-5738-bae9-7d231dcabe7f": {
+      "key": "simcore/services/frontend/parameter/number",
+      "version": "1.0.0",
+      "label": "InputNumber",
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {
+       "out_1": 1
+      }
+     },
+     "cd7eacb5-6806-5956-86c8-9b30ec588402": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/number",
+      "version": "1.0.0",
+      "label": "OutputNumber",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "d43949c5-5143-5738-bae9-7d231dcabe7f",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "d43949c5-5143-5738-bae9-7d231dcabe7f"
+      ]
+     },
+     "584e44d4-9a78-571f-a2a4-7d9c7b2396e3": {
+      "key": "simcore/services/frontend/parameter/boolean",
+      "version": "1.0.0",
+      "label": "InputBool",
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputNodes": [],
+      "outputs": {
+       "out_1": true
+      }
+     },
+     "efaaeabf-e4bc-5667-a757-d9b17ad606d9": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/boolean",
+      "version": "1.0.0",
+      "label": "OutputBool",
+      "thumbnail": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "584e44d4-9a78-571f-a2a4-7d9c7b2396e3",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputNodes": [
+       "584e44d4-9a78-571f-a2a4-7d9c7b2396e3"
+      ]
+     }
+    },
+    "prjOwner": "pricemorgan@example.net",
+    "accessRights": {
+     "3": {
+      "read": true,
+      "write": true,
+      "delete": true
+     }
+    },
+    "tags": [],
+    "classifiers": [],
+    "state": {
+     "locked": {
+      "value": false,
+      "status": "CLOSED"
+     },
+     "state": {
+      "value": "NOT_STARTED"
+     }
+    },
+    "ui": {
+     "workbench": {
+      "096acfb2-8c38-560a-91d3-8911f4334289": {
+       "position": {
+        "x": 220,
+        "y": 40
+       }
+      },
+      "197ba9f7-d09c-5cf8-9290-284cd6c40fb3": {
+       "position": {
+        "x": 240,
+        "y": 400
+       }
+      },
+      "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+       "position": {
+        "x": 820,
+        "y": 360
+       }
+      },
+      "2a9452ac-d210-5e11-a631-1d73454bfd91": {
+       "position": {
+        "x": 580,
+        "y": 200
+       }
+      },
+      "3d4963ee-179f-5948-9086-dd9bef543f65": {
+       "position": {
+        "x": 580,
+        "y": 40
+       }
+      },
+      "584e44d4-9a78-571f-a2a4-7d9c7b2396e3": {
+       "position": {
+        "x": 278,
+        "y": 733
+       }
+      },
+      "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca": {
+       "position": {
+        "x": 200,
+        "y": 840
+       }
+      },
+      "ab014072-a95f-5775-bb34-5582a13245a6": {
+       "position": {
+        "x": 700,
+        "y": 840
+       }
+      },
+      "bcc36381-7377-533f-bb04-f785c0f8e2be": {
+       "position": {
+        "x": 220,
+        "y": 200
+       }
+      },
+      "cb5bc33d-6635-5680-98e3-a6ac57f908f4": {
+       "position": {
+        "x": 580,
+        "y": 420
+       }
+      },
+      "cd7eacb5-6806-5956-86c8-9b30ec588402": {
+       "position": {
+        "x": 562,
+        "y": 586
+       }
+      },
+      "d43949c5-5143-5738-bae9-7d231dcabe7f": {
+       "position": {
+        "x": 271,
+        "y": 621
+       }
+      },
+      "efaaeabf-e4bc-5667-a757-d9b17ad606d9": {
+       "position": {
+        "x": 656,
+        "y": 720
+       }
+      }
+     },
+     "slideshow": {},
+     "currentNodeId": "aeab71fe-f71b-11ee-8fca-0242ac140008",
+     "mode": "workbench"
+    },
+    "quality": {
+     "enabled": true,
+     "tsr_target": {
+      "r01": {
+       "level": 4,
+       "references": ""
+      },
+      "r02": {
+       "level": 4,
+       "references": ""
+      },
+      "r03": {
+       "level": 4,
+       "references": ""
+      },
+      "r04": {
+       "level": 4,
+       "references": ""
+      },
+      "r05": {
+       "level": 4,
+       "references": ""
+      },
+      "r06": {
+       "level": 4,
+       "references": ""
+      },
+      "r07": {
+       "level": 4,
+       "references": ""
+      },
+      "r08": {
+       "level": 4,
+       "references": ""
+      },
+      "r09": {
+       "level": 4,
+       "references": ""
+      },
+      "r10": {
+       "level": 4,
+       "references": ""
+      },
+      "r03b": {
+       "references": ""
+      },
+      "r03c": {
+       "references": ""
+      },
+      "r07b": {
+       "references": ""
+      },
+      "r07c": {
+       "references": ""
+      },
+      "r07d": {
+       "references": ""
+      },
+      "r07e": {
+       "references": ""
+      },
+      "r08b": {
+       "references": ""
+      },
+      "r10b": {
+       "references": ""
+      }
+     },
+     "tsr_current": {
+      "r01": {
+       "level": 0,
+       "references": ""
+      },
+      "r02": {
+       "level": 0,
+       "references": ""
+      },
+      "r03": {
+       "level": 0,
+       "references": ""
+      },
+      "r04": {
+       "level": 0,
+       "references": ""
+      },
+      "r05": {
+       "level": 0,
+       "references": ""
+      },
+      "r06": {
+       "level": 0,
+       "references": ""
+      },
+      "r07": {
+       "level": 0,
+       "references": ""
+      },
+      "r08": {
+       "level": 0,
+       "references": ""
+      },
+      "r09": {
+       "level": 0,
+       "references": ""
+      },
+      "r10": {
+       "level": 0,
+       "references": ""
+      },
+      "r03b": {
+       "references": ""
+      },
+      "r03c": {
+       "references": ""
+      },
+      "r07b": {
+       "references": ""
+      },
+      "r07c": {
+       "references": ""
+      },
+      "r07d": {
+       "references": ""
+      },
+      "r07e": {
+       "references": ""
+      },
+      "r08b": {
+       "references": ""
+      },
+      "r10b": {
+       "references": ""
+      }
+     }
+    },
+    "dev": {}
+   }
+  }
+ },
+ {
+  "name": "PUT /projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('PUT', 'http://webserver:8080/v0/projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c')>",
+  "method": "PUT",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "projects"
+    }
+   ]
+  },
+  "request_payload": {
+   "uuid": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "name": "studies/aeab71fe-f71b-11ee-8fca-0242ac140008/jobs/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "description": "",
+   "thumbnail": null,
+   "creationDate": "2024-04-15T15:50:28.196Z",
+   "lastChangeDate": "2024-04-15T15:50:28.196Z",
+   "workbench": {
+    "ab014072-a95f-5775-bb34-5582a13245a6": {
+     "key": "simcore/services/frontend/iterator-consumer/probe/file",
+     "version": "1.0.0",
+     "label": "OutputFile",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {
+      "in_1": {
+       "nodeUuid": "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca",
+       "output": "outFile"
+      }
+     },
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [
+      "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca"
+     ],
+     "outputs": {},
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    },
+    "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca": {
+     "key": "simcore/services/frontend/file-picker",
+     "version": "1.0.0",
+     "label": "InputFile",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {},
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [],
+     "outputs": {},
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    },
+    "096acfb2-8c38-560a-91d3-8911f4334289": {
+     "key": "simcore/services/frontend/parameter/integer",
+     "version": "1.0.0",
+     "label": "InputInt",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {},
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [],
+     "outputs": {
+      "out_1": 1
+     },
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    },
+    "3d4963ee-179f-5948-9086-dd9bef543f65": {
+     "key": "simcore/services/frontend/iterator-consumer/probe/integer",
+     "version": "1.0.0",
+     "label": "OutputInt",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {
+      "in_1": {
+       "nodeUuid": "096acfb2-8c38-560a-91d3-8911f4334289",
+       "output": "out_1"
+      }
+     },
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [
+      "096acfb2-8c38-560a-91d3-8911f4334289"
+     ],
+     "outputs": {},
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    },
+    "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+     "key": "simcore/services/comp/itis/sleeper",
+     "version": "2.0.2",
+     "label": "sleeper",
+     "progress": 0.0,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {
+      "input_2": 2,
+      "input_3": false
+     },
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [],
+     "outputs": {},
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": null
+     },
+     "bootOptions": null
+    },
+    "2a9452ac-d210-5e11-a631-1d73454bfd91": {
+     "key": "simcore/services/frontend/iterator-consumer/probe/string",
+     "version": "1.0.0",
+     "label": "OutputString",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {
+      "in_1": {
+       "nodeUuid": "bcc36381-7377-533f-bb04-f785c0f8e2be",
+       "output": "out_1"
+      }
+     },
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [
+      "bcc36381-7377-533f-bb04-f785c0f8e2be"
+     ],
+     "outputs": {},
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    },
+    "bcc36381-7377-533f-bb04-f785c0f8e2be": {
+     "key": "simcore/services/frontend/parameter/string",
+     "version": "1.0.0",
+     "label": "InputString",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {},
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [],
+     "outputs": {
+      "out_1": "Foo"
+     },
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    },
+    "197ba9f7-d09c-5cf8-9290-284cd6c40fb3": {
+     "key": "simcore/services/frontend/parameter/array",
+     "version": "1.0.0",
+     "label": "InputArray",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {},
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [],
+     "outputs": {
+      "out_1": [
+       1
+      ]
+     },
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    },
+    "cb5bc33d-6635-5680-98e3-a6ac57f908f4": {
+     "key": "simcore/services/frontend/iterator-consumer/probe/array",
+     "version": "1.0.0",
+     "label": "OutputArray",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {
+      "in_1": {
+       "nodeUuid": "197ba9f7-d09c-5cf8-9290-284cd6c40fb3",
+       "output": "out_1"
+      }
+     },
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [
+      "197ba9f7-d09c-5cf8-9290-284cd6c40fb3"
+     ],
+     "outputs": {},
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    },
+    "d43949c5-5143-5738-bae9-7d231dcabe7f": {
+     "key": "simcore/services/frontend/parameter/number",
+     "version": "1.0.0",
+     "label": "InputNumber",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {},
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [],
+     "outputs": {
+      "out_1": 1
+     },
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    },
+    "cd7eacb5-6806-5956-86c8-9b30ec588402": {
+     "key": "simcore/services/frontend/iterator-consumer/probe/number",
+     "version": "1.0.0",
+     "label": "OutputNumber",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {
+      "in_1": {
+       "nodeUuid": "d43949c5-5143-5738-bae9-7d231dcabe7f",
+       "output": "out_1"
+      }
+     },
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [
+      "d43949c5-5143-5738-bae9-7d231dcabe7f"
+     ],
+     "outputs": {},
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    },
+    "584e44d4-9a78-571f-a2a4-7d9c7b2396e3": {
+     "key": "simcore/services/frontend/parameter/boolean",
+     "version": "1.0.0",
+     "label": "InputBool",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {},
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [],
+     "outputs": {
+      "out_1": true
+     },
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    },
+    "efaaeabf-e4bc-5667-a757-d9b17ad606d9": {
+     "key": "simcore/services/frontend/iterator-consumer/probe/boolean",
+     "version": "1.0.0",
+     "label": "OutputBool",
+     "progress": null,
+     "thumbnail": null,
+     "runHash": null,
+     "inputs": {
+      "in_1": {
+       "nodeUuid": "584e44d4-9a78-571f-a2a4-7d9c7b2396e3",
+       "output": "out_1"
+      }
+     },
+     "inputsUnits": {},
+     "inputAccess": null,
+     "inputNodes": [
+      "584e44d4-9a78-571f-a2a4-7d9c7b2396e3"
+     ],
+     "outputs": {},
+     "outputNode": null,
+     "outputNodes": null,
+     "parent": null,
+     "position": null,
+     "state": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "NOT_STARTED",
+      "progress": 0
+     },
+     "bootOptions": null
+    }
+   },
+   "prjOwner": "leon77@example.com",
+   "accessRights": {
+    "3": {
+     "read": true,
+     "write": true,
+     "delete": true
+    }
+   },
+   "tags": [],
+   "classifiers": [],
+   "state": {
+    "locked": {
+     "value": false,
+     "owner": null,
+     "status": "CLOSED"
+    },
+    "state": {
+     "value": "NOT_STARTED"
+    }
+   },
+   "ui": {
+    "workbench": {
+     "096acfb2-8c38-560a-91d3-8911f4334289": {
+      "position": {
+       "x": 220,
+       "y": 40
+      },
+      "marker": null
+     },
+     "197ba9f7-d09c-5cf8-9290-284cd6c40fb3": {
+      "position": {
+       "x": 240,
+       "y": 400
+      },
+      "marker": null
+     },
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "position": {
+       "x": 820,
+       "y": 360
+      },
+      "marker": null
+     },
+     "2a9452ac-d210-5e11-a631-1d73454bfd91": {
+      "position": {
+       "x": 580,
+       "y": 200
+      },
+      "marker": null
+     },
+     "3d4963ee-179f-5948-9086-dd9bef543f65": {
+      "position": {
+       "x": 580,
+       "y": 40
+      },
+      "marker": null
+     },
+     "584e44d4-9a78-571f-a2a4-7d9c7b2396e3": {
+      "position": {
+       "x": 278,
+       "y": 733
+      },
+      "marker": null
+     },
+     "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca": {
+      "position": {
+       "x": 200,
+       "y": 840
+      },
+      "marker": null
+     },
+     "ab014072-a95f-5775-bb34-5582a13245a6": {
+      "position": {
+       "x": 700,
+       "y": 840
+      },
+      "marker": null
+     },
+     "bcc36381-7377-533f-bb04-f785c0f8e2be": {
+      "position": {
+       "x": 220,
+       "y": 200
+      },
+      "marker": null
+     },
+     "cb5bc33d-6635-5680-98e3-a6ac57f908f4": {
+      "position": {
+       "x": 580,
+       "y": 420
+      },
+      "marker": null
+     },
+     "cd7eacb5-6806-5956-86c8-9b30ec588402": {
+      "position": {
+       "x": 562,
+       "y": 586
+      },
+      "marker": null
+     },
+     "d43949c5-5143-5738-bae9-7d231dcabe7f": {
+      "position": {
+       "x": 271,
+       "y": 621
+      },
+      "marker": null
+     },
+     "efaaeabf-e4bc-5667-a757-d9b17ad606d9": {
+      "position": {
+       "x": 656,
+       "y": 720
+      },
+      "marker": null
+     }
+    },
+    "slideshow": {},
+    "currentNodeId": "aeab71fe-f71b-11ee-8fca-0242ac140008",
+    "annotations": null,
+    "mode": "workbench"
+   },
+   "quality": {
+    "enabled": true,
+    "tsr_target": {
+     "r01": {
+      "level": 4,
+      "references": ""
+     },
+     "r02": {
+      "level": 4,
+      "references": ""
+     },
+     "r03": {
+      "level": 4,
+      "references": ""
+     },
+     "r04": {
+      "level": 4,
+      "references": ""
+     },
+     "r05": {
+      "level": 4,
+      "references": ""
+     },
+     "r06": {
+      "level": 4,
+      "references": ""
+     },
+     "r07": {
+      "level": 4,
+      "references": ""
+     },
+     "r08": {
+      "level": 4,
+      "references": ""
+     },
+     "r09": {
+      "level": 4,
+      "references": ""
+     },
+     "r10": {
+      "level": 4,
+      "references": ""
+     },
+     "r03b": {
+      "references": ""
+     },
+     "r03c": {
+      "references": ""
+     },
+     "r07b": {
+      "references": ""
+     },
+     "r07c": {
+      "references": ""
+     },
+     "r07d": {
+      "references": ""
+     },
+     "r07e": {
+      "references": ""
+     },
+     "r08b": {
+      "references": ""
+     },
+     "r10b": {
+      "references": ""
+     }
+    },
+    "tsr_current": {
+     "r01": {
+      "level": 0,
+      "references": ""
+     },
+     "r02": {
+      "level": 0,
+      "references": ""
+     },
+     "r03": {
+      "level": 0,
+      "references": ""
+     },
+     "r04": {
+      "level": 0,
+      "references": ""
+     },
+     "r05": {
+      "level": 0,
+      "references": ""
+     },
+     "r06": {
+      "level": 0,
+      "references": ""
+     },
+     "r07": {
+      "level": 0,
+      "references": ""
+     },
+     "r08": {
+      "level": 0,
+      "references": ""
+     },
+     "r09": {
+      "level": 0,
+      "references": ""
+     },
+     "r10": {
+      "level": 0,
+      "references": ""
+     },
+     "r03b": {
+      "references": ""
+     },
+     "r03c": {
+      "references": ""
+     },
+     "r07b": {
+      "references": ""
+     },
+     "r07c": {
+      "references": ""
+     },
+     "r07d": {
+      "references": ""
+     },
+     "r07e": {
+      "references": ""
+     },
+     "r08b": {
+      "references": ""
+     },
+     "r10b": {
+      "references": ""
+     }
+    }
+   },
+   "dev": {}
+  },
+  "response_body": {
+   "data": {
+    "uuid": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+    "name": "studies/aeab71fe-f71b-11ee-8fca-0242ac140008/jobs/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+    "description": "",
+    "thumbnail": "",
+    "prjOwner": "schmidtjennifer@example.net",
+    "creationDate": "2024-04-15T15:50:28.196Z",
+    "lastChangeDate": "2024-04-15T15:50:30.462Z",
+    "workbench": {
+     "ab014072-a95f-5775-bb34-5582a13245a6": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/file",
+      "version": "1.0.0",
+      "label": "OutputFile",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca",
+        "output": "outFile"
+       }
+      },
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [
+       "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca"
+      ],
+      "outputs": {},
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     },
+     "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca": {
+      "key": "simcore/services/frontend/file-picker",
+      "version": "1.0.0",
+      "label": "InputFile",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [],
+      "outputs": {},
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     },
+     "096acfb2-8c38-560a-91d3-8911f4334289": {
+      "key": "simcore/services/frontend/parameter/integer",
+      "version": "1.0.0",
+      "label": "InputInt",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [],
+      "outputs": {
+       "out_1": 1
+      },
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     },
+     "3d4963ee-179f-5948-9086-dd9bef543f65": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/integer",
+      "version": "1.0.0",
+      "label": "OutputInt",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "096acfb2-8c38-560a-91d3-8911f4334289",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [
+       "096acfb2-8c38-560a-91d3-8911f4334289"
+      ],
+      "outputs": {},
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     },
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "key": "simcore/services/comp/itis/sleeper",
+      "version": "2.0.2",
+      "label": "sleeper",
+      "progress": 0,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {
+       "input_2": 2,
+       "input_3": false
+      },
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [],
+      "outputs": {},
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": null
+      },
+      "bootOptions": null
+     },
+     "2a9452ac-d210-5e11-a631-1d73454bfd91": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/string",
+      "version": "1.0.0",
+      "label": "OutputString",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "bcc36381-7377-533f-bb04-f785c0f8e2be",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [
+       "bcc36381-7377-533f-bb04-f785c0f8e2be"
+      ],
+      "outputs": {},
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     },
+     "bcc36381-7377-533f-bb04-f785c0f8e2be": {
+      "key": "simcore/services/frontend/parameter/string",
+      "version": "1.0.0",
+      "label": "InputString",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [],
+      "outputs": {
+       "out_1": "Foo"
+      },
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     },
+     "197ba9f7-d09c-5cf8-9290-284cd6c40fb3": {
+      "key": "simcore/services/frontend/parameter/array",
+      "version": "1.0.0",
+      "label": "InputArray",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [],
+      "outputs": {
+       "out_1": [
+        1
+       ]
+      },
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     },
+     "cb5bc33d-6635-5680-98e3-a6ac57f908f4": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/array",
+      "version": "1.0.0",
+      "label": "OutputArray",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "197ba9f7-d09c-5cf8-9290-284cd6c40fb3",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [
+       "197ba9f7-d09c-5cf8-9290-284cd6c40fb3"
+      ],
+      "outputs": {},
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     },
+     "d43949c5-5143-5738-bae9-7d231dcabe7f": {
+      "key": "simcore/services/frontend/parameter/number",
+      "version": "1.0.0",
+      "label": "InputNumber",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [],
+      "outputs": {
+       "out_1": 1
+      },
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     },
+     "cd7eacb5-6806-5956-86c8-9b30ec588402": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/number",
+      "version": "1.0.0",
+      "label": "OutputNumber",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "d43949c5-5143-5738-bae9-7d231dcabe7f",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [
+       "d43949c5-5143-5738-bae9-7d231dcabe7f"
+      ],
+      "outputs": {},
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     },
+     "584e44d4-9a78-571f-a2a4-7d9c7b2396e3": {
+      "key": "simcore/services/frontend/parameter/boolean",
+      "version": "1.0.0",
+      "label": "InputBool",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {},
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [],
+      "outputs": {
+       "out_1": true
+      },
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     },
+     "efaaeabf-e4bc-5667-a757-d9b17ad606d9": {
+      "key": "simcore/services/frontend/iterator-consumer/probe/boolean",
+      "version": "1.0.0",
+      "label": "OutputBool",
+      "progress": null,
+      "thumbnail": null,
+      "runHash": null,
+      "inputs": {
+       "in_1": {
+        "nodeUuid": "584e44d4-9a78-571f-a2a4-7d9c7b2396e3",
+        "output": "out_1"
+       }
+      },
+      "inputsUnits": {},
+      "inputAccess": null,
+      "inputNodes": [
+       "584e44d4-9a78-571f-a2a4-7d9c7b2396e3"
+      ],
+      "outputs": {},
+      "outputNode": null,
+      "outputNodes": null,
+      "parent": null,
+      "position": null,
+      "state": {
+       "modified": true,
+       "dependencies": [],
+       "currentStatus": "NOT_STARTED",
+       "progress": 0
+      },
+      "bootOptions": null
+     }
+    },
+    "accessRights": {
+     "3": {
+      "read": true,
+      "write": true,
+      "delete": true
+     }
+    },
+    "dev": {},
+    "classifiers": [],
+    "ui": {
+     "mode": "workbench",
+     "slideshow": {},
+     "workbench": {
+      "096acfb2-8c38-560a-91d3-8911f4334289": {
+       "marker": null,
+       "position": {
+        "x": 220,
+        "y": 40
+       }
+      },
+      "197ba9f7-d09c-5cf8-9290-284cd6c40fb3": {
+       "marker": null,
+       "position": {
+        "x": 240,
+        "y": 400
+       }
+      },
+      "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+       "marker": null,
+       "position": {
+        "x": 820,
+        "y": 360
+       }
+      },
+      "2a9452ac-d210-5e11-a631-1d73454bfd91": {
+       "marker": null,
+       "position": {
+        "x": 580,
+        "y": 200
+       }
+      },
+      "3d4963ee-179f-5948-9086-dd9bef543f65": {
+       "marker": null,
+       "position": {
+        "x": 580,
+        "y": 40
+       }
+      },
+      "584e44d4-9a78-571f-a2a4-7d9c7b2396e3": {
+       "marker": null,
+       "position": {
+        "x": 278,
+        "y": 733
+       }
+      },
+      "9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca": {
+       "marker": null,
+       "position": {
+        "x": 200,
+        "y": 840
+       }
+      },
+      "ab014072-a95f-5775-bb34-5582a13245a6": {
+       "marker": null,
+       "position": {
+        "x": 700,
+        "y": 840
+       }
+      },
+      "bcc36381-7377-533f-bb04-f785c0f8e2be": {
+       "marker": null,
+       "position": {
+        "x": 220,
+        "y": 200
+       }
+      },
+      "cb5bc33d-6635-5680-98e3-a6ac57f908f4": {
+       "marker": null,
+       "position": {
+        "x": 580,
+        "y": 420
+       }
+      },
+      "cd7eacb5-6806-5956-86c8-9b30ec588402": {
+       "marker": null,
+       "position": {
+        "x": 562,
+        "y": 586
+       }
+      },
+      "d43949c5-5143-5738-bae9-7d231dcabe7f": {
+       "marker": null,
+       "position": {
+        "x": 271,
+        "y": 621
+       }
+      },
+      "efaaeabf-e4bc-5667-a757-d9b17ad606d9": {
+       "marker": null,
+       "position": {
+        "x": 656,
+        "y": 720
+       }
+      }
+     },
+     "annotations": null,
+     "currentNodeId": "aeab71fe-f71b-11ee-8fca-0242ac140008"
+    },
+    "quality": {
+     "enabled": true,
+     "tsr_target": {
+      "r01": {
+       "level": 4,
+       "references": ""
+      },
+      "r02": {
+       "level": 4,
+       "references": ""
+      },
+      "r03": {
+       "level": 4,
+       "references": ""
+      },
+      "r04": {
+       "level": 4,
+       "references": ""
+      },
+      "r05": {
+       "level": 4,
+       "references": ""
+      },
+      "r06": {
+       "level": 4,
+       "references": ""
+      },
+      "r07": {
+       "level": 4,
+       "references": ""
+      },
+      "r08": {
+       "level": 4,
+       "references": ""
+      },
+      "r09": {
+       "level": 4,
+       "references": ""
+      },
+      "r10": {
+       "level": 4,
+       "references": ""
+      },
+      "r03b": {
+       "references": ""
+      },
+      "r03c": {
+       "references": ""
+      },
+      "r07b": {
+       "references": ""
+      },
+      "r07c": {
+       "references": ""
+      },
+      "r07d": {
+       "references": ""
+      },
+      "r07e": {
+       "references": ""
+      },
+      "r08b": {
+       "references": ""
+      },
+      "r10b": {
+       "references": ""
+      }
+     },
+     "tsr_current": {
+      "r01": {
+       "level": 0,
+       "references": ""
+      },
+      "r02": {
+       "level": 0,
+       "references": ""
+      },
+      "r03": {
+       "level": 0,
+       "references": ""
+      },
+      "r04": {
+       "level": 0,
+       "references": ""
+      },
+      "r05": {
+       "level": 0,
+       "references": ""
+      },
+      "r06": {
+       "level": 0,
+       "references": ""
+      },
+      "r07": {
+       "level": 0,
+       "references": ""
+      },
+      "r08": {
+       "level": 0,
+       "references": ""
+      },
+      "r09": {
+       "level": 0,
+       "references": ""
+      },
+      "r10": {
+       "level": 0,
+       "references": ""
+      },
+      "r03b": {
+       "references": ""
+      },
+      "r03c": {
+       "references": ""
+      },
+      "r07b": {
+       "references": ""
+      },
+      "r07c": {
+       "references": ""
+      },
+      "r07d": {
+       "references": ""
+      },
+      "r07e": {
+       "references": ""
+      },
+      "r08b": {
+       "references": ""
+      },
+      "r10b": {
+       "references": ""
+      }
+     }
+    },
+    "tags": [],
+    "state": {
+     "locked": {
+      "value": false,
+      "status": "CLOSED"
+     },
+     "state": {
+      "value": "NOT_STARTED"
+     }
+    }
+   }
+  }
+ },
+ {
+  "name": "GET /projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c/inputs",
+  "description": "<Request('GET', 'http://webserver:8080/v0/projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c/inputs')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}/inputs",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "projects"
+    }
+   ]
+  },
+  "response_body": {
+   "data": {
+    "096acfb2-8c38-560a-91d3-8911f4334289": {
+     "key": "096acfb2-8c38-560a-91d3-8911f4334289",
+     "value": 1,
+     "label": "InputInt"
+    },
+    "bcc36381-7377-533f-bb04-f785c0f8e2be": {
+     "key": "bcc36381-7377-533f-bb04-f785c0f8e2be",
+     "value": "Foo",
+     "label": "InputString"
+    },
+    "197ba9f7-d09c-5cf8-9290-284cd6c40fb3": {
+     "key": "197ba9f7-d09c-5cf8-9290-284cd6c40fb3",
+     "value": [
+      1
+     ],
+     "label": "InputArray"
+    },
+    "d43949c5-5143-5738-bae9-7d231dcabe7f": {
+     "key": "d43949c5-5143-5738-bae9-7d231dcabe7f",
+     "value": 1,
+     "label": "InputNumber"
+    },
+    "584e44d4-9a78-571f-a2a4-7d9c7b2396e3": {
+     "key": "584e44d4-9a78-571f-a2a4-7d9c7b2396e3",
+     "value": true,
+     "label": "InputBool"
+    }
+   }
+  }
+ },
+ {
+  "name": "PATCH /projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c/nodes/9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca/outputs",
+  "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c/nodes/9fdd8dcc-7b2a-5b48-9918-63edc5eb1aca/outputs')>",
+  "method": "PATCH",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}/nodes/{node_id}/outputs",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str"
+     },
+     "response_value": "projects"
+    },
+    {
+     "in": "path",
+     "name": "node_id",
+     "required": true,
+     "schema": {
+      "title": "Node Id",
+      "type": "str"
+     },
+     "response_value": "nodes"
+    }
+   ]
+  },
+  "request_payload": {
+   "outputs": {
+    "outFile": {
+     "store": 0,
+     "path": "api/d8bc0c02-c3ee-3cec-a562-e6fd3e00be4b/input.json",
+     "label": "input.json",
+     "eTag": "3f14fb3a8ba8d750f26bdaa402b2f6cc",
+     "dataset": null
+    }
+   }
+  },
+  "status_code": 204
+ },
+ {
+  "name": "PATCH /projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c/inputs",
+  "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c/inputs')>",
+  "method": "PATCH",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}/inputs",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "projects"
+    }
+   ]
+  },
+  "request_payload": {
+   "key": "value"
+  },
+  "response_body": {
+   "data": {
+    "096acfb2-8c38-560a-91d3-8911f4334289": {
+     "key": "096acfb2-8c38-560a-91d3-8911f4334289",
+     "value": 42,
+     "label": "InputInt"
+    },
+    "bcc36381-7377-533f-bb04-f785c0f8e2be": {
+     "key": "bcc36381-7377-533f-bb04-f785c0f8e2be",
+     "value": "Z43",
+     "label": "InputString"
+    },
+    "197ba9f7-d09c-5cf8-9290-284cd6c40fb3": {
+     "key": "197ba9f7-d09c-5cf8-9290-284cd6c40fb3",
+     "value": [
+      1,
+      2,
+      3
+     ],
+     "label": "InputArray"
+    },
+    "d43949c5-5143-5738-bae9-7d231dcabe7f": {
+     "key": "d43949c5-5143-5738-bae9-7d231dcabe7f",
+     "value": 3.14,
+     "label": "InputNumber"
+    },
+    "584e44d4-9a78-571f-a2a4-7d9c7b2396e3": {
+     "key": "584e44d4-9a78-571f-a2a4-7d9c7b2396e3",
+     "value": false,
+     "label": "InputBool"
+    }
+   }
+  }
+ },
+ {
+  "name": "POST /computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c:start",
+  "description": "<Request('POST', 'http://webserver:8080/v0/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c:start')>",
+  "method": "POST",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/computations/{project_id}:start",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "request_payload": {},
+  "response_body": {
+   "data": {
+    "pipeline_id": "e19f9144-fb3f-11ee-b7b0-0242ac14001c"
+   }
+  },
+  "status_code": 201
+ },
+ {
+  "name": "GET /v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "id": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "state": "STARTED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": []
+    },
+    "progress": 0.05,
+    "node_states": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "STARTED",
+      "progress": 0.05
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-15T15:50:31.284124+00:00",
+   "stopped": null,
+   "submitted": "2024-04-15T15:50:31.162440+00:00",
+   "url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c:stop?user_id=1"
+  }
+ },
+ {
+  "name": "GET /v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "id": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "state": "STARTED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": []
+    },
+    "progress": 0.05,
+    "node_states": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "STARTED",
+      "progress": 0.05
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-15T15:50:31.284124+00:00",
+   "stopped": null,
+   "submitted": "2024-04-15T15:50:31.162440+00:00",
+   "url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c:stop?user_id=1"
+  }
+ },
+ {
+  "name": "GET /v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "id": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "state": "STARTED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": []
+    },
+    "progress": 0.05,
+    "node_states": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "STARTED",
+      "progress": 0.05
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-15T15:50:31.284124+00:00",
+   "stopped": null,
+   "submitted": "2024-04-15T15:50:31.162440+00:00",
+   "url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c:stop?user_id=1"
+  }
+ },
+ {
+  "name": "GET /v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "id": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "state": "STARTED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": []
+    },
+    "progress": 0.05,
+    "node_states": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "STARTED",
+      "progress": 0.05
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-15T15:50:31.284124+00:00",
+   "stopped": null,
+   "submitted": "2024-04-15T15:50:31.162440+00:00",
+   "url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c:stop?user_id=1"
+  }
+ },
+ {
+  "name": "GET /v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "id": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "state": "STARTED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": []
+    },
+    "progress": 0.05,
+    "node_states": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "STARTED",
+      "progress": 0.05
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-15T15:50:31.284124+00:00",
+   "stopped": null,
+   "submitted": "2024-04-15T15:50:31.162440+00:00",
+   "url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c:stop?user_id=1"
+  }
+ },
+ {
+  "name": "GET /v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "id": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "state": "STARTED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": []
+    },
+    "progress": 0.05,
+    "node_states": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "STARTED",
+      "progress": 0.05
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-15T15:50:31.284124+00:00",
+   "stopped": null,
+   "submitted": "2024-04-15T15:50:31.162440+00:00",
+   "url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c:stop?user_id=1"
+  }
+ },
+ {
+  "name": "GET /v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "id": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "state": "STARTED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": []
+    },
+    "progress": 0.05,
+    "node_states": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "STARTED",
+      "progress": 0.05
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-15T15:50:31.284124+00:00",
+   "stopped": null,
+   "submitted": "2024-04-15T15:50:31.162440+00:00",
+   "url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c:stop?user_id=1"
+  }
+ },
+ {
+  "name": "GET /v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "id": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "state": "STARTED",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": []
+    },
+    "progress": 0.05,
+    "node_states": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "modified": true,
+      "dependencies": [],
+      "currentStatus": "STARTED",
+      "progress": 0.05
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-15T15:50:31.284124+00:00",
+   "stopped": null,
+   "submitted": "2024-04-15T15:50:31.162440+00:00",
+   "url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1",
+   "stop_url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c:stop?user_id=1"
+  }
+ },
+ {
+  "name": "GET /v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "id": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "state": "SUCCESS",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": []
+    },
+    "progress": 1.0,
+    "node_states": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "modified": false,
+      "dependencies": [],
+      "currentStatus": "SUCCESS",
+      "progress": 1.0
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-15T15:50:31.284124+00:00",
+   "stopped": "2024-04-15T15:50:37.747356+00:00",
+   "submitted": "2024-04-15T15:50:31.162440+00:00",
+   "url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1",
+   "stop_url": null
+  }
+ },
+ {
+  "name": "GET /v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1')>",
+  "method": "GET",
+  "host": "director-v2",
+  "path": {
+   "path": "/v2/computations/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "computations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "id": "e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+   "state": "SUCCESS",
+   "result": null,
+   "pipeline_details": {
+    "adjacency_list": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": []
+    },
+    "progress": 1.0,
+    "node_states": {
+     "2519eb2c-fd8f-5f07-a75a-800cc4b284f2": {
+      "modified": false,
+      "dependencies": [],
+      "currentStatus": "SUCCESS",
+      "progress": 1.0
+     }
+    }
+   },
+   "iteration": 1,
+   "cluster_id": 0,
+   "started": "2024-04-15T15:50:31.284124+00:00",
+   "stopped": "2024-04-15T15:50:37.747356+00:00",
+   "submitted": "2024-04-15T15:50:31.162440+00:00",
+   "url": "http://director-v2:8000/v2/computations/e19f9144-fb3f-11ee-b7b0-0242ac14001c?user_id=1",
+   "stop_url": null
+  }
+ },
+ {
+  "name": "GET /projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c/outputs",
+  "description": "<Request('GET', 'http://webserver:8080/v0/projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c/outputs')>",
+  "method": "GET",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}/outputs",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "projects"
+    }
+   ]
+  },
+  "response_body": {
+   "data": {
+    "ab014072-a95f-5775-bb34-5582a13245a6": {
+     "key": "ab014072-a95f-5775-bb34-5582a13245a6",
+     "value": {
+      "store": 0,
+      "path": "api/d8bc0c02-c3ee-3cec-a562-e6fd3e00be4b/input.json",
+      "label": "input.json",
+      "eTag": "3f14fb3a8ba8d750f26bdaa402b2f6cc",
+      "dataset": null
+     },
+     "label": "OutputFile"
+    },
+    "3d4963ee-179f-5948-9086-dd9bef543f65": {
+     "key": "3d4963ee-179f-5948-9086-dd9bef543f65",
+     "value": 42,
+     "label": "OutputInt"
+    },
+    "2a9452ac-d210-5e11-a631-1d73454bfd91": {
+     "key": "2a9452ac-d210-5e11-a631-1d73454bfd91",
+     "value": "Z43",
+     "label": "OutputString"
+    },
+    "cb5bc33d-6635-5680-98e3-a6ac57f908f4": {
+     "key": "cb5bc33d-6635-5680-98e3-a6ac57f908f4",
+     "value": [
+      1,
+      2,
+      3
+     ],
+     "label": "OutputArray"
+    },
+    "cd7eacb5-6806-5956-86c8-9b30ec588402": {
+     "key": "cd7eacb5-6806-5956-86c8-9b30ec588402",
+     "value": 3.14,
+     "label": "OutputNumber"
+    },
+    "efaaeabf-e4bc-5667-a757-d9b17ad606d9": {
+     "key": "efaaeabf-e4bc-5667-a757-d9b17ad606d9",
+     "value": false,
+     "label": "OutputBool"
+    }
+   }
+  }
+ },
+ {
+  "name": "POST /simcore-s3/files/metadata:search",
+  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4&access_right=read')>",
+  "method": "POST",
+  "host": "storage",
+  "path": {
+   "path": "/v0/simcore-s3/files/metadata:search",
+   "path_parameters": []
+  },
+  "query": "user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4&access_right=read",
+  "response_body": {
+   "data": []
+  }
+ },
+ {
+  "name": "POST /files/api%2Fd8bc0c02-c3ee-3cec-a562-e6fd3e00be4b%2Finput.json:soft-copy",
+  "description": "<Request('POST', 'http://storage:8080/v0/files/api%2Fd8bc0c02-c3ee-3cec-a562-e6fd3e00be4b%2Finput.json:soft-copy?user_id=1')>",
+  "method": "POST",
+  "host": "storage",
+  "path": {
+   "path": "/v0/files/{file_id}:soft-copy",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "file_id",
+     "required": true,
+     "schema": {
+      "title": "File Id",
+      "anyOf": [
+       {
+        "type": "str",
+        "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+       },
+       {
+        "type": "str",
+        "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+       }
+      ]
+     },
+     "response_value": "files"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "request_payload": {
+   "link_id": "api/5b0cd3cd-5ceb-3d74-9961-246840c1e1d4/input.json"
+  },
+  "response_body": {
+   "data": {
+    "file_uuid": "api/5b0cd3cd-5ceb-3d74-9961-246840c1e1d4/input.json",
+    "location_id": 0,
+    "project_name": null,
+    "node_name": null,
+    "file_name": "input.json",
+    "file_id": "api/5b0cd3cd-5ceb-3d74-9961-246840c1e1d4/input.json",
+    "created_at": "2024-04-15T15:50:27.134729",
+    "last_modified": "2024-04-15T15:50:27+00:00",
+    "file_size": 9,
+    "entity_tag": "3f14fb3a8ba8d750f26bdaa402b2f6cc",
+    "is_soft_link": true,
+    "is_directory": false,
+    "sha256_checksum": "fd3bb7e4cc5098e8040cd35fe3346628693097fbf7d05477d0b2845b20b4a4fd"
+   },
+   "error": null
+  }
+ },
+ {
+  "name": "POST /simcore-s3/files/metadata:search",
+  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4&access_right=read')>",
+  "method": "POST",
+  "host": "storage",
+  "path": {
+   "path": "/v0/simcore-s3/files/metadata:search",
+   "path_parameters": []
+  },
+  "query": "user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4&access_right=read",
+  "response_body": {
+   "data": [
+    {
+     "file_uuid": "api/5b0cd3cd-5ceb-3d74-9961-246840c1e1d4/input.json",
+     "location_id": 0,
+     "project_name": null,
+     "node_name": null,
+     "file_name": "input.json",
+     "file_id": "api/5b0cd3cd-5ceb-3d74-9961-246840c1e1d4/input.json",
+     "created_at": "2024-04-15T15:50:27.134729",
+     "last_modified": "2024-04-15T15:50:27+00:00",
+     "file_size": 9,
+     "entity_tag": "3f14fb3a8ba8d750f26bdaa402b2f6cc",
+     "is_soft_link": true,
+     "is_directory": false,
+     "sha256_checksum": "fd3bb7e4cc5098e8040cd35fe3346628693097fbf7d05477d0b2845b20b4a4fd"
+    }
+   ]
+  }
+ },
+ {
+  "name": "GET /locations/0/files/api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4%2Finput.json",
+  "description": "<Request('GET', 'http://storage:8080/v0/locations/0/files/api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4%2Finput.json?user_id=1')>",
+  "method": "GET",
+  "host": "storage",
+  "path": {
+   "path": "/v0/locations/{location_id}/files/{file_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "file_id",
+     "required": true,
+     "schema": {
+      "title": "File Id",
+      "anyOf": [
+       {
+        "type": "str",
+        "pattern": "^(api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$"
+       },
+       {
+        "type": "str",
+        "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+       }
+      ]
+     },
+     "response_value": "files"
+    },
+    {
+     "in": "path",
+     "name": "location_id",
+     "required": true,
+     "schema": {
+      "title": "Location Id",
+      "type": "int"
+     },
+     "response_value": "locations"
+    }
+   ]
+  },
+  "query": "user_id=1",
+  "response_body": {
+   "data": {
+    "link": "http://127.0.0.1:9001/simcore/api/d8bc0c02-c3ee-3cec-a562-e6fd3e00be4b/input.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=12345678%2F20240415%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240415T155039Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=79a5cbc9b23ebb4084f4156acd6f7e6f891197dbd5a088327c9131768bd1c610"
+   }
+  }
+ },
+ {
+  "name": "DELETE /projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c",
+  "description": "<Request('DELETE', 'http://webserver:8080/v0/projects/e19f9144-fb3f-11ee-b7b0-0242ac14001c')>",
+  "method": "DELETE",
+  "host": "webserver",
+  "path": {
+   "path": "/v0/projects/{project_id}",
+   "path_parameters": [
+    {
+     "in": "path",
+     "name": "project_id",
+     "required": true,
+     "schema": {
+      "title": "Project Id",
+      "type": "str",
+      "format": "uuid"
+     },
+     "response_value": "projects"
+    }
+   ]
+  },
+  "status_code": 204
+ }
+]

@@ -6,12 +6,6 @@ from fastapi_pagination import add_pagination
 from httpx import HTTPError as HttpxException
 from models_library.basic_types import BootModeEnum
 from servicelib.logging_utils import config_all_loggers
-from simcore_service_api_server.api.errors.log_handling_error import (
-    log_handling_error_handler,
-)
-from simcore_service_api_server.services.log_streaming import (
-    LogDistributionBaseException,
-)
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -22,10 +16,12 @@ from ..api.errors.http_error import (
     make_http_error_handler_for_exception,
 )
 from ..api.errors.httpx_client_error import handle_httpx_client_exceptions
+from ..api.errors.log_handling_error import log_handling_error_handler
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..services import catalog, director_v2, storage, webserver
+from ..services.log_streaming import LogDistributionBaseException
 from ..services.rabbitmq import setup_rabbitmq
 from ._prometheus_instrumentation import setup_prometheus_instrumentation
 from .events import create_start_app_handler, create_stop_app_handler
@@ -127,7 +123,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
         app.add_middleware(ApiServerProfilerMiddleware)
 
-    if settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
+    if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
     # routing

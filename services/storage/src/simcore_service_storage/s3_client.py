@@ -3,24 +3,20 @@ import json
 import logging
 import urllib.parse
 from collections.abc import AsyncGenerator, Callable
-from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final, TypeAlias, cast
+from typing import Any, Final, TypeAlias
 
-import aioboto3
-from aiobotocore.session import ClientCreatorContext
+from aws_library.s3.client import SimcoreS3API
+from aws_library.s3.errors import S3KeyNotFoundError, s3_exception_handler
 from boto3.s3.transfer import TransferConfig
-from botocore.client import Config
 from models_library.api_schemas_storage import UploadedPart
-from models_library.basic_types import SHA256Str
+from models_library.basic_types import IDStr, SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
-from settings_library.s3 import S3Settings
-from simcore_service_storage.exceptions import S3KeyNotFoundError
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.type_defs import (
     ListObjectsV2OutputTypeDef,
@@ -30,7 +26,7 @@ from types_aiobotocore_s3.type_defs import (
 
 from .constants import EXPAND_DIR_MAX_ITEM_COUNT, MULTIPART_UPLOADS_MIN_TOTAL_SIZE
 from .models import ETag, MultiPartUploadLinks, S3BucketName, UploadID
-from .s3_utils import compute_num_file_chunks, s3_exception_handler
+from .s3_utils import compute_num_file_chunks
 
 _logger = logging.getLogger(__name__)
 
@@ -59,9 +55,11 @@ class S3MetaData:
             file_id=SimcoreS3FileID(obj["Key"]),
             last_modified=obj["LastModified"],
             e_tag=json.loads(obj["ETag"]),
-            sha256_checksum=SHA256Str(obj.get("ChecksumSHA256"))
-            if obj.get("ChecksumSHA256")
-            else None,
+            sha256_checksum=(
+                SHA256Str(obj.get("ChecksumSHA256"))
+                if obj.get("ChecksumSHA256")
+                else None
+            ),
             size=obj["Size"],
         )
 
@@ -85,40 +83,23 @@ async def _list_objects_v2_paginated_gen(
         yield items_in_page
 
 
-@dataclass
-class StorageS3Client:  # pylint: disable=too-many-public-methods
-    session: aioboto3.Session
-    client: S3Client
-    transfer_max_concurrency: int
+_DEFAULT_AWS_REGION: Final[str] = "us-east-1"
 
-    @classmethod
-    async def create(
-        cls, exit_stack: AsyncExitStack, settings: S3Settings, s3_max_concurrency: int
-    ) -> "StorageS3Client":
-        # upon creation the client does not try to connect, one need to make an operation
-        session = aioboto3.Session()
-        # NOTE: session.client returns an aiobotocore client enhanced with aioboto3 fcts (e.g. download_file, upload_file, copy_file...)
-        session_client = session.client(
-            "s3",
-            endpoint_url=settings.S3_ENDPOINT,
-            aws_access_key_id=settings.S3_ACCESS_KEY,
-            aws_secret_access_key=settings.S3_SECRET_KEY,
-            aws_session_token=settings.S3_ACCESS_TOKEN,
-            region_name=settings.S3_REGION,
-            config=Config(signature_version="s3v4"),
-        )
-        assert isinstance(session_client, ClientCreatorContext)  # nosec
-        client = cast(S3Client, await exit_stack.enter_async_context(session_client))
-        # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
-        await client.list_buckets()
 
-        return cls(session, client, s3_max_concurrency)
-
+class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
     @s3_exception_handler(_logger)
-    async def create_bucket(self, bucket: S3BucketName) -> None:
+    async def create_bucket(self, bucket: S3BucketName, region: IDStr) -> None:
         _logger.debug("Creating bucket: %s", bucket)
         try:
-            await self.client.create_bucket(Bucket=bucket)
+            # NOTE: see https://github.com/boto/boto3/issues/125 why this is so... (sic)
+            # setting it for the us-east-1 creates issue when creating buckets
+            create_bucket_config = {"Bucket": bucket}
+            if region != _DEFAULT_AWS_REGION:
+                create_bucket_config["CreateBucketConfiguration"] = {
+                    "LocationConstraint": region
+                }
+            await self.client.create_bucket(**create_bucket_config)
+
             _logger.info("Bucket %s successfully created", bucket)
         except self.client.exceptions.BucketAlreadyOwnedByYou:
             _logger.info(

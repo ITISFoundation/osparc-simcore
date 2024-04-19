@@ -11,12 +11,16 @@ import asyncio
 import logging
 
 from aiohttp import web
+from models_library.users import UserID
 from pydantic import BaseModel, Field
-from servicelib.logging_utils import log_decorator
+from servicelib.error_codes import create_error_code
+from servicelib.logging_utils import LogExtra, get_log_record_extra, log_decorator
 from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
+from twilio.base.exceptions import TwilioException
 from twilio.rest import Client
 
+from ..login.errors import SendingVerificationEmailError, SendingVerificationSmsError
 from ..products.api import Product
 from ..redis import get_redis_validation_code_client
 from .utils_email import get_template_path, send_email_from_template
@@ -91,37 +95,52 @@ class SMSError(RuntimeError):
 async def send_sms_code(
     phone_number: str,
     code: str,
-    twilo_auth: TwilioSettings,
+    twilio_auth: TwilioSettings,
     twilio_messaging_sid: str,
     twilio_alpha_numeric_sender: str,
     first_name: str,
+    user_id: UserID | None = None,
 ):
-    create_kwargs = {
-        "messaging_service_sid": twilio_messaging_sid,
-        "to": phone_number,
-        "body": f"Dear {first_name}, your verification code is {code}",
-    }
-    if twilo_auth.is_alphanumeric_supported(phone_number):
-        create_kwargs["from_"] = twilio_alpha_numeric_sender
+    try:
+        create_kwargs = {
+            "messaging_service_sid": twilio_messaging_sid,
+            "to": phone_number,
+            "body": f"Dear {first_name}, your verification code is {code}",
+        }
+        if twilio_auth.is_alphanumeric_supported(phone_number):
+            create_kwargs["from_"] = twilio_alpha_numeric_sender
 
-    def _sender():
-        log.info(
-            "Sending sms code to %s from product %s",
-            f"{phone_number=}",
-            twilio_alpha_numeric_sender,
+        def _sender():
+            log.info(
+                "Sending sms code to %s from product %s",
+                f"{phone_number=}",
+                twilio_alpha_numeric_sender,
+            )
+            #
+            # SEE https://www.twilio.com/docs/sms/quickstart/python
+            #
+            client = Client(
+                twilio_auth.TWILIO_ACCOUNT_SID, twilio_auth.TWILIO_AUTH_TOKEN
+            )
+            message = client.messages.create(**create_kwargs)
+
+            log.debug(
+                "Got twilio client %s",
+                f"{message=}",
+            )
+
+        await asyncio.get_event_loop().run_in_executor(executor=None, func=_sender)
+
+    except TwilioException as exc:
+        error_code = create_error_code(exc)
+        log_extra: LogExtra = get_log_record_extra(user_id=user_id) or {}
+        log.exception(
+            "Failed while setting up 2FA code and sending SMS to %s [%s]",
+            mask_phone_number(phone_number),
+            f"{error_code}",
+            extra={"error_code": error_code, **log_extra},
         )
-        #
-        # SEE https://www.twilio.com/docs/sms/quickstart/python
-        #
-        client = Client(twilo_auth.TWILIO_ACCOUNT_SID, twilo_auth.TWILIO_AUTH_TOKEN)
-        message = client.messages.create(**create_kwargs)
-
-        log.debug(
-            "Got twilio client %s",
-            f"{message=}",
-        )
-
-    await asyncio.get_event_loop().run_in_executor(executor=None, func=_sender)
+        raise SendingVerificationSmsError(reason=exc) from exc
 
 
 #
@@ -141,21 +160,33 @@ async def send_email_code(
     code: str,
     first_name: str,
     product: Product,
+    user_id: UserID | None = None,
 ):
-    email_template_path = await get_template_path(request, "new_2fa_code.jinja2")
-    await send_email_from_template(
-        request,
-        from_=support_email,
-        to=user_email,
-        template=email_template_path,
-        context={
-            "host": request.host,
-            "code": code,
-            "name": first_name,
-            "support_email": support_email,
-            "product": product,
-        },
-    )
+    try:
+        email_template_path = await get_template_path(request, "new_2fa_code.jinja2")
+        await send_email_from_template(
+            request,
+            from_=support_email,
+            to=user_email,
+            template=email_template_path,
+            context={
+                "host": request.host,
+                "code": code,
+                "name": first_name,
+                "support_email": support_email,
+                "product": product,
+            },
+        )
+    except TwilioException as exc:
+        error_code = create_error_code(exc)
+        log_extra: LogExtra = get_log_record_extra(user_id=user_id) or {}
+        log.exception(
+            "Failed while setting up 2FA code and sending Email to %s [%s]",
+            user_email,
+            f"{error_code}",
+            extra={"error_code": error_code, **log_extra},
+        )
+        raise SendingVerificationEmailError(reason=exc) from exc
 
 
 #

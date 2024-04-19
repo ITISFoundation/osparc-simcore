@@ -225,14 +225,18 @@ def fake_task_output_data(
     faker: Faker,
 ) -> TaskOutputData:
     converted_data = {
-        key: {
-            "url": faker.url(),
-            "file_mapping": next(iter(fake_io_schema[key]["fileToKeyMap"]))
-            if "fileToKeyMap" in fake_io_schema[key]
-            else None,
-        }
-        if fake_io_schema[key]["type"] == "data:*/*"
-        else value
+        key: (
+            {
+                "url": faker.url(),
+                "file_mapping": (
+                    next(iter(fake_io_schema[key]["fileToKeyMap"]))
+                    if "fileToKeyMap" in fake_io_schema[key]
+                    else None
+                ),
+            }
+            if fake_io_schema[key]["type"] == "data:*/*"
+            else value
+        )
         for key, value in fake_io_data.items()
     }
     data = parse_obj_as(TaskOutputData, converted_data)
@@ -284,13 +288,14 @@ def _app_config_with_db(
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     postgres_host_config: dict[str, str],
+    faker: Faker,
 ):
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("S3_ENDPOINT", faker.url())
+    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
+    monkeypatch.setenv("S3_REGION", faker.pystr())
+    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
+    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
 
 
 async def test_compute_input_data(
@@ -310,14 +315,18 @@ async def test_compute_input_data(
 
     # set some fake inputs
     fake_inputs = {
-        key: SimCoreFileLink(
-            store=0,
-            path=create_simcore_file_id(
-                published_project.project.uuid, sleeper_task.node_id, faker.file_name()
-            ),
-        ).dict(by_alias=True, exclude_unset=True)
-        if value_type["type"] == "data:*/*"
-        else fake_io_data[key]
+        key: (
+            SimCoreFileLink(
+                store=0,
+                path=create_simcore_file_id(
+                    published_project.project.uuid,
+                    sleeper_task.node_id,
+                    faker.file_name(),
+                ),
+            ).dict(by_alias=True, exclude_unset=True)
+            if value_type["type"] == "data:*/*"
+            else fake_io_data[key]
+        )
         for key, value_type in fake_io_schema.items()
     }
     await set_comp_task_inputs(

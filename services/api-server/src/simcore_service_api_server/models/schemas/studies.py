@@ -1,24 +1,27 @@
-from typing import TypeAlias
+import typing
 
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
-from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import BaseModel, Field
+import pydantic
+from models_library import projects, projects_nodes_io
+from models_library.utils import pydantic_tools_extension
 
-from .solvers import SolverPort
+from .. import api_resources
+from . import solvers
 
-StudyID: TypeAlias = ProjectID
+StudyID: typing.TypeAlias = projects.ProjectID
 
 
-# OUTPUT
-class Study(BaseModel):  # StudyGet
+class Study(pydantic.BaseModel):
     uid: StudyID
-    title: str = FieldNotRequired()
-    description: str = FieldNotRequired()
+    title: str = pydantic_tools_extension.FieldNotRequired()
+    description: str = pydantic_tools_extension.FieldNotRequired()
+
+    @classmethod
+    def compose_resource_name(cls, study_key) -> api_resources.RelativeResourceName:
+        return api_resources.compose_resource_name("studies", study_key)
 
 
-class StudyPort(SolverPort):
-    key: NodeID = Field(
+class StudyPort(solvers.SolverPort):
+    key: projects_nodes_io.NodeID = pydantic.Field(
         ...,
         description="port identifier name."
         "Correponds to the UUID of the parameter/probe node in the study",

@@ -128,7 +128,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __selectedItemId: null,
     __startHint: null,
     __toolHint: null,
-    __dropMe: null,
+    __dropHereNodeUI: null,
     __selectionRectInitPos: null,
     __selectionRectRepr: null,
     __panning: null,
@@ -295,21 +295,25 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       if (this.getStudy().isReadOnly()) {
         return null;
       }
+      if (this.getStudy().isPipelineRunning()) {
+        osparc.FlashMessenger.getInstance().logAs(osparc.data.model.Workbench.CANT_ADD_NODE, "ERROR");
+        return null;
+      }
       const srvCat = new osparc.workbench.ServiceCatalog();
       const maxLeft = this.getBounds().width - osparc.workbench.ServiceCatalog.Width;
       const maxHeight = this.getBounds().height - osparc.workbench.ServiceCatalog.Height;
       const posX = Math.min(winPos.x, maxLeft);
       const posY = Math.min(winPos.y, maxHeight);
       srvCat.moveTo(posX + this.__getLeftOffset(), posY + this.__getTopOffset());
-      srvCat.addListener("addService", e => {
+      srvCat.addListener("addService", async e => {
         const {
           service,
           nodeLeftId,
           nodeRightId
         } = e.getData();
-        const newNodeUI = this.__addNode(service, nodePos);
-        if (nodeLeftId !== null || nodeRightId !== null) {
-          const newNodeId = newNodeUI.getNodeId();
+        const nodeUI = await this.__addNode(service, nodePos);
+        if (nodeUI && nodeLeftId !== null || nodeRightId !== null) {
+          const newNodeId = nodeUI.getNodeId();
           this._createEdgeBetweenNodes(nodeLeftId ? nodeLeftId : newNodeId, nodeRightId ? nodeRightId : newNodeId, true);
         }
       }, this);
@@ -317,17 +321,50 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       return srvCat;
     },
 
-    __addNode: function(service, pos) {
-      const node = this.__getWorkbench().createNode(service.getKey(), service.getVersion(), null, null);
-      if (!node) {
-        return null;
-      }
+    __createTemporaryNodeUI: function(pos) {
+      const boxWidth = osparc.workbench.NodeUI.NODE_WIDTH;
+      const boxHeight = osparc.workbench.NodeUI.NODE_HEIGHT;
+      const circleSize = 26;
+      const temporaryNodeUI = new qx.ui.basic.Image("@FontAwesome5Solid/circle-notch/"+circleSize).set({
+        opacity: 0.8
+      });
+      temporaryNodeUI.getContentElement().addClass("rotate");
+      this.__workbenchLayout.add(temporaryNodeUI);
+      temporaryNodeUI.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
+      temporaryNodeUI.setLayoutProperties({
+        left: pos.x + parseInt(boxWidth/2) - parseInt(circleSize/2),
+        top: pos.y + parseInt(boxHeight/2) - parseInt(circleSize/2)
+      });
+      osparc.wrapper.Svg.updateItemPos(temporaryNodeUI.rect, pos.x, pos.y);
 
-      const newNodeUI = this._createNodeUI(node.getNodeId());
-      this._addNodeUIToWorkbench(newNodeUI, pos);
-      qx.ui.core.queue.Layout.flush();
-      this.__createDragDropMechanism(newNodeUI);
-      return newNodeUI;
+      return temporaryNodeUI;
+    },
+
+    __removeTemporaryNodeUI: function(temporaryNodeUI) {
+      temporaryNodeUI.exclude();
+      osparc.wrapper.Svg.removeItem(temporaryNodeUI.rect);
+      this.__workbenchLayout.add(temporaryNodeUI);
+      temporaryNodeUI = null;
+    },
+
+    __addNode: async function(service, pos) {
+      // render temporary node
+      let tempNodeUI = this.__createTemporaryNodeUI(pos);
+
+      let nodeUI = null;
+      try {
+        const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
+        nodeUI = this._createNodeUI(node.getNodeId());
+        this._addNodeUIToWorkbench(nodeUI, pos);
+        qx.ui.core.queue.Layout.flush();
+        this.__createDragDropMechanism(nodeUI);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        // remove temporary node
+        this.__removeTemporaryNodeUI(tempNodeUI);
+      }
+      return nodeUI;
     },
 
     __getNodesBounds: function() {
@@ -701,8 +738,12 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         if (this.__tempEdgeNodeId === dragNodeId) {
           const winPos = this.__unscaleCoordinates(this.__pointerPos.x, this.__pointerPos.y);
           const srvCat = this.openServiceCatalog(winPos, this.__pointerPos);
-          this.__tempEdgeIsInput === true ? srvCat.setContext(null, dragNodeId) : srvCat.setContext(dragNodeId, null);
-          srvCat.addListener("close", () => this.__removeTempEdge(), this);
+          if (srvCat) {
+            this.__tempEdgeIsInput === true ? srvCat.setContext(null, dragNodeId) : srvCat.setContext(dragNodeId, null);
+            srvCat.addListener("close", () => this.__removeTempEdge(), this);
+          } else {
+            this.__removeTempEdge();
+          }
         }
         this.__removePointerMoveListener();
       }, this);
@@ -1249,7 +1290,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               x: 50,
               y: 50
             }, freePos);
-            srvCat.setContext(null, nodeUI.getNodeId());
+            if (srvCat) {
+              srvCat.setContext(null, nodeUI.getNodeId());
+            }
           }
         },
         addServiceOutput: {
@@ -1260,7 +1303,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               x: 50,
               y: 50
             }, freePos);
-            srvCat.setContext(nodeUI.getNodeId(), null);
+            if (srvCat) {
+              srvCat.setContext(nodeUI.getNodeId(), null);
+            }
           }
         },
         noAction: {
@@ -1734,16 +1779,16 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __updateWidgets: function(dragging, posX, posY) {
       const boxWidth = 120;
       const boxHeight = 60;
-      if (this.__dropMe === null) {
-        const dropHint = this.__dropMe = new qx.ui.basic.Label(this.tr("Drop me")).set({
+      if (this.__dropHereNodeUI === null) {
+        const dropHereNodeUI = this.__dropHereNodeUI = new qx.ui.basic.Label(this.tr("Drop here")).set({
           font: "workbench-start-hint",
           textColor: "workbench-start-hint"
         });
-        dropHint.exclude();
-        this.__workbenchLayout.add(dropHint);
-        dropHint.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
+        dropHereNodeUI.exclude();
+        this.__workbenchLayout.add(dropHereNodeUI);
+        dropHereNodeUI.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
       }
-      const dropMe = this.__dropMe;
+      const dropMe = this.__dropHereNodeUI;
       if (dragging) {
         dropMe.show();
         const dropMeBounds = dropMe.getBounds() || dropMe.getSizeHint();
@@ -1889,7 +1934,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }
     },
 
-    __dropFile: function(e) {
+    __dropFile: async function(e) {
       this.__draggingFile(e, false);
 
       if ("dataTransfer" in e) {
@@ -1903,10 +1948,12 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           const fileList = e.dataTransfer.files;
           if (fileList.length) {
             const service = qx.data.marshal.Json.createModel(osparc.service.Utils.getFilePicker());
-            const nodeUI = this.__addNode(service, pos);
-            const filePicker = new osparc.file.FilePicker(nodeUI.getNode(), "workbench");
-            filePicker.uploadPendingFiles(fileList);
-            filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
+            const nodeUI = await this.__addNode(service, pos);
+            if (nodeUI) {
+              const filePicker = new osparc.file.FilePicker(nodeUI.getNode(), "workbench");
+              filePicker.uploadPendingFiles(fileList);
+              filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
+            }
           }
         } else {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
@@ -1914,19 +1961,19 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }
     },
 
-    __dropLink: function(e) {
+    __dropLink: async function(e) {
       this.__draggingLink(e, false);
 
       if (this.__isDraggingLink && "dragData" in this.__isDraggingLink) {
-        const data = this.__isDraggingLink["dragData"];
         const pos = this.__pointerEventToWorkbenchPos(e, false);
         const service = qx.data.marshal.Json.createModel(osparc.service.Utils.getFilePicker());
         const nodeUI = this.__addNode(service, pos);
-        const node = nodeUI.getNode();
-        // const filePicker = new osparc.file.FilePicker(node, "workbench");
-        // filePicker.buildLayout();
-        osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
-        this.__isDraggingLink = null;
+        if (nodeUI) {
+          const node = nodeUI.getNode();
+          const data = this.__isDraggingLink["dragData"];
+          osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+          this.__isDraggingLink = null;
+        }
       }
     },
 
@@ -1950,9 +1997,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __removeDropHint: function() {
-      this.__dropMe.setVisibility("excluded");
-      osparc.wrapper.Svg.removeItem(this.__dropMe.rect);
-      this.__dropMe = null;
+      this.__dropHereNodeUI.setVisibility("excluded");
+      osparc.wrapper.Svg.removeItem(this.__dropHereNodeUI.rect);
+      this.__dropHereNodeUI = null;
     }
   }
 });

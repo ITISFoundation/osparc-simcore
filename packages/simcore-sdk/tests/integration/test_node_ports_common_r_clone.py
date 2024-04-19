@@ -27,6 +27,7 @@ pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
     "storage",
+    "redis",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -47,7 +48,6 @@ async def cleanup_bucket_after_test(r_clone_settings: RCloneSettings) -> None:
     async with session.resource(
         "s3",
         endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
-        use_ssl=r_clone_settings.R_CLONE_S3.S3_SECURE,
     ) as s_3:
         bucket = await s_3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
         s3_objects = []

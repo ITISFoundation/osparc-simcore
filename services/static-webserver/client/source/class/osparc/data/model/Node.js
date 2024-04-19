@@ -50,7 +50,6 @@ qx.Class.define("osparc.data.model.Node", {
     this.base(arguments);
 
     this.__metaData = osparc.service.Utils.getMetaData(key, version);
-    this.__innerNodes = {};
     this.setOutputs({});
 
     this.__inputNodes = [];
@@ -104,11 +103,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     inputAccess: {
       check: "Object",
-      nullable: true
-    },
-
-    parentNodeId: {
-      check: "String",
       nullable: true
     },
 
@@ -326,7 +320,6 @@ qx.Class.define("osparc.data.model.Node", {
 
   members: {
     __metaData: null,
-    __innerNodes: null,
     __inputNodes: null,
     __exposedNodes: null,
     __settingsForm: null,
@@ -444,21 +437,6 @@ qx.Class.define("osparc.data.model.Node", {
       return Object.keys(this.getOutputs()).length;
     },
 
-    getInnerNodes: function(recursive = false) {
-      let innerNodes = Object.assign({}, this.__innerNodes);
-      if (recursive) {
-        for (const innerNodeId in this.__innerNodes) {
-          let myInnerNodes = this.__innerNodes[innerNodeId].getInnerNodes(true);
-          innerNodes = Object.assign(innerNodes, myInnerNodes);
-        }
-      }
-      return innerNodes;
-    },
-
-    addInnerNode: function(innerNodeId, innerNode) {
-      this.__innerNodes[innerNodeId] = innerNode;
-    },
-
     populateWithMetadata: function() {
       const metaData = this.__metaData;
       if (metaData) {
@@ -541,42 +519,6 @@ qx.Class.define("osparc.data.model.Node", {
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);
       }
-    },
-
-    startInBackend: function() {
-      // create the node in the backend here
-      const key = this.getKey();
-      const version = this.getVersion();
-      const params = {
-        url: {
-          studyId: this.getStudy().getUuid()
-        },
-        data: {
-          "service_id": this.getNodeId(),
-          "service_key": key,
-          "service_version": version
-        }
-      };
-      osparc.data.Resources.fetch("studies", "addNode", params)
-        .then(() => {
-          // a POST call on /nodes also triggers :start
-          this.startDynamicService();
-        })
-        .catch(err => {
-          let errorMsg = this.tr("Error when starting ") + key + ":" + version;
-          this.getStatus().setInteractive("failed");
-          if ("status" in err && err.status === 406) {
-            errorMsg = this.getKey() + ":" + this.getVersion() + this.tr(" is retired");
-            this.getStatus().setInteractive("retired");
-          }
-          const errorMsgData = {
-            nodeId: this.getNodeId(),
-            msg: errorMsg,
-            level: "ERROR"
-          };
-          this.fireDataEvent("showInLogger", errorMsgData);
-          osparc.FlashMessenger.getInstance().logAs(errorMsg, "ERROR");
-        });
     },
 
     __applyPropsForm: function() {
@@ -1086,6 +1028,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.__initLoadingPage();
 
       const iframe = new osparc.widget.PersistentIframe();
+      osparc.utils.Utils.setIdToWidget(iframe.getIframe(), "iframe_"+this.getNodeId());
       if (osparc.product.Utils.isProduct("s4llite")) {
         iframe.setShowToolbar(false);
       }
@@ -1358,7 +1301,7 @@ qx.Class.define("osparc.data.model.Node", {
           if ("status" in err && err.status === 406) {
             errorMsg = this.getKey() + ":" + this.getVersion() + "is retired";
             this.getStatus().setInteractive("retired");
-            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.getLabel() + this.tr(" is retired"), "ERROR");
           }
           const errorMsgData = {
             nodeId: this.getNodeId(),
@@ -1382,7 +1325,7 @@ qx.Class.define("osparc.data.model.Node", {
             setTimeout(() => this.__nodeState(), interval);
           } else {
             this.getStatus().setInteractive("failed");
-            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error starting") + " " + this.getLabel(), "ERROR");
           }
         });
     },
@@ -1592,7 +1535,6 @@ qx.Class.define("osparc.data.model.Node", {
         inputsUnits: this.__getInputUnits(),
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
-        parent: this.getParentNodeId(),
         thumbnail: this.getThumbnail(),
         bootOptions: this.getBootOptions()
       };
@@ -1612,7 +1554,7 @@ qx.Class.define("osparc.data.model.Node", {
       // remove null entries from the payload
       let filteredNodeEntry = {};
       for (const key in nodeEntry) {
-        if (nodeEntry[key] !== null || key === "parent") {
+        if (nodeEntry[key] !== null) {
           filteredNodeEntry[key] = nodeEntry[key];
         }
       }

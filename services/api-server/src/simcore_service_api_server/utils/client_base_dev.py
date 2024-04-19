@@ -7,9 +7,8 @@ from fastapi.encoders import jsonable_encoder
 from httpx._types import URLTypes
 from jsonschema import ValidationError
 from pydantic import parse_file_as
-from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 
-from .http_calls_capture import get_captured
+from .http_calls_capture import HttpApiCallCaptureModel, get_captured
 from .http_calls_capture_processing import CaptureProcessingException
 
 _logger = logging.getLogger(__name__)
@@ -47,7 +46,15 @@ class AsyncClientForDevelopmentOnly(httpx.AsyncClient):
             )
             serialized_captures.append(capture)
             self._capture_file.write_text(
-                json.dumps(jsonable_encoder(serialized_captures), indent=1)
+                json.dumps(
+                    jsonable_encoder(
+                        serialized_captures,
+                        # NOTE: reduces file size by relying on defaults
+                        exclude_unset=True,
+                        exclude_defaults=True,
+                    ),
+                    indent=1,
+                )
             )
         except (CaptureProcessingException, ValidationError, httpx.RequestError):
             _logger.exception(

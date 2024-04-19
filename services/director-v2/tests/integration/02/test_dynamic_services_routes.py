@@ -57,6 +57,7 @@ pytest_simcore_core_services_selection = [
     "rabbit",
     "redis",
     "storage",
+    "redis",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
@@ -155,6 +156,7 @@ async def director_v2_client(
     network_name: str,
     redis_settings: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
 ) -> AsyncIterable[TestClient]:
     setenvs_from_dict(
         monkeypatch,
@@ -169,11 +171,11 @@ async def director_v2_client(
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
             "COMPUTATIONAL_BACKEND_ENABLED": "false",
             "R_CLONE_PROVIDER": "MINIO",
-            "S3_ENDPOINT": "endpoint",
-            "S3_ACCESS_KEY": "access_key",
-            "S3_SECRET_KEY": "secret_key",
-            "S3_BUCKET_NAME": "bucket_name",
-            "S3_SECURE": "false",
+            "S3_ENDPOINT": faker.url(),
+            "S3_ACCESS_KEY": faker.pystr(),
+            "S3_REGION": faker.pystr(),
+            "S3_SECRET_KEY": faker.pystr(),
+            "S3_BUCKET_NAME": faker.pystr(),
             # patch host for dynamic-sidecar, not reachable via localhost
             # the dynamic-sidecar (running inside a container) will use
             # this address to reach the rabbit service

@@ -4,6 +4,8 @@
 # pylint: disable=unused-variable
 
 import json
+import os
+import subprocess
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
@@ -19,6 +21,7 @@ from asgi_lifespan import LifespanManager
 from cryptography.fernet import Fernet
 from faker import Faker
 from fastapi import FastAPI, status
+from httpx import ASGITransport
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskProgress,
@@ -73,6 +76,8 @@ def app_environment(
             "API_SERVER_RABBITMQ": "null",
             "LOG_LEVEL": "debug",
             "SC_BOOT_MODE": "production",
+            "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
+            "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
         },
     )
 
@@ -88,7 +93,7 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
     if settings.API_SERVER_RABBITMQ is None:
         mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
         mocker.patch(
-            "simcore_service_api_server.core.application.setup_prometheus_instrumentation"
+            "simcore_service_api_server.core._prometheus_instrumentation.setup_prometheus_instrumentation"
         )
     return app_environment
 
@@ -99,17 +104,27 @@ def app(mock_missing_plugins: EnvVarsDict) -> FastAPI:
     return init_app()
 
 
+MAX_TIME_FOR_APP_TO_STARTUP = 10
+MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
+
+
 @pytest.fixture
-async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+async def client(
+    app: FastAPI, is_pdb_enabled: bool
+) -> AsyncIterator[httpx.AsyncClient]:
     #
     # Prefer this client instead of fastapi.testclient.TestClient
     #
 
     # LifespanManager will trigger app's startup&shutown event handlers
-    async with LifespanManager(app), httpx.AsyncClient(
-        app=app,
+    async with LifespanManager(
+        app,
+        startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
+        shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
+    ), httpx.AsyncClient(
         base_url="http://api.testserver.io",
         headers={"Content-Type": "application/json"},
+        transport=ASGITransport(app=app),
     ) as httpx_async_client:
         yield httpx_async_client
 
@@ -373,7 +388,7 @@ def mocked_catalog_service_api_base(
 
 
 @pytest.fixture
-def mocked_solver_job_outputs(mocker):
+def mocked_solver_job_outputs(mocker) -> None:
     result: dict[str, ResultsTypes] = {}
     result["output_1"] = 0.6
     result["output_2"] = BaseFileLink(
@@ -389,7 +404,6 @@ def mocked_solver_job_outputs(mocker):
         autospec=True,
         return_value=result,
     )
-    yield
 
 
 @pytest.fixture
@@ -428,6 +442,11 @@ def patch_webserver_long_running_project_tasks(
 
         def create_project_task(self, request: httpx.Request):
             # create result: use the request-body
+            query = dict(
+                elm.split("=") for elm in request.url.query.decode().split("&")
+            )
+            if from_study := query.get("from_study"):
+                return self.clone_project_task(request=request, project_id=from_study)
             project_create = json.loads(request.content)
             project_get = ProjectGet.parse_obj(
                 {
@@ -468,7 +487,7 @@ def patch_webserver_long_running_project_tasks(
         long_running_task_workflow = _LongRunningProjectTasks()
 
         webserver_mock_router.post(
-            path__regex="/projects$",
+            path__regex="/projects",
             name="create_projects",
         ).mock(side_effect=long_running_task_workflow.create_project_task)
 
@@ -520,12 +539,14 @@ def respx_mock_from_capture() -> (
     ) -> list[respx.MockRouter]:
         assert capture_path.is_file()
         assert capture_path.suffix == ".json"
+
         captures: list[HttpApiCallCaptureModel] = parse_obj_as(
             list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
         )
 
         if len(side_effects_callbacks) > 0:
             assert len(side_effects_callbacks) == len(captures)
+
         assert isinstance(respx_mock, list)
         for router in respx_mock:
             assert (
@@ -550,7 +571,7 @@ def respx_mock_from_capture() -> (
                 self._capture = capture
                 self._side_effect_callback = side_effect
 
-            def _side_effect(self, request: httpx.Request, **kwargs):
+            def __call__(self, request: httpx.Request, **kwargs) -> httpx.Response:
                 capture = self._capture
                 assert isinstance(capture.path, PathDescription)
                 status_code: int = capture.status_code
@@ -566,24 +587,44 @@ def respx_mock_from_capture() -> (
         for ii, capture in enumerate(captures):
             url_path: PathDescription | str = capture.path
             assert isinstance(url_path, PathDescription)
+
+            # path
             path_regex: str = str(url_path.path)
-            side_effects.append(
-                CaptureSideEffect(
-                    capture=capture,
-                    side_effect=side_effects_callbacks[ii]
-                    if len(side_effects_callbacks)
-                    else None,
-                )
-            )
             for param in url_path.path_parameters:
                 path_regex = path_regex.replace(
                     "{" + param.name + "}", param.respx_lookup
                 )
+
+            # response
+            side_effect = CaptureSideEffect(
+                capture=capture,
+                side_effect=side_effects_callbacks[ii]
+                if len(side_effects_callbacks)
+                else None,
+            )
+
             router = _get_correct_mock_router_for_capture(respx_mock, capture)
-            router.request(
-                capture.method.upper(), url=None, path__regex="^" + path_regex + "$"
-            ).mock(side_effect=side_effects[-1]._side_effect)
+            r = router.request(
+                capture.method.upper(),
+                url=None,
+                path__regex=f"^{path_regex}$",
+            ).mock(side_effect=side_effect)
+
+            assert r.side_effect == side_effect
+            side_effects.append(side_effect)
 
         return respx_mock
 
     return _generate_mock
+
+
+@pytest.fixture
+def openapi_dev_specs(project_slug_dir: Path) -> dict[str, Any]:
+    openapi_file = (project_slug_dir / "openapi-dev.json").resolve()
+    if openapi_file.is_file():
+        os.remove(openapi_file)
+    subprocess.run(
+        "make openapi-dev.json", cwd=project_slug_dir, shell=True, check=True
+    )
+    assert openapi_file.is_file()
+    return json.loads(openapi_file.read_text())

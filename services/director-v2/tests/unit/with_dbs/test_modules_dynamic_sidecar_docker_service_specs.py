@@ -9,7 +9,9 @@ from typing import Any, cast
 
 import pytest
 import respx
+from faker import Faker
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import (
@@ -26,6 +28,7 @@ from models_library.wallets import WalletInfo
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from servicelib.json_serialization import json_dumps
+from settings_library.s3 import S3Settings
 from simcore_service_director_v2.core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
@@ -41,8 +44,17 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 
 @pytest.fixture
+def mock_s3_settings() -> S3Settings:
+    return S3Settings.parse_obj(S3Settings.Config.schema_extra["examples"][0])
+
+
+@pytest.fixture
 def mock_env(
-    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, disable_postgres: None
+    monkeypatch: pytest.MonkeyPatch,
+    mock_env: EnvVarsDict,
+    disable_postgres: None,
+    mock_s3_settings: S3Settings,
+    faker: Faker,
 ) -> EnvVarsDict:
     """overrides unit/conftest:mock_env fixture"""
     env_vars = mock_env.copy()
@@ -67,15 +79,11 @@ def mock_env(
             "REGISTRY_SSL": "false",
             "REGISTRY_URL": "foo.bar.com",
             "REGISTRY_USER": "test",
-            "S3_ACCESS_KEY": "12345678",
-            "S3_BUCKET_NAME": "simcore",
-            "S3_ENDPOINT": "http://172.17.0.1:9001",
-            "S3_SECRET_KEY": "12345678",
-            "S3_SECURE": "False",
             "SC_BOOT_MODE": "production",
             "SIMCORE_SERVICES_NETWORK_NAME": "simcore_services_network_name",
             "SWARM_STACK_NAME": "test_swarm_name",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
+            **jsonable_encoder(mock_s3_settings, exclude_none=True),
         }
     )
     setenvs_from_dict(monkeypatch, env_vars)
@@ -118,6 +126,8 @@ def expected_dynamic_sidecar_spec(
     osparc_product_name: str,
     request_simcore_user_agent: str,
     hardware_info: HardwareInfo,
+    faker: Faker,
+    mock_s3_settings: S3Settings,
 ) -> dict[str, Any]:
     return {
         "endpoint_spec": {},
@@ -259,11 +269,6 @@ def expected_dynamic_sidecar_spec(
                     "R_CLONE_OPTION_RETRIES": "3",
                     "R_CLONE_OPTION_TRANSFERS": "5",
                     "R_CLONE_PROVIDER": "MINIO",
-                    "S3_ACCESS_KEY": "12345678",
-                    "S3_BUCKET_NAME": "simcore",
-                    "S3_ENDPOINT": "http://172.17.0.1:9001",
-                    "S3_SECRET_KEY": "12345678",
-                    "S3_SECURE": "False",
                     "SC_BOOT_MODE": "production",
                     "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "SSL_CERT_FILE": "",
@@ -272,6 +277,7 @@ def expected_dynamic_sidecar_spec(
                     "STORAGE_PASSWORD": "null",
                     "STORAGE_SECURE": "0",
                     "STORAGE_PORT": "8080",
+                    **jsonable_encoder(mock_s3_settings, exclude_unset=True),
                 },
                 "CapabilityAdd": None,
                 "Hosts": [],

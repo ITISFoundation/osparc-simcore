@@ -1,7 +1,7 @@
 from typing import Final
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, NonNegativeInt, validator
+from pydantic import AnyHttpUrl, Field, NonNegativeInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.utils_logging import MixinLoggingSettings
@@ -16,7 +16,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_BOOT_MODE: BootModeEnum | None
 
     AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
+        default=False,
         env=[
             "AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
@@ -26,8 +26,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
         ..., description="Exactly the same as director-v2's `SWARM_STACK_NAME` env var"
     )
-    AGENT_VOLUMES_CLEANUP_S3_SECURE: bool = False
-    AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: str
+    AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: AnyHttpUrl | None
     AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY: str
     AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY: str
     AGENT_VOLUMES_CLEANUP_S3_BUCKET: str
@@ -47,16 +46,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         60 * _MINUTE, description="interval at which to repeat volumes cleanup"
     )
     AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
-
-    @validator("AGENT_VOLUMES_CLEANUP_S3_ENDPOINT", pre=True)
-    @classmethod
-    def ensure_scheme(cls, v: str, values) -> str:
-        if not v.startswith("http"):
-            scheme = (
-                "https" if values.get("AGENT_VOLUMES_CLEANUP_S3_SECURE") else "http"
-            )
-            return f"{scheme}://{v}"
-        return v
 
     @validator("LOGLEVEL")
     @classmethod

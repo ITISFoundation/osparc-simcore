@@ -51,14 +51,15 @@ def clusters_config(
     postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
+    faker: Faker,
 ):
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", "endpoint")
-    monkeypatch.setenv("S3_ACCESS_KEY", "access_key")
-    monkeypatch.setenv("S3_SECRET_KEY", "secret_key")
-    monkeypatch.setenv("S3_BUCKET_NAME", "bucket_name")
-    monkeypatch.setenv("S3_SECURE", "false")
+    monkeypatch.setenv("S3_ENDPOINT", faker.url())
+    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
+    monkeypatch.setenv("S3_REGION", faker.pystr())
+    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
+    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
 
 
 @pytest.fixture
@@ -727,7 +728,7 @@ async def test_ping_invalid_cluster_raises_422(
 
     # calling with correct data but non existing cluster also raises
     some_fake_cluster = ClusterPing(
-        endpoint=faker.uri(),
+        endpoint=faker.url(),
         authentication=parse_obj_as(
             ClusterAuthentication, cluster_simple_authentication()
         ),

@@ -14,7 +14,7 @@ def _check_response_headers(
         "application/x-ndjson",
         "application/json",
     }  # nosec
-    headers: dict = dict()
+    headers: dict = {}
     headers[b"content-type"] = b"application/x-ndjson"
     return list(headers.items())
 
@@ -36,7 +36,8 @@ def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, An
         return True
     if (more_body := message.get("more_body")) is not None:
         return not more_body
-    raise RuntimeError("Could not determine if last response")
+    msg = "Could not determine if last response"
+    raise RuntimeError(msg)
 
 
 class ApiServerProfilerMiddleware:
@@ -59,6 +60,7 @@ class ApiServerProfilerMiddleware:
         request: Request = Request(scope)
         request_headers = dict(request.headers)
         response_headers: dict[bytes, bytes] = {}
+
         if request_headers.get(self._profile_header_trigger) == "true":
             request_headers.pop(self._profile_header_trigger)
             scope["headers"] = [
@@ -67,7 +69,7 @@ class ApiServerProfilerMiddleware:
             profiler = Profiler(async_mode="enabled")
             profiler.start()
 
-        async def send_wrapper(message):
+        async def _send_wrapper(message):
             if isinstance(profiler, Profiler):
                 nonlocal response_headers
                 if message["type"] == "http.response.start":
@@ -84,4 +86,4 @@ class ApiServerProfilerMiddleware:
                         message["more_body"] = True
             await send(message)
 
-        await self._app(scope, receive, send_wrapper)
+        await self._app(scope, receive, _send_wrapper)

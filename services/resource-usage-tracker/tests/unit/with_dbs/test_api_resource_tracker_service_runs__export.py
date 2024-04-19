@@ -36,7 +36,7 @@ async def mocked_export(mocker: MockerFixture):
 @pytest.fixture
 async def mocked_presigned_link(mocker: MockerFixture):
     mock_presigned_link = mocker.patch(
-        "simcore_service_resource_usage_tracker.services.resource_tracker_service_runs.SimcoreS3API.create_presigned_download_link",
+        "simcore_service_resource_usage_tracker.services.resource_tracker_service_runs.SimcoreS3API.create_single_presigned_download_link",
         return_value=parse_obj_as(
             AnyUrl,
             "https://www.testing.com/",

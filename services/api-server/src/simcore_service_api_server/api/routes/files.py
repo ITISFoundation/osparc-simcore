@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import io
 import logging
-from http import HTTPStatus
 from textwrap import dedent
 from typing import IO, Annotated, Any
 from uuid import UUID
@@ -27,15 +26,12 @@ from simcore_sdk.node_ports_common.filemanager import (
     get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
-from simcore_service_api_server.models.schemas.errors import ErrorGet
-from simcore_service_api_server.services.service_exception_handling import (
-    DEFAULT_BACKEND_SERVICE_STATUS_CODES,
-)
 from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
 from ..._meta import API_VTAG
 from ...models.pagination import Page, PaginationParams
+from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import (
     ClientFile,
     ClientFileUploadData,
@@ -43,6 +39,7 @@ from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
 )
+from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...services.storage import (
     AccessRight,
     StorageApi,
@@ -145,7 +142,6 @@ async def list_files(
     response_model=Page[File],
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
-    response_description=HTTPStatus(status.HTTP_501_NOT_IMPLEMENTED).description,
 )
 async def get_files_page(
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
@@ -172,7 +168,7 @@ async def upload_file(
     request: Request,
     file: Annotated[UploadFile, FileParam(...)],
     user_id: Annotated[int, Depends(get_current_user_id)],
-    content_length: str | None = Header(None),  # noqa: B008
+    content_length: str | None = Header(None),
 ):
     """Uploads a single file to the system"""
     # TODO: For the moment we upload file here and re-upload to S3
@@ -417,7 +413,20 @@ async def complete_multipart_upload(
 
 
 @router.get(
-    "/{file_id}/content", response_class=RedirectResponse, responses=_FILE_STATUS_CODES
+    "/{file_id}/content",
+    response_class=RedirectResponse,
+    responses=_FILE_STATUS_CODES
+    | {
+        200: {
+            "content": {
+                "application/octet-stream": {
+                    "schema": {"type": "string", "format": "binary"}
+                },
+                "text/plain": {"schema": {"type": "string"}},
+            },
+            "description": "Returns a arbitrary binary data",
+        },
+    },
 )
 async def download_file(
     file_id: UUID,

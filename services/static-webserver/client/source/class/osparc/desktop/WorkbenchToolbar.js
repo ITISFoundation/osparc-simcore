@@ -52,8 +52,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
     // overridden
     _buildLayout: function() {
-      const startStopBtns = this.getChildControl("start-stop-btns");
-      startStopBtns.exclude();
+      this.getChildControl("start-stop-btns");
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1

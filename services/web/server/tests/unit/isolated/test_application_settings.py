@@ -47,7 +47,7 @@ def mock_env_makefile(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
             "DIRECTOR_V2_API_VERSION": "2.0.0",
             "DOCKER_IMAGE_TAG": "production",
             "DOCKER_REGISTRY": "local",
-            "S3_ENDPOINT": "127.0.0.1:9001",
+            "S3_ENDPOINT": "http://127.0.0.1:9001",
             "STORAGE_API_VERSION": "0.2.1",
             "SWARM_HOSTS": "",
             "SWARM_STACK_NAME": "master-simcore",
@@ -225,6 +225,10 @@ def test_settings_to_client_statics_plugins(
     assert (
         statics["webserverLogin"]["LOGIN_ACCOUNT_DELETION_RETENTION_DAYS"]
         == settings.WEBSERVER_LOGIN.LOGIN_ACCOUNT_DELETION_RETENTION_DAYS
+    )
+    assert (
+        statics["webserverLogin"]["LOGIN_2FA_REQUIRED"]
+        == settings.WEBSERVER_LOGIN.LOGIN_2FA_REQUIRED
     )
     assert (
         statics["webserverSession"].get("SESSION_COOKIE_MAX_AGE")

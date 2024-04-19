@@ -8,7 +8,6 @@
 import asyncio
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import AsyncExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from random import choice
@@ -18,6 +17,11 @@ from uuid import uuid4
 import botocore.exceptions
 import pytest
 from aiohttp import ClientSession
+from aws_library.s3.errors import (
+    S3AccessError,
+    S3BucketInvalidError,
+    S3KeyNotFoundError,
+)
 from faker import Faker
 from models_library.api_schemas_storage import UploadedPart
 from models_library.basic_types import SHA256Str
@@ -28,11 +32,6 @@ from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
-from simcore_service_storage.exceptions import (
-    S3AccessError,
-    S3BucketInvalidError,
-    S3KeyNotFoundError,
-)
 from simcore_service_storage.models import MultiPartUploadLinks, S3BucketName
 from simcore_service_storage.s3_client import (
     StorageS3Client,
@@ -56,17 +55,19 @@ def mock_config(
     monkeypatch.setenv("STORAGE_POSTGRES", "null")
 
 
-async def test_storage_storage_s3_client_creation(app_settings: Settings):
+async def test_storage_storage_s3_client_creation(
+    app_settings: Settings,
+):
     assert app_settings.STORAGE_S3
-    async with AsyncExitStack() as exit_stack:
-        storage_s3_client = await StorageS3Client.create(
-            exit_stack,
-            app_settings.STORAGE_S3,
-            app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
-        )
-        assert storage_s3_client
-        response = await storage_s3_client.client.list_buckets()
-        assert not response["Buckets"]
+    storage_s3_client = await StorageS3Client.create(
+        app_settings.STORAGE_S3,
+        app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
+    )
+    assert storage_s3_client
+    response = await storage_s3_client.client.list_buckets()
+    assert not response["Buckets"]
+
+    await storage_s3_client.close()
     with pytest.raises(botocore.exceptions.HTTPClientError):
         await storage_s3_client.client.list_buckets()
 
@@ -76,33 +77,31 @@ async def storage_s3_client(
     app_settings: Settings,
 ) -> AsyncIterator[StorageS3Client]:
     assert app_settings.STORAGE_S3
-    async with AsyncExitStack() as exit_stack:
-        storage_s3_client = await StorageS3Client.create(
-            exit_stack,
-            app_settings.STORAGE_S3,
-            app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
-        )
-        # check that no bucket is lying around
-        assert storage_s3_client
-        response = await storage_s3_client.client.list_buckets()
-        assert not response[
-            "Buckets"
-        ], f"for testing puproses, there should be no bucket lying around! {response=}"
-        yield storage_s3_client
+    storage_s3_client = await StorageS3Client.create(
+        app_settings.STORAGE_S3,
+        app_settings.STORAGE_S3_CLIENT_MAX_TRANSFER_CONCURRENCY,
+    )
+    # check that no bucket is lying around
+    assert storage_s3_client
+    response = await storage_s3_client.client.list_buckets()
+    assert not response[
+        "Buckets"
+    ], f"for testing puproses, there should be no bucket lying around! {response=}"
+    yield storage_s3_client
 
 
 async def test_create_bucket(storage_s3_client: StorageS3Client, faker: Faker):
     response = await storage_s3_client.client.list_buckets()
     assert not response["Buckets"]
     bucket = faker.pystr()
-    await storage_s3_client.create_bucket(bucket)
+    await storage_s3_client.create_bucket(bucket, "us-east-1")
     response = await storage_s3_client.client.list_buckets()
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
     assert "Name" in response["Buckets"][0]
     assert response["Buckets"][0]["Name"] == bucket
     # now we create the bucket again, it should silently work even if it exists already
-    await storage_s3_client.create_bucket(bucket)
+    await storage_s3_client.create_bucket(bucket, "us-east-1")
     response = await storage_s3_client.client.list_buckets()
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
@@ -115,7 +114,7 @@ async def storage_s3_bucket(storage_s3_client: StorageS3Client, faker: Faker) ->
     response = await storage_s3_client.client.list_buckets()
     assert not response["Buckets"]
     bucket_name = faker.pystr()
-    await storage_s3_client.create_bucket(bucket_name)
+    await storage_s3_client.create_bucket(bucket_name, "us-east-1")
     response = await storage_s3_client.client.list_buckets()
     assert response["Buckets"]
     assert bucket_name in [

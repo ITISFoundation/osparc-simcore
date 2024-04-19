@@ -20,11 +20,12 @@
 import types
 from collections.abc import Callable
 from http import HTTPStatus
+from typing import Final
 
 _INVALID_STATUS_CODE_MSG = "INVALID_STATUS_CODE"
 
 
-def get_display_name(status_code: int) -> str:
+def get_code_display_name(status_code: int) -> str:
     """
     Returns display name given a status code, e.g.
 
@@ -38,6 +39,30 @@ def get_display_name(status_code: int) -> str:
         if status_code == 306:  # noqa: PLR2004
             return "HTTP_306_RESERVED"
         return _INVALID_STATUS_CODE_MSG
+
+
+_CODE_DESCRIPTION_TEMPLATE: Final[
+    str
+] = "{description}. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status{url_suffix}"
+
+
+def get_code_description(status_code: int) -> str:
+    try:
+        description = HTTPStatus(status_code).description
+    except ValueError:
+        description = "Unused"
+
+    match status_code:
+        case 305:
+            url_suffix = "#305_use_proxy"
+        case 306:
+            url_suffix = "#306_unused"
+        case _:
+            url_suffix = f"/{status_code}"
+
+    return _CODE_DESCRIPTION_TEMPLATE.format(
+        description=description, url_suffix=url_suffix
+    )
 
 
 def is_informational(status_code: int) -> bool:

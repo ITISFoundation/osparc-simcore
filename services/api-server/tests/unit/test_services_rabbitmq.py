@@ -8,10 +8,10 @@
 import asyncio
 import logging
 import random
-from collections.abc import AsyncIterable, Callable
+from collections.abc import AsyncIterable, Callable, Iterable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import Final, Iterable
+from typing import Final, Literal
 from unittest.mock import AsyncMock
 
 import httpx
@@ -24,9 +24,9 @@ from fastapi.encoders import jsonable_encoder
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from models_library.rabbitmq_messages import LoggerRabbitMessage
+from models_library.rabbitmq_messages import LoggerRabbitMessage, RabbitMessageBase
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import ValidationError, parse_obj_as
 from pytest_mock import MockerFixture, MockFixture
 from pytest_simcore.helpers.utils_envs import (
     EnvVarsDict,
@@ -35,6 +35,7 @@ from pytest_simcore.helpers.utils_envs import (
 )
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.api.dependencies.rabbitmq import get_log_distributor
+from simcore_service_api_server.core.health_checker import get_health_checker
 from simcore_service_api_server.models.schemas.jobs import JobID, JobLog
 from simcore_service_api_server.services.director_v2 import (
     ComputationTaskGet,
@@ -46,6 +47,7 @@ from simcore_service_api_server.services.log_streaming import (
     LogStreamerNotRegistered,
     LogStreamerRegistionConflict,
 )
+from tenacity import AsyncRetrying, retry_if_not_exception_type, stop_after_delay
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -71,6 +73,8 @@ def app_environment(
         {
             **rabbit_env_vars_dict,
             "API_SERVER_POSTGRES": "null",
+            "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
+            "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
         },
     )
 
@@ -99,14 +103,15 @@ def node_id(faker: Faker) -> NodeID:
 
 @pytest.fixture
 async def log_distributor(
-    client: httpx.AsyncClient, app: FastAPI
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ) -> AsyncIterable[LogDistributor]:
-    yield get_log_distributor(app)
+    log_distributor = LogDistributor(create_rabbitmq_client("log_distributor_client"))
+    await log_distributor.setup()
+    yield log_distributor
+    await log_distributor.teardown()
 
 
 async def test_subscribe_publish_receive_logs(
-    client: httpx.AsyncClient,
-    app: FastAPI,
     faker: Faker,
     user_id: UserID,
     project_id: ProjectID,
@@ -170,15 +175,23 @@ def produce_logs(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     user_id: UserID,
 ):
-    async def _go(name, project_id_=None, node_id_=None, messages_=None, level_=None):
+    async def _go(
+        name,
+        project_id_=None,
+        node_id_=None,
+        messages_=None,
+        level_=None,
+        log_message: RabbitMessageBase | None = None,
+    ):
         rabbitmq_producer = create_rabbitmq_client(f"pytest_producer_{name}")
-        log_message = LoggerRabbitMessage(
-            user_id=user_id,
-            project_id=project_id_ or faker.uuid4(),
-            node_id=node_id_,
-            messages=messages_ or [faker.text() for _ in range(10)],
-            log_level=level_ or logging.INFO,
-        )
+        if log_message is None:
+            log_message = LoggerRabbitMessage(
+                user_id=user_id,
+                project_id=project_id_ or faker.uuid4(),
+                node_id=node_id_,
+                messages=messages_ or [faker.text() for _ in range(10)],
+                log_level=level_ or logging.INFO,
+            )
         await rabbitmq_producer.publish(log_message.channel_name, log_message)
 
     return _go
@@ -226,7 +239,7 @@ async def test_one_job_multiple_registrations(
         pass
 
     await log_distributor.register(project_id, _)
-    with pytest.raises(LogStreamerRegistionConflict) as e_info:
+    with pytest.raises(LogStreamerRegistionConflict):
         await log_distributor.register(project_id, _)
     await log_distributor.deregister(project_id)
 
@@ -325,7 +338,7 @@ def computation_done() -> Iterable[Callable[[], bool]]:
     def _job_done() -> bool:
         return datetime.now() >= stop_time
 
-    yield _job_done
+    return _job_done
 
 
 @pytest.fixture
@@ -367,8 +380,6 @@ async def log_streamer_with_distributor(
 
 
 async def test_log_streamer_with_distributor(
-    client: httpx.AsyncClient,
-    app: FastAPI,
     project_id: ProjectID,
     node_id: NodeID,
     produce_logs: Callable,
@@ -381,7 +392,6 @@ async def test_log_streamer_with_distributor(
     async def _log_publisher():
         while not computation_done():
             msg: str = faker.text()
-            await asyncio.sleep(0.2)
             await produce_logs("expected", project_id, node_id, [msg], logging.DEBUG)
             published_logs.append(msg)
 
@@ -394,9 +404,52 @@ async def test_log_streamer_with_distributor(
         assert job_log.job_id == project_id
         collected_messages.append(job_log.messages[0])
 
-    publish_task.cancel()
+    if not publish_task.done():
+        publish_task.cancel()
+        try:
+            await publish_task
+        except asyncio.CancelledError:
+            pass
+
     assert len(published_logs) > 0
     assert published_logs == collected_messages
+
+
+async def test_log_streamer_not_raise_with_distributor(
+    user_id,
+    project_id: ProjectID,
+    node_id: NodeID,
+    produce_logs: Callable,
+    log_streamer_with_distributor: LogStreamer,
+    faker: Faker,
+    computation_done: Callable[[], bool],
+):
+    class InvalidLoggerRabbitMessage(LoggerRabbitMessage):
+        channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
+        node_id: NodeID | None
+        messages: int
+        log_level: int = logging.INFO
+
+        def routing_key(self) -> str:
+            return f"{self.project_id}.{self.log_level}"
+
+    log_rabbit_message = InvalidLoggerRabbitMessage(
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
+        messages=100,
+        log_level=logging.INFO,
+    )
+    with pytest.raises(ValidationError):
+        LoggerRabbitMessage.parse_obj(log_rabbit_message.dict())
+
+    await produce_logs("expected", log_message=log_rabbit_message)
+
+    ii: int = 0
+    async for log in log_streamer_with_distributor.log_generator():
+        _ = JobLog.parse_raw(log)
+        ii += 1
+    assert ii == 0
 
 
 async def test_log_generator(mocker: MockFixture, faker: Faker):
@@ -429,3 +482,36 @@ async def test_log_generator_context(mocker: MockFixture, faker: Faker):
     with pytest.raises(LogStreamerNotRegistered):
         async for log in log_streamer.log_generator():
             print(log)
+
+
+@pytest.mark.parametrize("is_healthy", [True, False])
+async def test_logstreaming_health_checker(
+    mocker: MockFixture, client: httpx.AsyncClient, app: FastAPI, is_healthy: bool
+):
+    health_checker = get_health_checker(app)
+    health_checker._timeout_seconds = 0.5
+    health_checker._allowed_health_check_failures = 0
+    put_method = health_checker._dummy_queue.put
+
+    async def put_mock(log: JobLog):
+        put_mock.called = True
+        if is_healthy:
+            await put_method(log)
+
+    put_mock.called = False
+    mocker.patch.object(health_checker._dummy_queue, "put", put_mock)
+    health_setter = mocker.spy(health_checker, "_increment_health_check_failure_count")
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        stop=stop_after_delay(5),
+        retry=retry_if_not_exception_type(AssertionError),
+    ):
+        with attempt:
+            await asyncio.sleep(1)
+            assert put_mock.called
+            if is_healthy:
+                health_setter.assert_not_called()
+            else:
+                health_setter.assert_called()
+
+    assert health_checker.healthy == is_healthy, "Health check failed"

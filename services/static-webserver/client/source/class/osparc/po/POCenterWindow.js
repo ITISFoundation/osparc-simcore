@@ -16,27 +16,20 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.po.POCenterWindow", {
-  extend: osparc.ui.window.SingletonWindow,
+  extend: osparc.ui.window.TabbedWindow,
 
   construct: function() {
     this.base(arguments, "po-center", this.tr("PO Center"));
 
-    const viewWidth = 800;
-    const viewHeight = 600;
-
+    const width = 800;
+    const height = 600;
     this.set({
-      layout: new qx.ui.layout.Grow(),
-      modal: true,
-      width: viewWidth,
-      height: viewHeight,
-      showMaximize: false,
-      showMinimize: false,
-      resizable: true,
-      appearance: "service-window"
+      width,
+      height
     });
 
     const poCenter = new osparc.po.POCenter();
-    this.add(poCenter);
+    this._setTabbedView(poCenter);
   },
 
   statics: {
