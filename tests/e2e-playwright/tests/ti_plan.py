@@ -55,9 +55,11 @@ def test_tip(
         node_ids.append(node_id)
 
     # Electrode Selector
-    page.wait_for_timeout(30000)
-    es_page = page.frame_locator(".qx-main-dark").nth(0)
-    es_page.get_by_test_id("TargetStructure_Selector").click()
+    page.frame_locator(f'[osparc-test-id="iframe_{node_ids[0]}"]').get_by_test_id(
+        "TargetStructure_Selector"
+    ).click(timeout=30000)
+    page.wait_for_timeout(1000)
+    es_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[0]}"]')
     es_page.get_by_test_id(
         "TargetStructure_Target_(Targets_combined) Hypothalamus"
     ).click()
