@@ -421,6 +421,6 @@ async def test_regression_io_log_redirect_cb(
             kwonlydefaults=None,
             annotations={
                 "return": None,
-                "logs": str,
+                "log": str,
             },
         )
