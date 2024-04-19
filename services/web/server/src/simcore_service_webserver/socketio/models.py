@@ -10,6 +10,10 @@ from pydantic import BaseModel, Field
 class WebSocketMessageBase(BaseModel):
     event_type: str = Field(..., constr=True)
 
+    @classmethod
+    def get_event_type(cls) -> str:
+        return cls.__fields__["event_type"].default
+
     class Config:
         frozen = True
 
@@ -34,4 +38,10 @@ class WebSocketNodeProgress(
     def from_rabbit_message(
         cls, message: ProgressRabbitMessageNode
     ) -> "WebSocketNodeProgress":
-        return cls()
+        return cls(
+            user_id=message.user_id,
+            project_id=message.project_id,
+            node_id=message.node_id,
+            progress_type=message.progress_type,
+            progress=message.report.percent_value,
+        )

@@ -342,7 +342,9 @@ async def test_progress_non_computational_workflow(
     socket_io_conn = await socketio_client_factory(None, client)
 
     mock_progress_handler = mocker.MagicMock()
-    socket_io_conn.on(WebSocketNodeProgress.event_type, handler=mock_progress_handler)
+    socket_io_conn.on(
+        WebSocketNodeProgress.get_event_type(), handler=mock_progress_handler
+    )
 
     if subscribe_to_logs:
         assert client.app

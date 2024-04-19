@@ -83,7 +83,7 @@ def _convert_to_node_progress_event(
     message: ProgressRabbitMessageNode,
 ) -> SocketMessageDict:
     return SocketMessageDict(
-        event_type=WebSocketNodeProgress.event_type,
+        event_type=WebSocketNodeProgress.get_event_type(),
         data={
             "project_id": message.project_id,
             "node_id": message.node_id,
