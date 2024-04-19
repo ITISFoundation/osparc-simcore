@@ -9,8 +9,7 @@ import asyncio
 import json
 from collections.abc import AsyncIterable
 from contextlib import asynccontextmanager
-from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -142,7 +141,9 @@ async def fake_app(faker: Faker) -> AsyncIterable[FastAPI]:
     app = FastAPI()
     app.state.engine = AsyncMock()
 
-    app.state.settings = SimpleNamespace(DIRECTOR_V2_PUBLIC_API_BASE_URL=faker.url())
+    mock_settings = Mock()
+    mock_settings.DIRECTOR_V2_PUBLIC_API_BASE_URL = faker.url()
+    app.state.settings = mock_settings
 
     osparc_variables_substitutions.setup(app)
 
