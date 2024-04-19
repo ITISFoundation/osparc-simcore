@@ -313,3 +313,13 @@ async def create_api_key(_body: ApiKeyCreate):
 )
 async def delete_api_key(_body: ApiKeyCreate):
     """deletes API key by name"""
+
+
+@router.get(
+    "/auth/captcha",
+    operation_id="get_captcha",
+    status_code=status.HTTP_200_OK,
+    responses={200: {"content": {"image/png": {}}}},
+)
+async def get_captcha():
+    """get captcha"""

@@ -1,8 +1,12 @@
 import functools
 import logging
+import random
+import string
+from io import BytesIO
 from typing import Any
 
 from aiohttp import web
+from captcha.image import ImageCaptcha
 from models_library.emails import LowerCaseEmailStr
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import EmailStr, PositiveInt, ValidationError, parse_obj_as
@@ -95,3 +99,14 @@ async def send_account_request_email_to_support(
             template_name,
             f"{support_email=}",
         )
+
+
+async def generate_captcha() -> tuple[str, bytes]:
+    captcha_text = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    image = ImageCaptcha(width=280, height=90)
+
+    # Generate image
+    data: BytesIO = image.generate(captcha_text)
+    image_data: bytes = data.getvalue()
+
+    return (captcha_text, image_data)
