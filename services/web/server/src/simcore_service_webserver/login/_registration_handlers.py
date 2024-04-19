@@ -69,7 +69,7 @@ async def request_product_account(request: web.Request):
     assert body.captcha  # nosec
 
     if body.captcha != session[CAPTCHA_SESSION_KEY]:
-        raise web.HTTPUnauthorized(
+        raise web.HTTPUnprocessableEntity(
             reason=MSG_WRONG_CAPTCHA__INVALID, content_type=MIMETYPE_APPLICATION_JSON
         )
 
