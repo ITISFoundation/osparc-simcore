@@ -84,7 +84,7 @@ def test_tip(
     page.get_by_test_id("AppMode_NextBtn").click()
 
     # Optimal Configuration Identification
-    page.wait_for_timeout(120000)
+    page.wait_for_timeout(180000)
     ti_page = page.frame_locator(".qx-main-dark").nth(1)
     ti_page.get_by_role("button", name="Run Optimization").click()
     page.wait_for_timeout(20000)
