@@ -11,7 +11,7 @@
 import re
 from typing import Final
 
-from playwright.sync_api import APIRequestContext, Page, expect
+from playwright.sync_api import APIRequestContext, Page
 from pydantic import AnyUrl
 from pytest_simcore.playwright_utils import on_web_socket_default_handler
 
@@ -75,15 +75,14 @@ def test_tip(
     # check outputs
     expected_outputs = ["output.json"]
     text_on_output_button = f"Outputs ({len(expected_outputs)})"
-    expect(
-        page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button)
-    ).to_be_visible()
+    page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
+    page.wait_for_timeout(5000)
 
     # Move to next step
     page.get_by_test_id("AppMode_NextBtn").click()
 
     # Optimal Configuration Identification
-    page.wait_for_timeout(90000)
+    page.wait_for_timeout(120000)
     ti_page = page.frame_locator(".qx-main-dark").nth(1)
     ti_page.get_by_role("button", name="Run Optimization").click()
     page.wait_for_timeout(20000)
@@ -92,18 +91,34 @@ def test_tip(
     ti_page.get_by_role("button", name="Load").nth(1).click()  # Load Analysis is first
     page.wait_for_timeout(20000)
     ti_page.get_by_role("button", name="Add to Report (0)").nth(0).click()
-    page.wait_for_timeout(10000)
+    page.wait_for_timeout(20000)
     ti_page.get_by_role("button", name="Export to S4L").click()
-    page.wait_for_timeout(10000)
+    page.wait_for_timeout(20000)
     ti_page.get_by_role("button", name="Add to Report (1)").nth(1).click()
-    page.wait_for_timeout(10000)
+    page.wait_for_timeout(20000)
     ti_page.get_by_role("button", name="Export Report").click()
-    page.wait_for_timeout(10000)
+    page.wait_for_timeout(20000)
     # check outputs
-    page.get_by_test_id("outputsBtn").click()
+    expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv"]
+    text_on_output_button = f"Outputs ({len(expected_outputs)})"
+    page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
+    page.wait_for_timeout(5000)
 
     # Move to next step
     page.get_by_test_id("AppMode_NextBtn").click()
 
     # Sim4Life PostPro
+    page.wait_for_timeout(30000)
+    s4l_postpro_page = page.frame_locator(".qx-main-dark").nth(2)
     # make sure there is something in the postpro algorithm tree
+    # click on the mode button
+    s4l_postpro_page.get_by_test_id("mode-button-postro").click()
+    page.wait_for_timeout(5000)
+    # click on the first surface viewer
+    s4l_postpro_page.get_by_test_id("tree-item-ti_field.cache").click()
+    s4l_postpro_page.get_by_test_id("tree-item-SurfaceViewer").nth(0).click()
+    page.wait_for_timeout(5000)
+    # click on the second surface viewer
+    s4l_postpro_page.get_by_test_id("tree-item-hf_field.cache").click()
+    s4l_postpro_page.get_by_test_id("tree-item-SurfaceViewer").nth(1).click()
+    page.wait_for_timeout(5000)
