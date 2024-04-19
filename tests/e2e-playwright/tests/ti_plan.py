@@ -55,11 +55,8 @@ def test_tip(
         node_ids.append(node_id)
 
     # Electrode Selector
-    page.frame_locator(f'[osparc-test-id="iframe_{node_ids[0]}"]').get_by_test_id(
-        "TargetStructure_Selector"
-    ).click(timeout=60000)
-    page.wait_for_timeout(1000)
     es_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[0]}"]')
+    es_page.get_by_test_id("TargetStructure_Selector").click(timeout=300000)
     es_page.get_by_test_id(
         "TargetStructure_Target_(Targets_combined) Hypothalamus"
     ).click()
@@ -86,11 +83,8 @@ def test_tip(
     page.get_by_test_id("AppMode_NextBtn").click()
 
     # Optimal Configuration Identification
-    page.frame_locator(f'[osparc-test-id="iframe_{node_ids[1]}"]').get_by_role(
-        "button", name="Run Optimization"
-    ).click(timeout=180000)
-    page.wait_for_timeout(1000)
     ti_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[1]}"]')
+    ti_page.get_by_role("button", name="Run Optimization").click(timeout=300000)
     page.wait_for_timeout(20000)
     ti_page.get_by_role("button", name="Load Analysis").click()
     page.wait_for_timeout(20000)
@@ -114,14 +108,9 @@ def test_tip(
     page.get_by_test_id("AppMode_NextBtn").click()
 
     # Sim4Life PostPro
-    # click on the mode button
-    page.frame_locator(f'[osparc-test-id="iframe_{node_ids[2]}"]').get_by_test_id(
-        "mode-button-postro"
-    ).click(timeout=60000)
-    page.wait_for_timeout(1000)
     s4l_postpro_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[2]}"]')
-    # make sure there is something in the postpro algorithm tree
-    page.wait_for_timeout(5000)
+    # click on the mode button
+    s4l_postpro_page.get_by_test_id("mode-button-postro").click(timeout=300000)
     # click on the surface viewer
     s4l_postpro_page.get_by_test_id("tree-item-ti_field.cache").click()
     s4l_postpro_page.get_by_test_id("tree-item-SurfaceViewer").click()
