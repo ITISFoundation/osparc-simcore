@@ -1,6 +1,3 @@
-# pytest -s tests/ti_plan.py --color=yes --product-url=https://tip-master.speag.com/ --user-name=[user_name] --password=[password] --tracing on --junitxml=report.xml --browser chromium
-
-
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
