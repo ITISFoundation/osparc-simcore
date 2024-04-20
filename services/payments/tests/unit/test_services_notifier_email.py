@@ -72,6 +72,15 @@ def smtp_mock_or_none(
 
 
 @pytest.fixture
+def mock_get_invoice(mocker: MockerFixture) -> MagicMock:
+    _mock_get_invoice = mocker.patch(
+        "simcore_service_payments.services.notifier_email._get_invoice_pdf"
+    )
+    _mock_get_invoice.return_value = None
+    return _mock_get_invoice
+
+
+@pytest.fixture
 def transaction(
     faker: Faker, successful_transaction: dict[str, Any]
 ) -> PaymentsTransactionsDB:
@@ -93,6 +102,7 @@ async def test_send_email_workflow(
     product_name: ProductName,
     product: dict[str, Any],
     smtp_mock_or_none: MagicMock | None,
+    mock_get_invoice: MagicMock,
 ):
     """
     Example of usage with external email and envfile
@@ -155,6 +165,7 @@ async def test_email_provider(
     product: dict[str, Any],
     transaction: PaymentsTransactionsDB,
     smtp_mock_or_none: MagicMock | None,
+    mock_get_invoice: MagicMock,
 ):
     settings = SMTPSettings.create_from_envs()
 
