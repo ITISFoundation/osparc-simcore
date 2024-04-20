@@ -190,6 +190,7 @@ async def test_email_provider(
 
     await provider.notify_payment_completed(user_id=user_id, payment=transaction)
     assert get_notification_data_mock.called
+    assert mock_get_invoice.called
 
     if smtp_mock_or_none:
         assert smtp_mock_or_none.called
