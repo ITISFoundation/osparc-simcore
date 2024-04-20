@@ -213,6 +213,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="resource usage tracker service client's plugin",
     )
 
+    DIRECTOR_V2_PUBLIC_API_BASE_URL: AnyHttpUrl = Field(
+        ...,
+        description="Base URL used to access the public api e.g. http://127.0.0.1:6000 for development or https://api.osparc.io",
+    )
+
     @validator("LOG_LEVEL", pre=True)
     @classmethod
     def _validate_loglevel(cls, value: str) -> str:
