@@ -25,7 +25,7 @@ _EXAMPLE_AFTER_INIT = {
     "comment": "This is a test comment.",
     "invoice_url": None,
     "stripe_invoice_id": None,
-    "invoice_pdf": None,
+    "invoice_pdf_url": None,
     "initiated_at": "2023-09-27T10:00:00",
     "state": PaymentTransactionState.PENDING,
 }
