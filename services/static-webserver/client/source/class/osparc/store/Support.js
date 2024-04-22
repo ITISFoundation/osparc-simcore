@@ -161,7 +161,6 @@ qx.Class.define("osparc.store.Support", {
 
     openInvitationRequiredDialog: function() {
       const createAccountWindow = new osparc.ui.window.Dialog("Create Account").set({
-        appearance: "form-button",
         maxWidth: 380
       });
       const vendor = osparc.store.VendorInfo.getInstance().getVendor();
