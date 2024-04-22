@@ -4,6 +4,9 @@ from dataclasses import dataclass, field
 from inspect import isawaitable
 from typing import Final, Optional, Protocol, runtime_checkable
 
+from models_library.progress_bar import ProgressReport, ProgressUnit
+from pydantic import parse_obj_as
+
 from .logging_utils import log_catch
 
 _logger = logging.getLogger(__name__)
@@ -14,13 +17,13 @@ _FINAL_VALUE: Final[float] = 1.0
 
 @runtime_checkable
 class AsyncReportCB(Protocol):
-    async def __call__(self, progress_value: float) -> None:
+    async def __call__(self, report: ProgressReport) -> None:
         ...
 
 
 @runtime_checkable
 class ReportCB(Protocol):
-    def __call__(self, progress_value: float) -> None:
+    def __call__(self, report: ProgressReport) -> None:
         ...
 
 
@@ -73,6 +76,7 @@ class ProgressBarData:
             "description": "Optionally defines the step relative weight (defaults to steps of equal weights)"
         },
     )
+    progress_unit: ProgressUnit | None = None
     progress_report_cb: AsyncReportCB | ReportCB | None = None
     _current_steps: float = _INITIAL_VALUE
     _children: list = field(default_factory=list)
@@ -81,6 +85,8 @@ class ProgressBarData:
     _last_report_value: float = _INITIAL_VALUE
 
     def __post_init__(self) -> None:
+        if self.progress_unit is not None:
+            parse_obj_as(ProgressUnit, self.progress_unit)
         self._continuous_value_lock = asyncio.Lock()
         self.num_steps = max(1, self.num_steps)
         if self.step_weights:
@@ -112,7 +118,14 @@ class ProgressBarData:
                 or ((value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT)
                 or value == _FINAL_VALUE
             ):
-                call = self.progress_report_cb(value)
+                call = self.progress_report_cb(
+                    ProgressReport(
+                        # NOTE: here we convert back to actual value since this is possibly weighted
+                        actual_value=value * self.num_steps,
+                        total=self.num_steps,
+                        unit=self.progress_unit,
+                    ),
+                )
                 if isawaitable(call):
                     await call
                 self._last_report_value = value
