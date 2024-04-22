@@ -283,6 +283,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
+          this.__restartCaptcha();
         });
     },
 
@@ -298,10 +299,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         scale: true,
         width: 140,
         height: 45,
-        backgroundColor: "green",
         cursor: "pointer"
       });
-      this.__captchaImage.addListener("tap", () => this.__requestCaptchaImage(), this);
+      this.__captchaImage.addListener("tap", () => this.__restartCaptcha(), this);
       captchaLayout.add(captchaImage, {
         column: 0,
         row: 0,
@@ -328,16 +328,18 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       return captchaLayout;
     },
 
-    __requestCaptchaImage: function() {
-      const url = osparc.data.Resources.resources["auth"].endpoints["captcha"].url;
-      this.__captchaImage.set({
-        source: url
-      });
+    __restartCaptcha: function() {
+      this.__captchaImage.setSource(null);
+      let url = osparc.data.Resources.resources["auth"].endpoints["captcha"].url;
+      // Since the url doesn't change, this dummy query parameter will force the frontend to make a new request
+      url += "?" + Math.floor(Math.random() * 100);
+      this.__captchaImage.setSource(url);
+
+      this.__captchaField.resetValue();
     },
 
     _onAppear: function() {
-      // request captcha
-      this.__requestCaptchaImage();
+      this.__restartCaptcha();
 
       // Listen to "Enter" key
       const commandEnter = new qx.ui.command.Command("Enter");
