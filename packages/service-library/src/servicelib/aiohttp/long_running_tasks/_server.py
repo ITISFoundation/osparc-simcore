@@ -4,7 +4,7 @@ from functools import wraps
 from typing import Any, AsyncGenerator, Callable
 
 from aiohttp import web
-from pydantic import HttpUrl, PositiveFloat
+from pydantic import AnyHttpUrl, PositiveFloat
 from servicelib.aiohttp import status
 from servicelib.json_serialization import json_dumps
 
@@ -65,15 +65,15 @@ async def start_long_running_task(
         ip_addr, port = request_.transport.get_extra_info(
             "sockname"
         )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
-        status_url = HttpUrl(
+        status_url = AnyHttpUrl(
             url=f"http://{ip_addr}:{port}{request_.app.router['get_task_status'].url_for(task_id=task_id)}",
             scheme="http",
         )
-        result_url = HttpUrl(
+        result_url = AnyHttpUrl(
             url=f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}",
             scheme="http",
         )
-        abort_url = HttpUrl(
+        abort_url = AnyHttpUrl(
             url=f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}",
             scheme="http",
         )
