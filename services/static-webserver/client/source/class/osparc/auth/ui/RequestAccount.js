@@ -268,17 +268,22 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
     },
 
     __submit: function(formData, captchaValue) {
-      const msg = this.tr("The request is being processed, you will hear from us in the coming hours");
-      osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-      this.fireDataEvent("done");
-
       const params = {
         data: {
           "form": formData,
           "captcha": captchaValue
         }
       };
-      osparc.data.Resources.fetch("auth", "postRequestAccount", params);
+      osparc.data.Resources.fetch("auth", "postRequestAccount", params)
+        .then(() => {
+          const msg = this.tr("The request is being processed, you will hear from us in the coming hours");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          this.fireDataEvent("done");
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+        });
     },
 
     __createCaptchaLayout: function() {
