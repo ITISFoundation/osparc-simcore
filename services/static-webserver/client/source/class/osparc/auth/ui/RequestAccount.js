@@ -279,9 +279,11 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
     },
 
     __getCaptchaLayout: function() {
-      const captchaLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-        alignY: "bottom"
-      }));
+      const captchaGrid = new qx.ui.layout.Grid(5, 5);
+      captchaGrid.setColumnAlign(0, "center", "bottom");
+      captchaGrid.setColumnFlex(1, 1);
+      const captchaLayout = new qx.ui.container.Composite(captchaGrid);
+
       const captchaImage = this.__captchaImage = new qx.ui.basic.Image().set({
         allowShrinkX: true,
         allowShrinkY: true,
@@ -290,14 +292,29 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         height: 45,
         backgroundColor: "green"
       });
-      captchaLayout.add(captchaImage);
+      captchaLayout.add(captchaImage, {
+        column: 0,
+        row: 0,
+        rowSpan: 2
+      });
+
+      const label = new qx.ui.basic.Label(this.tr("Type the characters:")).set({
+        font: "text-12"
+      });
+      captchaLayout.add(label, {
+        column: 1,
+        row: 0
+      });
+
       const captchaField = this.__captchaField = new qx.ui.form.TextField().set({
         backgroundColor: "transparent",
         required: true
       });
       captchaLayout.add(captchaField, {
-        flex: 1
+        column: 1,
+        row: 1
       });
+
       return captchaLayout;
     },
 
