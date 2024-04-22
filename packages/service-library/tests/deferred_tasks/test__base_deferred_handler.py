@@ -403,8 +403,3 @@ async def test_deferred_manager_code_times_out(
 
     await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED, count=0)
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_RESULT, count=0)
-
-
-# TODO: TESTS WE ABSOLUTELEY NEED:
-# -> run the entire DeferredManager in a process and KILL the process while running a long task in the pool
-# -> a new process should pick this task up and finish it
