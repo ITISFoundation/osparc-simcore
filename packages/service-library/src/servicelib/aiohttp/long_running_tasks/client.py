@@ -145,5 +145,5 @@ async def long_running_task_request(
 
     except (asyncio.CancelledError, asyncio.TimeoutError):
         if task:
-            await _abort_task(session, url.with_path(task.abort_href, encoded=True))
+            await _abort_task(session, URL(task.abort_href))
         raise
