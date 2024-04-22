@@ -6,6 +6,7 @@ from typing import Any, Final
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
+from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
@@ -255,12 +256,12 @@ class CreateSidecars(DynamicSchedulerEvent):
                 include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
             )
         )
-        rabbit_message = ProgressRabbitMessageNode(
+        rabbit_message = ProgressRabbitMessageNode.construct(
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,
             progress_type=ProgressType.SIDECARS_PULLING,
-            progress=0,
+            report=ProgressReport(actual_value=0, total=1),
         )
         await rabbitmq_client.publish(rabbit_message.channel_name, rabbit_message)
         dynamic_sidecar_id = await create_service_and_get_id(
@@ -273,12 +274,12 @@ class CreateSidecars(DynamicSchedulerEvent):
             )
         )
 
-        rabbit_message = ProgressRabbitMessageNode(
+        rabbit_message = ProgressRabbitMessageNode.construct(
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,
             progress_type=ProgressType.SIDECARS_PULLING,
-            progress=1,
+            report=ProgressReport(actual_value=1, total=1),
         )
         await rabbitmq_client.publish(rabbit_message.channel_name, rabbit_message)
 
