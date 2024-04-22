@@ -79,6 +79,3 @@ async def test_memory_manager_list_all_entries(
     entries = await memory_manager.list_all()
     assert len(entries) == count
     assert entries == [task_schedule for _ in range(count)]
-
-
-# TODO: fiogure out why too many open files here
