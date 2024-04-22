@@ -285,8 +285,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         groupOptions.add(tagByGroup);
         if (
           osparc.product.Utils.isProduct("s4l") ||
-          osparc.product.Utils.isProduct("s4llite") ||
-          osparc.product.Utils.isProduct("s4lacad")
+          osparc.product.Utils.isProduct("s4lacad") ||
+          osparc.product.Utils.isProduct("s4llite")
         ) {
           tagByGroup.execute();
         }
