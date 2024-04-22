@@ -2,10 +2,11 @@
 # pylint:disable=unused-argument
 
 import asyncio
+import logging
 from collections.abc import AsyncIterable, Awaitable, Callable
 from datetime import timedelta
 from enum import auto
-from typing import Any
+from typing import Any, Iterable
 from unittest.mock import Mock
 
 import pytest
@@ -136,6 +137,14 @@ async def get_mocked_deferred_handler(
     return _
 
 
+@pytest.fixture()
+def caplog_debug_level(
+    caplog: pytest.LogCaptureFixture,
+) -> Iterable[pytest.LogCaptureFixture]:
+    with caplog.at_level(logging.DEBUG):
+        yield caplog
+
+
 async def _assert_mock_call(
     mocks: dict[MockKeys, Mock],
     *,
@@ -232,10 +241,10 @@ async def test_deferred_manager_raised_error(
         tuple[dict[MockKeys, Mock], type[BaseDeferredHandler]],
     ],
     mocked_deferred_globals: dict[str, Any],
-    caplog: pytest.LogCaptureFixture,
+    caplog_debug_level: pytest.LogCaptureFixture,
     retry_count: int,
 ):
-    caplog.clear()
+    caplog_debug_level.clear()
 
     expected_error_message = (
         "This is an expected error that was raised and should be found in the logs"
@@ -264,7 +273,7 @@ async def test_deferred_manager_raised_error(
     assert mocked_deferred_globals == received_globals
     if retry_count > 1:
         await _assert_log_message(
-            caplog,
+            caplog_debug_level,
             message=f"Schedule retry attempt for task_uid '{task_uid}'",
             count=retry_count - 1,
         )
@@ -273,9 +282,11 @@ async def test_deferred_manager_raised_error(
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_RESULT, count=0)
 
     await _assert_log_message(
-        caplog, message=f"Finished task_uid '{task_uid}' with error", count=1
+        caplog_debug_level,
+        message=f"Finished task_uid '{task_uid}' with error",
+        count=1,
     )
-    assert expected_error_message in caplog.text
+    assert expected_error_message in caplog_debug_level.text
 
 
 @pytest.mark.parametrize("retry_count", [1, 5])
@@ -285,10 +296,10 @@ async def test_deferred_manager_cancelled(
         tuple[dict[MockKeys, Mock], type[BaseDeferredHandler]],
     ],
     mocked_deferred_globals: dict[str, Any],
-    caplog: pytest.LogCaptureFixture,
+    caplog_debug_level: pytest.LogCaptureFixture,
     retry_count: int,
 ):
-    caplog.clear()
+    caplog_debug_level.clear()
 
     async def _run_deferred_to_cancel() -> None:
         await asyncio.sleep(1e6)
@@ -309,13 +320,20 @@ async def test_deferred_manager_cancelled(
 
     await _assert_mock_call(mocks, key=MockKeys.ON_FINISHED_WITH_ERROR, count=0)
 
-    assert caplog.text.count(f"Schedule retry attempt for task_uid '{task_uid}'") == 0
+    assert (
+        caplog_debug_level.text.count(
+            f"Schedule retry attempt for task_uid '{task_uid}'"
+        )
+        == 0
+    )
 
     await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED, count=0)
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_RESULT, count=0)
 
     await _assert_log_message(
-        caplog, message=f"Found and cancelled run_deferred for '{task_uid}'", count=1
+        caplog_debug_level,
+        message=f"Found and cancelled run_deferred for '{task_uid}'",
+        count=1,
     )
 
 
@@ -326,10 +344,10 @@ async def test_deferred_manager_start_parallelized(
         tuple[dict[MockKeys, Mock], type[BaseDeferredHandler]],
     ],
     mocked_deferred_globals: dict[str, Any],
-    caplog: pytest.LogCaptureFixture,
+    caplog_debug_level: pytest.LogCaptureFixture,
     tasks_to_start: NonNegativeInt,
 ):
-    caplog.clear()
+    caplog_debug_level.clear()
 
     async def _run_deferred_ok() -> None:
         await asyncio.sleep(0.1)
@@ -350,10 +368,10 @@ async def test_deferred_manager_start_parallelized(
 
     await _assert_mock_call(mocks, key=MockKeys.ON_FINISHED_WITH_ERROR, count=0)
     await _assert_log_message(
-        caplog, message="Schedule retry attempt for task_uid ", count=0
+        caplog_debug_level, message="Schedule retry attempt for task_uid ", count=0
     )
     await _assert_log_message(
-        caplog, message="Found and cancelled run_deferred for '", count=0
+        caplog_debug_level, message="Found and cancelled run_deferred for '", count=0
     )
 
 
