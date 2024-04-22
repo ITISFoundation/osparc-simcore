@@ -103,10 +103,12 @@ async def send_account_request_email_to_support(
 
 async def generate_captcha() -> tuple[str, bytes]:
     captcha_text = "".join(random.choices(string.digits, k=6))
-    image = ImageCaptcha(width=140, height=45, background=(0, 20, 46))
+    image = ImageCaptcha(width=140, height=45)
 
     # Generate image
-    data: BytesIO = image.generate(captcha_text)
+    data: BytesIO = image.create_captcha_image(
+        chars=captcha_text, color=(221, 221, 221), background=(0, 20, 46)
+    )
     image_data: bytes = data.getvalue()
 
     return (captcha_text, image_data)
