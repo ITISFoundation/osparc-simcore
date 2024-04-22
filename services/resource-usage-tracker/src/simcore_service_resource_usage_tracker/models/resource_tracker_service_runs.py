@@ -74,7 +74,7 @@ class ServiceRunDB(BaseModel):
     node_name: str
     service_key: ServiceKey
     service_version: ServiceVersion
-    service_type: str
+    service_type: ResourceTrackerServiceType
     service_resources: dict
     started_at: datetime
     stopped_at: datetime | None
