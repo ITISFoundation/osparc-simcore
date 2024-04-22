@@ -38,6 +38,9 @@ def _normalize_weights(steps: int, weights: list[float]) -> list[float]:
 class ProgressBarData:
     """A progress bar data allows to keep track of multiple progress(es) even in deeply nested processes.
 
+    BEWARE: Using weights AND concurrency is a recipe for disaster as the progress bar does not know which
+    sub progress finished. Concurrency may only be used with a single progress bar or with equal step weights!!
+
     - Simple example:
     async def main_fct():
         async with ProgressBarData(num_steps=3) as root_progress_bar:
@@ -79,7 +82,7 @@ class ProgressBarData:
     progress_unit: ProgressUnit | None = None
     progress_report_cb: AsyncReportCB | ReportCB | None = None
     _current_steps: float = _INITIAL_VALUE
-    _children: list = field(default_factory=list)
+    _children: dict = field(default_factory=dict)
     _parent: Optional["ProgressBarData"] = None
     _continuous_value_lock: asyncio.Lock = field(init=False)
     _last_report_value: float = _INITIAL_VALUE
@@ -107,17 +110,15 @@ class ProgressBarData:
         if self._parent:
             await self._parent.update(value)
 
-    async def _report_external(self, value: float, *, force: bool = False) -> None:
+    async def _report_external(self, value: float) -> None:
         if not self.progress_report_cb:
             return
 
         with log_catch(_logger, reraise=False):
             # NOTE: only report if at least a percent was increased
             if (
-                (force and value != self._last_report_value)
-                or ((value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT)
-                or value == _FINAL_VALUE
-            ):
+                (value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT
+            ) or value == _FINAL_VALUE:
                 call = self.progress_report_cb(
                     ProgressReport(
                         # NOTE: here we convert back to actual value since this is possibly weighted

@@ -350,3 +350,31 @@ async def test_weighted_progress_bar_with_0_weights_is_equivalent_to_standard_pr
         step_weights=[0, 0, 0],
     ) as root:
         assert root.step_weights == [1, 1, 1, 0]
+
+
+@pytest.mark.xfail(reason="show how to not use the progress bar")
+async def test_concurrent_sub_progress_update_correct_sub_progress(
+    mocked_progress_bar_cb: mock.Mock,
+):
+    async with ProgressBarData(
+        num_steps=3, step_weights=[3, 1, 2], progress_report_cb=mocked_progress_bar_cb
+    ) as root:
+        sub_progress1 = root.sub_progress(23)
+        assert sub_progress1._current_steps == _INITIAL_VALUE  # noqa: SLF001
+        sub_progress2 = root.sub_progress(45)
+        assert sub_progress2._current_steps == _INITIAL_VALUE  # noqa: SLF001
+        sub_progress3 = root.sub_progress(12)
+        assert sub_progress3._current_steps == _INITIAL_VALUE  # noqa: SLF001
+
+        # NOTE: in a gather call there is no control on which step finishes first
+
+        assert root._current_steps == 0  # noqa: SLF001
+        # complete last progress
+        async with sub_progress3:
+            ...
+        # so sub 3 is done here
+        assert sub_progress3._current_steps == 12  # noqa: SLF001
+        assert mocked_progress_bar_cb.call_count == 2
+        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(
+            2 / 6
+        )
