@@ -66,13 +66,16 @@ async def start_long_running_task(
             "sockname"
         )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
         status_url = HttpUrl(
-            f"http://{ip_addr}:{port}{request_.app.router['get_task_status'].url_for(task_id=task_id)}"
+            url=f"http://{ip_addr}:{port}{request_.app.router['get_task_status'].url_for(task_id=task_id)}",
+            scheme="http",
         )
         result_url = HttpUrl(
-            f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}"
+            url=f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}",
+            scheme="http",
         )
         abort_url = HttpUrl(
-            f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}"
+            url=f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}",
+            scheme="http",
         )
         task_get = TaskGet(
             task_id=task_id,
