@@ -157,11 +157,16 @@ qx.Class.define("osparc.product.Utils", {
       return logosPath;
     },
 
+    // All products except oSPARC
+    hasIdlingTrackerEnabled: function() {
+      const product = this.getProductName();
+      return product !== "osparc";
+    },
+
+    // All products except oSPARC
     showLicenseExtra: function() {
-      if (this.isProduct("osparc")) {
-        return false;
-      }
-      return true;
+      const product = this.getProductName();
+      return product !== "osparc";
     },
 
     showStudyPreview: function(studyData) {
