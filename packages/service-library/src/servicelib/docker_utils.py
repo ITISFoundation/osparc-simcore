@@ -204,7 +204,9 @@ async def pull_image(
                     assert parsed_progress.id  # nosec
                     layer_id_to_size.setdefault(
                         parsed_progress.id, _PulledStatus(0)
-                    ).downloaded = layer_id_to_size[parsed_progress.id].size
+                    ).downloaded = layer_id_to_size.setdefault(
+                        parsed_progress.id, _PulledStatus(0)
+                    ).size
                 case "extracting":
                     assert parsed_progress.id  # nosec
                     assert parsed_progress.progress_detail  # nosec

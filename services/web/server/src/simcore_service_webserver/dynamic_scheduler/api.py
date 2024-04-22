@@ -12,10 +12,11 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetIdle,
     NodeGetUnknown,
 )
+from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
-from pydantic.types import NonNegativeFloat, PositiveInt
+from pydantic.types import PositiveInt
 from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
@@ -75,13 +76,13 @@ async def _post_progress_message(
     rabbitmq_client: RabbitMQClient,
     user_id: PositiveInt,
     project_id: str,
-    progress_value: NonNegativeFloat,
+    report: ProgressReport,
 ) -> None:
     progress_message = ProgressRabbitMessageProject(
         user_id=user_id,
         project_id=ProjectID(project_id),
         progress_type=ProgressType.PROJECT_CLOSING,
-        progress=progress_value,
+        report=report,
     )
 
     await rabbitmq_client.publish(progress_message.channel_name, progress_message)
