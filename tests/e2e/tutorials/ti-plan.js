@@ -89,7 +89,7 @@ async function runTutorial() {
     // Click "Load Analysis" button
     const buttonsLoadAnalysis = await utils.getButtonsWithText(postProIframe, "Load Analysis");
     await buttonsLoadAnalysis[0].click();
-    await tutorial.waitFor(20000, "Loading anaylsis");
+    await tutorial.waitFor(20000, "Loading analysis");
     await tutorial.takeScreenshot("postpro_load_analysis");
     // Click on the first "Load" button
     const buttonsLoad = await utils.getButtonsWithText(postProIframe, "Load");

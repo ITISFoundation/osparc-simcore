@@ -710,7 +710,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
       resourceDetails.addListener("openStudy", e => {
         const openCB = () => win.close();
         const studyId = e.getData()["uuid"];
-        this._startStudyById(studyId, openCB, null);
+        const isStudyCreation = false;
+        this._startStudyById(studyId, openCB, null, isStudyCreation);
       });
       return resourceDetails;
     },
