@@ -118,7 +118,7 @@ def project_slug_dir(osparc_simcore_root_dir) -> Path:
 
 
 @pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> dict:
+def project_env_devel_dict(project_slug_dir: Path) -> dict[str, str]:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
     environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
@@ -126,7 +126,9 @@ def project_env_devel_dict(project_slug_dir: Path) -> dict:
 
 
 @pytest.fixture
-def project_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
+def project_env_devel_environment(
+    project_env_devel_dict: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
 
