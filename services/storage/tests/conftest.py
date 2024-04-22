@@ -118,7 +118,7 @@ def project_slug_dir(osparc_simcore_root_dir) -> Path:
 
 
 @pytest.fixture(scope="session")
-def project_env_devel_dict(project_slug_dir: Path) -> dict:
+def project_env_devel_dict(project_slug_dir: Path) -> dict[str, str]:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
     environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
@@ -126,7 +126,9 @@ def project_env_devel_dict(project_slug_dir: Path) -> dict:
 
 
 @pytest.fixture
-def project_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
+def project_env_devel_environment(
+    project_env_devel_dict: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
 
@@ -186,13 +188,13 @@ def mock_config(
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs,
     datcore_adapter_service_mock: aioresponses.aioresponses,
-):
+) -> None:
     # NOTE: this can be overriden in tests that do not need all dependencies up
     ...
 
 
 @pytest.fixture
-def app_settings(mock_config) -> Settings:
+def app_settings(mock_config: None) -> Settings:
     test_app_settings = Settings.create_from_envs()
     print(f"{test_app_settings.json(indent=2)=}")
     return test_app_settings
