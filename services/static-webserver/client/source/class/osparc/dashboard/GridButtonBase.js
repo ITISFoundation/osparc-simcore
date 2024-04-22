@@ -193,8 +193,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-light",
             font: "text-14",
-            maxWidth: this.self().ITEM_WIDTH,
-            width: this.self().ITEM_WIDTH - 2*this.self().PADDING - 30,
+            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING - 30,
             maxHeight: this.self().TITLE_MAX_HEIGHT
           });
           layout = this.getChildControl("title-row");

@@ -41,7 +41,6 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
     if (title) {
       const titleLabel = this.getChildControl("title");
       titleLabel.set({
-        maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING,
         value: title,
         rich: true
       });
@@ -55,8 +54,10 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
 
   members: {
     _buildLayout: function() {
-      const title = this.getChildControl("title");
-      title.setValue(this.tr("Empty") + " " + osparc.product.Utils.getStudyAlias({
+      const title = this.getChildControl("title").set({
+        maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING
+      });
+      title.setValue(this.tr("Empty") + " v" + osparc.product.Utils.getStudyAlias({
         firstUpperCase: true
       }));
 
