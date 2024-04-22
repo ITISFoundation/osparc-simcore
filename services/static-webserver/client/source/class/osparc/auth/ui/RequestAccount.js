@@ -211,7 +211,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       doubleSpaced.push(eula);
       this._form.add(eula, eulaText, null, "eula");
 
-      const content = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const content = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
       content.add(formRenderer);
       const captchaLayout = this.__getCaptchaLayout();
@@ -282,12 +282,15 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const captchaLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "bottom"
       }));
-      const captchaPlaceholder = new qx.ui.core.Widget().set({
-        width: 140, // 280/2
-        height: 45, // 90/2
+      const captchaImage = this.__captchaImage = new qx.ui.basic.Image().set({
+        allowShrinkX: true,
+        allowShrinkY: true,
+        scale: true,
+        width: 140,
+        height: 45,
         backgroundColor: "green"
       });
-      captchaLayout.add(captchaPlaceholder);
+      captchaLayout.add(captchaImage);
       const captchaField = this.__captchaField = new qx.ui.form.TextField().set({
         backgroundColor: "transparent",
         required: true
@@ -299,6 +302,12 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
     },
 
     _onAppear: function() {
+      // request captcha
+      const url = osparc.data.Resources.resources["auth"].endpoints["captcha"].url;
+      this.__captchaImage.set({
+        source: url
+      });
+
       // Listen to "Enter" key
       const commandEnter = new qx.ui.command.Command("Enter");
       this.__requestButton.setCommand(commandEnter);
