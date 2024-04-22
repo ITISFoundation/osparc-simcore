@@ -26,6 +26,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
   */
 
   members: {
+    __captchaField: null,
     __requestButton: null,
     __cancelButton: null,
 
@@ -210,10 +211,13 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       doubleSpaced.push(eula);
       this._form.add(eula, eulaText, null, "eula");
 
-      // const formRenderer = new qx.ui.form.renderer.Single(this._form);
+      const content = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
+      content.add(formRenderer);
+      const captchaLayout = this.__getCaptchaLayout();
+      content.add(captchaLayout);
       const scrollView = new qx.ui.container.Scroll();
-      scrollView.add(formRenderer);
+      scrollView.add(content);
       this.add(scrollView, {
         flex: 1
       });
@@ -240,7 +244,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       grp.add(buttons)
 
       // interaction
-      submitBtn.addListener("execute", e => {
+      submitBtn.addListener("execute", () => {
         const validForm = this._form.validate();
         if (validForm) {
           const formData = {};
@@ -252,7 +256,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
               formData[key] = val;
             }
           });
-          this.__submit(formData);
+          this.__submit({formData});
         }
       }, this);
 
@@ -272,6 +276,26 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         }
       };
       osparc.data.Resources.fetch("auth", "postRequestAccount", params);
+    },
+
+    __getCaptchaLayout: function() {
+      const captchaLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "bottom"
+      }));
+      const captchaPlaceholder = new qx.ui.core.Widget().set({
+        width: 140, // 280/2
+        height: 45, // 90/2
+        backgroundColor: "green"
+      });
+      captchaLayout.add(captchaPlaceholder);
+      const captchaField = this.__captchaField = new qx.ui.form.TextField().set({
+        backgroundColor: "transparent",
+        required: true
+      });
+      captchaLayout.add(captchaField, {
+        flex: 1
+      });
+      return captchaLayout;
     },
 
     _onAppear: function() {
