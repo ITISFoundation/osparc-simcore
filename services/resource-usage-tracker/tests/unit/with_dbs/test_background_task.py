@@ -193,10 +193,12 @@ async def test_process_event_functions(
             _SERVICE_RUN_ID_S4L_10_MIN_OLD,
         ):
             if transaction.service_run_id == _SERVICE_RUN_ID_OSPARC_10_MIN_OLD:
+                # Computational service is not billed
                 assert (
                     transaction.transaction_status == CreditTransactionStatus.NOT_BILLED
                 )
             else:
+                # Dynamic service is billed
                 assert transaction.transaction_status == CreditTransactionStatus.BILLED
         else:
             assert transaction.transaction_status == CreditTransactionStatus.PENDING
