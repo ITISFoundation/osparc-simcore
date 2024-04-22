@@ -1,26 +1,25 @@
 from datetime import datetime, timedelta
-from enum import auto
+from enum import Enum
 
 import arrow
-from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field, NonNegativeInt
 
 from ._base_deferred_handler import UserStartContext
 from ._models import ClassUniqueReference, TaskExecutionResult
 
 
-class TaskState(StrAutoEnum):
+class TaskState(str, Enum):
     # entrypoint state
-    SCHEDULED = auto()
+    SCHEDULED = "SCHEDULED"
 
-    SUBMIT_TASK = auto()
-    WORKER = auto()
-    ERROR_RESULT = auto()
+    SUBMIT_TASK = "SUBMIT_TASK"
+    WORKER = "WORKER"
+    ERROR_RESULT = "ERROR_RESULT"
 
     # end states
-    DEFERRED_RESULT = auto()
-    FINISHED_WITH_ERROR = auto()
-    MANUALLY_CANCELLED = auto()
+    DEFERRED_RESULT = "DEFERRED_RESULT"
+    FINISHED_WITH_ERROR = "FINISHED_WITH_ERROR"
+    MANUALLY_CANCELLED = "MANUALLY_CANCELLED"
 
 
 class TaskSchedule(BaseModel):
