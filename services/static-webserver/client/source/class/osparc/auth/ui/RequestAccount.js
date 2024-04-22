@@ -244,35 +244,37 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       grp.add(buttons)
 
       // interaction
-      submitBtn.addListener("execute", () => {
-        const validForm = this._form.validate();
-        if (validForm) {
-          const formData = {};
-          Object.entries(this._form.getItems()).forEach(([key, field]) => {
-            const val = field.getValue();
-            if (val && (typeof val === "object") && ("classname" in val)) {
-              formData[key] = val.getModel();
-            } else {
-              formData[key] = val;
-            }
-          });
-          this.__submit({formData});
-        }
-      }, this);
-
+      submitBtn.addListener("execute", () => this.__requestPressed(), this);
       cancelBtn.addListener("execute", () => this.fireDataEvent("done", null), this);
 
       this.add(grp);
     },
 
-    __submit: function(formData) {
+    __requestPressed: function() {
+      const validForm = this._form.validate();
+      if (validForm) {
+        const formData = {};
+        Object.entries(this._form.getItems()).forEach(([key, field]) => {
+          const val = field.getValue();
+          if (val && (typeof val === "object") && ("classname" in val)) {
+            formData[key] = val.getModel();
+          } else {
+            formData[key] = val;
+          }
+        });
+        this.__submit(formData, this.__captchaField.getValue());
+      }
+    },
+
+    __submit: function(formData, captchaValue) {
       const msg = this.tr("The request is being processed, you will hear from us in the coming hours");
       osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
       this.fireDataEvent("done");
 
       const params = {
         data: {
-          "form": formData
+          "form": formData,
+          "captcha": captchaValue
         }
       };
       osparc.data.Resources.fetch("auth", "postRequestAccount", params);
