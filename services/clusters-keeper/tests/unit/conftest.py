@@ -255,8 +255,10 @@ def clusters_keeper_docker_compose_file(installed_package_dir: Path) -> Path:
 
 @pytest.fixture
 def clusters_keeper_docker_compose() -> dict[str, Any]:
-    data = importlib.resources.read_text(
-        simcore_service_clusters_keeper.data, "docker-compose.yml"
+    data = (
+        importlib.resources.files(simcore_service_clusters_keeper.data)
+        .joinpath("docker-compose.yml")
+        .read_text()
     )
     assert data
     return yaml.safe_load(data)
