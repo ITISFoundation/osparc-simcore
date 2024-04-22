@@ -82,7 +82,7 @@ class ProgressBarData:
     progress_unit: ProgressUnit | None = None
     progress_report_cb: AsyncReportCB | ReportCB | None = None
     _current_steps: float = _INITIAL_VALUE
-    _children: dict = field(default_factory=dict)
+    _children: list = field(default_factory=list)
     _parent: Optional["ProgressBarData"] = None
     _continuous_value_lock: asyncio.Lock = field(init=False)
     _last_report_value: float = _INITIAL_VALUE
