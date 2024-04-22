@@ -46,7 +46,7 @@ mypy-extensions==1.0.0
     # via black
 nodeenv==1.8.0
     # via pre-commit
-packaging==23.1
+packaging==24.0
     # via
     #   black
     #   build

@@ -6,10 +6,10 @@ from enum import Enum, IntEnum, auto
 from typing import Any, Literal, TypeAlias
 
 import arrow
-from models_library.products import ProductName
 from pydantic import BaseModel, Field
-from pydantic.types import NonNegativeFloat
 
+from .products import ProductName
+from .progress_bar import ProgressReport
 from .projects import ProjectID
 from .projects_nodes_io import NodeID
 from .projects_state import RunningState
@@ -99,7 +99,7 @@ class ProgressMessageMixin(RabbitMessageBase):
     progress_type: ProgressType = (
         ProgressType.COMPUTATION_RUNNING
     )  # NOTE: backwards compatible
-    progress: NonNegativeFloat
+    report: ProgressReport
 
     def routing_key(self) -> str | None:
         return None

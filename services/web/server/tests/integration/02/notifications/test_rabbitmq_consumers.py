@@ -16,6 +16,7 @@ import socketio
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -57,9 +58,9 @@ from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.messages import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
-    SOCKET_IO_NODE_PROGRESS_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
 )
+from simcore_service_webserver.socketio.models import WebSocketNodeProgress
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from tenacity import RetryError
 from tenacity._asyncio import AsyncRetrying
@@ -110,7 +111,7 @@ async def _assert_handler_called(handler: mock.Mock, expected_call: mock._Call) 
 
 
 async def _assert_handler_called_with_json(
-    handler: mock.Mock, expected_call: dict[str, Any] | list[dict[str, Any]]
+    handler: mock.Mock, expected_call: dict[str, Any]
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
@@ -341,7 +342,9 @@ async def test_progress_non_computational_workflow(
     socket_io_conn = await socketio_client_factory(None, client)
 
     mock_progress_handler = mocker.MagicMock()
-    socket_io_conn.on(SOCKET_IO_NODE_PROGRESS_EVENT, handler=mock_progress_handler)
+    socket_io_conn.on(
+        WebSocketNodeProgress.get_event_type(), handler=mock_progress_handler
+    )
 
     if subscribe_to_logs:
         assert client.app
@@ -351,14 +354,16 @@ async def test_progress_non_computational_workflow(
         user_id=sender_user_id,
         project_id=user_project_id,
         node_id=random_node_id_in_user_project,
-        progress=0.3,
         progress_type=progress_type,
+        report=ProgressReport(actual_value=0.3, total=1),
     )
     await rabbitmq_publisher.publish(progress_message.channel_name, progress_message)
 
     call_expected = sender_same_user_id and subscribe_to_logs
     if call_expected:
-        expected_call = jsonable_encoder(progress_message, exclude={"channel_name"})
+        expected_call = WebSocketNodeProgress.from_rabbit_message(
+            progress_message
+        ).to_socket_dict()["data"]
         await _assert_handler_called_with_json(mock_progress_handler, expected_call)
     else:
         await _assert_handler_not_called(mock_progress_handler)
@@ -405,8 +410,8 @@ async def test_progress_computational_workflow(
         user_id=sender_user_id,
         project_id=user_project_id,
         node_id=random_node_id_in_user_project,
-        progress=0.3,
         progress_type=ProgressType.COMPUTATION_RUNNING,
+        report=ProgressReport(actual_value=0.3, total=1),
     )
     await rabbitmq_publisher.publish(progress_message.channel_name, progress_message)
 
@@ -418,13 +423,16 @@ async def test_progress_computational_workflow(
         expected_call |= {
             "data": user_project["workbench"][f"{random_node_id_in_user_project}"]
         }
-        expected_call["data"]["progress"] = int(progress_message.progress * 100)
+        expected_call["data"]["progress"] = int(
+            progress_message.report.percent_value * 100
+        )
         await _assert_handler_called_with_json(mock_progress_handler, expected_call)
     else:
         await _assert_handler_not_called(mock_progress_handler)
 
     # check the database. doing it after the waiting calls above is safe
     async with aiopg_engine.acquire() as conn:
+        assert projects is not None
         result = await conn.execute(
             sa.select(projects.c.workbench).where(
                 projects.c.uuid == str(user_project_id)
