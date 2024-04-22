@@ -1,4 +1,6 @@
-from pydantic import Field, PositiveInt, validator
+from typing import Any
+
+from pydantic import Field, PositiveInt, root_validator, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.postgres import PostgresSettings
@@ -32,11 +34,11 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         None, description="Pennsieve API secret ONLY for testing purposes"
     )
 
-    STORAGE_POSTGRES: PostgresSettings | None = Field(auto_default_from_env=True)
+    STORAGE_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
 
     STORAGE_REDIS: RedisSettings | None = Field(auto_default_from_env=True)
 
-    STORAGE_S3: S3Settings | None = Field(auto_default_from_env=True)
+    STORAGE_S3: S3Settings = Field(auto_default_from_env=True)
 
     STORAGE_TRACING: TracingSettings | None = Field(auto_default_from_env=True)
 
@@ -71,3 +73,12 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     def _validate_loglevel(cls, value) -> str:
         log_level: str = cls.validate_log_level(value)
         return log_level
+
+    @root_validator()
+    @classmethod
+    def ensure_settings_consistency(cls, values: dict[str, Any]):
+        if values.get("STORAGE_CLEANER_INTERVAL_S") and not values.get("STORAGE_REDIS"):
+            raise ValueError(
+                "STORAGE_CLEANER_INTERVAL_S cleaner cannot be set without STORAGE_REDIS! Please correct settings."
+            )
+        return values

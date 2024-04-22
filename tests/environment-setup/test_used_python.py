@@ -35,8 +35,7 @@ def make_versions_comparable(*versions) -> list[tuple[int]]:
     for v in versions:
         if isinstance(v, str):
             v = to_version(v)
-        if len(v) < n:
-            n = len(v)
+        n = min(n, len(v))
         vers.append(v)
     return [v[:n] for v in vers]
 
