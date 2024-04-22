@@ -10,7 +10,6 @@ from uuid import UUID
 
 from cryptography import fernet
 from fastapi import FastAPI
-from httpx import AsyncClient
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.computations import ComputationStart
@@ -102,6 +101,10 @@ class WebserverApi(BaseServiceClientApi):
     """
 
 
+class LongRunningTasksClient(BaseServiceClientApi):
+    "Client for requesting status and results of long running tasks"
+
+
 @dataclass
 class AuthSession:
     """
@@ -115,8 +118,8 @@ class AuthSession:
     """
 
     _api: WebserverApi
+    _long_running_task_client: LongRunningTasksClient
     vtag: str
-    _long_running_task_client: AsyncClient
     session_cookies: dict | None = None
 
     @classmethod
@@ -130,10 +133,13 @@ class AuthSession:
         assert api  # nosec
         assert isinstance(api, WebserverApi)  # nosec
         api.client.headers = product_header
-        tmp_client = AsyncClient(headers=product_header)
+        long_running_tasks_client = LongRunningTasksClient.get_instance(app=app)
+        assert long_running_tasks_client  # nosec
+        assert isinstance(long_running_tasks_client, LongRunningTasksClient)  # nosec
+        long_running_tasks_client.client.headers = product_header
         return cls(
             _api=api,
-            _long_running_task_client=tmp_client,
+            _long_running_task_client=long_running_tasks_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
             session_cookies=session_cookies,
         )
@@ -143,6 +149,10 @@ class AuthSession:
     @property
     def client(self):
         return self._api.client
+
+    @property
+    def long_running_task_client(self):
+        return self._long_running_task_client.client
 
     async def _page_projects(
         self,
@@ -195,7 +205,7 @@ class AuthSession:
             before_sleep=before_sleep_log(_logger, logging.INFO),
         ):
             with attempt:
-                get_response = await self._long_running_task_client.get(
+                get_response = await self.long_running_task_client.get(
                     url=status_url, cookies=self.session_cookies
                 )
                 get_response.raise_for_status()
@@ -205,7 +215,7 @@ class AuthSession:
                     msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"
                     raise TryAgain(msg)
 
-        result_response = await self._long_running_task_client.get(
+        result_response = await self.long_running_task_client.get(
             f"{result_url}", cookies=self.session_cookies
         )
         result_response.raise_for_status()
@@ -576,6 +586,12 @@ def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
         WebserverApi,
         api_baseurl=settings.api_base_url,
         service_name="webserver",
+    )
+    setup_client_instance(
+        app,
+        LongRunningTasksClient,
+        api_baseurl="",
+        service_name="long_running_tasks_client",
     )
 
     def _on_startup() -> None:
