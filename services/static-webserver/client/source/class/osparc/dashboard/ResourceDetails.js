@@ -390,10 +390,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const resourceData = this.__resourceData;
       if (
         osparc.utils.Resources.isService(resourceData) ||
-        osparc.product.Utils.isProduct("s4llite") ||
-        osparc.product.Utils.isProduct("tis")
+        !osparc.product.Utils.showStudyPreview() ||
+        osparc.data.model.Study.getUiMode(resourceData) === "app"
       ) {
-        // there is no pipelining
+        // there is no pipelining or don't show it
         return null;
       }
 
