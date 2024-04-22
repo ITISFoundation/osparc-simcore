@@ -17,6 +17,7 @@ from settings_library.rabbit import RabbitSettings
 
 from ._base_deferred_handler import (
     BaseDeferredHandler,
+    DeferredManagerContext,
     FullStartContext,
     UserStartContext,
 )
@@ -84,11 +85,11 @@ class _PatchCancelDeferred:
         await self.manager_cancel_deferred(task_uid)
 
 
-def __log_state(task_state: TaskState, task_uid: TaskUID) -> None:
+def _log_state(task_state: TaskState, task_uid: TaskUID) -> None:
     _logger.debug("Handling state '%s' for task_uid '%s'", task_state, task_uid)
 
 
-def __raise_if_not_type(task_result: Any, expected_types: Iterable[type]) -> None:
+def _raise_if_not_type(task_result: Any, expected_types: Iterable[type]) -> None:
     if not isinstance(task_result, tuple(expected_types)):
         msg = f"Unexpected '{task_result=}', should be one of {[x.__name__ for x in expected_types]}"
         raise TypeError(msg)
@@ -100,7 +101,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         rabbit_settings: RabbitSettings,
         scheduler_redis_sdk: RedisClientSDKHealthChecked,
         *,
-        globals_for_start_context: dict[str, Any],
+        globals_for_start_context: DeferredManagerContext,
         max_workers: NonNegativeInt = _DEFAULT_DEFERRED_MANAGER_WORKER_SLOTS,
         delay_when_requeuing_message: timedelta = _DEFAULT_DELAY_BEFORE_NACK,
     ) -> None:
@@ -244,7 +245,8 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     async def _fs_handle_scheduled(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        __log_state(TaskState.SCHEDULED, task_uid)
+
+        _log_state(TaskState.SCHEDULED, task_uid)
 
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.SCHEDULED
@@ -263,7 +265,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     async def _fs_handle_submit_task(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        __log_state(TaskState.SUBMIT_TASK, task_uid)
+        _log_state(TaskState.SUBMIT_TASK, task_uid)
 
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.SUBMIT_TASK
@@ -282,7 +284,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     async def _fs_handle_worker(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        __log_state(TaskState.WORKER, task_uid)
+        _log_state(TaskState.WORKER, task_uid)
 
         if not self._worker_tracker.has_free_slots():
             # NOTE: puts the message back in rabbit for redelivery since this pool is currently busy
@@ -349,12 +351,12 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     async def _fs_handle_error_result(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        __log_state(TaskState.ERROR_RESULT, task_uid)
+        _log_state(TaskState.ERROR_RESULT, task_uid)
 
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.ERROR_RESULT
         )
-        __raise_if_not_type(
+        _raise_if_not_type(
             task_schedule.result, (TaskResultError, TaskResultCancelledError)
         )
 
@@ -397,12 +399,12 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     async def _fs_handle_finished_with_error(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        __log_state(TaskState.FINISHED_WITH_ERROR, task_uid)
+        _log_state(TaskState.FINISHED_WITH_ERROR, task_uid)
 
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.FINISHED_WITH_ERROR
         )
-        __raise_if_not_type(
+        _raise_if_not_type(
             task_schedule.result, (TaskResultError, TaskResultCancelledError)
         )
 
@@ -424,12 +426,12 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     async def _fs_handle_deferred_result(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        __log_state(TaskState.DEFERRED_RESULT, task_uid)
+        _log_state(TaskState.DEFERRED_RESULT, task_uid)
 
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.DEFERRED_RESULT
         )
-        __raise_if_not_type(task_schedule.result, (TaskResultSuccess,))
+        _raise_if_not_type(task_schedule.result, (TaskResultSuccess,))
 
         subclass = self.__get_subclass(task_schedule.class_unique_reference)
         start_context = self.__get_start_context(task_schedule.user_start_context)
@@ -458,7 +460,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     async def _fs_handle_cancel_deferred(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        __log_state(TaskState.MANUALLY_CANCELLED, task_uid)
+        _log_state(TaskState.MANUALLY_CANCELLED, task_uid)
         _logger.info("Attempting to cancel task_uid '%s'", task_uid)
 
         task_schedule = await self.__get_task_schedule(
