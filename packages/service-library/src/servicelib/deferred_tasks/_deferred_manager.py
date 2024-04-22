@@ -84,7 +84,17 @@ class _PatchCancelDeferred:
         await self.manager_cancel_deferred(task_uid)
 
 
-class DeferredManager:
+def __log_state(task_state: TaskState, task_uid: TaskUID) -> None:
+    _logger.debug("Handling state '%s' for task_uid '%s'", task_state, task_uid)
+
+
+def __raise_if_not_type(task_result: Any, expected_types: Iterable[type]) -> None:
+    if not isinstance(task_result, tuple(expected_types)):
+        msg = f"Unexpected '{task_result=}', should be one of {[x.__name__ for x in expected_types]}"
+        raise TypeError(msg)
+
+
+class DeferredManager:  # pylint:disable=too-many-instance-attributes
     def __init__(
         self,
         rabbit_settings: RabbitSettings,
@@ -108,8 +118,8 @@ class DeferredManager:
             ClassUniqueReference, type[BaseDeferredHandler]
         ] = {}
 
-        self.broker = RabbitBroker(rabbit_settings.dsn)
-        self.router = RabbitRouter()
+        self.broker: RabbitBroker = RabbitBroker(rabbit_settings.dsn)
+        self.router: RabbitRouter = RabbitRouter()
 
         # NOTE: do not move this to a function, must remain in constructor
         # otherwise the calling_module will be this one instead of the actual one
@@ -230,14 +240,11 @@ class DeferredManager:
     ) -> FullStartContext:
         return {**self.globals_for_start_context, **user_start_context}
 
-    def __log_state(self, task_state: TaskState, task_uid: TaskUID) -> None:
-        _logger.debug("Handling state '%s' for task_uid '%s'", task_state, task_uid)
-
     @stop_retry_for_unintended_errors
     async def _fs_handle_scheduled(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        self.__log_state(TaskState.SCHEDULED, task_uid)
+        __log_state(TaskState.SCHEDULED, task_uid)
 
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.SCHEDULED
@@ -256,7 +263,7 @@ class DeferredManager:
     async def _fs_handle_submit_task(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        self.__log_state(TaskState.SUBMIT_TASK, task_uid)
+        __log_state(TaskState.SUBMIT_TASK, task_uid)
 
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.SUBMIT_TASK
@@ -275,7 +282,7 @@ class DeferredManager:
     async def _fs_handle_worker(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        self.__log_state(TaskState.WORKER, task_uid)
+        __log_state(TaskState.WORKER, task_uid)
 
         if not self._worker_tracker.has_free_slots():
             # NOTE: puts the message back in rabbit for redelivery since this pool is currently busy
@@ -338,23 +345,16 @@ class DeferredManager:
         )
         raise TypeError(msg)
 
-    def __raise_if_not_of_type(
-        self, task_result: Any, expected_types: Iterable[type]
-    ) -> None:
-        if not isinstance(task_result, tuple(expected_types)):
-            msg = f"Unexpected '{task_result=}', should be one of {[x.__name__ for x in expected_types]}"
-            raise TypeError(msg)
-
     @stop_retry_for_unintended_errors
     async def _fs_handle_error_result(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        self.__log_state(TaskState.ERROR_RESULT, task_uid)
+        __log_state(TaskState.ERROR_RESULT, task_uid)
 
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.ERROR_RESULT
         )
-        self.__raise_if_not_of_type(
+        __raise_if_not_type(
             task_schedule.result, (TaskResultError, TaskResultCancelledError)
         )
 
@@ -397,12 +397,12 @@ class DeferredManager:
     async def _fs_handle_finished_with_error(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        self.__log_state(TaskState.FINISHED_WITH_ERROR, task_uid)
+        __log_state(TaskState.FINISHED_WITH_ERROR, task_uid)
 
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.FINISHED_WITH_ERROR
         )
-        self.__raise_if_not_of_type(
+        __raise_if_not_type(
             task_schedule.result, (TaskResultError, TaskResultCancelledError)
         )
 
@@ -424,12 +424,12 @@ class DeferredManager:
     async def _fs_handle_deferred_result(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        self.__log_state(TaskState.DEFERRED_RESULT, task_uid)
+        __log_state(TaskState.DEFERRED_RESULT, task_uid)
 
         task_schedule = await self.__get_task_schedule(
             task_uid, expected_state=TaskState.DEFERRED_RESULT
         )
-        self.__raise_if_not_of_type(task_schedule.result, (TaskResultSuccess,))
+        __raise_if_not_type(task_schedule.result, (TaskResultSuccess,))
 
         subclass = self.__get_subclass(task_schedule.class_unique_reference)
         start_context = self.__get_start_context(task_schedule.user_start_context)
@@ -458,7 +458,7 @@ class DeferredManager:
     async def _fs_handle_cancel_deferred(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-        self.__log_state(TaskState.MANUALLY_CANCELLED, task_uid)
+        __log_state(TaskState.MANUALLY_CANCELLED, task_uid)
         _logger.info("Attempting to cancel task_uid '%s'", task_uid)
 
         task_schedule = await self.__get_task_schedule(
@@ -478,11 +478,11 @@ class DeferredManager:
         await self.__remove_task(task_uid, task_schedule)
 
     def _register_subscribers(self) -> None:
-        """
-        Registers subscribers at runtime instead of import time.
-        Enables for code reuse.
-        """
+        # Registers subscribers at runtime instead of import time.
+        # Enables for code reuse.
 
+        # pylint:disable=unexpected-keyword-arg
+        # pylint:disable=no-value-for-parameter
         self._fs_handle_scheduled = self.router.subscriber(
             queue=self._get_global_queue_name(_FastStreamRabbitQueue.SCHEDULED),
             exchange=self.common_exchange,
