@@ -235,12 +235,12 @@
             "title": "Invoice Url",
             "description": "Link to invoice is required when success=true"
           },
-          "invoice_pdf_url": {
+          "invoice_pdf": {
             "type": "string",
             "maxLength": 2083,
             "minLength": 1,
             "format": "uri",
-            "title": "Invoice Pdf Url",
+            "title": "Invoice Pdf",
             "description": "Link to invoice PDF"
           },
           "stripe_invoice_id": {
