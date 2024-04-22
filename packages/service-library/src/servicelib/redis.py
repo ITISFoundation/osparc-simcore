@@ -75,7 +75,7 @@ class RedisClientSDK:
         )
 
     async def shutdown(self) -> None:
-        await self._client.close(close_connection_pool=True)
+        await self._client.aclose(close_connection_pool=True)
 
     async def ping(self) -> bool:
         try:
