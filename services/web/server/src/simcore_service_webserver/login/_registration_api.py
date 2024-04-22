@@ -108,7 +108,7 @@ async def generate_captcha() -> tuple[str, bytes]:
 
     # Generate image
     data: Image = image.create_captcha_image(
-        chars=captcha_text, color=(221, 221, 221), background=(255, 0, 0)
+        chars=captcha_text, color=(221, 221, 221), background=(0, 20, 46)
     )
 
     img_byte_arr = BytesIO()
