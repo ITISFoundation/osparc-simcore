@@ -41,6 +41,7 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
     if (title) {
       const titleLabel = this.getChildControl("title");
       titleLabel.set({
+        maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING,
         value: title,
         rich: true
       });
