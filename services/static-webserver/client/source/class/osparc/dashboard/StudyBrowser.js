@@ -126,7 +126,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
           if (loadStudyId) {
             const cancelCB = () => this.reloadResources();
-            this._startStudyById(loadStudyId, null, cancelCB);
+            const isStudyCreation = false;
+            this._startStudyById(loadStudyId, null, cancelCB, isStudyCreation);
           } else {
             this.reloadResources();
           }
@@ -807,7 +808,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             };
             osparc.data.Resources.fetch("studies", "delete", params, studyId);
           };
-          this._startStudyById(studyId, openCB, cancelCB);
+          const isStudyCreation = true;
+          this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
         })
         .catch(err => {
           this._hideLoadingPage();

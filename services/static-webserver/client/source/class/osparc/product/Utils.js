@@ -157,23 +157,20 @@ qx.Class.define("osparc.product.Utils", {
       return logosPath;
     },
 
-    getWorkbenchUIPreviewPath: function() {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const textColor = colorManager.resolve("text");
-      const darkImage = osparc.utils.Utils.getColorLuminance(textColor) > 0.4;
-      return darkImage ? "osparc/workbenchUI-dark.png" : "osparc/workbenchUI-light.png";
+    // All products except oSPARC
+    hasIdlingTrackerEnabled: function() {
+      const product = this.getProductName();
+      return product !== "osparc";
     },
 
+    // All products except oSPARC
     showLicenseExtra: function() {
-      if (this.isProduct("osparc")) {
-        return false;
-      }
-      return true;
+      const product = this.getProductName();
+      return product !== "osparc";
     },
 
-    showStudyPreview: function(studyData) {
-      const uiMode = osparc.data.model.Study.getUiMode(studyData);
-      if (uiMode && uiMode === "app") {
+    showStudyPreview: function() {
+      if (this.isProduct("s4llite") || this.isProduct("tis")) {
         return false;
       }
       return true;

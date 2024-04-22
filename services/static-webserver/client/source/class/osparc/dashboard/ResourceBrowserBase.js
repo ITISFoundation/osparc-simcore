@@ -285,8 +285,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         groupOptions.add(tagByGroup);
         if (
           osparc.product.Utils.isProduct("s4l") ||
-          osparc.product.Utils.isProduct("s4llite") ||
-          osparc.product.Utils.isProduct("s4lacad")
+          osparc.product.Utils.isProduct("s4lacad") ||
+          osparc.product.Utils.isProduct("s4llite")
         ) {
           tagByGroup.execute();
         }
@@ -401,9 +401,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       openButton.openResource = true;
       openButton.addListener("execute", () => {
         switch (resourceData["resourceType"]) {
-          case "study":
-            this._startStudyById(resourceData["uuid"]);
+          case "study": {
+            const isStudyCreation = false;
+            this._startStudyById(resourceData["uuid"], null, null, isStudyCreation);
             break;
+          }
           case "template":
             this._createStudyFromTemplate(resourceData);
             break;
@@ -428,7 +430,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourceDetails.addListener("openStudy", e => {
         const openCB = () => win.close();
         const studyId = e.getData()["uuid"];
-        this._startStudyById(studyId, openCB, null);
+        const isStudyCreation = false;
+        this._startStudyById(studyId, openCB, null, isStudyCreation);
       });
       resourceDetails.addListener("openTemplate", e => {
         win.close();

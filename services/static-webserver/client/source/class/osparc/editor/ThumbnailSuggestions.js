@@ -177,18 +177,6 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       this.__reloadSuggestions();
     },
 
-    addWorkbenchUIPreviewToSuggestions: function() {
-      this.__addThumbnail({
-        type: "workbenchUIPreview",
-        thumbnailUrl: osparc.product.Utils.getWorkbenchUIPreviewPath(),
-        fileUrl: osparc.product.Utils.getWorkbenchUIPreviewPath()
-      });
-      this.__reloadSuggestions();
-
-      const themeManager = qx.theme.manager.Meta.getInstance();
-      themeManager.addListener("changeTheme", () => this.addWorkbenchUIPreviewToSuggestions());
-    },
-
     addPreviewsToSuggestions: function(previewsPerNodes) {
       previewsPerNodes.forEach(previewsPerNode => {
         const previews = previewsPerNode["screenshots"];
