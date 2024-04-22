@@ -298,15 +298,17 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         scale: true,
         width: 140,
         height: 45,
-        backgroundColor: "green"
+        backgroundColor: "green",
+        cursor: "pointer"
       });
+      this.__captchaImage.addListener("tap", () => this.__requestCaptchaImage(), this);
       captchaLayout.add(captchaImage, {
         column: 0,
         row: 0,
         rowSpan: 2
       });
 
-      const label = new qx.ui.basic.Label(this.tr("Type the characters:")).set({
+      const label = new qx.ui.basic.Label(this.tr("Type the 6 digits:")).set({
         font: "text-12"
       });
       captchaLayout.add(label, {
@@ -326,12 +328,16 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       return captchaLayout;
     },
 
-    _onAppear: function() {
-      // request captcha
+    __requestCaptchaImage: function() {
       const url = osparc.data.Resources.resources["auth"].endpoints["captcha"].url;
       this.__captchaImage.set({
         source: url
       });
+    },
+
+    _onAppear: function() {
+      // request captcha
+      this.__requestCaptchaImage();
 
       // Listen to "Enter" key
       const commandEnter = new qx.ui.command.Command("Enter");
