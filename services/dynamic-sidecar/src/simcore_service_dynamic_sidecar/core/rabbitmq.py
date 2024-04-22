@@ -3,6 +3,7 @@ from functools import lru_cache
 from typing import cast
 
 from fastapi import FastAPI
+from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import (
     EventRabbitMessage,
     LoggerRabbitMessage,
@@ -12,7 +13,6 @@ from models_library.rabbitmq_messages import (
     RabbitMessageBase,
     RabbitResourceTrackingMessages,
 )
-from pydantic import NonNegativeFloat
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, is_rabbitmq_responsive
 from settings_library.rabbit import RabbitSettings
@@ -38,7 +38,7 @@ async def post_log_message(
     app: FastAPI, log: LogMessageStr, *, log_level: LogLevelInt
 ) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    message = LoggerRabbitMessage(
+    message = LoggerRabbitMessage.construct(
         node_id=app_settings.DY_SIDECAR_NODE_ID,
         user_id=app_settings.DY_SIDECAR_USER_ID,
         project_id=app_settings.DY_SIDECAR_PROJECT_ID,
@@ -50,15 +50,15 @@ async def post_log_message(
 
 
 async def post_progress_message(
-    app: FastAPI, progress_type: ProgressType, progress_value: NonNegativeFloat
+    app: FastAPI, progress_type: ProgressType, report: ProgressReport
 ) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    message = ProgressRabbitMessageNode(
+    message = ProgressRabbitMessageNode.construct(
         node_id=app_settings.DY_SIDECAR_NODE_ID,
         user_id=app_settings.DY_SIDECAR_USER_ID,
         project_id=app_settings.DY_SIDECAR_PROJECT_ID,
         progress_type=progress_type,
-        progress=progress_value,
+        report=report,
     )
     await _post_rabbit_message(app, message)
 
