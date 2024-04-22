@@ -539,12 +539,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       // Make sure we have access to that service
       const versions = osparc.service.Utils.getVersions(services, serviceKey);
       if (versions.length && newButtonInfo) {
-        const title = newButtonInfo.title;
+        const latestVersion = versions[versions.length-1];
+        const title = newButtonInfo.title + " v" + latestVersion;
         const desc = newButtonInfo.description;
         const newStudyFromServiceButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
         newStudyFromServiceButton.setCardKey("new-"+serviceKey);
         osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
-        newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, versions[versions.length-1], newButtonInfo.newStudyLabel));
+        newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, serviceKey, latestVersion, newButtonInfo.newStudyLabel));
         if (this._resourcesContainer.getMode() === "list") {
           const width = this._resourcesContainer.getBounds().width - 15;
           newStudyFromServiceButton.setWidth(width);
