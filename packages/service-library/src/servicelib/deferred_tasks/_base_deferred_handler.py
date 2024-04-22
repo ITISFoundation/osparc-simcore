@@ -7,17 +7,16 @@ from pydantic import NonNegativeInt
 from ._models import ClassUniqueReference, TaskResultError, TaskUID
 
 ResultType = TypeVar("ResultType")
+
 UserStartContext: TypeAlias = dict[str, Any]
+DeferredManagerContext: TypeAlias = dict[str, Any]
+
+# composed by the `DeferredManagerContext` and `UserStartContext`
 FullStartContext: TypeAlias = dict[str, Any]
 
 
 class BaseDeferredHandler(ABC, Generic[ResultType]):
-    """Basis for scheduling code that can be ran distributed
-
-    # TODO: writeup usage
-
-    # TODO: add a note to why there is no context manager!
-    """
+    """Base class to define a deferred task."""
 
     SUBCLASSES: ClassVar[list[type["BaseDeferredHandler"]]] = []
 
@@ -27,14 +26,25 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
 
     @classmethod
     def get_class_unique_reference(cls) -> ClassUniqueReference:
-        """returns a unique reference for this class based on the module where it was defined"""
+        """
+        Used internally.
+
+        returns: a unique reference for this class (module and name)
+        """
         return f"{cls.__module__}.{cls.__name__}"
 
     @classmethod
     async def get_retries(cls, start_context: FullStartContext) -> NonNegativeInt:
-        """if ``run_deferred`` raises an error other than `asyncio.CancelledError`` this
-        is the maximum number of allowed retries
         """
+        returns: the amount of retries in case of error (default: 1)
+
+        If ``run_deferred`` raises an error other than `asyncio.CancelledError`` and this
+        value is > 1 code will be retried.
+
+        NOTE: if the process running the ``run_deferred`` code dies, it automatically gets
+        retried when the process is restarted or by another copy of the service.
+        """
+
         _ = start_context
         return 1
 
@@ -61,14 +71,13 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         # NOTE: intercepted by ``DeferredManager``
 
     @classmethod
-    @abstractmethod
-    async def run_deferred(cls, start_context: FullStartContext) -> ResultType:
-        """Code to be run in the background"""
+    async def on_deferred_created(cls, task_uid: TaskUID) -> None:
+        """return after deferred was scheduled"""
 
     @classmethod
     @abstractmethod
-    async def on_deferred_created(cls, task_uid: TaskUID) -> None:
-        """Called after deferred was scheduled"""
+    async def run_deferred(cls, start_context: FullStartContext) -> ResultType:
+        """Code to be run in the background"""
 
     @classmethod
     @abstractmethod
