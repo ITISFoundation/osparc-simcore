@@ -1,5 +1,7 @@
 ## DeferredHandler lifecycle
 
+Methods executed
+
 ```mermaid
 stateDiagram-v2
     * --> Scheduled: via [start_deferred]
@@ -27,14 +29,4 @@ stateDiagram-v2
 - `ErrorResult`: checks if it can retry the gives up
 - `FinishedWIthError`: logs error, invokes `on_finished_with_error` and removes the TASK
 - `DeferredResult`: invokes `on_deferred_result` and removes the TASK
-- `ManuallyCancelled`: cancels the task and removes the TASK
-
-
-### Workflows
-
-A typical sequence would look like:
-- user calls `start_deferred`
-- `Scheduled` state is processed -> calls `on_deferred_created`
-- `SubmitTask` state is processed
-- `Worker` state is processed
-- `DeferredResult` state is processed -> calls `on_deferred_result`
+- `ManuallyCancelled`: cancels the task and removes the TASK- `ManuallyCancelled`: cancels the task and removes the TASK
