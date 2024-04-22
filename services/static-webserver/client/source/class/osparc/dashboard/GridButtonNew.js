@@ -57,7 +57,7 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
       const title = this.getChildControl("title").set({
         maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING
       });
-      title.setValue(this.tr("Empty") + " v" + osparc.product.Utils.getStudyAlias({
+      title.setValue(this.tr("Empty") + " " + osparc.product.Utils.getStudyAlias({
         firstUpperCase: true
       }));
 
