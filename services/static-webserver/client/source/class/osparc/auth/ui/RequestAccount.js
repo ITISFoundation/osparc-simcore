@@ -214,7 +214,8 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const content = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
       content.add(formRenderer);
-      const captchaLayout = this.__getCaptchaLayout();
+      const captchaLayout = this.__createCaptchaLayout();
+      this._form.getValidationManager().add(this.__captchaField);
       content.add(captchaLayout);
       const scrollView = new qx.ui.container.Scroll();
       scrollView.add(content);
@@ -280,7 +281,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       osparc.data.Resources.fetch("auth", "postRequestAccount", params);
     },
 
-    __getCaptchaLayout: function() {
+    __createCaptchaLayout: function() {
       const captchaGrid = new qx.ui.layout.Grid(5, 5);
       captchaGrid.setColumnAlign(0, "center", "bottom");
       captchaGrid.setColumnFlex(1, 1);
