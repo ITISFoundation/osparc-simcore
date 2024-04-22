@@ -380,6 +380,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
 
       if (node.isDynamic()) {
         node.attachHandlersToStartButton(this.__nodeStartButton);
+        osparc.utils.Utils.setIdToWidget(this.__nodeStartButton, "Start_"+node.getNodeId())
         node.attachVisibilityHandlerToStopButton(this.__nodeStopButton);
         node.attachExecuteHandlerToStopButton(this.__nodeStopButton);
       }
