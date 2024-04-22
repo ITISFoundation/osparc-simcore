@@ -351,7 +351,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __editTemplate: function(studyData) {
-      this._startStudyById(studyData.uuid);
+      const isStudyCreation = false;
+      this._startStudyById(studyData.uuid, null, null, isStudyCreation);
     },
 
     __doDeleteTemplate: function(studyData) {

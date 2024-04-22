@@ -5,6 +5,7 @@ from aws_library.ec2.models import Resources
 from fastapi import FastAPI
 from models_library.docker import StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Task
+from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
@@ -46,7 +47,7 @@ async def post_task_progress_message(app: FastAPI, task: Task, progress: float) 
             user_id=simcore_label_keys.user_id,
             project_id=simcore_label_keys.project_id,
             progress_type=ProgressType.CLUSTER_UP_SCALING,
-            progress=progress,
+            report=ProgressReport(actual_value=progress, total=1),
         )
         await post_message(app, message)
 
