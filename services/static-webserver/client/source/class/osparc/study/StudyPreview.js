@@ -40,7 +40,8 @@ qx.Class.define("osparc.study.StudyPreview", {
 
     __buildPreview: function() {
       const study = new osparc.data.model.Study(this.__studyData);
-      if (osparc.product.Utils.showStudyPreview(this.__studyData) && !study.isPipelineEmpty()) {
+      const uiMode = osparc.data.model.Study.getUiMode(this.__studyData);
+      if (uiMode !== "app" && !study.isPipelineEmpty()) {
         const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
         workbenchUIPreview.setStudy(study);
         workbenchUIPreview.loadModel(study.getWorkbench());

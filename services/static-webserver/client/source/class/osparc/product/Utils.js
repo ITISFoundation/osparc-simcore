@@ -169,9 +169,8 @@ qx.Class.define("osparc.product.Utils", {
       return product !== "osparc";
     },
 
-    showStudyPreview: function(studyData) {
-      const uiMode = osparc.data.model.Study.getUiMode(studyData);
-      if (uiMode && uiMode === "app") {
+    showStudyPreview: function() {
+      if (this.isProduct("s4llite") || this.isProduct("tis")) {
         return false;
       }
       return true;
