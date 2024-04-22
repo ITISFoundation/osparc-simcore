@@ -188,13 +188,13 @@ def mock_config(
     postgres_host_config: dict[str, str],
     mocked_s3_server_envs,
     datcore_adapter_service_mock: aioresponses.aioresponses,
-):
+) -> None:
     # NOTE: this can be overriden in tests that do not need all dependencies up
     ...
 
 
 @pytest.fixture
-def app_settings(mock_config) -> Settings:
+def app_settings(mock_config: None) -> Settings:
     test_app_settings = Settings.create_from_envs()
     print(f"{test_app_settings.json(indent=2)=}")
     return test_app_settings
