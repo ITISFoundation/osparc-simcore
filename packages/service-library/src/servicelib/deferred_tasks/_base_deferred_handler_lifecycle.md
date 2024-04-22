@@ -1,6 +1,19 @@
-## DeferredHandler lifecycle
+# How to use
 
-Methods executed
+The `BaseDeferredHandler` is the interface to the user. (**note:** states are defined in the diagram below in the rectangles)
+
+
+- `get_retries` (used by state`Scheduled`) [default 1] {can br overwritten by the user}: returns the max attempts to retry user code
+- `get_timeout` (used by state`Scheduled`) [required] {MUST be implemented by user}: timeout for running the user code
+- `start_deferred` (called by the user) [required] {MUST be implemented by user}: defines a nice entrypoint to start new tasks
+- `on_deferred_created` (called after `start_deferred` executes) [optional] {can be overwritten by the user}: provides a global identifier for the started task
+- `run_deferred` (called by state `Worker`) [required] {MUST be implemented by user}: code the user wants to run
+- `on_deferred_result` (called by state `DeferredResult`) [required] {MUST be implemented by user}: provides the result of an execution
+- `on_finished_with_error` (called by state `FinishedWithError`) [optional] {can be overwritten by the user}: react to execution error, only triggered if all retry attempts fail
+- `cancel_deferred`: (called by the user) [optional]: send a message to cancel the current task. A warning will be logged but no call to either `on_deferred_result` or `on_finished_with_error` will occur.
+
+
+## DeferredHandler lifecycle
 
 ```mermaid
 stateDiagram-v2
@@ -9,7 +22,7 @@ stateDiagram-v2
 
     ManuallyCancelled --> Worker: attempts to cancel task in
 
-    Scheduled --> SubmitTask: calls [on_deferred_created]
+    Scheduled --> SubmitTask
     SubmitTask --> Worker
 
     ErrorResult --> SubmitTask: try again
@@ -23,10 +36,13 @@ stateDiagram-v2
 ```
 
 ### States
-- `Scheduled`: triggered by `start_deferred` and creates a TASK
+
+Used internally for scheduling the task's execution:
+
+- `Scheduled`: triggered by `start_deferred` and creates a schedule for the task
 - `SubmitTask`: decreases retry counter
-- `Worker`: checks if slots are available (can refuse task), invokes `run_deferred` code and saves the result. Only state in which local state is used (to run the task).
-- `ErrorResult`: checks if it can retry the gives up
-- `FinishedWIthError`: logs error, invokes `on_finished_with_error` and removes the TASK
-- `DeferredResult`: invokes `on_deferred_result` and removes the TASK
-- `ManuallyCancelled`: cancels the task and removes the TASK- `ManuallyCancelled`: cancels the task and removes the TASK
+- `Worker`: checks if enough workers slots are available (can refuse task), creates from `run_deferred` code and saves the result.
+- `ErrorResult`: checks if it can reschedule the task or gives up
+- `FinishedWIthError`: logs error, invokes `on_finished_with_error` and removes the schedule
+- `DeferredResult`: invokes `on_deferred_result` and removes the schedule
+- `ManuallyCancelled`: sends message to all instances to cancel. The instance handling the task will cancel the task and remove the schedule
