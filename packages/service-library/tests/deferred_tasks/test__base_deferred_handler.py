@@ -3,10 +3,10 @@
 
 import asyncio
 import logging
-from collections.abc import AsyncIterable, Awaitable, Callable
+from collections.abc import AsyncIterable, Awaitable, Callable, Iterable
 from datetime import timedelta
 from enum import auto
-from typing import Any, Iterable
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
