@@ -13,14 +13,13 @@ const expectedCreateAccountLabel = {
 
 for (const product in products) {
   test(`Invitation required ${product}`, async ({ page }) => {
-    const expectedLabel = expectedCreateAccountLabel[product];
-    expect(expectedLabel).toBeTruthy();
-    if (expectedLabel) {
-      await page.goto(products[product]);
+    expect(product in expectedCreateAccountLabel).toBeTruthy();
 
-      const button = page.getByTestId("loginCreateAccountBtn");
-      await expect(button).toBeVisible();
-      await expect(button).toContainText(expectedLabel);
-    }
+    const expectedLabel = expectedCreateAccountLabel[product];
+    await page.goto(products[product]);
+
+    const button = page.getByTestId("loginCreateAccountBtn");
+    await expect(button).toBeVisible();
+    await expect(button).toContainText(expectedLabel);
   });
 }
