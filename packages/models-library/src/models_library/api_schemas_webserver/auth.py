@@ -9,6 +9,7 @@ from ._base import InputSchema
 
 class AccountRequestInfo(InputSchema):
     form: dict[str, Any]
+    captcha: str
 
     class Config:
         # NOTE: this is just informative. The format of the form is defined
@@ -31,7 +32,8 @@ class AccountRequestInfo(InputSchema):
                     "hear": "Search_Engine",
                     "privacyPolicy": True,
                     "eula": True,
-                }
+                },
+                "captcha": "A12B34",
             }
         }
         anystr_strip_whitespace = True

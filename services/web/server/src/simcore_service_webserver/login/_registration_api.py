@@ -1,12 +1,16 @@
 import functools
 import logging
+from io import BytesIO
 from typing import Any
 
 from aiohttp import web
+from captcha.image import ImageCaptcha
 from models_library.emails import LowerCaseEmailStr
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from PIL.Image import Image
 from pydantic import EmailStr, PositiveInt, ValidationError, parse_obj_as
 from servicelib.json_serialization import json_dumps
+from servicelib.utils_secrets import generate_passcode
 
 from ..email.utils import send_email_from_template
 from ..products.api import Product, get_current_product, get_product_template_path
@@ -95,3 +99,19 @@ async def send_account_request_email_to_support(
             template_name,
             f"{support_email=}",
         )
+
+
+async def generate_captcha() -> tuple[str, bytes]:
+    captcha_text = generate_passcode(number_of_digits=6)
+    image = ImageCaptcha(width=140, height=45)
+
+    # Generate image
+    data: Image = image.create_captcha_image(
+        chars=captcha_text, color=(221, 221, 221), background=(0, 20, 46)
+    )
+
+    img_byte_arr = BytesIO()
+    data.save(img_byte_arr, format="PNG")
+    image_data = img_byte_arr.getvalue()
+
+    return (captcha_text, image_data)
