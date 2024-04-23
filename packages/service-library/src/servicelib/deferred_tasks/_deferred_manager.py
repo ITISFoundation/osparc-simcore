@@ -56,17 +56,17 @@ class _PatchStartDeferred:
         self,
         *,
         class_unique_reference: ClassUniqueReference,
-        handler_to_invoke: Callable[..., Awaitable[UserStartContext]],
+        original_start_deferred: Callable[..., Awaitable[UserStartContext]],
         manager_schedule_deferred: Callable[
             [ClassUniqueReference, UserStartContext], Awaitable[None]
         ],
     ):
         self.class_unique_reference = class_unique_reference
-        self.handler_to_invoke = handler_to_invoke
+        self.original_start_deferred = original_start_deferred
         self.manager_schedule_deferred = manager_schedule_deferred
 
     async def __call__(self, **kwargs) -> None:
-        result: UserStartContext = await self.handler_to_invoke(**kwargs)
+        result: UserStartContext = await self.original_start_deferred(**kwargs)
         await self.manager_schedule_deferred(self.class_unique_reference, result)
 
 
@@ -75,9 +75,11 @@ class _PatchCancelDeferred:
         self,
         *,
         class_unique_reference: ClassUniqueReference,
+        original_cancel_deferred: Callable[..., Awaitable[None]],
         manager_cancel_deferred: Callable[[TaskUID], Awaitable[None]],
     ) -> None:
         self.class_unique_reference = class_unique_reference
+        self.original_cancel_deferred = original_cancel_deferred
         self.manager_cancel_deferred = manager_cancel_deferred
 
     async def __call__(self, task_uid: TaskUID) -> None:
@@ -135,7 +137,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             f"{self._global_resources_prefix}_cancellation", type=ExchangeType.FANOUT
         )
 
-    def register_based_deferred_handlers(self) -> None:
+    def patch_based_deferred_handlers(self) -> None:
         """Allows subclasses of ``BaseDeferredHandler`` to be scheduled.
 
         NOTE: If a new subclass of ``BaseDeferredHandler`` was defined after
@@ -147,22 +149,51 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                 subclass.get_class_unique_reference()
             )
 
-            _logger.debug("Patching `start_deferred` for %s", class_unique_reference)
-            patched_start_deferred = _PatchStartDeferred(
-                class_unique_reference=class_unique_reference,
-                handler_to_invoke=subclass.start_deferred,
-                manager_schedule_deferred=self.__start_deferred,
-            )
-            subclass.start_deferred = patched_start_deferred  # type: ignore
+            if not isinstance(subclass.start_deferred, _PatchStartDeferred):
+                _logger.debug(
+                    "Patching `start_deferred` for %s", class_unique_reference
+                )
+                patched_start_deferred = _PatchStartDeferred(
+                    class_unique_reference=class_unique_reference,
+                    original_start_deferred=subclass.start_deferred,
+                    manager_schedule_deferred=self.__start_deferred,
+                )
+                subclass.start_deferred = patched_start_deferred  # type: ignore
 
-            _logger.debug("Patching `cancel_deferred` for %s", class_unique_reference)
-            patched_cancel_deferred = _PatchCancelDeferred(
-                class_unique_reference=class_unique_reference,
-                manager_cancel_deferred=self.__cancel_deferred,
-            )
-            subclass.cancel_deferred = patched_cancel_deferred  # type: ignore
+            if not isinstance(subclass.cancel_deferred, _PatchCancelDeferred):
+                _logger.debug(
+                    "Patching `cancel_deferred` for %s", class_unique_reference
+                )
+                patched_cancel_deferred = _PatchCancelDeferred(
+                    class_unique_reference=class_unique_reference,
+                    original_cancel_deferred=subclass.cancel_deferred,
+                    manager_cancel_deferred=self.__cancel_deferred,
+                )
+                subclass.cancel_deferred = patched_cancel_deferred  # type: ignore
 
             self._patched_deferred_handlers[class_unique_reference] = subclass
+
+    def un_patch_base_deferred_handlers(self) -> None:
+        for subclass in BaseDeferredHandler.SUBCLASSES:
+            class_unique_reference: ClassUniqueReference = (
+                subclass.get_class_unique_reference()
+            )
+
+            if isinstance(subclass.start_deferred, _PatchStartDeferred):
+                _logger.debug(
+                    "Removing `start_deferred` patch for %s", class_unique_reference
+                )
+                subclass.start_deferred = (
+                    subclass.start_deferred.original_start_deferred
+                )
+
+            if isinstance(subclass.cancel_deferred, _PatchCancelDeferred):
+                _logger.debug(
+                    "Removing `cancel_deferred` patch for %s", class_unique_reference
+                )
+                subclass.cancel_deferred = (
+                    subclass.cancel_deferred.original_cancel_deferred
+                )
 
     def _get_global_queue_name(self, queue_name: _FastStreamRabbitQueue) -> str:
         return f"{self._global_resources_prefix}_{queue_name}"
@@ -171,6 +202,11 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         self, class_unique_reference: ClassUniqueReference
     ) -> type[BaseDeferredHandler]:
         return self._patched_deferred_handlers[class_unique_reference]
+
+    def __get_start_context(
+        self, user_start_context: UserStartContext
+    ) -> FullStartContext:
+        return {**self.globals_for_start_context, **user_start_context}
 
     async def __start_deferred(
         self,
@@ -235,11 +271,6 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             raise RuntimeError(msg)
 
         return task_schedule
-
-    def __get_start_context(
-        self, user_start_context: UserStartContext
-    ) -> FullStartContext:
-        return {**self.globals_for_start_context, **user_start_context}
 
     @stop_retry_for_unintended_errors
     async def _fs_handle_scheduled(  # pylint:disable=method-hidden
@@ -538,9 +569,10 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         self._register_subscribers()
         self.broker.include_router(self.router)
 
-        self.register_based_deferred_handlers()
+        self.patch_based_deferred_handlers()
 
         await self.broker.start()
 
     async def shutdown(self) -> None:
+        self.un_patch_base_deferred_handlers()
         await self.broker.close()

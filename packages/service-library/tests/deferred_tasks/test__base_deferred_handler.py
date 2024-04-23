@@ -132,7 +132,7 @@ async def get_mocked_deferred_handler(
             ) -> None:
                 mocks[MockKeys.ON_FINISHED_WITH_ERROR](error, start_context)
 
-        deferred_manager.register_based_deferred_handlers()
+        deferred_manager.patch_based_deferred_handlers()
 
         return mocks, ObservableDeferredHandler
 
