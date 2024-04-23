@@ -432,8 +432,8 @@ qx.Class.define("osparc.data.model.Study", {
       const node = workbench.getNode(nodeId);
       if (node) {
         const progressType = nodeProgressData["progress_type"];
-        const progress = nodeProgressData["progress_report"]["actual_value"] / nodeProgressData["progress_report"]["total"];
-        node.setNodeProgressSequence(progressType, progress);
+        const progressReport = nodeProgressData["progress_report"];
+        node.setNodeProgressSequence(progressType, progressReport);
       }
     },
 
