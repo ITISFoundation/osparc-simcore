@@ -11,7 +11,7 @@ class UsersSettings(BaseCustomSettings, MixinServiceSettings):
         str, float | int | str | list | dict | None
     ] = Field(
         default_factory=dict,
-        description="contains entries for replacing default values",
+        description="key: name of the FrontendUserPreference, value: new default",
     )
 
 
