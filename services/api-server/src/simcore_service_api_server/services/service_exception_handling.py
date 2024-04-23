@@ -82,34 +82,41 @@ def backend_service_exception_handler(
             status_code=status_code, detail=detail, headers=headers
         ) from exc
     except httpx.HTTPStatusError as exc:
-        error_code = create_error_code(exc)
+        error_code = ""
         if status_detail_tuple := http_status_map.get(exc.response.status_code):
             status_code, detail_callback = status_detail_tuple
             if detail_callback is None:
-                detail = f"{exc}. {error_code}"
+                detail = f"{exc}."
             else:
-                detail = f"{detail_callback(endpoint_kwargs)}. {error_code}"
+                detail = f"{detail_callback(endpoint_kwargs)}."
+            if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
+                error_code = create_error_code(exc)
+                detail += f" {error_code}"
         elif exc.response.status_code in {
             status.HTTP_429_TOO_MANY_REQUESTS,
             status.HTTP_503_SERVICE_UNAVAILABLE,
+            status.HTTP_504_GATEWAY_TIMEOUT,
         }:
             status_code = exc.response.status_code
-            detail = f"The {service_name} service was unavailable. {error_code}"
+            detail = f"The {service_name} service was unavailable."
+            if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
+                error_code = create_error_code(exc)
+                detail += f" {error_code}"
             if retry_after := exc.response.headers.get("Retry-After"):
                 headers["Retry-After"] = retry_after
         else:
             status_code = status.HTTP_502_BAD_GATEWAY
+            error_code = create_error_code(exc)
             detail = f"Received unexpected response from {service_name}. {error_code}"
 
         if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
             _logger.exception(
-                "Converted status code %s from %s service to %s [%s]: %s",
+                "Converted status code %s from %s service to status code %s [%s]\n%s\n%s",
                 f"{exc.response.status_code}",
                 service_name,
                 f"{status_code}",
-                error_code,
                 f"{exc}",
-                extra={"error_code": error_code},
+                f"{error_code}",
             )
         raise HTTPException(
             status_code=status_code, detail=detail, headers=headers
