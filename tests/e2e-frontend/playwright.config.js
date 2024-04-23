@@ -28,6 +28,25 @@ module.exports = defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+
+    // Name of the browser that runs tests. For example `chromium`, `firefox`, `webkit`.
+    // browserName: 'chromium',
+
+    // Run browser in headless mode.
+    // headless: false,
+
+    // Change the default data-testid attribute.
+    testIdAttribute: 'osparc-test-id',
+
+    launchOptions: {
+      slowMo: 50,
+    },
+
+    // osparc min: HD 1280x720
+    viewport: {
+      width: 1280,
+      height: 720
+    },
   },
 
   /* Configure projects for major browsers */

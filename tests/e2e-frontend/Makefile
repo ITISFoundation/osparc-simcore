@@ -3,8 +3,11 @@ npm install --with-deps
 npx playwright install
 sudo npx playwright install-deps
 
-.PHONY: run-tests
+run-tests: ## run tests headless
 npx playwright test
 
-.PHONY: run-tests-headed
+run-tests-headed:  ## run tests headed (you can see what's going on)
+npx playwright test --headed
+
+run-tests-ui:  ## run tests headed with an assistance GUI
 npx playwright test --ui
