@@ -26,6 +26,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
   */
 
   members: {
+    __captchaField: null,
     __requestButton: null,
     __cancelButton: null,
 
@@ -210,10 +211,14 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       doubleSpaced.push(eula);
       this._form.add(eula, eulaText, null, "eula");
 
-      // const formRenderer = new qx.ui.form.renderer.Single(this._form);
+      const content = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       const formRenderer = new osparc.ui.form.renderer.DoubleV(this._form, doubleSpaced);
+      content.add(formRenderer);
+      const captchaLayout = this.__createCaptchaLayout();
+      this._form.getValidationManager().add(this.__captchaField);
+      content.add(captchaLayout);
       const scrollView = new qx.ui.container.Scroll();
-      scrollView.add(formRenderer);
+      scrollView.add(content);
       this.add(scrollView, {
         flex: 1
       });
@@ -240,41 +245,110 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       grp.add(buttons)
 
       // interaction
-      submitBtn.addListener("execute", e => {
-        const validForm = this._form.validate();
-        if (validForm) {
-          const formData = {};
-          Object.entries(this._form.getItems()).forEach(([key, field]) => {
-            const val = field.getValue();
-            if (val && (typeof val === "object") && ("classname" in val)) {
-              formData[key] = val.getModel();
-            } else {
-              formData[key] = val;
-            }
-          });
-          this.__submit(formData);
-        }
-      }, this);
-
+      submitBtn.addListener("execute", () => this.__requestPressed(), this);
       cancelBtn.addListener("execute", () => this.fireDataEvent("done", null), this);
 
       this.add(grp);
     },
 
-    __submit: function(formData) {
-      const msg = this.tr("The request is being processed, you will hear from us in the coming hours");
-      osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-      this.fireDataEvent("done");
+    __requestPressed: function() {
+      const validForm = this._form.validate();
+      if (validForm) {
+        const formData = {};
+        Object.entries(this._form.getItems()).forEach(([key, field]) => {
+          const val = field.getValue();
+          if (val && (typeof val === "object") && ("classname" in val)) {
+            formData[key] = val.getModel();
+          } else {
+            formData[key] = val;
+          }
+        });
+        this.__submit(formData, this.__captchaField.getValue());
+      }
+    },
 
+    __submit: function(formData, captchaValue) {
       const params = {
         data: {
-          "form": formData
+          "form": formData,
+          "captcha": captchaValue
         }
       };
-      osparc.data.Resources.fetch("auth", "postRequestAccount", params);
+      osparc.data.Resources.fetch("auth", "postRequestAccount", params)
+        .then(() => {
+          const msg = this.tr("The request is being processed, you will hear from us in the coming hours");
+          osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+          this.fireDataEvent("done");
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          this.__restartCaptcha();
+        });
+    },
+
+    __createCaptchaLayout: function() {
+      const captchaGrid = new qx.ui.layout.Grid(5, 5);
+      captchaGrid.setColumnAlign(0, "center", "bottom");
+      captchaGrid.setColumnFlex(2, 1);
+      const captchaLayout = new qx.ui.container.Composite(captchaGrid);
+
+      const captchaImage = this.__captchaImage = new qx.ui.basic.Image().set({
+        allowShrinkX: true,
+        allowShrinkY: true,
+        scale: true,
+        width: 140,
+        height: 45
+      });
+      captchaLayout.add(captchaImage, {
+        column: 0,
+        row: 0,
+        rowSpan: 2
+      });
+
+      const restartCaptcha = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/sync-alt/12",
+        toolTipText: this.tr("Reload Captcha")
+      });
+      restartCaptcha.addListener("tap", () => this.__restartCaptcha(), this);
+      captchaLayout.add(restartCaptcha, {
+        column: 1,
+        row: 1
+      });
+
+      const label = new qx.ui.basic.Label(this.tr("Type the 6 digits:")).set({
+        font: "text-12"
+      });
+      captchaLayout.add(label, {
+        column: 2,
+        row: 0
+      });
+
+      const captchaField = this.__captchaField = new qx.ui.form.TextField().set({
+        backgroundColor: "transparent",
+        required: true
+      });
+      captchaLayout.add(captchaField, {
+        column: 2,
+        row: 1
+      });
+
+      return captchaLayout;
+    },
+
+    __restartCaptcha: function() {
+      this.__captchaImage.setSource(null);
+      let url = osparc.data.Resources.resources["auth"].endpoints["captcha"].url;
+      // Since the url doesn't change, this dummy query parameter will force the frontend to make a new request
+      url += "?" + new Date().getTime();
+      this.__captchaImage.setSource(url);
+
+      this.__captchaField.resetValue();
     },
 
     _onAppear: function() {
+      this.__restartCaptcha();
+
       // Listen to "Enter" key
       const commandEnter = new qx.ui.command.Command("Enter");
       this.__requestButton.setCommand(commandEnter);
