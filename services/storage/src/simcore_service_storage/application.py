@@ -57,21 +57,20 @@ def create(settings: Settings) -> web.Application:
             skip_routes=None,
         )
 
-    if settings.STORAGE_POSTGRES:
-        setup_db(app)  # -> postgres service
-    if settings.STORAGE_S3:
-        setup_s3(app)  # -> minio service
+    setup_db(app)
+    setup_s3(app)
 
     setup_long_running_tasks(app)
     setup_rest(app)
-    setup_redis(app)
 
-    if settings.STORAGE_POSTGRES and settings.STORAGE_S3:
-        setup_dsm(app)  # core subsystem. Needs s3 and db setups done
-        if settings.STORAGE_CLEANER_INTERVAL_S:
-            setup_dsm_cleaner(app)
+    if settings.STORAGE_REDIS:
+        setup_redis(app)
 
-        app.middlewares.append(dsm_exception_handler)
+    setup_dsm(app)
+    if settings.STORAGE_CLEANER_INTERVAL_S:
+        setup_dsm_cleaner(app)
+
+    app.middlewares.append(dsm_exception_handler)
 
     if settings.LOG_LEVEL == "DEBUG":
         setup_dev_error_logger(app)

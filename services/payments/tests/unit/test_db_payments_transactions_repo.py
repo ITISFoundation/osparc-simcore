@@ -73,6 +73,7 @@ async def test_one_time_payment_annotations_workflow(app: FastAPI):
         payment_id=fake.payment_id,
         completion_state=PaymentTransactionState.SUCCESS,
         invoice_url=fake.invoice_url,
+        invoice_pdf_url=fake.invoice_pdf_url,
         stripe_invoice_id=fake.stripe_invoice_id,
         state_message="DONE",
     )
