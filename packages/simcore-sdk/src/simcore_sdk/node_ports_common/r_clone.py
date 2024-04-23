@@ -91,11 +91,11 @@ async def _async_r_clone_command(
     )
 
     assert proc.stdout  # nosec
-    await asyncio.wait(
-        [_read_stream(proc.stdout, [*r_clone_log_parsers, command_result_parser])]
-    )
+    await asyncio.wait([_read_stream(proc.stdout, [*r_clone_log_parsers])])
 
-    await proc.communicate()
+    # NOTE: ANE not sure why you do this call here. The above one already reads out the stream.
+    _stdout, _stderr = await proc.communicate()
+
     command_output = command_result_parser.get_output()
     if proc.returncode != 0:
         raise RCloneFailedError(
