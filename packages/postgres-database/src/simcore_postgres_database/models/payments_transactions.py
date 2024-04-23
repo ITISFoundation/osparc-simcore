@@ -101,6 +101,12 @@ payments_transactions = sa.Table(
         nullable=True,
         doc="Invoice ID of invoice of this transaction. Available when completed",
     ),
+    sa.Column(
+        "invoice_pdf_url",
+        sa.String,
+        nullable=True,
+        doc="Link to invoice PDF. Available when completed",
+    ),
     #
     # States
     #

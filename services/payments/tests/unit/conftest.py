@@ -339,7 +339,7 @@ def mock_payments_methods_routes(
                         invoice_url=faker.url(),
                         provider_payment_id="pi_123456ABCDEFG123456ABCDE",
                         payment_id=payment_id,
-                        invoice_pdf="https://invoice.com",
+                        invoice_pdf_url="https://invoice.com",
                         stripe_invoice_id="stripe-invoice-id",
                         stripe_customer_id="stripe-customer-id",
                     )
