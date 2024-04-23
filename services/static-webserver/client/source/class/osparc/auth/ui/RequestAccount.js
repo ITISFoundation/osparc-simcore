@@ -332,7 +332,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       this.__captchaImage.setSource(null);
       let url = osparc.data.Resources.resources["auth"].endpoints["captcha"].url;
       // Since the url doesn't change, this dummy query parameter will force the frontend to make a new request
-      url += "?" + Math.floor(Math.random() * 100);
+      url += "?" + new Date().getTime();
       this.__captchaImage.setSource(url);
 
       this.__captchaField.resetValue();
