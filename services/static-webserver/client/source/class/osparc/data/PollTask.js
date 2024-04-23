@@ -164,8 +164,9 @@ qx.Class.define("osparc.data.PollTask", {
     },
 
     abortRequested: function() {
-      const abortPath = this.self().extractPathname(this.getAbortHref());
-      if (abortPath) {
+      const abortHref = this.getAbortHref();
+      if (abortHref) {
+        const abortPath = this.self().extractPathname(abortHref);
         this.__aborting = true;
         fetch(abortPath, {
           method: "DELETE"
