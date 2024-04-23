@@ -55,7 +55,7 @@ cryptography==42.0.5
     #   moto
 docker==7.0.0
     # via moto
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via pytest
 faker==24.4.0
 fakeredis==2.21.3
