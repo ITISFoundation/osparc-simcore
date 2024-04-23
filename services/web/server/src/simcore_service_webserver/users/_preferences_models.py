@@ -151,7 +151,16 @@ def get_preference_identifier(preference_name: PreferenceName) -> PreferenceIden
 def _update_preference_default_value(
     preference_class: type[FrontendUserPreference], new_default: Any
 ) -> None:
-    preference_class.__fields__["value"].default = new_default
+    expected_type = preference_class.__fields__["value"].type_
+    detected_type = type(new_default)
+    if expected_type != detected_type:
+        msg = f"Error, {preference_class.__name__} {expected_type=} differs from {detected_type=}"
+        raise TypeError(msg)
+
+    if preference_class.__fields__["value"].default is None:
+        preference_class.__fields__["value"].default_factory = lambda: new_default
+    else:
+        preference_class.__fields__["value"].default = new_default
 
 
 def overwrite_user_preferences_defaults(app: web.Application) -> None:
@@ -160,6 +169,7 @@ def overwrite_user_preferences_defaults(app: web.Application) -> None:
     search_map: dict[str, type[FrontendUserPreference]] = {
         x.__name__: x for x in ALL_FRONTEND_PREFERENCES
     }
+
     for (
         preference_class,
         value,
