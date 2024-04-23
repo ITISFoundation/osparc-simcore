@@ -374,7 +374,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __applySidecarPulling: function(value) {
       if (value.value > 0) {
         const defaultEndVals = this.getDefaultEndValues();
-        this.self().updateProgressLabel(this.__clusterUpScalingLayout, defaultEndVals);
+        this.setClusterUpScaling(defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingSidecarLayout, value);
 
@@ -384,7 +384,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __applyOutputsPulling: function(value) {
       if (value.value > 0) {
         const defaultEndVals = this.getDefaultEndValues();
-        this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
+        this.setSidecarPulling(defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingOutputsLayout, value);
 
@@ -394,7 +394,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __applyStatePulling: function(value) {
       if (value.value > 0) {
         const defaultEndVals = this.getDefaultEndValues();
-        this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
+        this.setSidecarPulling(defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingStateLayout, value);
 
@@ -404,7 +404,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __applyImagesPulling: function(value) {
       if (value.value > 0) {
         const defaultEndVals = this.getDefaultEndValues();
-        this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
+        this.setSidecarPulling(defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingImagesLayout, value);
 
@@ -414,7 +414,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __applyInputsPulling: function(value) {
       if (value.value > 0) {
         const defaultEndVals = this.getDefaultEndValues();
-        this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
+        this.setSidecarPulling(defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingInputsLayout, value);
 
