@@ -1,5 +1,6 @@
-from typing import Final
+from typing import Any, Final
 
+from aiohttp import web
 from models_library.authentification import TwoFactorAuthentificationMethod
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
@@ -143,3 +144,15 @@ def get_preference_name(preference_identifier: PreferenceIdentifier) -> Preferen
 
 def get_preference_identifier(preference_name: PreferenceName) -> PreferenceIdentifier:
     return _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING[preference_name]
+
+
+def _update_preference_default_value(
+    preference: type[FrontendUserPreference], new_default: Any
+) -> None:
+    preference.__fields__["value"].default = new_default
+
+
+def overwrite_preferences_defaults(app: web.Application) -> None:
+    _update_preference_default_value(
+        UserInactivityThresholdFrontendUserPreference, 60 * _MINUTE
+    )
