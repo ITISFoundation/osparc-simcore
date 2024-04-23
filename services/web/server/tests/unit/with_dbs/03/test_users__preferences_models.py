@@ -39,7 +39,6 @@ def test_get_preference_name_and_get_preference_identifier():
 def app_environment(
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
-    # disables GC
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
