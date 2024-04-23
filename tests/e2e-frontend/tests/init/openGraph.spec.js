@@ -1,6 +1,4 @@
 /* eslint-disable no-undef */
-
-// @ts-check
 const { test, expect } = require('@playwright/test');
 
 import products from '../products.json';
