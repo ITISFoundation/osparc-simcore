@@ -157,6 +157,7 @@ async def _get_folder_size(
             "size",
             f"{folder}",
             "--json",
+            "--links",
         )
 
         result = await _async_r_clone_command(
