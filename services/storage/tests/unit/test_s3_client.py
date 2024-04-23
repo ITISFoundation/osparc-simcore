@@ -30,7 +30,6 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockFixture
-from pytest_simcore.helpers.utils_envs import EnvVarsDict
 from pytest_simcore.helpers.utils_parametrizations import byte_size_ids
 from simcore_service_storage.models import MultiPartUploadLinks, S3BucketName
 from simcore_service_storage.s3_client import (
@@ -46,13 +45,7 @@ from types_aiobotocore_s3.type_defs import ObjectTypeDef
 
 DEFAULT_EXPIRATION_SECS: Final[int] = 10
 
-
-@pytest.fixture
-def mock_config(
-    mocked_s3_server_envs: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    # NOTE: override services/storage/tests/conftest.py::mock_config
-    monkeypatch.setenv("STORAGE_POSTGRES", "null")
+pytest_simcore_core_services_selection = ["postgres"]
 
 
 async def test_storage_storage_s3_client_creation(
