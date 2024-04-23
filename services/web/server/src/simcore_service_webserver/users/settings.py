@@ -7,7 +7,9 @@ from .._constants import APP_SETTINGS_KEY
 
 
 class UsersSettings(BaseCustomSettings, MixinServiceSettings):
-    USERS_FRONTEND_PREFERENCES_DEFAULTS_OVERWRITES: dict = Field(
+    USERS_FRONTEND_PREFERENCES_DEFAULTS_OVERWRITES: dict[
+        str, float | int | str | list | dict | None
+    ] = Field(
         default_factory=dict,
         description="contains entries for replacing default values",
     )

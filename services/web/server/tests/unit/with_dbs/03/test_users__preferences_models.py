@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 
 import json
+from typing import Any
 
 import pytest
 from aiohttp import web
@@ -37,13 +38,13 @@ def test_get_preference_name_and_get_preference_identifier():
 
 @pytest.fixture
 def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, overwrite_value: Any
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
             "USERS_FRONTEND_PREFERENCES_DEFAULTS_OVERWRITES": json.dumps(
-                {"UserInactivityThresholdFrontendUserPreference": 3600}
+                {"UserInactivityThresholdFrontendUserPreference": overwrite_value}
             )
         },
     )
@@ -55,6 +56,12 @@ def app(client: TestClient) -> web.Application:
     return client.app
 
 
-def test_overwrite_user_preferences_defaults(app: web.Application):
+@pytest.mark.parametrize(
+    "overwrite_value",
+    [1, 2.2, "hoi", [4, 2, 5], {"k": "v", "dd": 4}, None, False, True, -0.1, -4],
+)
+def test_overwrite_user_preferences_defaults(
+    app: web.Application, overwrite_value: Any
+):
     instance = UserInactivityThresholdFrontendUserPreference()
-    assert instance.value == 3600
+    assert instance.value == overwrite_value
