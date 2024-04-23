@@ -181,13 +181,19 @@ class ProgressBarData:
         await self.set_(self.num_steps)
 
     def sub_progress(
-        self, steps: int, step_weights: list[float] | None = None
+        self,
+        steps: int,
+        step_weights: list[float] | None = None,
+        progress_unit: ProgressUnit | None = None,
     ) -> "ProgressBarData":
         if len(self._children) == self.num_steps:
             msg = "Too many sub progresses created already. Wrong usage of the progress bar"
             raise RuntimeError(msg)
         child = ProgressBarData(
-            num_steps=steps, step_weights=step_weights, _parent=self
+            num_steps=steps,
+            step_weights=step_weights,
+            progress_unit=progress_unit,
+            _parent=self,
         )
         self._children.append(child)
         return child
