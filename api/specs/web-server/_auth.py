@@ -317,9 +317,9 @@ async def delete_api_key(_body: ApiKeyCreate):
 
 @router.get(
     "/auth/captcha",
-    operation_id="get_captcha",
+    operation_id="request_captcha",
     status_code=status.HTTP_200_OK,
     responses={status.HTTP_200_OK: {"content": {"image/png": {}}}},
 )
-async def get_captcha():
+async def request_captcha():
     ...

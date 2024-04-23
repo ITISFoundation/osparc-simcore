@@ -476,8 +476,8 @@ paths:
     get:
       tags:
       - auth
-      summary: Get Captcha
-      operationId: get_captcha
+      summary: Request Captcha
+      operationId: request_captcha
       responses:
         '200':
           description: Successful Response
@@ -2938,7 +2938,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
