@@ -49,7 +49,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     clusterUpScaling: {
       check: "Object",
       init: {
-        progressLabel: "",
+        progressLabel: qx.locale.Manager.tr("Waiting..."),
         value: 0
       },
       nullable: false,
@@ -59,7 +59,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     sidecarPulling: {
       check: "Object",
       init: {
-        progressLabel: "",
+        progressLabel: qx.locale.Manager.tr("Waiting..."),
         value: 0
       },
       nullable: false,
@@ -69,7 +69,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     outputsPulling: {
       check: "Object",
       init: {
-        progressLabel: "",
+        progressLabel: qx.locale.Manager.tr("Waiting..."),
         value: 0
       },
       nullable: false,
@@ -79,7 +79,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     statePulling: {
       check: "Object",
       init: {
-        progressLabel: "",
+        progressLabel: qx.locale.Manager.tr("Waiting..."),
         value: 0
       },
       nullable: false,
@@ -89,7 +89,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     imagesPulling: {
       check: "Object",
       init: {
-        progressLabel: "",
+        progressLabel: qx.locale.Manager.tr("Waiting..."),
         value: 0
       },
       nullable: false,
@@ -99,7 +99,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     inputsPulling: {
       check: "Object",
       init: {
-        progressLabel: "",
+        progressLabel: qx.locale.Manager.tr("Waiting..."),
         value: 0
       },
       nullable: false,
@@ -151,7 +151,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
       const progressState = new qx.ui.basic.Label();
       progressState.set({
-        value: "",
+        value: qx.locale.Manager.tr("Waiting..."),
         textColor: "text",
         allowGrowX: true,
         allowShrinkX: true
@@ -184,10 +184,8 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         const progressColor = qx.theme.manager.Color.getInstance().resolve("progressbar")
         osparc.service.StatusUI.getStatusHalo(halo, progressColor, value * 100);
 
-        const isProgressLabelVisible = progressLabel !== "0%" && progressLabel !== "100%";
         const label = atom.getChildren()[this.NODE_INDEX.CALC];
         label.setValue(progressLabel);
-        label.setVisibility(isProgressLabelVisible ? "visible" : "excluded")
       }
     },
 
@@ -216,15 +214,26 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __pullingInputsLayout: null,
     __disclaimerText: null,
 
+    getDefaultStartValues: function() {
+      return {
+        progressLabel: qx.locale.Manager.tr("Waiting..."),
+        value: 0
+      }
+    },
+
+    getDefaultEndValues: function() {
+      return {
+        progressLabel: "100%",
+        value: 1
+      }
+    },
+
     getWidgetForLoadingPage: function() {
       return this.__mainLoadingPage;
     },
 
     resetSequence: function() {
-      const defaultVals = {
-        progressLabel: "0%",
-        value: 0
-      }
+      const defaultVals = this.getDefaultStartValues();
       this.setOverallProgress(0);
       this.setClusterUpScaling(defaultVals);
       this.setSidecarPulling(defaultVals);
@@ -246,7 +255,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       }
       const percentage = parseFloat((report["actual_value"] / report["total"] * 100).toFixed(2))
       return {
-        progressLabel: isDownloading ? `${percentage}%` : "",
+        progressLabel: `${percentage}%`,
         value: report["actual_value"] / report["total"]
       }
     },
@@ -367,10 +376,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     __applySidecarPulling: function(value) {
       if (value.value > 0) {
-        this.setClusterUpScaling({
-          progressLabel: "100%",
-          value: 1
-        });
+        const defaultEndVals = this.getDefaultEndValues();
+        this.setClusterUpScaling(defaultEndVals);
+        this.self().updateProgressLabel(this.__clusterUpScalingLayout, defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingSidecarLayout, value);
 
@@ -379,10 +387,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     __applyOutputsPulling: function(value) {
       if (value.value > 0) {
-        this.setSidecarPulling({
-          progressLabel: "100%",
-          value: 1
-        });
+        const defaultEndVals = this.getDefaultEndValues();
+        this.setSidecarPulling(defaultEndVals);
+        this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingOutputsLayout, value);
 
@@ -391,10 +398,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     __applyStatePulling: function(value) {
       if (value.value > 0) {
-        this.setSidecarPulling({
-          progressLabel: "100%",
-          value: 1
-        });
+        const defaultEndVals = this.getDefaultEndValues();
+        this.setSidecarPulling(defaultEndVals);
+        this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingStateLayout, value);
 
@@ -403,10 +409,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     __applyImagesPulling: function(value) {
       if (value.value > 0) {
-        this.setSidecarPulling({
-          progressLabel: "100%",
-          value: 1
-        });
+        const defaultEndVals = this.getDefaultEndValues();
+        this.setSidecarPulling(defaultEndVals);
+        this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingImagesLayout, value);
 
@@ -415,10 +420,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     __applyInputsPulling: function(value) {
       if (value.value > 0) {
-        this.setSidecarPulling({
-          progressLabel: "100%",
-          value: 1
-        });
+        const defaultEndVals = this.getDefaultEndValues();
+        this.setSidecarPulling(defaultEndVals);
+        this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingInputsLayout, value);
 
