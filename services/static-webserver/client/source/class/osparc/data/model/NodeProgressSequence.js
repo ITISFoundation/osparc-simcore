@@ -244,12 +244,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     getProgress: function(report) {
-      const isDownloading = report["actual_value"] > 0 && report["actual_value"] < report["total"];
       if (report.unit) {
         return {
-          progressLabel: isDownloading ?
-            `${osparc.utils.Utils.bytesToSize(report["actual_value"], 1, false)} / ${osparc.utils.Utils.bytesToSize(report["total"], 1)}` :
-            `${osparc.utils.Utils.bytesToSize(report["total"], 1)}`,
+          progressLabel: `${osparc.utils.Utils.bytesToSize(report["actual_value"], 1, false)} / ${osparc.utils.Utils.bytesToSize(report["total"], 1)}`,
           value: report["actual_value"] / report["total"]
         }
       }
@@ -377,7 +374,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __applySidecarPulling: function(value) {
       if (value.value > 0) {
         const defaultEndVals = this.getDefaultEndValues();
-        this.setClusterUpScaling(defaultEndVals);
         this.self().updateProgressLabel(this.__clusterUpScalingLayout, defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingSidecarLayout, value);
@@ -388,7 +384,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __applyOutputsPulling: function(value) {
       if (value.value > 0) {
         const defaultEndVals = this.getDefaultEndValues();
-        this.setSidecarPulling(defaultEndVals);
         this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingOutputsLayout, value);
@@ -399,7 +394,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __applyStatePulling: function(value) {
       if (value.value > 0) {
         const defaultEndVals = this.getDefaultEndValues();
-        this.setSidecarPulling(defaultEndVals);
         this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingStateLayout, value);
@@ -410,7 +404,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __applyImagesPulling: function(value) {
       if (value.value > 0) {
         const defaultEndVals = this.getDefaultEndValues();
-        this.setSidecarPulling(defaultEndVals);
         this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingImagesLayout, value);
@@ -421,7 +414,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __applyInputsPulling: function(value) {
       if (value.value > 0) {
         const defaultEndVals = this.getDefaultEndValues();
-        this.setSidecarPulling(defaultEndVals);
         this.self().updateProgressLabel(this.__pullingSidecarLayout, defaultEndVals);
       }
       this.self().updateProgressLabel(this.__pullingInputsLayout, value);
