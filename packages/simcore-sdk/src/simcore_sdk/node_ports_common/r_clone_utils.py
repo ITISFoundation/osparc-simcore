@@ -1,8 +1,6 @@
 import datetime
 import logging
-import re
 from abc import abstractmethod
-from typing import Final
 
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, Field, parse_raw_as
@@ -16,11 +14,6 @@ class BaseRCloneLogParser:
     @abstractmethod
     async def __call__(self, logs: str) -> None:
         ...
-
-
-_RCLONE_PROGRESS_RE: Final[re.Pattern] = re.compile(
-    r"(?P<current>\d+.\d+ \w+) \/ (?P<total>\d+.\d+ \w+), (?P<percent_done>\d{1,3})%, (?P<speed>\d+(.\d+)? \w+\/\w+), ETA (?P<eta>\d\S+)?"
-)
 
 
 class _RCloneSyncMessageBase(BaseModel):
