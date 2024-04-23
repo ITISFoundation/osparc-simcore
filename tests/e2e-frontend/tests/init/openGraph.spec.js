@@ -11,6 +11,7 @@ import appsMetadata from '../../../../services/static-webserver/client/scripts/a
 const PRODUCT_URLS = {
   "osparc": "https://osparc-master.speag.com/",
   "s4l": "https://s4l-master.speag.com/",
+  "s4lacad": "https://s4l-acad-master.speag.com/",
   "s4llite": "https://s4l-lite-master.speag.com/",
   "tis": "https://tip-master.speag.com/",
 };
@@ -18,7 +19,7 @@ const PRODUCT_URLS = {
 for (const product in PRODUCT_URLS) {
   test(`Open Graph properties ${product}`, async ({ page }) => {
     const app = appsMetadata.applications.find(app => app.application === product);
-    expect(app);
+    expect(app).toBeTruthy();
     if (app) {
       const title = app.replacements.replace_me_og_title;
       const description = app.replacements.replace_me_og_description;
