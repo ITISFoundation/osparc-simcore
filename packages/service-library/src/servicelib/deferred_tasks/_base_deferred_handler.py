@@ -71,7 +71,9 @@ class BaseDeferredHandler(ABC, Generic[ResultType]):
         # NOTE: intercepted by ``DeferredManager``
 
     @classmethod
-    async def on_deferred_created(cls, task_uid: TaskUID) -> None:
+    async def on_deferred_created(
+        cls, task_uid: TaskUID, start_context: FullStartContext
+    ) -> None:
         """return after deferred was scheduled"""
 
     @classmethod

@@ -10,7 +10,7 @@ import arrow
 from faststream.exceptions import NackMessage, RejectMessage
 from faststream.rabbit import ExchangeType, RabbitBroker, RabbitExchange, RabbitRouter
 from pydantic import NonNegativeInt
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis import RedisClientSDKHealthChecked
 from settings_library.rabbit import RabbitSettings
 
@@ -200,13 +200,14 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
         await self._memory_manager.save(task_uid, task_schedule)
         _logger.debug("Scheduled task '%s' with entry: %s", task_uid, task_schedule)
+        with log_catch(_logger, reraise=False):
+            await subclass.on_deferred_created(task_uid, full_start_context)
+
         await self.broker.publish(
             task_uid,
             queue=self._get_global_queue_name(_FastStreamRabbitQueue.SCHEDULED),
             exchange=self.common_exchange,
         )
-
-        await subclass.on_deferred_created(task_uid)
 
     async def __get_task_schedule(
         self, task_uid: TaskUID, *, expected_state: TaskState
@@ -415,7 +416,10 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             )
             subclass = self.__get_subclass(task_schedule.class_unique_reference)
             start_context = self.__get_start_context(task_schedule.user_start_context)
-            await subclass.on_finished_with_error(task_schedule.result, start_context)
+            with log_catch(_logger, reraise=False):
+                await subclass.on_finished_with_error(
+                    task_schedule.result, start_context
+                )
         else:
             _logger.debug("Task '%s' cancelled!", task_uid)
 
@@ -435,7 +439,9 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         subclass = self.__get_subclass(task_schedule.class_unique_reference)
         start_context = self.__get_start_context(task_schedule.user_start_context)
         assert isinstance(task_schedule.result, TaskResultSuccess)  # nosec
-        await subclass.on_deferred_result(task_schedule.result.value, start_context)
+
+        with log_catch(_logger, reraise=False):
+            await subclass.on_deferred_result(task_schedule.result.value, start_context)
 
         await self.__remove_task(task_uid, task_schedule)
 
