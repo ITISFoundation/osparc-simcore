@@ -15,7 +15,7 @@ from . import (
     _preferences_handlers,
     _tokens_handlers,
 )
-from ._preferences_models import overwrite_preferences_defaults
+from ._preferences_models import overwrite_user_preferences_defaults
 
 _logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ _logger = logging.getLogger(__name__)
 def setup_users(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_USERS  # nosec
     setup_observer_registry(app)
-    overwrite_preferences_defaults(app)
+    overwrite_user_preferences_defaults(app)
 
     app.router.add_routes(_handlers.routes)
     app.router.add_routes(_tokens_handlers.routes)

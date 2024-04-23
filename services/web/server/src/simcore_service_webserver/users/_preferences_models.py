@@ -12,6 +12,8 @@ from models_library.user_preferences import (
 )
 from pydantic import Field, NonNegativeInt
 
+from .settings import UsersSettings, get_plugin_settings
+
 _MINUTE: Final[NonNegativeInt] = 60
 
 
@@ -147,12 +149,19 @@ def get_preference_identifier(preference_name: PreferenceName) -> PreferenceIden
 
 
 def _update_preference_default_value(
-    preference: type[FrontendUserPreference], new_default: Any
+    preference_class: type[FrontendUserPreference], new_default: Any
 ) -> None:
-    preference.__fields__["value"].default = new_default
+    preference_class.__fields__["value"].default = new_default
 
 
-def overwrite_preferences_defaults(app: web.Application) -> None:
-    _update_preference_default_value(
-        UserInactivityThresholdFrontendUserPreference, 60 * _MINUTE
-    )
+def overwrite_user_preferences_defaults(app: web.Application) -> None:
+    settings: UsersSettings = get_plugin_settings(app)
+
+    search_map: dict[str, type[FrontendUserPreference]] = {
+        x.__name__: x for x in ALL_FRONTEND_PREFERENCES
+    }
+    for (
+        preference_class,
+        value,
+    ) in settings.USERS_FRONTEND_PREFERENCES_DEFAULTS_OVERWRITES.items():
+        _update_preference_default_value(search_map[preference_class], value)
