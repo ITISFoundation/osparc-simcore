@@ -477,7 +477,6 @@ paths:
       tags:
       - auth
       summary: Get Captcha
-      description: get captcha
       operationId: get_captcha
       responses:
         '200':
