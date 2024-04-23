@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI
 from models_library.resource_tracker import (
     CreditTransactionStatus,
+    ResourceTrackerServiceType,
     ServiceRunId,
     ServiceRunStatus,
 )
@@ -102,7 +103,12 @@ async def _close_unhealthy_service(
         update_credit_transaction = CreditTransactionCreditsAndStatusUpdate(
             service_run_id=service_run_id,
             osparc_credits=make_negative(computed_credits),
-            transaction_status=CreditTransactionStatus.NOT_BILLED,
+            transaction_status=(
+                CreditTransactionStatus.NOT_BILLED
+                if running_service.service_type
+                == ResourceTrackerServiceType.COMPUTATIONAL_SERVICE
+                else CreditTransactionStatus.BILLED
+            ),
         )
         await resource_tracker_repo.update_credit_transaction_credits_and_status(
             update_credit_transaction
