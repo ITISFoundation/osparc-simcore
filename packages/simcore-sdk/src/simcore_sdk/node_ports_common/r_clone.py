@@ -207,20 +207,23 @@ async def _sync_sources(
             "--use-mmap",  # docs https://rclone.org/docs/#use-mmap
             "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
             r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
-            # make sure stats can be noticed
-            "--stats-log-level",
-            "NOTICE",
+            "--use-json-log",
+            # make sure stats can be noticed at the end
+            # "--stats-log-level",
+            # "INFO",
             # frequent polling for faster progress updates
             "--stats",
-            "0.5s",
+            "200ms",
+            # makes sure the stats are only sending the summary
+            # "--stats-one-line",
+            # "--progress",
+            "--verbose",
             "sync",
             shlex.quote(source),
             shlex.quote(destination),
             # filter options
             *_get_exclude_filters(exclude_patterns),
-            "--progress",
             "--links",
-            "--verbose",
         )
 
         async with progress_bar.sub_progress(
