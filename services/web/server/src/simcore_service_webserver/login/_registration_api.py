@@ -1,7 +1,5 @@
 import functools
 import logging
-import random
-import string
 from io import BytesIO
 from typing import Any
 
@@ -12,6 +10,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from PIL.Image import Image
 from pydantic import EmailStr, PositiveInt, ValidationError, parse_obj_as
 from servicelib.json_serialization import json_dumps
+from servicelib.utils_secrets import generate_passcode
 
 from ..email.utils import send_email_from_template
 from ..products.api import Product, get_current_product, get_product_template_path
@@ -103,7 +102,7 @@ async def send_account_request_email_to_support(
 
 
 async def generate_captcha() -> tuple[str, bytes]:
-    captcha_text = "".join(random.choices(string.digits, k=6))
+    captcha_text = generate_passcode(number_of_digits=6)
     image = ImageCaptcha(width=140, height=45)
 
     # Generate image

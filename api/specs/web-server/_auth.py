@@ -319,7 +319,7 @@ async def delete_api_key(_body: ApiKeyCreate):
     "/auth/captcha",
     operation_id="get_captcha",
     status_code=status.HTTP_200_OK,
-    responses={200: {"content": {"image/png": {}}}},
+    responses={status.HTTP_200_OK: {"content": {"image/png": {}}}},
 )
 async def get_captcha():
-    """get captcha"""
+    ...
