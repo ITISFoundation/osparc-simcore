@@ -15,6 +15,7 @@ from models_library.user_preferences import (
 )
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
+from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.users._preferences_models import (
     ALL_FRONTEND_PREFERENCES,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
@@ -22,7 +23,6 @@ from simcore_service_webserver.users._preferences_models import (
     get_preference_name,
     overwrite_user_preferences_defaults,
 )
-from simcore_service_webserver.users.settings import UsersSettings
 
 
 def test_get_preference_name_and_get_preference_identifier():
@@ -52,7 +52,11 @@ def app_environment(
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
-        {"USERS_FRONTEND_PREFERENCES_DEFAULTS_OVERWRITES": json.dumps(overwrites)},
+        {
+            "WEBSERVER_USERS": json.dumps(
+                {"USERS_FRONTEND_PREFERENCES_DEFAULTS_OVERWRITES": overwrites}
+            )
+        },
     )
 
 
@@ -87,7 +91,7 @@ def test_overwrite_user_preferences_defaults(
 @pytest.fixture
 def mock_app(app_environment: EnvVarsDict) -> Mock:
     app = {APP_SETTINGS_KEY: Mock()}
-    app[APP_SETTINGS_KEY].WEBSERVER_USERS = UsersSettings.create_from_envs()
+    app[APP_SETTINGS_KEY] = ApplicationSettings.create_from_envs()
     return app  # type: ignore
 
 
