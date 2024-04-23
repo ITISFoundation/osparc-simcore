@@ -5,6 +5,7 @@
 
 import asyncio
 from typing import Any, Awaitable, Callable
+from urllib.parse import urlparse
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -117,7 +118,7 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     assert len(data) == 1, "there are too many projects in the db!"
 
     # now abort the copy
-    resp = await client.delete(f"{abort_url}")
+    resp = await client.delete(urlparse(abort_url).path)
     await assert_status(resp, expected.no_content)
     # wait to check that the call to storage is "done"
     async for attempt in AsyncRetrying(
@@ -163,7 +164,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
     # let the copy start
     await asyncio.sleep(2)
     # now abort the copy
-    resp = await client.delete(f"{created_copy_task.abort_href}")
+    resp = await client.delete(urlparse(created_copy_task.abort_href).path)
     await assert_status(resp, expected.no_content)
     # wait to check that the call to storage is "done"
     async for attempt in AsyncRetrying(
