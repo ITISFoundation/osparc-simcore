@@ -290,7 +290,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
     __createCaptchaLayout: function() {
       const captchaGrid = new qx.ui.layout.Grid(5, 5);
       captchaGrid.setColumnAlign(0, "center", "bottom");
-      captchaGrid.setColumnFlex(1, 1);
+      captchaGrid.setColumnFlex(2, 1);
       const captchaLayout = new qx.ui.container.Composite(captchaGrid);
 
       const captchaImage = this.__captchaImage = new qx.ui.basic.Image().set({
@@ -298,21 +298,29 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         allowShrinkY: true,
         scale: true,
         width: 140,
-        height: 45,
-        cursor: "pointer"
+        height: 45
       });
-      this.__captchaImage.addListener("tap", () => this.__restartCaptcha(), this);
       captchaLayout.add(captchaImage, {
         column: 0,
         row: 0,
         rowSpan: 2
       });
 
+      const restartCaptcha = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/sync-alt/12",
+        toolTipText: this.tr("Reload Captcha")
+      });
+      restartCaptcha.addListener("tap", () => this.__restartCaptcha(), this);
+      captchaLayout.add(restartCaptcha, {
+        column: 1,
+        row: 1
+      });
+
       const label = new qx.ui.basic.Label(this.tr("Type the 6 digits:")).set({
         font: "text-12"
       });
       captchaLayout.add(label, {
-        column: 1,
+        column: 2,
         row: 0
       });
 
@@ -321,7 +329,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         required: true
       });
       captchaLayout.add(captchaField, {
-        column: 1,
+        column: 2,
         row: 1
       });
 
