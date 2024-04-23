@@ -7,14 +7,16 @@ Therefore,
 """
 
 import logging
-from typing import Annotated, NamedTuple
+from typing import Annotated, Any, NamedTuple, TypeAlias
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.api_schemas_directorv2.comp_tasks import TaskLogFileGet
+from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pydantic import BaseModel
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_common.exceptions import NodeportsException
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -183,3 +185,33 @@ async def get_task_logs(
     """
 
     raise NotImplementedError(f"/{project_id=}/tasks/{node_uuid=}/logs")
+
+
+class TasksOutputsBatchGet(BaseModel):
+    node_ids: list[NodeID]
+
+
+OutputName: TypeAlias = IDStr
+
+
+class TasksOutputs(BaseModel):
+    nodes: dict[NodeID, dict[OutputName, Any]]
+
+
+@router.get(
+    "/{project_id}/tasks/-/outputs:batchGet",
+    summary="Gets outputs of selected tasks",
+    response_model=TasksOutputs,
+)
+async def get_batch_tasks_outputs(
+    project_id: ProjectID,
+    selection: TasksOutputsBatchGet,
+    comp_tasks_repo: Annotated[
+        CompTasksRepository, Depends(get_repository(CompTasksRepository))
+    ],
+):
+    return TasksOutputs.construct(
+        nodes=await comp_tasks_repo.get_outputs_from_tasks(
+            project_id, set(selection.node_ids)
+        )
+    )
