@@ -4,10 +4,16 @@
 
 from functools import cached_property
 
+import pytest
+from pydantic import AnyHttpUrl, parse_obj_as
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
+from settings_library.catalog import CatalogSettings
+from settings_library.director_v2 import DirectorV2Settings
+from settings_library.storage import StorageSettings
 from settings_library.utils_service import MixinServiceSettings, URLPart
+from settings_library.webserver import WebServerSettings
 
 
 def test_mixing_service_settings_usage(monkeypatch):
@@ -69,3 +75,25 @@ def test_mixing_service_settings_usage(monkeypatch):
     assert settings.api_base_url == "https://me:secret@example.com:8000/v9"
     assert settings.base_url == "https://me:secret@example.com:8000"
     assert settings.origin_url == "https://example.com"
+
+
+@pytest.mark.parametrize(
+    "service_settings_cls",
+    [WebServerSettings, CatalogSettings, DirectorV2Settings, StorageSettings],
+)
+def test_service_settings_base_urls(service_settings_cls):
+
+    assert issubclass(service_settings_cls, BaseCustomSettings)
+    assert issubclass(service_settings_cls, MixinServiceSettings)
+
+    settings_with_default = service_settings_cls()
+
+    base_url = parse_obj_as(AnyHttpUrl, settings_with_default.base_url)
+    api_base_url = parse_obj_as(AnyHttpUrl, settings_with_default.api_base_url)
+
+    assert base_url.path != api_base_url.path
+    assert (base_url.scheme, base_url.host, base_url.port) == (
+        api_base_url.scheme,
+        api_base_url.host,
+        api_base_url.port,
+    )
