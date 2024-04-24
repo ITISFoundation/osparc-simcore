@@ -74,6 +74,7 @@ def app(client: TestClient) -> web.Application:
             "WalletIndicatorVisibilityFrontendUserPreference": "nothing",
             "ServicesFrontendUserPreference": {"empty": "data"},
             "DoNotShowAnnouncementsFrontendUserPreference": [1, 5, 70],
+            "ConnectPortsAutomaticallyFrontendUserPreference": False,
         }
     ],
 )
@@ -99,6 +100,7 @@ def mock_app(app_environment: EnvVarsDict) -> Mock:
     "overwrites",
     [
         {"WalletIndicatorVisibilityFrontendUserPreference": 34},
+        {"UserInactivityThresholdFrontendUserPreference": 34.6},
         {"ServicesFrontendUserPreference": [1, 3, 4]},
         {"ServicesFrontendUserPreference": "str"},
         {"ServicesFrontendUserPreference": 1},

@@ -1,5 +1,5 @@
 from aiohttp import web
-from pydantic import Field
+from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
 
@@ -8,7 +8,7 @@ from .._constants import APP_SETTINGS_KEY
 
 class UsersSettings(BaseCustomSettings, MixinServiceSettings):
     USERS_FRONTEND_PREFERENCES_DEFAULTS_OVERWRITES: dict[
-        str, int | float | str | list | dict | None
+        str, StrictInt | StrictFloat | StrictStr | StrictBool | list | dict | None
     ] = Field(
         default_factory=dict,
         description="key: name of the FrontendUserPreference, value: new default",
