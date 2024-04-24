@@ -39,7 +39,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_DIRECTOR_V2": "null",
             "WEBSERVER_CATALOG": "null",
-            "WEBSERVER_USERS": "True",
             "WEBSERVER_REDIS": "null",
             "WEBSERVER_SCICRUNCH": "null",
             "WEBSERVER_VERSION_CONTROL": "0",
