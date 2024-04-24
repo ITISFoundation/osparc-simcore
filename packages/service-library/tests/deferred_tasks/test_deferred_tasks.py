@@ -59,7 +59,7 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
         await result_queue.put(result)
 
 
-class ManagerWrapper:
+class ExampleApp:
     def __init__(
         self,
         rabbit_settings: RabbitSettings,
@@ -91,7 +91,7 @@ class ManagerWrapper:
         await self._redis_client.shutdown()
 
 
-class _Manager:
+class _AppLifecycleManager:
     def __init__(
         self,
         rabbit_settings: RabbitSettings,
@@ -102,7 +102,7 @@ class _Manager:
         self._result_queue: asyncio.Queue = asyncio.Queue()
         self._commands_queue: asyncio.Queue = asyncio.Queue()
 
-        self._manager = ManagerWrapper(
+        self._app = ExampleApp(
             rabbit_settings, redis_settings, self._result_queue, max_workers
         )
 
@@ -126,7 +126,7 @@ class _Manager:
             self.results_mock(result)
 
     async def start(self) -> None:
-        await self._manager.setup()
+        await self._app.setup()
 
         if self._task:
             msg = "already started"
@@ -136,7 +136,7 @@ class _Manager:
         self._results_task = asyncio.create_task(self._results_worker())
 
     async def stop(self) -> None:
-        await self._manager.shutdown()
+        await self._app.shutdown()
 
         # graceful shut down of deferred_manager
         await self._commands_queue.put(None)
@@ -149,10 +149,10 @@ class _Manager:
             await cancel_task(self._results_task, timeout=1)
             self._results_task = None
 
-    async def start_task(self, sleep_duration: float) -> None:
+    async def start_deferred_task(self, sleep_duration: float) -> None:
         await self._commands_queue.put({"sleep_duration": sleep_duration})
 
-    async def __aenter__(self) -> "_Manager":
+    async def __aenter__(self) -> "_AppLifecycleManager":
         await self.start()
         return self
 
@@ -176,22 +176,24 @@ async def _assert_all_started_deferred_tasks_finish(
 
 
 @pytest.mark.parametrize("max_workers", [10])
-@pytest.mark.parametrize("tasks_to_start", [1, 2, 100])
+@pytest.mark.parametrize("deferred_tasks_to_start", [1, 2, 100])
 @pytest.mark.parametrize("start_stop_cycles", [1])
 async def test_run_lots_of_jobs_interrupted(
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
     max_workers: NonNegativeInt,
-    tasks_to_start: NonNegativeInt,
+    deferred_tasks_to_start: NonNegativeInt,
     start_stop_cycles: NonNegativeInt,
 ):
     results_mock = Mock()
 
-    async with _Manager(
+    async with _AppLifecycleManager(
         rabbit_service, redis_service, max_workers, results_mock
     ) as manager:
-        # start all tasks in parallel
-        await asyncio.gather(*[manager.start_task(0.1) for _ in range(tasks_to_start)])
+        # start all in parallel
+        await asyncio.gather(
+            *[manager.start_deferred_task(0.1) for _ in range(deferred_tasks_to_start)]
+        )
 
         # emulate issues with processing start & stop DeferredManager
         for _ in range(start_stop_cycles):
@@ -201,5 +203,5 @@ async def test_run_lots_of_jobs_interrupted(
             await manager.start()
 
         await _assert_all_started_deferred_tasks_finish(
-            results_mock, count=tasks_to_start
+            results_mock, count=deferred_tasks_to_start
         )
