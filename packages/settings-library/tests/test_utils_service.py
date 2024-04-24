@@ -81,15 +81,15 @@ def test_mixing_service_settings_usage(monkeypatch):
     "service_settings_cls",
     [WebServerSettings, CatalogSettings, DirectorV2Settings, StorageSettings],
 )
-def test_service_settings_base_urls(service_settings_cls):
+def test_service_settings_base_urls(service_settings_cls: type):
 
     assert issubclass(service_settings_cls, BaseCustomSettings)
     assert issubclass(service_settings_cls, MixinServiceSettings)
 
-    settings_with_default = service_settings_cls()
+    settings_with_defaults = service_settings_cls()
 
-    base_url = parse_obj_as(AnyHttpUrl, settings_with_default.base_url)
-    api_base_url = parse_obj_as(AnyHttpUrl, settings_with_default.api_base_url)
+    base_url = parse_obj_as(AnyHttpUrl, settings_with_defaults.base_url)
+    api_base_url = parse_obj_as(AnyHttpUrl, settings_with_defaults.api_base_url)
 
     assert base_url.path != api_base_url.path
     assert (base_url.scheme, base_url.host, base_url.port) == (

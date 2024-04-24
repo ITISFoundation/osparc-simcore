@@ -8,7 +8,7 @@ from fastapi.requests import Request
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
-from ...core.settings import ApplicationSettings, WebServerSessionSettings
+from ...core.settings import ApplicationSettings, WebServerExtendedSettings
 from ...services.webserver import AuthSession
 from .application import get_app, get_settings
 from .authentication import Identity, get_active_user_email, get_current_identity
@@ -16,13 +16,13 @@ from .authentication import Identity, get_active_user_email, get_current_identit
 
 def _get_settings(
     app_settings: Annotated[ApplicationSettings, Depends(get_settings)],
-) -> WebServerSessionSettings:
+) -> WebServerExtendedSettings:
     settings = app_settings.API_SERVER_WEBSERVER
     if not settings:
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE, detail=MSG_BACKEND_SERVICE_UNAVAILABLE
         )
-    assert isinstance(settings, WebServerSessionSettings)  # nosec
+    assert isinstance(settings, WebServerExtendedSettings)  # nosec
     return settings
 
 
@@ -33,7 +33,7 @@ def _get_encrypt(request: Request) -> Fernet | None:
 
 def get_session_cookie(
     identity: Annotated[str, Depends(get_active_user_email)],
-    settings: Annotated[WebServerSessionSettings, Depends(_get_settings)],
+    settings: Annotated[WebServerExtendedSettings, Depends(_get_settings)],
     fernet: Annotated[Fernet | None, Depends(_get_encrypt)],
 ) -> dict:
     # Based on aiohttp_session and aiohttp_security

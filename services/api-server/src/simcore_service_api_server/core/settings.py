@@ -20,7 +20,7 @@ from settings_library.utils_session import (
 from settings_library.webserver import WebServerSettings
 
 
-class WebServerSessionSettings(WebServerSettings, MixinSessionSettings):
+class WebServerExtendedSettings(WebServerSettings, MixinSessionSettings):
 
     WEBSERVER_SESSION_SECRET_KEY: SecretStr = Field(
         ...,
@@ -76,7 +76,7 @@ class ApplicationSettings(BasicSettings):
     )
 
     # SERVICES with http API
-    API_SERVER_WEBSERVER: WebServerSessionSettings | None = Field(
+    API_SERVER_WEBSERVER: WebServerExtendedSettings | None = Field(
         auto_default_from_env=True
     )
     API_SERVER_CATALOG: CatalogSettings | None = Field(auto_default_from_env=True)
@@ -131,5 +131,5 @@ __all__: tuple[str, ...] = (
     "CatalogSettings",
     "DirectorV2Settings",
     "StorageSettings",
-    "WebServerSessionSettings",
+    "WebServerExtendedSettings",
 )
