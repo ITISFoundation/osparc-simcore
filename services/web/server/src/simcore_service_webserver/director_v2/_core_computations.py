@@ -16,6 +16,10 @@ from models_library.api_schemas_directorv2.clusters import (
     ClusterPatch,
     ClusterPing,
 )
+from models_library.api_schemas_directorv2.comp_tasks import (
+    TasksOutputs,
+    TasksSelection,
+)
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
@@ -34,6 +38,7 @@ from .exceptions import (
     ClusterDefinedPingError,
     ClusterNotFoundError,
     ClusterPingError,
+    ComputationNotFoundError,
     DirectorServiceError,
 )
 from .settings import DirectorV2Settings, get_plugin_settings
@@ -404,3 +409,39 @@ async def ping_specific_cluster(
             )
         },
     )
+
+
+#
+# COMPUTATIONS TASKS RESOURCE ----------------------
+#
+
+
+async def get_batch_tasks_outputs(
+    app: web.Application,
+    *,
+    project_id: ProjectID,
+    selection: TasksSelection,
+) -> TasksOutputs:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    response_payload = await request_director_v2(
+        app,
+        "POST",
+        url=(
+            settings.base_url
+            / f"/v2/computations/{project_id}/tasks/-/outputs:batchGet"
+        ),
+        expected_status=web.HTTPOk,
+        data=json.loads(
+            selection.json(
+                by_alias=True,
+                exclude_unset=True,
+            )
+        ),
+        on_error={
+            status.HTTP_404_NOT_FOUND: (
+                ComputationNotFoundError,
+                {"project_id": f"{project_id}"},
+            )
+        },
+    )
+    return TasksOutputs(**response_payload)
