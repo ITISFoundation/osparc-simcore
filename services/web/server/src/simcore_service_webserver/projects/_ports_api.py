@@ -3,7 +3,11 @@ from dataclasses import dataclass
 from typing import Any, Literal, NamedTuple
 
 from aiohttp import web
-from models_library.api_schemas_directorv2.comp_tasks import OutputName, TasksSelection
+from models_library.api_schemas_directorv2.comp_tasks import (
+    OutputName,
+    TasksOutputs,
+    TasksSelection,
+)
 from models_library.function_services_catalog.api import (
     catalog,
     is_parameter_service,
@@ -190,10 +194,10 @@ async def _get_computation_tasks_outputs(
     app: web.Application, *, project_id: ProjectID, nodes_ids: set[NodeID]
 ) -> dict[NodeID, dict[OutputName, Any]]:
     selection = TasksSelection(nodes_ids=nodes_ids)
-    batch = await get_batch_tasks_outputs(
+    batch: TasksOutputs = await get_batch_tasks_outputs(
         app, project_id=project_id, selection=selection
     )
-    return batch.nodes_outputs
+    return batch.nodes_outputs  # type: ignore[no-any-return]
 
 
 async def get_project_outputs(
