@@ -2,7 +2,8 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from models_library.api_schemas_directorv2.comp_tasks import OutputName
+from aiohttp import web
+from models_library.api_schemas_directorv2.comp_tasks import OutputName, TasksSelection
 from models_library.function_services_catalog.api import (
     catalog,
     is_parameter_service,
@@ -18,6 +19,7 @@ from models_library.utils.json_schema import (
 from models_library.utils.services_io import JsonSchemaDict, get_service_io_json_schema
 from pydantic import ValidationError
 
+from ..director_v2.api import get_batch_tasks_outputs
 from .exceptions import InvalidInputValue
 
 
@@ -166,6 +168,10 @@ def get_outputs_in_project(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
 
 
 async def get_computation_tasks_outputs(
-    project_id: ProjectID, nodes_ids: set[NodeID]
+    app: web.Application, *, project_id: ProjectID, nodes_ids: set[NodeID]
 ) -> dict[NodeID, dict[OutputName, Any]]:
-    ...
+    selection = TasksSelection(nodes_ids=nodes_ids)
+    batch = await get_batch_tasks_outputs(
+        app, project_id=project_id, selection=selection
+    )
+    return batch.nodes_outputs

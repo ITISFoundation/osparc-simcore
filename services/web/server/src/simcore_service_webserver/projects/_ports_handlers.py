@@ -186,8 +186,12 @@ async def get_project_outputs(request: web.Request) -> web.Response:
     workbench = await _get_validated_workbench_model(
         app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
     )
-    # NOTE: these are the outputs from the workbench
+
     outputs: dict[NodeID, Any] = _ports_api.get_outputs_in_project(workbench)
+    tasks_outputs = await _ports_api.get_computation_tasks_outputs(
+        request.app, project_id=path_params.project_id, nodes_ids={outputs.keys()}
+    )
+    outputs.update(tasks_outputs)
 
     return _web_json_response_enveloped(
         data={
