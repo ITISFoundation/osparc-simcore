@@ -7,28 +7,20 @@ from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
 from pydantic.class_validators import validator
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import PortInt, VersionTag
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
-from settings_library.utils_service import (
-    DEFAULT_AIOHTTP_PORT,
-    MixinServiceSettings,
-    URLPart,
-)
 from settings_library.utils_session import (
     DEFAULT_SESSION_COOKIE_NAME,
     MixinSessionSettings,
 )
+from settings_library.webserver import WebServerSettings
 
 
-class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSettings):
-    WEBSERVER_HOST: str = "webserver"
-    WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
-    WEBSERVER_VTAG: VersionTag = Field(default="v0")
+class WebServerSessionSettings(WebServerSettings, MixinSessionSettings):
 
     WEBSERVER_SESSION_SECRET_KEY: SecretStr = Field(
         ...,
@@ -38,25 +30,6 @@ class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSe
         env=["SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"],
     )
     WEBSERVER_SESSION_NAME: str = DEFAULT_SESSION_COOKIE_NAME
-
-    @cached_property
-    def base_url(self) -> str:
-        # http://webserver:8080/
-        url_without_vtag: str = self._compose_url(
-            prefix="WEBSERVER",
-            port=URLPart.REQUIRED,
-        )
-        return url_without_vtag
-
-    @cached_property
-    def api_base_url(self) -> str:
-        # http://webserver:8080/v0
-        url_with_vtag: str = self._compose_url(
-            prefix="WEBSERVER",
-            port=URLPart.REQUIRED,
-            vtag=URLPart.REQUIRED,
-        )
-        return url_with_vtag
 
     @validator("WEBSERVER_SESSION_SECRET_KEY")
     @classmethod
@@ -103,7 +76,9 @@ class ApplicationSettings(BasicSettings):
     )
 
     # SERVICES with http API
-    API_SERVER_WEBSERVER: WebServerSettings | None = Field(auto_default_from_env=True)
+    API_SERVER_WEBSERVER: WebServerSessionSettings | None = Field(
+        auto_default_from_env=True
+    )
     API_SERVER_CATALOG: CatalogSettings | None = Field(auto_default_from_env=True)
     API_SERVER_STORAGE: StorageSettings | None = Field(auto_default_from_env=True)
     API_SERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
@@ -156,5 +131,5 @@ __all__: tuple[str, ...] = (
     "CatalogSettings",
     "DirectorV2Settings",
     "StorageSettings",
-    "WebServerSettings",
+    "WebServerSessionSettings",
 )
