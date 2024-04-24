@@ -75,7 +75,7 @@ class _PatchCancelDeferred:
         self,
         *,
         class_unique_reference: ClassUniqueReference,
-        original_cancel_deferred: Callable[..., Awaitable[None]],
+        original_cancel_deferred: Callable[[TaskUID], Awaitable[None]],
         manager_cancel_deferred: Callable[[TaskUID], Awaitable[None]],
     ) -> None:
         self.class_unique_reference = class_unique_reference
@@ -173,7 +173,8 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
             self._patched_deferred_handlers[class_unique_reference] = subclass
 
-    def un_patch_base_deferred_handlers(self) -> None:
+    @classmethod
+    def un_patch_base_deferred_handlers(cls) -> None:
         for subclass in BaseDeferredHandler.SUBCLASSES:
             class_unique_reference: ClassUniqueReference = (
                 subclass.get_class_unique_reference()
@@ -183,16 +184,16 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                 _logger.debug(
                     "Removing `start_deferred` patch for %s", class_unique_reference
                 )
-                subclass.start_deferred = (
-                    subclass.start_deferred.original_start_deferred
+                subclass.start_deferred = (  # type: ignore
+                    subclass.start_deferred.original_start_deferred  # type: ignore
                 )
 
             if isinstance(subclass.cancel_deferred, _PatchCancelDeferred):
                 _logger.debug(
                     "Removing `cancel_deferred` patch for %s", class_unique_reference
                 )
-                subclass.cancel_deferred = (
-                    subclass.cancel_deferred.original_cancel_deferred
+                subclass.cancel_deferred = (  # type: ignore
+                    subclass.cancel_deferred.original_cancel_deferred  # type: ignore
                 )
 
     def _get_global_queue_name(self, queue_name: _FastStreamRabbitQueue) -> str:
