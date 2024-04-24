@@ -7,7 +7,6 @@ from typing import Any
 import httpx
 from fastapi import HTTPException, status
 from pydantic import ValidationError
-from servicelib.error_codes import create_error_code
 
 from ..models.schemas.errors import ErrorGet
 
@@ -68,15 +67,12 @@ def backend_service_exception_handler(
     try:
         yield
     except ValidationError as exc:
-        error_code = create_error_code(exc)
         status_code = status.HTTP_502_BAD_GATEWAY
-        detail = f"{service_name} service returned invalid response. {error_code}"
+        detail = f"{service_name} service returned invalid response"
         _logger.exception(
-            "Invalid data exchanged with %s service [%s]: %s",
+            "Invalid data exchanged with %s service\n%s",
             service_name,
-            error_code,
             f"{exc}",
-            extra={"error_code": error_code},
         )
         raise HTTPException(
             status_code=status_code, detail=detail, headers=headers
@@ -102,16 +98,13 @@ def backend_service_exception_handler(
             detail = f"Received unexpected response from {service_name}"
 
         if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
-            error_code = create_error_code(exc)
             _logger.exception(
-                "Converted status code %s from %s service to status code %s [%s]\n%s",
+                "Converted status code %s from %s service to status code %s\n%s",
                 f"{exc.response.status_code}",
                 service_name,
                 f"{status_code}",
                 f"{exc}",
-                f"{error_code}",
             )
-            detail += f"\n{error_code}"
         raise HTTPException(
             status_code=status_code, detail=detail, headers=headers
         ) from exc
