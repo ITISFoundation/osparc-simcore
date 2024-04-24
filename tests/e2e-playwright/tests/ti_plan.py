@@ -7,7 +7,6 @@
 
 import re
 from http import HTTPStatus
-from typing import Final
 
 from playwright.sync_api import APIRequestContext, Page, WebSocket
 from pydantic import AnyUrl
@@ -16,10 +15,6 @@ from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
-
-projects_uuid_pattern: Final[re.Pattern] = re.compile(
-    r"/projects/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
-)
 
 
 def test_tip(
