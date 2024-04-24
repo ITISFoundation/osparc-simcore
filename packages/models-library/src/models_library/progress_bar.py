@@ -10,6 +10,7 @@ class ProgressReport(BaseModel):
     actual_value: float
     total: float
     unit: ProgressUnit | None = None
+    message: str | None = None
 
     @property
     def percent_value(self) -> float:
@@ -25,12 +26,14 @@ class ProgressReport(BaseModel):
                 {
                     "actual_value": 0.3,
                     "total": 1.0,
+                    "message": "downloading 0.3/1.0",
                 },
                 # typical byte progress
                 {
                     "actual_value": 128.5,
                     "total": 1024.0,
                     "unit": "Byte",
+                    "message": "downloading 128.5/1024.0 Byte",
                 },
             ]
         }

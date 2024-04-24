@@ -116,9 +116,11 @@ class ComputationalSidecar:
             output_data = TaskOutputData.from_task_output(
                 self.task_parameters.output_data_keys,
                 task_volumes.outputs_folder,
-                "outputs.json"
-                if integration_version > LEGACY_INTEGRATION_VERSION
-                else "output.json",
+                (
+                    "outputs.json"
+                    if integration_version > LEGACY_INTEGRATION_VERSION
+                    else "output.json"
+                ),
             )
 
             upload_tasks = []
@@ -173,6 +175,7 @@ class ComputationalSidecar:
             num_steps=3,
             step_weights=[5 / 100, 90 / 100, 5 / 100],
             progress_report_cb=self.task_publishers.publish_progress,
+            progress_desc="running",
         ) as progress_bar:
             # PRE-PROCESSING
             await pull_image(
@@ -213,7 +216,7 @@ class ComputationalSidecar:
                 config,
                 name=f"{self.task_parameters.image.split(sep='/')[-1]}_{run_id}",
             ) as container, progress_bar.sub_progress(
-                100
+                100, progress_desc="processing"
             ) as processing_progress_bar, managed_monitor_container_log_task(
                 container=container,
                 progress_regexp=image_labels.get_progress_regexp(),

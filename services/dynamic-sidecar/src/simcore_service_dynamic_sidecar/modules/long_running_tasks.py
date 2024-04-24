@@ -364,8 +364,11 @@ async def task_restore_state(
     async with ProgressBarData(
         num_steps=len(state_paths),
         progress_report_cb=functools.partial(
-            post_progress_message, app, ProgressType.SERVICE_STATE_PULLING
+            post_progress_message,
+            app,
+            ProgressType.SERVICE_STATE_PULLING,
         ),
+        progress_desc="pulling states",
     ) as root_progress:
         await logged_gather(
             *(
@@ -422,8 +425,11 @@ async def task_save_state(
     async with ProgressBarData(
         num_steps=len(state_paths),
         progress_report_cb=functools.partial(
-            post_progress_message, app, ProgressType.SERVICE_STATE_PUSHING
+            post_progress_message,
+            app,
+            ProgressType.SERVICE_STATE_PUSHING,
         ),
+        progress_desc="pushing state",
     ) as root_progress:
         await logged_gather(
             *[
@@ -464,8 +470,11 @@ async def task_ports_inputs_pull(
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=functools.partial(
-            post_progress_message, app, ProgressType.SERVICE_INPUTS_PULLING
+            post_progress_message,
+            app,
+            ProgressType.SERVICE_INPUTS_PULLING,
         ),
+        progress_desc="pulling inputs",
     ) as root_progress:
         transferred_bytes = await nodeports.download_target_ports(
             nodeports.PortTypeName.INPUTS,
@@ -497,8 +506,11 @@ async def task_ports_outputs_pull(
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=functools.partial(
-            post_progress_message, app, ProgressType.SERVICE_OUTPUTS_PULLING
+            post_progress_message,
+            app,
+            ProgressType.SERVICE_OUTPUTS_PULLING,
         ),
+        progress_desc="pulling outputs",
     ) as root_progress:
         transferred_bytes = await nodeports.download_target_ports(
             nodeports.PortTypeName.OUTPUTS,

@@ -79,10 +79,11 @@ class ProgressBarData:
             "description": "Optionally defines the step relative weight (defaults to steps of equal weights)"
         },
     )
+    progress_desc: str = field(metadata={"description": "define the progress name"})
     progress_unit: ProgressUnit | None = None
     progress_report_cb: AsyncReportCB | ReportCB | None = None
     _current_steps: float = _INITIAL_VALUE
-    _children: list = field(default_factory=list)
+    _children: list["ProgressBarData"] = field(default_factory=list)
     _parent: Optional["ProgressBarData"] = None
     _continuous_value_lock: asyncio.Lock = field(init=False)
     _last_report_value: float = _INITIAL_VALUE
@@ -110,6 +111,22 @@ class ProgressBarData:
         if self._parent:
             await self._parent.update(value)
 
+    def _is_running(self) -> bool:
+        return self._current_steps < self.num_steps
+
+    def _compute_report_str(self, parent_str: str | None) -> str:
+        report_str = ""
+        if parent_str is not None:
+            report_str = f"{parent_str}/"
+        report_str = f"{report_str}{self.progress_desc}"
+        for child in self._children:
+            if child._is_running():
+                return child._compute_report_str(report_str)
+
+        return (
+            f"{report_str}: {self._current_steps}/{self.num_steps} {self.progress_unit}"
+        )
+
     async def _report_external(self, value: float) -> None:
         if not self.progress_report_cb:
             return
@@ -119,12 +136,14 @@ class ProgressBarData:
             if (
                 (value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT
             ) or value == _FINAL_VALUE:
+                # compute progress string
                 call = self.progress_report_cb(
                     ProgressReport(
                         # NOTE: here we convert back to actual value since this is possibly weighted
                         actual_value=value * self.num_steps,
                         total=self.num_steps,
                         unit=self.progress_unit,
+                        message=self._compute_report_str(None),
                     ),
                 )
                 if isawaitable(call):
@@ -183,6 +202,7 @@ class ProgressBarData:
     def sub_progress(
         self,
         steps: int,
+        progress_desc: str,
         step_weights: list[float] | None = None,
         progress_unit: ProgressUnit | None = None,
     ) -> "ProgressBarData":
@@ -191,6 +211,7 @@ class ProgressBarData:
             raise RuntimeError(msg)
         child = ProgressBarData(
             num_steps=steps,
+            progress_desc=progress_desc,
             step_weights=step_weights,
             progress_unit=progress_unit,
             _parent=self,
