@@ -159,6 +159,7 @@ resource_tracker_service_runs = sa.Table(
         sa.DateTime(timezone=True),
         nullable=False,
         doc="Timestamp when the service was started",
+        index=True,
     ),
     sa.Column(
         "stopped_at",
