@@ -2,11 +2,13 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from models_library.api_schemas_directorv2.comp_tasks import OutputName
 from models_library.function_services_catalog.api import (
     catalog,
     is_parameter_service,
     is_probe_service,
 )
+from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID
 from models_library.projects_nodes_io import PortLink
 from models_library.utils.json_schema import (
@@ -106,7 +108,7 @@ def get_project_inputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     return input_to_value
 
 
-def set_project_inputs(
+def set_inputs_in_project(
     workbench: dict[NodeID, Node], update: dict[NodeID, Any]
 ) -> set[NodeID]:
     """Updates selected input nodes and
@@ -141,8 +143,8 @@ class _NonStrictPortLink(PortLink):
         allow_population_by_field_name = True
 
 
-def get_project_outputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
-    """Returns values assigned to each output node"""
+def get_outputs_in_project(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
+    """Returns values assigned to each output node from the workbench"""
     output_to_value = {}
     for port in iter_project_ports(workbench, "output"):
         if port.node.inputs:
@@ -161,3 +163,9 @@ def get_project_outputs(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
 
         output_to_value[port.node_id] = value
     return output_to_value
+
+
+async def get_computation_tasks_outputs(
+    project_id: ProjectID, nodes_ids: set[NodeID]
+) -> dict[NodeID, dict[OutputName, Any]]:
+    ...
