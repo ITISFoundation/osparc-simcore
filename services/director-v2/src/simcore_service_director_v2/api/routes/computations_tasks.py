@@ -7,16 +7,18 @@ Therefore,
 """
 
 import logging
-from typing import Annotated, Any, NamedTuple, TypeAlias
+from typing import Annotated, NamedTuple
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
-from models_library.api_schemas_directorv2.comp_tasks import TaskLogFileGet
-from models_library.basic_types import IDStr
+from models_library.api_schemas_directorv2.comp_tasks import (
+    TaskLogFileGet,
+    TasksOutputs,
+    TasksSelection,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import BaseModel
 from servicelib.utils import logged_gather
 from simcore_sdk.node_ports_common.exceptions import NodeportsException
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -166,52 +168,26 @@ async def get_task_log_file(
     return await _get_task_log_file(user_id, project_id, node_uuid)
 
 
-# NOTE: This handler function is NOT ACTIVE
-# but still kept as reference for future extensions that will tackle
-# real-time log streaming (instead of logfile download)
-#
-# @router.get(
-#    "/{project_id}/tasks/{node_uuid}/logs",
-#    summary="Gets computation task log",
-# )
-# - Implement close as possible to https://docs.docker.com/engine/api/v1.41/#operation/ContainerTop
-async def get_task_logs(
-    user_id: UserID,
-    project_id: ProjectID,
-    node_uuid: NodeID,
-) -> str:
-    """Gets ``stdout`` and ``stderr`` logs from a computation task.
-    It can return a list of the tail or stream live
-    """
-
-    raise NotImplementedError(f"/{project_id=}/tasks/{node_uuid=}/logs")
-
-
-class TasksOutputsBatchGet(BaseModel):
-    node_ids: list[NodeID]
-
-
-OutputName: TypeAlias = IDStr
-
-
-class TasksOutputs(BaseModel):
-    nodes: dict[NodeID, dict[OutputName, Any]]
-
-
-@router.get(
+@router.post(
     "/{project_id}/tasks/-/outputs:batchGet",
-    summary="Gets outputs of selected tasks",
+    summary="Gets all outputs for selected tasks",
     response_model=TasksOutputs,
 )
 async def get_batch_tasks_outputs(
     project_id: ProjectID,
-    selection: TasksOutputsBatchGet,
+    selection: TasksSelection,
     comp_tasks_repo: Annotated[
         CompTasksRepository, Depends(get_repository(CompTasksRepository))
     ],
 ):
-    return TasksOutputs.construct(
-        nodes=await comp_tasks_repo.get_outputs_from_tasks(
-            project_id, set(selection.node_ids)
-        )
+    nodes_outputs = await comp_tasks_repo.get_outputs_from_tasks(
+        project_id, set(selection.nodes_ids)
     )
+
+    if not nodes_outputs:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=[f"Cannot computation `{project_id}` or the tasks in it"],
+        )
+
+    return TasksOutputs(nodes_outputs=nodes_outputs)

@@ -6,16 +6,22 @@
 from collections.abc import Awaitable, Callable
 from typing import Any, NamedTuple
 from unittest import mock
+from uuid import uuid4
 
 import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from models_library.api_schemas_directorv2.comp_tasks import TaskLogFileGet
+from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_directorv2.comp_tasks import (
+    TaskLogFileGet,
+    TasksOutputs,
+    TasksSelection,
+)
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_raw_as
+from pydantic import parse_obj_as, parse_raw_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_director_v2.core.settings import AppSettings
@@ -185,13 +191,24 @@ async def test_get_tasks_outputs(
         node_id,
     }
     resp = await client.post(
-        f"/{project_id}/tasks/-/outputs:batchGet", json={"node_ids": selection}
+        f"/v2/computations/{project_id}/tasks/-/outputs:batchGet",
+        json=jsonable_encoder(TasksSelection(nodes_ids=selection)),
     )
 
     assert resp.status_code == status.HTTP_200_OK
 
-    node_outputs = await resp.json()
-    assert selection == set(node_outputs.keys())
-    outputs = node_outputs[f"{node_id}"]
+    tasks_outputs = parse_obj_as(TasksOutputs, resp.json())
 
-    assert outputs.keys()
+    assert selection == set(tasks_outputs.nodes_outputs.keys())
+    outputs = tasks_outputs.nodes_outputs[node_id]
+    assert outputs == {}
+
+
+async def test_get_tasks_outputs_not_found(node_id: NodeID, client: httpx.AsyncClient):
+
+    invalid_project = uuid4()
+    resp = await client.post(
+        f"/v2/computations/{invalid_project}/tasks/-/outputs:batchGet",
+        json=jsonable_encoder(TasksSelection(nodes_ids={node_id})),
+    )
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
