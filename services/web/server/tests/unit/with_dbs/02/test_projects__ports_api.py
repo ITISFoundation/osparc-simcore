@@ -11,7 +11,7 @@ from models_library.projects_nodes import Node, NodeID
 from models_library.utils.json_schema import jsonschema_validate_schema
 from simcore_service_webserver.projects._ports_api import (
     InvalidInputValue,
-    get_outputs_in_project,
+    _get_outputs_in_project,
     get_project_inputs,
     iter_project_ports,
     set_inputs_in_project,
@@ -60,7 +60,7 @@ def test_get_and_set_project_inputs(workbench: dict[NodeID, Node]):
 
 def test_get_project_outputs(workbench: dict[NodeID, Node]):
     # get all outputs in the workbench
-    project_outputs: dict[NodeID, Any] = get_outputs_in_project(workbench=workbench)
+    project_outputs: dict[NodeID, Any] = _get_outputs_in_project(workbench=workbench)
 
     assert project_outputs
     assert len(project_outputs) == 2

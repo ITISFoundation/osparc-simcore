@@ -145,7 +145,7 @@ class _NonStrictPortLink(PortLink):
         allow_population_by_field_name = True
 
 
-def get_outputs_in_project(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
+def _get_outputs_in_project(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     """Returns values assigned to each output node from the workbench"""
     output_to_value = {}
     for port in iter_project_ports(workbench, "output"):
@@ -167,7 +167,7 @@ def get_outputs_in_project(workbench: dict[NodeID, Node]) -> dict[NodeID, Any]:
     return output_to_value
 
 
-async def get_computation_tasks_outputs(
+async def _get_computation_tasks_outputs(
     app: web.Application, *, project_id: ProjectID, nodes_ids: set[NodeID]
 ) -> dict[NodeID, dict[OutputName, Any]]:
     selection = TasksSelection(nodes_ids=nodes_ids)
@@ -175,3 +175,17 @@ async def get_computation_tasks_outputs(
         app, project_id=project_id, selection=selection
     )
     return batch.nodes_outputs
+
+
+async def get_project_outputs(
+    app: web.Application, *, project_id: ProjectID, workbench: dict[NodeID, Node]
+) -> dict[NodeID, Any]:
+
+    # Used to identify which nodes and outputs we need to extract
+    outputs: dict[NodeID, Any] = _get_outputs_in_project(workbench)
+    # Updates prefious results with task computations to avoid issue https://github.com/ITISFoundation/osparc-simcore/pull/5721
+    tasks_outputs = await _get_computation_tasks_outputs(
+        app, project_id=project_id, nodes_ids=set(outputs.keys())
+    )
+    outputs.update(tasks_outputs)
+    return outputs
