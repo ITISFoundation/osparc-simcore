@@ -125,4 +125,14 @@ resource_tracker_credit_transactions = sa.Table(
     ),
     column_modified_datetime(timezone=True),
     # ---------------------------
+    sa.ForeignKeyConstraint(
+        ["product_name", "service_run_id"],
+        [
+            "resource_tracker_service_runs.product_name",
+            "resource_tracker_service_runs.service_run_id",
+        ],
+        name="resource_tracker_credit_trans_fkey",
+        onupdate="CASCADE",
+        ondelete="RESTRICT",
+    ),
 )
