@@ -28,7 +28,7 @@ const expectedStatics = {
 
 for (const product in products) {
   test(`statics ${product}`, async ({ page }) => {
-    expect(product in expectedStatics).toBeTruthy();
+    expect(expectedStatics[product]).toBeDefined();
 
     const responsePromise = page.waitForResponse('**/static-frontend-data.json');
     await page.goto(products[product]);
@@ -37,7 +37,7 @@ for (const product in products) {
     const statics = await response.json();
 
     for (const staticKey in expectedStatics[product]) {
-      expect(expectedStatics[product][staticKey] === statics[staticKey]).toBeTruthy();
+      expect(statics[staticKey]).toBe(expectedStatics[product][staticKey]);
     }
   });
 }

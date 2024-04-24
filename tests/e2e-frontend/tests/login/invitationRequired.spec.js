@@ -13,7 +13,7 @@ const expectedCreateAccountLabel = {
 
 for (const product in products) {
   test(`Invitation required ${product}`, async ({ page }) => {
-    expect(product in expectedCreateAccountLabel).toBeTruthy();
+    expect(expectedCreateAccountLabel[product]).toBeDefined();
 
     const expectedLabel = expectedCreateAccountLabel[product];
     await page.goto(products[product]);
