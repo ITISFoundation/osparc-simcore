@@ -87,23 +87,22 @@ class SocketIOProjectStateUpdatedWaiter:
 
 
 @dataclass
-class SocketIOOsparcMessageHandler:
+class SocketIOOsparcMessagePrinter:
     def __call__(self, message: str) -> None:
         osparc_messages = [
             "set_heartbeat_emit_interval",
-            "projectStateUpdated",
-            "walletOsparcCreditsUpdated",
             "logger",
             "nodeUpdated",
             "nodeProgress",
+            "projectStateUpdated",
             "serviceDiskUsage",
+            "walletOsparcCreditsUpdated",
         ]
 
-        with log_context(logging.INFO, msg=f"handling websocket event"):
-            if message.startswith("42"):
-                decoded_message: SocketIOEvent = decode_socketio_42_message(message)
-                if decoded_message.name in osparc_messages:
-                    print("WS Message: ", decoded_message.name, decoded_message.obj)
+        if message.startswith("42"):
+            decoded_message: SocketIOEvent = decode_socketio_42_message(message)
+            if decoded_message.name in osparc_messages:
+                print("WS Message:", decoded_message.name, decoded_message.obj)
 
 
 def wait_for_pipeline_state(
