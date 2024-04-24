@@ -5,18 +5,19 @@ from urllib.parse import unquote
 import httpx
 import jsonref
 from pydantic import parse_obj_as
-from simcore_service_api_server.core.settings import (  # FIXME: outsource this
-    CatalogSettings,
-    DirectorV2Settings,
-    StorageSettings,
-    WebServerSettings,
-)
+from settings_library.catalog import CatalogSettings
+from settings_library.director_v2 import DirectorV2Settings
+from settings_library.storage import StorageSettings
+from settings_library.webserver import WebServerSettings
 
-from .httpx_calls_capture_errors import PathNotInOpenApiSpecError, VerbNotInPathError
+from .httpx_calls_capture_errors import (
+    OpenApiSpecError,
+    PathNotInOpenApiSpecError,
+    VerbNotInPathError,
+)
 from .httpx_calls_capture_parameters import (
     CapturedParameter,
     CapturedParameterSchema,
-    OpenApiSpecError,
     PathDescription,
 )
 
