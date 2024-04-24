@@ -14,6 +14,7 @@ from servicelib.deferred_tasks import (
     BaseDeferredHandler,
     DeferredManager,
     FullStartContext,
+    TaskUID,
     UserStartContext,
 )
 from servicelib.redis import RedisClientSDKHealthChecked
@@ -46,6 +47,13 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
         return {"sleep_duration": sleep_duration}
 
     @classmethod
+    async def on_deferred_created(
+        cls, task_uid: TaskUID, start_context: FullStartContext
+    ) -> None:
+        scheduled_queue: asyncio.Queue = start_context["scheduled_queue"]
+        await scheduled_queue.put(task_uid)
+
+    @classmethod
     async def run_deferred(cls, start_context: FullStartContext) -> str:
         sleep_duration: float = start_context["sleep_duration"]
         await asyncio.sleep(sleep_duration)
@@ -65,20 +73,19 @@ class ExampleApp:
         rabbit_settings: RabbitSettings,
         redis_settings: RedisSettings,
         result_queue: asyncio.Queue,
+        scheduled_queue: asyncio.Queue,
         max_workers: NonNegativeInt,
     ) -> None:
-        self.rabbit_settings = rabbit_settings
-        self.redis_settings = redis_settings
-        self.result_queue = result_queue
-        self.max_workers = max_workers
-
         self._redis_client = RedisClientSDKHealthChecked(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
         )
         self._manager = DeferredManager(
             rabbit_settings,
             self._redis_client,
-            globals_for_start_context={"result_queue": result_queue},
+            globals_for_start_context={
+                "result_queue": result_queue,
+                "scheduled_queue": scheduled_queue,
+            },
             max_workers=max_workers,
         )
 
@@ -98,18 +105,25 @@ class _AppLifecycleManager:
         redis_settings: RedisSettings,
         max_workers: NonNegativeInt,
         results_mock: Mock,
+        scheduled_mock: Mock,
     ) -> None:
         self._result_queue: asyncio.Queue = asyncio.Queue()
+        self._scheduled_queue: asyncio.Queue = asyncio.Queue()
         self._commands_queue: asyncio.Queue = asyncio.Queue()
+        self.results_mock = results_mock
+        self.scheduled_mock = scheduled_mock
 
         self._app = ExampleApp(
-            rabbit_settings, redis_settings, self._result_queue, max_workers
+            rabbit_settings,
+            redis_settings,
+            self._result_queue,
+            self._scheduled_queue,
+            max_workers,
         )
 
-        self.results_mock = results_mock
-
-        self._task: asyncio.Task | None = None
+        self._commands_task: asyncio.Task | None = None
         self._results_task: asyncio.Task | None = None
+        self._scheduled_task: asyncio.Task | None = None
 
     async def _commands_worker(self) -> None:
         while True:
@@ -126,31 +140,44 @@ class _AppLifecycleManager:
             self.results_mock(result)
             print("App Lifecycle -> JOB DONE")
 
+    async def _scheduled_worker(self) -> None:
+        while True:
+            task_uid = await self._scheduled_queue.get()
+            self.scheduled_mock(task_uid)
+            print("App Lifecycle -> JOB SCHEDULED")
+
     async def start(self) -> None:
+        assert self._commands_task is None
+        assert self._results_task is None
+        assert self._scheduled_task is None
+
         await self._app.setup()
 
-        if self._task:
-            msg = "already started"
-            raise RuntimeError(msg)
-
-        self._task = asyncio.create_task(self._commands_worker())
+        self._commands_task = asyncio.create_task(self._commands_worker())
         self._results_task = asyncio.create_task(self._results_worker())
+        self._scheduled_task = asyncio.create_task(self._scheduled_worker())
 
         print("App Lifecycle -> STARTED")
 
     async def stop(self) -> None:
+        assert self._commands_task is not None
+        assert self._results_task is not None
+        assert self._scheduled_task is not None
+
         await self._app.shutdown()
 
         # graceful shut down of deferred_manager
         await self._commands_queue.put(None)
         await asyncio.sleep(0.1)  # wait for manager shutdown
 
-        if self._task:
-            await cancel_task(self._task, timeout=1)
-            self._task = None
-        if self._results_task:
-            await cancel_task(self._results_task, timeout=1)
-            self._results_task = None
+        await cancel_task(self._commands_task, timeout=1)
+        self._commands_task = None
+
+        await cancel_task(self._results_task, timeout=1)
+        self._results_task = None
+
+        await cancel_task(self._scheduled_task, timeout=1)
+        self._scheduled_task = None
 
         print("App Lifecycle -> STOPPED")
 
@@ -167,7 +194,7 @@ class _AppLifecycleManager:
         await asyncio.sleep(0.1)
 
 
-async def _assert_all_started_deferred_tasks_finish(
+async def _assert_mock_has_calls(
     mock: Mock, *, count: NonNegativeInt, timeout: float = 10
 ) -> None:
     async for attempt in AsyncRetrying(
@@ -203,15 +230,22 @@ async def test_run_lots_of_jobs_interrupted(
     deferred_tasks_to_start: NonNegativeInt,
     start_stop_cycles: NonNegativeInt,
 ):
+    scheduled_mock = Mock()
     results_mock = Mock()
 
     async with _AppLifecycleManager(
-        rabbit_service, redis_service, max_workers, results_mock
+        rabbit_service, redis_service, max_workers, results_mock, scheduled_mock
     ) as manager:
+
         # start all in parallel
         await asyncio.gather(
             *[manager.start_deferred_task(0.1) for _ in range(deferred_tasks_to_start)]
         )
+        # makes sure tasks have been scheduled
+        await _assert_mock_has_calls(scheduled_mock, count=deferred_tasks_to_start)
+
+        # if this fails all scheduled tasks have already finished
+        assert len(results_mock.call_args_list) < deferred_tasks_to_start
 
         # emulate issues with processing start & stop DeferredManager
         for _ in range(start_stop_cycles):
@@ -220,6 +254,4 @@ async def test_run_lots_of_jobs_interrupted(
             await asyncio.sleep(radom_wait)
             await manager.start()
 
-        await _assert_all_started_deferred_tasks_finish(
-            results_mock, count=deferred_tasks_to_start
-        )
+        await _assert_mock_has_calls(results_mock, count=deferred_tasks_to_start)
