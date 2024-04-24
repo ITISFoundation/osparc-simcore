@@ -4,18 +4,18 @@ from pathlib import Path
 from typing import Any
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, parse_obj_as
+from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
 from pydantic.class_validators import validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.catalog import CatalogSettings
+from settings_library.director_v2 import DirectorV2Settings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import (
     DEFAULT_AIOHTTP_PORT,
-    DEFAULT_FASTAPI_PORT,
     MixinServiceSettings,
     URLPart,
 )
@@ -62,32 +62,6 @@ class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSe
     @classmethod
     def check_valid_fernet_key(cls, v):
         return cls.do_check_valid_fernet_key(v)
-
-
-class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
-    DIRECTOR_V2_HOST: str = "director-v2"
-    DIRECTOR_V2_PORT: PortInt = DEFAULT_FASTAPI_PORT
-    DIRECTOR_V2_VTAG: VersionTag = parse_obj_as(VersionTag, "v2")
-
-    @cached_property
-    def api_base_url(self) -> str:
-        # http://director-v2:8000/v2
-        url_with_vtag: str = self._compose_url(
-            prefix="DIRECTOR_V2",
-            port=URLPart.REQUIRED,
-            vtag=URLPart.REQUIRED,
-        )
-        return url_with_vtag
-
-    @cached_property
-    def base_url(self) -> str:
-        # http://director-v2:8000
-        origin: str = self._compose_url(
-            prefix="DIRECTOR_V2",
-            port=URLPart.REQUIRED,
-            vtag=URLPart.EXCLUDE,
-        )
-        return origin
 
 
 # MAIN SETTINGS --------------------------------------------
