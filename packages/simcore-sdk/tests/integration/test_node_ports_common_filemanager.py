@@ -92,11 +92,11 @@ async def test_valid_upload_download(
         assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
         assert store_id == s3_simcore_location
         assert e_tag
-        get_store_id, get_e_tag = await filemanager.get_file_metadata(
+        file_metadata = await filemanager.get_file_metadata(
             user_id=user_id, store_id=store_id, s3_object=file_id
         )
-        assert get_store_id == store_id
-        assert get_e_tag == e_tag
+        assert file_metadata.location == store_id
+        assert file_metadata.etag == e_tag
 
         download_folder = Path(tmpdir) / "downloads"
         download_file_path = await filemanager.download_path_from_s3(
@@ -152,11 +152,11 @@ async def test_valid_upload_download_using_file_object(
         store_id, e_tag = upload_result.store_id, upload_result.etag
     assert store_id == s3_simcore_location
     assert e_tag
-    get_store_id, get_e_tag = await filemanager.get_file_metadata(
+    file_metadata = await filemanager.get_file_metadata(
         user_id=user_id, store_id=store_id, s3_object=file_id
     )
-    assert get_store_id == store_id
-    assert get_e_tag == e_tag
+    assert file_metadata.location == store_id
+    assert file_metadata.etag == e_tag
 
     download_folder = Path(tmpdir) / "downloads"
     async with ProgressBarData(num_steps=1) as progress_bar:
@@ -259,11 +259,11 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     assert store_id == s3_simcore_location
     assert e_tag
     # check the file is correctly uploaded
-    get_store_id, get_e_tag = await filemanager.get_file_metadata(
+    file_metadata = await filemanager.get_file_metadata(
         user_id=user_id, store_id=store_id, s3_object=file_id
     )
-    assert get_store_id == store_id
-    assert get_e_tag == e_tag
+    assert file_metadata.location == store_id
+    assert file_metadata.etag == e_tag
     # now start an invalid update by generating an exception while uploading the same file
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager.r_clone.sync_local_to_s3",
@@ -286,11 +286,11 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
             io_log_redirect_cb=None,
         )
     # the file shall be back to its original state
-    old_store_id, old_e_tag = await filemanager.get_file_metadata(
+    file_metadata = await filemanager.get_file_metadata(
         user_id=user_id, store_id=s3_simcore_location, s3_object=file_id
     )
-    assert get_store_id == old_store_id
-    assert get_e_tag == old_e_tag
+    assert file_metadata.location == old_store_id
+    assert file_metadata.etag == old_e_tag
 
 
 async def test_invalid_file_path(

@@ -303,10 +303,12 @@ async def get_file_link_from_url(
     s3_object = data_items_utils.create_simcore_file_id(
         Path(new_value.path), project_id, node_id
     )
-    store_id, e_tag = await filemanager.get_file_metadata(
+    file_metadata = await filemanager.get_file_metadata(
         user_id=user_id,
         store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
     )
     log.debug("file meta data for %s found, received ETag %s", new_value, e_tag)
-    return FileLink(store=store_id, path=s3_object, e_tag=e_tag)
+    return FileLink(
+        store=file_metadata.location, path=s3_object, e_tag=file_metadata.etag
+    )
