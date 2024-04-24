@@ -5,20 +5,19 @@ from urllib.parse import unquote
 import httpx
 import jsonref
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.httpx_calls_capture import (
-    CapturedParameter,
-    CapturedParameterSchema,
-    OpenApiSpecError,
-    PathDescription,
-    PathNotInOpenApiSpecError,
-    VerbNotInPathError,
-)
-
-from ..core.settings import (
+from simcore_service_api_server.core.settings import (  # FIXME: outsource this
     CatalogSettings,
     DirectorV2Settings,
     StorageSettings,
     WebServerSettings,
+)
+
+from .httpx_calls_capture_errors import PathNotInOpenApiSpecError, VerbNotInPathError
+from .httpx_calls_capture_parameters import (
+    CapturedParameter,
+    CapturedParameterSchema,
+    OpenApiSpecError,
+    PathDescription,
 )
 
 service_hosts = Literal["storage", "catalog", "webserver", "director-v2"]
@@ -29,16 +28,16 @@ assert CapturedParameterSchema  # nosec
 def _get_openapi_specs(host: service_hosts) -> dict[str, Any]:
     url: str
     if host == "storage":
-        settings = StorageSettings()
+        settings = StorageSettings.create_from_envs()
         url = settings.base_url + "/dev/doc/swagger.json"
     elif host == "catalog":
-        settings = CatalogSettings()
+        settings = CatalogSettings.create_from_envs()
         url = settings.base_url + "/api/v0/openapi.json"
     elif host == "webserver":
-        settings = WebServerSettings()
+        settings = WebServerSettings.create_from_envs()
         url = settings.base_url + "/dev/doc/swagger.json"
     elif host == "director-v2":
-        settings = DirectorV2Settings()
+        settings = DirectorV2Settings.create_from_envs()
         url = settings.base_url + "/api/v2/openapi.json"
     else:
         msg = f"{host=} has not been added yet to the testing system. Please do so yourself"

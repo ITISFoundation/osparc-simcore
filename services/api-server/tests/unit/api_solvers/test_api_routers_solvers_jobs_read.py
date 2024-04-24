@@ -8,7 +8,7 @@ from typing import NamedTuple
 import httpx
 import pytest
 from pydantic import parse_file_as, parse_obj_as
-from pytest_simcore.helpers.httpx_calls_capture import HttpApiCallCaptureModel
+from pytest_simcore.helpers.httpx_calls_capture_model import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server.models.pagination import Page
 from simcore_service_api_server.models.schemas.jobs import Job

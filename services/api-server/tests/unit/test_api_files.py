@@ -26,7 +26,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.basic_types import SHA256Str
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.httpx_calls_capture import HttpApiCallCaptureModel
+from pytest_simcore.helpers.httpx_calls_capture_model import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.pagination import Page
