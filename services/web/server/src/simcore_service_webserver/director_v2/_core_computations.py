@@ -426,10 +426,7 @@ async def get_batch_tasks_outputs(
     response_payload = await request_director_v2(
         app,
         "POST",
-        url=(
-            settings.base_url
-            / f"/v2/computations/{project_id}/tasks/-/outputs:batchGet"
-        ),
+        url=(settings.base_url / f"computations/{project_id}/tasks/-/outputs:batchGet"),
         expected_status=web.HTTPOk,
         data=json.loads(
             selection.json(
