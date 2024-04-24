@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from pydantic import Field
+from pydantic import parse_obj_as
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt, VersionTag
@@ -10,7 +10,7 @@ from .utils_service import DEFAULT_AIOHTTP_PORT, MixinServiceSettings, URLPart
 class WebServerSettings(BaseCustomSettings, MixinServiceSettings):
     WEBSERVER_HOST: str = "webserver"
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
-    WEBSERVER_VTAG: VersionTag = Field(default="v0")
+    WEBSERVER_VTAG: VersionTag = parse_obj_as(VersionTag, "v0")
 
     @cached_property
     def base_url(self) -> str:
