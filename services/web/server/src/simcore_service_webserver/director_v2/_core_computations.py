@@ -24,6 +24,7 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
@@ -428,11 +429,10 @@ async def get_batch_tasks_outputs(
         "POST",
         url=(settings.base_url / f"computations/{project_id}/tasks/-/outputs:batchGet"),
         expected_status=web.HTTPOk,
-        data=json.loads(
-            selection.json(
-                by_alias=True,
-                exclude_unset=True,
-            )
+        data=jsonable_encoder(
+            selection,
+            by_alias=True,
+            exclude_unset=True,
         ),
         on_error={
             status.HTTP_404_NOT_FOUND: (

@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import re
 from copy import deepcopy
 from datetime import datetime
 from http import HTTPStatus
@@ -10,7 +11,10 @@ from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
+from models_library.api_schemas_directorv2.comp_tasks import TasksOutputs
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.faker_webserver import (
     PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA,
@@ -21,6 +25,10 @@ from pytest_simcore.helpers.utils_webserver_unit_with_db import MockedStorageSub
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.director_v2.settings import (
+    DirectorV2Settings,
+    get_plugin_settings,
+)
 from simcore_service_webserver.projects.models import ProjectDict
 from yarl import URL
 
@@ -33,6 +41,37 @@ def fake_project(
     project = deepcopy(fake_project)
     project["workbench"] = workbench_db_column
     return project
+
+
+@pytest.fixture
+def mock_directorv2_service_api_responses(
+    client: TestClient, aioresponses_mocker: AioResponsesMock
+) -> AioResponsesMock:
+    assert client.app
+    settings: DirectorV2Settings = get_plugin_settings(client.app)
+
+    url_pattern = rf"^{settings.base_url}.*?outputs:batchGet$"
+
+    aioresponses_mocker.post(
+        re.compile(url_pattern),
+        payload=jsonable_encoder(
+            TasksOutputs(
+                nodes_outputs={
+                    "08d15a6c-ae7b-4ea1-938e-4ce81a360ffa": {
+                        "output_1": {
+                            "store": 0,
+                            "path": "e08316a8-5afc-11ed-bab7-02420a00002b/08d15a6c-ae7b-4ea1-938e-4ce81a360ffa/single_number.txt",
+                            "eTag": "1679091c5a880faf6fb5e6087eb1b2dc",
+                        },
+                        "output_2": 6,
+                    },
+                    "13220a1d-a569-49de-b375-904301af9295": {},
+                }
+            )
+        ),
+        repeat=True,
+    )
+    return aioresponses_mocker
 
 
 @pytest.mark.acceptance_test()
@@ -48,6 +87,7 @@ async def test_io_workflow(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mock_catalog_service_api_responses: None,
+    mock_directorv2_service_api_responses: AioResponsesMock,
     expected: HTTPStatus,
 ):
     """This tests implements a minimal workflow
