@@ -462,7 +462,7 @@ async def get_computation(
         else None,
         iteration=last_run.iteration if last_run else None,
         cluster_id=last_run.cluster_id if last_run else None,
-        result=None,  #  FIXME: why this is always None?
+        result=None,
         started=compute_pipeline_started_timestamp(pipeline_dag, all_tasks),
         stopped=compute_pipeline_stopped_timestamp(pipeline_dag, all_tasks),
         submitted=compute_pipeline_submitted_timestamp(pipeline_dag, all_tasks),
