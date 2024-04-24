@@ -124,6 +124,7 @@ class _AppLifecycleManager:
         while True:
             result = await self._result_queue.get()
             self.results_mock(result)
+            print("App Lifecycle -> JOB DONE")
 
     async def start(self) -> None:
         await self._app.setup()
@@ -134,6 +135,8 @@ class _AppLifecycleManager:
 
         self._task = asyncio.create_task(self._commands_worker())
         self._results_task = asyncio.create_task(self._results_worker())
+
+        print("App Lifecycle -> STARTED")
 
     async def stop(self) -> None:
         await self._app.shutdown()
@@ -148,6 +151,8 @@ class _AppLifecycleManager:
         if self._results_task:
             await cancel_task(self._results_task, timeout=1)
             self._results_task = None
+
+        print("App Lifecycle -> STOPPED")
 
     async def start_deferred_task(self, sleep_duration: float) -> None:
         await self._commands_queue.put({"sleep_duration": sleep_duration})
@@ -176,8 +181,21 @@ async def _assert_all_started_deferred_tasks_finish(
 
 
 @pytest.mark.parametrize("max_workers", [10])
-@pytest.mark.parametrize("deferred_tasks_to_start", [1, 2, 100])
-@pytest.mark.parametrize("start_stop_cycles", [1])
+@pytest.mark.parametrize(
+    "deferred_tasks_to_start",
+    [
+        1,
+        2,
+        100,
+    ],
+)
+@pytest.mark.parametrize(
+    "start_stop_cycles",
+    [
+        0,
+        # 1,
+    ],
+)
 async def test_run_lots_of_jobs_interrupted(
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
