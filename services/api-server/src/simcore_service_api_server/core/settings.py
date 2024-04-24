@@ -132,4 +132,5 @@ __all__: tuple[str, ...] = (
     "DirectorV2Settings",
     "StorageSettings",
     "WebServerExtendedSettings",
+    "WebServerSettings",
 )
