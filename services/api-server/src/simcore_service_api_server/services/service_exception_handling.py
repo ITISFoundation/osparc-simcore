@@ -61,7 +61,6 @@ def backend_service_exception_handler(
     **endpoint_kwargs,
 ):
     status_code: int
-    error_code: str
     detail: str
     headers: dict[str, str] = {}
     try:
