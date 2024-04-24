@@ -16,7 +16,7 @@ from settings_library.utils_service import MixinServiceSettings, URLPart
 from settings_library.webserver import WebServerSettings
 
 
-def test_mixing_service_settings_usage(monkeypatch):
+def test_mixing_service_settings_usage(monkeypatch: pytest.MonkeyPatch):
     # this test provides an example of usage
     class MySettings(BaseCustomSettings, MixinServiceSettings):
         MY_HOST: str = "example.com"
