@@ -1,4 +1,4 @@
-from typing import Any, Final
+from typing import Final
 
 from aiohttp import web
 from models_library.authentification import TwoFactorAuthentificationMethod
@@ -148,21 +148,6 @@ def get_preference_identifier(preference_name: PreferenceName) -> PreferenceIden
     return _PREFERENCE_NAME_TO_IDENTIFIER_MAPPING[preference_name]
 
 
-def _update_preference_default_value(
-    preference_class: type[FrontendUserPreference], new_default: Any
-) -> None:
-    expected_type = preference_class.__fields__["value"].type_
-    detected_type = type(new_default)
-    if expected_type != detected_type:
-        msg = f"Error, {preference_class.__name__} {expected_type=} differs from {detected_type=}"
-        raise TypeError(msg)
-
-    if preference_class.__fields__["value"].default is None:
-        preference_class.__fields__["value"].default_factory = lambda: new_default
-    else:
-        preference_class.__fields__["value"].default = new_default
-
-
 def overwrite_user_preferences_defaults(app: web.Application) -> None:
     settings: UsersSettings = get_plugin_settings(app)
 
@@ -174,4 +159,4 @@ def overwrite_user_preferences_defaults(app: web.Application) -> None:
         preference_class,
         value,
     ) in settings.USERS_FRONTEND_PREFERENCES_DEFAULTS_OVERWRITES.items():
-        _update_preference_default_value(search_map[preference_class], value)
+        search_map[preference_class].update_preference_default_value(value)
