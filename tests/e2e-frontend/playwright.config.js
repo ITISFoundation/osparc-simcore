@@ -1,10 +1,7 @@
 /* eslint-disable no-undef */
 
 // @ts-check
-const {
-  defineConfig,
-  devices
-} = require('@playwright/test');
+const { defineConfig, devices } = require('@playwright/test');
 
 /**
  * Read environment variables from file.
@@ -23,29 +20,34 @@ module.exports = defineConfig({
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
+    /* Basic Options */
+    // Base URL to use in actions like `await page.goto('/')`
     // baseURL: 'http://127.0.0.1:9081',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
-
-    // Name of the browser that runs tests. For example `chromium`, `firefox`, `webkit`.
-    // browserName: 'chromium',
-
-    // Run browser in headless mode.
-    // headless: false,
-
-    // Change the default data-testid attribute.
-    testIdAttribute: 'osparc-test-id',
-
-    launchOptions: {
-      slowMo: 50,
-    },
-
-    // osparc min: HD 1280x720
+    /* Emulation Options */
+    // oSPARC min: HD 1280x720
     viewport: {
       width: 1280,
       height: 720
+    },
+
+    /* Recording Options */
+    screenshot: 'only-on-failure',
+    // Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer
+    trace: 'retain-on-failure',
+    video: 'off',
+
+    /* Other Options */
+    // Name of the browser that runs tests. For example `chromium`, `firefox`, `webkit`.
+    // browserName: 'chromium',
+    // Run browser in headless mode.
+    // headless: false,
+    // Change the default data-testid attribute.
+    testIdAttribute: 'osparc-test-id',
+
+    /* More browser and context options */
+    launchOptions: {
+      slowMo: 50,
     },
   },
 
