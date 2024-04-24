@@ -2,7 +2,6 @@ from ._preferences_api import get_frontend_user_preference, set_frontend_user_pr
 from ._preferences_models import (
     PreferredWalletIdFrontendUserPreference,
     TwoFAFrontendUserPreference,
-    UserInactivityThresholdFrontendUserPreference,
 )
 from .exceptions import UserDefaultWalletNotFoundError
 
@@ -12,5 +11,4 @@ __all__ = (
     "TwoFAFrontendUserPreference",
     "set_frontend_user_preference",
     "UserDefaultWalletNotFoundError",
-    "UserInactivityThresholdFrontendUserPreference",
 )
