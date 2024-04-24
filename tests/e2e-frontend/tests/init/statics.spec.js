@@ -5,24 +5,29 @@ import products from '../products.json';
 
 const expectedStatics = {
   "osparc": {
+    "displayName": "o²S²PARC",
     "isPaymentEnabled": false
   },
   "s4l": {
+    "displayName": "Sim4Life",
     "isPaymentEnabled": true
   },
   "s4lacad": {
+    "displayName": "Sim4Life Science",
     "isPaymentEnabled": true
   },
   "s4llite": {
+    "displayName": "<i>S4L<sup>lite</sup></i>",
     "isPaymentEnabled": false
   },
   "tis": {
+    "displayName": "TI Planning Tool",
     "isPaymentEnabled": true
   },
 };
 
 for (const product in products) {
-  test(`is payment enabled ${product}`, async ({ page }) => {
+  test(`statics ${product}`, async ({ page }) => {
     expect(product in expectedStatics).toBeTruthy();
 
     const responsePromise = page.waitForResponse('**/static-frontend-data.json');
