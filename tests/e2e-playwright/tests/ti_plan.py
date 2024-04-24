@@ -54,6 +54,13 @@ def test_tip(
         print("node_id: ", node_id)
         node_ids.append(node_id)
 
+    # let it start or force
+    page.wait_for_timeout(5000)
+    start_button = page.get_by_test_id("Start_" + node_ids[0])
+    print(start_button.is_visible(), start_button.is_enabled())
+    if start_button.is_visible() and start_button.is_enabled():
+        start_button.click()
+
     # Electrode Selector
     es_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[0]}"]')
     es_page.get_by_test_id("TargetStructure_Selector").click(timeout=300000)
@@ -71,6 +78,8 @@ def test_tip(
         electrode_id = "Electrode_" + selection[1]
         es_page.get_by_test_id(group_id).click()
         es_page.get_by_test_id(electrode_id).click()
+    # configuration done, push output
+    page.wait_for_timeout(1000)
     es_page.get_by_test_id("FinishSetUp").click()
     page.wait_for_timeout(10000)
     # check outputs
@@ -81,6 +90,13 @@ def test_tip(
 
     # Move to next step
     page.get_by_test_id("AppMode_NextBtn").click()
+
+    # let it start or force
+    page.wait_for_timeout(5000)
+    start_button = page.get_by_test_id("Start_" + node_ids[1])
+    print(start_button.is_visible(), start_button.is_enabled())
+    if start_button.is_visible() and start_button.is_enabled():
+        start_button.click()
 
     # Optimal Configuration Identification
     ti_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[1]}"]')
@@ -106,6 +122,13 @@ def test_tip(
 
     # Move to next step
     page.get_by_test_id("AppMode_NextBtn").click()
+
+    # let it start or force
+    page.wait_for_timeout(5000)
+    start_button = page.get_by_test_id("Start_ " + node_ids[2])
+    print(start_button.is_visible(), start_button.is_enabled())
+    if start_button.is_visible() and start_button.is_enabled():
+        start_button.click()
 
     # Sim4Life PostPro
     s4l_postpro_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[2]}"]')
