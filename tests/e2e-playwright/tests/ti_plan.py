@@ -11,7 +11,7 @@ from typing import Final
 
 from playwright.sync_api import APIRequestContext, Page, WebSocket
 from pydantic import AnyUrl
-from pytest_simcore.playwright_utils import on_web_socket_default_handler
+from pytest_simcore.playwright_utils import SocketIOOsparcMessageHandler
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -29,8 +29,9 @@ def test_tip(
     product_url: AnyUrl,
     product_billable: bool,
 ):
-    # connect and listen to websocket
-    page.on("websocket", on_web_socket_default_handler)
+    handler = SocketIOOsparcMessageHandler()
+    # log_in_and_out is the initial websocket
+    log_in_and_out.on("framereceived", handler)
 
     # open studies tab and filter
     page.get_by_test_id("studiesTabBtn").click()
