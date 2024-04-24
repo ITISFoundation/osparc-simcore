@@ -53,7 +53,6 @@ def test_tip(
     # let it start or force
     page.wait_for_timeout(5000)
     start_button = page.get_by_test_id("Start_" + node_ids[0])
-    print(start_button.is_visible(), start_button.is_enabled())
     if start_button.is_visible() and start_button.is_enabled():
         start_button.click()
 
@@ -90,7 +89,6 @@ def test_tip(
     # let it start or force
     page.wait_for_timeout(5000)
     start_button = page.get_by_test_id("Start_" + node_ids[1])
-    print(start_button.is_visible(), start_button.is_enabled())
     if start_button.is_visible() and start_button.is_enabled():
         start_button.click()
 
@@ -122,7 +120,6 @@ def test_tip(
     # let it start or force
     page.wait_for_timeout(5000)
     start_button = page.get_by_test_id("Start_ " + node_ids[2])
-    print(start_button.is_visible(), start_button.is_enabled())
     if start_button.is_visible() and start_button.is_enabled():
         start_button.click()
 
