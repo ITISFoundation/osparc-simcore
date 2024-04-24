@@ -90,7 +90,6 @@ class SocketIOProjectStateUpdatedWaiter:
 class SocketIOOsparcMessagePrinter:
     def __call__(self, message: str) -> None:
         osparc_messages = [
-            "set_heartbeat_emit_interval",
             "logger",
             "nodeUpdated",
             "nodeProgress",
