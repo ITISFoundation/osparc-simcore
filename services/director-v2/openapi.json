@@ -416,6 +416,9 @@
               }
             }
           },
+          "404": {
+            "description": "Cannot find computation or the tasks in it"
+          },
           "422": {
             "description": "Validation Error",
             "content": {

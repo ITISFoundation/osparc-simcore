@@ -172,6 +172,11 @@ async def get_task_log_file(
     "/{project_id}/tasks/-/outputs:batchGet",
     summary="Gets all outputs for selected tasks",
     response_model=TasksOutputs,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Cannot find computation or the tasks in it"
+        }
+    },
 )
 async def get_batch_tasks_outputs(
     project_id: ProjectID,
@@ -185,9 +190,6 @@ async def get_batch_tasks_outputs(
     )
 
     if not nodes_outputs:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail=[f"Cannot computation `{project_id}` or the tasks in it"],
-        )
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
 
     return TasksOutputs(nodes_outputs=nodes_outputs)
