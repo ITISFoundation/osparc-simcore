@@ -9,7 +9,7 @@ import re
 from http import HTTPStatus
 from typing import Final
 
-from playwright.sync_api import APIRequestContext, Page
+from playwright.sync_api import APIRequestContext, Page, WebSocket
 from pydantic import AnyUrl
 from pytest_simcore.playwright_utils import on_web_socket_default_handler
 from tenacity import Retrying
@@ -24,7 +24,7 @@ projects_uuid_pattern: Final[re.Pattern] = re.compile(
 
 def test_tip(
     page: Page,
-    log_in_and_out: None,
+    log_in_and_out: WebSocket,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
     product_billable: bool,
