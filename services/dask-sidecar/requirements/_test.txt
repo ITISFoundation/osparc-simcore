@@ -12,11 +12,11 @@ aws-xray-sdk==2.13.0
     # via moto
 blinker==1.8.1
     # via flask
-boto3==1.34.51
+boto3==1.34.69
     # via
     #   aws-sam-translator
     #   moto
-botocore==1.34.51
+botocore==1.34.69
     # via
     #   aws-xray-sdk
     #   boto3
@@ -26,13 +26,13 @@ certifi==2024.2.2
     # via requests
 cffi==1.16.0
     # via cryptography
-cfn-lint==0.87.1
+cfn-lint==0.86.4
     # via moto
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via flask
-coverage==7.5.1
+coverage==7.5.0
     # via pytest-cov
 cryptography==42.0.6
     # via
@@ -43,7 +43,7 @@ docker==7.0.0
     # via moto
 exceptiongroup==1.2.1
     # via pytest
-faker==25.0.1
+faker==24.11.0
 flask==3.0.3
     # via
     #   flask-cors
@@ -54,7 +54,7 @@ graphql-core==3.2.3
     # via moto
 icdiff==2.0.7
     # via pytest-icdiff
-idna==3.6
+idna==3.7
     # via requests
 iniconfig==2.0.0
     # via pytest
@@ -173,7 +173,7 @@ referencing==0.29.3
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-regex==2024.4.28
+regex==2024.4.16
     # via cfn-lint
 requests==2.31.0
     # via
@@ -212,7 +212,7 @@ typing-extensions==4.11.0
     # via
     #   aws-sam-translator
     #   pydantic
-urllib3==2.0.7
+urllib3==2.2.1
     # via
     #   botocore
     #   docker
