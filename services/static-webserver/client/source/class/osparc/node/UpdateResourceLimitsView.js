@@ -84,7 +84,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
                 const resourceInfo = resourcesInfo[resourceKey];
                 let label = resourceKey;
                 if (resourceKey === "RAM") {
-                  label += " (GB)";
+                  label += " (GiB)";
                 }
                 const resourceKeyTitle = new qx.ui.basic.Label(label).set({
                   font: "text-13"
@@ -98,7 +98,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
                   if (resourceInfoKey in resourceInfo) {
                     let value = resourceInfo[resourceInfoKey];
                     if (resourceKey === "RAM") {
-                      value = osparc.utils.Utils.bytesToGB(value);
+                      value = osparc.utils.Utils.bytesToGiB(value);
                     }
                     const spinner = new qx.ui.form.Spinner(0, value, 512).set({
                       singleStep: 0.1
@@ -152,7 +152,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
         ) {
           let value = resourceField.getValue();
           if (resourceField.resourceKey === "RAM") {
-            value = osparc.utils.Utils.gBToBytes(value);
+            value = osparc.utils.Utils.giBToBytes(value);
           }
           updatedResources[resourceField.imageName].resources[resourceField.resourceKey]["limit"] = value;
         }
