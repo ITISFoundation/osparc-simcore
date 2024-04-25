@@ -50,14 +50,14 @@ async def exit_middleware_cb(request: web.Request, _response: web.StreamResponse
 def setup_monitoring(app: web.Application):
     service_lib_setup(
         app,
-        _meta.PROJECT_NAME,
+        _meta.APP_NAME,
         enter_middleware_cb=enter_middleware_cb,
         exit_middleware_cb=exit_middleware_cb,
         version=f"{_meta.VERSION}",
     )
 
     monitor_services.add_instrumentation(
-        app, get_collector_registry(app), _meta.PROJECT_NAME
+        app, get_collector_registry(app), _meta.APP_NAME
     )
 
     # on-the fly stats
