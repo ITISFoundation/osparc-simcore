@@ -52,7 +52,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from ..core.settings import WebServerExtendedSettings
+from ..core.settings import WebServerSettings
 from ..models.basic_types import VersionStr
 from ..models.pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from ..models.schemas.jobs import MetaValueType
@@ -575,9 +575,9 @@ class AuthSession:
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: WebServerExtendedSettings | None = None) -> None:
+def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
     if not settings:
-        settings = WebServerExtendedSettings.create_from_envs()
+        settings = WebServerSettings.create_from_envs()
 
     assert settings is not None  # nosec
 

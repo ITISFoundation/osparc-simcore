@@ -17,10 +17,10 @@ from settings_library.utils_session import (
     DEFAULT_SESSION_COOKIE_NAME,
     MixinSessionSettings,
 )
-from settings_library.webserver import WebServerSettings
+from settings_library.webserver import WebServerSettings as WebServerBaseSettings
 
 
-class WebServerExtendedSettings(WebServerSettings, MixinSessionSettings):
+class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
 
     WEBSERVER_SESSION_SECRET_KEY: SecretStr = Field(
         ...,
@@ -76,9 +76,7 @@ class ApplicationSettings(BasicSettings):
     )
 
     # SERVICES with http API
-    API_SERVER_WEBSERVER: WebServerExtendedSettings | None = Field(
-        auto_default_from_env=True
-    )
+    API_SERVER_WEBSERVER: WebServerSettings | None = Field(auto_default_from_env=True)
     API_SERVER_CATALOG: CatalogSettings | None = Field(auto_default_from_env=True)
     API_SERVER_STORAGE: StorageSettings | None = Field(auto_default_from_env=True)
     API_SERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
@@ -131,6 +129,6 @@ __all__: tuple[str, ...] = (
     "CatalogSettings",
     "DirectorV2Settings",
     "StorageSettings",
-    "WebServerExtendedSettings",
+    "WebServerSettings",
     "WebServerSettings",
 )
