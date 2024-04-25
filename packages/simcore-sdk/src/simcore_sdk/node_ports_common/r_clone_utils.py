@@ -1,6 +1,7 @@
 import datetime
 import logging
 from abc import abstractmethod
+from typing import Union
 
 from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, Field, parse_raw_as
@@ -36,12 +37,19 @@ class _RCloneSyncTransferringStats(BaseModel):
     bytes: ByteSize
     total_bytes: ByteSize
 
-    class Config:
+    class Config:  # type: ignore[pydantic-alias]
         alias_generator = snake_to_camel
 
 
 class _RCloneSyncTransferringMessage(_RCloneSyncMessageBase):
     stats: _RCloneSyncTransferringStats
+
+
+_RCloneSyncMessages = Union[  # noqa: UP007
+    _RCloneSyncTransferCompletedMessage,
+    _RCloneSyncUpdatedMessage,
+    _RCloneSyncTransferringMessage,
+]
 
 
 class SyncProgressLogParser(BaseRCloneLogParser):
@@ -74,10 +82,8 @@ class SyncProgressLogParser(BaseRCloneLogParser):
     async def __call__(self, logs: str) -> None:
         _logger.debug("received logs: %s", logs)
         with log_catch(_logger, reraise=False):
-            rclone_message = parse_raw_as(
-                _RCloneSyncTransferCompletedMessage
-                | _RCloneSyncUpdatedMessage
-                | _RCloneSyncTransferringMessage,
+            rclone_message: _RCloneSyncMessages = parse_raw_as(
+                _RCloneSyncMessages,  # type: ignore[arg-type]
                 logs,
             )
 
