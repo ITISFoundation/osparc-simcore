@@ -4,31 +4,23 @@ from pathlib import Path
 from typing import Any
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, parse_obj_as
+from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
 from pydantic.class_validators import validator
 from settings_library.base import BaseCustomSettings
-from settings_library.basic_types import PortInt, VersionTag
 from settings_library.catalog import CatalogSettings
+from settings_library.director_v2 import DirectorV2Settings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.storage import StorageSettings
 from settings_library.utils_logging import MixinLoggingSettings
-from settings_library.utils_service import (
-    DEFAULT_AIOHTTP_PORT,
-    DEFAULT_FASTAPI_PORT,
-    MixinServiceSettings,
-    URLPart,
-)
 from settings_library.utils_session import (
     DEFAULT_SESSION_COOKIE_NAME,
     MixinSessionSettings,
 )
+from settings_library.webserver import WebServerSettings as WebServerBaseSettings
 
 
-class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSettings):
-    WEBSERVER_HOST: str = "webserver"
-    WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
-    WEBSERVER_VTAG: VersionTag = Field(default="v0")
+class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
 
     WEBSERVER_SESSION_SECRET_KEY: SecretStr = Field(
         ...,
@@ -39,55 +31,10 @@ class WebServerSettings(BaseCustomSettings, MixinServiceSettings, MixinSessionSe
     )
     WEBSERVER_SESSION_NAME: str = DEFAULT_SESSION_COOKIE_NAME
 
-    @cached_property
-    def base_url(self) -> str:
-        # http://webserver:8080/
-        url_without_vtag: str = self._compose_url(
-            prefix="WEBSERVER",
-            port=URLPart.REQUIRED,
-        )
-        return url_without_vtag
-
-    @cached_property
-    def api_base_url(self) -> str:
-        # http://webserver:8080/v0
-        url_with_vtag: str = self._compose_url(
-            prefix="WEBSERVER",
-            port=URLPart.REQUIRED,
-            vtag=URLPart.REQUIRED,
-        )
-        return url_with_vtag
-
     @validator("WEBSERVER_SESSION_SECRET_KEY")
     @classmethod
     def check_valid_fernet_key(cls, v):
         return cls.do_check_valid_fernet_key(v)
-
-
-class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
-    DIRECTOR_V2_HOST: str = "director-v2"
-    DIRECTOR_V2_PORT: PortInt = DEFAULT_FASTAPI_PORT
-    DIRECTOR_V2_VTAG: VersionTag = parse_obj_as(VersionTag, "v2")
-
-    @cached_property
-    def api_base_url(self) -> str:
-        # http://director-v2:8000/v2
-        url_with_vtag: str = self._compose_url(
-            prefix="DIRECTOR_V2",
-            port=URLPart.REQUIRED,
-            vtag=URLPart.REQUIRED,
-        )
-        return url_with_vtag
-
-    @cached_property
-    def base_url(self) -> str:
-        # http://director-v2:8000
-        origin: str = self._compose_url(
-            prefix="DIRECTOR_V2",
-            port=URLPart.REQUIRED,
-            vtag=URLPart.EXCLUDE,
-        )
-        return origin
 
 
 # MAIN SETTINGS --------------------------------------------
@@ -182,5 +129,6 @@ __all__: tuple[str, ...] = (
     "CatalogSettings",
     "DirectorV2Settings",
     "StorageSettings",
+    "WebServerSettings",
     "WebServerSettings",
 )
