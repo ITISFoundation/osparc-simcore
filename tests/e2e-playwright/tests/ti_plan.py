@@ -8,7 +8,7 @@
 import re
 from http import HTTPStatus
 
-from playwright.sync_api import APIRequestContext, Page, WebSocket
+from playwright.sync_api import APIRequestContext, Page, WebSocket, expect
 from pydantic import AnyUrl
 from pytest_simcore.playwright_utils import SocketIOOsparcMessagePrinter
 from tenacity import Retrying
@@ -58,7 +58,12 @@ def test_tip(
 
     # Electrode Selector
     es_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[0]}"]')
-    es_page.get_by_test_id("TargetStructure_Selector").click(timeout=300000)
+    expect(es_page.get_by_test_id("TargetStructure_Selector")).to_be_visible(
+        timeout=300000
+    )
+    # Sometimes this iframe flicks and shows a white page. This wait will avoid it
+    page.wait_for_timeout(5000)
+    es_page.get_by_test_id("TargetStructure_Selector").click()
     es_page.get_by_test_id(
         "TargetStructure_Target_(Targets_combined) Hypothalamus"
     ).click()
@@ -94,7 +99,10 @@ def test_tip(
 
     # Optimal Configuration Identification
     ti_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[1]}"]')
-    ti_page.get_by_role("button", name="Run Optimization").click(timeout=300000)
+    expect(ti_page.get_by_role("button", name="Run Optimization")).to_be_visible(
+        timeout=300000
+    )
+    ti_page.get_by_role("button", name="Run Optimization").click()
     page.wait_for_timeout(20000)
     ti_page.get_by_role("button", name="Load Analysis").click()
     page.wait_for_timeout(20000)
@@ -125,8 +133,11 @@ def test_tip(
 
     # Sim4Life PostPro
     s4l_postpro_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[2]}"]')
-    # click on the mode button
-    s4l_postpro_page.get_by_test_id("mode-button-postro").click(timeout=300000)
+    expect(s4l_postpro_page.get_by_test_id("mode-button-postro")).to_be_visible(
+        timeout=300000
+    )
+    # click on the postpro mode button
+    s4l_postpro_page.get_by_test_id("mode-button-postro").click()
     # click on the surface viewer
     s4l_postpro_page.get_by_test_id("tree-item-ti_field.cache").click()
     s4l_postpro_page.get_by_test_id("tree-item-SurfaceViewer").click()
