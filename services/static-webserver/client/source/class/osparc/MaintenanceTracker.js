@@ -95,6 +95,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
     },
 
     __setMaintenance: function(maintenanceData) {
+      // ignore old maintenance
       const oldStart = this.getStart();
       const oldEnd = this.getEnd();
       const oldReason = this.getReason();
