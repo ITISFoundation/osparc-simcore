@@ -244,7 +244,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
             const resourceInfo = resourcesInfo[resourceKey];
             let label = resourceKey;
             if (resourceKey === "RAM") {
-              label += " (GB)";
+              label += " (GiB)";
             }
             layout.add(new qx.ui.basic.Label(label).set({
               font: "text-13"
@@ -257,7 +257,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
               if (resourceInfoKey in resourceInfo) {
                 let value = resourceInfo[resourceInfoKey];
                 if (resourceKey === "RAM") {
-                  value = osparc.utils.Utils.bytesToGB(value);
+                  value = osparc.utils.Utils.bytesToGiB(value);
                 }
                 layout.add(new qx.ui.basic.Label(String(value)).set({
                   font: "text-12"
