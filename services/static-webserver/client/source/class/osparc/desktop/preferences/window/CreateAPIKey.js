@@ -45,12 +45,16 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
       form.add(expirationDate, this.tr("Expiration Date"), null, "expiration");
       expirationDate.addListener("changeValue", e => {
         const date = e.getData();
-        if (new Date(date).getTime() < new Date().getTime()) {
-          const msg = this.tr("Choose a future date");
-          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-          expirationDate.resetValue();
+        if (date) {
+          // allow only today and future dates
+          if (new Date(date).getDate() < new Date().getDate()) {
+            const msg = this.tr("Choose a future date");
+            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+            expirationDate.resetValue();
+          } else {
+            expirationDate.setDateFormat(dateFormat);
+          }
         }
-        expirationDate.setDateFormat(dateFormat);
       });
 
       const formRenderer = new qx.ui.form.renderer.Single(form);
