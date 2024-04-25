@@ -9,6 +9,7 @@ from unittest import mock
 from unittest.mock import call
 
 import pytest
+from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.progress_bar import ProgressReport
 from pydantic import parse_obj_as
@@ -112,6 +113,7 @@ async def test_pull_image(
     mocked_log_cb: mock.AsyncMock,
     mocked_progress_cb: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
+    faker: Faker,
 ):
     # clean first
     await remove_images_from_host([image])
@@ -121,6 +123,7 @@ async def test_pull_image(
     async with progress_bar.ProgressBarData(
         num_steps=layer_information.layers_total_size,
         progress_report_cb=mocked_progress_cb,
+        description=faker.pystr(),
     ) as main_progress_bar:
         await pull_image(
             image,
@@ -149,6 +152,7 @@ async def test_pull_image(
     async with progress_bar.ProgressBarData(
         num_steps=layer_information.layers_total_size,
         progress_report_cb=mocked_progress_cb,
+        description=faker.pystr(),
     ) as main_progress_bar:
         await pull_image(
             image,
