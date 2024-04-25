@@ -29,30 +29,47 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
   },
 
   members: {
+    __form: null,
+
     __populateWindow: function() {
-      const hBox1 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const sTitle = new qx.ui.basic.Label(this.tr("API Key")).set({
-        width: 50,
-        alignY: "middle"
+      const form = this.__form = new qx.ui.form.Form();
+
+      const keyName = new qx.ui.form.TextField().set({
+        required: true
       });
-      hBox1.add(sTitle);
-      const labelEditor = new qx.ui.form.TextField();
-      this.add(labelEditor, {
-        flex: 1
+      form.add(keyName, this.tr("Key Name"), null, "name");
+      this.addListener("appear", () => keyName.focus());
+
+      const dateFormat = new qx.util.format.DateFormat("dd/MM/yyyy-HH:mm:ss");
+      const expirationDate = new qx.ui.form.DateField();
+      form.add(expirationDate, this.tr("Expiration Date"), null, "expiration");
+      expirationDate.addListener("changeValue", e => {
+        const date = e.getData();
+        if (date) {
+          // allow only today and future dates
+          if (new Date(date).getDate() < new Date().getDate()) {
+            const msg = this.tr("Choose a future date");
+            osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+            expirationDate.resetValue();
+          } else {
+            expirationDate.setDateFormat(dateFormat);
+          }
+        }
       });
-      hBox1.add(labelEditor, {
-        flex: 1
-      });
-      this.add(hBox1);
+
+      const formRenderer = new qx.ui.form.renderer.Single(form);
+      this.add(formRenderer);
 
       const hBox2 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       hBox2.add(new qx.ui.core.Spacer(), {
         flex: 1
       });
       const confirmBtn = new qx.ui.form.Button(this.tr("Confirm"));
-      confirmBtn.addListener("execute", e => {
-        const keyLabel = labelEditor.getValue();
-        this.fireDataEvent("finished", keyLabel);
+      confirmBtn.addListener("execute", () => {
+        this.fireDataEvent("finished", {
+          name: form.getItem("name").getValue(),
+          expiration: form.getItem("expiration").getValue()
+        });
       }, this);
       hBox2.add(confirmBtn);
 

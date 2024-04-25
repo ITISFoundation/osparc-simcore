@@ -73,12 +73,17 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       }
 
       const createAPIKeyWindow = new osparc.desktop.preferences.window.CreateAPIKey();
-      createAPIKeyWindow.addListener("finished", keyLabel => {
+      createAPIKeyWindow.addListener("finished", e => {
+        const formData = e.getData();
         const params = {
           data: {
-            "display_name": keyLabel.getData()
+            "display_name": formData["name"]
           }
         };
+        if (formData["expiration"]) {
+          const seconds = parseInt((new Date(formData["expiration"]).getTime() - new Date().getTime()) / 1000);
+          params.data["expiration"] = seconds
+        }
         createAPIKeyWindow.close();
         this.__requestAPIKeyBtn.setFetching(true);
         osparc.data.Resources.fetch("apiKeys", "post", params)
