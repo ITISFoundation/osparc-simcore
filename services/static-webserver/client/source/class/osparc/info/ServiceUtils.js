@@ -157,7 +157,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
     createThumbnail: function(serviceData, maxWidth, maxHeight) {
       const thumbnail = osparc.info.Utils.createThumbnail(maxWidth, maxHeight);
       thumbnail.set({
-        source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.CardBase.SERVICE_ICON
+        source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.CardBase.PRODUCT_ICON
       });
       return thumbnail;
     },
