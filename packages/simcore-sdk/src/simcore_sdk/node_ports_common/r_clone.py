@@ -162,7 +162,7 @@ async def _get_folder_size(
 
         result = await _async_r_clone_command(
             *r_clone_command,
-            cwd=f"{local_dir}",
+            cwd=f"{local_dir.resolve()}",
         )
 
     rclone_folder_size_result = _RCloneSize.parse_raw(result)
