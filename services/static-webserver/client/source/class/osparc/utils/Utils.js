@@ -569,6 +569,11 @@ qx.Class.define("osparc.utils.Utils", {
       return Math.round(100*bytes/b2gb)/100;
     },
 
+    bytesToGiB: function(bytes) {
+      const b2gb = 1024*1024*1024;
+      return Math.round(100*bytes/b2gb)/100;
+    },
+
     gBToBytes: function(gBytes) {
       const b2gb = 1000*1000*1000;
       return gBytes*b2gb;
