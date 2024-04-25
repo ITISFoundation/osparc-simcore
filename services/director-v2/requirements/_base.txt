@@ -52,12 +52,12 @@ cloudpickle==3.0.0
     # via
     #   dask
     #   distributed
-dask==2023.3.2
+dask==2024.4.2
     # via
     #   dask-gateway
     #   distributed
 dask-gateway==2024.1.0
-distributed==2023.3.2
+distributed==2024.4.2
     # via
     #   dask
     #   dask-gateway
@@ -242,7 +242,7 @@ typing-extensions==4.11.0
     #   uvicorn
 ujson==5.9.0
     # via fastapi
-urllib3==2.0.7
+urllib3==2.2.1
     # via distributed
 uvicorn==0.29.0
     # via fastapi
