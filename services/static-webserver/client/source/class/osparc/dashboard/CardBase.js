@@ -298,7 +298,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyResourceData: function(resourceData) {
-      const defaultThumbnail = this.self().PRODUCT_ICON;
       let uuid = null;
       let owner = "";
       let defaultHits = null;
@@ -329,7 +328,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         owner,
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
         lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
-        icon: resourceData.thumbnail || defaultThumbnail,
+        icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
         state: resourceData.state ? resourceData.state : {},
         classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
         quality: resourceData.quality ? resourceData.quality : null,
