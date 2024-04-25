@@ -6,7 +6,6 @@
 
 from collections.abc import Callable, Iterator
 from http import HTTPStatus
-from typing import Any
 from unittest import mock
 from unittest.mock import MagicMock, call
 
@@ -60,7 +59,6 @@ async def test_delete_project(
     fake_services: Callable,
     assert_get_same_project_caller: Callable,
     mock_dynamic_scheduler_rabbitmq: None,
-    mock_progress_bar: Any,
 ):
     assert client.app
 
@@ -94,7 +92,7 @@ async def test_delete_project(
                 node_id=service["service_uuid"],
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
-                progress=mock_progress_bar.sub_progress(1),
+                progress=mock.ANY,
             )
             for service in fakes
         ]
