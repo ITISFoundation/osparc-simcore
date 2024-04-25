@@ -97,7 +97,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
     __setMaintenance: function(maintenanceData) {
       // ignore old maintenance
       if (new Date(maintenanceData.end).getTime() < new Date().getTime()) {
-        console.error(`Old maintenance "${maintenanceData.reason}" wasn't removed"`);
+        console.warn(`Old maintenance "${maintenanceData.reason}" wasn't removed"`);
         return;
       }
 
