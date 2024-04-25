@@ -130,7 +130,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 async with progress_bar.ProgressBarData(
                     num_steps=1,
                     progress_report_cb=self.task_progress_cb,
-                    progress_desc="uploading ports",
+                    description="uploading ports",
                 ) as root_progress:
                     await upload_outputs(
                         outputs_path=self.outputs_context.outputs_path,

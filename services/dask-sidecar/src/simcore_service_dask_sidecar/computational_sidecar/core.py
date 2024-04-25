@@ -175,7 +175,7 @@ class ComputationalSidecar:
             num_steps=3,
             step_weights=[5 / 100, 90 / 100, 5 / 100],
             progress_report_cb=self.task_publishers.publish_progress,
-            progress_desc="running",
+            description="running",
         ) as progress_bar:
             # PRE-PROCESSING
             await pull_image(
@@ -216,7 +216,7 @@ class ComputationalSidecar:
                 config,
                 name=f"{self.task_parameters.image.split(sep='/')[-1]}_{run_id}",
             ) as container, progress_bar.sub_progress(
-                100, progress_desc="processing"
+                100, description="processing"
             ) as processing_progress_bar, managed_monitor_container_log_task(
                 container=container,
                 progress_regexp=image_labels.get_progress_regexp(),

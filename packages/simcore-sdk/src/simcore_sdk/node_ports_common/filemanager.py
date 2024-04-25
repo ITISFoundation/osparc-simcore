@@ -338,7 +338,7 @@ async def _upload_path(
     )
 
     if not progress_bar:
-        progress_bar = ProgressBarData(num_steps=1, progress_desc="uploading")
+        progress_bar = ProgressBarData(num_steps=1, description="uploading")
 
     is_directory: bool = isinstance(path_to_upload, Path) and path_to_upload.is_dir()
     if is_directory and not await r_clone.is_r_clone_available(r_clone_settings):

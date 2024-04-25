@@ -368,7 +368,7 @@ async def task_restore_state(
             app,
             ProgressType.SERVICE_STATE_PULLING,
         ),
-        progress_desc="pulling states",
+        description="pulling states",
     ) as root_progress:
         await logged_gather(
             *(
@@ -429,7 +429,7 @@ async def task_save_state(
             app,
             ProgressType.SERVICE_STATE_PUSHING,
         ),
-        progress_desc="pushing state",
+        description="pushing state",
     ) as root_progress:
         await logged_gather(
             *[
@@ -474,7 +474,7 @@ async def task_ports_inputs_pull(
             app,
             ProgressType.SERVICE_INPUTS_PULLING,
         ),
-        progress_desc="pulling inputs",
+        description="pulling inputs",
     ) as root_progress:
         transferred_bytes = await nodeports.download_target_ports(
             nodeports.PortTypeName.INPUTS,
@@ -510,7 +510,7 @@ async def task_ports_outputs_pull(
             app,
             ProgressType.SERVICE_OUTPUTS_PULLING,
         ),
-        progress_desc="pulling outputs",
+        description="pulling outputs",
     ) as root_progress:
         transferred_bytes = await nodeports.download_target_ports(
             nodeports.PortTypeName.OUTPUTS,

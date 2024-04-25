@@ -96,7 +96,7 @@ async def _pull_legacy_archive(
     progress_bar: ProgressBarData,
 ) -> None:
     # NOTE: the legacy way of storing states was as zip archives
-    async with progress_bar.sub_progress(steps=2, progress_desc="pulling") as sub_prog:
+    async with progress_bar.sub_progress(steps=2, description="pulling") as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
             archive_file = Path(tmp_dir_name) / __get_s3_name(
                 destination_path, is_archive=True

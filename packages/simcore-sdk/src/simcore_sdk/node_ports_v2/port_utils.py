@@ -201,7 +201,7 @@ async def pull_file_from_store(
         io_log_redirect_cb=io_log_redirect_cb,
         r_clone_settings=r_clone_settings,
         progress_bar=progress_bar
-        or ProgressBarData(num_steps=1, progress_desc="pulling file"),
+        or ProgressBarData(num_steps=1, description="pulling file"),
     )
     # if a file alias is present use it to rename the file accordingly
     if file_to_key_map:
@@ -275,7 +275,7 @@ async def pull_file_from_download_link(
         local_path,
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar
-        or ProgressBarData(num_steps=1, progress_desc="pulling file"),
+        or ProgressBarData(num_steps=1, description="pulling file"),
     )
 
     # if a file alias is present use it to rename the file accordingly
