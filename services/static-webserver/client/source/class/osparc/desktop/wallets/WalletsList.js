@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     this.__addHeader(this.tr("Personal"), true);
     this.__noPersonalWalletsLabel = new qx.ui.basic.Label().set({
-      value: this.tr("No personal wallet found"),
+      value: this.tr("No personal Credit Account found"),
       font: "text-13",
       marginLeft: 10
     });
@@ -34,7 +34,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     this.__addHeader(this.tr("Shared with me"), false);
     this.__noSharedWalletsLabel = new qx.ui.basic.Label().set({
-      value: this.tr("No shared wallets found"),
+      value: this.tr("No shared Credit Accounts found"),
       font: "text-13",
       marginLeft: 10
     });
