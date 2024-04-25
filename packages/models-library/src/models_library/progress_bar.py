@@ -59,12 +59,12 @@ class ProgressReport(BaseModel):
         if struct_msg.sub:
             return f"{msg}/{self._recursive_compose_message(struct_msg.sub)}"
         msg = f"{msg} {struct_msg.current} / {struct_msg.total}"
-        return f"{msg} {struct_msg.unit}" if struct_msg.unit else f"{msg} %"
+        return f"{msg} {struct_msg.unit}" if struct_msg.unit else msg
 
     @property
     def composed_message(self) -> str:
         msg = f"{self.actual_value} / {self.total}"
-        msg = f"{msg} {self.unit}" if self.unit else f"{msg} %"
+        msg = f"{msg} {self.unit}" if self.unit else msg
         if self.message:
             msg = f"{self.message.description} ({msg})"
             if self.message.sub:
