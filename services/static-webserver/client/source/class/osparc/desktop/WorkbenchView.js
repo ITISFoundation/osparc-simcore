@@ -1197,7 +1197,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         const startStopButton = new osparc.node.StartStopButton();
         startStopButton.setNode(node);
-        sections.splice(1, 0, instructions);
+        sections.splice(1, 0, startStopButton);
       }
 
       if (sections.length) {
