@@ -42,9 +42,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     Object.keys(this.self().POS).forEach((_, idx) => {
       grid.setColumnAlign(idx, "left", "middle");
     });
-    const gridLayout = this.__gridLayout = new qx.ui.container.Composite(grid).set({
-      marginLeft: -5
-    });
+    const gridLayout = this.__gridLayout = new qx.ui.container.Composite(grid);
     this._add(gridLayout);
 
     this.set({
