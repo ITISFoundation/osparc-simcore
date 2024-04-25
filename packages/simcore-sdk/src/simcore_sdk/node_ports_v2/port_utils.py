@@ -310,7 +310,9 @@ async def get_file_link_from_url(
         store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
     )
-    log.debug("file meta data for %s found, received ETag %s", new_value, e_tag)
+    log.debug(
+        "file meta data for %s found, received ETag %s", new_value, file_metadata.etag
+    )
     return FileLink(
-        store=file_metadata.location, path=s3_object, e_tag=file_metadata.etag
+        store=file_metadata.location, path=s3_object, eTag=file_metadata.etag
     )
