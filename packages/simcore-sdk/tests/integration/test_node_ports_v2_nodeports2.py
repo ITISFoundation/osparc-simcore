@@ -19,6 +19,7 @@ from uuid import uuid4
 import np_helpers
 import pytest
 import sqlalchemy as sa
+from faker import Faker
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import (
     BaseFileLink,
@@ -747,6 +748,7 @@ async def test_batch_update_inputs_outputs(
     create_special_configuration: Callable,
     port_count: int,
     option_r_clone_settings: RCloneSettings | None,
+    faker: Faker,
 ) -> None:
     outputs = [(f"value_out_{i}", "integer", None) for i in range(port_count)]
     inputs = [(f"value_in_{i}", "integer", None) for i in range(port_count)]
@@ -760,7 +762,7 @@ async def test_batch_update_inputs_outputs(
     )
     await check_config_valid(PORTS, config_dict)
 
-    async with ProgressBarData(num_steps=2) as progress_bar:
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         await PORTS.set_multiple(
             {
                 PortKey(port.key): (k, None)
@@ -769,7 +771,7 @@ async def test_batch_update_inputs_outputs(
             progress_bar=progress_bar,
         )
         # pylint: disable=protected-access
-        assert progress_bar._current_steps == pytest.approx(1)
+        assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
         await PORTS.set_multiple(
             {
                 PortKey(port.key): (k, None)
@@ -777,7 +779,7 @@ async def test_batch_update_inputs_outputs(
             },
             progress_bar=progress_bar,
         )
-        assert progress_bar._current_steps == pytest.approx(2)
+        assert progress_bar._current_steps == pytest.approx(2)  # noqa: SLF001
 
     ports_outputs = await PORTS.outputs
     ports_inputs = await PORTS.inputs
@@ -792,10 +794,9 @@ async def test_batch_update_inputs_outputs(
         assert await ports_inputs[PortKey(item_key)].get() == k
 
     # test missing key raises error
-    with pytest.raises(UnboundPortError):
-        async with ProgressBarData(num_steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
+        with pytest.raises(UnboundPortError):
             await PORTS.set_multiple(
                 {PortKey("missing_key_in_both"): (123132, None)},
                 progress_bar=progress_bar,
             )
-            assert progress_bar._current_steps == pytest.approx(0)
