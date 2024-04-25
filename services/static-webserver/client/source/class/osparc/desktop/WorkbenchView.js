@@ -15,9 +15,7 @@
 
 ************************************************************************ */
 
-/**
- *
- */
+/* eslint-disable no-underscore-dangle */
 
 qx.Class.define("osparc.desktop.WorkbenchView", {
   extend: qx.ui.splitpane.Pane,
@@ -1104,36 +1102,39 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__serviceOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const spacing = 8;
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(spacing*2));
 
       // INPUTS FORM
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
         const inputs = new osparc.desktop.PanelView(this.tr("Inputs"), node.getPropsForm());
+        inputs._innerContainer.set({
+          margin: spacing
+        });
         vBox.add(inputs);
       }
 
       // OUTPUTS
-      const outputsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const outputsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(spacing));
       if (node.hasOutputs()) {
         const nodeOutputs = new osparc.widget.NodeOutputs(node, node.getMetaData().outputs).set({
           offerProbes: true
         });
         outputsBox.add(nodeOutputs);
       }
-      const outputFilesBtn = new qx.ui.form.Button(this.tr("Service data"), "@FontAwesome5Solid/folder-open/14").set({
-        allowGrowX: false,
-        allowGrowY: false
+      const outputs = new osparc.desktop.PanelView(this.tr("Outputs"), outputsBox);
+      outputs._innerContainer.set({
+        margin: spacing
       });
-      osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
-      outputFilesBtn.addListener("execute", () => osparc.node.BaseNodeView.openNodeDataManager(node));
-      outputsBox.add(outputFilesBtn);
-      const outputs = new osparc.desktop.PanelView(this.tr("Outputs"), outputsBox)
       vBox.add(outputs);
 
       // NODE OPTIONS
       const nodeOptions = await this.__getNodeOptionsPage(node);
       if (nodeOptions) {
-        const options = new osparc.desktop.PanelView(this.tr("Options"), nodeOptions)
+        const options = new osparc.desktop.PanelView(this.tr("Options"), nodeOptions);
+        options._innerContainer.set({
+          margin: spacing
+        });
         vBox.add(options);
       }
 
@@ -1149,7 +1150,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         return null;
       }
 
-      const nodeOptionsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const nodeOptionsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
 
       let showStartStopButton = false;
 
@@ -1196,7 +1197,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         const startStopButton = new osparc.node.StartStopButton();
         startStopButton.setNode(node);
-        sections.addAt(1, 0, instructions);
+        sections.splice(1, 0, instructions);
       }
 
       if (sections.length) {
