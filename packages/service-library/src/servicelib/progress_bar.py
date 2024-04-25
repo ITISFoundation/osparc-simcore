@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from inspect import isawaitable
 from typing import Final, Optional, Protocol, runtime_checkable
 
+from models_library.basic_types import IDStr
 from models_library.progress_bar import (
     ProgressReport,
     ProgressStructuredMessage,
@@ -83,7 +84,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             "description": "Optionally defines the step relative weight (defaults to steps of equal weights)"
         },
     )
-    description: str = field(metadata={"description": "define the progress name"})
+    description: IDStr = field(metadata={"description": "define the progress name"})
     progress_unit: ProgressUnit | None = None
     progress_report_cb: AsyncReportCB | ReportCB | None = None
     _current_steps: float = _INITIAL_VALUE
@@ -93,6 +94,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     _last_report_value: float = _INITIAL_VALUE
 
     def __post_init__(self) -> None:
+        parse_obj_as(IDStr, self.description)
         if self.progress_unit is not None:
             parse_obj_as(ProgressUnit, self.progress_unit)
         self._continuous_value_lock = asyncio.Lock()
