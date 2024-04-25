@@ -101,6 +101,34 @@ class CapturedParameter(BaseModel):
         None  # attribute for storing the params value in a concrete response
     )
 
+    class Config:
+        validate_always = True
+        allow_population_by_field_name = True
+
+    def __hash__(self):
+        return hash(
+            self.name + self.in_
+        )  # it is assumed name is unique within a given path
+
+    def __eq__(self, other):
+        return self.name == other.name and self.in_ == other.in_
+
+    @property
+    def is_path(self) -> bool:
+        return self.in_ == "path"
+
+    @property
+    def is_header(self) -> bool:
+        return self.in_ == "header"
+
+    @property
+    def is_query(self) -> bool:
+        return self.in_ == "query"
+
+    @property
+    def respx_lookup(self) -> str:
+        return rf"(?P<{self.name}>{self.schema_.regex_pattern})"
+
 
 class PathDescription(BaseModel):
     path: str
