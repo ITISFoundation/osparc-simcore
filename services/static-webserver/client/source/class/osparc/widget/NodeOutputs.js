@@ -38,7 +38,6 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
     const grid = new qx.ui.layout.Grid(5, 5);
     grid.setColumnMaxWidth(this.self().POS.NAME, 140);
-    grid.setColumnFlex(this.self().POS.NAME, 1);
     grid.setColumnFlex(this.self().POS.VALUE, 1);
     Object.keys(this.self().POS).forEach((_, idx) => {
       grid.setColumnAlign(idx, "left", "middle");
