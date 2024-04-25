@@ -128,12 +128,8 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
           orgServices.forEach(orgService => {
             const orgServiceCopy = osparc.utils.Utils.deepCloneObject(orgService);
             orgServiceCopy["orgId"] = gid;
-            if (osparc.data.model.Node.isDynamic(orgServiceCopy)) {
-              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.DYNAMIC_SERVICE_ICON+"24";
-            } else if (osparc.data.model.Node.isComputational(orgServiceCopy)) {
-              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.COMP_SERVICE_ICON+"24";
-            } else {
-              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.SERVICE_ICON+"24";
+            if (orgServiceCopy["thumbnail"] === null) {
+              orgServiceCopy["thumbnail"] = osparc.dashboard.CardBase.PRODUCT_ICON;
             }
             servicesModel.append(qx.data.marshal.Json.createModel(orgServiceCopy));
           });
