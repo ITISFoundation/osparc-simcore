@@ -40,12 +40,15 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
 
     const fl = this._getLayout();
     fl.setSpacingY(0); // so that the "excluded" rows do not take any space
-    fl.setColumnFlex(this.self().GRID_POS.LABEL, 0);
-    fl.setColumnAlign(this.self().GRID_POS.LABEL, "left", "top");
+    fl.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 60);
+    fl.setColumnMaxWidth(this.self().GRID_POS.CTRL_FIELD, 200);
+    fl.setColumnFlex(this.self().GRID_POS.LABEL, 1);
     fl.setColumnFlex(this.self().GRID_POS.INFO, 0);
-    fl.setColumnAlign(this.self().GRID_POS.INFO, "left", "middle");
     fl.setColumnFlex(this.self().GRID_POS.CTRL_FIELD, 1);
-    fl.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 50);
+    fl.setColumnFlex(this.self().GRID_POS.UNIT, 0);
+    fl.setColumnFlex(this.self().GRID_POS.FIELD_LINK_UNLINK, 0);
+    fl.setColumnAlign(this.self().GRID_POS.LABEL, "left", "top");
+    fl.setColumnAlign(this.self().GRID_POS.INFO, "left", "middle");
   },
 
   properties: {

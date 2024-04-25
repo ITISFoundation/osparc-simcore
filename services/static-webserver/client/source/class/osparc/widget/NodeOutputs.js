@@ -37,12 +37,18 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     this._setLayout(new qx.ui.layout.VBox(15));
 
     const grid = new qx.ui.layout.Grid(5, 5);
-    grid.setColumnMaxWidth(this.self().POS.NAME, 140);
+    grid.setColumnFlex(this.self().POS.NAME, 1);
+    grid.setColumnFlex(this.self().POS.INFO, 0);
+    grid.setColumnFlex(this.self().POS.ICON, 0);
     grid.setColumnFlex(this.self().POS.VALUE, 1);
+    grid.setColumnFlex(this.self().POS.UNIT, 0);
+    grid.setColumnFlex(this.self().POS.PROBE, 0);
     Object.keys(this.self().POS).forEach((_, idx) => {
       grid.setColumnAlign(idx, "left", "middle");
     });
-    const gridLayout = this.__gridLayout = new qx.ui.container.Composite(grid);
+    const gridLayout = this.__gridLayout = new qx.ui.container.Composite(grid).set({
+      allowGrowX: false
+    });
     this._add(gridLayout);
 
     this.set({

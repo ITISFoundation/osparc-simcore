@@ -1107,7 +1107,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       // INPUTS FORM
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
-        const inputs = new osparc.desktop.PanelView(this.tr("Inputs"), node.getPropsForm());
+        const inputsForm = node.getPropsForm().set({
+          allowGrowX: false
+        });
+        const inputs = new osparc.desktop.PanelView(this.tr("Inputs"), inputsForm);
         inputs._innerContainer.set({
           margin: spacing
         });
