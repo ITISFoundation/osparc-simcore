@@ -158,7 +158,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       return text;
     },
 
-    drawAnnotationNote: function(draw, x, y, destinataryName, note) {
+    drawAnnotationNote: function(draw, x, y, recipientName, note) {
       const lines = note.split("\n");
       const width = 200;
       const minHeight = 120;
@@ -224,7 +224,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       gNote.add(separator);
 
       const defaultFont = osparc.utils.Utils.getDefaultFont();
-      const title = gNote.text(destinataryName)
+      const title = gNote.text(recipientName)
         .font({
           fill: "#000000",
           size: (defaultFont["size"]+1) + "px",

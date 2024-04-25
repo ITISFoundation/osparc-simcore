@@ -37,7 +37,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   },
 
   events: {
-    "addEditors": "qx.event.type.Data"
+    "addCollaborators": "qx.event.type.Data"
   },
 
   members: {
@@ -166,7 +166,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         addCollabs.push(collabId);
       }
       if (addCollabs.length) {
-        this.fireDataEvent("addEditors", addCollabs);
+        this.fireDataEvent("addCollaborators", addCollabs);
       }
       // The parent class will close the window
     }

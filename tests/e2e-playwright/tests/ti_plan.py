@@ -7,30 +7,26 @@
 
 import re
 from http import HTTPStatus
-from typing import Final
 
-from playwright.sync_api import APIRequestContext, Page
+from playwright.sync_api import APIRequestContext, Page, WebSocket
 from pydantic import AnyUrl
-from pytest_simcore.playwright_utils import on_web_socket_default_handler
+from pytest_simcore.playwright_utils import SocketIOOsparcMessagePrinter
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-projects_uuid_pattern: Final[re.Pattern] = re.compile(
-    r"/projects/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
-)
-
 
 def test_tip(
     page: Page,
-    log_in_and_out: None,
+    log_in_and_out: WebSocket,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
     product_billable: bool,
 ):
-    # connect and listen to websocket
-    page.on("websocket", on_web_socket_default_handler)
+    handler = SocketIOOsparcMessagePrinter()
+    # log_in_and_out is the initial websocket
+    log_in_and_out.on("framereceived", handler)
 
     # open studies tab and filter
     page.get_by_test_id("studiesTabBtn").click()
@@ -54,6 +50,12 @@ def test_tip(
         print("node_id: ", node_id)
         node_ids.append(node_id)
 
+    # let it start or force
+    page.wait_for_timeout(5000)
+    start_button = page.get_by_test_id("Start_" + node_ids[0])
+    if start_button.is_visible() and start_button.is_enabled():
+        start_button.click()
+
     # Electrode Selector
     es_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[0]}"]')
     es_page.get_by_test_id("TargetStructure_Selector").click(timeout=300000)
@@ -71,6 +73,8 @@ def test_tip(
         electrode_id = "Electrode_" + selection[1]
         es_page.get_by_test_id(group_id).click()
         es_page.get_by_test_id(electrode_id).click()
+    # configuration done, push output
+    page.wait_for_timeout(1000)
     es_page.get_by_test_id("FinishSetUp").click()
     page.wait_for_timeout(10000)
     # check outputs
@@ -81,6 +85,12 @@ def test_tip(
 
     # Move to next step
     page.get_by_test_id("AppMode_NextBtn").click()
+
+    # let it start or force
+    page.wait_for_timeout(5000)
+    start_button = page.get_by_test_id("Start_" + node_ids[1])
+    if start_button.is_visible() and start_button.is_enabled():
+        start_button.click()
 
     # Optimal Configuration Identification
     ti_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[1]}"]')
@@ -106,6 +116,12 @@ def test_tip(
 
     # Move to next step
     page.get_by_test_id("AppMode_NextBtn").click()
+
+    # let it start or force
+    page.wait_for_timeout(5000)
+    start_button = page.get_by_test_id("Start_ " + node_ids[2])
+    if start_button.is_visible() and start_button.is_enabled():
+        start_button.click()
 
     # Sim4Life PostPro
     s4l_postpro_page = page.frame_locator(f'[osparc-test-id="iframe_{node_ids[2]}"]')
