@@ -129,6 +129,7 @@ async def test_pull_image(
     async with progress_bar.ProgressBarData(
         num_steps=layer_information.layers_total_size,
         progress_report_cb=mocked_progress_cb,
+        progress_unit="Byte",
         description=faker.pystr(),
     ) as main_progress_bar:
         await pull_image(
@@ -159,6 +160,7 @@ async def test_pull_image(
         num_steps=layer_information.layers_total_size,
         progress_report_cb=mocked_progress_cb,
         description=faker.pystr(),
+        progress_unit="Byte",
     ) as main_progress_bar:
         await pull_image(
             image,
