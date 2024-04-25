@@ -19,7 +19,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Final
 from unittest import mock
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import aiopg.sa
