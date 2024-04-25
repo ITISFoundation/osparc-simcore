@@ -1,8 +1,8 @@
-coverage==7.5.1
+coverage==7.5.0
     # via pytest-cov
 exceptiongroup==1.2.1
     # via pytest
-faker==25.0.1
+faker==24.11.0
 icdiff==2.0.7
     # via pytest-icdiff
 iniconfig==2.0.0

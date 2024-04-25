@@ -12,9 +12,9 @@ cloudpickle==3.0.0
     # via
     #   dask
     #   distributed
-dask==2024.5.0
+dask==2024.4.2
     # via distributed
-distributed==2024.5.0
+distributed==2024.4.2
     # via dask
 dnspython==2.6.1
     # via email-validator
@@ -43,7 +43,7 @@ mdurl==0.1.2
     # via markdown-it-py
 msgpack==1.0.8
     # via distributed
-orjson==3.10.3
+orjson==3.10.1
 packaging==24.0
     # via
     #   dask
@@ -61,7 +61,7 @@ pyyaml==6.0.1
     # via
     #   dask
     #   distributed
-referencing==0.35.1
+referencing==0.35.0
     # via
     #   jsonschema
     #   jsonschema-specifications
