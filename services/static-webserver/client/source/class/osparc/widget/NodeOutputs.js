@@ -37,7 +37,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     this._setLayout(new qx.ui.layout.VBox(15));
 
     const grid = new qx.ui.layout.Grid(5, 5);
-    grid.setColumnFlex(this.self().POS.NAME, 1);
+    grid.setColumnFlex(this.self().POS.LABEL, 1);
     grid.setColumnFlex(this.self().POS.INFO, 0);
     grid.setColumnFlex(this.self().POS.ICON, 0);
     grid.setColumnFlex(this.self().POS.VALUE, 1);
@@ -91,7 +91,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
   statics: {
     POS: {
-      NAME: {
+      LABEL: {
         col: 0
       },
       INFO: {
@@ -124,12 +124,12 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         const portKey = portKeys[i];
         const port = ports[portKey];
 
-        const name = new qx.ui.basic.Label(port.label).set({
+        const label = new qx.ui.basic.Label(port.label).set({
           toolTipText: port.label
         });
-        this.__gridLayout.add(name, {
+        this.__gridLayout.add(label, {
           row: i,
-          column: this.self().POS.NAME.col
+          column: this.self().POS.LABEL.col
         });
 
         const infoButton = new osparc.ui.hint.InfoHint(port.description);
