@@ -6,19 +6,47 @@ from pydantic import BaseModel
 ProgressUnit: TypeAlias = Literal["Byte"]
 
 
-class StructuredMessage(BaseModel):
+class ProgressStructuredMessage(BaseModel):
     description: str
     current: float
     total: int
     unit: str | None
-    sub: "StructuredMessage | None"
+    sub: "ProgressStructuredMessage | None"
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [
+                {
+                    "description": "some description",
+                    "current": 12.2,
+                    "total": 123,
+                },
+                {
+                    "description": "some description",
+                    "current": 12.2,
+                    "total": 123,
+                    "unit": "Byte",
+                },
+                {
+                    "description": "downloading",
+                    "current": 2.0,
+                    "total": 5,
+                    "sub": {
+                        "description": "port 2",
+                        "current": 12.2,
+                        "total": 123,
+                        "unit": "Byte",
+                    },
+                },
+            ]
+        }
 
 
 class ProgressReport(BaseModel):
     actual_value: float
     total: float
     unit: ProgressUnit | None = None
-    message: StructuredMessage | None = None
+    message: ProgressStructuredMessage | None = None
 
     @property
     def percent_value(self) -> float:
@@ -26,7 +54,7 @@ class ProgressReport(BaseModel):
             return max(min(self.actual_value / self.total, 1.0), 0.0)
         return 0
 
-    def _recursive_compose_message(self, struct_msg: StructuredMessage) -> str:
+    def _recursive_compose_message(self, struct_msg: ProgressStructuredMessage) -> str:
         msg = f"{struct_msg.description}"
         if struct_msg.sub:
             return f"{msg}/{self._recursive_compose_message(struct_msg.sub)}"
@@ -52,14 +80,20 @@ class ProgressReport(BaseModel):
                 {
                     "actual_value": 0.3,
                     "total": 1.0,
-                    "message": "downloading 0.3/1.0",
                 },
                 # typical byte progress
                 {
                     "actual_value": 128.5,
                     "total": 1024.0,
                     "unit": "Byte",
-                    "message": "downloading 128.5/1024.0 Byte",
+                },
+                # typical progress with sub progresses
+                {
+                    "actual_value": 0.3,
+                    "total": 1.0,
+                    "message": ProgressStructuredMessage.Config.schema_extra[
+                        "examples"
+                    ][2],
                 },
             ]
         }

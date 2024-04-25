@@ -9,7 +9,7 @@ from unittest import mock
 
 import pytest
 from faker import Faker
-from models_library.progress_bar import ProgressReport, StructuredMessage
+from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 from servicelib.progress_bar import (
@@ -64,7 +64,7 @@ async def test_progress_bar_progress_report_cb(
                 actual_value=0,
                 total=outer_num_steps,
                 unit="Byte",
-                message=StructuredMessage(
+                message=ProgressStructuredMessage(
                     description=root.description,
                     current=0.0,
                     total=outer_num_steps,
@@ -82,7 +82,7 @@ async def test_progress_bar_progress_report_cb(
                 actual_value=1,
                 total=outer_num_steps,
                 unit="Byte",
-                message=StructuredMessage(
+                message=ProgressStructuredMessage(
                     description=root.description,
                     current=1.0,
                     total=outer_num_steps,
@@ -168,7 +168,7 @@ async def test_progress_bar_always_reports_0_on_creation_and_1_on_finish(
             ProgressReport(
                 actual_value=0,
                 total=num_steps,
-                message=StructuredMessage(
+                message=ProgressStructuredMessage(
                     description=root.description,
                     current=0.0,
                     total=num_steps,
@@ -184,7 +184,7 @@ async def test_progress_bar_always_reports_0_on_creation_and_1_on_finish(
         ProgressReport(
             actual_value=num_steps,
             total=num_steps,
-            message=StructuredMessage(
+            message=ProgressStructuredMessage(
                 description=root.description,
                 current=num_steps,
                 total=num_steps,
@@ -216,7 +216,7 @@ async def test_progress_bar_always_reports_1_on_finish(
             ProgressReport(
                 actual_value=0,
                 total=num_steps,
-                message=StructuredMessage(
+                message=ProgressStructuredMessage(
                     description=root.description,
                     current=0,
                     total=num_steps,
@@ -236,7 +236,7 @@ async def test_progress_bar_always_reports_1_on_finish(
         ProgressReport(
             actual_value=num_steps,
             total=num_steps,
-            message=StructuredMessage(
+            message=ProgressStructuredMessage(
                 description=root.description,
                 current=num_steps,
                 total=num_steps,
@@ -320,7 +320,7 @@ async def test_weighted_progress_bar(mocked_progress_bar_cb: mock.Mock, faker: F
             ProgressReport(
                 actual_value=0,
                 total=outer_num_steps,
-                message=StructuredMessage(
+                message=ProgressStructuredMessage(
                     description=root.description,
                     current=0,
                     total=outer_num_steps,
@@ -348,7 +348,7 @@ async def test_weighted_progress_bar(mocked_progress_bar_cb: mock.Mock, faker: F
         ProgressReport(
             actual_value=outer_num_steps,
             total=outer_num_steps,
-            message=StructuredMessage(
+            message=ProgressStructuredMessage(
                 description=root.description,
                 current=outer_num_steps,
                 total=outer_num_steps,
@@ -375,7 +375,7 @@ async def test_weighted_progress_bar_with_weighted_sub_progress(
             ProgressReport(
                 actual_value=0,
                 total=outer_num_steps,
-                message=StructuredMessage(
+                message=ProgressStructuredMessage(
                     description=root.description,
                     current=0,
                     total=outer_num_steps,
@@ -441,7 +441,7 @@ async def test_weighted_progress_bar_with_weighted_sub_progress(
         ProgressReport(
             actual_value=outer_num_steps,
             total=outer_num_steps,
-            message=StructuredMessage(
+            message=ProgressStructuredMessage(
                 description=root.description,
                 current=outer_num_steps,
                 total=outer_num_steps,

@@ -4,7 +4,11 @@ from dataclasses import dataclass, field
 from inspect import isawaitable
 from typing import Final, Optional, Protocol, runtime_checkable
 
-from models_library.progress_bar import ProgressReport, ProgressUnit, StructuredMessage
+from models_library.progress_bar import (
+    ProgressReport,
+    ProgressStructuredMessage,
+    ProgressUnit,
+)
 from pydantic import parse_obj_as
 
 from .logging_utils import log_catch
@@ -114,8 +118,8 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     def is_running(self) -> bool:
         return self._current_steps < self.num_steps
 
-    def compute_report_message_stuct(self) -> StructuredMessage:
-        self_report = StructuredMessage(
+    def compute_report_message_stuct(self) -> ProgressStructuredMessage:
+        self_report = ProgressStructuredMessage(
             description=self.description,
             current=self._current_steps,
             total=self.num_steps,
