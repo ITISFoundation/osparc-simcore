@@ -398,7 +398,7 @@ async def upload_file_to_presigned_links(
             )
         )
         sub_progress = await stack.enter_async_context(
-            progress_bar.sub_progress(steps=file_siz, description="uploading")
+            progress_bar.sub_progress(steps=file_size, description="uploading")
         )
 
         indexed_urls: list[tuple[int, AnyUrl]] = list(enumerate(file_upload_links.urls))

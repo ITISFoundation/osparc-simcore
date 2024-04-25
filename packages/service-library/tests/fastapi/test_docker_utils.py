@@ -10,6 +10,7 @@ from unittest import mock
 from unittest.mock import call
 
 import pytest
+from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.progress_bar import ProgressReport
 from pydantic import ByteSize, parse_obj_as
@@ -117,6 +118,7 @@ async def test_pull_image(
     mocked_log_cb: mock.AsyncMock,
     mocked_progress_cb: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
+    faker: Faker,
 ):
     await remove_images_from_host([image])
     layer_information = await retrieve_image_layer_information(image, registry_settings)
@@ -126,6 +128,7 @@ async def test_pull_image(
         num_steps=layer_information.layers_total_size,
         progress_report_cb=mocked_progress_cb,
         progress_unit="Byte",
+        description=faker.pystr(),
     ) as main_progress_bar:
 
         await pull_image(
@@ -156,6 +159,7 @@ async def test_pull_image(
         num_steps=layer_information.layers_total_size,
         progress_report_cb=mocked_progress_cb,
         progress_unit="Byte",
+        description=faker.pystr(),
     ) as main_progress_bar:
         await pull_image(
             image,
@@ -187,6 +191,7 @@ async def test_pull_image_without_layer_information(
     mocked_log_cb: mock.AsyncMock,
     mocked_progress_cb: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
+    faker: Faker,
 ):
     await remove_images_from_host([image])
     layer_information = await retrieve_image_layer_information(image, registry_settings)
@@ -198,6 +203,7 @@ async def test_pull_image_without_layer_information(
         num_steps=fake_number_of_steps,
         progress_report_cb=mocked_progress_cb,
         progress_unit="Byte",
+        description=faker.pystr(),
     ) as main_progress_bar:
         await pull_image(
             image, registry_settings, main_progress_bar, mocked_log_cb, None
@@ -224,6 +230,7 @@ async def test_pull_image_without_layer_information(
         num_steps=1,
         progress_report_cb=mocked_progress_cb,
         progress_unit="Byte",
+        description=faker.pystr(),
     ) as main_progress_bar:
         await pull_image(
             image, registry_settings, main_progress_bar, mocked_log_cb, None

@@ -228,7 +228,9 @@ async def _sync_sources(
         )
 
         async with progress_bar.sub_progress(
-            steps=folder_size, progress_unit="Byte", description="transferring"
+            steps=folder_size,
+            progress_unit="Byte",
+            description=f"transferring {local_dir.name}",
         ) as sub_progress:
             r_clone_log_parsers: list[BaseRCloneLogParser] = (
                 [DebugLogParser()] if debug_logs else []
