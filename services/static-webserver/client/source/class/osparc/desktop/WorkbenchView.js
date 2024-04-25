@@ -1108,33 +1108,33 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       // INPUTS FORM
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
-        vBox.add(node.getPropsForm());
+        const inputs = new osparc.desktop.PanelView(this.tr("Inputs"), node.getPropsForm());
+        vBox.add(inputs);
       }
 
+      // OUTPUTS
+      const outputsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       if (node.hasOutputs()) {
         const nodeOutputs = new osparc.widget.NodeOutputs(node, node.getMetaData().outputs).set({
           offerProbes: true
         });
-        vBox.add(nodeOutputs);
+        outputsBox.add(nodeOutputs);
       }
-
-      // OUTPUTS
       const outputFilesBtn = new qx.ui.form.Button(this.tr("Service data"), "@FontAwesome5Solid/folder-open/14").set({
         allowGrowX: false,
         allowGrowY: false
       });
       osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
       outputFilesBtn.addListener("execute", () => osparc.node.BaseNodeView.openNodeDataManager(node));
-      vBox.add(outputFilesBtn);
+      outputsBox.add(outputFilesBtn);
+      const outputs = new osparc.desktop.PanelView(this.tr("Outputs"), outputsBox)
+      vBox.add(outputs);
 
       // NODE OPTIONS
       const nodeOptions = await this.__getNodeOptionsPage(node);
       if (nodeOptions) {
-        const nodeOptionsTitle = new qx.ui.basic.Label(this.tr("Service Options")).set({
-          font: "text-14"
-        });
-        vBox.add(nodeOptionsTitle);
-        vBox.add(nodeOptions);
+        const options = new osparc.desktop.PanelView(this.tr("Options"), nodeOptions)
+        vBox.add(options);
       }
 
       const scrollContainer = new qx.ui.container.Scroll();
