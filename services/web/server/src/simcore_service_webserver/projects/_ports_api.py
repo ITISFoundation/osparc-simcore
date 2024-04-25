@@ -213,7 +213,7 @@ async def get_project_outputs(
         if isinstance(v, _OutputPortInfo):
             task_node_ids.add(v.task_node_id)
 
-    # Updates prefious results with task computations to avoid issue https://github.com/ITISFoundation/osparc-simcore/pull/5721
+    # Updates previous results with task computations to avoid issue https://github.com/ITISFoundation/osparc-simcore/pull/5721
     tasks_outputs = await _get_computation_tasks_outputs(
         app, project_id=project_id, nodes_ids=task_node_ids
     )
