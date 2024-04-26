@@ -47,9 +47,9 @@ class ApiServerProfilerMiddleware:
     https://fastapi.tiangolo.com/advanced/middleware/#advanced-middleware
     """
 
-    def __init__(self, app: FastAPI):
+    def __init__(self, app: FastAPI, app_name: str):
         self._app: FastAPI = app
-        self._profile_header_trigger: str = "x-profile-api-server"
+        self._profile_header_trigger: str = f"x-profile-{app_name}"
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -61,7 +61,7 @@ class ApiServerProfilerMiddleware:
         request_headers = dict(request.headers)
         response_headers: dict[bytes, bytes] = {}
 
-        if request_headers.get(self._profile_header_trigger) == "true":
+        if bool(request_headers.get(self._profile_header_trigger)):
             request_headers.pop(self._profile_header_trigger)
             scope["headers"] = [
                 (k.encode("utf8"), v.encode("utf8")) for k, v in request_headers.items()
