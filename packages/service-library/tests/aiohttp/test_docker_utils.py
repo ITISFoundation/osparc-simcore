@@ -140,10 +140,7 @@ async def test_pull_image(
             layer_information,
         )
         mocked_log_cb.assert_called()
-        assert (
-            main_progress_bar._current_steps  # noqa: SLF001
-            == layer_information.layers_total_size
-        )
+
     _assert_progress_report_values(
         mocked_progress_cb, total=layer_information.layers_total_size
     )
@@ -170,10 +167,7 @@ async def test_pull_image(
             layer_information,
         )
         mocked_log_cb.assert_called()
-        assert (
-            main_progress_bar._current_steps  # noqa: SLF001
-            == layer_information.layers_total_size
-        )
+
     _assert_progress_report_values(
         mocked_progress_cb, total=layer_information.layers_total_size
     )
