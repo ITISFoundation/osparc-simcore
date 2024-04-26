@@ -338,7 +338,7 @@ async def _upload_path(
     )
 
     if not progress_bar:
-        progress_bar = ProgressBarData(num_steps=1)
+        progress_bar = ProgressBarData(num_steps=1, description="uploading")
 
     is_directory: bool = isinstance(path_to_upload, Path) and path_to_upload.is_dir()
     if is_directory and not await r_clone.is_r_clone_available(r_clone_settings):
@@ -490,12 +490,18 @@ async def entry_exists(
         return False
 
 
+@dataclass(kw_only=True, frozen=True, slots=True)
+class FileMetaData:
+    location: LocationID
+    etag: ETag
+
+
 async def get_file_metadata(
     user_id: UserID,
     store_id: LocationID,
     s3_object: StorageFileID,
     client_session: ClientSession | None = None,
-) -> tuple[LocationID, ETag]:
+) -> FileMetaData:
     """
     :raises S3InvalidPathError
     """
@@ -507,7 +513,25 @@ async def get_file_metadata(
     )
     assert file_metadata.location_id is not None  # nosec
     assert file_metadata.entity_tag is not None  # nosec
-    return (file_metadata.location_id, file_metadata.entity_tag)
+    return FileMetaData(
+        location=file_metadata.location_id,
+        etag=file_metadata.entity_tag,
+    )
+
+
+async def get_path_size(
+    user_id: UserID,
+    store_id: LocationID,
+    s3_object: StorageFileID,
+    client_session: ClientSession | None = None,
+) -> ByteSize:
+    file_metadata: FileMetaDataGet = await _get_file_meta_data(
+        user_id=user_id,
+        store_id=store_id,
+        s3_object=s3_object,
+        client_session=client_session,
+    )
+    return ByteSize(file_metadata.file_size)
 
 
 async def delete_file(
