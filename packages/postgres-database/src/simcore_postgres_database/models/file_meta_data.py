@@ -54,5 +54,6 @@ file_meta_data = sa.Table(
         nullable=True,
         server_default=sa.null(),
         doc="SHA256 checksum of the file content",
+        index=True,
     ),
 )
