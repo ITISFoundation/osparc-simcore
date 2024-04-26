@@ -40,7 +40,7 @@ def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, An
     raise RuntimeError(msg)
 
 
-class ApiServerProfilerMiddleware:
+class ProfilerMiddleware:
     """Following
     https://www.starlette.io/middleware/#cleanup-and-error-handling
     https://www.starlette.io/middleware/#reusing-starlette-components
@@ -61,7 +61,7 @@ class ApiServerProfilerMiddleware:
         request_headers = dict(request.headers)
         response_headers: dict[bytes, bytes] = {}
 
-        if bool(request_headers.get(self._profile_header_trigger)):
+        if request_headers.get(self._profile_header_trigger) is not None:
             request_headers.pop(self._profile_header_trigger)
             scope["headers"] = [
                 (k.encode("utf8"), v.encode("utf8")) for k, v in request_headers.items()

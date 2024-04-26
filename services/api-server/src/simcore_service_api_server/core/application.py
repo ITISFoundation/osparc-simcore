@@ -121,9 +121,9 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         ),
     )
     if settings.API_SERVER_DEV_FEATURES_ENABLED:
-        from ._profiler_middleware import ApiServerProfilerMiddleware
+        from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 
-        app.add_middleware(ApiServerProfilerMiddleware, app_name="api-server")
+        app.add_middleware(ProfilerMiddleware, app_name="api-server")
 
     if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
