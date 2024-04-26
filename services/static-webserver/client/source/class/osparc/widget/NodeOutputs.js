@@ -91,24 +91,12 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
   statics: {
     POS: {
-      LABEL: {
-        col: 0
-      },
-      INFO: {
-        col: 1
-      },
-      ICON: {
-        col: 2
-      },
-      VALUE: {
-        col: 3
-      },
-      UNIT: {
-        col: 4
-      },
-      PROBE: {
-        col: 5
-      }
+      LABEL: 0,
+      INFO: 1,
+      ICON: 2,
+      VALUE: 3,
+      UNIT: 4,
+      PROBE: 5
     }
   },
 
@@ -129,19 +117,19 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         });
         this.__gridLayout.add(label, {
           row: i,
-          column: this.self().POS.LABEL.col
+          column: this.self().POS.LABEL
         });
 
         const infoButton = new osparc.ui.hint.InfoHint(port.description);
         this.__gridLayout.add(infoButton, {
           row: i,
-          column: this.self().POS.INFO.col
+          column: this.self().POS.INFO
         });
 
         const icon = new qx.ui.basic.Image(osparc.data.Converters.fromTypeToIcon(port.type));
         this.__gridLayout.add(icon, {
           row: i,
-          column: this.self().POS.ICON.col
+          column: this.self().POS.ICON
         });
 
         const value = port.value || null;
@@ -149,7 +137,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           const valueLink = new osparc.ui.basic.LinkLabel();
           this.__gridLayout.add(valueLink, {
             row: i,
-            column: this.self().POS.VALUE.col
+            column: this.self().POS.VALUE
           });
           if ("store" in value) {
             // it's a file
@@ -179,14 +167,14 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           }
           this.__gridLayout.add(valueEntry, {
             row: i,
-            column: this.self().POS.VALUE.col
+            column: this.self().POS.VALUE
           });
         }
 
         const unit = new qx.ui.basic.Label(port.unitShort || "");
         this.__gridLayout.add(unit, {
           row: i,
-          column: this.self().POS.UNIT.col
+          column: this.self().POS.UNIT
         });
 
         const probeBtn = new qx.ui.form.Button().set({
@@ -204,7 +192,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         }));
         this.__gridLayout.add(probeBtn, {
           row: i,
-          column: this.self().POS.PROBE.col
+          column: this.self().POS.PROBE
         });
       }
     }
