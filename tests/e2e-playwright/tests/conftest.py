@@ -14,6 +14,7 @@ from collections.abc import Callable, Iterator
 import pytest
 from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
+from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import (
@@ -75,16 +76,23 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="Service Key",
     )
+    group.addoption(
+        "--user-agent",
+        action="store",
+        type=str,
+        default="e2e-playwright",
+        help="defines a specific user agent osparc header",
+    )
 
 
 @pytest.fixture(autouse=True)
-def osparc_test_id_attribute(playwright):
+def osparc_test_id_attribute(playwright: Playwright) -> None:
     # Set a custom test id attribute
     playwright.selectors.set_test_id_attribute("osparc-test-id")
 
 
 @pytest.fixture
-def api_request_context(context: BrowserContext):
+def api_request_context(context: BrowserContext) -> APIRequestContext:
     return context.request
 
 
@@ -143,6 +151,22 @@ def service_key(request: pytest.FixtureRequest) -> str:
 @pytest.fixture
 def auto_register(request: pytest.FixtureRequest) -> bool:
     return bool(request.config.getoption("--autoregister"))
+
+
+@pytest.fixture
+def user_agent(request: pytest.FixtureRequest) -> str:
+    return str(request.config.getoption("--user-agent"))
+
+
+@pytest.fixture(scope="session")
+def browser_context_args(
+    browser_context_args: dict[str, dict[str, str]], user_agent: str
+) -> dict[str, dict[str, str]]:
+    # Override browser context options, see https://playwright.dev/python/docs/test-runners#fixtures
+    return {
+        **browser_context_args,
+        "extra_http_headers": {"X-Simcore-User-Agent": user_agent},
+    }
 
 
 @pytest.fixture
