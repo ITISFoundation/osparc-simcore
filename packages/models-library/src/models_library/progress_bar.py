@@ -44,10 +44,13 @@ class ProgressStructuredMessage(BaseModel):
         }
 
 
+UNITLESS = None
+
+
 class ProgressReport(BaseModel):
     actual_value: float
-    total: float
-    unit: ProgressUnit | None = None
+    total: float = 1.0
+    unit: ProgressUnit | None = UNITLESS
     message: ProgressStructuredMessage | None = None
 
     @property
@@ -61,12 +64,12 @@ class ProgressReport(BaseModel):
         if struct_msg.sub:
             return f"{msg}/{self._recursive_compose_message(struct_msg.sub)}"
         msg = f"{msg} {struct_msg.current} / {struct_msg.total}"
-        return f"{msg} {struct_msg.unit}" if struct_msg.unit else msg
+        return f"{msg} {struct_msg.unit}" if struct_msg.unit is not UNITLESS else msg
 
     @property
     def composed_message(self) -> str:
         msg = f"{self.actual_value} / {self.total}"
-        msg = f"{msg} {self.unit}" if self.unit else msg
+        msg = f"{msg} {self.unit}" if self.unit is not UNITLESS else msg
         if self.message:
             msg = f"{self.message.description} ({msg})"
             if self.message.sub:
