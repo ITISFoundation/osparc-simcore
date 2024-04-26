@@ -1153,59 +1153,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         return null;
       }
 
-      const nodeOptionsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
-
-      let showStartStopButton = false;
-
-      const sections = [];
-
-      // Life Cycle
-      if (
-        node.isDynamic() &&
-        (node.isUpdatable() || node.isDeprecated() || node.isRetired())
-      ) {
-        const lifeCycleView = new osparc.node.LifeCycleView(node);
-        node.addListener("versionChanged", () => this.__populateSecondPanel(node));
-        sections.push(lifeCycleView);
-        showStartStopButton = true;
-      }
-
-      // Boot Options
-      if (node.hasBootModes()) {
-        const bootOptionsView = new osparc.node.BootOptionsView(node);
-        node.addListener("bootModeChanged", () => this.__populateSecondPanel(node));
-        sections.push(bootOptionsView);
-        showStartStopButton = true;
-      }
-
-      // Update Resource Limits
-      if (
-        await osparc.data.Permissions.getInstance().checkCanDo("override_services_specifications") &&
-        (node.isComputational() || node.isDynamic())
-      ) {
-        const updateResourceLimitsView = new osparc.node.UpdateResourceLimitsView(node);
-        node.addListener("limitsChanged", () => this.__populateSecondPanel(node));
-        sections.push(updateResourceLimitsView);
-        showStartStopButton |= node.isDynamic();
-      }
-
-      if (showStartStopButton) {
-        // Only available to dynamic services
-        const instructions = new qx.ui.basic.Label(this.tr("To proceed with the following actions, the service needs to be Stopped.")).set({
-          font: "text-13",
-          rich: true,
-          wrap: true
+      const nodeOptions = new osparc.widget.NodeOptions(node);
+      await nodeOptions.buildLayout();
+      if (nodeOptions._getChildren().length) {
+        [
+          "versionChanged",
+          "bootModeChanged",
+          "limitsChanged"
+        ].forEach(eventName => {
+          nodeOptions.addListener(eventName, () => this.__populateSecondPanel(node));
         });
-        sections.splice(0, 0, instructions);
-
-        const startStopButton = new osparc.node.StartStopButton();
-        startStopButton.setNode(node);
-        sections.splice(1, 0, startStopButton);
-      }
-
-      if (sections.length) {
-        sections.forEach(section => nodeOptionsLayout.add(section));
-        return nodeOptionsLayout;
+        return nodeOptions;
       }
 
       return null;
