@@ -1237,8 +1237,8 @@ async def test_is_directory_link_forces_link_type_and_size(
     )
     assert len(files_and_directories) == 1
     assert files_and_directories[0].is_directory is True
-    # file size is -1 meaning unknown
-    assert files_and_directories[0].file_size == -1
+    # file size is 0 since nothing is uploaded
+    assert files_and_directories[0].file_size == 0
 
 
 async def test_ensure_expand_dirs_defaults_true(
