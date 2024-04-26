@@ -115,6 +115,8 @@ services:
       WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
       SC_BOOT_MODE: debug
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-DEBUG}
+      WEBSERVER_PROFILING_MIDDLEWARE_ENABLED: ${WEBSERVER_PROFILING_MIDDLEWARE_ENABLED:-0}
+
 
   wb-db-event-listener:
     volumes: *webserver-volumes-dev

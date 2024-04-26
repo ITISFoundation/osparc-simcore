@@ -59,11 +59,6 @@ def setup_diagnostics(
     app[HEALTH_PLUGIN_START_TIME] = time.time()
 
 
-@app_module_setup(
-    __name__,
-    ModuleCategory.ADDON,
-    logger=_logger,
-)
 def setup_profiling_middleware(
     app: web.Application,
 ) -> None:
