@@ -124,6 +124,10 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         const item = items[i];
 
         const label = this._createLabel(names[i], item);
+        label.set({
+          rich: false, // override, required for showing the vut off ellipses
+          toolTipText: names[i]
+        });
         label.setBuddy(item);
         this._add(label, {
           row: this._row,
@@ -146,9 +150,6 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
           row: this._row,
           column: this.self().GRID_POS.UNIT
         });
-
-        // compensate the SpacingY: 0
-        this._getLayout().setRowHeight(this._row, this.self().ROW_HEIGHT);
 
         this._row++;
 
