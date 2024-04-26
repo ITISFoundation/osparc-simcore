@@ -12,6 +12,14 @@ const expectedCreateAccountLabel = {
   "tis": "Request Account"
 };
 
+const expectedActionOnCreateAccount = {
+  "osparc": "registrationSubmitBtn",
+  "s4l": "registrationSubmitBtn",
+  "s4lacad": "registrationSubmitBtn",
+  "s4llite": "createAccountWindow",
+  "tis": "createAccountWindow"
+};
+
 for (const product in products) {
   test(`Invitation required ${product}`, async ({ page }) => {
     expect(expectedCreateAccountLabel[product]).toBeDefined();
@@ -22,5 +30,17 @@ for (const product in products) {
     const button = page.getByTestId("loginCreateAccountBtn");
     await expect(button).toBeVisible();
     await expect(button).toContainText(expectedLabel);
+  });
+
+  test(`Action on Create Account ${product}`, async ({ page }) => {
+    expect(expectedActionOnCreateAccount[product]).toBeDefined();
+
+    await page.goto(products[product]);
+
+    const button = page.getByTestId("loginCreateAccountBtn");
+    button.click();
+
+    const expectedLocator = expectedActionOnCreateAccount[product];
+    await expect(expectedLocator).toBeVisible();
   });
 }
