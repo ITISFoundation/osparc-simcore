@@ -399,7 +399,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       fileInfoPage.exclude();
       tabViewSecondary.add(fileInfoPage);
 
-      const serviceOptionsPage = this.__serviceOptionsPage = this.__createTabPage("@FontAwesome5Solid/cogs", this.tr("Service options"));
+      const serviceOptionsPage = this.__serviceOptionsPage = this.__createTabPage("@FontAwesome5Solid/exchange-alt", this.tr("Service options"));
       serviceOptionsPage.exclude();
       tabViewSecondary.add(serviceOptionsPage);
 
