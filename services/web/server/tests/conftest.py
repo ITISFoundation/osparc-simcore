@@ -11,6 +11,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 import simcore_service_webserver
@@ -284,7 +285,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 print(
                     f"--> waiting for creation {attempt.retry_state.attempt_number}..."
                 )
-                result = await client.get(f"{status_url}")
+                result = await client.get(urlparse(status_url).path)
                 data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
@@ -298,7 +299,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
 
         # get result GET /{task_id}/result
         print("--> getting project creation result...")
-        result = await client.get(f"{result_url}")
+        result = await client.get(urlparse(result_url).path)
         data, error = await assert_status(result, expected_creation_response)
         if error:
             assert not data

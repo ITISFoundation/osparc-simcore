@@ -248,8 +248,14 @@ class ResourceTrackerRepository(
                 .select_from(
                     resource_tracker_service_runs.join(
                         resource_tracker_credit_transactions,
-                        resource_tracker_service_runs.c.service_run_id
-                        == resource_tracker_credit_transactions.c.service_run_id,
+                        (
+                            resource_tracker_service_runs.c.product_name
+                            == resource_tracker_credit_transactions.c.product_name
+                        )
+                        & (
+                            resource_tracker_service_runs.c.service_run_id
+                            == resource_tracker_credit_transactions.c.service_run_id
+                        ),
                         isouter=True,
                     )
                 )

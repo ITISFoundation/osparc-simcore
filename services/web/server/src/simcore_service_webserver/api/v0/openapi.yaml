@@ -472,6 +472,19 @@ paths:
           description: requires login to  delete a key
         '403':
           description: not enough permissions to delete a key
+  /v0/auth/captcha:
+    get:
+      tags:
+      - auth
+      summary: Request Captcha
+      operationId: request_captcha
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+            image/png: {}
   /v0/catalog/services:
     get:
       tags:
@@ -4956,11 +4969,15 @@ components:
       title: AccountRequestInfo
       required:
       - form
+      - captcha
       type: object
       properties:
         form:
           title: Form
           type: object
+        captcha:
+          title: Captcha
+          type: string
       example:
         form:
           firstName: James
@@ -4977,6 +4994,7 @@ components:
           hear: Search_Engine
           privacyPolicy: true
           eula: true
+        captcha: A12B34
     Activity:
       title: Activity
       required:

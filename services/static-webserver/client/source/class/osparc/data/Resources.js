@@ -981,6 +981,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/auth/request-account"
           },
+          captcha: {
+            method: "POST",
+            url: statics.API + "/auth/captcha"
+          },
           checkInvitation: {
             method: "POST",
             url: statics.API + "/auth/register/invitations:check"

@@ -23,7 +23,7 @@ else:
     ErrorCodeStr = constr(strip_whitespace=True, regex=_PATTERN)
 
 
-def create_error_code(exception: Exception) -> ErrorCodeStr:
+def create_error_code(exception: BaseException) -> ErrorCodeStr:
     return parse_obj_as(ErrorCodeStr, _LABEL.format(id(exception)))
 
 
