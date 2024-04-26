@@ -186,6 +186,7 @@ services:
     environment:
       - SC_BOOT_MODE=debug
       - STORAGE_LOGLEVEL=DEBUG
+      - STORAGE_PROFILING_MIDDLEWARE_ENABLED=${STORAGE_PROFILING_MIDDLEWARE_ENABLED:-0}
 
   agent:
     environment:
