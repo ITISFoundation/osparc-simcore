@@ -21,6 +21,7 @@ import pytest
 import sqlalchemy as sa
 from aiodocker.containers import DockerContainer
 from aiopg.sa import Engine
+from faker import Faker
 from fastapi import FastAPI
 from helpers.shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
@@ -621,12 +622,13 @@ async def _fetch_data_via_data_manager(
     service_uuid: NodeID,
     temp_dir: Path,
     io_log_redirect_cb: LogRedirectCB,
+    faker: Faker,
 ) -> Path:
     save_to = temp_dir / f"data-manager_{dir_tag}_{uuid4()}"
     save_to.mkdir(parents=True, exist_ok=True)
 
     assert (
-        await data_manager._state_metadata_entry_exists(
+        await data_manager._state_metadata_entry_exists(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
@@ -636,8 +638,8 @@ async def _fetch_data_via_data_manager(
         is True
     )
 
-    async with ProgressBarData(num_steps=1) as progress_bar:
-        await data_manager._pull_directory(
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
+        await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
             node_uuid=service_uuid,
@@ -875,6 +877,7 @@ async def test_nodeports_integration(
     osparc_product_name: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
     mock_io_log_redirect_cb: LogRedirectCB,
+    faker: Faker,
 ) -> None:
     """
     Creates a new project with where the following connections
@@ -1073,6 +1076,7 @@ async def test_nodeports_integration(
             service_uuid=services_node_uuids.dy,
             temp_dir=tmp_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
+            faker=faker,
         )
     )
 
@@ -1093,6 +1097,7 @@ async def test_nodeports_integration(
             service_uuid=services_node_uuids.dy_compose_spec,
             temp_dir=tmp_path,
             io_log_redirect_cb=mock_io_log_redirect_cb,
+            faker=faker,
         )
     )
 
