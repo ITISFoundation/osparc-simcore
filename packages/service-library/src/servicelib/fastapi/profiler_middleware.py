@@ -1,32 +1,10 @@
-import json
 from typing import Any
 
 from fastapi import FastAPI
 from pyinstrument import Profiler
 from starlette.requests import Request
 
-
-def _check_response_headers(
-    response_headers: dict[bytes, bytes]
-) -> list[tuple[bytes, bytes]]:
-    original_content_type: str = response_headers[b"content-type"].decode()
-    assert original_content_type in {
-        "application/x-ndjson",
-        "application/json",
-    }  # nosec
-    headers: dict = {}
-    headers[b"content-type"] = b"application/x-ndjson"
-    return list(headers.items())
-
-
-def _append_profile(body: str, profile: str) -> str:
-    try:
-        json.loads(body)
-        body += "\n" if not body.endswith("\n") else ""
-    except json.decoder.JSONDecodeError:
-        pass
-    body += json.dumps({"profile": profile})
-    return body
+from .._utils_profiling_middleware import append_profile, check_response_headers
 
 
 def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, Any]):
@@ -74,11 +52,11 @@ class ProfilerMiddleware:
                 nonlocal response_headers
                 if message["type"] == "http.response.start":
                     response_headers = dict(message.get("headers"))
-                    message["headers"] = _check_response_headers(response_headers)
+                    message["headers"] = check_response_headers(response_headers)
                 elif message["type"] == "http.response.body":
                     if is_last_response(response_headers, message):
                         profiler.stop()
-                        message["body"] = _append_profile(
+                        message["body"] = append_profile(
                             message["body"].decode(),
                             profiler.output_text(unicode=True, color=True),
                         ).encode()
