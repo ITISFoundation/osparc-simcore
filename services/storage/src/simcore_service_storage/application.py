@@ -12,7 +12,7 @@ from servicelib.aiohttp.dev_error_logger import setup_dev_error_logger
 from servicelib.aiohttp.monitoring import setup_monitoring
 from servicelib.aiohttp.tracing import setup_tracing
 
-from ._meta import APP_STARTED_BANNER_MSG, PROJECT_NAME, VERSION
+from ._meta import APP_NAME, APP_STARTED_BANNER_MSG, VERSION
 from .db import setup_db
 from .dsm import setup_dsm
 from .dsm_cleaner import setup_dsm_cleaner
@@ -76,7 +76,7 @@ def create(settings: Settings) -> web.Application:
         setup_dev_error_logger(app)
 
     if settings.STORAGE_MONITORING_ENABLED:
-        setup_monitoring(app, PROJECT_NAME, version=f"{VERSION}")
+        setup_monitoring(app, APP_NAME, version=f"{VERSION}")
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(
