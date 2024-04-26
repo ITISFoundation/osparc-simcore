@@ -27,6 +27,9 @@ qx.Class.define("osparc.widget.NodeOptions", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
+    // it will become visible if children are added
+    this.exclude();
+
     this.setNode(node);
   },
 
@@ -44,6 +47,11 @@ qx.Class.define("osparc.widget.NodeOptions", {
   },
 
   members: {
+    // overridden
+    _afterAddChild: function() {
+      this.show();
+    },
+
     buildLayout: async function() {
       const node = this.getNode();
 

@@ -1132,12 +1132,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       vBox.add(outputs);
 
       // NODE OPTIONS
-      const nodeOptions = await this.__getNodeOptionsPage(node);
+      const nodeOptions = this.__getNodeOptionsPage(node);
       if (nodeOptions) {
         const options = new osparc.desktop.PanelView(this.tr("Options"), nodeOptions);
         options._innerContainer.set({
           margin: spacing
         });
+        nodeOptions.bind("visibility", options, "visibility");
         vBox.add(options);
       }
 
@@ -1148,25 +1149,22 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __getNodeOptionsPage: async function(node) {
+    __getNodeOptionsPage: function(node) {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return null;
       }
 
       const nodeOptions = new osparc.widget.NodeOptions(node);
-      await nodeOptions.buildLayout();
-      if (nodeOptions._getChildren().length) {
-        [
-          "versionChanged",
-          "bootModeChanged",
-          "limitsChanged"
-        ].forEach(eventName => {
-          nodeOptions.addListener(eventName, () => this.__populateSecondPanel(node));
-        });
-        return nodeOptions;
-      }
+      nodeOptions.buildLayout();
+      [
+        "versionChanged",
+        "bootModeChanged",
+        "limitsChanged"
+      ].forEach(eventName => {
+        nodeOptions.addListener(eventName, () => this.__populateSecondPanel(node));
+      });
 
-      return null;
+      return nodeOptions;
     },
 
     getLogger: function() {
