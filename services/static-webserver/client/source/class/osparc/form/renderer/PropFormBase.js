@@ -38,15 +38,16 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
 
     this.base(arguments, form);
 
-    const fl = this._getLayout();
-    fl.setSpacingY(0); // so that the "excluded" rows do not take any space
-    fl.setColumnFlex(this.self().GRID_POS.LABEL, 1);
-    fl.setColumnFlex(this.self().GRID_POS.INFO, 0);
-    fl.setColumnFlex(this.self().GRID_POS.CTRL_FIELD, 1);
-    fl.setColumnFlex(this.self().GRID_POS.UNIT, 0);
-    fl.setColumnFlex(this.self().GRID_POS.FIELD_LINK_UNLINK, 0);
-    fl.setColumnAlign(this.self().GRID_POS.LABEL, "left", "top");
-    fl.setColumnAlign(this.self().GRID_POS.INFO, "left", "middle");
+    // override qx.ui.form.renderer.Single's grid layout
+    const grid = this.getLayout();
+    grid.setSpacingY(0); // so that the "excluded" rows do not take any space
+    grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
+    grid.setColumnFlex(this.self().GRID_POS.INFO, 0);
+    grid.setColumnFlex(this.self().GRID_POS.CTRL_FIELD, 1);
+    grid.setColumnFlex(this.self().GRID_POS.UNIT, 0);
+    grid.setColumnFlex(this.self().GRID_POS.FIELD_LINK_UNLINK, 0);
+    grid.setColumnAlign(this.self().GRID_POS.LABEL, "left", "top");
+    grid.setColumnAlign(this.self().GRID_POS.INFO, "left", "middle");
   },
 
   properties: {
@@ -98,7 +99,14 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       readWrite: "ReadAndWrite"
     },
 
-    addItems: function(items, names, title, itemOptions, headerOptions) {
+    /**
+     * override
+     *
+     * @param items {qx.ui.core.Widget[]} An array of form items to render.
+     * @param names {String[]} An array of names for the form items.
+     * @param title {String?} A title of the group you are adding.
+     */
+    addItems: function(items, names, title) {
       // add the header
       if (title !== null) {
         this._add(
@@ -116,17 +124,13 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         const item = items[i];
 
         const label = this._createLabel(names[i], item);
-        // compensate the SpacingY: 0
-        label.set({
-          marginTop: 3
-        });
         label.setBuddy(item);
         this._add(label, {
           row: this._row,
           column: this.self().GRID_POS.LABEL
         });
 
-        const info = this._createInfoWHint(item.description);
+        const info = this.__createInfoWHint(item.description);
         this._add(info, {
           row: this._row,
           column: this.self().GRID_POS.INFO
@@ -143,20 +147,12 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
           column: this.self().GRID_POS.UNIT
         });
 
-        this._connectVisibility(item, label);
-        // store the names for translation
-        if (qx.core.Environment.get("qx.dynlocale")) {
-          this._names.push({
-            name: names[i],
-            label: label,
-            item: items[i]
-          });
-        }
-
         // compensate the SpacingY: 0
         this._getLayout().setRowHeight(this._row, this.self().ROW_HEIGHT);
 
         this._row++;
+
+        this._connectVisibility(item, label);
       }
     },
 
@@ -254,7 +250,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       throw new Error("Abstract method called!");
     },
 
-    _createInfoWHint: function(hint) {
+    __createInfoWHint: function(hint) {
       const infoWHint = new osparc.form.PortInfoHint(hint);
       return infoWHint;
     },
