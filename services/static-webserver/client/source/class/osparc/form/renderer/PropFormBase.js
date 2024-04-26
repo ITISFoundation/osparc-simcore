@@ -46,8 +46,8 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
     grid.setColumnFlex(this.self().GRID_POS.CTRL_FIELD, 1);
     grid.setColumnFlex(this.self().GRID_POS.UNIT, 0);
     grid.setColumnFlex(this.self().GRID_POS.FIELD_LINK_UNLINK, 0);
-    grid.setColumnAlign(this.self().GRID_POS.LABEL, "left", "top");
-    grid.setColumnAlign(this.self().GRID_POS.INFO, "left", "middle");
+    grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 50);
+    Object.keys(this.self().GRID_POS).forEach((_, idx) => grid.setColumnAlign(idx, "left", "middle"));
   },
 
   properties: {
@@ -274,7 +274,6 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       }
       const unitLabel = new qx.ui.basic.Label().set({
         rich: true,
-        alignY: "bottom",
         paddingBottom: 1,
         value: unitShort || null,
         toolTipText: unitLong || null,

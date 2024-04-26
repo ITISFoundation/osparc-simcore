@@ -43,9 +43,8 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     grid.setColumnFlex(this.self().POS.VALUE, 1);
     grid.setColumnFlex(this.self().POS.UNIT, 0);
     grid.setColumnFlex(this.self().POS.PROBE, 0);
-    Object.keys(this.self().POS).forEach((_, idx) => {
-      grid.setColumnAlign(idx, "left", "middle");
-    });
+    grid.setColumnMinWidth(this.self().POS.VALUE, 50);
+    Object.keys(this.self().POS).forEach((_, idx) => grid.setColumnAlign(idx, "left", "middle"));
     const gridLayout = this.__gridLayout = new qx.ui.container.Composite(grid).set({
       allowGrowX: false
     });
@@ -112,7 +111,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         const portKey = portKeys[i];
         const port = ports[portKey];
 
-        const label = new qx.ui.basic.Label(port.label).set({
+        const label = new qx.ui.basic.Label(port.label + " :").set({
           toolTipText: port.label
         });
         this.__gridLayout.add(label, {
