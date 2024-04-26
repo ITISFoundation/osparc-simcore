@@ -216,7 +216,7 @@ async def test_update_project_node_of_invalid_node_raises(
     assert new_nodes[0]
     assert new_nodes[0].created == new_nodes[0].modified
     with pytest.raises(ProjectNodesNodeNotFound):
-        await projects_nodes_repo.update(
+        await projects_nodes_repo.update(  # <-- MD: project node update
             connection,
             node_id=create_fake_node_id(),
             required_resources={faker.pystr(): faker.pyint()},
@@ -237,7 +237,7 @@ async def test_update_project_node(
     assert new_nodes[0]
     assert new_nodes[0].created == new_nodes[0].modified
     required_resources = {faker.pystr(): faker.pyint()}
-    updated_node = await projects_nodes_repo.update(
+    updated_node = await projects_nodes_repo.update(  # <-- MD: project node update
         connection,
         node_id=new_nodes[0].node_id,
         required_resources=required_resources,

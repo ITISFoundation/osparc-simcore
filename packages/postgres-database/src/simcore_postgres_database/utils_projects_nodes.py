@@ -42,6 +42,7 @@ class ProjectNodesDuplicateNode(BaseProjectNodesError):
 class ProjectNodeCreate:
     node_id: uuid.UUID
     required_resources: dict[str, Any] = field(default_factory=dict)
+    # MD: add additional fields
 
     @staticmethod
     def get_field_names(*, exclude: set[str]) -> set[str]:

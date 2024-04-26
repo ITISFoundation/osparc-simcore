@@ -288,7 +288,7 @@ async def _update_project_node_resources_from_hardware_info(
                 )
             )
 
-            await project_nodes_repo.update(
+            await project_nodes_repo.update(  # <-- MD: project node update
                 connection,
                 node_id=node_id,
                 required_resources=ServiceResourcesDictHelpers.create_jsonable(

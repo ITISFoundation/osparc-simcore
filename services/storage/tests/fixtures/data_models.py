@@ -73,6 +73,8 @@ async def create_project(
             projects.delete().where(projects.c.uuid.in_(created_project_uuids))
         )
 
+    # MD: Insert project
+
 
 @pytest.fixture
 async def project_id(
@@ -126,6 +128,7 @@ def share_with_collaborator(
                 "delete": False,
             }
 
+            # MD: Project update
             await conn.execute(
                 projects.update()
                 .where(projects.c.uuid == f"{project_id}")
@@ -159,6 +162,7 @@ async def create_project_node(
             }
             node_data.update(**kwargs)
             project_workbench.update({f"{new_node_id}": node_data})
+            # MD: project workbench update
             await conn.execute(
                 projects.update()
                 .where(projects.c.uuid == f"{project_id}")

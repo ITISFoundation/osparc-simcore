@@ -79,6 +79,8 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[ProjectI
     with postgres_db.connect() as conn:
         conn.execute(projects.delete().where(projects.c.uuid == prj_uuid))
 
+    # MD: Inserting/deleting project
+
 
 @pytest.fixture
 def mock_environment(
