@@ -363,7 +363,8 @@ class Port(BaseServiceIOModel):
         await self._set(
             new_concrete_value=new_value,
             **set_kwargs,
-            progress_bar=progress_bar or ProgressBarData(num_steps=1),
+            progress_bar=progress_bar
+            or ProgressBarData(num_steps=1, description="set"),
         )
         await self._node_ports.save_to_db_cb(self._node_ports)
 

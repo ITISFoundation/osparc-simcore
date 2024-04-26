@@ -275,12 +275,14 @@ class SimcoreS3DataManager(BaseDataManager):
                 conn,
                 user_id,
                 file_id,
-                upload_id=S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
-                if (
-                    get_s3_client(self.app).is_multipart(file_size_bytes)
-                    or link_type == LinkType.S3
-                )
-                else None,
+                upload_id=(
+                    S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
+                    if (
+                        get_s3_client(self.app).is_multipart(file_size_bytes)
+                        or link_type == LinkType.S3
+                    )
+                    else None
+                ),
                 is_directory=is_directory,
                 sha256_checksum=sha256_checksum,
             )
@@ -1021,6 +1023,11 @@ class SimcoreS3DataManager(BaseDataManager):
             fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
             fmd.last_modified = s3_metadata.last_modified
             fmd.entity_tag = s3_metadata.e_tag
+        elif fmd.is_directory:
+            s3_folder_metadata = await get_s3_client(self.app).get_directory_metadata(
+                fmd.bucket_name, prefix=fmd.object_name
+            )
+            fmd.file_size = parse_obj_as(ByteSize, s3_folder_metadata.size)
         fmd.upload_expires_at = None
         fmd.upload_id = None
         updated_fmd: FileMetaDataAtDB = await db_file_meta_data.upsert(
