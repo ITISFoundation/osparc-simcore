@@ -16,6 +16,7 @@ from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
 from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from dask_task_models_library.container_tasks.protocol import ContainerTaskParameters
+from models_library.progress_bar import ProgressReport
 from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
@@ -261,7 +262,7 @@ class ComputationalSidecar:
 
     async def __aenter__(self) -> "ComputationalSidecar":
         # ensure we start publishing progress
-        self.task_publishers.publish_progress(0)
+        self.task_publishers.publish_progress(ProgressReport(actual_value=0))
         return self
 
     async def __aexit__(
@@ -278,4 +279,4 @@ class ComputationalSidecar:
                 "TIP: There might be more information in the service log file in the service outputs",
             )
         # ensure we pass the final progress
-        self.task_publishers.publish_progress(1)
+        self.task_publishers.publish_progress(ProgressReport(actual_value=1))
