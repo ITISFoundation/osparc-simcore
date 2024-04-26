@@ -96,7 +96,7 @@ def api_request_context(context: BrowserContext) -> APIRequestContext:
     return context.request
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def product_url(request: pytest.FixtureRequest) -> AnyUrl:
     if passed_product_url := request.config.getoption("--product-url"):
         return TypeAdapter(AnyUrl).validate_python(passed_product_url)
@@ -126,13 +126,13 @@ def user_password(
     return os.environ["USER_PASSWORD"]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def product_billable(request: pytest.FixtureRequest) -> bool:
     billable = request.config.getoption("--product-billable")
     return TypeAdapter(bool).validate_python(billable)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def service_test_id(request: pytest.FixtureRequest) -> str:
     if test_id := request.config.getoption("--service-test-id"):
         assert isinstance(test_id, str)
@@ -140,7 +140,7 @@ def service_test_id(request: pytest.FixtureRequest) -> str:
     return os.environ["SERVICE_TEST_ID"]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def service_key(request: pytest.FixtureRequest) -> str:
     if key := request.config.getoption("--service-key"):
         assert isinstance(key, str)
@@ -148,12 +148,12 @@ def service_key(request: pytest.FixtureRequest) -> str:
     return os.environ["SERVICE_KEY"]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def auto_register(request: pytest.FixtureRequest) -> bool:
     return bool(request.config.getoption("--autoregister"))
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def user_agent(request: pytest.FixtureRequest) -> str:
     return str(request.config.getoption("--user-agent"))
 
