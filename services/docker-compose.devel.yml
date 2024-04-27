@@ -47,6 +47,7 @@ services:
       - SC_BOOT_MODE=debug
       - DYNAMIC_SCHEDULER_LOGLEVEL=DEBUG
       - DEBUG=true
+      - DYNAMIC_SCHEDULER_PROFILING_MIDDLEWARE_ENABLED=${DYNAMIC_SCHEDULER_PROFILING_MIDDLEWARE_ENABLED:-0}
     volumes:
       - ./dynamic-scheduler:/devel/services/dynamic-scheduler
       - ../packages:/devel/packages
