@@ -59,6 +59,7 @@ services:
       - LOG_LEVEL=DEBUG
       - DEBUG=true
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
+      - CATALOG_PROFILING_MIDDLEWARE_ENABLED=${CATALOG_PROFILING_MIDDLEWARE_ENABLED:-0}
     volumes:
       - ./catalog:/devel/services/catalog
       - ../packages:/devel/packages
@@ -95,6 +96,7 @@ services:
       - LOG_LEVEL=debug
       - DEBUG=true
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
+      - DIRECTOR_V2_PROFILING_MIDDLEWARE_ENABLED=${DIRECTOR_V2_PROFILING_MIDDLEWARE_ENABLED:-0}
     volumes:
       - ./director-v2:/devel/services/director-v2
       - ../packages:/devel/packages

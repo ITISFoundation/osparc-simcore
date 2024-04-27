@@ -67,6 +67,11 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if app.state.settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
+    if app.state.settings.CATALOG_PROFILING_MIDDLEWARE_ENABLED:
+        from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
+
+        app.add_middleware(ProfilerMiddleware, app_name="catalog")
+
     # EVENTS
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)
