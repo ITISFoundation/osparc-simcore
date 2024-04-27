@@ -11,6 +11,7 @@ services:
       - SC_BOOT_MODE=debug
       - LOG_LEVEL=DEBUG
       - DEBUG=true
+      - API_SERVER_PROFILING_MIDDLEWARE_ENABLED=${API_SERVER_PROFILING_MIDDLEWARE_ENABLED:-0}
     volumes:
       - ./api-server:/devel/services/api-server
       - ../packages:/devel/packages
