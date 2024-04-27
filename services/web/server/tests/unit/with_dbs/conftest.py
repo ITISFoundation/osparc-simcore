@@ -5,6 +5,7 @@
 
     IMPORTANT: remember that these are still unit-tests!
 """
+
 # nopycln: file
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
@@ -18,7 +19,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Final
 from unittest import mock
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import aiopg.sa
@@ -688,32 +689,12 @@ def mocked_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
 
 
 @pytest.fixture
-def mock_progress_bar(mocker: MockerFixture) -> Any:
-    sub_progress = Mock()
-
-    class MockedProgress:
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *args):
-            pass
-
-        def sub_progress(self, *kwargs):  # pylint:disable=no-self-use
-            return sub_progress
-
-    mock_bar = MockedProgress()
-
-    mocker.patch(
-        "simcore_service_webserver.dynamic_scheduler.api.ProgressBarData",
-        autospec=True,
-        return_value=mock_bar,
-    )
-    return mock_bar
-
-
-@pytest.fixture
 async def user_project(
-    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
+    client: TestClient,
+    fake_project: ProjectDict,
+    logged_user: UserInfoDict,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ) -> AsyncIterator[ProjectDict]:
     async with NewProject(
         fake_project,

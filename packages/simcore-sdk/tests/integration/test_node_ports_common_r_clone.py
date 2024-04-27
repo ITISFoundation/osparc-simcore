@@ -126,6 +126,7 @@ async def _upload_local_dir_to_s3(
     source_dir: Path,
     *,
     check_progress: bool = False,
+    faker: Faker,
 ) -> None:
     # NOTE: progress is enforced only when uploading and only when using
     # total file sizes that are quite big, otherwise the test will fail
@@ -140,7 +141,9 @@ async def _upload_local_dir_to_s3(
         progress_entries.append(progress_value)
 
     async with ProgressBarData(
-        num_steps=1, progress_report_cb=_report_progress_upload
+        num_steps=1,
+        progress_report_cb=_report_progress_upload,
+        description=faker.pystr(),
     ) as progress_bar:
         await r_clone.sync_local_to_s3(
             r_clone_settings,
@@ -159,12 +162,15 @@ async def _download_from_s3_to_local_dir(
     r_clone_settings: RCloneSettings,
     s3_directory_link: AnyUrl,
     destination_dir: Path,
+    faker: Faker,
 ) -> None:
     async def _report_progress_download(progress_value: float) -> None:
         print(">>>|", progress_value, "| ⏬")
 
     async with ProgressBarData(
-        num_steps=1, progress_report_cb=_report_progress_download
+        num_steps=1,
+        progress_report_cb=_report_progress_download,
+        description=faker.pystr(),
     ) as progress_bar:
         await r_clone.sync_s3_to_local(
             r_clone_settings,
@@ -252,11 +258,12 @@ async def test_local_to_remote_to_local(
     file_size: ByteSize,
     check_progress: bool,
     cleanup_bucket_after_test: None,
+    faker: Faker,
 ) -> None:
     await _create_files_in_dir(dir_locally_created_files, file_count, file_size)
 
     # get s3 reference link
-    directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path(""))
+    directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path())
     s3_directory_link = _fake_s3_link(r_clone_settings, directory_uuid)
 
     # run the test
@@ -265,9 +272,10 @@ async def test_local_to_remote_to_local(
         s3_directory_link,
         dir_locally_created_files,
         check_progress=check_progress,
+        faker=faker,
     )
     await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_1
+        r_clone_settings, s3_directory_link, dir_downloaded_files_1, faker=faker
     )
     assert _directories_have_the_same_content(
         dir_locally_created_files, dir_downloaded_files_1
@@ -350,6 +358,7 @@ async def test_overwrite_an_existing_file_and_sync_again(
     dir_downloaded_files_2: Path,
     changes_callable: Callable[[Path, set[str]], None],
     cleanup_bucket_after_test: None,
+    faker: Faker,
 ) -> None:
     generated_file_names: set[str] = await _create_files_in_dir(
         dir_locally_created_files,
@@ -364,10 +373,10 @@ async def test_overwrite_an_existing_file_and_sync_again(
 
     # sync local to remote and check
     await _upload_local_dir_to_s3(
-        r_clone_settings, s3_directory_link, dir_locally_created_files
+        r_clone_settings, s3_directory_link, dir_locally_created_files, faker=faker
     )
     await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_1
+        r_clone_settings, s3_directory_link, dir_downloaded_files_1, faker=faker
     )
     assert _directories_have_the_same_content(
         dir_locally_created_files, dir_downloaded_files_1
@@ -383,10 +392,10 @@ async def test_overwrite_an_existing_file_and_sync_again(
 
     # upload and check new local and new remote are in sync
     await _upload_local_dir_to_s3(
-        r_clone_settings, s3_directory_link, dir_locally_created_files
+        r_clone_settings, s3_directory_link, dir_locally_created_files, faker=faker
     )
     await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_2
+        r_clone_settings, s3_directory_link, dir_downloaded_files_2, faker=faker
     )
     assert _directories_have_the_same_content(
         dir_locally_created_files, dir_downloaded_files_2

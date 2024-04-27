@@ -184,16 +184,18 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       */
     createDisableServiceAutoStart: function(study) {
+      // the wording is now opposite to the value of the property
+      // Autostart services to true by default
+      const devObj = study.getDev();
       const cb = new qx.ui.form.CheckBox().set({
-        label: qx.locale.Manager.tr("Disable Services Auto Start"),
+        value: "disableServiceAutoStart" in devObj ? !devObj["disableServiceAutoStart"] : true,
+        label: qx.locale.Manager.tr("Autostart services"),
         toolTipText: qx.locale.Manager.tr("This will help opening and closing studies faster"),
         iconPosition: "right"
       });
-      const devObj = study.getDev();
-      cb.setValue(("disableServiceAutoStart" in devObj) ? devObj["disableServiceAutoStart"] : false);
       cb.addListener("changeValue", e => {
         const newVal = e.getData();
-        devObj["disableServiceAutoStart"] = newVal;
+        devObj["disableServiceAutoStart"] = !newVal;
         study.updateStudy({
           dev: devObj
         });
