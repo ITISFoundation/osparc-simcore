@@ -80,7 +80,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         "--user-agent",
         action="store",
         type=str,
-        default="e2e-playwright",
+        default=None,
         help="defines a specific user agent osparc header",
     )
 
@@ -154,19 +154,25 @@ def auto_register(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture(scope="session")
-def user_agent(request: pytest.FixtureRequest) -> str:
-    return str(request.config.getoption("--user-agent"))
+def user_agent(request: pytest.FixtureRequest) -> str | None:
+    agent = request.config.getoption("--user-agent")
+    if agent is None:
+        return None
+    assert isinstance(agent, str)
+    return agent
 
 
 @pytest.fixture(scope="session")
 def browser_context_args(
-    browser_context_args: dict[str, dict[str, str]], user_agent: str
+    browser_context_args: dict[str, dict[str, str]], user_agent: str | None
 ) -> dict[str, dict[str, str]]:
     # Override browser context options, see https://playwright.dev/python/docs/test-runners#fixtures
-    return {
-        **browser_context_args,
-        "extra_http_headers": {"X-Simcore-User-Agent": user_agent},
-    }
+    overriden_browser_context_args = browser_context_args
+    if user_agent is not None:
+        overriden_browser_context_args["extra_http_headers"] = {
+            "X-Simcore-User-Agent": user_agent
+        }
+    return overriden_browser_context_args
 
 
 @pytest.fixture
