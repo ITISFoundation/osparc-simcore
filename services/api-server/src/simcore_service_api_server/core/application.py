@@ -122,7 +122,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         ),
     )
     if settings.API_SERVER_PROFILING:
-        app.add_middleware(ProfilerMiddleware, app_name="api-server")
+        app.add_middleware(ProfilerMiddleware)
 
     if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)

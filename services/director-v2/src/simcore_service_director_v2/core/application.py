@@ -187,8 +187,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     if settings.DIRECTOR_V2_PROFILING:
-
-        app.add_middleware(ProfilerMiddleware, app_name="director-v2")
+        app.add_middleware(ProfilerMiddleware)
 
     # setup app --
     app.add_event_handler("startup", on_startup)

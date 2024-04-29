@@ -26,9 +26,9 @@ class ProfilerMiddleware:
     https://fastapi.tiangolo.com/advanced/middleware/#advanced-middleware
     """
 
-    def __init__(self, app: FastAPI, app_name: str):
+    def __init__(self, app: FastAPI):
         self._app: FastAPI = app
-        self._profile_header_trigger: str = f"x-profile-{app_name}"
+        self._profile_header_trigger: str = f"x-profile"
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":

@@ -69,8 +69,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     if app.state.settings.CATALOG_PROFILING:
-
-        app.add_middleware(ProfilerMiddleware, app_name="catalog")
+        app.add_middleware(ProfilerMiddleware)
 
     # EVENTS
     async def _on_startup() -> None:

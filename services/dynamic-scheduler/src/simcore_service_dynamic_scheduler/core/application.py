@@ -44,8 +44,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     if app.state.settings.DYNAMIC_SCHEDULER_PROFILING:
-
-        app.add_middleware(ProfilerMiddleware, app_name="dynamic-scheduler")
+        app.add_middleware(ProfilerMiddleware)
 
     # PLUGINS SETUP
 
