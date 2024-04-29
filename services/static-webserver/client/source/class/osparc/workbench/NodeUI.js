@@ -270,7 +270,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       this.getNode().bind("marker", this._markerBtn, "label", {
         converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
       });
-      this._markerBtn.addListener("execute", () => this.getNode().toggleMarker());
+      this._markerBtn.addListener("execute", () => node.toggleMarker());
 
       const marker = this.getChildControl("marker");
       const updateMarker = () => {
@@ -283,6 +283,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
       };
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
+
+      node.getStudy().bind("pipelineRunning", this._deleteBtn, "enabled", {
+        converter: running => !running
+      });
 
       const evaluateLifeCycleIcon = () => {
         const deprecatedIcon = this.getChildControl("deprecated-icon");

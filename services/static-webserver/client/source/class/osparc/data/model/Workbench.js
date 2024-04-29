@@ -68,7 +68,8 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   statics: {
-    CANT_ADD_NODE: qx.locale.Manager.tr("Nodes can't be added while the pipeline is running")
+    CANT_ADD_NODE: qx.locale.Manager.tr("Nodes can't be added while the pipeline is running"),
+    CANT_DELETE_NODE: qx.locale.Manager.tr("Nodes can't be deleted while the pipeline is running")
   },
 
   members: {
@@ -508,6 +509,10 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     removeNode: async function(nodeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
+        return false;
+      }
+      if (this.getStudy().isPipelineRunning()) {
+        osparc.FlashMessenger.getInstance().logAs(this.self().CANT_DELETE_NODE, "ERROR");
         return false;
       }
 

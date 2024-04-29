@@ -150,6 +150,11 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
       };
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
+
+      const deleteBtn = this.getChildControl("delete-button");
+      node.getStudy().bind("pipelineRunning", deleteBtn, "enabled", {
+        converter: running => !running
+      });
     },
 
     __applyIconColor: function(textColor) {

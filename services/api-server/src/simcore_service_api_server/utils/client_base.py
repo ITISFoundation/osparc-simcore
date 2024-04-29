@@ -56,7 +56,7 @@ def setup_client_instance(
         # NOTE that this is a general function with no guarantees as when is going to be used.
         # Here, 'AttributeError' might be raied when app.state.settings is still not initialized
         if capture_path := app.state.settings.API_SERVER_DEV_HTTP_CALLS_LOGS_PATH:
-            from simcore_service_api_server.utils.client_base_dev import (
+            from pytest_simcore.helpers.httpx_client_base_dev import (
                 AsyncClientForDevelopmentOnly,
             )
 

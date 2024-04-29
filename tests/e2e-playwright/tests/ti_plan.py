@@ -46,8 +46,11 @@ def test_tip(
     project_uuid = project_data["data"]["uuid"]
     print("project uuid: ", project_uuid)
     node_ids = []
-    for node_id in project_data["data"]["workbench"].keys():
+    workbench = project_data["data"]["workbench"]
+    for node_id in workbench.keys():
         print("node_id: ", node_id)
+        print("key: ", workbench[node_id]["key"])
+        print("version: ", workbench[node_id]["version"])
         node_ids.append(node_id)
 
     # let it start or force

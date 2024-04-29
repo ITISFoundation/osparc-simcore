@@ -38,6 +38,10 @@ from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.httpx_calls_capture_model import (
+    HttpApiCallCaptureModel,
+    PathDescription,
+)
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
@@ -47,10 +51,6 @@ from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
 from simcore_service_api_server.services.solver_job_outputs import ResultsTypes
-from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
-from simcore_service_api_server.utils.http_calls_capture_processing import (
-    PathDescription,
-)
 
 # (capture.response_body, kwargs, capture.path.path_parameters) -> response_body
 SideEffectCallback: TypeAlias = Callable[
