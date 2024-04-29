@@ -5,6 +5,7 @@ from operator import attrgetter
 from aiohttp import web
 from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.profiler_middleware import create_profiling_middleware
 from simcore_service_webserver.application_settings import get_application_settings
 
 from ..rest.healthcheck import HealthCheck
@@ -63,6 +64,5 @@ def setup_profiling_middleware(
     app: web.Application,
 ) -> None:
     if get_application_settings(app).WEBSERVER_PROFILING:
-        from servicelib.aiohttp.profiler_middleware import create_profiling_middleware
 
         app.middlewares.append(create_profiling_middleware("webserver"))

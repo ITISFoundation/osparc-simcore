@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi_pagination import add_pagination
 from httpx import HTTPError as HttpxException
 from models_library.basic_types import BootModeEnum
+from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.logging_utils import config_all_loggers
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -121,8 +122,6 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         ),
     )
     if settings.API_SERVER_PROFILING:
-        from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
-
         app.add_middleware(ProfilerMiddleware, app_name="api-server")
 
     if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:

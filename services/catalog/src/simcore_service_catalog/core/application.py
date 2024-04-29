@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.gzip import GZipMiddleware
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
@@ -68,7 +69,6 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     if app.state.settings.CATALOG_PROFILING:
-        from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 
         app.add_middleware(ProfilerMiddleware, app_name="catalog")
 

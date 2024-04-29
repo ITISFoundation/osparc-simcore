@@ -6,6 +6,7 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
+from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
@@ -186,7 +187,6 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     if settings.DIRECTOR_V2_PROFILING:
-        from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 
         app.add_middleware(ProfilerMiddleware, app_name="director-v2")
 
