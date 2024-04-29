@@ -1,6 +1,5 @@
-from aiohttp.web import Request, StreamResponse, middleware
+from aiohttp.web import HTTPInternalServerError, Request, StreamResponse, middleware
 from pyinstrument import Profiler
-from servicelib.aiohttp import status
 from servicelib.mimetype_constants import (
     MIMETYPE_APPLICATION_JSON,
     MIMETYPE_APPLICATION_ND_JSON,
@@ -22,8 +21,7 @@ def create_profiling_middleware(app_name: str):
         if profiler is None:
             return response
         if response.content_type != MIMETYPE_APPLICATION_JSON:
-            return StreamResponse(
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            raise HTTPInternalServerError(
                 reason=f"Profiling middleware is not compatible with {response.content_type=}",
                 headers={},
             )
