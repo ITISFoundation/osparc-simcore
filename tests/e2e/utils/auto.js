@@ -359,7 +359,6 @@ async function restoreIFrame(page) {
 async function openNodeFiles(page) {
   console.log("Opening Data produced by Node");
 
-  await utils.waitAndClick(page, '[osparc-test-id="outputsTabButton"]');
   await utils.waitAndClick(page, '[osparc-test-id="nodeOutputFilesBtn"]');
 }
 
