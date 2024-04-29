@@ -115,8 +115,11 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     getFaviconUrl: function() {
-      let url = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/favicon-"+qx.core.Environment.get("product.name")+".png";
-      return url;
+      return new Promise(resolve => {
+        const backupIcon = "/resource/osparc/favicon-osparc.png";
+        let url = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/favicon-"+this.getProductName()+".png";
+        resolve(url);
+      });
     },
 
     getLogoPath: function(longLogo = true) {
