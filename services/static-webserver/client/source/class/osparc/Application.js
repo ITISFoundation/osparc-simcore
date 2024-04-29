@@ -213,6 +213,7 @@ qx.Class.define("osparc.Application", {
         link.rel = "icon";
         document.getElementsByTagName("head")[0].appendChild(link);
       }
+      link.href = "";
       osparc.product.Utils.getFaviconUrl()
         .then(url => link.href = url);
     },
