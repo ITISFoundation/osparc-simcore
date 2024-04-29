@@ -21,9 +21,15 @@ for (const product in products) {
 
         test.beforeAll('Log in', async ({ page }) => {
           await page.goto(products[product]);
-          user.email
-          user.password
-          user.role
+          await page.get_by_test_id("loginUserEmailFld").fill(user.email);
+          await page.get_by_test_id("loginPasswordFld").fill(user.password);
+
+          const responsePromise = page.waitForResponse('**/me');
+          await page.get_by_test_id("loginSubmitBtn").click();
+
+          const response = await responsePromise;
+          const statics = await response.json();
+          expect(statics["data"]["role"]).toBe(user.role);
         });
 
         test(`Items`, async ({ page }) => {
