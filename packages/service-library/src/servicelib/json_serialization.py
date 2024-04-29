@@ -73,7 +73,7 @@ def orjson_dumps(
     indent=int | None,
     separators: SeparatorTuple | tuple[str, str] | None = None,
 ):
-    """Runs orjson.dumps with a json.dumps-like API"""
+    """json.dumps-like API implemented with orjson.dumps in the core"""
     # pre-process inputs
     option = orjson.OPT_INDENT_2 if indent is not None else 0
     if sort_keys:
@@ -85,7 +85,7 @@ def orjson_dumps(
     result: str = orjson.dumps(obj, default=default, option=option).decode("utf-8")
 
     # post-process outputs
-    if separators != _default_separator:
+    if separators is not None and separators != _default_separator:
         assert isinstance(separators, SeparatorTuple)  # nosec
         result = result.replace(
             _default_separator.key_separator,
