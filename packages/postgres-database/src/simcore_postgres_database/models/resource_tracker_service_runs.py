@@ -169,7 +169,7 @@ resource_tracker_service_runs = sa.Table(
     ),
     # Run status
     sa.Column(
-        "service_run_status",  # Partial index was added manaually in migration
+        "service_run_status",  # Partial index was added manually in migration
         sa.Enum(ResourceTrackerServiceRunStatus),
         nullable=False,
     ),
