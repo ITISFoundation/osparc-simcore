@@ -10,7 +10,7 @@ from uuid import uuid4
 import pytest
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic.json import pydantic_encoder
-from servicelib.json_serialization import OrJsonAdapter, SeparatorTuple, orjson_dumps
+from servicelib.json_serialization import OrJsonNamespace, SeparatorTuple, orjson_dumps
 
 
 def _expected_json_dumps(obj: Any, default=pydantic_encoder, **json_dumps_kwargs):
@@ -56,26 +56,26 @@ def test_serialization_of_nested_dicts(fake_data_dict: dict[str, Any]):
 
 def test_orjson_adapter_has_dumps_interface(fake_data_dict: dict[str, Any]):
 
-    assert OrJsonAdapter.dumps(fake_data_dict) == _expected_json_dumps(fake_data_dict)
+    assert OrJsonNamespace.dumps(fake_data_dict) == _expected_json_dumps(fake_data_dict)
 
     sort_keys = True
-    assert OrJsonAdapter.dumps(
+    assert OrJsonNamespace.dumps(
         fake_data_dict, sort_keys=sort_keys
     ) == _expected_json_dumps(fake_data_dict, sort_keys=sort_keys)
 
     # NOTE: e.g. engineio.packet has `self.json.dumps(self.data, separators=(',', ':'))`
     separators = ",", ":"
-    assert OrJsonAdapter.dumps(
+    assert OrJsonNamespace.dumps(
         fake_data_dict, separators=separators
     ) == _expected_json_dumps(fake_data_dict, separators=separators)
 
     separators = " , ", " : "
-    assert OrJsonAdapter.dumps(
+    assert OrJsonNamespace.dumps(
         fake_data_dict, separators=separators
     ) == _expected_json_dumps(fake_data_dict, separators=separators)
 
     # NOTE: only one-to-one with indent=2
     indent = 2
-    assert OrJsonAdapter.dumps(fake_data_dict, indent=indent) == _expected_json_dumps(
+    assert OrJsonNamespace.dumps(fake_data_dict, indent=indent) == _expected_json_dumps(
         fake_data_dict, indent=indent
     )

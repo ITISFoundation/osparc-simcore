@@ -54,7 +54,7 @@ def orjson_dumps(
 orjson_loads = orjson.loads
 
 
-class OrJsonAdapter:
+class OrJsonNamespace:
     """
     Creates a namespace to use orjson as a replacment for json namesspace
     NOTE orjson performs better than json. SEE https://github.com/ijl/orjson?tab=readme-ov-file#performance
