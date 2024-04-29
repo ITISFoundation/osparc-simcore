@@ -1,8 +1,8 @@
-import json
 from dataclasses import asdict
 
 from aiohttp import web
 from aiohttp.web import RouteDef, RouteTableDef
+from models_library.utils.json_serialization import json_dumps
 
 
 class EnvelopeFactory:
@@ -23,7 +23,7 @@ class EnvelopeFactory:
         return self._envelope
 
     def as_text(self) -> str:
-        return json.dumps(self.as_dict())
+        return json_dumps(self.as_dict())
 
     as_data = as_dict
 
