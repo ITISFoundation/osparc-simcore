@@ -246,7 +246,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     getProgress: function(report) {
       if (report.unit) {
         return {
-          progressLabel: `${osparc.utils.Utils.bytesToSize(report["actual_value"], 1, false)} / ${osparc.utils.Utils.bytesToSize(report["total"], 1)}`,
+          progressLabel: `${osparc.utils.Utils.bytesToSize(report["actual_value"], 1, false)} / ${osparc.utils.Utils.bytesToSize(report["total"], 1, false)}`,
           value: report["actual_value"] / report["total"]
         }
       }
