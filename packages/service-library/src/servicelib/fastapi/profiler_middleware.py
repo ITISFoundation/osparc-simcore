@@ -2,6 +2,7 @@ from typing import Any
 
 from fastapi import FastAPI
 from pyinstrument import Profiler
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from starlette.requests import Request
 
 from .._utils_profiling_middleware import append_profile, check_response_headers
@@ -10,7 +11,7 @@ from .._utils_profiling_middleware import append_profile, check_response_headers
 def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, Any]):
     if (
         content_type := response_headers.get(b"content-type")
-    ) and content_type == b"application/json":
+    ) and content_type == MIMETYPE_APPLICATION_JSON.encode():
         return True
     if (more_body := message.get("more_body")) is not None:
         return not more_body
