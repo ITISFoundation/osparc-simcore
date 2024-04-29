@@ -1,10 +1,9 @@
 import logging
-from typing import Any
 
-import orjson
 from aiopg.sa import Engine, create_engine
 from aiopg.sa.engine import get_dialect
 from fastapi import FastAPI
+from models_library.utils.json_serialization import json_dumps
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_aiopg import (
@@ -15,10 +14,6 @@ from simcore_postgres_database.utils_aiopg import (
 from tenacity import retry
 
 logger = logging.getLogger(__name__)
-
-
-def json_serializer(o: Any) -> str:
-    return str(orjson.dumps(o), "utf-8")
 
 
 @retry(**PostgresRetryPolicyUponInitialization(logger).kwargs)
@@ -33,7 +28,7 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
         application_name=f"{__name__}_{id(app)}",  # unique identifier per app
         minsize=settings.POSTGRES_MINSIZE,
         maxsize=settings.POSTGRES_MAXSIZE,
-        dialect=get_dialect(json_serializer=json_serializer),
+        dialect=get_dialect(json_serializer=json_dumps),
     )
     logger.debug("Connected to %s", engine.dsn)
 
