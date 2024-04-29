@@ -62,7 +62,7 @@ def setup_diagnostics(
 def setup_profiling_middleware(
     app: web.Application,
 ) -> None:
-    if get_application_settings(app).WEBSERVER_PROFILING_MIDDLEWARE_ENABLED:
+    if get_application_settings(app).WEBSERVER_PROFILING:
         from servicelib.aiohttp.profiler_middleware import create_profiling_middleware
 
         app.middlewares.append(create_profiling_middleware("webserver"))

@@ -72,7 +72,7 @@ def create(settings: Settings) -> web.Application:
 
     app.middlewares.append(dsm_exception_handler)
 
-    if settings.STORAGE_PROFILING_MIDDLEWARE_ENABLED:
+    if settings.STORAGE_PROFILING:
         from servicelib.aiohttp.profiler_middleware import create_profiling_middleware
 
         app.middlewares.append(create_profiling_middleware("storage"))

@@ -11,7 +11,7 @@ services:
       - SC_BOOT_MODE=debug
       - LOG_LEVEL=DEBUG
       - DEBUG=true
-      - API_SERVER_PROFILING_MIDDLEWARE_ENABLED=${API_SERVER_PROFILING_MIDDLEWARE_ENABLED:-0}
+      - API_SERVER_PROFILING=${API_SERVER_PROFILING:-0}
     volumes:
       - ./api-server:/devel/services/api-server
       - ../packages:/devel/packages
@@ -48,7 +48,7 @@ services:
       - SC_BOOT_MODE=debug
       - DYNAMIC_SCHEDULER_LOGLEVEL=DEBUG
       - DEBUG=true
-      - DYNAMIC_SCHEDULER_PROFILING_MIDDLEWARE_ENABLED=${DYNAMIC_SCHEDULER_PROFILING_MIDDLEWARE_ENABLED:-0}
+      - DYNAMIC_SCHEDULER_PROFILING=${DYNAMIC_SCHEDULER_PROFILING:-0}
     volumes:
       - ./dynamic-scheduler:/devel/services/dynamic-scheduler
       - ../packages:/devel/packages
@@ -61,7 +61,7 @@ services:
       - LOG_LEVEL=DEBUG
       - DEBUG=true
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
-      - CATALOG_PROFILING_MIDDLEWARE_ENABLED=${CATALOG_PROFILING_MIDDLEWARE_ENABLED:-0}
+      - CATALOG_PROFILING=${CATALOG_PROFILING:-0}
     volumes:
       - ./catalog:/devel/services/catalog
       - ../packages:/devel/packages
@@ -98,7 +98,7 @@ services:
       - LOG_LEVEL=debug
       - DEBUG=true
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
-      - DIRECTOR_V2_PROFILING_MIDDLEWARE_ENABLED=${DIRECTOR_V2_PROFILING_MIDDLEWARE_ENABLED:-0}
+      - DIRECTOR_V2_PROFILING=${DIRECTOR_V2_PROFILING:-0}
     volumes:
       - ./director-v2:/devel/services/director-v2
       - ../packages:/devel/packages
@@ -119,7 +119,7 @@ services:
       WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
       SC_BOOT_MODE: debug
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-DEBUG}
-      WEBSERVER_PROFILING_MIDDLEWARE_ENABLED: ${WEBSERVER_PROFILING_MIDDLEWARE_ENABLED:-0}
+      WEBSERVER_PROFILING: ${WEBSERVER_PROFILING:-0}
 
 
   wb-db-event-listener:
@@ -192,7 +192,7 @@ services:
     environment:
       - SC_BOOT_MODE=debug
       - STORAGE_LOGLEVEL=DEBUG
-      - STORAGE_PROFILING_MIDDLEWARE_ENABLED=${STORAGE_PROFILING_MIDDLEWARE_ENABLED:-0}
+      - STORAGE_PROFILING=${STORAGE_PROFILING:-0}
 
   agent:
     environment:

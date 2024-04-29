@@ -67,7 +67,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if app.state.settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    if app.state.settings.CATALOG_PROFILING_MIDDLEWARE_ENABLED:
+    if app.state.settings.CATALOG_PROFILING:
         from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 
         app.add_middleware(ProfilerMiddleware, app_name="catalog")

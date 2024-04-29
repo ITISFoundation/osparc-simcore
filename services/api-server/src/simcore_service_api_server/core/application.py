@@ -120,7 +120,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
             add_oec_to_message=True,
         ),
     )
-    if settings.API_SERVER_PROFILING_MIDDLEWARE_ENABLED:
+    if settings.API_SERVER_PROFILING:
         from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 
         app.add_middleware(ProfilerMiddleware, app_name="api-server")

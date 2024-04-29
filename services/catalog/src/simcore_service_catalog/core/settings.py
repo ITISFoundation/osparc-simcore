@@ -71,7 +71,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    CATALOG_PROFILING_MIDDLEWARE_ENABLED: bool = False
+    CATALOG_PROFILING: bool = False
 
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60
