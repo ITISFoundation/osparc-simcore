@@ -88,15 +88,18 @@ class SocketIOProjectStateUpdatedWaiter:
 
 @dataclass
 class SocketIOOsparcMessagePrinter:
+    include_logger_messages: bool = False
+
     def __call__(self, message: str) -> None:
         osparc_messages = [
-            "logger",
             "nodeUpdated",
             "nodeProgress",
             "projectStateUpdated",
             "serviceDiskUsage",
             "walletOsparcCreditsUpdated",
         ]
+        if self.include_logger_messages:
+            osparc_messages.append("logger")
 
         if message.startswith("42"):
             decoded_message: SocketIOEvent = decode_socketio_42_message(message)
