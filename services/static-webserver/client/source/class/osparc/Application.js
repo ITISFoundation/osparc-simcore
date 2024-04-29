@@ -59,7 +59,6 @@ qx.Class.define("osparc.Application", {
       threejs.init();
 
       const announcementsTracker = osparc.announcement.Tracker.getInstance();
-      await announcementsTracker.checkAnnouncements();
       announcementsTracker.startTracker();
 
       const webSocket = osparc.wrapper.WebSocket.getInstance();
@@ -95,6 +94,9 @@ qx.Class.define("osparc.Application", {
 
     __preloadCalls: async function() {
       await osparc.store.Store.getInstance().preloadCalls();
+
+      const announcementsTracker = osparc.announcement.Tracker.getInstance();
+      await announcementsTracker.checkAnnouncements();
     },
 
     __initRouting: function() {
