@@ -114,6 +114,11 @@ qx.Class.define("osparc.product.Utils", {
       return resourceType;
     },
 
+    getFaviconUrl: function() {
+      let url = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/favicon-"+qx.core.Environment.get("product.name")+".png";
+      return url;
+    },
+
     getLogoPath: function(longLogo = true) {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
