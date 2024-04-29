@@ -8,8 +8,8 @@ from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundErr
 from ...long_running_tasks._models import TaskGet, TaskId, TaskStatus
 from ...long_running_tasks._task import TrackedTask
 from ...mimetype_constants import MIMETYPE_APPLICATION_JSON
+from ..requests_validation import parse_request_path_parameters_as
 from ._dependencies import get_task_context, get_tasks_manager
-from .requests_validation import parse_request_path_parameters_as
 
 _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
