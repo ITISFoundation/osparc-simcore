@@ -133,7 +133,7 @@ qx.Class.define("osparc.product.Utils", {
 
     getFaviconUrl: function() {
       const pngUrl = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/favicon-"+this.getProductName()+".png";
-      const fallbackIcon = "/resource/osparc/favicon-osparc.png";
+      const fallbackIcon = "/resource/osparc/favicon-"+this.getProductName()+".png";
       return new Promise(resolve => {
         this.__linkExists(pngUrl)
           .then(() => resolve(pngUrl))
