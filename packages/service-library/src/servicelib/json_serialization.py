@@ -28,7 +28,7 @@ def json_dumps(
     sort_keys: bool = False,
     indent: int | None = None,
     separators: SeparatorTuple | tuple[str, str] | None = None,
-):
+) -> str:
     """json.dumps-like API implemented with orjson.dumps in the core"""
     # SEE https://github.com/ijl/orjson?tab=readme-ov-file#serialize
     option = (
