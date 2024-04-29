@@ -17,13 +17,13 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import json_dumps
 from models_library.utils.services_io import JsonSchemaDict
 from pydantic import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.json_serialization import json_dumps
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required

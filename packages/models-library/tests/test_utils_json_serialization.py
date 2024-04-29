@@ -10,8 +10,12 @@ from uuid import uuid4
 import pytest
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import (
+    JsonNamespace,
+    SeparatorTuple,
+    json_dumps,
+)
 from pydantic.json import pydantic_encoder
-from servicelib.json_serialization import JsonNamespace, SeparatorTuple, json_dumps
 
 
 def _expected_json_dumps(obj: Any, default=pydantic_encoder, **json_dumps_kwargs):

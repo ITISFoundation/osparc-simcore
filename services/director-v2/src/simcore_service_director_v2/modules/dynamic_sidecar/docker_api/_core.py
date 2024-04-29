@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkName
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
-from servicelib.json_serialization import json_dumps
+from models_library.utils.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from starlette import status
 from tenacity import TryAgain, retry

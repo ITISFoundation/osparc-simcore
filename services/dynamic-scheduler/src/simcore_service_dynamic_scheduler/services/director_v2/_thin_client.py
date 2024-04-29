@@ -7,6 +7,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
+from models_library.utils.json_serialization import json_dumps
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
@@ -18,7 +19,6 @@ from servicelib.fastapi.http_client_thin import (
     expect_status,
     retry_on_errors,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
     DEFAULT_LEGACY_WB_TO_DV2_HTTP_REQUESTS_TIMEOUT_S,
 )

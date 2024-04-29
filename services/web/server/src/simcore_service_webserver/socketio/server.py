@@ -2,7 +2,7 @@ import logging
 from collections.abc import AsyncIterator
 
 from aiohttp import web
-from servicelib.json_serialization import JsonNamespace
+from models_library.utils.json_serialization import JsonNamespace
 from servicelib.socketio_utils import cleanup_socketio_async_pubsub_manager
 from socketio import AsyncAioPikaManager, AsyncServer
 
