@@ -1,8 +1,10 @@
 import logging
 from datetime import datetime
+from typing import Any
 
 import arrow
 import sqlalchemy as sa
+from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -265,3 +267,19 @@ class CompTasksRepository(BaseRepository):
             await conn.execute(
                 sa.delete(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")
             )
+
+    async def get_outputs_from_tasks(
+        self, project_id: ProjectID, node_ids: set[NodeID]
+    ) -> dict[NodeID, dict[str, Any]]:
+        selection = list(map(str, node_ids))
+        query = sa.select(comp_tasks.c.node_id, comp_tasks.c.outputs).where(
+            (comp_tasks.c.project_id == f"{project_id}")
+            & (comp_tasks.c.node_id.in_(selection))
+        )
+        async with self.db_engine.acquire() as conn:
+            result: ResultProxy = await conn.execute(query)
+            rows: list[RowProxy] | None = await result.fetchall()
+            if rows:
+                assert set(selection) == {f"{_.node_id}" for _ in rows}  # nosec
+                return {NodeID(_.node_id): _.outputs or {} for _ in rows}
+            return {}
