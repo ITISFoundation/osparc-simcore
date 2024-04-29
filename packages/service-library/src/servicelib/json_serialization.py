@@ -74,17 +74,23 @@ def orjson_dumps(
     separators: SeparatorTuple | tuple[str, str] | None = None,
 ):
     """json.dumps-like API implemented with orjson.dumps in the core"""
-    # pre-process inputs
-    option = orjson.OPT_INDENT_2 if indent is not None else 0
+    # SEE https://github.com/ijl/orjson?tab=readme-ov-file#serialize
+    option = (
+        # if a dict has a key of a type other than str it will NOT raise
+        orjson.OPT_NON_STR_KEYS
+    )
+    if indent:
+        option |= orjson.OPT_INDENT_2
     if sort_keys:
         option |= orjson.OPT_SORT_KEYS
 
     if separators is not None:
         separators = SeparatorTuple(*separators)
 
+    # serialize
     result: str = orjson.dumps(obj, default=default, option=option).decode("utf-8")
 
-    # post-process outputs
+    # post-process
     if separators is not None and separators != _default_separator:
         assert isinstance(separators, SeparatorTuple)  # nosec
         result = result.replace(
