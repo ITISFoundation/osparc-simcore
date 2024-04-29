@@ -22,7 +22,7 @@ from models_library.services_resources import (
 from models_library.users import UserID
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
 from pydantic import ByteSize
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.resources import CPU_RESOURCE_LIMIT_KEY, MEM_RESOURCE_LIMIT_KEY
 from settings_library.docker_registry import RegistrySettings
 
@@ -125,7 +125,7 @@ def _update_paths_mappings(
         env_vars["DY_SIDECAR_PATH_OUTPUTS"] = f"{path_mappings.outputs_path}"
         env_vars[
             "DY_SIDECAR_STATE_PATHS"
-        ] = f"{orjson_dumps( { f'{p}' for p in path_mappings.state_paths } )}"
+        ] = f"{json_dumps( { f'{p}' for p in path_mappings.state_paths } )}"
 
         service_content["environment"] = _EnvironmentSection.export_as_list(env_vars)
 

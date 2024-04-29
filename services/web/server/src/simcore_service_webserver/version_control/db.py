@@ -10,7 +10,7 @@ from aiopg.sa.result import RowProxy
 from models_library.basic_types import SHA1Str
 from models_library.projects import ProjectIDStr
 from pydantic.types import NonNegativeInt, PositiveInt
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_version_control import (
     projects_vc_branches,
@@ -187,8 +187,8 @@ class VersionControlRepository(BaseRepository):
         insert_stmt = pg_insert(projects_vc_snapshots).values(
             checksum=project_checksum,
             content={
-                "workbench": json.loads(orjson_dumps(project.workbench)),
-                "ui": json.loads(orjson_dumps(project.ui)),
+                "workbench": json.loads(json_dumps(project.workbench)),
+                "ui": json.loads(json_dumps(project.ui)),
             },
         )
         upsert_snapshot = insert_stmt.on_conflict_do_update(

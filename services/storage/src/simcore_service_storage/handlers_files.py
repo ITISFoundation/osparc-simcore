@@ -24,7 +24,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ._meta import API_VTAG
@@ -70,7 +70,7 @@ async def get_files_metadata(request: web.Request) -> web.Response:
     )
     return web.json_response(
         {"data": [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]},
-        dumps=orjson_dumps,
+        dumps=json_dumps,
     )
 
 
@@ -100,7 +100,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_enveloped.py#L34
 
         return web.json_response(
-            {"error": "No result found", "data": {}}, dumps=orjson_dumps
+            {"error": "No result found", "data": {}}, dumps=json_dumps
         )
 
     if request.headers.get("User-Agent") == "OpenAPI-Generator/0.1.0/python":
@@ -126,7 +126,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
                 },
                 "error": None,
             },
-            dumps=orjson_dumps,
+            dumps=json_dumps,
         )
 
     return jsonable_encoder(FileMetaDataGet.from_orm(data))
@@ -146,7 +146,7 @@ async def download_file(request: web.Request) -> web.Response:
     link = await dsm.create_file_download_link(
         query_params.user_id, path_params.file_id, query_params.link_type
     )
-    return web.json_response({"data": {"link": link}}, dumps=orjson_dumps)
+    return web.json_response({"data": {"link": link}}, dumps=json_dumps)
 
 
 @routes.put(
@@ -201,7 +201,7 @@ async def upload_file(request: web.Request) -> web.Response:
         assert len(links.urls) == 1  # nosec
         response = {"data": {"link": jsonable_encoder(links.urls[0], by_alias=True)}}
         log.debug("Returning v1 response: %s", response)
-        return web.json_response(response, dumps=orjson_dumps)
+        return web.json_response(response, dumps=json_dumps)
 
     # v2 response
     abort_url = request.url.join(
@@ -294,7 +294,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     return web.json_response(
         status=status.HTTP_202_ACCEPTED,
         data={"data": jsonable_encoder(response, by_alias=True)},
-        dumps=orjson_dumps,
+        dumps=json_dumps,
     )
 
 

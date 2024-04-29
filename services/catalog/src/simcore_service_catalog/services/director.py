@@ -5,7 +5,7 @@ from typing import Any, Awaitable, Callable
 
 import httpx
 from fastapi import FastAPI, HTTPException
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -46,7 +46,7 @@ async def setup_director(app: FastAPI) -> None:
 
                     logger.info(
                         "Connection to director-v0 succeded [%s]",
-                        orjson_dumps(attempt.retry_state.retry_object.statistics),
+                        json_dumps(attempt.retry_state.retry_object.statistics),
                     )
         except UnresponsiveService:
             await client.close()

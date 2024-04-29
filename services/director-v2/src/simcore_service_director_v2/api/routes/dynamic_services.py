@@ -21,7 +21,7 @@ from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
@@ -226,7 +226,7 @@ async def stop_dynamic_service(
         logger.error(
             "Service with %s could not be untracked after %s",
             f"{node_uuid=}",
-            f"{orjson_dumps(retry_state.retry_object.statistics)}",
+            f"{json_dumps(retry_state.retry_object.statistics)}",
         )
 
     async for attempt in AsyncRetrying(

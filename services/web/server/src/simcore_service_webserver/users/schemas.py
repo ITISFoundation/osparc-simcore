@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.users_preferences import AggregatedPre
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import FirstNameStr, LastNameStr, UserID
 from pydantic import BaseModel, Field, root_validator, validator
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.users import UserRole
 
 from ..utils import gravatar_hash
@@ -78,7 +78,7 @@ class ProfileGet(BaseModel):
         # NOTE: old models have an hybrid between snake and camel cases!
         # Should be unified at some point
         allow_population_by_field_name = True
-        json_dumps = orjson_dumps
+        json_dumps = json_dumps
 
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [

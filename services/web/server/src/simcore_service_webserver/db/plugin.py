@@ -11,7 +11,7 @@ from aiopg.sa import Engine, create_engine
 from servicelib.aiohttp.aiopg_utils import is_pg_responsive
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from simcore_postgres_database.errors import DBAPIError
 from simcore_postgres_database.utils_aiopg import (
@@ -54,7 +54,7 @@ async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
     aiopg_engine = await _ensure_pg_ready(settings)
     app[APP_DB_ENGINE_KEY] = aiopg_engine
 
-    _logger.info("pg engine created %s", orjson_dumps(get_engine_state(app), indent=1))
+    _logger.info("pg engine created %s", json_dumps(get_engine_state(app), indent=1))
 
     yield  # -------------------
 
@@ -67,7 +67,7 @@ async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
         "pg engine created after shutdown %s (closed=%s): %s",
         aiopg_engine.dsn,
         aiopg_engine.closed,
-        orjson_dumps(get_engine_state(app), indent=1),
+        json_dumps(get_engine_state(app), indent=1),
     )
 
 

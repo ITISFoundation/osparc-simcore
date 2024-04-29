@@ -17,7 +17,7 @@ from servicelib.aiohttp.rest_middlewares import (
     error_middleware_factory,
 )
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 
 
 @dataclass
@@ -81,7 +81,7 @@ class Handlers:
         loop = asyncio.get_event_loop()
         data = loop.run_until_complete(coro(None))
 
-        return json.loads(orjson_dumps(data))
+        return json.loads(json_dumps(data))
 
 
 @pytest.fixture

@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_networks import DockerNetworkName
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from starlette import status
 from tenacity import TryAgain, retry
@@ -453,7 +453,7 @@ async def _update_service_spec(
                     await client._query_json(  # pylint: disable=protected-access  # noqa: SLF001
                         f"services/{service_id}/update",
                         method="POST",
-                        data=orjson_dumps(clean_map(updated_spec)),
+                        data=json_dumps(clean_map(updated_spec)),
                         params={"version": service_version},
                     )
                 except aiodocker.exceptions.DockerError as e:

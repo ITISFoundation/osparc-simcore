@@ -17,7 +17,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 
 RQT_USERID_KEY = f"{__name__}.user_id"
 APP_SECRET_KEY = f"{__name__}.secret"
@@ -26,7 +26,7 @@ APP_SECRET_KEY = f"{__name__}.secret"
 def jsonable_encoder(data):
     # Neither models_library nor fastapi is not part of requirements.
     # Q&D replacement for fastapi.encoders.jsonable_encoder
-    return json.loads(orjson_dumps(data))
+    return json.loads(json_dumps(data))
 
 
 class MyRequestContext(BaseModel):
@@ -113,7 +113,7 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
                 "body": body.dict(),
                 "context": context.dict(),
             },
-            dumps=orjson_dumps,
+            dumps=json_dumps,
         )
 
     # ---

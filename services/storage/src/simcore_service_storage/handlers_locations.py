@@ -14,7 +14,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task
 
 # Exclusive for simcore-s3 storage -----------------------
@@ -45,7 +45,7 @@ async def get_storage_locations(request: web.Request) -> web.Response:
         if await dsm.authorized(query_params.user_id):
             locs.append(FileLocation(name=dsm.location_name, id=dsm.location_id))
 
-    return web.json_response({"error": None, "data": locs}, dumps=orjson_dumps)
+    return web.json_response({"error": None, "data": locs}, dumps=json_dumps)
 
 
 @routes.post(
@@ -97,5 +97,5 @@ async def synchronise_meta_data_table(request: web.Request) -> web.Response:
                 "dry_run": query_params.dry_run,
             },
         },
-        dumps=orjson_dumps,
+        dumps=json_dumps,
     )

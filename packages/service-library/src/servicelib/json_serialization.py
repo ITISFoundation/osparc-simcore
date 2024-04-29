@@ -21,7 +21,7 @@ ENCODERS_BY_TYPE[ConstrainedFloat] = float
 _orjson_default_separator: Final = SeparatorTuple(item_separator=",", key_separator=":")
 
 
-def orjson_dumps(
+def json_dumps(
     obj: Any,
     *,
     default=pydantic_encoder,
@@ -60,11 +60,12 @@ def orjson_dumps(
     return result
 
 
-orjson_loads = orjson.loads
+orjson_dumps = json_dumps
+json_loads = orjson.loads
 
 
-class OrJsonNamespace:
+class JsonNamespace:
     """Namespace to use orjson as a replacement for interfaces where the built-in json namespace is expected"""
 
-    dumps = orjson_dumps
-    loads = orjson_loads
+    dumps = json_dumps
+    loads = json_loads

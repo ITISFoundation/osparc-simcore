@@ -10,7 +10,7 @@ from aiohttp import web
 from pydantic import HttpUrl, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_from_dict, setenvs_from_envfile
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
@@ -185,14 +185,14 @@ def test_settings_constructs(app_settings: ApplicationSettings):
     assert "api_version" in app_settings.public_dict()
 
     # assert can jsonify w/o raising
-    print("public_dict:", orjson_dumps(app_settings.public_dict(), indent=1))
+    print("public_dict:", json_dumps(app_settings.public_dict(), indent=1))
 
 
 def test_settings_to_client_statics(app_settings: ApplicationSettings):
     statics = app_settings.to_client_statics()
 
     # assert can jsonify w/o raising
-    print("statics:", orjson_dumps(statics, indent=1))
+    print("statics:", json_dumps(statics, indent=1))
 
     # all key in camelcase
     assert all(
@@ -218,7 +218,7 @@ def test_settings_to_client_statics_plugins(
     settings = ApplicationSettings.create_from_envs()
     statics = settings.to_client_statics()
 
-    print("STATICS:\n", orjson_dumps(statics, indent=1))
+    print("STATICS:\n", json_dumps(statics, indent=1))
 
     assert settings.WEBSERVER_LOGIN
 

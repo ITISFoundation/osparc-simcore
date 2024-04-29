@@ -33,7 +33,7 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -226,7 +226,7 @@ async def get_active_project(request: web.Request) -> web.Response:
 
             data = ProjectGet.parse_obj(project).data(exclude_unset=True)
 
-        return web.json_response({"data": data}, dumps=orjson_dumps)
+        return web.json_response({"data": data}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason="Project not found") from exc
@@ -281,7 +281,7 @@ async def get_project(request: web.Request):
         await update_or_pop_permalink_in_project(request, project)
 
         data = ProjectGet.parse_obj(project).data(exclude_unset=True)
-        return web.json_response({"data": data}, dumps=orjson_dumps)
+        return web.json_response({"data": data}, dumps=json_dumps)
 
     except ProjectInvalidRightsError as exc:
         raise web.HTTPForbidden(
@@ -304,7 +304,7 @@ async def get_project_inactivity(request: web.Request):
     project_inactivity = await projects_api.get_project_inactivity(
         app=request.app, project_id=path_params.project_id
     )
-    return web.json_response(Envelope(data=project_inactivity), dumps=orjson_dumps)
+    return web.json_response(Envelope(data=project_inactivity), dumps=json_dumps)
 
 
 #
@@ -432,7 +432,7 @@ async def replace_project(request: web.Request):
             app=request.app,
         )
 
-        return web.json_response({"data": data}, dumps=orjson_dumps)
+        return web.json_response({"data": data}, dumps=json_dumps)
 
     except JsonSchemaValidationError as exc:
         raise web.HTTPBadRequest(

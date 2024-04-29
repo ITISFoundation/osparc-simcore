@@ -8,7 +8,7 @@ from pydantic import PositiveInt
 from servicelib.aiohttp import observer
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.aiohttp.status import HTTP_200_OK
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
@@ -131,7 +131,7 @@ def envelope_response(data: Any, *, status: int = HTTP_200_OK) -> web.Response:
             "data": data,
             "error": None,
         },
-        dumps=orjson_dumps,
+        dumps=json_dumps,
         status=status,
     )
 

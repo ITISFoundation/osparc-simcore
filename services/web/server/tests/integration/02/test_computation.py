@@ -19,7 +19,7 @@ from models_library.projects_state import RunningState
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.status_utils import get_code_display_name
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -280,7 +280,7 @@ def _get_project_workbench_from_db(
         project_in_db
     ), f"missing pipeline in the database under comp_pipeline {project_id}"
     print(
-        f"<-- found following workbench: {orjson_dumps( project_in_db.workbench, indent=2)}"
+        f"<-- found following workbench: {json_dumps( project_in_db.workbench, indent=2)}"
     )
     return project_in_db.workbench
 
@@ -315,7 +315,7 @@ async def _assert_and_wait_for_pipeline_state(
             assert received_study_state == expected_state
             print(
                 f"--> pipeline completed with state {received_study_state=}! "
-                f"That's great: {orjson_dumps(attempt.retry_state.retry_object.statistics)}",
+                f"That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
             )
 
 
@@ -342,7 +342,7 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
             for node_id, node_values in comp_tasks_in_db.items():
                 assert (
                     node_id in workbench_in_db
-                ), f"node {node_id=} is missing from workbench {orjson_dumps(workbench_in_db, indent=2)}"
+                ), f"node {node_id=} is missing from workbench {json_dumps(workbench_in_db, indent=2)}"
 
                 node_in_project_table = workbench_in_db[node_id]
 
@@ -361,7 +361,7 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
                 )
             print(
                 "--> tasks were properly transferred! "
-                f"That's great: {orjson_dumps(attempt.retry_state.retry_object.statistics)}",
+                f"That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
             )
 
 
@@ -531,7 +531,7 @@ async def test_run_pipeline_and_check_state(
             if received_study_state != RunningState.SUCCESS:
                 raise ValueError
             print(
-                f"--> pipeline completed with state {received_study_state=}! That's great: {orjson_dumps(attempt.retry_state.retry_object.statistics)}",
+                f"--> pipeline completed with state {received_study_state=}! That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
             )
     assert pipeline_state == RunningState.SUCCESS
     comp_tasks_in_db: dict[NodeIdStr, Any] = _get_computational_tasks_from_db(

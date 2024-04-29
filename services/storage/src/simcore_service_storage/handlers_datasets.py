@@ -8,7 +8,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 
 # Exclusive for simcore-s3 storage -----------------------
 from ._meta import API_VTAG
@@ -41,7 +41,7 @@ async def get_datasets_metadata(request: web.Request) -> web.Response:
 
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
     return web.json_response(
-        {"data": await dsm.list_datasets(query_params.user_id)}, dumps=orjson_dumps
+        {"data": await dsm.list_datasets(query_params.user_id)}, dumps=json_dumps
     )
 
 
@@ -68,5 +68,5 @@ async def get_files_metadata_dataset(request: web.Request) -> web.Response:
     )
     return web.json_response(
         {"data": [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]},
-        dumps=orjson_dumps,
+        dumps=json_dumps,
     )

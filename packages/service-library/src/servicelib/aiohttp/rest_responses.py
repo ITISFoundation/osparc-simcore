@@ -11,7 +11,7 @@ from aiohttp import web, web_exceptions
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from servicelib.aiohttp.status import HTTP_200_OK
 
-from ..json_serialization import orjson_dumps
+from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorItemType, ErrorType
 
@@ -63,7 +63,7 @@ def create_data_response(
     try:
         payload = wrap_as_envelope(data) if not is_enveloped(data) else data
 
-        response = web.json_response(payload, dumps=orjson_dumps, status=status)
+        response = web.json_response(payload, dumps=json_dumps, status=status)
     except (TypeError, ValueError) as err:
         response = create_error_response(
             [
@@ -110,7 +110,7 @@ def create_error_response(
 
     return http_error_cls(
         reason=reason,
-        text=orjson_dumps(payload),
+        text=json_dumps(payload),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
 

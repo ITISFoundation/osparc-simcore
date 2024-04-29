@@ -21,7 +21,7 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
     RUN_PROJECT,
 )
 from servicelib.aiohttp import status
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.director_v2.api import get_project_run_policy
@@ -263,7 +263,7 @@ async def test_iterators_workflow(
 
     response = await client.put(
         f"/v0/projects/{project_uuid}",
-        data=orjson_dumps(new_project.dict(**REQUEST_MODEL_POLICY)),
+        data=json_dumps(new_project.dict(**REQUEST_MODEL_POLICY)),
     )
     assert response.status == status.HTTP_200_OK, await response.text()
 

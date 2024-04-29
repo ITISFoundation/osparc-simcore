@@ -17,7 +17,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import RunID
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
@@ -97,7 +97,7 @@ async def _create_proxy_service(
     )
     _logger.debug(
         "dynamic-sidecar-proxy create_service_params %s",
-        orjson_dumps(dynamic_sidecar_proxy_create_service_params),
+        json_dumps(dynamic_sidecar_proxy_create_service_params),
     )
 
     await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)

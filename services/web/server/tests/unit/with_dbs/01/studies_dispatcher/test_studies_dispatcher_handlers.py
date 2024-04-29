@@ -23,7 +23,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict, UserRole
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 from servicelib.aiohttp import status
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
@@ -240,7 +240,7 @@ async def test_api_list_supported_filetypes(client: TestClient):
 def test_model_examples(
     model_cls: type[BaseModel], example_name: int, example_data: Any
 ):
-    print(example_name, ":", orjson_dumps(example_data))
+    print(example_name, ":", json_dumps(example_data))
     model = model_cls.parse_obj(example_data)
     assert model
 

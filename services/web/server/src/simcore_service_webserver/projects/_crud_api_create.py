@@ -15,7 +15,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
@@ -326,7 +326,7 @@ async def create_project(
         data = ProjectGet.parse_obj(new_project).data(exclude_unset=True)
 
         raise web.HTTPCreated(
-            text=orjson_dumps({"data": data}),
+            text=json_dumps({"data": data}),
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 

@@ -9,7 +9,7 @@ from aiohttp import web
 from aws_library.s3.errors import S3AccessError, S3BucketInvalidError
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
@@ -37,7 +37,7 @@ async def get_health(request: web.Request) -> web.Response:
                 }
             ).dict(**RESPONSE_MODEL_POLICY)
         },
-        dumps=orjson_dumps,
+        dumps=json_dumps,
     )
 
 
@@ -79,5 +79,5 @@ async def get_status(request: web.Request) -> web.Response:
     )
 
     return web.json_response(
-        {"data": status.dict(exclude_unset=True)}, dumps=orjson_dumps
+        {"data": status.dict(exclude_unset=True)}, dumps=json_dumps
     )

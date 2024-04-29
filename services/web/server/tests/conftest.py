@@ -25,7 +25,7 @@ from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
-from servicelib.json_serialization import orjson_dumps
+from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._crud_api_create import (
@@ -150,7 +150,7 @@ def monkeypatch_setenv_from_app_config(
     def _patch(app_config: dict) -> EnvVarsDict:
         assert isinstance(app_config, dict)
 
-        print("  - app_config=\n", orjson_dumps(app_config, indent=1, sort_keys=True))
+        print("  - app_config=\n", json_dumps(app_config, indent=1, sort_keys=True))
         envs: EnvVarsDict = {
             env_key: f"{env_value}"
             for env_key, env_value in convert_to_environ_vars(app_config).items()
@@ -158,7 +158,7 @@ def monkeypatch_setenv_from_app_config(
 
         print(
             "  - convert_to_environ_vars(app_cfg)=\n",
-            orjson_dumps(envs, indent=1, sort_keys=True),
+            json_dumps(envs, indent=1, sort_keys=True),
         )
         setenvs_from_dict(monkeypatch, envs)
 
