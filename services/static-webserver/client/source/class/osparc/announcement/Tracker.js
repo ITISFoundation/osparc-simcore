@@ -43,7 +43,7 @@ qx.Class.define("osparc.announcement.Tracker", {
     },
 
     startTracker: function() {
-      this.__checkInterval = setInterval(this.checkAnnouncements, this.self().CHECK_INTERVAL);
+      this.__checkInterval = setInterval(() => this.checkAnnouncements(), this.self().CHECK_INTERVAL);
     },
 
     stopTracker: function() {

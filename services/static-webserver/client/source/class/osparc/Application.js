@@ -94,9 +94,6 @@ qx.Class.define("osparc.Application", {
 
     __preloadCalls: async function() {
       await osparc.store.Store.getInstance().preloadCalls();
-
-      const announcementsTracker = osparc.announcement.Tracker.getInstance();
-      await announcementsTracker.checkAnnouncements();
     },
 
     __initRouting: function() {
