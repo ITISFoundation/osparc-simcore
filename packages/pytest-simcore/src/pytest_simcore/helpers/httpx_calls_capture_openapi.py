@@ -44,8 +44,6 @@ def _get_openapi_specs(host: service_hosts) -> dict[str, Any]:
         msg = f"{host=} has not been added yet to the testing system. Please do so yourself"
         raise OpenApiSpecError(msg)
     with httpx.Client() as session:
-        # http://127.0.0.1:30010/dev/doc/swagger.json
-        # http://127.0.0.1:8006/api/v0/openapi.json
         response = session.get(url)
         response.raise_for_status()
         openapi_spec = jsonref.loads(response.read().decode("utf8"))
