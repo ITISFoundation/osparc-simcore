@@ -28,7 +28,7 @@ class ProfilerMiddleware:
 
     def __init__(self, app: FastAPI):
         self._app: FastAPI = app
-        self._profile_header_trigger: str = f"x-profile"
+        self._profile_header_trigger: str = "x-profile"
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":

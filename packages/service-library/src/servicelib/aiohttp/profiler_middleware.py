@@ -11,7 +11,7 @@ from .._utils_profiling_middleware import append_profile
 @middleware
 async def profiling_middleware(request: Request, handler):
     profiler: Profiler | None = None
-    if request.headers.get(f"x-profile") is not None:
+    if request.headers.get("x-profile") is not None:
         profiler = Profiler(async_mode="enabled")
         profiler.start()
 
