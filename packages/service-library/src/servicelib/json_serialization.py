@@ -65,7 +65,7 @@ json_loads = orjson.loads
 
 
 class JsonNamespace:
-    """Namespace to use orjson as a replacement for interfaces where the built-in json namespace is expected"""
+    """Namespace to use our customized serialization functions for interfaces where the built-in json Api is expected"""
 
     dumps = json_dumps
     loads = json_loads
