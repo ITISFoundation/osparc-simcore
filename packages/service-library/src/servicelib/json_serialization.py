@@ -51,21 +51,48 @@ class OrJsonAdapter:
     loads = orjson.loads
 
 
-def json_dumps(obj: Any, **json_dumps_kwargs):
+def json_dumps(obj: Any, default=pydantic_encoder, **json_dumps_kwargs):
     """Keeps json.dump interface with different defaults"""
 
-    json_dumps_kwargs.setdefault("default", pydantic_encoder)  # rich encoder
     if "indent" not in json_dumps_kwargs:
         json_dumps_kwargs.setdefault(
             "separators",
             SeparatorTuple(item_separator=",", key_separator=":"),  # compact separators
         )
-    return json.dumps(obj, **json_dumps_kwargs)
+    return json.dumps(obj, default=default, **json_dumps_kwargs)
 
 
-def orjson_dumps(obj: Any, **orjson_kwargs):
-    orjson_kwargs.setdefault(
-        "default", pydantic_encoder
-    )  # TODO: remove and see customize only where needed
-    result: str = orjson.dumps(obj, **orjson_kwargs).decode("utf-8")
+_default_separator: Final = SeparatorTuple(item_separator=",", key_separator=":")
+
+
+def orjson_dumps(
+    obj: Any,
+    *,
+    default=pydantic_encoder,
+    sort_keys: bool = False,
+    indent=int | None,
+    separators: SeparatorTuple | tuple[str, str] | None = None,
+):
+    """Runs orjson.dumps with a json.dumps-like API"""
+    # pre-process inputs
+    option = orjson.OPT_INDENT_2 if indent is not None else 0
+    if sort_keys:
+        option |= orjson.OPT_SORT_KEYS
+
+    if separators is not None:
+        separators = SeparatorTuple(*separators)
+
+    result: str = orjson.dumps(obj, default=default, option=option).decode("utf-8")
+
+    # post-process outputs
+    if separators != _default_separator:
+        assert isinstance(separators, SeparatorTuple)  # nosec
+        result = result.replace(
+            _default_separator.key_separator,
+            separators.key_separator,
+        ).replace(
+            _default_separator.item_separator,
+            separators.item_separator,
+        )
+
     return result
