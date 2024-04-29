@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from typing import Any
 from uuid import uuid4
@@ -173,9 +172,7 @@ async def _fake_list_wallet_payment_methods(
     # FAKE -----
     _logger.debug(
         "FAKE Payments Gateway: POST /payment-methods:batchGet: %s",
-        json.dumps(
-            {"payment_methods_ids": [p.payment_method_id for p in acked]}, indent=1
-        ),
+        {"payment_methods_ids": [p.payment_method_id for p in acked]},
     )
     await asyncio.sleep(1)
 

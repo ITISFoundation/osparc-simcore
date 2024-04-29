@@ -2,6 +2,7 @@ import json
 from typing import Any
 
 from fastapi import FastAPI
+from models_library.utils.json_serialization import json_dumps
 from pyinstrument import Profiler
 from starlette.requests import Request
 
@@ -25,7 +26,7 @@ def _append_profile(body: str, profile: str) -> str:
         body += "\n" if not body.endswith("\n") else ""
     except json.decoder.JSONDecodeError:
         pass
-    body += json.dumps({"profile": profile})
+    body += json_dumps({"profile": profile})
     return body
 
 

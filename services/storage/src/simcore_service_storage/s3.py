@@ -2,11 +2,11 @@
 
 """
 
-import json
 import logging
 from typing import cast
 
 from aiohttp import web
+from models_library.utils.json_serialization import json_dumps
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_fixed
@@ -39,7 +39,7 @@ async def setup_s3_client(app):
             log.info(
                 "S3 client %s successfully created [%s]",
                 f"{client=}",
-                json.dumps(attempt.retry_state.retry_object.statistics),
+                json_dumps(attempt.retry_state.retry_object.statistics),
             )
         assert client  # nosec
         app[APP_S3_KEY] = client

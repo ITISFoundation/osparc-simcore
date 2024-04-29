@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import NoReturn, cast
 
@@ -72,7 +71,7 @@ async def _copy_folders_from_project(
     )
 
     raise web.HTTPCreated(
-        text=json.dumps(body.destination), content_type=MIMETYPE_APPLICATION_JSON
+        text=json_dumps(body.destination), content_type=MIMETYPE_APPLICATION_JSON
     )
 
 
