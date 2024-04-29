@@ -1,8 +1,8 @@
 from collections.abc import AsyncGenerator
 
 from aiohttp import ClientSession, ClientTimeout, web
+from models_library.utils.json_serialization import json_dumps
 
-from ..json_serialization import json_dumps
 from ..utils import (
     get_http_client_request_aiohttp_connect_timeout,
     get_http_client_request_aiohttp_sock_connect_timeout,
