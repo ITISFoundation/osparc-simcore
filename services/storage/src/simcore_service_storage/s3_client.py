@@ -64,6 +64,11 @@ class S3MetaData:
         )
 
 
+@dataclass(frozen=True)
+class S3FolderMetaData:
+    size: int
+
+
 async def _list_objects_v2_paginated_gen(
     client: S3Client,
     bucket: S3BucketName,
@@ -326,6 +331,23 @@ class StorageS3Client(SimcoreS3API):  # pylint: disable=too-many-public-methods
             sha256_checksum=response.get("ChecksumSHA256"),
             size=response["ContentLength"],
         )
+
+    async def _list_all_objects(
+        self, bucket: S3BucketName, *, prefix: str
+    ) -> AsyncGenerator[ObjectTypeDef, None]:
+        async for s3_objects in self.list_all_objects_gen(bucket, prefix=prefix):
+            for obj in s3_objects:
+                yield obj
+
+    @s3_exception_handler(_logger)
+    async def get_directory_metadata(
+        self, bucket: S3BucketName, *, prefix: str
+    ) -> S3FolderMetaData:
+        size = 0
+        async for s3_object in self._list_all_objects(bucket, prefix=prefix):
+            assert "Size" in s3_object  # nosec
+            size += s3_object["Size"]
+        return S3FolderMetaData(size=size)
 
     @s3_exception_handler(_logger)
     async def copy_file(

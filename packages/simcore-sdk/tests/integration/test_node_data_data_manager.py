@@ -153,8 +153,9 @@ async def test_valid_upload_download(
     node_uuid: NodeID,
     r_clone_settings: RCloneSettings,
     mock_io_log_redirect_cb: LogRedirectCB,
+    faker: Faker,
 ):
-    async with ProgressBarData(num_steps=2) as progress_bar:
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
@@ -195,8 +196,9 @@ async def test_valid_upload_download_saved_to(
     random_tmp_dir_generator: Callable,
     r_clone_settings: RCloneSettings,
     mock_io_log_redirect_cb: LogRedirectCB,
+    faker: Faker,
 ):
-    async with ProgressBarData(num_steps=2) as progress_bar:
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
@@ -240,8 +242,9 @@ async def test_delete_legacy_archive(
     node_uuid: NodeID,
     r_clone_settings: RCloneSettings,
     temp_dir: Path,
+    faker: Faker,
 ):
-    async with ProgressBarData(num_steps=2) as progress_bar:
+    async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         # NOTE: legacy archives can no longer be crated
         # generating a "legacy style archive"
         archive_into_dir = temp_dir / f"legacy-archive-dir-{uuid4()}"

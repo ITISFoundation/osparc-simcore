@@ -212,7 +212,8 @@ async def pull_image(
                     assert parsed_progress.progress_detail  # nosec
                     assert parsed_progress.progress_detail.current  # nosec
                     layer_id_to_size.setdefault(
-                        parsed_progress.id, _PulledStatus(0)
+                        parsed_progress.id,
+                        _PulledStatus(parsed_progress.progress_detail.total or 0),
                     ).extracted = parsed_progress.progress_detail.current
                 case "pull complete":
                     assert parsed_progress.id  # nosec

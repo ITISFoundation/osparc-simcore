@@ -10,7 +10,7 @@ from typing import Final
 
 from aiocache import cached
 from aiofiles import tempfile
-from pydantic import AnyUrl
+from pydantic import AnyUrl, BaseModel, ByteSize
 from pydantic.errors import PydanticErrorMixin
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
@@ -91,11 +91,11 @@ async def _async_r_clone_command(
     )
 
     assert proc.stdout  # nosec
-    await asyncio.wait(
-        [_read_stream(proc.stdout, [*r_clone_log_parsers, command_result_parser])]
-    )
+    await asyncio.wait([_read_stream(proc.stdout, [*r_clone_log_parsers])])
 
-    await proc.communicate()
+    # NOTE: ANE not sure why you do this call here. The above one already reads out the stream.
+    _stdout, _stderr = await proc.communicate()
+
     command_output = command_result_parser.get_output()
     if proc.returncode != 0:
         raise RCloneFailedError(
@@ -134,6 +134,44 @@ def _get_exclude_filters(exclude_patterns: set[str] | None) -> list[str]:
     return exclude_options
 
 
+class _RCloneSize(BaseModel):
+    count: int
+    bytes: ByteSize
+    sizeless: int
+
+
+async def _get_folder_size(
+    r_clone_settings: RCloneSettings,
+    *,
+    local_dir: Path,
+    folder: Path,
+    s3_config_key: str,
+) -> ByteSize:
+    r_clone_config_file_content = get_r_clone_config(
+        r_clone_settings, s3_config_key=s3_config_key
+    )
+    async with _config_file(r_clone_config_file_content) as config_file_name:
+        r_clone_command = (
+            "rclone",
+            f"--config {config_file_name}",
+            "size",
+            f"{folder}",
+            "--json",
+            "--links",
+        )
+
+        result = await _async_r_clone_command(
+            *r_clone_command,
+            cwd=f"{local_dir.resolve()}",
+        )
+
+    rclone_folder_size_result = _RCloneSize.parse_raw(result)
+    _logger.debug(
+        "RClone size call for %s: %s", f"{folder}", f"{rclone_folder_size_result}"
+    )
+    return rclone_folder_size_result.bytes
+
+
 async def _sync_sources(
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
@@ -145,6 +183,14 @@ async def _sync_sources(
     exclude_patterns: set[str] | None,
     debug_logs: bool,
 ) -> None:
+
+    folder_size = await _get_folder_size(
+        r_clone_settings,
+        local_dir=local_dir,
+        folder=Path(source),
+        s3_config_key=s3_config_key,
+    )
+
     r_clone_config_file_content = get_r_clone_config(
         r_clone_settings, s3_config_key=s3_config_key
     )
@@ -162,23 +208,30 @@ async def _sync_sources(
             "--use-mmap",  # docs https://rclone.org/docs/#use-mmap
             "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
             r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
-            # make sure stats can be noticed
-            "--stats-log-level",
-            "NOTICE",
+            "--use-json-log",
+            # make sure stats can be noticed at the end
+            # "--stats-log-level",
+            # "INFO",
             # frequent polling for faster progress updates
             "--stats",
-            "0.5s",
+            "200ms",
+            # makes sure the stats are only sending the summary
+            # "--stats-one-line",
+            # "--progress",
+            "--verbose",
             "sync",
             shlex.quote(source),
             shlex.quote(destination),
             # filter options
             *_get_exclude_filters(exclude_patterns),
-            "--progress",
             "--links",
-            "--verbose",
         )
 
-        async with progress_bar.sub_progress(steps=100) as sub_progress:
+        async with progress_bar.sub_progress(
+            steps=folder_size,
+            progress_unit="Byte",
+            description=f"transferring {local_dir.name}",
+        ) as sub_progress:
             r_clone_log_parsers: list[BaseRCloneLogParser] = (
                 [DebugLogParser()] if debug_logs else []
             )

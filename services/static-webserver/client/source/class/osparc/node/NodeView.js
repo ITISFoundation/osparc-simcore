@@ -96,13 +96,6 @@ qx.Class.define("osparc.node.NodeView", {
       this._mainView.bind("backgroundColor", nodeOutputs, "backgroundColor");
       this._outputsLayout.add(nodeOutputs);
 
-      const outputFilesBtn = new qx.ui.form.Button(this.tr("Service data"), "@FontAwesome5Solid/folder-open/14").set({
-        allowGrowX: false
-      });
-      osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
-      outputFilesBtn.addListener("execute", () => osparc.node.BaseNodeView.openNodeDataManager(this.getNode()));
-      this._outputsLayout.add(outputFilesBtn);
-
       this._outputsBtn.set({
         value: false,
         enabled: this.getNode().hasOutputs() > 0
