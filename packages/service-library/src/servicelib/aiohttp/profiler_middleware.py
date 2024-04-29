@@ -35,7 +35,7 @@ async def profiling_middleware(request: Request, handler):
     await stream_response.write(response.body)
     profiler.stop()
     await stream_response.write(
-        append_profile("", profiler.output_text(unicode=True, color=True)).encode()
+        append_profile("\n", profiler.output_text(unicode=True, color=True)).encode()
     )
     await stream_response.write_eof()
     return stream_response
