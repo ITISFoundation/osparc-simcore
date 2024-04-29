@@ -575,11 +575,7 @@ class AuthSession:
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: WebServerSettings | None = None) -> None:
-    if not settings:
-        settings = WebServerSettings.create_from_envs()
-
-    assert settings is not None  # nosec
+def setup(app: FastAPI, settings: WebServerSettings) -> None:
 
     setup_client_instance(
         app,

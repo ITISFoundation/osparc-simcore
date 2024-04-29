@@ -376,6 +376,62 @@
         }
       }
     },
+    "/v2/computations/{project_id}/tasks/-/outputs:batchGet": {
+      "post": {
+        "tags": [
+          "computations"
+        ],
+        "summary": "Gets all outputs for selected tasks",
+        "operationId": "get_batch_tasks_outputs_v2_computations__project_id__tasks___outputs_batchGet_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            },
+            "name": "project_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TasksSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TasksOutputs"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cannot find computation or the tasks in it"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v2/dynamic_services": {
       "get": {
         "tags": [
@@ -3679,6 +3735,39 @@
           "task_id"
         ],
         "title": "TaskLogFileGet"
+      },
+      "TasksOutputs": {
+        "properties": {
+          "nodes_outputs": {
+            "additionalProperties": {
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Nodes Outputs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nodes_outputs"
+        ],
+        "title": "TasksOutputs"
+      },
+      "TasksSelection": {
+        "properties": {
+          "nodes_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Nodes Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nodes_ids"
+        ],
+        "title": "TasksSelection"
       },
       "UsedResources": {
         "additionalProperties": {

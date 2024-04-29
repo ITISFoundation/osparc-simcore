@@ -14,6 +14,7 @@ from collections.abc import Callable, Iterator
 import pytest
 from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
+from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import (
@@ -75,20 +76,27 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="Service Key",
     )
+    group.addoption(
+        "--user-agent",
+        action="store",
+        type=str,
+        default="e2e-playwright",
+        help="defines a specific user agent osparc header",
+    )
 
 
 @pytest.fixture(autouse=True)
-def osparc_test_id_attribute(playwright):
+def osparc_test_id_attribute(playwright: Playwright) -> None:
     # Set a custom test id attribute
     playwright.selectors.set_test_id_attribute("osparc-test-id")
 
 
 @pytest.fixture
-def api_request_context(context: BrowserContext):
+def api_request_context(context: BrowserContext) -> APIRequestContext:
     return context.request
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def product_url(request: pytest.FixtureRequest) -> AnyUrl:
     if passed_product_url := request.config.getoption("--product-url"):
         return TypeAdapter(AnyUrl).validate_python(passed_product_url)
@@ -118,13 +126,13 @@ def user_password(
     return os.environ["USER_PASSWORD"]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def product_billable(request: pytest.FixtureRequest) -> bool:
     billable = request.config.getoption("--product-billable")
     return TypeAdapter(bool).validate_python(billable)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def service_test_id(request: pytest.FixtureRequest) -> str:
     if test_id := request.config.getoption("--service-test-id"):
         assert isinstance(test_id, str)
@@ -132,7 +140,7 @@ def service_test_id(request: pytest.FixtureRequest) -> str:
     return os.environ["SERVICE_TEST_ID"]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def service_key(request: pytest.FixtureRequest) -> str:
     if key := request.config.getoption("--service-key"):
         assert isinstance(key, str)
@@ -140,9 +148,32 @@ def service_key(request: pytest.FixtureRequest) -> str:
     return os.environ["SERVICE_KEY"]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def auto_register(request: pytest.FixtureRequest) -> bool:
     return bool(request.config.getoption("--autoregister"))
+
+
+@pytest.fixture(scope="session")
+def user_agent(request: pytest.FixtureRequest) -> str:
+    return str(request.config.getoption("--user-agent"))
+
+
+@pytest.fixture(scope="session")
+def browser_type_launch_args(browser_type_launch_args: dict, user_agent: str) -> dict:
+    # NOTE: Until the dynamic sidecar is setup with https://doc.traefik.io/traefik/middlewares/http/headers/#accesscontrolallowheaders
+    # this must remain. until https://github.com/ITISFoundation/osparc-simcore/issues/5754 is completed
+    return {**browser_type_launch_args, "args": ["--disable-web-security"]}
+
+
+@pytest.fixture(scope="session")
+def browser_context_args(
+    browser_context_args: dict[str, dict[str, str] | str], user_agent: str
+) -> dict[str, dict[str, str] | str]:
+    # Override browser context options, see https://playwright.dev/python/docs/test-runners#fixtures
+    return {
+        **browser_context_args,
+        "extra_http_headers": {"X-Simcore-User-Agent": user_agent},
+    }
 
 
 @pytest.fixture

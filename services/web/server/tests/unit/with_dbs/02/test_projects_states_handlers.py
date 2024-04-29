@@ -312,9 +312,9 @@ async def test_share_project(
         resp = await _delete_project(client, new_project)
         await assert_status(
             resp,
-            expected_status_code=expected.no_content
-            if share_rights["delete"]
-            else expected.forbidden,
+            expected_status_code=(
+                expected.no_content if share_rights["delete"] else expected.forbidden
+            ),
         )
 
 
@@ -755,15 +755,14 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
 @pytest.mark.parametrize(*standard_role_response())
 async def test_close_project(
     client: TestClient,
-    logged_user,
-    user_project,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
     client_session_id_factory: Callable,
     expected,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
     fake_services,
     mock_dynamic_scheduler_rabbitmq: None,
-    mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # POST /v0/projects/{project_id}:close
@@ -773,17 +772,18 @@ async def test_close_project(
         "dynamic_scheduler.api.list_dynamic_services"
     ].return_value = fake_dynamic_services
 
+    assert client.app
     # open project
     client_id = client_session_id_factory()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_id)
+    resp = await client.post(f"{url}", json=client_id)
 
     if resp.status == status.HTTP_200_OK:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(user_project["uuid"])
         )
         mocked_director_v2_api["director_v2.api.list_dynamic_services"].assert_any_call(
-            client.server.app, logged_user["id"], user_project["uuid"]
+            client.app, logged_user["id"], user_project["uuid"]
         )
         mocked_director_v2_api["director_v2.api.list_dynamic_services"].reset_mock()
     else:
@@ -791,7 +791,7 @@ async def test_close_project(
 
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_id)
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.no_content)
 
     if resp.status == status.HTTP_204_NO_CONTENT:
@@ -803,7 +803,7 @@ async def test_close_project(
 
         calls = [
             call(
-                client.server.app,
+                client.app,
                 user_id=logged_user["id"],
                 project_id=user_project["uuid"],
             ),
@@ -814,11 +814,11 @@ async def test_close_project(
 
         calls = [
             call(
-                app=client.server.app,
+                app=client.app,
                 node_id=service["service_uuid"],
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
-                progress=mock_progress_bar.sub_progress(1),
+                progress=mock.ANY,
             )
             for service in fake_dynamic_services
         ]
@@ -858,14 +858,14 @@ async def test_get_active_project(
     except SocketConnectionError:
         if expected == status.HTTP_200_OK:
             pytest.fail("socket io connection should not fail")
-
+    assert client.app
     # get active projects -> empty
     get_active_projects_url = (
         client.app.router["get_active_project"]
         .url_for()
         .with_query(client_session_id=client_id1)
     )
-    resp = await client.get(get_active_projects_url)
+    resp = await client.get(f"{get_active_projects_url}")
     data, error = await assert_status(resp, expected)
     if resp.status == status.HTTP_200_OK:
         assert not data
@@ -875,10 +875,10 @@ async def test_get_active_project(
     open_project_url = client.app.router["open_project"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.post(open_project_url, json=client_id1)
+    resp = await client.post(f"{open_project_url}", json=client_id1)
     await assert_status(resp, expected)
 
-    resp = await client.get(get_active_projects_url)
+    resp = await client.get(f"{get_active_projects_url}")
     data, error = await assert_status(resp, expected)
     if resp.status == status.HTTP_200_OK:
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
@@ -909,7 +909,7 @@ async def test_get_active_project(
         .url_for()
         .with_query(client_session_id=client_id2)
     )
-    resp = await client.get(get_active_projects_url)
+    resp = await client.get(f"{get_active_projects_url}")
     data, error = await assert_status(resp, expected)
     if resp.status == status.HTTP_200_OK:
         assert not data
@@ -1358,9 +1358,11 @@ async def test_open_shared_project_at_same_time(
             shared_project,
             [
                 expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
-                expected.locked
-                if user_role != UserRole.GUEST
-                else status.HTTP_423_LOCKED,
+                (
+                    expected.locked
+                    if user_role != UserRole.GUEST
+                    else status.HTTP_423_LOCKED
+                ),
             ],
         )
         for c in clients

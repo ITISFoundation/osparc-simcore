@@ -30,6 +30,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 from models_library.clusters import DEFAULT_CLUSTER_ID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -430,7 +431,7 @@ async def get_computation(
         project_id, comp_pipelines_repo, comp_tasks_repo
     )
 
-    pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
+    pipeline_state: RunningState = get_pipeline_state_from_task_states(filtered_tasks)
 
     _logger.debug(
         "Computational task status by %s for %s has %s",

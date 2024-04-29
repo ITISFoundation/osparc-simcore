@@ -102,7 +102,8 @@ async def upload_outputs(
                 steps=sum(
                     2 if is_file_type(port.property_type) else 1
                     for port in ports_to_set
-                )
+                ),
+                description="uploading outputs",
             )
         )
         for port in ports_to_set:
@@ -193,7 +194,7 @@ async def _get_data_from_port(
     port: Port, *, target_dir: Path, progress_bar: ProgressBarData
 ) -> tuple[Port, ItemConcreteValue | None, ByteSize]:
     async with progress_bar.sub_progress(
-        steps=2 if is_file_type(port.property_type) else 1
+        steps=2 if is_file_type(port.property_type) else 1, description="getting data"
     ) as sub_progress:
         with log_context(logger, logging.DEBUG, f"getting {port.key=}"):
             port_data = await port.get(sub_progress)
@@ -274,7 +275,9 @@ async def download_target_ports(
         for port_value in (await getattr(PORTS, port_type_name.value)).values()
         if (not port_keys) or (port_value.key in port_keys)
     ]
-    async with progress_bar.sub_progress(steps=len(ports_to_get)) as sub_progress:
+    async with progress_bar.sub_progress(
+        steps=len(ports_to_get), description="downloading"
+    ) as sub_progress:
         results = await logged_gather(
             *[
                 _get_data_from_port(
