@@ -1,3 +1,8 @@
+""" Helpers for json serialization
+    - built-in json-like API
+    - implemented using orjson, which  performs better. SEE https://github.com/ijl/orjson?tab=readme-ov-file#performance
+"""
+
 from typing import Any, Final, NamedTuple
 
 import orjson
@@ -55,10 +60,7 @@ orjson_loads = orjson.loads
 
 
 class OrJsonNamespace:
-    """
-    Creates a namespace to use orjson as a replacment for json namesspace
-    NOTE orjson performs better than json. SEE https://github.com/ijl/orjson?tab=readme-ov-file#performance
-    """
+    """Namespace to use orjson as a replacement for interfaces where the built-in json namespace is expected"""
 
     dumps = orjson_dumps
     loads = orjson_loads
