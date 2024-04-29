@@ -22,7 +22,7 @@ def orjson_dumps(
     *,
     default=pydantic_encoder,
     sort_keys: bool = False,
-    indent=int | None,
+    indent: int | None = None,
     separators: SeparatorTuple | tuple[str, str] | None = None,
 ):
     """json.dumps-like API implemented with orjson.dumps in the core"""
