@@ -1,6 +1,6 @@
-from servicelib.json_serialization import OrJsonAdapter
+from servicelib.json_serialization import orjson_dumps, orjson_loads
 
 
 class BaseConfig:
-    json_loads = OrJsonAdapter.loads
-    json_dumps = OrJsonAdapter.dumps
+    json_loads = orjson_loads
+    json_dumps = orjson_dumps
