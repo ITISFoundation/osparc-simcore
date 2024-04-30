@@ -1,10 +1,6 @@
 /* eslint-disable no-undef */
 
-const {
-  test,
-  expect,
-  base
-} = require('@playwright/test');
+const { test, expect } = require('@playwright/test');
 
 import { LoginPage } from '../fixtures/loginPage';
 
@@ -39,22 +35,28 @@ for (const product in products) {
     const productUsers = users[product];
     test.describe(`Navigation Bar ${product}`, () => {
       for (const user of productUsers) {
-        test.beforeAll(async () => {
-          const browser = await chromium.launch();
-          const page = await browser.newPage();
+        const role = user.role;
+        let page = null;
 
-          const loginPage = test.use(new LoginPage(page, products[product]));
+        test.beforeAll(async ({ browser }) => {
+          page = await browser.newPage();
+
+          const loginPage = new LoginPage(page, products[product]);
           await loginPage.goto();
           await loginPage.login(user.email, user.password);
         });
 
-        test(`Options per Role ${user.role}`, async ({ page }) => {
-          expect(userMenuButtonsPerRole[user.role]).toBeDefined();
+        test.afterAll(async () => {
+          await page.close();
+        });
+
+        test(`Options per Role ${role}`, async () => {
+          expect(userMenuButtonsPerRole[role]).toBeDefined();
 
           // open user menu
           await page.getByTestId("userMenuBtn").click();
 
-          const buttons = userMenuButtonsPerRole[user.role];
+          const buttons = userMenuButtonsPerRole[role];
           for (const button in buttons) {
             const expected = buttons[button];
             const isVisible = await page.getByRole("button", {
