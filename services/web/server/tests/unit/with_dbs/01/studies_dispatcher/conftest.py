@@ -38,6 +38,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_VERSION_CONTROL": "0",
             "WEBSERVER_WALLETS": "0",
+            "WEBSERVER_PROFILING": "0",
         },
     )
 
