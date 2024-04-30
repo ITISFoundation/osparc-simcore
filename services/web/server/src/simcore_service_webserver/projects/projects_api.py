@@ -807,10 +807,10 @@ async def update_project_node_outputs(
     return updated_project, changed_keys
 
 
-async def get_workbench_node_ids_from_project_uuid(
+async def list_node_ids_in_project(
     app: web.Application,
-    project_uuid: str,
-) -> set[str]:
+    project_uuid: ProjectID,
+) -> set[NodeID]:
     """Returns a set with all the node_ids from a project's workbench"""
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     return await db.list_node_ids_in_project(project_uuid)
@@ -818,7 +818,7 @@ async def get_workbench_node_ids_from_project_uuid(
 
 async def is_node_id_present_in_any_project_workbench(
     app: web.Application,
-    node_id: str,
+    node_id: NodeID,
 ) -> bool:
     """If the node_id is presnet in one of the projects' workbenche returns True"""
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]

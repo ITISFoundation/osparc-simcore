@@ -1,10 +1,11 @@
 import datetime
 import uuid
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import asdict, field, fields
 from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
+from pydantic import dataclasses as py_dataclasses
 from simcore_postgres_database.models.projects_node_to_pricing_unit import (
     projects_node_to_pricing_unit,
 )
@@ -12,7 +13,6 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .errors import ForeignKeyViolation, UniqueViolation
 from .models.projects_nodes import projects_nodes
-from .utils_models import FromRowMixin
 
 
 #
@@ -38,7 +38,7 @@ class ProjectNodesDuplicateNode(BaseProjectNodesError):
     ...
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@py_dataclasses.dataclass(frozen=True, kw_only=True)
 class ProjectNodeCreate:
     node_id: uuid.UUID
     required_resources: dict[str, Any] = field(default_factory=dict)
@@ -48,13 +48,13 @@ class ProjectNodeCreate:
         return {f.name for f in fields(ProjectNodeCreate) if f.name not in exclude}
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ProjectNode(ProjectNodeCreate, FromRowMixin):
+@py_dataclasses.dataclass(frozen=True, kw_only=True)
+class ProjectNode(ProjectNodeCreate):
     created: datetime.datetime
     modified: datetime.datetime
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@py_dataclasses.dataclass(frozen=True, kw_only=True)
 class ProjectNodesRepo:
     project_uuid: uuid.UUID
 
