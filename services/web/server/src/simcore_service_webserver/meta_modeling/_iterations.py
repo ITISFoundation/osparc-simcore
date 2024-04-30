@@ -3,7 +3,6 @@
 """
 
 import itertools
-import json
 import logging
 import re
 from collections.abc import Generator, Iterator
@@ -16,6 +15,7 @@ from models_library.function_services_catalog import is_iterator_service
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
+from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
@@ -298,7 +298,7 @@ async def get_or_create_runnable_projects(
             project=project,
             branch_name=branch_name,
             tag_name=tag_name,
-            tag_message=json.dumps(parameters),
+            tag_message=json_dumps(parameters),
         )
 
         workcopy_project_id = await vc_repo.get_workcopy_project_id(repo_id, commit_id)

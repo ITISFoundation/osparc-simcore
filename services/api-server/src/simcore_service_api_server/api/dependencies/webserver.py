@@ -1,10 +1,10 @@
-import json
 import time
 from typing import Annotated
 
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.requests import Request
+from models_library.utils.json_serialization import json_dumps
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE
@@ -46,7 +46,7 @@ def get_session_cookie(
 
     # builds session cookie
     cookie_name = settings.WEBSERVER_SESSION_NAME
-    cookie_data = json.dumps(
+    cookie_data = json_dumps(
         {
             "created": int(time.time()),  # now
             "session": {"AIOHTTP_SECURITY": identity},
