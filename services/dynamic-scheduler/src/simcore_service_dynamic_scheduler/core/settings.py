@@ -79,4 +79,4 @@ class ApplicationSettings(_BaseApplicationSettings):
 
     DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    DYNAMIC_SCHEDULER_PROFILING: bool = False
+    DYNAMIC_SCHEDULER_PROFILING: bool
