@@ -2,26 +2,28 @@
 
 const { test, expect } = require('@playwright/test');
 
+import LoginPage from '../fixtures/loginPage';
+
 import products from '../products.json';
 import users from '../users.json';
 
 const userMenuButtonsPerRole = {
-  "user": {
+  "USER": {
     "My Account": true,
     "PO Center": false,
     "Admin Center": false,
   },
-  "tester": {
+  "TESTER": {
     "My Account": true,
     "PO Center": false,
     "Admin Center": false,
   },
-  "po_owner": {
+  "PRODUCT_OWNER": {
     "My Account": true,
     "PO Center": true,
     "Admin Center": false,
   },
-  "admin": {
+  "ADMIN": {
     "My Account": true,
     "PO Center": true,
     "Admin Center": true,
@@ -38,20 +40,22 @@ for (const product in products) {
           const browser = await chromium.launch();
           const page = await browser.newPage();
 
-          await page.goto(products[product]);
-          await page.getByTestId("loginUserEmailFld").fill(user.email);
-          await page.getByTestId("loginPasswordFld").fill(user.password);
+          const loginPage = LoginPage(page, products[product]);
+          await loginPage.goto();
 
           const responsePromise = page.waitForResponse('**/me');
-          await page.getByTestId("loginSubmitBtn").click();
+          await loginPage.login(user.email, user.password);
 
           const response = await responsePromise;
           const statics = await response.json();
           expect(statics["data"]["role"]).toBe(user.role);
         });
 
-        test(`Role Centers`, async ({ page }) => {
+        test(`Options per Role ${user.role}`, async ({ page }) => {
           expect(userMenuButtonsPerRole[user.role]).toBeDefined();
+
+          // open user menu
+          await page.getByTestId("userMenuBtn").click();
 
           const buttons = userMenuButtonsPerRole[user.role];
           for (const button in buttons) {
