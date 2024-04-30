@@ -19,9 +19,9 @@ from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
+from models_library.utils.json_serialization import json_dumps
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
-from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather

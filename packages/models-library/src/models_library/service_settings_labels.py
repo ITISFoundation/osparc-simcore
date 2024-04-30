@@ -1,6 +1,5 @@
 # pylint: disable=unsubscriptable-object
 
-import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
@@ -23,6 +22,7 @@ from .callbacks_mapping import CallbacksMapping
 from .generics import ListModel
 from .service_settings_nat_rule import NATRule
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
+from .utils.json_serialization import json_dumps
 
 
 class _BaseConfig:
@@ -520,20 +520,20 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                 # WARNING: do not change order. Used in tests!
                 # legacy service
                 {
-                    "simcore.service.settings": json.dumps(
+                    "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     )
                 },
                 # dynamic-service
                 {
-                    "simcore.service.settings": json.dumps(
+                    "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
-                    "simcore.service.paths-mapping": json.dumps(
+                    "simcore.service.paths-mapping": json_dumps(
                         PathMappingsLabel.Config.schema_extra["examples"][0]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
-                    "simcore.service.callbacks-mapping": json.dumps(
+                    "simcore.service.callbacks-mapping": json_dumps(
                         {
                             "metrics": {
                                 "service": DEFAULT_SINGLE_SERVICE_NAME,
@@ -542,19 +542,19 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                             }
                         }
                     ),
-                    "simcore.service.user-preferences-path": json.dumps(
+                    "simcore.service.user-preferences-path": json_dumps(
                         "/tmp/path_to_preferences"  # noqa: S108
                     ),
                 },
                 # dynamic-service with compose spec
                 {
-                    "simcore.service.settings": json.dumps(
+                    "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
                     ),
-                    "simcore.service.paths-mapping": json.dumps(
+                    "simcore.service.paths-mapping": json_dumps(
                         PathMappingsLabel.Config.schema_extra["examples"][0]
                     ),
-                    "simcore.service.compose-spec": json.dumps(
+                    "simcore.service.compose-spec": json_dumps(
                         {
                             "version": "2.3",
                             "services": {
@@ -579,7 +579,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     ),
                     "simcore.service.container-http-entrypoint": "rt-web",
                     "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
-                    "simcore.service.callbacks-mapping": json.dumps(
+                    "simcore.service.callbacks-mapping": json_dumps(
                         CallbacksMapping.Config.schema_extra["examples"][3]
                     ),
                 },

@@ -7,9 +7,9 @@ from aiohttp import web
 from captcha.image import ImageCaptcha
 from models_library.emails import LowerCaseEmailStr
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import json_dumps
 from PIL.Image import Image
 from pydantic import EmailStr, PositiveInt, ValidationError, parse_obj_as
-from servicelib.json_serialization import json_dumps
 from servicelib.utils_secrets import generate_passcode
 
 from ..email.utils import send_email_from_template

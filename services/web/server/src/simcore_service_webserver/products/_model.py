@@ -143,7 +143,7 @@ class Product(BaseModel):
                     },
                     # defaults from sqlalchemy table
                     **{
-                        c.name: c.server_default.arg
+                        str(c.name): c.server_default.arg
                         for c in products.columns
                         if c.server_default and isinstance(c.server_default.arg, str)
                     },

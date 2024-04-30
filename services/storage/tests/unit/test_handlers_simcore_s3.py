@@ -106,7 +106,7 @@ async def _request_copy_folders(
         if lr_task.done():
             return await lr_task.result()
 
-    assert False, "Copy folders failed!"
+    pytest.fail(reason="Copy folders failed!")
 
 
 async def test_copy_folders_from_non_existing_project(

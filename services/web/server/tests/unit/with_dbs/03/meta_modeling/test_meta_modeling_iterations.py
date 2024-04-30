@@ -11,6 +11,7 @@ from faker import Faker
 from models_library.projects import Project
 from models_library.projects_nodes import Node
 from models_library.services_resources import ServiceResourcesDict
+from models_library.utils.json_serialization import json_dumps
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -21,7 +22,6 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
     RUN_PROJECT,
 )
 from servicelib.aiohttp import status
-from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.director_v2.api import get_project_run_policy

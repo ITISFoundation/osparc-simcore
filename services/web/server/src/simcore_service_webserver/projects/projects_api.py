@@ -54,6 +54,7 @@ from models_library.services_resources import (
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID, UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils.json_serialization import json_dumps
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from pydantic import ByteSize, parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
@@ -62,7 +63,6 @@ from servicelib.common_headers import (
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
