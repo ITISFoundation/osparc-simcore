@@ -30,7 +30,10 @@ def json_dumps(
     indent: int | None = None,
     separators: SeparatorTuple | tuple[str, str] | None = None,
 ) -> str:
-    """json.dumps-like API implemented with orjson.dumps in the core"""
+    """json.dumps-like API implemented with orjson.dumps in the core
+
+    NOTE: only separator=(",",":") is supported
+    """
     # SEE https://github.com/ijl/orjson?tab=readme-ov-file#serialize
     option = (
         # if a dict has a key of a type other than str it will NOT raise
@@ -41,22 +44,14 @@ def json_dumps(
     if sort_keys:
         option |= orjson.OPT_SORT_KEYS
 
-    if separators is not None:
-        separators = SeparatorTuple(*separators)
+    if separators is not None and separators != _orjson_default_separator:
+        # NOTE1: replacing separators in the result is no only time-consuming but error prone. We had
+        # some examples with time-stamps that were corrupted because of this replacement.
+        msg = f"Only {_orjson_default_separator} supported, got {separators}"
+        raise ValueError(msg)
 
     # serialize
     result: str = orjson.dumps(obj, default=default, option=option).decode("utf-8")
-
-    # post-process
-    if separators is not None and separators != _orjson_default_separator:
-        assert isinstance(separators, SeparatorTuple)  # nosec
-        result = result.replace(
-            _orjson_default_separator.key_separator,
-            separators.key_separator,
-        ).replace(
-            _orjson_default_separator.item_separator,
-            separators.item_separator,
-        )
 
     return result
 

@@ -77,31 +77,27 @@ def test_serialization_of_nested_dicts(fake_data_dict: dict[str, Any]):
     assert json_loads(dump) == jsonable_encoder(obj)
 
 
-def test_orjson_adapter_has_dumps_interface(fake_data_dict: dict[str, Any]):
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        pytest.param({}, id="no-kw"),
+        pytest.param({"sort_keys": True}, id="sort_keys-kw"),
+        pytest.param(
+            {"separators": (",", ":")}, id="default_separators-kw"
+        ),  # NOTE: e.g. engineio.packet has `self.json.dumps(self.data, separators=(',', ':'))`
+        pytest.param(
+            {"indent": 2}, id="indent-kw"
+        ),  # NOTE: only one-to-one with indent=2
+    ],
+)
+def test_compatiblity_with_json_interface(
+    fake_data_dict: dict[str, Any], kwargs: dict[str, Any]
+):
+    orjson_dump = JsonNamespace.dumps(fake_data_dict, **kwargs)
+    json_dump = _expected_json_dumps(fake_data_dict, **kwargs)
 
-    assert JsonNamespace.dumps(fake_data_dict) == _expected_json_dumps(fake_data_dict)
-
-    sort_keys = True
-    assert JsonNamespace.dumps(
-        fake_data_dict, sort_keys=sort_keys
-    ) == _expected_json_dumps(fake_data_dict, sort_keys=sort_keys)
-
-    # NOTE: e.g. engineio.packet has `self.json.dumps(self.data, separators=(',', ':'))`
-    separators = ",", ":"
-    assert JsonNamespace.dumps(
-        fake_data_dict, separators=separators
-    ) == _expected_json_dumps(fake_data_dict, separators=separators)
-
-    separators = " , ", " : "
-    assert JsonNamespace.dumps(
-        fake_data_dict, separators=separators
-    ) == _expected_json_dumps(fake_data_dict, separators=separators)
-
-    # NOTE: only one-to-one with indent=2
-    indent = 2
-    assert JsonNamespace.dumps(fake_data_dict, indent=indent) == _expected_json_dumps(
-        fake_data_dict, indent=indent
-    )
+    # NOTE: cannot compare dumps directly because orjson compacts it more
+    assert json_loads(orjson_dump) == json_loads(json_dump)
 
 
 def test_serialized_non_str_dict_keys():
