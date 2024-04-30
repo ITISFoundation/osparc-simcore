@@ -1,4 +1,5 @@
 import hashlib
+import json
 import logging
 from collections.abc import Callable, Coroutine
 from copy import deepcopy
@@ -8,7 +9,6 @@ from pydantic import BaseModel
 
 from ..projects import Project
 from ..projects_nodes_io import NodeID, PortLink, UUIDStr
-from .json_serialization import json_dumps
 
 _logger = logging.getLogger(__name__)
 
@@ -65,6 +65,8 @@ async def compute_node_hash(
                 resolved_payload[port_type][port_key] = payload
 
     # now create the hash
-    block_string = json_dumps(resolved_payload, sort_keys=True).encode("utf-8")
+    # WARNING: Here we cannot change to json_serialization.json_dumps because if would create a different dump string and therefore a different hash
+    # NOTE that these hashes might have been already stored elsewhere
+    block_string = json.dumps(resolved_payload, sort_keys=True).encode("utf-8")
     raw_hash = hashlib.sha256(block_string)
     return raw_hash.hexdigest()
