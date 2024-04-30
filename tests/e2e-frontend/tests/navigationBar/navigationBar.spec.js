@@ -36,7 +36,8 @@ for (const product in products) {
     const productUsers = users[product];
     for (const user of productUsers) {
       const role = user.role;
-      test.describe.serial(`Navigation Bar`, () => {
+
+      test.describe.serial(`Navigation Bar: ${product}`, () => {
         let page = null;
         let loginPageFixture = null;
 
@@ -45,14 +46,21 @@ for (const product in products) {
 
           loginPageFixture = new LoginPage(page, productUrl);
           await loginPageFixture.goto();
+
+          expect(userMenuButtonsPerRole[role]).toBeDefined();
+          const responsePromise = page.waitForResponse('**/static-frontend-data.json');
           await loginPageFixture.login(user.email, user.password);
+
+          const response = await responsePromise;
+          const statics = await response.json();
+          expect(statics["data"]["role"]).toBe(role);
         });
 
         test.afterAll(async () => {
           await loginPageFixture.logout();
         });
 
-        test(`${product}: Options per Role ${role}`, async () => {
+        test(`Options per Role ${role}`, async () => {
           expect(userMenuButtonsPerRole[role]).toBeDefined();
 
           // open user menu
