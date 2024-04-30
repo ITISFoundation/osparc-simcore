@@ -30,47 +30,42 @@ const userMenuButtonsPerRole = {
   },
 };
 
-test.describe(`Navigation Bar`, () => {
-  test.describe.configure({
-    mode: "serial"
-  });
+for (const product in products) {
+  if (product in users) {
+    const productUrl = products[product];
+    const productUsers = users[product];
+    for (const user of productUsers) {
+      const role = user.role;
+      test.describe.serial(`Navigation Bar`, () => {
+        let page = null;
+        let loginPageFixture = null;
 
-  for (const product in products) {
-    if (product in users) {
-      const productUsers = users[product];
-      test.describe(`Navigation Bar ${product}`, () => {
-        for (const user of productUsers) {
-          const role = user.role;
-          let page = null;
-          let loginPageFixture = null;
+        test.beforeAll(async ({ browser }) => {
+          page = await browser.newPage();
 
-          test.beforeAll(async ({ browser }) => {
-            page = await browser.newPage();
+          loginPageFixture = new LoginPage(page, productUrl);
+          await loginPageFixture.goto();
+          await loginPageFixture.login(user.email, user.password);
+        });
 
-            loginPageFixture = new LoginPage(page, products[product]);
-            await loginPageFixture.goto();
-            await loginPageFixture.login(user.email, user.password);
-          });
+        test.afterAll(async () => {
+          await loginPageFixture.logout();
+        });
 
-          test.afterAll(async () => {
-            await loginPageFixture.logout();
-          });
+        test(`${product}: Options per Role ${role}`, async () => {
+          expect(userMenuButtonsPerRole[role]).toBeDefined();
 
-          test(`Options per Role ${role}`, async () => {
-            expect(userMenuButtonsPerRole[role]).toBeDefined();
+          // open user menu
+          await page.getByTestId("userMenuBtn").click();
 
-            // open user menu
-            await page.getByTestId("userMenuBtn").click();
-
-            const buttons = userMenuButtonsPerRole[role];
-            for (const buttonText in buttons) {
-              const expected = buttons[buttonText];
-              const isVisible = await page.getByText(buttonText).isVisible();
-              expect(isVisible).toEqual(expected);
-            }
-          });
-        }
+          const buttons = userMenuButtonsPerRole[role];
+          for (const buttonText in buttons) {
+            const expected = buttons[buttonText];
+            const isVisible = await page.getByText(buttonText).isVisible();
+            expect(isVisible).toEqual(expected);
+          }
+        });
       });
     }
   }
-});
+}

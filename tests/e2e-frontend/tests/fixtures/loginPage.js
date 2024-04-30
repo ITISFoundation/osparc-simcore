@@ -17,20 +17,20 @@ export class LoginPage {
    * @param {string} password
    */
   async login(email, password) {
-    this.usernameField = this.page.getByTestId("loginUserEmailFld");
-    this.passwordField = this.page.getByTestId("loginPasswordFld");
-    this.submitButton = this.page.getByTestId("loginSubmitBtn");
+    const usernameField = this.page.getByTestId("loginUserEmailFld");
+    const passwordField = this.page.getByTestId("loginPasswordFld");
+    const submitButton = this.page.getByTestId("loginSubmitBtn");
 
-    await this.usernameField.fill(email);
-    await this.passwordField.fill(password);
-    await this.submitButton.click();
+    await usernameField.fill(email);
+    await passwordField.fill(password);
+    await submitButton.click();
   }
 
   async logout() {
-    this.navUserMenuButton = this.page.getByTestId("userMenuBtn");
-    await this.navUserMenuButton.click();
+    const navUserMenuButton = this.page.getByTestId("userMenuBtn");
+    await navUserMenuButton.click();
 
-    this.navLogoutButton = this.page.getByTestId("userMenuLogoutBtn");
-    await this.navLogoutButton.click();
+    const navLogoutButton = this.page.getByTestId("userMenuLogoutBtn");
+    await navLogoutButton.click();
   }
 }
