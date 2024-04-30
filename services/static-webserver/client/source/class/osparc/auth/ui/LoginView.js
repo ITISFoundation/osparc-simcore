@@ -42,7 +42,14 @@ qx.Class.define("osparc.auth.ui.LoginView", {
     _buildPage: function() {
       const announcementUIFactory = osparc.announcement.AnnouncementUIFactory.getInstance();
       if (announcementUIFactory.hasLoginAnnouncement()) {
-        this.add(announcementUIFactory.createLoginAnnouncement());
+        this.addAt(announcementUIFactory.createLoginAnnouncement(), 0);
+      } else {
+        announcementUIFactory.addListenerOnce("changeAnnouncement", e => {
+          const announcement = e.getData();
+          if (announcement) {
+            this.addAt(announcementUIFactory.createLoginAnnouncement(), 0);
+          }
+        });
       }
 
       // form
