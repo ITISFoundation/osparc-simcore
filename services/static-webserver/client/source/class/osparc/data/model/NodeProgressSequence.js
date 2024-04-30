@@ -49,7 +49,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     clusterUpScaling: {
       check: "Object",
       init: {
-        progressLabel: qx.locale.Manager.tr("Waiting..."),
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
         value: 0
       },
       nullable: false,
@@ -59,7 +59,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     sidecarPulling: {
       check: "Object",
       init: {
-        progressLabel: qx.locale.Manager.tr("Waiting..."),
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
         value: 0
       },
       nullable: false,
@@ -69,7 +69,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     outputsPulling: {
       check: "Object",
       init: {
-        progressLabel: qx.locale.Manager.tr("Waiting..."),
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
         value: 0
       },
       nullable: false,
@@ -79,7 +79,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     statePulling: {
       check: "Object",
       init: {
-        progressLabel: qx.locale.Manager.tr("Waiting..."),
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
         value: 0
       },
       nullable: false,
@@ -89,7 +89,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     imagesPulling: {
       check: "Object",
       init: {
-        progressLabel: qx.locale.Manager.tr("Waiting..."),
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
         value: 0
       },
       nullable: false,
@@ -99,7 +99,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     inputsPulling: {
       check: "Object",
       init: {
-        progressLabel: qx.locale.Manager.tr("Waiting..."),
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
         value: 0
       },
       nullable: false,
@@ -151,7 +151,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
       const progressState = new qx.ui.basic.Label();
       progressState.set({
-        value: qx.locale.Manager.tr("Waiting..."),
+        value: qx.locale.Manager.tr("Waiting ..."),
         textColor: "text",
         allowGrowX: true,
         allowShrinkX: true
@@ -216,7 +216,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
     getDefaultStartValues: function() {
       return {
-        progressLabel: qx.locale.Manager.tr("Waiting..."),
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
         value: 0
       }
     },
@@ -246,7 +246,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     getProgress: function(report) {
       if (report.unit) {
         return {
-          progressLabel: `${osparc.utils.Utils.bytesToSize(report["actual_value"], 1, false)} / ${osparc.utils.Utils.bytesToSize(report["total"], 1)}`,
+          progressLabel: `${osparc.utils.Utils.bytesToSize(report["actual_value"], 1, false)} / ${osparc.utils.Utils.bytesToSize(report["total"], 1, false)}`,
           value: report["actual_value"] / report["total"]
         }
       }
@@ -290,7 +290,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         paddingBottom: 8
       });
 
-      const progressTitle = new qx.ui.basic.Label(qx.locale.Manager.tr("LOADING...")).set({
+      const progressTitle = new qx.ui.basic.Label(qx.locale.Manager.tr("LOADING ...")).set({
         font: "text-12",
         alignX: "center",
         alignY: "middle",
@@ -302,7 +302,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       sequenceLoadingPage.add(overallPBar);
 
       const disclaimerText = this.__disclaimerText = new qx.ui.basic.Atom().set({
-        label: qx.locale.Manager.tr("Please be patient, this process can take a few minutes..."),
+        label: qx.locale.Manager.tr("Please be patient, this process can take a few minutes ..."),
         padding: [20, 10],
         gap: 15,
         icon: "@FontAwesome5Solid/exclamation-triangle/16",
@@ -317,22 +317,22 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       disclaimerText.exclude();
 
 
-      const scalingLayout = this.__clusterUpScalingLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Increasing system capacity..."));
+      const scalingLayout = this.__clusterUpScalingLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Increasing system capacity ..."));
       sequenceLoadingPage.add(scalingLayout);
 
-      const pullingSidecarLayout = this.__pullingSidecarLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Setting up key components..."));
+      const pullingSidecarLayout = this.__pullingSidecarLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Setting up key components ..."));
       sequenceLoadingPage.add(pullingSidecarLayout);
 
-      const pullingOutputsLayout = this.__pullingOutputsLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your output data..."));
+      const pullingOutputsLayout = this.__pullingOutputsLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your output data ..."));
       sequenceLoadingPage.add(pullingOutputsLayout);
 
-      const pullingStateLayout = this.__pullingStateLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your work..."));
+      const pullingStateLayout = this.__pullingStateLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your work ..."));
       sequenceLoadingPage.add(pullingStateLayout);
 
-      const pullingImagesLayout = this.__pullingImagesLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Installing software..."));
+      const pullingImagesLayout = this.__pullingImagesLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Installing software ..."));
       sequenceLoadingPage.add(pullingImagesLayout);
 
-      const pullingInputsLayout = this.__pullingInputsLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your input data..."));
+      const pullingInputsLayout = this.__pullingInputsLayout = this.self().createTaskLayout(qx.locale.Manager.tr("Retrieving your input data ..."));
       sequenceLoadingPage.add(pullingInputsLayout);
 
       this.__mainLoadingPage.addAt(sequenceLoadingPage, 0, {

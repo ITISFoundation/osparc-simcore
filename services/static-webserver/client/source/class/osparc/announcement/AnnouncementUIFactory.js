@@ -24,6 +24,7 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
       check: "osparc.announcement.Announcement",
       init: null,
       nullable: false,
+      event: "changeAnnouncement",
       apply: "__applyAnnouncement"
     }
   },
