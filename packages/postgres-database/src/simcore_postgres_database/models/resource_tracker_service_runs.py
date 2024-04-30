@@ -169,7 +169,7 @@ resource_tracker_service_runs = sa.Table(
     ),
     # Run status
     sa.Column(
-        "service_run_status",
+        "service_run_status",  # Partial index was defined bellow
         sa.Enum(ResourceTrackerServiceRunStatus),
         nullable=False,
     ),
@@ -193,5 +193,15 @@ resource_tracker_service_runs = sa.Table(
         nullable=False,
         default=0,
         doc="How many heartbeat checks have been missed",
+    ),
+)
+
+# We define the partial index
+sa.Index(
+    "ix_resource_tracker_credit_transactions_status_running",
+    resource_tracker_service_runs.c.service_run_status,
+    postgresql_where=(
+        resource_tracker_service_runs.c.service_run_status
+        == ResourceTrackerServiceRunStatus.RUNNING
     ),
 )
