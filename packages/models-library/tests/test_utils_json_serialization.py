@@ -14,6 +14,7 @@ from models_library.utils.json_serialization import (
     JsonNamespace,
     SeparatorTuple,
     json_dumps,
+    json_loads,
 )
 from pydantic.json import pydantic_encoder
 
@@ -48,7 +49,7 @@ def test_serialization_of_uuids(fake_data_dict: dict[str, Any]):
 
     obj = {"ids": [uuid4() for _ in range(3)]}
     dump = json_dumps(obj)
-    assert json.loads(dump) == jsonable_encoder(obj)
+    assert json_loads(dump) == jsonable_encoder(obj)
 
 
 def test_serialization_of_nested_dicts(fake_data_dict: dict[str, Any]):
@@ -56,7 +57,7 @@ def test_serialization_of_nested_dicts(fake_data_dict: dict[str, Any]):
     obj = {"data": fake_data_dict, "ids": [uuid4() for _ in range(3)]}
 
     dump = json_dumps(obj)
-    assert json.loads(dump) == jsonable_encoder(obj)
+    assert json_loads(dump) == jsonable_encoder(obj)
 
 
 def test_orjson_adapter_has_dumps_interface(fake_data_dict: dict[str, Any]):

@@ -1,4 +1,5 @@
 from dataclasses import asdict
+from typing import cast
 
 from aiohttp import web
 from aiohttp.web import RouteDef, RouteTableDef
@@ -23,7 +24,7 @@ class EnvelopeFactory:
         return self._envelope
 
     def as_text(self) -> str:
-        return json_dumps(self.as_dict())
+        return cast(str, json_dumps(self.as_dict()))
 
     as_data = as_dict
 

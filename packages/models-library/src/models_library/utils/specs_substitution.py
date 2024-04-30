@@ -123,7 +123,9 @@ class SpecsSubstitutionsResolver:
                 if safe
                 else self._template.substitute(self._substitutions)
             )
-            return json_loads(new_specs_txt)
+            new_specs = json_loads(new_specs_txt)
+            assert isinstance(new_specs, dict)  # nosec
+            return new_specs
         except KeyError as e:
             raise IdentifierSubstitutionError(
                 name=e.args[0], substitutions=self._substitutions
