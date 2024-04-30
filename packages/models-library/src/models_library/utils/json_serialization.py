@@ -3,6 +3,7 @@
     - implemented using orjson, which  performs better. SEE https://github.com/ijl/orjson?tab=readme-ov-file#performance
 """
 
+from collections.abc import Callable
 from typing import Any, Final, NamedTuple
 
 import orjson
@@ -60,8 +61,7 @@ def json_dumps(
     return result
 
 
-orjson_dumps = json_dumps
-json_loads = orjson.loads
+json_loads: Callable = orjson.loads
 
 
 class JsonNamespace:

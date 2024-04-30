@@ -4,10 +4,12 @@
 
 
 import json
+from copy import deepcopy
 from typing import Any
 from uuid import uuid4
 
 import pytest
+from faker import Faker
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import (
@@ -38,6 +40,21 @@ def test_json_dump_variants():
     assert str(exc_info.value) == "Object of type UUID is not JSON serializable"
 
     assert json_dumps(uuid_obj) == json.dumps(str(uuid_obj))
+
+
+@pytest.fixture
+def fake_data_dict(faker: Faker) -> dict[str, Any]:
+    data = {
+        "uuid_as_UUID": faker.uuid4(cast_to=None),
+        "uuid_as_str": faker.uuid4(),
+        "int": faker.pyint(),
+        "float": faker.pyfloat(),
+        "str": faker.pystr(),
+        "dict": faker.pydict(),
+        "list": faker.pylist(),
+    }
+    data["object"] = deepcopy(data)
+    return data
 
 
 def test_serialization_of_uuids(fake_data_dict: dict[str, Any]):
