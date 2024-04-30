@@ -8,8 +8,8 @@ from httpx._types import URLTypes
 from jsonschema import ValidationError
 from pydantic import parse_file_as
 
-from .http_calls_capture import HttpApiCallCaptureModel, get_captured
-from .http_calls_capture_processing import CaptureProcessingException
+from .httpx_calls_capture_errors import CaptureProcessingError
+from .httpx_calls_capture_model import HttpApiCallCaptureModel, get_captured
 
 _logger = logging.getLogger(__name__)
 
@@ -56,11 +56,10 @@ class AsyncClientForDevelopmentOnly(httpx.AsyncClient):
                     indent=1,
                 )
             )
-        except (CaptureProcessingException, ValidationError, httpx.RequestError):
+        except (CaptureProcessingError, ValidationError, httpx.RequestError):
             _logger.exception(
                 "Unexpected failure with %s",
                 capture_name,
-                exc_info=True,
                 stack_info=True,
             )
         return response
