@@ -1,23 +1,17 @@
 from copy import deepcopy
 from typing import Any, ClassVar, TypeAlias
 
-import orjson
 from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
 from ..api_schemas_catalog import services as api_schemas_catalog_services
 from ..services import ServiceInput, ServiceOutput, ServicePortKey
 from ..utils.change_case import snake_to_camel
+from ..utils.json_serialization import json_dumps, json_loads
 from ._base import InputSchema, OutputSchema
 
 ServiceInputKey: TypeAlias = ServicePortKey
 ServiceOutputKey: TypeAlias = ServicePortKey
-
-
-def _orjson_dumps(v, *, default=None) -> str:
-    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
-    dump: str = orjson.dumps(v, default=default).decode()
-    return dump
 
 
 class _BaseCommonApiExtension(BaseModel):
@@ -34,8 +28,8 @@ class _BaseCommonApiExtension(BaseModel):
         alias_generator = snake_to_camel
         allow_population_by_field_name = True
         extra = Extra.forbid
-        json_dumps = _orjson_dumps
-        json_loads = orjson.loads
+        json_dumps = json_dumps
+        json_loads = json_loads
 
 
 class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):

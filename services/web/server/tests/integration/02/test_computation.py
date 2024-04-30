@@ -16,10 +16,10 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import RunningState
+from models_library.utils.json_serialization import json_dumps
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
-from servicelib.json_serialization import json_dumps
 from servicelib.status_utils import get_code_display_name
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings

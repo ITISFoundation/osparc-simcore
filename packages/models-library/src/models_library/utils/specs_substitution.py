@@ -1,9 +1,9 @@
-import json
 from typing import Any, NamedTuple, TypeAlias, cast
 
 from pydantic import StrictBool, StrictFloat, StrictInt
 from pydantic.errors import PydanticErrorMixin
 
+from .json_serialization import json_dumps, json_loads
 from .string_substitution import (
     SubstitutionsDict,
     TextTemplate,
@@ -13,14 +13,6 @@ from .string_substitution import (
 # This constraint on substitution values is to avoid
 # deserialization issues on the TextTemplate substitution!
 SubstitutionValue: TypeAlias = StrictBool | StrictInt | StrictFloat | str
-
-
-def _json_dumps(data: dict[str, Any]) -> str:
-    return json.dumps(data)
-
-
-def _json_loads(str_data: str) -> dict[str, Any]:
-    return cast(dict[str, Any], json.loads(str_data))
 
 
 class IdentifierSubstitutionError(PydanticErrorMixin, KeyError):
@@ -53,7 +45,7 @@ class SpecsSubstitutionsResolver:
         cls, specs: dict[str, Any], *, upgrade: bool
     ) -> TextTemplate:
         # convert to yaml (less symbols as in json)
-        service_spec_str: str = _json_dumps(specs)
+        service_spec_str: str = json_dumps(specs)
 
         if upgrade:  # legacy
             service_spec_str = substitute_all_legacy_identifiers(service_spec_str)
@@ -131,7 +123,9 @@ class SpecsSubstitutionsResolver:
                 if safe
                 else self._template.substitute(self._substitutions)
             )
-            return _json_loads(new_specs_txt)
+            new_specs = json_loads(new_specs_txt)
+            assert isinstance(new_specs, dict)  # nosec
+            return new_specs
         except KeyError as e:
             raise IdentifierSubstitutionError(
                 name=e.args[0], substitutions=self._substitutions

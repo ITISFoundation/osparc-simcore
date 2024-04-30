@@ -8,7 +8,7 @@ import json
 from json.decoder import JSONDecodeError
 from typing import Any, TypeAlias
 
-from pydantic.json import pydantic_encoder
+from .json_serialization import json_dumps
 
 LabelsAnnotationsDict: TypeAlias = dict[str, str]
 
@@ -20,10 +20,6 @@ OSPARC_LABEL_PREFIXES = (
     "io.simcore",
     "simcore.service",
 )
-
-
-def _json_dumps(obj: Any, **kwargs) -> str:
-    return json.dumps(obj, default=pydantic_encoder, **kwargs)
 
 
 def to_labels(
@@ -39,9 +35,9 @@ def to_labels(
                 # Avoids double quotes, i.e. '"${VERSION}"'
                 label = value
             else:
-                label = _json_dumps(value, sort_keys=False)
+                label = json_dumps(value, sort_keys=False)
         else:
-            label = _json_dumps({key: value}, sort_keys=False)
+            label = json_dumps({key: value}, sort_keys=False)
 
         # NOTE: docker-compose env var interpolation gets confused with schema's '$ref' and
         # will replace it '$ref' with an empty string.

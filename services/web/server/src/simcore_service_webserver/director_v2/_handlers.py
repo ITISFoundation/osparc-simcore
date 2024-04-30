@@ -7,6 +7,7 @@ from models_library.api_schemas_webserver.computations import ComputationStart
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
@@ -14,7 +15,6 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.json_serialization import json_dumps
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_groups_extra_properties import (

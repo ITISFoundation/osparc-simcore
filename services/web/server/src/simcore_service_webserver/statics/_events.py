@@ -4,8 +4,8 @@ from copy import deepcopy
 from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
+from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.json_serialization import json_dumps
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before import before_log
 from tenacity.retry import retry_if_exception_type
