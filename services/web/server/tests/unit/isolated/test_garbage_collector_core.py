@@ -37,12 +37,8 @@ def mock_list_node_ids_in_project(
 ) -> mock.AsyncMock:
     return mocker.patch(
         f"{MODULE_GC_CORE_ORPHANS}.list_node_ids_in_project",
-        return_value={
-            faker.uuid4(cast_to=None),
-            faker.uuid4(cast_to=None),
-            faker.uuid4(cast_to=None),
-        },
         autospec=True,
+        return_value=set(),
     )
 
 
@@ -55,7 +51,7 @@ async def mock_list_dynamic_services(mocker: MockerFixture) -> mock.AsyncMock:
     )
 
 
-async def test_remove_orphaned_services(
+async def test_remove_orphaned_services_with_no_running_services_does_nothing(
     mock_list_node_ids_in_project: mock.AsyncMock,
     mock_list_dynamic_services: mock.AsyncMock,
     mock_registry: mock.AsyncMock,
