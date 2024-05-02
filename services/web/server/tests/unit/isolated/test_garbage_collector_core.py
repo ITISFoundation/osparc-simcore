@@ -65,7 +65,12 @@ async def test_remove_orphaned_services_with_no_running_services_does_nothing(
 
 @pytest.fixture
 def faker_dynamic_service_get(faker: Faker) -> Callable[[], DynamicServiceGet]:
-    return DynamicServiceGet(host=faker.url())
+    def _() -> DynamicServiceGet:
+        return DynamicServiceGet.parse_obj(
+            DynamicServiceGet.Config.schema_extra["examples"][1]
+        )
+
+    return _
 
 
 async def test_removed_orphaned_service_of_invalid_service_does_not_hang_or_block_gc(
@@ -73,10 +78,12 @@ async def test_removed_orphaned_service_of_invalid_service_does_not_hang_or_bloc
     mock_list_dynamic_services: mock.AsyncMock,
     mock_registry: mock.AsyncMock,
     mock_app: mock.AsyncMock,
-    faker_dynamic_service_get,
+    faker_dynamic_service_get: Callable[[], DynamicServiceGet],
 ):
-    mock_list_dynamic_services.return_value = [DynamicServiceGet()]
+    mock_list_dynamic_services.return_value = [faker_dynamic_service_get()]
     await remove_orphaned_services(mock_registry, mock_app)
+    mock_list_dynamic_services.assert_called_once()
+    mock_list_node_ids_in_project.assert_not_called()
 
 
 # async def test_regression_project_id_recovered_from_the_wrong_data_structure(
