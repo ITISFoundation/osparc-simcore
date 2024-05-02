@@ -311,7 +311,7 @@ async def search_files_page(
         user_id=user_id,
         file_id=file_id,
         sha256_checksum=sha256_checksum,
-        access_right="read",
+        access_right="write",
     )
     if page_params.offset > len(stored_files):
         _logger.debug("File with sha256_checksum=%d not found.", sha256_checksum)
