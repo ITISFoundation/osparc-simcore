@@ -53,7 +53,7 @@ def mock_list_dynamic_services(mocker: MockerFixture):
     )
 
 
-async def test_regressionremove_orphaned_services_node_ids_unhashable_type_set(
+async def test_remove_orphaned_services(
     mock_get_workbench_node_ids_from_project_uuid: None,
     mock_list_dynamic_services: None,
     mock_registry: AsyncMock,
