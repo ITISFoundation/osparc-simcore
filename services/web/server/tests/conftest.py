@@ -18,6 +18,7 @@ import simcore_service_webserver
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects_state import ProjectState
+from models_library.utils.json_serialization import json_dumps
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -25,7 +26,6 @@ from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
-from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._crud_api_create import (

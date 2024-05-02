@@ -121,7 +121,6 @@ def client(
     redis_client: Redis,
     monkeypatch_setenv_from_app_config: Callable,
     mock_dynamic_scheduler_rabbitmq: None,
-    mock_progress_bar: Any,
 ) -> TestClient:
     cfg = deepcopy(app_cfg)
     assert cfg["rest"]["version"] == API_VTAG
@@ -483,7 +482,6 @@ async def test_interactive_services_removed_after_logout(
     director_v2_service_mock: aioresponses,
     expected_save_state: bool,
     open_project: Callable,
-    mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     assert client.app
@@ -525,7 +523,7 @@ async def test_interactive_services_removed_after_logout(
                 node_id=service["service_uuid"],
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
-                progress=mock_progress_bar.sub_progress(1),
+                progress=mock.ANY,
             )
 
 
@@ -549,7 +547,6 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     expected_save_state: bool,
     mocker: MockerFixture,
     open_project: Callable,
-    mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     assert client.app
@@ -642,11 +639,11 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     # assert dynamic service is gone
     calls = [
         call(
-            app=client.server.app,
+            app=client.app,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             node_id=service["service_uuid"],
-            progress=mock_progress_bar.sub_progress(1),
+            progress=mock.ANY,
         )
     ]
     mocked_director_v2_api[
@@ -688,7 +685,6 @@ async def test_interactive_services_removed_per_project(
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expected_save_state: bool,
     open_project: Callable,
-    mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # create server with delay set to DELAY
@@ -728,11 +724,11 @@ async def test_interactive_services_removed_per_project(
     # assert dynamic service 1 is removed
     calls = [
         call(
-            app=client.server.app,
+            app=client.app,
             node_id=service1["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
-            progress=mock_progress_bar.sub_progress(1),
+            progress=mock.ANY,
         )
     ]
     mocked_director_v2_api[
@@ -757,14 +753,14 @@ async def test_interactive_services_removed_per_project(
             node_id=service2["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
-            progress=mock_progress_bar.sub_progress(1),
+            progress=mock.ANY,
         ),
         call(
             app=client.server.app,
             node_id=service3["service_uuid"],
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
-            progress=mock_progress_bar.sub_progress(1),
+            progress=mock.ANY,
         ),
     ]
     mocked_director_v2_api[
@@ -856,7 +852,6 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     expect_call: bool,
     expected_save_state: bool,
     open_project: Callable,
-    mock_progress_bar: Any,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # login - logged_user fixture
@@ -888,7 +883,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
             node_id=service["service_uuid"],
-            progress=mock_progress_bar.sub_progress(1),
+            progress=mock.ANY,
         )
     ]
     mocked_director_v2_api[

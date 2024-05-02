@@ -6,7 +6,8 @@ import httpx
 from fastapi import status
 from pydantic import BaseModel, Field
 
-from .http_calls_capture_processing import PathDescription, enhance_from_openapi_spec
+from .httpx_calls_capture_openapi import enhance_from_openapi_spec
+from .httpx_calls_capture_parameters import PathDescription
 
 
 class HttpApiCallCaptureModel(BaseModel):

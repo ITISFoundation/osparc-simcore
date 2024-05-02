@@ -220,7 +220,6 @@ def test_sleepers(
     ) as ctx:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
             sleeper.click()
-            page.get_by_test_id("outputsTabButton").click()
             # waiting for this response is not enough, the frontend needs some time to show the files
             # therefore _get_file_names is wrapped with tenacity
             with page.expect_response(re.compile(r"files/metadata")):

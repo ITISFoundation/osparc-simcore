@@ -1,5 +1,4 @@
 import functools
-import json
 import logging
 from contextlib import suppress
 from typing import Literal
@@ -12,6 +11,7 @@ from models_library.api_schemas_webserver.groups import (
 )
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import GroupID
+from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
@@ -127,7 +127,7 @@ async def create_group(request: web.Request):
     created_group = await api.create_user_group(request.app, user_id, new_group)
     assert parse_obj_as(UsersGroup, created_group) is not None  # nosec
     raise web.HTTPCreated(
-        text=json.dumps({"data": created_group}), content_type=MIMETYPE_APPLICATION_JSON
+        text=json_dumps({"data": created_group}), content_type=MIMETYPE_APPLICATION_JSON
     )
 
 

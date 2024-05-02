@@ -1,3 +1,6 @@
+from typing import Any, TypeAlias
+
+from models_library.basic_types import IDStr
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, validator
 
 from ..clusters import ClusterID
@@ -79,3 +82,14 @@ class TaskLogFileGet(BaseModel):
     download_link: AnyUrl | None = Field(
         None, description="Presigned link for log file or None if still not available"
     )
+
+
+class TasksSelection(BaseModel):
+    nodes_ids: list[NodeID]
+
+
+OutputName: TypeAlias = IDStr
+
+
+class TasksOutputs(BaseModel):
+    nodes_outputs: dict[NodeID, dict[OutputName, Any]]

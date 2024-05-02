@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi_pagination import add_pagination
 from httpx import HTTPError as HttpxException
 from models_library.basic_types import BootModeEnum
+from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.logging_utils import config_all_loggers
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -105,7 +106,9 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app.add_exception_handler(
         NotImplementedError,
         make_http_error_handler_for_exception(
-            NotImplementedError, status.HTTP_501_NOT_IMPLEMENTED
+            NotImplementedError,
+            status.HTTP_501_NOT_IMPLEMENTED,
+            detail_message="Endpoint not implemented",
         ),
     )
     app.add_exception_handler(
@@ -113,15 +116,13 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         make_http_error_handler_for_exception(
             Exception,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
-            override_detail_message="Internal error"
-            if settings.SC_BOOT_MODE == BootModeEnum.DEBUG
-            else None,
+            detail_message="Unexpected error",
+            add_exception_to_message=(settings.SC_BOOT_MODE == BootModeEnum.DEBUG),
+            add_oec_to_message=True,
         ),
     )
-    if settings.API_SERVER_DEV_FEATURES_ENABLED:
-        from ._profiler_middleware import ApiServerProfilerMiddleware
-
-        app.add_middleware(ApiServerProfilerMiddleware)
+    if settings.API_SERVER_PROFILING:
+        app.add_middleware(ProfilerMiddleware)
 
     if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)

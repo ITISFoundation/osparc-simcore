@@ -132,7 +132,7 @@ qx.Class.define("osparc.desktop.wallets.MembersList", {
         serializedData["resourceType"] = "wallet";
         const showOrganizations = false;
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(serializedData, showOrganizations);
-        collaboratorsManager.addListener("addEditors", e => {
+        collaboratorsManager.addListener("addCollaborators", e => {
           const cb = () => collaboratorsManager.close();
           this.__addMembers(e.getData(), cb);
         }, this);

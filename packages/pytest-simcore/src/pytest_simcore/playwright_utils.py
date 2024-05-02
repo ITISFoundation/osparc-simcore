@@ -86,6 +86,27 @@ class SocketIOProjectStateUpdatedWaiter:
             return False
 
 
+@dataclass
+class SocketIOOsparcMessagePrinter:
+    include_logger_messages: bool = False
+
+    def __call__(self, message: str) -> None:
+        osparc_messages = [
+            "nodeUpdated",
+            "nodeProgress",
+            "projectStateUpdated",
+            "serviceDiskUsage",
+            "walletOsparcCreditsUpdated",
+        ]
+        if self.include_logger_messages:
+            osparc_messages.append("logger")
+
+        if message.startswith("42"):
+            decoded_message: SocketIOEvent = decode_socketio_42_message(message)
+            if decoded_message.name in osparc_messages:
+                print("WS Message:", decoded_message.name, decoded_message.obj)
+
+
 def wait_for_pipeline_state(
     current_state: RunningState,
     *,

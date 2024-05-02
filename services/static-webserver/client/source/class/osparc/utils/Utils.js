@@ -552,7 +552,7 @@ qx.Class.define("osparc.utils.Utils", {
       return L > 0.35 ? "#FFF" : "#000";
     },
 
-    bytesToSize: function(bytes, decimals = 2, isPrefixVisible = true) {
+    bytesToSize: function(bytes, decimals = 2, isDecimalColapsed = true) {
       if (!+bytes) {
         return "0 Bytes";
       }
@@ -561,7 +561,7 @@ qx.Class.define("osparc.utils.Utils", {
       const dm = decimals < 0 ? 0 : decimals;
 
       const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${isPrefixVisible ? sizes[i] : ""}`
+      return `${isDecimalColapsed ? parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) : (bytes / Math.pow(k, i)).toFixed(dm)} ${sizes[i]}`
     },
 
     bytesToGB: function(bytes) {
@@ -569,9 +569,19 @@ qx.Class.define("osparc.utils.Utils", {
       return Math.round(100*bytes/b2gb)/100;
     },
 
+    bytesToGiB: function(bytes) {
+      const b2gib = 1024*1024*1024;
+      return Math.round(100*bytes/b2gib)/100;
+    },
+
     gBToBytes: function(gBytes) {
       const b2gb = 1000*1000*1000;
       return gBytes*b2gb;
+    },
+
+    giBToBytes: function(giBytes) {
+      const b2gib = 1024*1024*1024;
+      return giBytes*b2gib;
     },
 
     retrieveURLAndDownload: function(locationId, fileId) {

@@ -11,9 +11,9 @@ import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
 from pydantic import parse_file_as
+from pytest_simcore.helpers.httpx_calls_capture_model import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs
-from simcore_service_api_server.utils.http_calls_capture import HttpApiCallCaptureModel
 from starlette import status
 
 

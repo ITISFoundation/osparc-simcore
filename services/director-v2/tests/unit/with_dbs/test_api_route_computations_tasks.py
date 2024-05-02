@@ -1,21 +1,29 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
-from typing import Any, Awaitable, Callable, NamedTuple
+from collections.abc import Awaitable, Callable
+from typing import Any, NamedTuple
 from unittest import mock
+from uuid import uuid4
 
 import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from models_library.api_schemas_directorv2.comp_tasks import TaskLogFileGet
+from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_directorv2.comp_tasks import (
+    TaskLogFileGet,
+    TasksOutputs,
+    TasksSelection,
+)
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_raw_as
+from pydantic import parse_obj_as, parse_raw_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_from_dict
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
@@ -28,14 +36,6 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-def get_app(async_client: httpx.AsyncClient) -> FastAPI:
-    # pylint: disable=protected-access
-    app = async_client._transport.app  # type: ignore
-    assert app
-    assert isinstance(app, FastAPI)
-    return app
-
-
 @pytest.fixture
 def mock_env(
     mock_env: EnvVarsDict,  # sets default env vars
@@ -43,19 +43,29 @@ def mock_env(
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
 ):
-    # overrides mock_env
-    monkeypatch.setenv("S3_ENDPOINT", faker.url())
-    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
-    monkeypatch.setenv("S3_REGION", faker.pystr())
-    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
-    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "S3_ENDPOINT": faker.url(),
+            "S3_ACCESS_KEY": faker.pystr(),
+            "S3_REGION": faker.pystr(),
+            "S3_SECRET_KEY": faker.pystr(),
+            "S3_BUCKET_NAME": faker.pystr(),
+        },
+    )
 
 
 @pytest.fixture
-def client(async_client: httpx.AsyncClient, mocker) -> httpx.AsyncClient:
+def client(async_client: httpx.AsyncClient) -> httpx.AsyncClient:
     # overrides client
     # WARNING: this is an httpx.AsyncClient and not a TestClient!!
-    app = get_app(async_client)
+    def _get_app(async_client: httpx.AsyncClient) -> FastAPI:
+        app = async_client._transport.app  # type: ignore
+        assert app
+        assert isinstance(app, FastAPI)
+        return app
+
+    app = _get_app(async_client)
 
     settings: AppSettings = app.state.settings
     assert settings
@@ -92,8 +102,7 @@ def mocked_nodeports_storage_client(mocker, faker: Faker) -> dict[str, mock.Magi
 
 @pytest.fixture
 def user(registered_user: Callable[..., dict[str, Any]]):
-    user = registered_user()
-    return user
+    return registered_user()
 
 
 @pytest.fixture
@@ -128,7 +137,7 @@ async def project_id(
 
 @pytest.fixture
 def node_id(fake_workbench_adjacency: dict[str, Any]) -> NodeID:
-    return NodeID(next(nid for nid in fake_workbench_adjacency.keys()))
+    return NodeID(next(nid for nid in fake_workbench_adjacency))
 
 
 # - tests api routes
@@ -175,8 +184,31 @@ async def test_get_task_logs_file(
     assert log_file.download_link
 
 
-@pytest.mark.xfail
-async def test_get_task_logs(
+async def test_get_tasks_outputs(
     project_id: ProjectID, node_id: NodeID, client: httpx.AsyncClient
 ):
-    resp = await client.get(f"/{project_id}/tasks/{node_id}/logs")
+    selection = {
+        node_id,
+    }
+    resp = await client.post(
+        f"/v2/computations/{project_id}/tasks/-/outputs:batchGet",
+        json=jsonable_encoder(TasksSelection(nodes_ids=selection)),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+
+    tasks_outputs = parse_obj_as(TasksOutputs, resp.json())
+
+    assert selection == set(tasks_outputs.nodes_outputs.keys())
+    outputs = tasks_outputs.nodes_outputs[node_id]
+    assert outputs == {}
+
+
+async def test_get_tasks_outputs_not_found(node_id: NodeID, client: httpx.AsyncClient):
+
+    invalid_project = uuid4()
+    resp = await client.post(
+        f"/v2/computations/{invalid_project}/tasks/-/outputs:batchGet",
+        json=jsonable_encoder(TasksSelection(nodes_ids={node_id})),
+    )
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
