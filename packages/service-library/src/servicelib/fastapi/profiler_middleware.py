@@ -59,7 +59,9 @@ class ProfilerMiddleware:
                         profiler.stop()
                         message["body"] = append_profile(
                             message["body"].decode(),
-                            profiler.output_text(unicode=True, color=True),
+                            profiler.output_text(
+                                unicode=True, color=True, show_all=True
+                            ),
                         ).encode()
                     else:
                         message["more_body"] = True
