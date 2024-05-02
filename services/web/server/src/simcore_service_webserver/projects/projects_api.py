@@ -703,7 +703,7 @@ async def delete_project_node(
                 X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
             ),
             stop_service=any(
-                s["service_uuid"] == node_uuid for s in list_running_dynamic_services
+                f"{s.node_uuid}" == node_uuid for s in list_running_dynamic_services
             ),
         ),
         task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
@@ -1322,7 +1322,7 @@ async def run_project_dynamic_services(
     # first get the services if they already exist
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
     running_services_uuids: list[NodeIDStr] = [
-        d["service_uuid"]
+        f"{d.node_uuid}"
         for d in await director_v2_api.list_dynamic_services(
             request.app, user_id, project["uuid"]
         )

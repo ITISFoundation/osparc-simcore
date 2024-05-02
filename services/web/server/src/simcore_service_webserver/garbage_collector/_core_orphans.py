@@ -1,10 +1,10 @@
 import logging
-from typing import Any, Final
+from typing import Final
 
 from aiohttp import web
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import logged_gather
@@ -27,19 +27,16 @@ _MAX_CONCURRENT_CALLS: Final[int] = 2
 
 
 async def _remove_service(
-    app: web.Application, node_id: NodeID, service: dict[str, Any]
+    app: web.Application, node_id: NodeID, service: DynamicServiceGet
 ) -> None:
     save_service_state = True
     if not await is_node_id_present_in_any_project_workbench(app, node_id):
         # this is a loner service that is not part of any project
         save_service_state = False
-    elif "user_id" not in service:
-        save_service_state = False
     else:
-        user_id = UserID(service["user_id"])
         user_role: UserRole | None = None
         try:
-            user_role = await get_user_role(app, user_id)
+            user_role = await get_user_role(app, service.user_id)
         except (UserNotFoundError, ValueError):
             user_role = None
 
@@ -47,7 +44,7 @@ async def _remove_service(
 
         save_service_state = await ProjectDBAPI.get_from_app_context(
             app
-        ).has_permission(user_id, project_uuid, "write")
+        ).has_permission(service.user_id, project_uuid, "write")
         if user_role is None or user_role <= UserRole.GUEST:
             save_service_state = False
 
@@ -87,9 +84,7 @@ async def remove_orphaned_services(
     # in between and the GC would remove services that actually should be running.
 
     with log_catch(_logger, reraise=False):
-        running_dynamic_services: list[
-            dict[str, Any]
-        ] = await director_v2_api.list_dynamic_services(app)
+        running_dynamic_services = await director_v2_api.list_dynamic_services(app)
         if not running_dynamic_services:
             # nothing to do
             return
@@ -100,10 +95,8 @@ async def remove_orphaned_services(
                 for x in running_dynamic_services
             ],
         )
-        running_service_ids: dict[NodeID, dict[str, Any]] = {
-            NodeID(service["service_uuid"]): service
-            for service in running_dynamic_services
-            if "service_uuid" in service
+        running_service_ids: dict[NodeID, DynamicServiceGet] = {
+            service.node_uuid: service for service in running_dynamic_services
         }
 
         known_opened_project_ids = await _list_opened_project_ids(registry)
