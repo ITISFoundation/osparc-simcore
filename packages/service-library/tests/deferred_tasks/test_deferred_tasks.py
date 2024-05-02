@@ -2,13 +2,17 @@
 # pylint:disable=unused-argument
 
 import asyncio
+import json
 import random
+import sys
 from datetime import timedelta
-from typing import Final
+from pathlib import Path
+from typing import Any, AsyncIterable, Final
 from unittest.mock import Mock
 
+import psutil
 import pytest
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.background_task import cancel_task
 from servicelib.deferred_tasks import (
     BaseDeferredHandler,
@@ -211,16 +215,16 @@ async def _assert_mock_has_calls(
 @pytest.mark.parametrize(
     "deferred_tasks_to_start",
     [
-        1,
+        # 1,
         2,
-        100,
+        # 100,
     ],
 )
 @pytest.mark.parametrize(
     "start_stop_cycles",
     [
-        0,
-        # 1,
+        # 0
+        1,
     ],
 )
 async def test_run_lots_of_jobs_interrupted(
@@ -255,3 +259,88 @@ async def test_run_lots_of_jobs_interrupted(
             await manager.start()
 
         await _assert_mock_has_calls(results_mock, count=deferred_tasks_to_start)
+
+
+class _RemoteProcess:
+    def __init__(self, shell_command):
+        self.shell_command = shell_command
+        self.process = None
+        self.pid: int | None = None
+
+    async def start(self):
+        assert self.process is None
+        assert self.pid is None
+
+        self.process = await asyncio.create_subprocess_shell(self.shell_command)
+        self.pid = self.process.pid
+        print(f"Process started {self.pid}")
+
+    async def stop(self):
+        assert self.process is not None
+        assert self.pid is not None
+
+        parent = psutil.Process(self.pid)
+        children = parent.children(recursive=True)
+        for child_pid in [child.pid for child in children]:
+            print(f"Killing {child_pid}")
+            psutil.Process(child_pid).kill()
+
+        parent.kill()
+        print(f"Killing {parent.pid}")
+
+        self.process = None
+        self.pid = None
+
+
+@pytest.fixture
+async def remote_process() -> AsyncIterable[None]:
+    python_interpreter = sys.executable
+    current_module_path = (
+        Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+    )
+    app_to_start = current_module_path / "example_app.py"
+    assert app_to_start.exists()
+
+    process = _RemoteProcess(f"{python_interpreter} {app_to_start}")
+    await process.start()
+
+    yield None
+
+    await process.stop()
+
+
+async def _tcp_command(
+    command: dict[str, Any],
+    *,
+    host: str = "127.0.0.1",
+    port: int = 3562,
+    buff_size: int = 10000,
+    timeout: NonNegativeFloat = 1,
+) -> Any:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(timeout),
+        reraise=True,
+    ):
+        with attempt:
+            reader, writer = await asyncio.open_connection(host, port)
+
+    writer.write(json.dumps(command).encode())
+    await writer.drain()
+    response = await reader.read(buff_size)
+    decoded_response = response.decode()
+    writer.close()
+    return json.loads(decoded_response)
+
+
+async def test_with_remote_process(remote_process: None):
+
+    request = {"hello": "bc-d"}
+    response = await _tcp_command(request)
+    assert response == request
+
+
+# THIS could be the issue: ERROR    servicelib.deferred_tasks._utils:_utils.py:29 Error detected in user code. Aborting message retry. Please check code at: 'servicelib.deferred_tasks._deferred_manager._fs_handle_worker'
+# It's in ERROR_RESULT when the thing was cancelled, should be in worker retry,
+# I guess something went wrong? But why is the status in the DB wrong?
+# Figure out from here

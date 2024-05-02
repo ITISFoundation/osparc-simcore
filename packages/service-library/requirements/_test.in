@@ -18,6 +18,7 @@ docker
 faker
 flaky
 openapi-spec-validator
+psutil
 pytest
 pytest-aiohttp
 pytest-asyncio
