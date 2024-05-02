@@ -84,19 +84,16 @@ async def remove_orphaned_services(
     # in between and the GC would remove services that actually should be running.
 
     with log_catch(_logger, reraise=False):
-        running_dynamic_services = await director_v2_api.list_dynamic_services(app)
-        if not running_dynamic_services:
+        running_services = await director_v2_api.list_dynamic_services(app)
+        if not running_services:
             # nothing to do
             return
         _logger.debug(
             "Currently running dynamic services: %s",
-            [
-                (x.get("service_uuid", ""), x.get("service_host", ""))
-                for x in running_dynamic_services
-            ],
+            [(x.node_uuid, x.host) for x in running_services],
         )
-        running_service_ids: dict[NodeID, DynamicServiceGet] = {
-            service.node_uuid: service for service in running_dynamic_services
+        running_services_by_id: dict[NodeID, DynamicServiceGet] = {
+            service.node_uuid: service for service in running_services
         }
 
         known_opened_project_ids = await _list_opened_project_ids(registry)
@@ -117,15 +114,15 @@ async def remove_orphaned_services(
 
         # compute the difference to find the orphaned services
         orphaned_running_service_ids = (
-            set(running_service_ids) - potentially_running_service_ids_set
+            set(running_services_by_id) - potentially_running_service_ids_set
         )
-
+        # NOTE: no need to not reraise here, since we catch everything above
+        # and logged_gather first runs everything
         await logged_gather(
             *(
-                _remove_service(app, node_id, running_service_ids[node_id])
+                _remove_service(app, node_id, running_services_by_id[node_id])
                 for node_id in orphaned_running_service_ids
             ),
             log=_logger,
             max_concurrency=_MAX_CONCURRENT_CALLS,
-            reraise=False,
         )

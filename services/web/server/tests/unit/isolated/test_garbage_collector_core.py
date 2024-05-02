@@ -7,10 +7,13 @@ from unittest import mock
 import pytest
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.projects import ProjectID
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from simcore_service_webserver.garbage_collector._core_orphans import (
     remove_orphaned_services,
 )
+from simcore_service_webserver.resource_manager.registry import UserSessionDict
 
 MODULE_GC_CORE_ORPHANS: Final[
     str
@@ -18,12 +21,36 @@ MODULE_GC_CORE_ORPHANS: Final[
 
 
 @pytest.fixture
-def mock_registry(faker: Faker) -> mock.AsyncMock:
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
+
+
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def client_session_id(faker: Faker) -> str:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def mock_registry(
+    user_id: UserID, project_id: ProjectID, client_session_id: str
+) -> mock.AsyncMock:
+    async def _fake_get_all_resource_keys() -> tuple[
+        list[UserSessionDict], list[UserSessionDict]
+    ]:
+        return ([{"user_id": user_id, "client_session_id": client_session_id}], [])
+
     registry = mock.AsyncMock()
     registry.get_all_resource_keys = mock.AsyncMock(
-        return_value=("test_alive_key", None)
+        side_effect=_fake_get_all_resource_keys
     )
-    registry.get_resources = mock.AsyncMock(return_value={"project_id": faker.uuid4()})
+    registry.get_resources = mock.AsyncMock(
+        return_value={"project_id": f"{project_id}"}
+    )
     return registry
 
 
@@ -33,13 +60,22 @@ def mock_app() -> mock.AsyncMock:
 
 
 @pytest.fixture
-def mock_list_node_ids_in_project(
-    mocker: MockerFixture, faker: Faker
-) -> mock.AsyncMock:
+def mock_list_node_ids_in_project(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.patch(
         f"{MODULE_GC_CORE_ORPHANS}.list_node_ids_in_project",
         autospec=True,
         return_value=set(),
+    )
+
+
+@pytest.fixture
+async def mock_is_node_id_present_in_any_project_workbench(
+    mocker: MockerFixture,
+) -> mock.AsyncMock:
+    return mocker.patch(
+        f"{MODULE_GC_CORE_ORPHANS}.is_node_id_present_in_any_project_workbench",
+        autospec=True,
+        return_value=False,
     )
 
 
@@ -49,6 +85,14 @@ async def mock_list_dynamic_services(mocker: MockerFixture) -> mock.AsyncMock:
         f"{MODULE_GC_CORE_ORPHANS}.director_v2_api.list_dynamic_services",
         autospec=True,
         return_value=[],
+    )
+
+
+@pytest.fixture
+async def mock_stop_dynamic_service(mocker: MockerFixture) -> mock.AsyncMock:
+    return mocker.patch(
+        f"{MODULE_GC_CORE_ORPHANS}.dynamic_scheduler_api.stop_dynamic_service",
+        autospec=True,
     )
 
 
@@ -64,7 +108,7 @@ async def test_remove_orphaned_services_with_no_running_services_does_nothing(
 
 
 @pytest.fixture
-def faker_dynamic_service_get(faker: Faker) -> Callable[[], DynamicServiceGet]:
+def faker_dynamic_service_get() -> Callable[[], DynamicServiceGet]:
     def _() -> DynamicServiceGet:
         return DynamicServiceGet.parse_obj(
             DynamicServiceGet.Config.schema_extra["examples"][1]
@@ -73,17 +117,30 @@ def faker_dynamic_service_get(faker: Faker) -> Callable[[], DynamicServiceGet]:
     return _
 
 
-async def test_removed_orphaned_service_of_invalid_service_does_not_hang_or_block_gc(
+async def test_remove_orphaned_services(
     mock_list_node_ids_in_project: mock.AsyncMock,
+    mock_is_node_id_present_in_any_project_workbench: mock.AsyncMock,
     mock_list_dynamic_services: mock.AsyncMock,
+    mock_stop_dynamic_service: mock.AsyncMock,
     mock_registry: mock.AsyncMock,
     mock_app: mock.AsyncMock,
     faker_dynamic_service_get: Callable[[], DynamicServiceGet],
+    project_id: ProjectID,
 ):
-    mock_list_dynamic_services.return_value = [faker_dynamic_service_get()]
+    fake_running_service = faker_dynamic_service_get()
+    mock_list_dynamic_services.return_value = [fake_running_service]
     await remove_orphaned_services(mock_registry, mock_app)
     mock_list_dynamic_services.assert_called_once()
-    mock_list_node_ids_in_project.assert_not_called()
+    mock_is_node_id_present_in_any_project_workbench.assert_called_once_with(
+        mock.ANY, fake_running_service.node_uuid
+    )
+    mock_list_node_ids_in_project.assert_called_once_with(mock.ANY, project_id)
+    mock_stop_dynamic_service.assert_called_once_with(
+        mock_app,
+        node_id=fake_running_service.node_uuid,
+        simcore_user_agent=mock.ANY,
+        save_state=False,
+    )
 
 
 # async def test_regression_project_id_recovered_from_the_wrong_data_structure(
