@@ -159,13 +159,6 @@ def user_agent(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture(scope="session")
-def browser_type_launch_args(browser_type_launch_args: dict, user_agent: str) -> dict:
-    # NOTE: Until the dynamic sidecar is setup with https://doc.traefik.io/traefik/middlewares/http/headers/#accesscontrolallowheaders
-    # this must remain. until https://github.com/ITISFoundation/osparc-simcore/issues/5754 is completed
-    return {**browser_type_launch_args, "args": ["--disable-web-security"]}
-
-
-@pytest.fixture(scope="session")
 def browser_context_args(
     browser_context_args: dict[str, dict[str, str] | str], user_agent: str
 ) -> dict[str, dict[str, str] | str]:
