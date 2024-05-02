@@ -1,11 +1,12 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from typing import Final
+from typing import Callable, Final
 from unittest import mock
 
 import pytest
 from faker import Faker
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from pytest_mock import MockerFixture
 from simcore_service_webserver.garbage_collector._core_orphans import (
     remove_orphaned_services,
@@ -62,13 +63,19 @@ async def test_remove_orphaned_services_with_no_running_services_does_nothing(
     mock_list_node_ids_in_project.assert_not_called()
 
 
+@pytest.fixture
+def faker_dynamic_service_get(faker: Faker) -> Callable[[], DynamicServiceGet]:
+    return DynamicServiceGet(host=faker.url())
+
+
 async def test_removed_orphaned_service_of_invalid_service_does_not_hang_or_block_gc(
     mock_list_node_ids_in_project: mock.AsyncMock,
     mock_list_dynamic_services: mock.AsyncMock,
     mock_registry: mock.AsyncMock,
     mock_app: mock.AsyncMock,
+    faker_dynamic_service_get,
 ):
-    mock_list_dynamic_services.return_value = []
+    mock_list_dynamic_services.return_value = [DynamicServiceGet()]
     await remove_orphaned_services(mock_registry, mock_app)
 
 
