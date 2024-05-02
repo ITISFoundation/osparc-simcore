@@ -10,6 +10,7 @@ from aiohttp import web
 from servicelib.aiohttp.application import APP_CONFIG_KEY, create_safe_application
 from servicelib.aiohttp.dev_error_logger import setup_dev_error_logger
 from servicelib.aiohttp.monitoring import setup_monitoring
+from servicelib.aiohttp.profiler_middleware import profiling_middleware
 from servicelib.aiohttp.tracing import setup_tracing
 
 from ._meta import APP_NAME, APP_STARTED_BANNER_MSG, VERSION
@@ -71,6 +72,10 @@ def create(settings: Settings) -> web.Application:
         setup_dsm_cleaner(app)
 
     app.middlewares.append(dsm_exception_handler)
+
+    if settings.STORAGE_PROFILING:
+
+        app.middlewares.append(profiling_middleware)
 
     if settings.LOG_LEVEL == "DEBUG":
         setup_dev_error_logger(app)
