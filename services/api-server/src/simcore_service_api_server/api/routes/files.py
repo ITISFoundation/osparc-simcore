@@ -289,7 +289,7 @@ async def get_file(
         file_id=file_id,
         storage_client=storage_client,
         user_id=user_id,
-        access_right="read",
+        access_right="write",
     )
 
 

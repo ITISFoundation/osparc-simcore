@@ -255,7 +255,7 @@ async def get_job_outputs(
                 user_id=user_id,
                 file_id=file_id,
                 sha256_checksum=None,
-                access_right="read",
+                access_right="write",
             )
             if found:
                 assert len(found) == 1  # nosec
