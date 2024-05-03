@@ -91,7 +91,7 @@ async def _tcp_command(
     *,
     host: str = "127.0.0.1",
     port: int = 3562,
-    buff_size: int = 10000,
+    read_chunk_size: int = 10000,
     timeout: NonNegativeFloat = 1,
 ) -> Any:
     async for attempt in AsyncRetrying(
@@ -104,7 +104,7 @@ async def _tcp_command(
 
     writer.write(json.dumps({"command": command, "payload": payload}).encode())
     await writer.drain()
-    response = await reader.read(buff_size)
+    response = await reader.read(read_chunk_size)
     decoded_response = response.decode()
     writer.close()
     return json.loads(decoded_response)

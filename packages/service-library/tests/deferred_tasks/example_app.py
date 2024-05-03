@@ -143,11 +143,11 @@ async def _commands_handler(
 
 class AsyncTCPServer:
     def __init__(
-        self, host: str = "127.0.0.1", port: int = 3562, buff_size: int = 10000
+        self, host: str = "127.0.0.1", port: int = 3562, read_chunk_size: int = 10000
     ) -> None:
         self.host = host
         self.port = port
-        self.buff_size = buff_size
+        self.read_chunk_size = read_chunk_size
 
         self._scheduled: list = []
         self._results: list = []
@@ -165,7 +165,7 @@ class AsyncTCPServer:
 
     async def _handle_client(self, reader, writer):
         while True:
-            data = await reader.read(self.buff_size)
+            data = await reader.read(self.read_chunk_size)
             if not data:
                 break
             response = await self._handle_request(json.loads(data.decode()))
