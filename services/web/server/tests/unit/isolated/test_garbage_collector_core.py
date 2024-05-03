@@ -39,9 +39,9 @@ def client_session_id(faker: Faker) -> str:
 def mock_registry(
     user_id: UserID, project_id: ProjectID, client_session_id: str
 ) -> mock.AsyncMock:
-    async def _fake_get_all_resource_keys() -> tuple[
-        list[UserSessionDict], list[UserSessionDict]
-    ]:
+    async def _fake_get_all_resource_keys() -> (
+        tuple[list[UserSessionDict], list[UserSessionDict]]
+    ):
         return ([{"user_id": user_id, "client_session_id": client_session_id}], [])
 
     registry = mock.AsyncMock()
@@ -159,7 +159,8 @@ async def test_remove_orphaned_services(
     mock_app: mock.AsyncMock,
     faker_dynamic_service_get: Callable[[], DynamicServiceGet],
     project_id: ProjectID,
-    request: pytest.FixtureRequest,
+    node_exists: bool,
+    user_id: UserID,
 ):
     fake_running_service = faker_dynamic_service_get()
     mock_list_dynamic_services.return_value = [fake_running_service]
@@ -170,10 +171,10 @@ async def test_remove_orphaned_services(
     )
     mock_list_node_ids_in_project.assert_called_once_with(mock.ANY, project_id)
 
-    if is_node_present := request.getfixturevalue(
-        "mock_is_node_id_present_in_any_project_workbench"
-    ):
-        mock_has_write_permission.assert_not_called()
+    if node_exists:
+        mock_has_write_permission.assert_called_once_with(
+            fake_running_service.user_id, f"{fake_running_service.project_id}", "write"
+        )
     else:
         mock_has_write_permission.assert_not_called()
     mock_stop_dynamic_service.assert_called_once_with(
