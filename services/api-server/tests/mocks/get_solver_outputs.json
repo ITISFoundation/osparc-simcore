@@ -219,14 +219,14 @@
  },
  {
   "name": "POST /simcore-s3/files/metadata:search",
-  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?user_id=1&startswith=api/4ea24645-fd8c-339b-9621-ae045d45d94d&access_right=read')>",
+  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?kind=owned&user_id=1&startswith=api/4ea24645-fd8c-339b-9621-ae045d45d94d')>",
   "method": "POST",
   "host": "storage",
   "path": {
    "path": "/v0/simcore-s3/files/metadata:search",
    "path_parameters": []
   },
-  "query": "user_id=1&startswith=api/4ea24645-fd8c-339b-9621-ae045d45d94d&access_right=read",
+  "query": "kind=owned&user_id=1&startswith=api/4ea24645-fd8c-339b-9621-ae045d45d94d",
   "request_payload": null,
   "response_body": {
    "data": [

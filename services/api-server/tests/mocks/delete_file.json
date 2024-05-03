@@ -1,14 +1,14 @@
 [
  {
   "name": "POST /simcore-s3/files/metadata:search",
-  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?user_id=1&startswith=api/cc3dd190-8c87-3686-b581-d9f7809d312e')>",
+  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?kind=owned&user_id=1&startswith=api/cc3dd190-8c87-3686-b581-d9f7809d312e')>",
   "method": "POST",
   "host": "storage",
   "path": {
    "path": "/v0/simcore-s3/files/metadata:search",
    "path_parameters": []
   },
-  "query": "user_id=1&startswith=api/cc3dd190-8c87-3686-b581-d9f7809d312e",
+  "query": "kind=owned&user_id=1&startswith=api/cc3dd190-8c87-3686-b581-d9f7809d312e",
   "request_payload": null,
   "response_body": {
    "data": [

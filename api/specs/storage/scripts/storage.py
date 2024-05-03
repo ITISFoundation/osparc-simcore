@@ -343,14 +343,14 @@ async def delete_folders_of_project(
     f"/{API_VTAG}/simcore-s3/files/metadata:search",
     response_model=Envelope[FileMetaDataGet],
     tags=TAGS_SIMCORE_S3,
-    summary="search for files starting with",
+    summary="search for owned files",
     operation_id="search_files",
 )
 async def search_files(
     user_id: UserID,
+    kind: Literal["owned"],
     startswith: str = "",
     sha256_checksum: SHA256Str | None = None,
-    access_right: Literal["read", "write"] = "read",
 ):
     """search for files starting with `startswith` and/or matching a sha256_checksum in the file_meta_data table"""
 

@@ -1,14 +1,14 @@
 [
  {
   "name": "POST /simcore-s3/files/metadata:search",
-  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?user_id=2&sha256_checksum=92c7a39ce451ee57edd6da0b9c734ca9e6423a20410f73ce55e0d07cfd603b9d')>",
+  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?kind=owned&user_id=2&sha256_checksum=92c7a39ce451ee57edd6da0b9c734ca9e6423a20410f73ce55e0d07cfd603b9d')>",
   "method": "POST",
   "host": "storage",
   "path": {
    "path": "/v0/simcore-s3/files/metadata:search",
    "path_parameters": []
   },
-  "query": "user_id=2&sha256_checksum=92c7a39ce451ee57edd6da0b9c734ca9e6423a20410f73ce55e0d07cfd603b9d",
+  "query": "kind=owned&user_id=2&sha256_checksum=92c7a39ce451ee57edd6da0b9c734ca9e6423a20410f73ce55e0d07cfd603b9d",
   "request_payload": null,
   "response_body": {
    "data": [
