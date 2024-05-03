@@ -48,7 +48,11 @@ class _FastStreamRabbitQueue(str, Enum):
 
     FINISHED_WITH_ERROR = "FINISHED_WITH_ERROR"
     DEFERRED_RESULT = "DEFERRED_RESULT"
-    CANCEL_DEFERRED = "CANCEL_DEFERRED"
+    MANUALLY_CANCELLED = "MANUALLY_CANCELLED"
+
+
+def _get_queue_from_state(task_state: TaskState) -> _FastStreamRabbitQueue:
+    return _FastStreamRabbitQueue(task_state)
 
 
 class _PatchStartDeferred:
@@ -209,6 +213,19 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     ) -> FullStartContext:
         return {**self.globals_for_start_context, **user_start_context}
 
+    async def __publish_to_queue(
+        self, task_uid: TaskUID, queue: _FastStreamRabbitQueue
+    ) -> None:
+        await self.broker.publish(
+            task_uid,
+            queue=self._get_global_queue_name(queue),
+            exchange=(
+                self.cancellation_exchange
+                if queue == _FastStreamRabbitQueue.MANUALLY_CANCELLED
+                else self.common_exchange
+            ),
+        )
+
     async def __start_deferred(
         self,
         class_unique_reference: ClassUniqueReference,
@@ -235,16 +252,12 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             state=TaskState.SCHEDULED,
         )
 
-        await self._memory_manager.save(task_uid, task_schedule)
-        _logger.debug("Scheduled task '%s' with entry: %s", task_uid, task_schedule)
         with log_catch(_logger, reraise=False):
             await subclass.on_deferred_created(task_uid, full_start_context)
 
-        await self.broker.publish(
-            task_uid,
-            queue=self._get_global_queue_name(_FastStreamRabbitQueue.SCHEDULED),
-            exchange=self.common_exchange,
-        )
+        await self._memory_manager.save(task_uid, task_schedule)
+        _logger.debug("Scheduled task '%s' with entry: %s", task_uid, task_schedule)
+        await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.SCHEDULED)
 
     async def __get_task_schedule(
         self, task_uid: TaskUID, *, expected_state: TaskState
@@ -268,8 +281,22 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             raise RejectMessage
 
         if task_schedule.state != expected_state:
-            msg = f"Detected unexpected state '{task_schedule.state}', should be: '{expected_state}'"
-            raise RuntimeError(msg)
+            # NOTE: switching state is a two phase operation (commit to memory and trigger "next handler")
+            # if there is an interruption between committing to memory and triggering the "next handler"
+            # the old handler will be retried (this is by design and guarantees that the event chain is not interrupted)
+            # It is safe to skip this event handling and trigger the next one
+
+            _logger.debug(
+                "Detected unexpected state '%s' for task '%s', should be: '%s'",
+                task_schedule.state,
+                task_uid,
+                expected_state,
+            )
+
+            await self.__publish_to_queue(
+                task_uid, _get_queue_from_state(task_schedule.state)
+            )
+            raise RejectMessage
 
         return task_schedule
 
@@ -287,11 +314,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         task_schedule.state = TaskState.SUBMIT_TASK
         await self._memory_manager.save(task_uid, task_schedule)
 
-        await self.broker.publish(
-            task_uid,
-            queue=self._get_global_queue_name(_FastStreamRabbitQueue.SUBMIT_TASK),
-            exchange=self.common_exchange,
-        )
+        await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.SUBMIT_TASK)
 
     @stop_retry_for_unintended_errors
     async def _fs_handle_submit_task(  # pylint:disable=method-hidden
@@ -306,11 +329,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         task_schedule.state = TaskState.WORKER
         await self._memory_manager.save(task_uid, task_schedule)
 
-        await self.broker.publish(
-            task_uid,
-            queue=self._get_global_queue_name(_FastStreamRabbitQueue.WORKER),
-            exchange=self.common_exchange,
-        )
+        await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.WORKER)
 
     @stop_retry_for_unintended_errors
     async def _fs_handle_worker(  # pylint:disable=method-hidden
@@ -354,23 +373,15 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         if isinstance(task_schedule.result, TaskResultSuccess):
             task_schedule.state = TaskState.DEFERRED_RESULT
             await self._memory_manager.save(task_uid, task_schedule)
-            await self.broker.publish(
-                task_uid,
-                queue=self._get_global_queue_name(
-                    _FastStreamRabbitQueue.DEFERRED_RESULT
-                ),
-                exchange=self.common_exchange,
+            await self.__publish_to_queue(
+                task_uid, _FastStreamRabbitQueue.DEFERRED_RESULT
             )
             return
 
         if isinstance(task_schedule.result, TaskResultError | TaskResultCancelledError):
             task_schedule.state = TaskState.ERROR_RESULT
             await self._memory_manager.save(task_uid, task_schedule)
-            await self.broker.publish(
-                task_uid,
-                queue=self._get_global_queue_name(_FastStreamRabbitQueue.ERROR_RESULT),
-                exchange=self.common_exchange,
-            )
+            await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.ERROR_RESULT)
             return
 
         msg = (
@@ -399,21 +410,13 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             # does not retry if task was cancelled
             task_schedule.state = TaskState.SUBMIT_TASK
             await self._memory_manager.save(task_uid, task_schedule)
-            await self.broker.publish(
-                task_uid,
-                queue=self._get_global_queue_name(_FastStreamRabbitQueue.SUBMIT_TASK),
-                exchange=self.common_exchange,
-            )
+            await self.__publish_to_queue(task_uid, _FastStreamRabbitQueue.SUBMIT_TASK)
             return
 
         task_schedule.state = TaskState.FINISHED_WITH_ERROR
         await self._memory_manager.save(task_uid, task_schedule)
-        await self.broker.publish(
-            task_uid,
-            queue=self._get_global_queue_name(
-                _FastStreamRabbitQueue.FINISHED_WITH_ERROR
-            ),
-            exchange=self.common_exchange,
+        await self.__publish_to_queue(
+            task_uid, _FastStreamRabbitQueue.FINISHED_WITH_ERROR
         )
 
     async def __remove_task(
@@ -487,14 +490,12 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         task_schedule.state = TaskState.MANUALLY_CANCELLED
         await self._memory_manager.save(task_uid, task_schedule)
 
-        await self.broker.publish(
-            task_uid,
-            queue=self._get_global_queue_name(_FastStreamRabbitQueue.CANCEL_DEFERRED),
-            exchange=self.cancellation_exchange,
+        await self.__publish_to_queue(
+            task_uid, _FastStreamRabbitQueue.MANUALLY_CANCELLED
         )
 
     @stop_retry_for_unintended_errors
-    async def _fs_handle_cancel_deferred(  # pylint:disable=method-hidden
+    async def _fs_handle_manually_cancelled(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
         _log_state(TaskState.MANUALLY_CANCELLED, task_uid)
@@ -560,11 +561,13 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             retry=True,
         )(self._fs_handle_deferred_result)
 
-        self._fs_handle_cancel_deferred = self.router.subscriber(
-            queue=self._get_global_queue_name(_FastStreamRabbitQueue.CANCEL_DEFERRED),
+        self._fs_handle_manually_cancelled = self.router.subscriber(
+            queue=self._get_global_queue_name(
+                _FastStreamRabbitQueue.MANUALLY_CANCELLED
+            ),
             exchange=self.cancellation_exchange,
             retry=True,
-        )(self._fs_handle_cancel_deferred)
+        )(self._fs_handle_manually_cancelled)
 
     async def setup(self) -> None:
         self._register_subscribers()

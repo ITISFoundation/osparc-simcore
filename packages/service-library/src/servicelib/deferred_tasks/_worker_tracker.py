@@ -63,7 +63,7 @@ class WorkerTracker:
                 str_traceback=_get_str_traceback(e),
             )
 
-        self._tasks.pop(task_uid)
+        self._tasks.pop(task_uid, None)
 
         return result_to_return
 
