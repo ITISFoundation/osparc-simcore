@@ -40,12 +40,7 @@ from ...models.schemas.files import (
     UploadLinks,
 )
 from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
-from ...services.storage import (
-    AccessRight,
-    StorageApi,
-    StorageFileMetaData,
-    to_file_api_model,
-)
+from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
@@ -73,7 +68,6 @@ async def _get_file(
     file_id: UUID,
     storage_client: StorageApi,
     user_id: int,
-    access_right: AccessRight,
 ):
     """Gets metadata for a given file resource"""
 
@@ -290,7 +284,6 @@ async def get_file(
         file_id=file_id,
         storage_client=storage_client,
         user_id=user_id,
-        access_right="write",
     )
 
 
@@ -342,7 +335,6 @@ async def delete_file(
         file_id=file_id,
         storage_client=storage_client,
         user_id=user_id,
-        access_right="write",
     )
     await storage_client.delete_file(
         user_id=user_id, quoted_storage_file_id=file.quoted_storage_file_id
