@@ -406,6 +406,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
               node.setBootOptions({
                 "boot_mode": newBootModeId
               });
+              node.fireEvent("updateStudyDocument");
             }, this);
           } else {
             this.__bootModeSB.exclude();

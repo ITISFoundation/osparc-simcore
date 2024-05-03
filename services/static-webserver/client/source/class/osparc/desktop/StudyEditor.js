@@ -247,6 +247,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             this.nodeSelected(nodeId);
           }, this);
 
+          workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
           workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
         })
         .catch(err => {
