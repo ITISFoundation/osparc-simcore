@@ -8,47 +8,47 @@ version: "3.8"
 services:
   api-server:
     environment:
-      - SC_BOOT_MODE=debug
-      - LOG_LEVEL=DEBUG
-      - DEBUG=true
-      - API_SERVER_PROFILING=${API_SERVER_PROFILING}
+      API_SERVER_PROFILING : ${API_SERVER_PROFILING}
+      DEBUG : true
+      LOGLEVEL : DEBUG
+      SC_BOOT_MODE : debug
     volumes:
       - ./api-server:/devel/services/api-server
       - ../packages:/devel/packages
 
   autoscaling:
     environment:
-      - SC_BOOT_MODE=debug
-      - AUTOSCALING_LOGLEVEL=DEBUG
-      - DEBUG=true
+      DEBUG : true
+      LOGLEVEL : DEBUG
+      SC_BOOT_MODE : debug
     volumes:
       - ./autoscaling:/devel/services/autoscaling
       - ../packages:/devel/packages
 
   invitations:
     environment:
-      - SC_BOOT_MODE=debug
-      - INVITATIONS_LOGLEVEL=DEBUG
-      - DEBUG=true
+      DEBUG : true
+      LOGLEVEL : DEBUG
+      SC_BOOT_MODE : debug
     volumes:
       - ./invitations:/devel/services/invitations
       - ../packages:/devel/packages
 
   payments:
     environment:
-      - SC_BOOT_MODE=debug
-      - PAYMENTS_LOGLEVEL=DEBUG
-      - DEBUG=true
+      DEBUG : true
+      LOGLEVEL : DEBUG
+      SC_BOOT_MODE : debug
     volumes:
       - ./payments:/devel/services/payments
       - ../packages:/devel/packages
 
   dynamic-schdlr:
     environment:
-      - SC_BOOT_MODE=debug
-      - DYNAMIC_SCHEDULER_LOGLEVEL=DEBUG
-      - DEBUG=true
-      - DYNAMIC_SCHEDULER_PROFILING=${DYNAMIC_SCHEDULER_PROFILING}
+      DEBUG : true
+      DYNAMIC_SCHEDULER_PROFILING : ${DYNAMIC_SCHEDULER_PROFILING}
+      LOGLEVEL : DEBUG
+      SC_BOOT_MODE : debug
     volumes:
       - ./dynamic-scheduler:/devel/services/dynamic-scheduler
       - ../packages:/devel/packages
@@ -57,36 +57,36 @@ services:
 
   catalog:
     environment:
-      - SC_BOOT_MODE=debug
-      - LOG_LEVEL=DEBUG
-      - DEBUG=true
-      - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
-      - CATALOG_PROFILING=${CATALOG_PROFILING}
+      CATALOG_PROFILING : ${CATALOG_PROFILING}
+      DEBUG : true
+      DYNAMIC_SIDECAR_MOUNT_PATH_DEV : ${PWD}/services/dynamic-sidecar
+      LOGLEVEL : DEBUG
+      SC_BOOT_MODE : debug
     volumes:
       - ./catalog:/devel/services/catalog
       - ../packages:/devel/packages
 
   clusters-keeper:
     environment:
-      - SC_BOOT_MODE=debug
-      - LOG_LEVEL=DEBUG
-      - DEBUG=true
+      DEBUG : true
+      LOGLEVEL : DEBUG
+      SC_BOOT_MODE : debug
     volumes:
       - ./clusters-keeper:/devel/services/clusters-keeper
       - ../packages:/devel/packages
 
   datcore-adapter:
     environment:
-      - SC_BOOT_MODE=debug
-      - LOG_LEVEL=DEBUG
+      LOGLEVEL : DEBUG
+      SC_BOOT_MODE : debug
     volumes:
       - ./datcore-adapter:/devel/services/datcore-adapter
       - ../packages:/devel/packages
 
   director:
     environment:
-      - SC_BOOT_MODE=debug
-      - LOGLEVEL=debug
+      LOGLEVEL : debug
+      SC_BOOT_MODE : debug
     volumes:
       - ./director:/devel/services/director
       - ../packages:/devel/packages
@@ -94,11 +94,11 @@ services:
 
   director-v2:
     environment:
-      - SC_BOOT_MODE=debug
-      - LOG_LEVEL=debug
-      - DEBUG=true
-      - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
-      - DIRECTOR_V2_PROFILING=${DIRECTOR_V2_PROFILING}
+      DEBUG : true
+      DIRECTOR_V2_PROFILING : ${DIRECTOR_V2_PROFILING}
+      DYNAMIC_SIDECAR_MOUNT_PATH_DEV : ${PWD}/services/dynamic-sidecar
+      LOGLEVEL : debug
+      SC_BOOT_MODE : debug
     volumes:
       - ./director-v2:/devel/services/director-v2
       - ../packages:/devel/packages
@@ -107,7 +107,7 @@ services:
     volumes:
       - ./static-webserver/client/source-output:/static-content
     environment:
-      - SERVER_LOG_LEVEL=info
+      SERVER_LOGLEVEL : info
 
   webserver:
     volumes:
@@ -116,10 +116,10 @@ services:
       - ../packages:/devel/packages
     environment:
       &webserver_environment_devel
-      WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
       SC_BOOT_MODE: debug
-      WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-DEBUG}
+      WEBSERVER_LOGLEVEL: ${LOGLEVEL:-DEBUG}
       WEBSERVER_PROFILING: ${WEBSERVER_PROFILING}
+      WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
 
 
   wb-api-server:
@@ -146,9 +146,9 @@ services:
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
 
     environment:
+      LOGLEVEL: DEBUG
       SC_BOOT_MODE: debug
       SIDECAR_LOGLEVEL: DEBUG
-      LOG_LEVEL: DEBUG
     ports:
       - "3000"
     deploy:
@@ -157,9 +157,9 @@ services:
   dask-scheduler:
     volumes: *dev-dask-sidecar-volumes
     environment:
+      LOGLEVEL: DEBUG
       SC_BOOT_MODE: debug
       SIDECAR_LOGLEVEL: DEBUG
-      LOG_LEVEL: DEBUG
     ports:
       - "3000"
     deploy:
@@ -168,24 +168,24 @@ services:
 
   resource-usage-tracker:
     environment:
-      - SC_BOOT_MODE=debug
-      - RESOURCE_USAGE_TRACKER_LOGLEVEL=DEBUG
-      - DEBUG=true
-      - LOG_FORMAT_LOCAL_DEV_ENABLED=${LOG_FORMAT_LOCAL_DEV_ENABLED}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_ENDPOINT=${POSTGRES_ENDPOINT}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - PROMETHEUS_URL=${RESOURCE_USAGE_TRACKER_PROMETHEUS_URL}
-      - PROMETHEUS_USERNAME=${RESOURCE_USAGE_TRACKER_PROMETHEUS_USERNAME}
-      - PROMETHEUS_PASSWORD=${RESOURCE_USAGE_TRACKER_PROMETHEUS_PASSWORD}
-      - RABBIT_HOST=${RABBIT_HOST}
-      - RABBIT_PASSWORD=${RABBIT_PASSWORD}
-      - RABBIT_PORT=${RABBIT_PORT}
-      - RABBIT_SECURE=${RABBIT_SECURE}
-      - RABBIT_USER=${RABBIT_USER}
+      DEBUG : true
+      LOG_FORMAT_LOCAL_DEV_ENABLED : ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      POSTGRES_DB : ${POSTGRES_DB}
+      POSTGRES_ENDPOINT : ${POSTGRES_ENDPOINT}
+      POSTGRES_HOST : ${POSTGRES_HOST}
+      POSTGRES_PASSWORD : ${POSTGRES_PASSWORD}
+      POSTGRES_PORT : ${POSTGRES_PORT}
+      POSTGRES_USER : ${POSTGRES_USER}
+      PROMETHEUS_PASSWORD : ${RESOURCE_USAGE_TRACKER_PROMETHEUS_PASSWORD}
+      PROMETHEUS_URL : ${RESOURCE_USAGE_TRACKER_PROMETHEUS_URL}
+      PROMETHEUS_USERNAME : ${RESOURCE_USAGE_TRACKER_PROMETHEUS_USERNAME}
+      RABBIT_HOST : ${RABBIT_HOST}
+      RABBIT_PASSWORD : ${RABBIT_PASSWORD}
+      RABBIT_PORT : ${RABBIT_PORT}
+      RABBIT_SECURE : ${RABBIT_SECURE}
+      RABBIT_USER : ${RABBIT_USER}
+      RESOURCE_USAGE_TRACKER_LOGLEVEL : DEBUG
+      SC_BOOT_MODE : debug
     volumes:
       - ./resource-usage-tracker:/devel/services/resource-usage-tracker
       - ../packages:/devel/packages
@@ -195,14 +195,13 @@ services:
       - ./storage:/devel/services/storage
       - ../packages:/devel/packages
     environment:
-      - SC_BOOT_MODE=debug
-      - STORAGE_LOGLEVEL=DEBUG
-      - STORAGE_PROFILING=${STORAGE_PROFILING}
+      SC_BOOT_MODE : debug
+      STORAGE_PROFILING : ${STORAGE_PROFILING}
 
   agent:
     environment:
-      - SC_BOOT_MODE=debug
-      - LOGLEVEL=DEBUG
+      LOGLEVEL : DEBUG
+      SC_BOOT_MODE : debug
     volumes:
       - ./agent:/devel/services/agent
       - ../packages:/devel/packages
