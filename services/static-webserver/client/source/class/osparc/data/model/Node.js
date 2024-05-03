@@ -278,14 +278,14 @@ qx.Class.define("osparc.data.model.Node", {
       return false;
     },
 
-    getBootModesSelectBox: function(nodeMetaData, workbench, nodeId) {
+    populateBootModes: function(bootModeSB, nodeMetaData, workbench, nodeId) {
       if (!osparc.data.model.Node.hasBootModes(nodeMetaData)) {
-        return null;
+        return;
       }
 
       const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
-      const bootModeSB = new qx.ui.form.SelectBox();
       const sbItems = [];
+      bootModeSB.removeAll();
       Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
         const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
         sbItem.bootModeId = bootModeId;
@@ -303,6 +303,15 @@ qx.Class.define("osparc.data.model.Node", {
           bootModeSB.setSelection([sbItem]);
         }
       });
+    },
+
+    getBootModesSelectBox: function(nodeMetaData, workbench, nodeId) {
+      if (!osparc.data.model.Node.hasBootModes(nodeMetaData)) {
+        return null;
+      }
+
+      const bootModeSB = new qx.ui.form.SelectBox();
+      this.populateBootModes(bootModeSB, nodeMetaData, workbench, nodeId);
       return bootModeSB;
     },
 
