@@ -80,8 +80,9 @@ qx.Class.define("osparc.node.BaseNodeView", {
     __preparingInputs: null,
     __instructionsBtn: null,
     __instructionsWindow: null,
-    __nodeStartButton: null,
     __nodeStopButton: null,
+    __bootModeSB: null,
+    __nodeStartButton: null,
     __nodeStatusUI: null,
     _mainView: null,
     _settingsLayout: null,
@@ -148,14 +149,6 @@ qx.Class.define("osparc.node.BaseNodeView", {
       instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
       header.add(instructionsBtn);
 
-      const startBtn = this.__nodeStartButton = new qx.ui.form.Button().set({
-        label: this.tr("Start"),
-        icon: "@FontAwesome5Solid/play/14",
-        backgroundColor: "background-main-4",
-        visibility: "excluded"
-      });
-      header.add(startBtn);
-
       const stopBtn = this.__nodeStopButton = new qx.ui.form.Button().set({
         label: this.tr("Stop"),
         icon: "@FontAwesome5Solid/stop/14",
@@ -163,6 +156,19 @@ qx.Class.define("osparc.node.BaseNodeView", {
         visibility: "excluded"
       });
       header.add(stopBtn);
+
+      const bootModeSB = this.__bootModeSB = new qx.ui.form.SelectBox().set({
+        visibility: "excluded"
+      });
+      header.add(bootModeSB);
+
+      const startBtn = this.__nodeStartButton = new qx.ui.form.Button().set({
+        label: this.tr("Start"),
+        icon: "@FontAwesome5Solid/play/14",
+        backgroundColor: "background-main-4",
+        visibility: "excluded"
+      });
+      header.add(startBtn);
 
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
         backgroundColor: "background-main-4"
@@ -380,10 +386,33 @@ qx.Class.define("osparc.node.BaseNodeView", {
       }
 
       if (node.isDynamic()) {
-        node.attachHandlersToStartButton(this.__nodeStartButton);
-        osparc.utils.Utils.setIdToWidget(this.__nodeStartButton, "Start_"+node.getNodeId())
         node.attachVisibilityHandlerToStopButton(this.__nodeStopButton);
         node.attachExecuteHandlerToStopButton(this.__nodeStopButton);
+
+        if (osparc.product.Utils.isProduct("tis")) {
+          const nodeMetaData = node.getMetaData();
+          if (osparc.data.model.Node.hasBootModes(nodeMetaData)) {
+            const bootModeSB = this.__bootModeSB;
+            bootModeSB.show();
+            const workbench = node.getWorkbench();
+            const nodeId = node.getNodeId();
+            osparc.data.model.Node.populateBootModes(bootModeSB, nodeMetaData, workbench, nodeId);
+            node.getStatus().bind("interactive", bootModeSB, "enabled", {
+              converter: interactive => interactive === "idle"
+            });
+            bootModeSB.addListener("changeSelection", e => {
+              const newBootModeId = e.getData()[0].bootModeId;
+              node.setBootOptions({
+                "boot_mode": newBootModeId
+              });
+            }, this);
+          } else {
+            this.__bootModeSB.exclude();
+          }
+        }
+
+        node.attachHandlersToStartButton(this.__nodeStartButton);
+        osparc.utils.Utils.setIdToWidget(this.__nodeStartButton, "Start_"+node.getNodeId())
       }
 
       this.__preparingInputs = new osparc.widget.PreparingInputs(node.getStudy());
