@@ -92,7 +92,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
     __buildLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
 
-      const header = this._header = this._buildHeader();
+      const header = this._header = this.__buildHeader();
       layout.add(header);
 
       const mainView = this.__buildMainView();
@@ -110,11 +110,12 @@ qx.Class.define("osparc.node.BaseNodeView", {
       this.add(layout, 1);
     },
 
-    _buildHeader: function() {
+    __buildHeader: function() {
       const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignX: "center"
       })).set({
         padding: 6,
+        paddingTop: 0,
         height: this.self().HEADER_HEIGHT
       });
 
@@ -141,8 +142,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
       header.add(infoBtn);
 
       const instructionsBtn = this.__instructionsBtn = new qx.ui.form.Button(this.tr("Instructions"), "@FontAwesome5Solid/book/17").set({
-        padding: 3,
-        backgroundColor: "background-main-4"
+        backgroundColor: "background-main-3"
       });
       instructionsBtn.addListener("appear", () => osparc.utils.Utils.makeButtonBlink(instructionsBtn, 3));
       instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
