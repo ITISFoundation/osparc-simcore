@@ -5,8 +5,9 @@ import asyncio
 import json
 import random
 import sys
+from collections.abc import AsyncIterable, AsyncIterator
 from pathlib import Path
-from typing import Any, AsyncIterable, AsyncIterator
+from typing import Any
 
 import psutil
 import pytest
