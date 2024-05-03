@@ -75,7 +75,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
   },
 
   members: {
-    _header: null,
+    __header: null,
     __inputsButton: null,
     __preparingInputs: null,
     __instructionsBtn: null,
@@ -93,7 +93,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
     __buildLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
 
-      const header = this._header = this.__buildHeader();
+      const header = this.__header = this.__buildHeader();
       layout.add(header);
 
       const mainView = this.__buildMainView();
@@ -277,7 +277,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
     },
 
     getHeaderLayout: function() {
-      return this._header;
+      return this.__header;
     },
 
     getOutputsButton: function() {
