@@ -128,7 +128,7 @@ services:
 
   dask-sidecar:
     volumes:
-      &dev-dask-sidecar-volumes
+      &dask-sidecar_volumen_devel
       - ./dask-sidecar:/devel/services/dask-sidecar
       - ../packages:/devel/packages
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
@@ -143,7 +143,7 @@ services:
       endpoint_mode: vip
 
   dask-scheduler:
-    volumes: *dev-dask-sidecar-volumes
+    volumes: *dask-sidecar_volumen_devel
     environment:
       <<: *common-environment
       SIDECAR_LOGLEVEL: DEBUG
