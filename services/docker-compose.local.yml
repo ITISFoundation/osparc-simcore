@@ -14,36 +14,36 @@ version: "3.8"
 services:
   api-server:
     environment:
-      - API_SERVER_REMOTE_DEBUG_PORT=3000
+      API_SERVER_REMOTE_DEBUG_PORT : 3000
     ports:
       - "8006:8000"
       - "3006:3000"
 
   autoscaling:
     environment:
-      - AUTOSCALING_REMOTE_DEBUGGING_PORT=3000
+      AUTOSCALING_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8007:8000"
       - "3012:3000"
 
   catalog:
     environment:
-      - CATALOG_REMOTE_DEBUGGING_PORT=3000
+      CATALOG_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8005:8000"
       - "3005:3000"
 
   clusters-keeper:
     environment:
-      - CLUSTERS_KEEPER_REMOTE_DEBUGGING_PORT=3000
+      CLUSTERS_KEEPER_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8010:8000"
       - "3015:3000"
 
   director:
     environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
+      SC_BOOT_MODE : ${SC_BOOT_MODE:-default}
+      SWARM_STACK_NAME : ${SWARM_STACK_NAME:-simcore_local}
     ports:
       - "8080"
       - "3004:3000"
@@ -53,39 +53,37 @@ services:
 
   director-v2:
     environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
-      - DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS={}
-      - DIRECTOR_V2_REMOTE_DEBUGGING_PORT=3000
+      SWARM_STACK_NAME : ${SWARM_STACK_NAME:-simcore_local}
+      DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS : {}
+      DIRECTOR_V2_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8000"
       - "3009:3000"
 
   datcore-adapter:
     environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-      - DATCORE_ADAPTER_REMOTE_DEBUG_PORT=3000
+      DATCORE_ADAPTER_REMOTE_DEBUG_PORT : 3000
     ports:
       - "8000"
       - "3010:3000"
 
   invitations:
     environment:
-      - INVITATIONS_REMOTE_DEBUGGING_PORT=3000
+      INVITATIONS_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8008:8000"
       - "3017:3000"
 
   payments:
     environment:
-      - PAYMENTS_REMOTE_DEBUGGING_PORT=3000
+      PAYMENTS_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8011:8000"
       - "3018:3000"
 
   dynamic-schdlr:
     environment:
-      - DYNAMIC_SCHEDULER_REMOTE_DEBUGGING_PORT=3000
+      DYNAMIC_SCHEDULER_REMOTE_DEBUGGING_PORT : 3000
     ports:
      - "8012:8000"
      - "3016:3000"
@@ -94,15 +92,14 @@ services:
 
   resource-usage-tracker:
     environment:
-      - RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT=3000
+      RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8009:8000"
       - "3014:3000"
 
   storage:
     environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-      - STORAGE_REMOTE_DEBUGGING_PORT=3000
+      STORAGE_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8080"
       - "3003:3000"
@@ -110,10 +107,7 @@ services:
   webserver:
     environment:
       &webserver_environment_local
-      SC_BOOT_MODE: ${SC_BOOT_MODE:-default}
-      WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-INFO}
-      REST_SWAGGER_API_DOC_ENABLED: 1
-
+      GUNICORN_CMD_ARGS : --timeout=0
     ports:
       - "8080"
       - "3001:3000"
@@ -152,19 +146,14 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes/:/var/lib/docker/volumes/
     environment:
-      - LOGLEVEL=${LOG_LEVEL:-INFO}
-      - AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
+      AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME : ${SWARM_STACK_NAME:-simcore_local}
 
   dask-sidecar:
-    environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
     # ports:
       # dashboard UI currently disabled because of dnsrr mode
       # - "8788:8787"
 
   dask-scheduler:
-    environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
     ports:
       # dashboard UI
       - "8787:8787"
