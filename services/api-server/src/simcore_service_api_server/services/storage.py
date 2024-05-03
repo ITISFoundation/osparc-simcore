@@ -61,6 +61,7 @@ class StorageApi(BaseServiceClientApi):
         response = await self.client.post(
             "/simcore-s3/files/metadata:search",
             params={
+                "kind": "owned",
                 "user_id": str(user_id),
                 "startswith": "api/",
             },
@@ -85,12 +86,12 @@ class StorageApi(BaseServiceClientApi):
         # logic in storage 'wrongly' assumes that all data is associated to a project and
         # here there is no project, so it would always returns an empty
         params: dict = {
+            "kind": "owned",
             "user_id": f"{user_id}",
             "startswith": None if file_id is None else f"api/{file_id}",
             "sha256_checksum": None
             if sha256_checksum is None
             else f"{sha256_checksum}",
-            "kind": "owned",
         }
 
         response = await self.client.post(
