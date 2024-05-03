@@ -10,6 +10,7 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.garbage_collector._core_orphans import (
     remove_orphaned_services,
 )
@@ -149,18 +150,34 @@ async def mock_has_write_permission(
     return mocked_project_db_api.get_from_app_context.return_value.has_permission
 
 
+@pytest.fixture(params=list(UserRole), ids=str)
+def user_role(request: pytest.FixtureRequest) -> UserRole:
+    return request.param
+
+
+@pytest.fixture
+async def mock_get_user_role(
+    mocker: MockerFixture, user_role: UserRole
+) -> mock.AsyncMock:
+    return mocker.patch(
+        f"{MODULE_GC_CORE_ORPHANS}.get_user_role", autospec=True, return_value=user_role
+    )
+
+
 async def test_remove_orphaned_services(
     mock_list_node_ids_in_project: mock.AsyncMock,
     mock_is_node_id_present_in_any_project_workbench: mock.AsyncMock,
     mock_list_dynamic_services: mock.AsyncMock,
     mock_stop_dynamic_service: mock.AsyncMock,
     mock_has_write_permission: mock.AsyncMock,
+    mock_get_user_role: mock.AsyncMock,
     mock_registry: mock.AsyncMock,
     mock_app: mock.AsyncMock,
     faker_dynamic_service_get: Callable[[], DynamicServiceGet],
     project_id: ProjectID,
     node_exists: bool,
-    user_id: UserID,
+    has_write_permission: bool,
+    user_role: UserRole,
 ):
     fake_running_service = faker_dynamic_service_get()
     mock_list_dynamic_services.return_value = [fake_running_service]
@@ -171,17 +188,25 @@ async def test_remove_orphaned_services(
     )
     mock_list_node_ids_in_project.assert_called_once_with(mock.ANY, project_id)
 
-    if node_exists:
+    expected_save_state = bool(
+        node_exists and user_role > UserRole.GUEST and has_write_permission
+    )
+    if node_exists and user_role > UserRole.GUEST:
+        mock_get_user_role.assert_called_once()
         mock_has_write_permission.assert_called_once_with(
             fake_running_service.user_id, f"{fake_running_service.project_id}", "write"
         )
+    elif node_exists:
+        mock_get_user_role.assert_called_once()
+        mock_has_write_permission.assert_not_called()
     else:
+        mock_get_user_role.assert_not_called()
         mock_has_write_permission.assert_not_called()
     mock_stop_dynamic_service.assert_called_once_with(
         mock_app,
         node_id=fake_running_service.node_uuid,
         simcore_user_agent=mock.ANY,
-        save_state=False,
+        save_state=expected_save_state,
     )
 
 

@@ -34,20 +34,20 @@ async def _remove_service(
         # this is a loner service that is not part of any project
         save_service_state = False
     else:
-        user_role: UserRole | None = None
         try:
-            user_role = await get_user_role(app, service.user_id)
+            if await get_user_role(app, service.user_id) <= UserRole.GUEST:
+                save_service_state = False
+            else:
+                save_service_state = await ProjectDBAPI.get_from_app_context(
+                    app
+                ).has_permission(service.user_id, f"{service.project_id}", "write")
         except (UserNotFoundError, ValueError):
-            user_role = None
-        project_db_api = ProjectDBAPI.get_from_app_context(app)
-        save_service_state = await project_db_api.has_permission(
-            service.user_id, f"{service.project_id}", "write"
-        )
-        if user_role is None or user_role <= UserRole.GUEST:
             save_service_state = False
 
     with log_context(
-        _logger, logging.INFO, msg=f"removing {service=} with {save_service_state=}"
+        _logger,
+        logging.INFO,
+        msg=f"removing {(service.node_uuid, service.host)} with {save_service_state=}",
     ):
         await dynamic_scheduler_api.stop_dynamic_service(
             app,
