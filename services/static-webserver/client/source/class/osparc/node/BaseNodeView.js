@@ -444,7 +444,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
           return this.tr("Outputs") + ` (${outputCounter})`;
         }
       });
-      this._outputsBtn.addListener("changeLabel", () => osparc.utils.Utils.makeButtonBlink(this._outputsBtn));
+      this._outputsBtn.addListener("changeLabel", () => osparc.utils.Utils.makeButtonBlink(this._outputsBtn, 2));
 
       this._addLogger();
     }
