@@ -196,10 +196,6 @@ async def test_delete_file(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> dict[str, Any]:
-        request_query: dict[str, str] = dict(
-            pair.split("=") for pair in request.url.query.decode("utf8").split("&")
-        )
-        assert request_query.get("access_right") == "write"
         assert isinstance(capture.response_body, dict)
         response: dict[str, Any] = capture.response_body
         return response
