@@ -41,8 +41,8 @@ services:
       - STORAGE_HOST=${STORAGE_HOST}
       - STORAGE_PORT=${STORAGE_PORT}
 
-      - WEBSERVER_HOST=${WEBAPI_HOST}
-      - WEBSERVER_PORT=${WEBAPI_PORT}
+      - WEBSERVER_HOST=${WB_API_WEBSERVER_HOST}
+      - WEBSERVER_PORT=${WB_API_WEBSERVER_PORT}
       - WEBSERVER_SESSION_SECRET_KEY=${WEBSERVER_SESSION_SECRET_KEY}
 
     deploy:
@@ -711,8 +711,9 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *webserver_environment
-      WEBSERVER_HOST: ${WEBAPI_HOST}
-      WEBSERVER_PORT: ${WEBAPI_PORT}
+      WEBSERVER_HOST: ${WB_API_WEBSERVER_HOST}
+      WEBSERVER_PORT: ${WB_API_WEBSERVER_PORT}
+      WEBSERVER_STATICWEB: null
 
     networks: *webserver_networks
 
