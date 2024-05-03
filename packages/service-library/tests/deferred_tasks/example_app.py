@@ -176,7 +176,6 @@ class AsyncTCPServer:
         writer.close()
 
     async def run(self):
-        # disable
         tcp_server = await asyncio.start_server(
             self._handle_client, self.host, self.port
         )
