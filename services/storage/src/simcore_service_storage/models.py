@@ -1,7 +1,7 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Final, Literal
+from typing import Final
 from uuid import UUID
 
 from models_library.api_schemas_storage import (
@@ -202,7 +202,6 @@ class DeleteFolderQueryParams(StorageQueryParamsBase):
 class SearchFilesQueryParams(StorageQueryParamsBase):
     startswith: str = ""
     sha256_checksum: SHA256Str | None = None
-    access_right: Literal["read", "write"] = "read"
 
 
 class LocationPathParams(BaseModel):

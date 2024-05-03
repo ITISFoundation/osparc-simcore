@@ -5,7 +5,7 @@
 
 
 from enum import Enum
-from typing import Any, Literal
+from typing import Any
 
 from fastapi import FastAPI, Query, status
 from models_library.api_schemas_storage import (
@@ -340,17 +340,16 @@ async def delete_folders_of_project(
 
 
 @app.post(
-    f"/{API_VTAG}/simcore-s3/files/metadata:search",
+    f"/{API_VTAG}/simcore-s3/files/metadata:search_owned",
     response_model=Envelope[FileMetaDataGet],
     tags=TAGS_SIMCORE_S3,
     summary="search for files starting with",
-    operation_id="search_files",
+    operation_id="search_owned_files",
 )
-async def search_files(
+async def search_owned_files(
     user_id: UserID,
     startswith: str = "",
     sha256_checksum: SHA256Str | None = None,
-    access_right: Literal["read", "write"] = "read",
 ):
     """search for files starting with `startswith` and/or matching a sha256_checksum in the file_meta_data table"""
 
