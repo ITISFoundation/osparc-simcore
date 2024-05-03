@@ -78,7 +78,7 @@ async def remote_process(cleanup_redis: None) -> AsyncIterable[_RemoteProcess]:
     app_to_start = current_module_path / "example_app.py"
     assert app_to_start.exists()
 
-    process = _RemoteProcess(f"{python_interpreter} {app_to_start}")
+    process = _RemoteProcess(shell_command=f"{python_interpreter} {app_to_start}")
 
     yield process
 
