@@ -78,11 +78,12 @@ async def _get_file(
     """Gets metadata for a given file resource"""
 
     try:
-        stored_files: list[StorageFileMetaData] = await storage_client.search_files(
+        stored_files: list[
+            StorageFileMetaData
+        ] = await storage_client.search_owned_files(
             user_id=user_id,
             file_id=file_id,
             sha256_checksum=None,
-            access_right=access_right,
         )
         if not stored_files:
             msg = "Not found in storage"
@@ -307,11 +308,10 @@ async def search_files_page(
     file_id: UUID | None = None,
 ):
     """Search files"""
-    stored_files: list[StorageFileMetaData] = await storage_client.search_files(
+    stored_files: list[StorageFileMetaData] = await storage_client.search_owned_files(
         user_id=user_id,
         file_id=file_id,
         sha256_checksum=sha256_checksum,
-        access_right="write",
     )
     if page_params.offset > len(stored_files):
         _logger.debug("File with sha256_checksum=%d not found.", sha256_checksum)

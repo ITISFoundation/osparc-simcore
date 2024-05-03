@@ -74,13 +74,12 @@ class StorageApi(BaseServiceClientApi):
         return files
 
     @_exception_mapper({})
-    async def search_files(
+    async def search_owned_files(
         self,
         *,
         user_id: int,
         file_id: UUID | None,
         sha256_checksum: SHA256Str | None,
-        access_right: AccessRight,
     ) -> list[StorageFileMetaData]:
         # NOTE: can NOT use /locations/0/files/metadata with uuid_filter=api/ because
         # logic in storage 'wrongly' assumes that all data is associated to a project and
@@ -91,11 +90,10 @@ class StorageApi(BaseServiceClientApi):
             "sha256_checksum": None
             if sha256_checksum is None
             else f"{sha256_checksum}",
-            "access_right": access_right,
         }
 
         response = await self.client.post(
-            "/simcore-s3/files/metadata:search",
+            "/simcore-s3/files/metadata:search_owned",
             params={k: v for k, v in params.items() if v is not None},
         )
         response.raise_for_status()
