@@ -90,10 +90,11 @@ class StorageApi(BaseServiceClientApi):
             "sha256_checksum": None
             if sha256_checksum is None
             else f"{sha256_checksum}",
+            "kind": "owned",
         }
 
         response = await self.client.post(
-            "/simcore-s3/files/metadata:search_owned",
+            "/simcore-s3/files/metadata:search",
             params={k: v for k, v in params.items() if v is not None},
         )
         response.raise_for_status()
