@@ -705,7 +705,7 @@ services:
       - default
       - interactive_services_subnet
 
-  web-api:
+  wb-api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
