@@ -117,10 +117,8 @@ async def delete_folders_of_project(request: web.Request) -> NoReturn:
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
-@routes.post(
-    f"/{API_VTAG}/simcore-s3/files/metadata:search_owned", name="search_owned_files"
-)
-async def search_owned_files(request: web.Request) -> web.Response:
+@routes.post(f"/{API_VTAG}/simcore-s3/files/metadata:search", name="search_files")
+async def search_files(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(SearchFilesQueryParams, request)
     log.debug(
         "received call to search_files with %s",

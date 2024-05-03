@@ -5,7 +5,7 @@
 
 
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, Query, status
 from models_library.api_schemas_storage import (
@@ -340,14 +340,15 @@ async def delete_folders_of_project(
 
 
 @app.post(
-    f"/{API_VTAG}/simcore-s3/files/metadata:search_owned",
+    f"/{API_VTAG}/simcore-s3/files/metadata:search",
     response_model=Envelope[FileMetaDataGet],
     tags=TAGS_SIMCORE_S3,
-    summary="search for files starting with",
-    operation_id="search_owned_files",
+    summary="search for owned files",
+    operation_id="search_files",
 )
-async def search_owned_files(
+async def search_files(
     user_id: UserID,
+    kind: Literal["owned"],
     startswith: str = "",
     sha256_checksum: SHA256Str | None = None,
 ):
