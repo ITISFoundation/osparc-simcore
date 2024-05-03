@@ -402,11 +402,17 @@ qx.Class.define("osparc.node.BaseNodeView", {
               converter: interactive => interactive === "idle"
             });
             bootModeSB.addListener("changeSelection", e => {
+              bootModeSB.setEnabled(false);
+              this.__nodeStartButton.setEnabled(false);
               const newBootModeId = e.getData()[0].bootModeId;
               node.setBootOptions({
                 "boot_mode": newBootModeId
               });
               node.fireEvent("updateStudyDocument");
+              setTimeout(() => {
+                bootModeSB.setEnabled(true);
+                this.__nodeStartButton.setEnabled(true);
+              }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
             }, this);
           } else {
             this.__bootModeSB.exclude();

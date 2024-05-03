@@ -187,8 +187,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
 
           let dontCheck = false;
-          if (this.getDisableServiceAutoStart() !== null) {
-            dontCheck = this.getDisableServiceAutoStart();
+          if (study.getDisableServiceAutoStart() !== null) {
+            dontCheck = study.getDisableServiceAutoStart();
           }
           // Count dynamic services.
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
