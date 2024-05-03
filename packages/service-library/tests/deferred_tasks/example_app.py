@@ -22,6 +22,8 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+_logger = logging.getLogger(__name__)
+
 
 class ExampleDeferredHandler(BaseDeferredHandler[str]):
     @classmethod
@@ -122,7 +124,7 @@ async def _commands_handler(
         )
         await context.example_app.setup()
 
-        print(f"Initialized context {context=}")
+        _logger.info("Initialized context %s", context)
 
         return None
 
@@ -156,11 +158,11 @@ class AsyncTCPServer:
 
     async def _handle_request(self, command: Any) -> Any:
         unique_request_id = uuid4()
-        print(f"[{unique_request_id}] request:  {command=}")
+        _logger.info("[%s] request:  %s", unique_request_id, command)
         response = await _commands_handler(
             self._context, command["command"], command["payload"]
         )
-        print(f"[{unique_request_id}] response: {response=}")
+        _logger.info("[%s] response: %s", unique_request_id, response)
         return response
 
     async def _handle_client(self, reader, writer):
@@ -172,7 +174,7 @@ class AsyncTCPServer:
             writer.write(json.dumps(response).encode())
             await writer.drain()
 
-        print("Client disconnected.")
+        _logger.info("Client disconnected.")
         writer.close()
 
     async def run(self):
@@ -180,7 +182,7 @@ class AsyncTCPServer:
             self._handle_client, self.host, self.port
         )
         addr = tcp_server.sockets[0].getsockname()
-        print(f"Serving on {addr}")
+        _logger.info("Serving on %s", addr)
 
         async with tcp_server:
             await tcp_server.serve_forever()

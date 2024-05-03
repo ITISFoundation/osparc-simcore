@@ -42,7 +42,6 @@ class _RemoteProcess:
 
         self.process = await asyncio.create_subprocess_shell(self.shell_command)
         self.pid = self.process.pid
-        print(f"Process started {self.pid}")
 
     async def stop(self, *, graceful: bool = False):
         if not graceful:
@@ -52,7 +51,6 @@ class _RemoteProcess:
         parent = psutil.Process(self.pid)
         children = parent.children(recursive=True)
         for child_pid in [child.pid for child in children]:
-            print(f"Killing {child_pid}")
             psutil.Process(child_pid).kill()
 
         self.process = None
