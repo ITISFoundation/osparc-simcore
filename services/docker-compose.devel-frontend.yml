@@ -7,4 +7,4 @@ services:
     volumes:
       - ./static-webserver/client/source-output:/static-content
     environment:
-      - SERVER_LOG_LEVEL=info
+      SERVER_LOG_LEVEL : info
