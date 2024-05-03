@@ -1,54 +1,48 @@
 # Overrides docker-compose.yml config when deploying services in development mode,
 #  i.e. binding with source code in source
-#
 # NOTES:
 # - port 3000 used for ptsv
 #
 version: "3.8"
+x-common-environment: &common-environment
+  DEBUG : true
+  SC_BOOT_MODE : debug
+
 services:
   api-server:
     environment:
+      <<: *common-environment
       API_SERVER_PROFILING : ${API_SERVER_PROFILING}
-      DEBUG : true
-      LOGLEVEL : DEBUG
-      SC_BOOT_MODE : debug
     volumes:
       - ./api-server:/devel/services/api-server
       - ../packages:/devel/packages
 
   autoscaling:
     environment:
-      DEBUG : true
-      LOGLEVEL : DEBUG
-      SC_BOOT_MODE : debug
+      <<: *common-environment
+
     volumes:
       - ./autoscaling:/devel/services/autoscaling
       - ../packages:/devel/packages
 
   invitations:
     environment:
-      DEBUG : true
-      LOGLEVEL : DEBUG
-      SC_BOOT_MODE : debug
+      <<: *common-environment
     volumes:
       - ./invitations:/devel/services/invitations
       - ../packages:/devel/packages
 
   payments:
     environment:
-      DEBUG : true
-      LOGLEVEL : DEBUG
-      SC_BOOT_MODE : debug
+      <<: *common-environment
     volumes:
       - ./payments:/devel/services/payments
       - ../packages:/devel/packages
 
   dynamic-schdlr:
     environment:
-      DEBUG : true
+      <<: *common-environment
       DYNAMIC_SCHEDULER_PROFILING : ${DYNAMIC_SCHEDULER_PROFILING}
-      LOGLEVEL : DEBUG
-      SC_BOOT_MODE : debug
     volumes:
       - ./dynamic-scheduler:/devel/services/dynamic-scheduler
       - ../packages:/devel/packages
@@ -57,28 +51,24 @@ services:
 
   catalog:
     environment:
+      <<: *common-environment
       CATALOG_PROFILING : ${CATALOG_PROFILING}
-      DEBUG : true
       DYNAMIC_SIDECAR_MOUNT_PATH_DEV : ${PWD}/services/dynamic-sidecar
-      LOGLEVEL : DEBUG
-      SC_BOOT_MODE : debug
+
     volumes:
       - ./catalog:/devel/services/catalog
       - ../packages:/devel/packages
 
   clusters-keeper:
     environment:
-      DEBUG : true
-      LOGLEVEL : DEBUG
-      SC_BOOT_MODE : debug
+      <<: *common-environment
     volumes:
       - ./clusters-keeper:/devel/services/clusters-keeper
       - ../packages:/devel/packages
 
   datcore-adapter:
     environment:
-      LOGLEVEL : DEBUG
-      SC_BOOT_MODE : debug
+      <<: *common-environment
     volumes:
       - ./datcore-adapter:/devel/services/datcore-adapter
       - ../packages:/devel/packages
@@ -94,11 +84,10 @@ services:
 
   director-v2:
     environment:
-      DEBUG : true
+      <<: *common-environment
       DIRECTOR_V2_PROFILING : ${DIRECTOR_V2_PROFILING}
       DYNAMIC_SIDECAR_MOUNT_PATH_DEV : ${PWD}/services/dynamic-sidecar
-      LOGLEVEL : debug
-      SC_BOOT_MODE : debug
+
     volumes:
       - ./director-v2:/devel/services/director-v2
       - ../packages:/devel/packages
@@ -110,13 +99,12 @@ services:
       SERVER_LOGLEVEL : info
 
   webserver:
-    volumes:
-      &webserver_volumes_devel
+
+    volumes: &webserver_volumes_devel
       - ./web/server:/devel/services/web/server
       - ../packages:/devel/packages
-    environment:
-      &webserver_environment_devel
-      SC_BOOT_MODE: debug
+    environment: &webserver_environment_devel
+      <<: *common-environment
       WEBSERVER_LOGLEVEL: ${LOGLEVEL:-DEBUG}
       WEBSERVER_PROFILING: ${WEBSERVER_PROFILING}
       WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
@@ -157,8 +145,7 @@ services:
   dask-scheduler:
     volumes: *dev-dask-sidecar-volumes
     environment:
-      LOGLEVEL: DEBUG
-      SC_BOOT_MODE: debug
+      <<: *common-environment
       SIDECAR_LOGLEVEL: DEBUG
     ports:
       - "3000"
@@ -168,7 +155,7 @@ services:
 
   resource-usage-tracker:
     environment:
-      DEBUG : true
+      <<: *common-environment
       LOG_FORMAT_LOCAL_DEV_ENABLED : ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       POSTGRES_DB : ${POSTGRES_DB}
       POSTGRES_ENDPOINT : ${POSTGRES_ENDPOINT}
@@ -184,8 +171,6 @@ services:
       RABBIT_PORT : ${RABBIT_PORT}
       RABBIT_SECURE : ${RABBIT_SECURE}
       RABBIT_USER : ${RABBIT_USER}
-      RESOURCE_USAGE_TRACKER_LOGLEVEL : DEBUG
-      SC_BOOT_MODE : debug
     volumes:
       - ./resource-usage-tracker:/devel/services/resource-usage-tracker
       - ../packages:/devel/packages
@@ -195,13 +180,13 @@ services:
       - ./storage:/devel/services/storage
       - ../packages:/devel/packages
     environment:
-      SC_BOOT_MODE : debug
+      <<: *common-environment
       STORAGE_PROFILING : ${STORAGE_PROFILING}
 
   agent:
     environment:
-      LOGLEVEL : DEBUG
-      SC_BOOT_MODE : debug
+      <<: *common-environment
+
     volumes:
       - ./agent:/devel/services/agent
       - ../packages:/devel/packages
