@@ -186,10 +186,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             this.__startIdlingTracker();
           }
 
+          let dontCheck = false;
+          if (this.getDisableServiceAutoStart() !== null) {
+            dontCheck = this.getDisableServiceAutoStart();
+          }
           // Count dynamic services.
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
           const maxNumber = osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes();
-          if (maxNumber) {
+          if (maxNumber && !dontCheck) {
             const nodes = study.getWorkbench().getNodes();
             const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
             if (nDynamics > maxNumber) {
