@@ -1,8 +1,9 @@
 import asyncio
 import json
+import logging
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, Final
+from typing import Any
 from uuid import uuid4
 
 from pydantic import NonNegativeInt
@@ -17,7 +18,9 @@ from servicelib.redis import RedisClientSDK, RedisClientSDKHealthChecked
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 
-_CONSTANT_RESULT: Final[str] = "always_the_same"
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 class ExampleDeferredHandler(BaseDeferredHandler[str]):
@@ -26,38 +29,40 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
         return timedelta(seconds=60)
 
     @classmethod
-    async def start_deferred(cls, sleep_duration: float) -> UserStartContext:
-        return {"sleep_duration": sleep_duration}
+    async def start_deferred(
+        cls, sleep_duration: float, sequence_id: int
+    ) -> UserStartContext:
+        return {"sleep_duration": sleep_duration, "sequence_id": sequence_id}
 
     @classmethod
     async def on_deferred_created(
         cls, task_uid: TaskUID, start_context: FullStartContext
     ) -> None:
-        distributed_lists: DistributedLists = start_context["distributed_lists"]
-        await distributed_lists.append_to("scheduled", task_uid)
+        in_memory_lists: InMemoryLists = start_context["in_memory_lists"]
+        await in_memory_lists.append_to("scheduled", task_uid)
 
     @classmethod
     async def run_deferred(cls, start_context: FullStartContext) -> str:
         sleep_duration: float = start_context["sleep_duration"]
         await asyncio.sleep(sleep_duration)
-        return _CONSTANT_RESULT
+        return start_context["sequence_id"]
 
     @classmethod
     async def on_deferred_result(
         cls, result: str, start_context: FullStartContext
     ) -> None:
-        distributed_lists: DistributedLists = start_context["distributed_lists"]
-        await distributed_lists.append_to("results", result)
+        in_memory_lists: InMemoryLists = start_context["in_memory_lists"]
+        await in_memory_lists.append_to("results", result)
 
 
-class DistributedLists:
+class InMemoryLists:
     def __init__(self, redis_settings: RedisSettings) -> None:
         self.redis_sdk = RedisClientSDK(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
         )
 
     def _get_queue_name(self, queue_name: str) -> str:
-        return f"distributed_lists::{queue_name}"
+        return f"in_memory_lists::{queue_name}"
 
     async def append_to(self, queue_name: str, value: Any) -> None:
         await self.redis_sdk.redis.rpush(self._get_queue_name(queue_name), value)  # type: ignore
@@ -73,7 +78,7 @@ class ExampleApp:
         self,
         rabbit_settings: RabbitSettings,
         redis_settings: RedisSettings,
-        distributed_lists: DistributedLists,
+        in_memory_lists: InMemoryLists,
         max_workers: NonNegativeInt,
     ) -> None:
         self._redis_client = RedisClientSDKHealthChecked(
@@ -82,7 +87,7 @@ class ExampleApp:
         self._manager = DeferredManager(
             rabbit_settings,
             self._redis_client,
-            globals_for_start_context={"distributed_lists": distributed_lists},
+            globals_for_start_context={"in_memory_lists": in_memory_lists},
             max_workers=max_workers,
         )
 
@@ -96,7 +101,7 @@ class Context:
     redis_settings: RedisSettings | None = None
     rabbit_settings: RabbitSettings | None = None
     example_app: ExampleApp | None = None
-    distributed_lists: DistributedLists | None = None
+    in_memory_lists: InMemoryLists | None = None
 
 
 async def _commands_handler(
@@ -107,12 +112,12 @@ async def _commands_handler(
         context.redis_settings = RedisSettings.parse_raw(payload["redis"])
         context.rabbit_settings = RabbitSettings.parse_raw(payload["rabbit"])
         # using the same db as the deferred tasks with different keys
-        context.distributed_lists = DistributedLists(context.redis_settings)
+        context.in_memory_lists = InMemoryLists(context.redis_settings)
 
         context.example_app = ExampleApp(
             context.rabbit_settings,
             context.redis_settings,
-            context.distributed_lists,
+            context.in_memory_lists,
             payload["max-workers"],
         )
         await context.example_app.setup()
@@ -126,12 +131,12 @@ async def _commands_handler(
         return None
 
     if command == "get-scheduled":
-        assert context.distributed_lists
-        return await context.distributed_lists.get_all_from("scheduled")
+        assert context.in_memory_lists
+        return await context.in_memory_lists.get_all_from("scheduled")
 
     if command == "get-results":
-        assert context.distributed_lists
-        return await context.distributed_lists.get_all_from("results")
+        assert context.in_memory_lists
+        return await context.in_memory_lists.get_all_from("results")
 
     return None
 

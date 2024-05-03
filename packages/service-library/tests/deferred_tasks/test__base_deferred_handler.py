@@ -17,8 +17,13 @@ from servicelib.deferred_tasks._base_deferred_handler import (
     FullStartContext,
     UserStartContext,
 )
-from servicelib.deferred_tasks._deferred_manager import DeferredManager
+from servicelib.deferred_tasks._deferred_manager import (
+    DeferredManager,
+    _FastStreamRabbitQueue,
+    _get_queue_from_state,
+)
 from servicelib.deferred_tasks._models import TaskResultError, TaskUID
+from servicelib.deferred_tasks._task_schedule import TaskState
 from servicelib.redis import RedisClientSDKHealthChecked
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -405,3 +410,23 @@ async def test_deferred_manager_code_times_out(
 
     await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED, count=0)
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_RESULT, count=0)
+
+
+def test_enums_have_same_entries():
+    assert len(TaskState) == len(_FastStreamRabbitQueue)
+
+
+@pytest.mark.parametrize(
+    "state, queue",
+    [
+        (TaskState.SCHEDULED, _FastStreamRabbitQueue.SCHEDULED),
+        (TaskState.SUBMIT_TASK, _FastStreamRabbitQueue.SUBMIT_TASK),
+        (TaskState.WORKER, _FastStreamRabbitQueue.WORKER),
+        (TaskState.ERROR_RESULT, _FastStreamRabbitQueue.ERROR_RESULT),
+        (TaskState.DEFERRED_RESULT, _FastStreamRabbitQueue.DEFERRED_RESULT),
+        (TaskState.FINISHED_WITH_ERROR, _FastStreamRabbitQueue.FINISHED_WITH_ERROR),
+        (TaskState.MANUALLY_CANCELLED, _FastStreamRabbitQueue.MANUALLY_CANCELLED),
+    ],
+)
+def test__get_queue_from_state(state: TaskState, queue: _FastStreamRabbitQueue):
+    assert _get_queue_from_state(state) == queue

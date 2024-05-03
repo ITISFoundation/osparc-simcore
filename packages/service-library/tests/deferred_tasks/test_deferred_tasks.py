@@ -55,9 +55,6 @@ class _RemoteProcess:
             print(f"Killing {child_pid}")
             psutil.Process(child_pid).kill()
 
-        parent.kill()
-        print(f"Killing {parent.pid}")
-
         self.process = None
         self.pid = None
 
@@ -166,8 +163,12 @@ class _RemoteProcessLifecycleManager:
     async def stop(self) -> None:
         await self.remote_process.stop()
 
-    async def start_deferred_task(self, sleep_duration: float) -> None:
-        response = await _tcp_command("start", {"sleep_duration": sleep_duration})
+    async def start_deferred_task(
+        self, sleep_duration: float, sequence_id: int
+    ) -> None:
+        response = await _tcp_command(
+            "start", {"sleep_duration": sleep_duration, "sequence_id": sequence_id}
+        )
         assert response is None
 
     async def get_results(self) -> list[str]:
@@ -196,25 +197,32 @@ async def _assert_has_entries(
     ):
         with attempt:
             if list_name == "get-results":
-                assert len(await manager.get_results()) == count
+                results = await manager.get_results()
+                # enure sequence numbers appear at least once
+                # since results handler can be retries since they are interrupted
+                assert len(results) >= count
+                assert set(results) == {f"{x}" for x in range(count)}
             if list_name == "get-scheduled":
-                assert len(await manager.get_scheduled()) == count
+                scheduled = await manager.get_scheduled()
+                assert len(scheduled) == count
+                # ensure all entries are unique
+                assert len(scheduled) == len(set(scheduled))
 
 
 @pytest.mark.parametrize("max_workers", [10])
 @pytest.mark.parametrize(
     "deferred_tasks_to_start",
     [
-        # 1,
-        # 2,
-        40,
+        1,
+        2,
+        100,
     ],
 )
 @pytest.mark.parametrize(
     "start_stop_cycles",
     [
-        # 0,
-        1,
+        0,
+        10,
     ],
 )
 async def test_with_remote_process(
@@ -231,7 +239,10 @@ async def test_with_remote_process(
 
         # start all in parallel
         await asyncio.gather(
-            *[manager.start_deferred_task(0.1) for _ in range(deferred_tasks_to_start)]
+            *[
+                manager.start_deferred_task(0.1, i)
+                for i in range(deferred_tasks_to_start)
+            ]
         )
         # makes sure tasks have been scheduled
         await _assert_has_entries(
@@ -244,7 +255,7 @@ async def test_with_remote_process(
         # emulate issues with processing start & stop DeferredManager
         for _ in range(start_stop_cycles):
             await manager.stop()
-            radom_wait = random.uniform(0.1, 0.2)  # noqa: S311
+            radom_wait = random.uniform(0.2, 0.4)  # noqa: S311
             await asyncio.sleep(radom_wait)
             await manager.start()
 
