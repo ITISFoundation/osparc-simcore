@@ -125,6 +125,16 @@ qx.Class.define("osparc.utils.Utils", {
       qx.bom.element.Animation.animate(domElement, desc);
     },
 
+    makeButtonBlink: function(button, nTimes = 1) {
+      // make it "blink"
+      button.getChildControl("label").setTextColor("ready-green");
+      button.getChildControl("icon").setTextColor("ready-green");
+      setTimeout(() => {
+        button.getChildControl("label").setTextColor("text");
+        button.getChildControl("icon").setTextColor("text");
+      }, 1000);
+    },
+
     prettifyMenu: function(menu) {
       menu.set({
         font: "text-14",

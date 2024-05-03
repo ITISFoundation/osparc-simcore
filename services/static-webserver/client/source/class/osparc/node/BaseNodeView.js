@@ -135,7 +135,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
       const infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/17").set({
         padding: 3,
         backgroundColor: "transparent",
-        toolTipText: this.tr("Information")
+        toolTipText: this.tr("Service Information")
       });
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       header.add(infoBtn);
@@ -443,15 +443,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
           return this.tr("Outputs") + ` (${outputCounter})`;
         }
       });
-      this._outputsBtn.addListener("changeLabel", () => {
-        // make it "blink"
-        this._outputsBtn.getChildControl("label").setTextColor("ready-green");
-        this._outputsBtn.getChildControl("icon").setTextColor("ready-green");
-        setTimeout(() => {
-          this._outputsBtn.getChildControl("label").setTextColor("text");
-          this._outputsBtn.getChildControl("icon").setTextColor("text");
-        }, 1000);
-      });
+      this._outputsBtn.addListener("changeLabel", () => osparc.utils.Utils.makeButtonBlink(this._outputsBtn));
 
       this._addLogger();
     }
