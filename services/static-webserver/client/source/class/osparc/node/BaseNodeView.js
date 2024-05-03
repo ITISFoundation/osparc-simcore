@@ -394,9 +394,9 @@ qx.Class.define("osparc.node.BaseNodeView", {
           if (osparc.data.model.Node.hasBootModes(nodeMetaData)) {
             const bootModeSB = this.__bootModeSB;
             bootModeSB.show();
-            const workbench = node.getWorkbench();
+            const workbenchData = node.getWorkbench().serialize();
             const nodeId = node.getNodeId();
-            osparc.data.model.Node.populateBootModes(bootModeSB, nodeMetaData, workbench, nodeId);
+            osparc.data.model.Node.populateBootModes(bootModeSB, nodeMetaData, workbenchData, nodeId);
             node.getStatus().bind("interactive", bootModeSB, "enabled", {
               converter: interactive => interactive === "idle"
             });
