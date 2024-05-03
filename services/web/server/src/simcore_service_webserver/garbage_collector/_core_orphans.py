@@ -39,12 +39,10 @@ async def _remove_service(
             user_role = await get_user_role(app, service.user_id)
         except (UserNotFoundError, ValueError):
             user_role = None
-
-        project_uuid = service["project_id"]
-
-        save_service_state = await ProjectDBAPI.get_from_app_context(
-            app
-        ).has_permission(service.user_id, project_uuid, "write")
+        project_db_api = ProjectDBAPI.get_from_app_context(app)
+        save_service_state = await project_db_api.has_permission(
+            service.user_id, f"{service.project_id}", "write"
+        )
         if user_role is None or user_role <= UserRole.GUEST:
             save_service_state = False
 

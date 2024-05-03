@@ -68,14 +68,19 @@ def mock_list_node_ids_in_project(mocker: MockerFixture) -> mock.AsyncMock:
     )
 
 
+@pytest.fixture(params=[False, True], ids=lambda s: f"node-present-in-project:{s}")
+def node_exists(request: pytest.FixtureRequest) -> bool:
+    return request.param
+
+
 @pytest.fixture
 async def mock_is_node_id_present_in_any_project_workbench(
-    mocker: MockerFixture,
+    mocker: MockerFixture, node_exists: bool
 ) -> mock.AsyncMock:
     return mocker.patch(
         f"{MODULE_GC_CORE_ORPHANS}.is_node_id_present_in_any_project_workbench",
         autospec=True,
-        return_value=False,
+        return_value=node_exists,
     )
 
 
@@ -121,15 +126,40 @@ def faker_dynamic_service_get() -> Callable[[], DynamicServiceGet]:
     return _
 
 
+@pytest.fixture(params=[False, True], ids=lambda s: f"has-write-permission:{s}")
+def has_write_permission(request: pytest.FixtureRequest) -> bool:
+    return request.param
+
+
+@pytest.fixture
+async def mock_has_write_permission(
+    mocker: MockerFixture, has_write_permission: bool
+) -> mock.AsyncMock:
+    mocked_project_db_api = mocker.patch(
+        f"{MODULE_GC_CORE_ORPHANS}.ProjectDBAPI", autospec=True
+    )
+
+    async def _mocked_has_permission(*args, **kwargs) -> bool:
+        assert "write" in args
+        return has_write_permission
+
+    mocked_project_db_api.get_from_app_context.return_value.has_permission.side_effect = (
+        _mocked_has_permission
+    )
+    return mocked_project_db_api.get_from_app_context.return_value.has_permission
+
+
 async def test_remove_orphaned_services(
     mock_list_node_ids_in_project: mock.AsyncMock,
     mock_is_node_id_present_in_any_project_workbench: mock.AsyncMock,
     mock_list_dynamic_services: mock.AsyncMock,
     mock_stop_dynamic_service: mock.AsyncMock,
+    mock_has_write_permission: mock.AsyncMock,
     mock_registry: mock.AsyncMock,
     mock_app: mock.AsyncMock,
     faker_dynamic_service_get: Callable[[], DynamicServiceGet],
     project_id: ProjectID,
+    request: pytest.FixtureRequest,
 ):
     fake_running_service = faker_dynamic_service_get()
     mock_list_dynamic_services.return_value = [fake_running_service]
@@ -139,6 +169,13 @@ async def test_remove_orphaned_services(
         mock.ANY, fake_running_service.node_uuid
     )
     mock_list_node_ids_in_project.assert_called_once_with(mock.ANY, project_id)
+
+    if is_node_present := request.getfixturevalue(
+        "mock_is_node_id_present_in_any_project_workbench"
+    ):
+        mock_has_write_permission.assert_not_called()
+    else:
+        mock_has_write_permission.assert_not_called()
     mock_stop_dynamic_service.assert_called_once_with(
         mock_app,
         node_id=fake_running_service.node_uuid,
