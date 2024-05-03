@@ -713,7 +713,7 @@ services:
       <<: *webserver_environment
       WEBSERVER_HOST: ${WB_API_WEBSERVER_HOST}
       WEBSERVER_PORT: ${WB_API_WEBSERVER_PORT}
-      WEBSERVER_STATICWEB: null
+      WEBSERVER_STATICWEB: "null"
 
     networks: *webserver_networks
 
