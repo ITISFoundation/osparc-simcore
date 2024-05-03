@@ -111,26 +111,31 @@ services:
 
   webserver:
     volumes:
-      &webserver-volumes-dev
+      &webserver_volumes_devel
       - ./web/server:/devel/services/web/server
       - ../packages:/devel/packages
     environment:
-      &webserver-environment-dev
+      &webserver_environment_devel
       WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
       SC_BOOT_MODE: debug
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-DEBUG}
       WEBSERVER_PROFILING: ${WEBSERVER_PROFILING}
 
 
-  wb-db-event-listener:
-    volumes: *webserver-volumes-dev
+  wb-api-server:
+    volumes: *webserver_volumes_devel
     environment:
-      <<: *webserver-environment-dev
+      <<: *webserver_environment_devel
+
+  wb-db-event-listener:
+    volumes: *webserver_volumes_devel
+    environment:
+      <<: *webserver_environment_devel
 
   wb-garbage-collector:
-    volumes: *webserver-volumes-dev
+    volumes: *webserver_volumes_devel
     environment:
-      <<: *webserver-environment-dev
+      <<: *webserver_environment_devel
       RESOURCE_MANAGER_RESOURCE_TTL_S: 15
 
   dask-sidecar:
