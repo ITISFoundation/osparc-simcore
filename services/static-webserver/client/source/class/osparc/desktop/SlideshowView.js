@@ -317,7 +317,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
 
           // Automatically request to start the dynamic service when the user gets to this step
           if (node.isDynamic()) {
-            // Do no auto start it if it's TIP and has boot modes thou, users might want to select the boot mode first
+            // Do no auto start it if it's TIP and has boot modes, users might want to select the boot mode first
             const nodeMetaData = node.getMetaData();
             if (!(osparc.product.Utils.isProduct("tis") && osparc.data.model.Node.hasBootModes(nodeMetaData))) {
               node.requestStartNode();
