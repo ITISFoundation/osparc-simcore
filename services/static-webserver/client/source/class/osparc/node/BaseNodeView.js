@@ -144,6 +144,7 @@ qx.Class.define("osparc.node.BaseNodeView", {
         padding: 3,
         backgroundColor: "background-main-4"
       });
+      instructionsBtn.addListener("appear", () => osparc.utils.Utils.makeButtonBlink(instructionsBtn, 3));
       instructionsBtn.addListener("execute", () => this.__openInstructions(), this);
       header.add(instructionsBtn);
 
