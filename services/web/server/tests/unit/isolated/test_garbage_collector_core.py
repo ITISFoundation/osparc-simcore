@@ -99,12 +99,16 @@ async def mock_stop_dynamic_service(mocker: MockerFixture) -> mock.AsyncMock:
 async def test_remove_orphaned_services_with_no_running_services_does_nothing(
     mock_list_node_ids_in_project: mock.AsyncMock,
     mock_list_dynamic_services: mock.AsyncMock,
+    mock_is_node_id_present_in_any_project_workbench: mock.AsyncMock,
+    mock_stop_dynamic_service: mock.AsyncMock,
     mock_registry: mock.AsyncMock,
     mock_app: mock.AsyncMock,
 ):
     await remove_orphaned_services(mock_registry, mock_app)
     mock_list_dynamic_services.assert_called_once()
     mock_list_node_ids_in_project.assert_not_called()
+    mock_is_node_id_present_in_any_project_workbench.assert_not_called()
+    mock_stop_dynamic_service.assert_not_called()
 
 
 @pytest.fixture
