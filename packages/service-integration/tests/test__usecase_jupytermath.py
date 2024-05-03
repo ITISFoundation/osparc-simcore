@@ -12,6 +12,7 @@ from typing import Any, Callable, Iterable
 
 import pytest
 import yaml
+from models_library.utils.json_serialization import json_loads
 from service_integration import cli
 from typer.testing import CliRunner, Result
 
@@ -178,4 +179,24 @@ def test_ooil_compose_wo_arguments(
     ] = compose_spec_reference["services"]["jupyter-math"]["build"]["labels"][
         "org.label-schema.build-date"
     ]
+
+    label_keys = compose_spec_reference["services"]["jupyter-math"]["build"][
+        "labels"
+    ].keys()
+
+    # NOTE: generally it is not a good idea to compare serialized values. It is difficult to debug
+    # when it fails and a failure is not always indicative of a real error e.g. orjson serializes diffferently
+    # to json.
+    for k in label_keys:
+
+        got_label_value = compose_spec["services"]["jupyter-math"]["build"]["labels"][k]
+        expected_label_value = compose_spec_reference["services"]["jupyter-math"][
+            "build"
+        ]["labels"][k]
+        if k.startswith("io.simcore"):
+            assert json_loads(got_label_value) == json_loads(expected_label_value)
+        assert (
+            got_label_value == expected_label_value
+        ), f"label {k} got a different dump"
+
     assert compose_spec == compose_spec_reference

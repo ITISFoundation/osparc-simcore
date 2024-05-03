@@ -26,6 +26,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     STORAGE_MONITORING_ENABLED: bool = False
+    STORAGE_PROFILING: bool = False
 
     BF_API_KEY: str | None = Field(
         None, description="Pennsieve API key ONLY for testing purposes"

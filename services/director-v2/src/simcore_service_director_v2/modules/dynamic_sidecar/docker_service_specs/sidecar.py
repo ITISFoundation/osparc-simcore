@@ -14,8 +14,8 @@ from models_library.docker import (
 )
 from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from models_library.utils.json_serialization import json_dumps
 from pydantic import ByteSize, parse_obj_as
-from servicelib.json_serialization import json_dumps
 from settings_library.node_ports import StorageAuthSettings
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL

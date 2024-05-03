@@ -14,7 +14,7 @@ from pydantic.json import pydantic_encoder
 
 
 def servicelib__json_serialization__json_dumps(obj: Any, **kwargs):
-    # Analogous to 'servicelib.json_serialization.json_dumps'
+    # Analogous to 'models_library.utils.json_serialization.json_dumps'
     return json.dumps(obj, default=pydantic_encoder, **kwargs)
 
 

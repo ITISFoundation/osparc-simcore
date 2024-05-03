@@ -18,6 +18,7 @@ from models_library.projects_nodes import NodeID
 from models_library.services import RunID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.users import UserID
+from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_envs import (
@@ -25,7 +26,6 @@ from pytest_simcore.helpers.utils_envs import (
     setenvs_from_dict,
     setenvs_from_envfile,
 )
-from servicelib.json_serialization import json_dumps
 from simcore_service_dynamic_sidecar.core.reserved_space import (
     remove_reserved_disk_space,
 )
