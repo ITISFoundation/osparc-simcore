@@ -1418,27 +1418,15 @@ qx.Class.define("osparc.data.model.Node", {
       startButton.executeListenerId = executeListenerId;
     },
 
-    attachVisibilityHandlerToStopButton: function(stopButton) {
+    attachHandlersToStopButton: function(stopButton) {
       this.getStatus().bind("interactive", stopButton, "visibility", {
         converter: state => (state === "ready") ? "visible" : "excluded"
       });
-    },
-
-    attachEnabledHandlerToStopButton: function(stopButton) {
       this.getStatus().bind("interactive", stopButton, "enabled", {
         converter: state => state === "ready"
       });
-    },
-
-    attachExecuteHandlerToStopButton: function(stopButton) {
       const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
       stopButton.executeListenerId = executeListenerId;
-    },
-
-    attachHandlersToStopButton: function(stopButton) {
-      this.attachVisibilityHandlerToStopButton(stopButton);
-      this.attachEnabledHandlerToStopButton(stopButton);
-      this.attachExecuteHandlerToStopButton(stopButton);
     },
 
     removeNode: function() {
