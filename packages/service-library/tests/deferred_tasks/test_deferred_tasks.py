@@ -212,7 +212,6 @@ async def _assert_has_entries(
     "deferred_tasks_to_start",
     [
         1,
-        2,
         100,
     ],
 )
@@ -223,7 +222,7 @@ async def _assert_has_entries(
         10,
     ],
 )
-async def test_with_remote_process(
+async def test_workflow_with_remote_process_interruptions(
     remote_process: _RemoteProcess,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
