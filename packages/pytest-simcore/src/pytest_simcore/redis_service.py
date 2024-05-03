@@ -103,4 +103,4 @@ async def wait_till_redis_responsive(redis_url: URL | str) -> None:
             msg = f"{redis_url=} not available"
             raise ConnectionError(msg)
     finally:
-        await client.aclose(close_connection_pool=True)
+        await client.close(close_connection_pool=True)
