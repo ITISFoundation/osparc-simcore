@@ -3238,15 +3238,15 @@
   }
  },
  {
-  "name": "POST /simcore-s3/files/metadata:search",
-  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4&access_right=read')>",
+  "name": "POST /simcore-s3/files/metadata:search_owned",
+  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search_owned?user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4')>",
   "method": "POST",
   "host": "storage",
   "path": {
-   "path": "/v0/simcore-s3/files/metadata:search",
+   "path": "/v0/simcore-s3/files/metadata:search_owned",
    "path_parameters": []
   },
-  "query": "user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4&access_right=read",
+  "query": "user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4",
   "response_body": {
    "data": []
   }
