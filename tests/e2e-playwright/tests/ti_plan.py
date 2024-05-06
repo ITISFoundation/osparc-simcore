@@ -35,6 +35,7 @@ def test_tip(
     _textbox.press("Enter")
 
     with page.expect_response(re.compile(r"/projects/[^:]+:open")) as response_info:
+        page.get_by_test_id("newStudyBtn").click()
         page.get_by_test_id("newTIPlanButton").click()
         if product_billable:
             # Open project with default resources
