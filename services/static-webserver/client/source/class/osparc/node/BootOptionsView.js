@@ -54,17 +54,20 @@ qx.Class.define("osparc.node.BootOptionsView", {
         converter: interactive => interactive === "idle"
       });
       bootModeSB.addListener("changeSelection", e => {
-        buttonsLayout.setEnabled(false);
-        const newBootModeId = e.getData()[0].bootModeId;
-        node.setBootOptions({
-          "boot_mode": newBootModeId
-        });
-        node.fireEvent("updateStudyDocument");
-        setTimeout(() => {
-          buttonsLayout.setEnabled(true);
-          node.requestStartNode();
-          this.fireEvent("bootModeChanged");
-        }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
+        const selection = e.getData();
+        if (selection.length) {
+          buttonsLayout.setEnabled(false);
+          const newBootModeId = e.getData()[0].bootModeId;
+          node.setBootOptions({
+            "boot_mode": newBootModeId
+          });
+          node.fireEvent("updateStudyDocument");
+          setTimeout(() => {
+            buttonsLayout.setEnabled(true);
+            node.requestStartNode();
+            this.fireEvent("bootModeChanged");
+          }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
+        }
       }, this);
       buttonsLayout.add(bootModeSB);
 

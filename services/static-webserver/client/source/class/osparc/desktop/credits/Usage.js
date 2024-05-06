@@ -84,8 +84,9 @@ qx.Class.define("osparc.desktop.credits.Usage", {
       this._add(container);
 
       walletSelectBox.addListener("changeSelection", e => {
-        if (walletSelectBox.getSelection().length) {
-          this.__selectedWallet = walletSelectBox.getSelection()[0].getModel()
+        const selection = e.getData();
+        if (selection.length) {
+          this.__selectedWallet = selection[0].getModel()
           if (this.__table) {
             this.__table.getTableModel().setWalletId(this.__selectedWallet.getWalletId())
             this.__table.getTableModel().reloadData()
