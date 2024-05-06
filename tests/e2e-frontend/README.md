@@ -5,3 +5,6 @@ npm install
 
 ## Run tests
 npm run tests
+
+## Run one test
+npx playwright test tests/init/statics.spec.js
