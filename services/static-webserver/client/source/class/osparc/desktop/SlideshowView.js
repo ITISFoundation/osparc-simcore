@@ -386,10 +386,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__openFirstNode();
       }
 
-      const node = this.__nodeView.getNode();
-      if (node.isDynamic()) {
-        // Start it. First wait 2 seconds because the function depends on the node's state which might not be available yet
-        setTimeout(() => node.requestStartNode(), 2000);
+      if (this.__nodeView) {
+        const node = this.__nodeView.getNode();
+        if (node.isDynamic()) {
+          // Start it. First wait 2 seconds because the function depends on the node's state which might not be available yet
+          setTimeout(() => node.requestStartNode(), 2000);
+        }
       }
     },
 
