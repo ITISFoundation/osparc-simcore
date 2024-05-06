@@ -249,6 +249,7 @@ async def _delete_project(client: TestClient, project: dict) -> ClientResponse:
         {"read": True, "write": False, "delete": False},
         {"read": False, "write": False, "delete": False},
     ],
+    ids=str,
 )
 async def test_share_project(
     client: TestClient,
@@ -1083,7 +1084,6 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     # delete the NOT dynamic node
     mocked_director_v2_api["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
     mock_storage_api_delete_data_folders_of_project_node.reset_mock()
-    # mock_director_api_get_running_services.return_value.set_result([{"service_uuid": node_id}])
     url = client.app.router["delete_node"].url_for(
         project_id=user_project["uuid"], node_id=computational_node_id
     )
