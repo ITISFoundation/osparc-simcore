@@ -548,7 +548,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const product = osparc.product.Utils.getProductName()
               if (product in newStudiesData) {
                 const newButtonsInfo = newStudiesData[product].resources;
-                Object.keys(newButtonsInfo).forEach(newButtonInfo => {
+                newButtonsInfo.forEach(newButtonInfo => {
                   this.__addNewStudyFromServiceButtons(services, newButtonInfo.expectedKey, newButtonsInfo);
                 });
               }
