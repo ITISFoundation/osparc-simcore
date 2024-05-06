@@ -526,30 +526,36 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     max_amount_of_auto_started_dyn_services: int,
     faker: Faker,
     mocked_notifications_plugin: dict[str, mock.Mock],
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
 ):
     assert client.app
-    num_of_dyn_services = max_amount_of_auto_started_dyn_services or faker.pyint(
-        min_value=3, max_value=250
-    )
+    num_of_dyn_services = max_amount_of_auto_started_dyn_services
     project = await user_project_with_num_dynamic_services(num_of_dyn_services)
     all_service_uuids = list(project["workbench"])
-    for num_service_already_running in range(num_of_dyn_services):
-        mocked_director_v2_api["director_v2.api.list_dynamic_services"].return_value = [
-            {"service_uuid": all_service_uuids[service_id]}
-            for service_id in range(num_service_already_running)
-        ]
-
-        url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-        resp = await client.post(f"{url}", json=client_session_id_factory())
-        await assert_status(resp, expected.ok)
-        mocked_notifications_plugin["subscribe"].assert_called_once_with(
-            client.app, ProjectID(project["uuid"])
+    num_service_already_running = faker.pyint(
+        min_value=1, max_value=num_of_dyn_services - 1
+    )
+    assert num_service_already_running < num_of_dyn_services
+    _ = [
+        await create_dynamic_service_mock(
+            user_id=logged_user["id"],
+            project_id=project["uuid"],
+            service_uuid=all_service_uuids[service_id],
         )
-        mocked_notifications_plugin["subscribe"].reset_mock()
-        assert mocked_director_v2_api[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].call_count == (num_of_dyn_services - num_service_already_running)
-        mocked_director_v2_api["dynamic_scheduler.api.run_dynamic_service"].reset_mock()
+        for service_id in range(num_service_already_running)
+    ]
+
+    url = client.app.router["open_project"].url_for(project_id=project["uuid"])
+    resp = await client.post(f"{url}", json=client_session_id_factory())
+    await assert_status(resp, expected.ok)
+    mocked_notifications_plugin["subscribe"].assert_called_once_with(
+        client.app, ProjectID(project["uuid"])
+    )
+    mocked_notifications_plugin["subscribe"].reset_mock()
+    assert mocked_director_v2_api[
+        "dynamic_scheduler.api.run_dynamic_service"
+    ].call_count == (num_of_dyn_services - num_service_already_running)
+    mocked_director_v2_api["dynamic_scheduler.api.run_dynamic_service"].reset_mock()
 
 
 @pytest.mark.parametrize(*standard_user_role())
