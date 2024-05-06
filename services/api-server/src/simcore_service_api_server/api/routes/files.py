@@ -40,12 +40,7 @@ from ...models.schemas.files import (
     UploadLinks,
 )
 from ...services.service_exception_handling import DEFAULT_BACKEND_SERVICE_STATUS_CODES
-from ...services.storage import (
-    AccessRight,
-    StorageApi,
-    StorageFileMetaData,
-    to_file_api_model,
-)
+from ...services.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
@@ -73,16 +68,16 @@ async def _get_file(
     file_id: UUID,
     storage_client: StorageApi,
     user_id: int,
-    access_right: AccessRight,
 ):
     """Gets metadata for a given file resource"""
 
     try:
-        stored_files: list[StorageFileMetaData] = await storage_client.search_files(
+        stored_files: list[
+            StorageFileMetaData
+        ] = await storage_client.search_owned_files(
             user_id=user_id,
             file_id=file_id,
             sha256_checksum=None,
-            access_right=access_right,
         )
         if not stored_files:
             msg = "Not found in storage"
@@ -289,7 +284,6 @@ async def get_file(
         file_id=file_id,
         storage_client=storage_client,
         user_id=user_id,
-        access_right="read",
     )
 
 
@@ -307,11 +301,10 @@ async def search_files_page(
     file_id: UUID | None = None,
 ):
     """Search files"""
-    stored_files: list[StorageFileMetaData] = await storage_client.search_files(
+    stored_files: list[StorageFileMetaData] = await storage_client.search_owned_files(
         user_id=user_id,
         file_id=file_id,
         sha256_checksum=sha256_checksum,
-        access_right="read",
     )
     if page_params.offset > len(stored_files):
         _logger.debug("File with sha256_checksum=%d not found.", sha256_checksum)
@@ -342,7 +335,6 @@ async def delete_file(
         file_id=file_id,
         storage_client=storage_client,
         user_id=user_id,
-        access_right="write",
     )
     await storage_client.delete_file(
         user_id=user_id, quoted_storage_file_id=file.quoted_storage_file_id

@@ -50,8 +50,11 @@ qx.Class.define("osparc.cluster.ClustersDetails", {
       });
       osparc.cluster.Utils.populateClustersSelectBox(selectBox);
       selectBox.addListener("changeSelection", e => {
-        const clusterId = e.getData()[0].id;
-        this.__selectedClusterChanged(clusterId);
+        const selection = e.getData();
+        if (selection.length) {
+          const clusterId = selection[0].id;
+          this.__selectedClusterChanged(clusterId);
+        }
       }, this);
       clustersLayout.add(selectBox);
 
