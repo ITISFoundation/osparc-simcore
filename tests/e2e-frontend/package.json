@@ -7,9 +7,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "npx playwright test",
-    "test-headed": "npx playwright test --headed",
-    "test-ui": "npx playwright test --ui"
+    "tests": "npx playwright test",
+    "tests-headed": "npx playwright test --headed",
+    "tests-ui": "npx playwright test --ui"
   },
   "keywords": [],
   "author": "",
