@@ -681,11 +681,11 @@ async def test_node_id_exists(
     )
 
     node_id_exists = await db_api.node_id_exists(
-        f"{not_existing_node_id_in_existing_project}"
+        not_existing_node_id_in_existing_project
     )
     assert node_id_exists is False
     existing_node_id = choice(some_projects_and_nodes[existing_project_id])
-    node_id_exists = await db_api.node_id_exists(f"{existing_node_id}")
+    node_id_exists = await db_api.node_id_exists(existing_node_id)
     assert node_id_exists is True
 
 
@@ -706,7 +706,7 @@ async def test_get_node_ids_from_project(
     for project_id, node_ids_inside_project in zip(
         some_projects_and_nodes, node_ids_inside_project_list, strict=True
     ):
-        assert node_ids_inside_project == some_projects_and_nodes[project_id]
+        assert node_ids_inside_project == set(some_projects_and_nodes[project_id])
 
 
 @pytest.mark.parametrize(
