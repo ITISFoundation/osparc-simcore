@@ -354,11 +354,14 @@ qx.Class.define("osparc.metadata.QualityEditor", {
             }
           });
           targetsBox.addListener("changeSelection", e => {
-            const newMaxScore = e.getData()[0].level;
-            copyTSRTarget[ruleKey].level = newMaxScore;
-            copyTSRCurrent[ruleKey].level = Math.min(newMaxScore, copyTSRCurrent[ruleKey].level);
-            updateCurrentLevel(copyTSRCurrent[ruleKey].level);
-            updateTotalTSR();
+            const selection = e.getData();
+            if (selection.length) {
+              const newMaxScore = selection[0].level;
+              copyTSRTarget[ruleKey].level = newMaxScore;
+              copyTSRCurrent[ruleKey].level = Math.min(newMaxScore, copyTSRCurrent[ruleKey].level);
+              updateCurrentLevel(copyTSRCurrent[ruleKey].level);
+              updateTotalTSR();
+            }
           }, this);
           this.bind("mode", targetsBox, "visibility", {
             converter: mode => mode === "edit" ? "visible" : "excluded"
