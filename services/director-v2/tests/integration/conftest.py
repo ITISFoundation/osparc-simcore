@@ -58,6 +58,8 @@ def update_project_workbench_with_comp_tasks(
                 .where(projects.c.uuid == project_uuid)
             )
 
+            # MD: Updating workbench
+
     return updator
 
 

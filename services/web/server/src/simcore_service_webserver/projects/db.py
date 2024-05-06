@@ -147,6 +147,7 @@ class ProjectDBAPI(BaseProjectDB):
                         project_uuid = ProjectID(f"{insert_values['uuid']}")
 
                         try:
+                            # MD: insert
                             result: ResultProxy = await conn.execute(
                                 projects.insert()
                                 .values(**insert_values)
@@ -212,7 +213,9 @@ class ProjectDBAPI(BaseProjectDB):
                                 )
                                 for node_id in selected_values["workbench"]
                             ]
-                            await project_nodes_repo.add(conn, nodes=nodes)
+                            await project_nodes_repo.add(
+                                conn, nodes=nodes
+                            )  # <-- MD: here we update project_nodes
         return selected_values
 
     async def insert_project(
@@ -503,6 +506,7 @@ class ProjectDBAPI(BaseProjectDB):
             new_project_data["lastChangeDate"] = now_str()
 
             # now update it
+            # MD: Update project
             result = await db_connection.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.update()
@@ -536,6 +540,7 @@ class ProjectDBAPI(BaseProjectDB):
         permissions layer (sic)."""
         async with self.engine.acquire() as conn:
             # now update it
+            # MD: Update project
             result: ResultProxy = await conn.execute(
                 projects.update()
                 .values(
@@ -550,6 +555,7 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def update_project_last_change_timestamp(self, project_uuid: ProjectIDStr):
         async with self.engine.acquire() as conn:
+            # MD: Update project
             result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.update()
@@ -686,6 +692,7 @@ class ProjectDBAPI(BaseProjectDB):
             # update timestamps
             new_project_data["lastChangeDate"] = now_str()
 
+            # MD: Update project workbench
             result = await db_connection.execute(
                 projects.update()
                 .values(**convert_to_db_names(new_project_data))
@@ -784,7 +791,9 @@ class ProjectDBAPI(BaseProjectDB):
                         "TIP: Ask your administrator or contact support"
                     )
                     raise ProjectNodeResourcesInsufficientRightsError(msg)
-            return await project_nodes_repo.update(conn, node_id=node_id, **values)
+            return await project_nodes_repo.update(
+                conn, node_id=node_id, **values
+            )  # <-- MD: project node update
 
     async def list_project_nodes(self, project_id: ProjectID) -> list[ProjectNode]:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)

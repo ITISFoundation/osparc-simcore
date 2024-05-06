@@ -162,6 +162,7 @@ async def test_project_comments_full_workflow(
 
         # Now we will share the project with the new user
         with postgres_db.connect() as con:
+            # MD: project update
             result = con.execute(
                 projects.update()
                 .values(
