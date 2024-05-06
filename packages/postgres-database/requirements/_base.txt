@@ -13,8 +13,11 @@ multidict==6.0.4
     # via yarl
 psycopg2-binary==2.9.9
     # via sqlalchemy
+pydantic==1.10.15
 sqlalchemy==1.4.50
     # via alembic
 typing-extensions==4.8.0
-    # via alembic
+    # via
+    #   alembic
+    #   pydantic
 yarl==1.9.2
