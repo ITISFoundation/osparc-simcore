@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
@@ -154,7 +154,7 @@ class ProjectNodesRepo:
             msg = f"Node with {node_id} not found"
             raise ProjectNodesNodeNotFound(msg)
         assert row  # nosec
-        return cast(ProjectNode, ProjectNode.from_orm(row))  # sonar
+        return ProjectNode.from_orm(row)
 
     async def update(
         self, connection: SAConnection, *, node_id: uuid.UUID, **values
@@ -183,7 +183,7 @@ class ProjectNodesRepo:
             msg = f"Node with {node_id} not found"
             raise ProjectNodesNodeNotFound(msg)
         assert row  # nosec
-        return cast(ProjectNode, ProjectNode.from_orm(row))  # sonar
+        return ProjectNode.from_orm(row)
 
     async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
         """delete a node in the current project
