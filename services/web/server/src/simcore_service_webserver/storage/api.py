@@ -85,7 +85,7 @@ async def get_project_total_size_simcore_s3(
         for location in user_accessible_locations:
             files_metadata_url = (
                 api_endpoint / "locations" / f"{location.id}" / "files" / "metadata"
-            ).with_query(user_id=user_id, uuid_filter=f"{project_uuid}")
+            ).with_query(user_id=user_id, project_id=f"{project_uuid}")
             async with session.get(f"{files_metadata_url}") as response:
                 response.raise_for_status()
                 list_of_files_enveloped = Envelope[list[FileMetaDataGet]].parse_obj(
