@@ -71,7 +71,10 @@ qx.Class.define("osparc.dashboard.NewStudies", {
 
         const categories = new Set([]);
         this.__newStudies.forEach(newStudy => newStudy.category && categories.add(newStudy.category));
-        Array.from(categories).forEach(category => this.__createGroupContainer(category, qx.lang.String.firstUp(category), "transparent"));
+        Array.from(categories).forEach(category => {
+          const groupContainer = this.__createGroupContainer(category, qx.lang.String.firstUp(category), "transparent");
+          this._add(groupContainer);
+        });
       } else {
         const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
         osparc.utils.Utils.setIdToWidget(flatList, listId);
