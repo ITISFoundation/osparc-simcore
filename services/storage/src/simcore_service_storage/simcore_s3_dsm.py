@@ -50,6 +50,7 @@ from .db_access_layer import (
     get_file_access_rights,
     get_project_access_rights,
     get_readable_project_ids,
+    project_read_access,
 )
 from .dsm_factory import BaseDataManager
 from .exceptions import (
@@ -130,7 +131,12 @@ class SimcoreS3DataManager(BaseDataManager):
         return data
 
     async def list_files(  # noqa C901
-        self, user_id: UserID, *, expand_dirs: bool, uuid_filter: str = ""
+        self,
+        user_id: UserID,
+        *,
+        expand_dirs: bool,
+        uuid_filter: str = "",
+        project_id: ProjectID | None = None,
     ) -> list[FileMetaData]:
         """
         expand_dirs `False`: returns one metadata entry for each directory
@@ -144,7 +150,16 @@ class SimcoreS3DataManager(BaseDataManager):
         data: list[FileMetaData] = []
         accessible_projects_ids = []
         async with self.engine.acquire() as conn, conn.begin():
-            accessible_projects_ids = await get_readable_project_ids(conn, user_id)
+            if project_id:
+                if not project_read_access(
+                    conn=conn, user_id=user_id, project_id=project_id
+                ):
+                    raise ProjectAccessRightError(
+                        access_right="read", project_id=project_id
+                    )
+                accessible_projects_ids = [project_id]
+            else:
+                accessible_projects_ids = await get_readable_project_ids(conn, user_id)
             file_and_directory_meta_data: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
