@@ -10,12 +10,12 @@ import pytest
 from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.test_utils import TestServer
+from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY
 from servicelib.aiohttp.client_session import (
     get_client_session,
     persistent_client_session,
 )
-from servicelib.json_serialization import json_dumps
 
 
 @pytest.fixture

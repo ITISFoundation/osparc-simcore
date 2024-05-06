@@ -9,9 +9,9 @@ from typing import Any
 
 from aiohttp import web, web_exceptions
 from aiohttp.web_exceptions import HTTPError, HTTPException
+from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.status import HTTP_200_OK
 
-from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .rest_models import ErrorItemType, ErrorType
 
@@ -109,7 +109,9 @@ def create_error_response(
     payload = wrap_as_envelope(error=asdict(error))
 
     return http_error_cls(
-        reason=reason, text=json_dumps(payload), content_type=MIMETYPE_APPLICATION_JSON
+        reason=reason,
+        text=json_dumps(payload),
+        content_type=MIMETYPE_APPLICATION_JSON,
     )
 
 

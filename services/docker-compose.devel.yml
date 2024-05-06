@@ -11,6 +11,7 @@ services:
       - SC_BOOT_MODE=debug
       - LOG_LEVEL=DEBUG
       - DEBUG=true
+      - API_SERVER_PROFILING=${API_SERVER_PROFILING}
     volumes:
       - ./api-server:/devel/services/api-server
       - ../packages:/devel/packages
@@ -47,6 +48,7 @@ services:
       - SC_BOOT_MODE=debug
       - DYNAMIC_SCHEDULER_LOGLEVEL=DEBUG
       - DEBUG=true
+      - DYNAMIC_SCHEDULER_PROFILING=${DYNAMIC_SCHEDULER_PROFILING}
     volumes:
       - ./dynamic-scheduler:/devel/services/dynamic-scheduler
       - ../packages:/devel/packages
@@ -59,6 +61,7 @@ services:
       - LOG_LEVEL=DEBUG
       - DEBUG=true
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
+      - CATALOG_PROFILING=${CATALOG_PROFILING}
     volumes:
       - ./catalog:/devel/services/catalog
       - ../packages:/devel/packages
@@ -95,6 +98,7 @@ services:
       - LOG_LEVEL=debug
       - DEBUG=true
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
+      - DIRECTOR_V2_PROFILING=${DIRECTOR_V2_PROFILING}
     volumes:
       - ./director-v2:/devel/services/director-v2
       - ../packages:/devel/packages
@@ -107,24 +111,31 @@ services:
 
   webserver:
     volumes:
-      &webserver-volumes-dev
+      &webserver_volumes_devel
       - ./web/server:/devel/services/web/server
       - ../packages:/devel/packages
     environment:
-      &webserver-environment-dev
+      &webserver_environment_devel
       WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
       SC_BOOT_MODE: debug
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-DEBUG}
+      WEBSERVER_PROFILING: ${WEBSERVER_PROFILING}
+
+
+  wb-api-server:
+    volumes: *webserver_volumes_devel
+    environment:
+      <<: *webserver_environment_devel
 
   wb-db-event-listener:
-    volumes: *webserver-volumes-dev
+    volumes: *webserver_volumes_devel
     environment:
-      <<: *webserver-environment-dev
+      <<: *webserver_environment_devel
 
   wb-garbage-collector:
-    volumes: *webserver-volumes-dev
+    volumes: *webserver_volumes_devel
     environment:
-      <<: *webserver-environment-dev
+      <<: *webserver_environment_devel
       RESOURCE_MANAGER_RESOURCE_TTL_S: 15
 
   dask-sidecar:
@@ -186,6 +197,7 @@ services:
     environment:
       - SC_BOOT_MODE=debug
       - STORAGE_LOGLEVEL=DEBUG
+      - STORAGE_PROFILING=${STORAGE_PROFILING}
 
   agent:
     environment:

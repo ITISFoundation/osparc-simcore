@@ -38,7 +38,6 @@ resource_tracker_credit_transactions = sa.Table(
         sa.String,
         nullable=False,
         doc="Product name",
-        index=True,
     ),
     sa.Column(
         "wallet_id",
@@ -101,7 +100,6 @@ resource_tracker_credit_transactions = sa.Table(
         sa.Enum(CreditTransactionClassification),
         nullable=True,
         doc="Transaction classification, ex. ADD_WALLET_TOP_UP, DEDUCT_SERVICE_RUN",
-        index=True,
     ),
     sa.Column(
         "service_run_id",

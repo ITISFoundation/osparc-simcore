@@ -106,7 +106,7 @@ async def _request_copy_folders(
         if lr_task.done():
             return await lr_task.result()
 
-    assert False, "Copy folders failed!"
+    pytest.fail(reason="Copy folders failed!")
 
 
 async def test_copy_folders_from_non_existing_project(
@@ -566,7 +566,7 @@ async def test_create_and_delete_folders_from_project_burst(
 
 @pytest.mark.parametrize("search_startswith", [True, False])
 @pytest.mark.parametrize("search_sha256_checksum", [True, False])
-@pytest.mark.parametrize("access_right", ["read", "write"])
+@pytest.mark.parametrize("kind", ["owned", "read", None])
 async def test_search_files(
     client: TestClient,
     user_id: UserID,
@@ -574,19 +574,27 @@ async def test_search_files(
     faker: Faker,
     search_startswith: bool,
     search_sha256_checksum: bool,
-    access_right: Literal["read", "write"],
+    kind: Literal["owned"],
 ):
     assert client.app
     _file_name: str = faker.file_name()
     _sha256_checksum: SHA256Str = parse_obj_as(SHA256Str, faker.sha256())
     _query_params: dict[str, Any] = {
         "user_id": user_id,
-        "access_right": access_right,
+        "kind": kind,
         "startswith": "",
     }
-    url = client.app.router["search_files"].url_for().with_query(**_query_params)
+    url = (
+        client.app.router["search_files"]
+        .url_for()
+        .with_query(**{k: v for k, v in _query_params.items() if v is not None})
+    )
 
     response = await client.post(f"{url}")
+
+    if kind != "owned":
+        _ = await assert_status(response, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        return
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)

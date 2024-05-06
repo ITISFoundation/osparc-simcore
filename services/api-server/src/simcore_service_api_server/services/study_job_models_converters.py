@@ -111,11 +111,10 @@ async def create_job_outputs_from_project_outputs(
             path = value["path"]
             file_id: UUID = File.create_id(*path.split("/"))
 
-            if found := await storage_client.search_files(
+            if found := await storage_client.search_owned_files(
                 user_id=user_id,
                 file_id=file_id,
                 sha256_checksum=None,
-                access_right="read",
             ):
                 assert len(found) == 1  # nosec
                 results[name] = to_file_api_model(found[0])

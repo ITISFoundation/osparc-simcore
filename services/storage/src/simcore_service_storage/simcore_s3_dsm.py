@@ -710,18 +710,6 @@ class SimcoreS3DataManager(BaseDataManager):
 
         return parse_obj_as(ByteSize, total_size), total_num_s3_objects
 
-    async def search_read_access_files(
-        self, user_id: UserID, file_id_prefix: str, sha256_checksum: SHA256Str | None
-    ):
-        async with self.engine.acquire() as conn:
-            can_read_projects_ids = await get_readable_project_ids(conn, user_id)
-        return await self._search_files(
-            user_id=user_id,
-            project_ids=can_read_projects_ids,
-            file_id_prefix=file_id_prefix,
-            sha256_checksum=sha256_checksum,
-        )
-
     async def search_owned_files(
         self, user_id: UserID, file_id_prefix: str, sha256_checksum: SHA256Str | None
     ):

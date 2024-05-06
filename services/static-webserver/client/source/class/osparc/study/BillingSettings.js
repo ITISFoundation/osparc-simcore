@@ -78,30 +78,32 @@ qx.Class.define("osparc.study.BillingSettings", {
           .finally(() => {
             walletSelector.addListener("changeSelection", e => {
               const selection = e.getData();
-              const walletId = selection[0].walletId;
-              if (walletId === null) {
-                return;
-              }
-              hBox.setEnabled(false);
-              const paramsPut = {
-                url: {
-                  studyId: this.__studyData["uuid"],
-                  walletId
+              if (selection.length) {
+                const walletId = selection[0].walletId;
+                if (walletId === null) {
+                  return;
                 }
-              };
-              osparc.data.Resources.fetch("studies", "selectWallet", paramsPut)
-                .then(() => {
-                  const msg = this.tr("Credit Account saved");
-                  osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
-                })
-                .catch(err => {
-                  console.error(err);
-                  osparc.FlashMessenger.logAs(err.message, "ERROR");
-                })
-                .finally(() => {
-                  hBox.setEnabled(true);
-                  populateCreditAccountBox();
-                });
+                hBox.setEnabled(false);
+                const paramsPut = {
+                  url: {
+                    studyId: this.__studyData["uuid"],
+                    walletId
+                  }
+                };
+                osparc.data.Resources.fetch("studies", "selectWallet", paramsPut)
+                  .then(() => {
+                    const msg = this.tr("Credit Account saved");
+                    osparc.FlashMessenger.getInstance().logAs(msg, "INFO");
+                  })
+                  .catch(err => {
+                    console.error(err);
+                    osparc.FlashMessenger.logAs(err.message, "ERROR");
+                  })
+                  .finally(() => {
+                    hBox.setEnabled(true);
+                    populateCreditAccountBox();
+                  });
+              }
             });
           });
       };

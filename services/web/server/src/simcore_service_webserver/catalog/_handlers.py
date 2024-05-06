@@ -9,7 +9,6 @@ import logging
 import urllib.parse
 from typing import Any, Final
 
-import orjson
 from aiohttp.web import Request, RouteTableDef
 from models_library.api_schemas_webserver.catalog import (
     ServiceGet,
@@ -23,6 +22,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
+from models_library.utils.json_serialization import json_loads
 from pydantic import BaseModel, Extra, Field, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
@@ -112,7 +112,7 @@ async def get_service(request: Request):
 async def update_service(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    update_data: dict[str, Any] = await request.json(loads=orjson.loads)
+    update_data: dict[str, Any] = await request.json(loads=json_loads)
 
     assert parse_obj_as(ServiceUpdate, update_data) is not None  # nosec
 

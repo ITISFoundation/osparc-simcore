@@ -142,14 +142,6 @@ async def template_project(
 
 
 @pytest.fixture
-def fake_services():
-    def create_fakes(number_services: int) -> list[dict]:
-        return [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
-
-    return create_fakes
-
-
-@pytest.fixture
 async def project_db_cleaner(client):
     yield
     await delete_all_projects(client.app)

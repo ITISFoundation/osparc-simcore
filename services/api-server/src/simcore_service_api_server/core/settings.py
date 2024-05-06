@@ -88,6 +88,7 @@ class ApplicationSettings(BasicSettings):
     API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS: PositiveInt = 10
     API_SERVER_ALLOWED_HEALTH_CHECK_FAILURES: PositiveInt = 5
     API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS: PositiveInt = 5
+    API_SERVER_PROFILING: bool = False
     # DEV-TOOLS
     API_SERVER_DEV_HTTP_CALLS_LOGS_PATH: Path | None = Field(
         default=None,

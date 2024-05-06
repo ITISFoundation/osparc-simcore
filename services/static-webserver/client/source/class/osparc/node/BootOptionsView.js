@@ -54,16 +54,19 @@ qx.Class.define("osparc.node.BootOptionsView", {
         converter: interactive => interactive === "idle"
       });
       bootModeSB.addListener("changeSelection", e => {
-        buttonsLayout.setEnabled(false);
-        const newBootModeId = e.getData()[0].bootModeId;
-        node.setBootOptions({
-          "boot_mode": newBootModeId
-        });
-        setTimeout(() => {
-          buttonsLayout.setEnabled(true);
-          node.requestStartNode();
-          this.fireEvent("bootModeChanged");
-        }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL*2);
+        const selection = e.getData();
+        if (selection.length) {
+          buttonsLayout.setEnabled(false);
+          const newBootModeId = selection[0].bootModeId;
+          node.setBootOptions({
+            "boot_mode": newBootModeId
+          });
+          setTimeout(() => {
+            buttonsLayout.setEnabled(true);
+            node.requestStartNode();
+            this.fireEvent("bootModeChanged");
+          }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL*2);
+        }
       }, this);
       buttonsLayout.add(bootModeSB);
 

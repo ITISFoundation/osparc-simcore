@@ -69,6 +69,10 @@ def test_jupyterlab(
         page.frame_locator(".qx-main-dark").locator(
             ".jp-LauncherCard-icon"
         ).first.click()
+        page.wait_for_timeout(3000)
+        page.frame_locator(".qx-main-dark").get_by_role(
+            "tab", name="Untitled.ipynb"
+        ).click()
         _jupyterlab_ui = (
             page.frame_locator(".qx-main-dark")
             .get_by_label("Untitled.ipynb")
