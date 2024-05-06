@@ -76,16 +76,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       },
       "personalizationMTI": {
         templateLabel: "personalized mcTI Planning Tool",
-        title: "Personalized Multichannel TI",
-        description: "Start new personalized mcTI planning",
-        newStudyLabel: "PersonalizedMultichannel TI",
+        title: "Personalized MC TI",
+        description: "Start new personalized multichannel TI planning",
+        newStudyLabel: "Personalized Multichannel TI",
         category: "personalized",
         idToWidget: "personalizationNewMTIPlanButton"
       },
       "personalizationPMTI": {
         templateLabel: "personalized pmTI Planning Tool",
-        title: "Personalized Phase-Modulation TI",
-        description: "Start new personalized pmTI planning",
+        title: "Personalized PM TI",
+        description: "Start new personalized Phase-Modulation TI planning",
         newStudyLabel: "Personalized Phase-Modulation TI",
         category: "personalized",
         idToWidget: "personalizationNewPMTIPlanButton"
@@ -543,7 +543,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(templates => {
           if (templates && Object.values(this.self().EXPECTED_TI_TEMPLATES).length) {
             const title = this.tr("New Plan");
-            const desc = this.tr("Choose Plan in next step");
+            const desc = this.tr("Choose Plan in pop-up");
             const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
             newStudyBtn.setCardKey("new-study");
             newStudyBtn.subscribeToFilterGroup("searchBarFilter");
@@ -568,10 +568,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               });
               newStudies.addListener("newStudyClicked", e => {
                 win.close();
-                const templateLabel = e.getData();
-                const templateData = templates.find(t => t.name === templateLabel);
+                const templateInfo = e.getData();
+                const templateData = templates.find(t => t.name === templateInfo.templateLabel);
                 if (templateData) {
-                  this.__newPlanBtnClicked(templateData);
+                  this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
                 }
               });
             });
@@ -834,12 +834,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__createStudy(minStudyData, null);
     },
 
-    __newPlanBtnClicked: function(templateData) {
+    __newPlanBtnClicked: function(templateData, newStudyName) {
       // do not override cached template data
       const templateCopyData = osparc.utils.Utils.deepCloneObject(templateData);
-      const title = osparc.utils.Utils.getUniqueStudyName(templateCopyData.name, this._resourcesList);
+      const title = osparc.utils.Utils.getUniqueStudyName(newStudyName, this._resourcesList);
       templateCopyData.name = title;
-      this._showLoadingPage(this.tr("Creating ") + (templateCopyData.name || osparc.product.Utils.getStudyAlias()));
+      this._showLoadingPage(this.tr("Creating ") + (newStudyName || osparc.product.Utils.getStudyAlias()));
       osparc.study.Utils.createStudyFromTemplate(templateCopyData, this._loadingPage)
         .then(studyId => {
           const openCB = () => this._hideLoadingPage();
