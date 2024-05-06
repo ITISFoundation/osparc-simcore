@@ -40,7 +40,7 @@ for (const product in products) {
     const button = page.getByTestId("loginCreateAccountBtn");
     button.click();
 
-    const expectedLocator = expectedActionOnCreateAccount[product];
-    await expect(expectedLocator).toBeVisible();
+    const expectedWidget = page.getByTestId(expectedActionOnCreateAccount[product]);
+    await expect(expectedWidget).toBeVisible();
   });
 }
