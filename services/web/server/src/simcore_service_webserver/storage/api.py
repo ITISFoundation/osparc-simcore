@@ -92,8 +92,10 @@ async def get_project_total_size_simcore_s3(
                     await response.json()
                 )
                 assert list_of_files_enveloped.data is not None  # nosec
-            for file_metadata in list_of_files_enveloped.data:
-                project_size_bytes += file_metadata.file_size
+            project_size_bytes += sum(
+                file_metadata.file_size
+                for file_metadata in list_of_files_enveloped.data
+            )
         return parse_obj_as(ByteSize, project_size_bytes)
 
 
