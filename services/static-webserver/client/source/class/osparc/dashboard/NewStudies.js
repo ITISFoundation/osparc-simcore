@@ -25,8 +25,6 @@ qx.Class.define("osparc.dashboard.NewStudies", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.__newStudies = [];
-
     const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
     [
       "changeSelection",
@@ -70,6 +68,10 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       if (this.getGroupBy()) {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this._add(noGroupContainer);
+
+        const categories = new Set([]);
+        this.__newStudies.forEach(newStudy => newStudy.category && categories.add(newStudy.category));
+        Array.from(categories).forEach(category => this.__createGroupContainer(category, qx.lang.String.firstUp(category), "transparent"));
       } else {
         const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
         osparc.utils.Utils.setIdToWidget(flatList, listId);
@@ -107,26 +109,15 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     },
 
     __groupByCategory: function(cards, resourceData) {
-      const categories = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
-      if (categories.length === 0) {
-        let noGroupContainer = this.__getGroupContainer("no-group");
-        const card = this.__createCard(resourceData);
-        noGroupContainer.add(card);
-        cards.push(card);
+      const card = this.__createCard(resourceData);
+      const groupContainer = this.__getGroupContainer(resourceData.category);
+      if (groupContainer) {
+        groupContainer.add(card);
       } else {
-        categories.forEach(tag => {
-          let groupContainer = this.__getGroupContainer(tag.id);
-          if (groupContainer === null) {
-            groupContainer = this.__createGroupContainer(tag.id, tag.name, tag.color);
-            this._add(groupContainer);
-            this._getChildren().sort((a, b) => a.getHeaderLabel().localeCompare(b.getHeaderLabel()));
-            this.__moveNoGroupToLast();
-          }
-          const card = this.__createCard(resourceData);
-          groupContainer.add(card);
-          cards.push(card);
-        });
+        let noGroupContainer = this.__getGroupContainer("no-group");
+        noGroupContainer.add(card);
       }
+      cards.push(card);
     },
 
     __createGroupContainer: function(groupId, headerLabel, headerColor = "text") {

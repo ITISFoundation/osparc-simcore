@@ -47,7 +47,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Classic TI",
         description: "Start new TI planning",
         newStudyLabel: "Classic TI",
-        category: "Precomputed",
+        category: "precomputed",
         idToWidget: "newTIPlanButton"
       },
       "mTI": {
@@ -55,7 +55,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Multichannel TI",
         description: "Start new mcTI planning",
         newStudyLabel: "Multichannel TI",
-        category: "Precomputed",
+        category: "precomputed",
         idToWidget: "newMTIPlanButton"
       },
       "pmTI": {
@@ -63,7 +63,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Phase-Modulation TI",
         description: "Start new pmTI planning",
         newStudyLabel: "Phase-Modulation TI",
-        category: "Precomputed",
+        category: "precomputed",
         idToWidget: "newPMTIPlanButton"
       },
       "personalizationTI": {
@@ -71,7 +71,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Personalized Classic TI",
         description: "Start new personalized plan",
         newStudyLabel: "Personalized TI",
-        category: "Personalized",
+        category: "personalized",
         idToWidget: "personalizationNewTIPlanButton"
       },
       "personalizationMTI": {
@@ -79,7 +79,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Personalized Multichannel TI",
         description: "Start new personalized mcTI planning",
         newStudyLabel: "PersonalizedMultichannel TI",
-        category: "Personalized",
+        category: "personalized",
         idToWidget: "personalizationNewMTIPlanButton"
       },
       "personalizationPMTI": {
@@ -87,7 +87,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Personalized Phase-Modulation TI",
         description: "Start new personalized pmTI planning",
         newStudyLabel: "Personalized Phase-Modulation TI",
-        category: "Personalized",
+        category: "personalized",
         idToWidget: "personalizationNewPMTIPlanButton"
       }
     },
@@ -558,10 +558,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
               const newStudies = new osparc.dashboard.NewStudies(Object.values(this.self().EXPECTED_TI_TEMPLATES));
               newStudies.setGroupBy("category");
+              newStudies.setMode(this._resourcesContainer.getMode());
               const winTitle = this.tr("New Plan");
-              const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, 350, 135).set({
+              const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, 650, 700).set({
                 clickAwayClose: false,
-                resizable: false,
+                resizable: true,
                 showClose: true
               });
               const closeBtn = win.getChildControl("close-button");
