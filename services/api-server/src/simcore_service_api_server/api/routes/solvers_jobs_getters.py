@@ -251,11 +251,10 @@ async def get_job_outputs(
         if isinstance(value, BaseFileLink):
             file_id: UUID = File.create_id(*value.path.split("/"))
 
-            found = await storage_client.search_files(
+            found = await storage_client.search_owned_files(
                 user_id=user_id,
                 file_id=file_id,
                 sha256_checksum=None,
-                access_right="read",
             )
             if found:
                 assert len(found) == 1  # nosec
