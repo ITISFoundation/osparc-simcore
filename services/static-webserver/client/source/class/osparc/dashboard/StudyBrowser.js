@@ -44,75 +44,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     this.base(arguments);
   },
 
-  statics: {
-    EXPECTED_TI_TEMPLATES: {
-      "TI": {
-        templateLabel: "TI Planning Tool",
-        title: "Classic TI",
-        description: "Start new TI planning",
-        newStudyLabel: "Classic TI",
-        category: "precomputed",
-        idToWidget: "newTIPlanButton"
-      },
-      "mTI": {
-        templateLabel: "mcTI Planning Tool",
-        title: "Multichannel TI",
-        description: "Start new mcTI planning",
-        newStudyLabel: "Multichannel TI",
-        category: "precomputed",
-        idToWidget: "newMTIPlanButton"
-      },
-      "pmTI": {
-        templateLabel: "pmTI Planning Tool",
-        title: "Phase-Modulation TI",
-        description: "Start new pmTI planning",
-        newStudyLabel: "Phase-Modulation TI",
-        category: "precomputed",
-        idToWidget: "newPMTIPlanButton"
-      },
-      "personalizationTI": {
-        templateLabel: "personalized TI Planning Tool",
-        title: "Personalized Classic TI",
-        description: "Start new personalized plan",
-        newStudyLabel: "Personalized TI",
-        category: "personalized",
-        idToWidget: "personalizationNewTIPlanButton"
-      },
-      "personalizationMTI": {
-        templateLabel: "personalized mcTI Planning Tool",
-        title: "Personalized MC TI",
-        description: "Start new personalized multichannel TI planning",
-        newStudyLabel: "Personalized Multichannel TI",
-        category: "personalized",
-        idToWidget: "personalizationNewMTIPlanButton"
-      },
-      "personalizationPMTI": {
-        templateLabel: "personalized pmTI Planning Tool",
-        title: "Personalized PM TI",
-        description: "Start new personalized Phase-Modulation TI planning",
-        newStudyLabel: "Personalized Phase-Modulation TI",
-        category: "personalized",
-        idToWidget: "personalizationNewPMTIPlanButton"
-      }
-    },
-    EXPECTED_S4L_SERVICE_KEYS: {
-      "simcore/services/dynamic/sim4life-8-0-0-dy": {
-        title: "Start Sim4Life",
-        description: "New Sim4Life project",
-        newStudyLabel: "New S4L project",
-        idToWidget: "startS4LButton"
-      }
-    },
-    EXPECTED_S4L_LITE_SERVICE_KEYS: {
-      "simcore/services/dynamic/sim4life-lite": {
-        title: "Start <i>S4L<sup>lite</sup></i>",
-        description: "New project",
-        newStudyLabel: "New project",
-        idToWidget: "startS4LButton"
-      }
-    }
-  },
-
   events: {
     "publishTemplate": "qx.event.type.Data"
   },
@@ -519,10 +450,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "s4l":
         case "s4lacad":
-          this.__addS4LPlusButtons();
-          break;
         case "s4llite":
-          this.__addS4LLitePlusButtons();
+          this.__addPlusButtonsFromServices();
           break;
       }
     },
@@ -609,27 +538,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __addS4LPlusButtons: function() {
+    __addPlusButtonsFromServices: function() {
       const store = osparc.store.Store.getInstance();
       store.getAllServices()
         .then(services => {
           // add new plus buttons if key services exists
-          const newButtonsInfo = this.self().EXPECTED_S4L_SERVICE_KEYS;
-          Object.keys(newButtonsInfo).forEach(serviceKey => {
-            this.__addNewStudyFromServiceButtons(services, serviceKey, newButtonsInfo[serviceKey]);
-          });
-        });
-    },
-
-    __addS4LLitePlusButtons: function() {
-      const store = osparc.store.Store.getInstance();
-      store.getAllServices()
-        .then(services => {
-          // add new plus buttons if key services exists
-          const newButtonsInfo = this.self().EXPECTED_S4L_LITE_SERVICE_KEYS;
-          Object.keys(newButtonsInfo).forEach(serviceKey => {
-            this.__addNewStudyFromServiceButtons(services, serviceKey, newButtonsInfo[serviceKey]);
-          });
+          osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
+            .then(newStudiesData => {
+              const product = osparc.product.Utils.getProductName()
+              if (product in newStudiesData) {
+                const newButtonsInfo = newStudiesData[product].resources;
+                Object.keys(newButtonsInfo).forEach(serviceKey => {
+                  this.__addNewStudyFromServiceButtons(services, serviceKey, newButtonsInfo[serviceKey]);
+                });
+              }
+            });
         });
     },
 
