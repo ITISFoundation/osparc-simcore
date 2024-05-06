@@ -57,7 +57,7 @@ qx.Class.define("osparc.node.BootOptionsView", {
         const selection = e.getData();
         if (selection.length) {
           buttonsLayout.setEnabled(false);
-          const newBootModeId = e.getData()[0].bootModeId;
+          const newBootModeId = selection[0].bootModeId;
           node.setBootOptions({
             "boot_mode": newBootModeId
           });
