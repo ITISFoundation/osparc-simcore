@@ -25,7 +25,7 @@
     }, {
       "expectedTemplateLabel": "personalized TI Planning Tool",
       "title": "Personalized Classic TI",
-      "description": "Start new Personalized Classic TI plan",
+      "description": "Start new Personalized Classic TI planning",
       "newStudyLabel": "Personalized Classic TI",
       "category": "personalized",
       "idToWidget": "personalizationNewTIPlanButton"
