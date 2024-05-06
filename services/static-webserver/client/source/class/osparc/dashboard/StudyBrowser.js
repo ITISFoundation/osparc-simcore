@@ -566,30 +566,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 resizable: true,
                 showClose: true
               });
-              const closeBtn = win.getChildControl("close-button");
-              osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
+              newStudies.addListener("newStudyClicked", e => {
+                win.close();
+                const templateLabel = e.getData();
+                const templateData = templates.find(t => t.name === templateLabel);
+                if (templateData) {
+                  this.__newPlanBtnClicked(templateData);
+                }
+              });
             });
           }
-
-          /*
-          // replace if a "TI Planning Tool" templates exist
-          Object.values(this.self().EXPECTED_TI_TEMPLATES).forEach(templateInfo => {
-            const templateData = templates.find(t => t.name === templateInfo.templateLabel);
-            if (templateData) {
-              const title = templateInfo.title;
-              const desc = templateInfo.description;
-              const newPlanButton = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
-              newPlanButton.setCardKey(templateInfo.idToWidget);
-              osparc.utils.Utils.setIdToWidget(newPlanButton, templateInfo.idToWidget);
-              newPlanButton.addListener("execute", () => this.__newPlanBtnClicked(newPlanButton, templateData));
-              if (this._resourcesContainer.getMode() === "list") {
-                const width = this._resourcesContainer.getBounds().width - 15;
-                newPlanButton.setWidth(width);
-              }
-              this._resourcesContainer.addNonResourceCard(newPlanButton);
-            }
-          });
-          */
         });
     },
 
@@ -848,10 +834,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__createStudy(minStudyData, null);
     },
 
-    __newPlanBtnClicked: function(button, templateData) {
+    __newPlanBtnClicked: function(templateData) {
       // do not override cached template data
       const templateCopyData = osparc.utils.Utils.deepCloneObject(templateData);
-      button.setValue(false);
       const title = osparc.utils.Utils.getUniqueStudyName(templateCopyData.name, this._resourcesList);
       templateCopyData.name = title;
       this._showLoadingPage(this.tr("Creating ") + (templateCopyData.name || osparc.product.Utils.getStudyAlias()));

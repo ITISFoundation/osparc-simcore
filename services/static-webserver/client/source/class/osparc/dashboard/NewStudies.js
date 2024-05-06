@@ -154,6 +154,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         const width = this.getBounds().width - 15;
         newPlanButton.setWidth(width);
       }
+      newPlanButton.addListener("execute", this.fireDataEvent("newStudyClicked", templateInfo.templateLabel))
       return newPlanButton;
     },
 
