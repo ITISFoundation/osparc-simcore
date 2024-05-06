@@ -247,3 +247,32 @@ async def test_remove_orphaned_services_inexisting_user_does_not_save_state(
         simcore_user_agent=mock.ANY,
         save_state=False,
     )
+
+
+@pytest.mark.parametrize("node_exists", [False], indirect=True)
+async def test_remove_orphaned_services_raises_exception_does_not_reraise(
+    mock_app: mock.AsyncMock,
+    mock_registry: mock.AsyncMock,
+    mock_list_node_ids_in_project: mock.AsyncMock,
+    mock_is_node_id_present_in_any_project_workbench: mock.AsyncMock,
+    mock_list_dynamic_services: mock.AsyncMock,
+    mock_stop_dynamic_service: mock.AsyncMock,
+    faker_dynamic_service_get: Callable[[], DynamicServiceGet],
+    caplog: pytest.LogCaptureFixture,
+):
+    error_msg = "Boom this is an error!"
+    mock_stop_dynamic_service.side_effect = Exception(error_msg)
+    fake_running_service = faker_dynamic_service_get()
+    mock_list_dynamic_services.return_value = [fake_running_service]
+    # this should not raise
+    await remove_orphaned_services(mock_registry, mock_app)
+    mock_list_dynamic_services.assert_called_once()
+    mock_is_node_id_present_in_any_project_workbench.assert_called_once_with(
+        mock.ANY, fake_running_service.node_uuid
+    )
+    # there should be error messages though
+    error_records = [_ for _ in caplog.records if _.levelname == "ERROR"]
+    assert len(error_records) == 1
+    error_record = error_records[0]
+    assert error_record.exc_text is not None
+    assert error_msg in error_record.exc_text
