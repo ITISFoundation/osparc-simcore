@@ -556,11 +556,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             newStudyBtn.addListener("execute", () => {
               newStudyBtn.setValue(false);
 
-              const newStudies = new osparc.dashboard.NewStudies(Object.values(this.self().EXPECTED_TI_TEMPLATES));
+              const foundTemplates = Object.values(this.self().EXPECTED_TI_TEMPLATES).filter(templateInfo => templates.find(t => t.name === templateInfo.templateLabel));
+              const newStudies = new osparc.dashboard.NewStudies(foundTemplates);
               newStudies.setGroupBy("category");
               newStudies.setMode(this._resourcesContainer.getMode());
               const winTitle = this.tr("New Plan");
-              const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, 650, 700).set({
+              const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, 640, 600).set({
                 clickAwayClose: false,
                 resizable: true,
                 showClose: true
