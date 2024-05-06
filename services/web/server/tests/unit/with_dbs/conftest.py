@@ -389,7 +389,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
         mock[name] = mocker.patch(
             f"simcore_service_webserver.{name}",
             autospec=True,
-            return_value={},
+            return_value=[],
         )
     # add here redirects from director-v2 via dynamic-scheduler
     # NOTE: once all above are moved to dynamic-scheduler
