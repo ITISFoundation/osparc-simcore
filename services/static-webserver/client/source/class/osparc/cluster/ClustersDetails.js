@@ -52,7 +52,7 @@ qx.Class.define("osparc.cluster.ClustersDetails", {
       selectBox.addListener("changeSelection", e => {
         const selection = e.getData();
         if (selection.length) {
-          const clusterId = [0].id;
+          const clusterId = selection[0].id;
           this.__selectedClusterChanged(clusterId);
         }
       }, this);
