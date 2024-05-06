@@ -47,6 +47,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Classic TI",
         description: "Start new TI planning",
         newStudyLabel: "Classic TI",
+        category: "Precomputed",
         idToWidget: "newTIPlanButton"
       },
       "mTI": {
@@ -54,6 +55,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Multichannel TI",
         description: "Start new mcTI planning",
         newStudyLabel: "Multichannel TI",
+        category: "Precomputed",
         idToWidget: "newMTIPlanButton"
       },
       "pmTI": {
@@ -61,6 +63,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Phase-Modulation TI",
         description: "Start new pmTI planning",
         newStudyLabel: "Phase-Modulation TI",
+        category: "Precomputed",
         idToWidget: "newPMTIPlanButton"
       },
       "personalizationTI": {
@@ -68,6 +71,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Personalized Classic TI",
         description: "Start new personalized plan",
         newStudyLabel: "Personalized TI",
+        category: "Personalized",
         idToWidget: "personalizationNewTIPlanButton"
       },
       "personalizationMTI": {
@@ -75,6 +79,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Personalized Multichannel TI",
         description: "Start new personalized mcTI planning",
         newStudyLabel: "PersonalizedMultichannel TI",
+        category: "Personalized",
         idToWidget: "personalizationNewMTIPlanButton"
       },
       "personalizationPMTI": {
@@ -82,6 +87,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         title: "Personalized Phase-Modulation TI",
         description: "Start new personalized pmTI planning",
         newStudyLabel: "Personalized Phase-Modulation TI",
+        category: "Personalized",
         idToWidget: "personalizationNewPMTIPlanButton"
       }
     },
@@ -535,6 +541,35 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const mode = this._resourcesContainer.getMode();
       osparc.data.Resources.get("templates")
         .then(templates => {
+          if (templates && Object.values(this.self().EXPECTED_TI_TEMPLATES).length) {
+            const title = this.tr("New Plan");
+            const desc = this.tr("Choose Plan in next step");
+            const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title, desc) : new osparc.dashboard.ListButtonNew(title, desc);
+            newStudyBtn.setCardKey("new-study");
+            newStudyBtn.subscribeToFilterGroup("searchBarFilter");
+            osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
+            if (this._resourcesContainer.getMode() === "list") {
+              const width = this._resourcesContainer.getBounds().width - 15;
+              newStudyBtn.setWidth(width);
+            }
+            this._resourcesContainer.addNonResourceCard(newStudyBtn);
+            newStudyBtn.addListener("execute", () => {
+              newStudyBtn.setValue(false);
+
+              const newStudies = new osparc.dashboard.NewStudies(Object.values(this.self().EXPECTED_TI_TEMPLATES));
+              newStudies.setGroupBy("category");
+              const winTitle = this.tr("New Plan");
+              const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, 350, 135).set({
+                clickAwayClose: false,
+                resizable: false,
+                showClose: true
+              });
+              const closeBtn = win.getChildControl("close-button");
+              osparc.utils.Utils.setIdToWidget(closeBtn, "newReleaseCloseBtn");
+            });
+          }
+
+          /*
           // replace if a "TI Planning Tool" templates exist
           Object.values(this.self().EXPECTED_TI_TEMPLATES).forEach(templateInfo => {
             const templateData = templates.find(t => t.name === templateInfo.templateLabel);
@@ -552,6 +587,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               this._resourcesContainer.addNonResourceCard(newPlanButton);
             }
           });
+          */
         });
     },
 
