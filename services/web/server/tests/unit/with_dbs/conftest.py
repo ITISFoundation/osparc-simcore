@@ -442,6 +442,8 @@ def create_dynamic_service_mock(
                 "service_host": faker.url(),
                 "service_port": faker.pyint(min_value=3000, max_value=60000),
                 "service_state": random.choice(ServiceState),
+                "user_id": user_id,
+                "project_id": project_id,
             }
         )
 
