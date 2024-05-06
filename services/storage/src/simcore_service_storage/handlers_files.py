@@ -66,6 +66,7 @@ async def get_files_metadata(request: web.Request) -> web.Response:
     data: list[FileMetaData] = await dsm.list_files(
         user_id=query_params.user_id,
         expand_dirs=query_params.expand_dirs,
+        uuid_filter=query_params.uuid_filter,
         project_id=query_params.project_id,
     )
     return web.json_response(
