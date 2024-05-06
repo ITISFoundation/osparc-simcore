@@ -15,10 +15,10 @@ import asyncio
 import random
 import sys
 import textwrap
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Awaitable, Final
+from typing import Any, Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -37,9 +37,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.products import ProductName
-from models_library.projects import ProjectID
 from models_library.services_enums import ServiceState
-from models_library.users import UserID
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
