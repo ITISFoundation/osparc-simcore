@@ -494,7 +494,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                   newStudyBtn.addListener("execute", () => {
                     newStudyBtn.setValue(false);
 
-                    const foundTemplates = newButtonsInfo.filter(templateInfo => templates.find(t => t.name === templateInfo.templateLabel));
+                    const foundTemplates = newButtonsInfo.filter(newButtonInfo => templates.find(t => t.name === newButtonInfo.expectedTemplateLabel));
                     const newStudies = new osparc.dashboard.NewStudies(foundTemplates);
                     newStudies.setGroupBy("category");
                     newStudies.setMode(this._resourcesContainer.getMode());
@@ -507,7 +507,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                     newStudies.addListener("newStudyClicked", e => {
                       win.close();
                       const templateInfo = e.getData();
-                      const templateData = templates.find(t => t.name === templateInfo.templateLabel);
+                      const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
                       if (templateData) {
                         this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
                       }
@@ -548,8 +548,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const product = osparc.product.Utils.getProductName()
               if (product in newStudiesData) {
                 const newButtonsInfo = newStudiesData[product].resources;
-                Object.keys(newButtonsInfo).forEach(serviceKey => {
-                  this.__addNewStudyFromServiceButtons(services, serviceKey, newButtonsInfo[serviceKey]);
+                Object.keys(newButtonsInfo).forEach(newButtonInfo => {
+                  this.__addNewStudyFromServiceButtons(services, newButtonInfo.expectedKey, newButtonsInfo);
                 });
               }
             });
