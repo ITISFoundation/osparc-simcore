@@ -131,6 +131,8 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         headerColor,
         visibility: "excluded"
       });
+      const atom = groupContainer.getChildControl("header");
+      atom.setFont("text-16");
       this.__groupedContainers.push(groupContainer);
       return groupContainer;
     },
