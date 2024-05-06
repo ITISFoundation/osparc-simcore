@@ -4,6 +4,7 @@
     - Shall be used as entry point for all the queries to the database regarding projects
 
 """
+
 import logging
 from contextlib import AsyncExitStack
 from typing import Any
@@ -242,9 +243,11 @@ class ProjectDBAPI(BaseProjectDB):
         insert_values = convert_to_db_names(project)
         insert_values.update(
             {
-                "type": ProjectType.TEMPLATE.value
-                if (force_as_template or user_id is None)
-                else ProjectType.STANDARD.value,
+                "type": (
+                    ProjectType.TEMPLATE.value
+                    if (force_as_template or user_id is None)
+                    else ProjectType.STANDARD.value
+                ),
                 "prj_owner": user_id if user_id else None,
                 "hidden": hidden,
                 # NOTE: this is very bad and leads to very weird conversions.
@@ -791,7 +794,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             return await project_nodes_repo.list(conn)  # type: ignore[no-any-return]
 
-    async def node_id_exists(self, node_id: str) -> bool:
+    async def node_id_exists(self, node_id: NodeID) -> bool:
         """Returns True if the node id exists in any of the available projects"""
         async with self.engine.acquire() as conn:
             num_entries = await conn.scalar(
@@ -803,12 +806,12 @@ class ProjectDBAPI(BaseProjectDB):
         assert isinstance(num_entries, int)  # nosec
         return bool(num_entries > 0)
 
-    async def list_node_ids_in_project(self, project_uuid: str) -> set[str]:
+    async def list_node_ids_in_project(self, project_uuid: ProjectID) -> set[NodeID]:
         """Returns a set containing all the node_ids from project with project_uuid"""
-        repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
+        repo = ProjectNodesRepo(project_uuid=project_uuid)
         async with self.engine.acquire() as conn:
             list_of_nodes = await repo.list(conn)
-        return {f"{node.node_id}" for node in list_of_nodes}
+        return {node.node_id for node in list_of_nodes}
 
     #
     # Project NODES to Pricing Units

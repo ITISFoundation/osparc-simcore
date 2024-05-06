@@ -2,11 +2,11 @@ import asyncio
 import logging
 from collections.abc import Coroutine
 from contextlib import AsyncExitStack
-from dataclasses import asdict
 from typing import Any, TypeAlias
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
+from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -127,7 +127,7 @@ async def _copy_project_nodes_from_source_project(
             node_id=_mapped_node_id(node),
             **{
                 k: v
-                for k, v in asdict(node).items()
+                for k, v in node.dict().items()
                 if k in ProjectNodeCreate.get_field_names(exclude={"node_id"})
             },
         )
@@ -166,9 +166,12 @@ async def _copy_files_from_source_project(
         ):
             task_progress.update(
                 message=long_running_task.progress.message,
-                percent=(
-                    starting_value
-                    + long_running_task.progress.percent * (1.0 - starting_value)
+                percent=parse_obj_as(
+                    ProgressPercent,
+                    (
+                        starting_value
+                        + long_running_task.progress.percent * (1.0 - starting_value)
+                    ),
                 ),
             )
             if long_running_task.done():
