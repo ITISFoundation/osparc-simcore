@@ -82,7 +82,6 @@ qx.Class.define("osparc.node.BaseNodeView", {
     __instructionsWindow: null,
     __nodeStartButton: null,
     __nodeStopButton: null,
-    __bootModeSB: null,
     __nodeStatusUI: null,
     _mainView: null,
     _settingsLayout: null,
@@ -164,11 +163,6 @@ qx.Class.define("osparc.node.BaseNodeView", {
         visibility: "excluded"
       });
       header.add(stopBtn);
-
-      const bootModeSB = this.__bootModeSB = new qx.ui.form.SelectBox().set({
-        visibility: "excluded"
-      });
-      header.add(bootModeSB);
 
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
         backgroundColor: "background-main-4"
@@ -389,35 +383,6 @@ qx.Class.define("osparc.node.BaseNodeView", {
         node.attachHandlersToStartButton(this.__nodeStartButton);
         osparc.utils.Utils.setIdToWidget(this.__nodeStartButton, "Start_"+node.getNodeId());
         node.attachHandlersToStopButton(this.__nodeStopButton);
-
-        if (osparc.product.Utils.isProduct("tis")) {
-          const nodeMetaData = node.getMetaData();
-          if (osparc.data.model.Node.hasBootModes(nodeMetaData)) {
-            const bootModeSB = this.__bootModeSB;
-            bootModeSB.show();
-            const workbenchData = node.getWorkbench().serialize();
-            const nodeId = node.getNodeId();
-            osparc.data.model.Node.populateBootModes(bootModeSB, nodeMetaData, workbenchData, nodeId);
-            node.getStatus().bind("interactive", bootModeSB, "enabled", {
-              converter: interactive => interactive === "idle"
-            });
-            bootModeSB.addListener("changeSelection", e => {
-              bootModeSB.setEnabled(false);
-              this.__nodeStartButton.setEnabled(false);
-              const newBootModeId = e.getData()[0].bootModeId;
-              node.setBootOptions({
-                "boot_mode": newBootModeId
-              });
-              node.fireEvent("updateStudyDocument");
-              setTimeout(() => {
-                bootModeSB.setEnabled(true);
-                this.__nodeStartButton.setEnabled(true);
-              }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
-            }, this);
-          } else {
-            this.__bootModeSB.exclude();
-          }
-        }
       }
 
       this.__preparingInputs = new osparc.widget.PreparingInputs(node.getStudy());
