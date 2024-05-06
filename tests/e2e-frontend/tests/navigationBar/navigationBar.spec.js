@@ -60,7 +60,7 @@ for (const product in products) {
           await browser.close();
         });
 
-        test(`Options per Role ${role}`, async () => {
+        test(`Options per Role in User Menu ${role}`, async () => {
           expect(userMenuButtonsPerRole[role]).toBeDefined();
 
           // open user menu

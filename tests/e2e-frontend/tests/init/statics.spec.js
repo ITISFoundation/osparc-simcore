@@ -28,7 +28,7 @@ const expectedStatics = {
 };
 
 for (const product in products) {
-  test(`statics ${product}`, async ({ page }) => {
+  test(`statics response in ${product}`, async ({ page }) => {
     expect(expectedStatics[product]).toBeDefined();
 
     const responsePromise = page.waitForResponse('**/static-frontend-data.json');

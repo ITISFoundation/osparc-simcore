@@ -6,7 +6,7 @@ import products from '../products.json';
 import appsMetadata from '../../../../services/static-webserver/client/scripts/apps_metadata.json';
 
 for (const product in products) {
-  test(`Open Graph properties ${product}`, async ({ page }) => {
+  test(`Open Graph attributes ${product}`, async ({ page }) => {
     const app = appsMetadata.applications.find(app => app.application === product);
     expect(app).toBeDefined();
 

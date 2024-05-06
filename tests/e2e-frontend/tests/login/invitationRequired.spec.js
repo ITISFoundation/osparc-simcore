@@ -21,7 +21,7 @@ const expectedActionOnCreateAccount = {
 };
 
 for (const product in products) {
-  test(`Invitation required ${product}`, async ({ page }) => {
+  test(`Invitation required text in ${product}`, async ({ page }) => {
     expect(expectedCreateAccountLabel[product]).toBeDefined();
 
     const expectedLabel = expectedCreateAccountLabel[product];
@@ -32,7 +32,7 @@ for (const product in products) {
     await expect(button).toContainText(expectedLabel);
   });
 
-  test(`Action on Create Account ${product}`, async ({ page }) => {
+  test(`Callback action on Create Account ${product}`, async ({ page }) => {
     expect(expectedActionOnCreateAccount[product]).toBeDefined();
 
     await page.goto(products[product]);
