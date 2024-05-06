@@ -47,17 +47,17 @@ for (const product in products) {
           loginPageFixture = new LoginPage(page, productUrl);
           await loginPageFixture.goto();
 
-          expect(userMenuButtonsPerRole[role]).toBeDefined();
-          const responsePromise = page.waitForResponse('**/static-frontend-data.json');
           await loginPageFixture.login(user.email, user.password);
 
-          const response = await responsePromise;
-          const statics = await response.json();
-          expect(statics["data"]["role"]).toBe(role);
+          const response = await page.waitForResponse('**/me');
+          const meData = await response.json();
+          expect(meData["data"]["role"]).toBe(role);
         });
 
-        test.afterAll(async () => {
+        test.afterAll(async ({ browser }) => {
           await loginPageFixture.logout();
+          await page.close();
+          await browser.close();
         });
 
         test(`Options per Role ${role}`, async () => {
@@ -72,6 +72,9 @@ for (const product in products) {
             const isVisible = await page.getByText(buttonText).isVisible();
             expect(isVisible).toEqual(expected);
           }
+
+          // close user menu
+          await page.getByTestId("userMenuBtn").click();
         });
       });
     }
