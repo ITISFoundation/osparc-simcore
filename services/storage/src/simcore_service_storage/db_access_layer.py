@@ -275,15 +275,6 @@ async def get_file_access_rights(
 # HELPERS -----------------------------------------------
 
 
-async def project_read_access(
-    conn: SAConnection, user_id: UserID, project_id: ProjectID
-) -> bool:
-    access_rights = await get_project_access_rights(
-        conn=conn, user_id=user_id, project_id=project_id
-    )
-    return access_rights.read
-
-
 async def get_readable_project_ids(
     conn: SAConnection, user_id: UserID
 ) -> list[ProjectID]:

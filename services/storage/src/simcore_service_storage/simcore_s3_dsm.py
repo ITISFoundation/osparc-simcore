@@ -50,7 +50,6 @@ from .db_access_layer import (
     get_file_access_rights,
     get_project_access_rights,
     get_readable_project_ids,
-    project_read_access,
 )
 from .dsm_factory import BaseDataManager
 from .exceptions import (
@@ -141,6 +140,7 @@ class SimcoreS3DataManager(BaseDataManager):
         """
         expand_dirs `False`: returns one metadata entry for each directory
         expand_dirs `True`: returns all files in each directory (no directories will be included)
+        project_id: If passed, only list files associated with that project_id
 
         NOTE: expand_dirs will be replaced by pagination in the future
         currently only {EXPAND_DIR_MAX_ITEM_COUNT} items will be returned
@@ -151,9 +151,10 @@ class SimcoreS3DataManager(BaseDataManager):
         accessible_projects_ids = []
         async with self.engine.acquire() as conn, conn.begin():
             if project_id is not None:
-                if not project_read_access(
+                project_access_rights = await get_project_access_rights(
                     conn=conn, user_id=user_id, project_id=project_id
-                ):
+                )
+                if not project_access_rights.read:
                     raise ProjectAccessRightError(
                         access_right="read", project_id=project_id
                     )
