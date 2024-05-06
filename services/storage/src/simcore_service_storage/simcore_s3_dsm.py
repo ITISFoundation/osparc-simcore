@@ -150,7 +150,7 @@ class SimcoreS3DataManager(BaseDataManager):
         data: list[FileMetaData] = []
         accessible_projects_ids = []
         async with self.engine.acquire() as conn, conn.begin():
-            if project_id:
+            if project_id is not None:
                 if not project_read_access(
                     conn=conn, user_id=user_id, project_id=project_id
                 ):
