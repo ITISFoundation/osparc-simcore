@@ -64,6 +64,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
     },
 
+    invalidateTemplates: function() {
+      osparc.store.Store.getInstance().invalidate("templates");
+    },
+
     __attachEventHandlers: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
       socket.on("projectStateUpdated", data => {
@@ -445,12 +449,12 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     taskToTemplateReceived: function(task, studyName) {
-      const toTemaplateTaskUI = new osparc.task.ToTemplate(studyName);
-      toTemaplateTaskUI.setTask(task);
-      toTemaplateTaskUI.start();
+      const toTemplateTaskUI = new osparc.task.ToTemplate(studyName);
+      toTemplateTaskUI.setTask(task);
+      toTemplateTaskUI.start();
       const toTemplateCard = this.__createToTemplateCard(studyName);
       toTemplateCard.setTask(task);
-      this.__attachToTemplateEventHandler(task, toTemaplateTaskUI, toTemplateCard);
+      this.__attachToTemplateEventHandler(task, toTemplateTaskUI, toTemplateCard);
     },
 
     __createToTemplateCard: function(studyName) {

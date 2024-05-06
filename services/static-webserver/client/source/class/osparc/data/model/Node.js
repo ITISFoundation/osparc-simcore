@@ -217,6 +217,7 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   events: {
+    "updateStudyDocument": "qx.event.type.Event",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "keyChanged": "qx.event.type.Event",
@@ -278,14 +279,14 @@ qx.Class.define("osparc.data.model.Node", {
       return false;
     },
 
-    getBootModesSelectBox: function(nodeMetaData, workbench, nodeId) {
+    populateBootModes: function(bootModeSB, nodeMetaData, workbench, nodeId) {
       if (!osparc.data.model.Node.hasBootModes(nodeMetaData)) {
-        return null;
+        return;
       }
 
       const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
-      const bootModeSB = new qx.ui.form.SelectBox();
       const sbItems = [];
+      bootModeSB.removeAll();
       Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
         const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
         sbItem.bootModeId = bootModeId;
@@ -303,6 +304,15 @@ qx.Class.define("osparc.data.model.Node", {
           bootModeSB.setSelection([sbItem]);
         }
       });
+    },
+
+    getBootModesSelectBox: function(nodeMetaData, workbench, nodeId) {
+      if (!osparc.data.model.Node.hasBootModes(nodeMetaData)) {
+        return null;
+      }
+
+      const bootModeSB = new qx.ui.form.SelectBox();
+      this.populateBootModes(bootModeSB, nodeMetaData, workbench, nodeId);
       return bootModeSB;
     },
 
@@ -1409,27 +1419,15 @@ qx.Class.define("osparc.data.model.Node", {
       startButton.executeListenerId = executeListenerId;
     },
 
-    attachVisibilityHandlerToStopButton: function(stopButton) {
+    attachHandlersToStopButton: function(stopButton) {
       this.getStatus().bind("interactive", stopButton, "visibility", {
         converter: state => (state === "ready") ? "visible" : "excluded"
       });
-    },
-
-    attachEnabledHandlerToStopButton: function(stopButton) {
       this.getStatus().bind("interactive", stopButton, "enabled", {
         converter: state => state === "ready"
       });
-    },
-
-    attachExecuteHandlerToStopButton: function(stopButton) {
       const executeListenerId = stopButton.addListener("execute", this.requestStopNode, this);
       stopButton.executeListenerId = executeListenerId;
-    },
-
-    attachHandlersToStopButton: function(stopButton) {
-      this.attachVisibilityHandlerToStopButton(stopButton);
-      this.attachEnabledHandlerToStopButton(stopButton);
-      this.attachExecuteHandlerToStopButton(stopButton);
     },
 
     removeNode: function() {

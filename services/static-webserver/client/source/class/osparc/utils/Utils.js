@@ -125,6 +125,26 @@ qx.Class.define("osparc.utils.Utils", {
       qx.bom.element.Animation.animate(domElement, desc);
     },
 
+    makeButtonBlink: function(button, nTimes = 1) {
+      const onTime = 1000;
+      const oldBgColor = button.getBackgroundColor();
+      let count = 0;
+
+      const blinkIt = btn => {
+        count++;
+        btn.setBackgroundColor("strong-main");
+        setTimeout(() => {
+          btn && btn.setBackgroundColor(oldBgColor);
+        }, onTime);
+      };
+
+      // make it "blink": show it as strong button during onTime" nTimes
+      blinkIt(button);
+      const intervalId = setInterval(() => {
+        (count < nTimes) ? blinkIt(button) : clearInterval(intervalId);
+      }, 2*onTime);
+    },
+
     prettifyMenu: function(menu) {
       menu.set({
         font: "text-14",
