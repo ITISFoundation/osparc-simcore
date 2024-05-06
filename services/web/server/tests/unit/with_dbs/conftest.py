@@ -18,10 +18,9 @@ import textwrap
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Awaitable, Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 import aiopg.sa
 import pytest
@@ -424,28 +423,28 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
 @pytest.fixture
 def create_dynamic_service_mock(
     client: TestClient, mocked_director_v2_api: dict, faker: Faker
-) -> Callable[[UserID, ProjectID], DynamicServiceGet]:
+) -> Callable[..., Awaitable[DynamicServiceGet]]:
     services = []
 
-    async def _create(user_id: UserID, project_id: ProjectID) -> DynamicServiceGet:
+    async def _create(**service_override_kwargs) -> DynamicServiceGet:
         SERVICE_UUID = faker.uuid4(cast_to=None)
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
         assert client.app
 
-        running_service = DynamicServiceGet(
-            **{
-                "published_port": faker.pyint(min_value=3000, max_value=60000),
-                "service_uuid": SERVICE_UUID,
-                "service_key": SERVICE_KEY,
-                "service_version": SERVICE_VERSION,
-                "service_host": faker.url(),
-                "service_port": faker.pyint(min_value=3000, max_value=60000),
-                "service_state": random.choice(ServiceState),
-                "user_id": user_id,
-                "project_id": project_id,
-            }
-        )
+        service_config = {
+            "published_port": faker.pyint(min_value=3000, max_value=60000),
+            "service_uuid": SERVICE_UUID,
+            "service_key": SERVICE_KEY,
+            "service_version": SERVICE_VERSION,
+            "service_host": faker.url(),
+            "service_port": faker.pyint(min_value=3000, max_value=60000),
+            "service_state": random.choice(list(ServiceState)),  # noqa: S311
+            "user_id": faker.pyint(min_value=1),
+            "project_id": faker.uuid4(cast_to=None),
+        } | service_override_kwargs
+
+        running_service = DynamicServiceGet(**service_config)
 
         services.append(running_service)
         # reset the future or an invalidStateError will appear as set_result sets the future to done

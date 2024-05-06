@@ -20,6 +20,7 @@ import sqlalchemy as sa
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     RPCDynamicServiceCreate,
 )
@@ -761,12 +762,12 @@ async def test_close_project(
     expected,
     mocked_director_v2_api: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
-    fake_services,
+    fake_services: Callable[..., Awaitable[list[DynamicServiceGet]]],
     mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # POST /v0/projects/{project_id}:close
-    fake_dynamic_services = fake_services(number_services=5)
+    fake_dynamic_services = await fake_services(number_services=5)
     assert len(fake_dynamic_services) == 5
     mocked_director_v2_api[
         "dynamic_scheduler.api.list_dynamic_services"
@@ -815,7 +816,7 @@ async def test_close_project(
         calls = [
             call(
                 app=client.app,
-                node_id=service["service_uuid"],
+                node_id=service.node_uuid,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
                 progress=mock.ANY,

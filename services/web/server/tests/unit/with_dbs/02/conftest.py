@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import contextlib
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -17,6 +18,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects_nodes import Node, NodeID
 from models_library.projects_state import ProjectState
 from models_library.services_resources import (
@@ -218,9 +220,13 @@ async def create_template_project(
 
 
 @pytest.fixture
-def fake_services():
-    def create_fakes(number_services: int) -> list[dict]:
-        return [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
+def fake_services(
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]]
+) -> Callable[..., Awaitable[list[DynamicServiceGet]]]:
+    async def create_fakes(number_services: int) -> list[DynamicServiceGet]:
+        return await asyncio.gather(
+            *(create_dynamic_service_mock() for _ in range(number_services))
+        )
 
     return create_fakes
 
