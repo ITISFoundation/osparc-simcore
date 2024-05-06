@@ -64,6 +64,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
     },
 
+    invalidateTemplates: function() {
+      osparc.store.Store.getInstance().invalidate("templates");
+    },
+
     __attachEventHandlers: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
       socket.on("projectStateUpdated", data => {
