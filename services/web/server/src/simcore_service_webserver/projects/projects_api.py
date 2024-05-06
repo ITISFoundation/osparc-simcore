@@ -703,7 +703,7 @@ async def delete_project_node(
                 X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
             ),
             stop_service=any(
-                s["service_uuid"] == node_uuid for s in list_running_dynamic_services
+                f"{s.node_uuid}" == node_uuid for s in list_running_dynamic_services
             ),
         ),
         task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
@@ -807,10 +807,10 @@ async def update_project_node_outputs(
     return updated_project, changed_keys
 
 
-async def get_workbench_node_ids_from_project_uuid(
+async def list_node_ids_in_project(
     app: web.Application,
-    project_uuid: str,
-) -> set[str]:
+    project_uuid: ProjectID,
+) -> set[NodeID]:
     """Returns a set with all the node_ids from a project's workbench"""
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     return await db.list_node_ids_in_project(project_uuid)
@@ -818,7 +818,7 @@ async def get_workbench_node_ids_from_project_uuid(
 
 async def is_node_id_present_in_any_project_workbench(
     app: web.Application,
-    node_id: str,
+    node_id: NodeID,
 ) -> bool:
     """If the node_id is presnet in one of the projects' workbenche returns True"""
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
@@ -1322,7 +1322,7 @@ async def run_project_dynamic_services(
     # first get the services if they already exist
     project_settings: ProjectsSettings = get_plugin_settings(request.app)
     running_services_uuids: list[NodeIDStr] = [
-        d["service_uuid"]
+        NodeIDStr(f"{d.node_uuid}")
         for d in await director_v2_api.list_dynamic_services(
             request.app, user_id, project["uuid"]
         )
