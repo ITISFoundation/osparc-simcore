@@ -35,6 +35,7 @@ import simcore_service_webserver.utils
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -423,35 +424,35 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
 @pytest.fixture
 def create_dynamic_service_mock(
     client: TestClient, mocked_director_v2_api: dict, faker: Faker
-) -> Callable[[UserID, ProjectID], list[DynamicServiceGet]]:
+) -> Callable[[UserID, ProjectID], DynamicServiceGet]:
     services = []
 
-    async def _create(
-        user_id: UserID, project_id: ProjectID
-    ) -> list[DynamicServiceGet]:
+    async def _create(user_id: UserID, project_id: ProjectID) -> DynamicServiceGet:
         SERVICE_UUID = faker.uuid4(cast_to=None)
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
         assert client.app
 
-        running_service_dict = {
-            "published_port": faker.pyint(min_value=3000, max_value=16000),
-            "service_uuid": SERVICE_UUID,
-            "service_key": SERVICE_KEY,
-            "service_version": SERVICE_VERSION,
-            "service_host": faker.url(),
-            "service_port": faker.pyint(min_value=3000, max_value=16000),
-            "service_state": random.choice(ServiceState),
-        }
+        running_service = DynamicServiceGet(
+            **{
+                "published_port": faker.pyint(min_value=3000, max_value=60000),
+                "service_uuid": SERVICE_UUID,
+                "service_key": SERVICE_KEY,
+                "service_version": SERVICE_VERSION,
+                "service_host": faker.url(),
+                "service_port": faker.pyint(min_value=3000, max_value=60000),
+                "service_state": random.choice(ServiceState),
+            }
+        )
 
-        services.append(DynamicServiceGet(**running_service_dict))
+        services.append(running_service)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
         for module_name in _LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH:
             mocked_director_v2_api[
                 f"{module_name}.list_dynamic_services"
             ].return_value = services
 
-        return running_service_dict
+        return running_service
 
     return _create
 

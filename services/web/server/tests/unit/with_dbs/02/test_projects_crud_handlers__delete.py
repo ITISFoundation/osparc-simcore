@@ -14,8 +14,10 @@ import redis.asyncio as aioredis
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
+from models_library.users import UserID
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserInfoDict
 from pytest_simcore.helpers.utils_webserver_unit_with_db import (
@@ -130,7 +132,7 @@ async def test_delete_multiple_opened_project_forbidden(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mocked_director_v2_api,
-    create_dynamic_service_mock,
+    create_dynamic_service_mock: Callable[[UserID, ProjectID], DynamicServiceGet],
     socketio_client_factory: Callable,
     client_session_id_factory: Callable,
     user_role: UserRole,
