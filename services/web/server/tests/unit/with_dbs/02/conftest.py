@@ -3,7 +3,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
 import contextlib
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -224,9 +223,7 @@ def fake_services(
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]]
 ) -> Callable[..., Awaitable[list[DynamicServiceGet]]]:
     async def create_fakes(number_services: int) -> list[DynamicServiceGet]:
-        return await asyncio.gather(
-            *(create_dynamic_service_mock() for _ in range(number_services))
-        )
+        return [await create_dynamic_service_mock() for _ in range(number_services)]
 
     return create_fakes
 

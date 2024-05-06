@@ -427,14 +427,13 @@ def create_dynamic_service_mock(
     services = []
 
     async def _create(**service_override_kwargs) -> DynamicServiceGet:
-        SERVICE_UUID = faker.uuid4(cast_to=None)
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
         assert client.app
 
         service_config = {
             "published_port": faker.pyint(min_value=3000, max_value=60000),
-            "service_uuid": SERVICE_UUID,
+            "service_uuid": faker.uuid4(cast_to=None),
             "service_key": SERVICE_KEY,
             "service_version": SERVICE_VERSION,
             "service_host": faker.url(),
