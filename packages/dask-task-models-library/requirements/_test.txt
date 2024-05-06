@@ -1,8 +1,8 @@
-coverage==7.4.4
+coverage==7.5.1
     # via pytest-cov
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via pytest
-faker==24.7.1
+faker==25.0.1
 icdiff==2.0.7
     # via pytest-icdiff
 iniconfig==2.0.0
@@ -12,11 +12,11 @@ packaging==24.0
     #   pytest
     #   pytest-sugar
 pint==0.23
-pluggy==1.4.0
+pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.1.1
+pytest==8.2.0
     # via
     #   pytest-asyncio
     #   pytest-cov
@@ -24,7 +24,7 @@ pytest==8.1.1
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.21.1
+pytest-asyncio==0.21.2
 pytest-cov==5.0.0
 pytest-icdiff==0.9
 pytest-instafail==0.5.0
