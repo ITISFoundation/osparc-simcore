@@ -58,8 +58,4 @@ async def collect_garbage(app: web.Application):
         # the projects are closed or the user was disconencted.
         # This will close and remove all these services from
         # the cluster, thus freeing important resources.
-
-        # Temporary disabling GC to until the dynamic service
-        # safe function is invoked by the GC. This will avoid
-        # data loss for current users.
         await remove_orphaned_services(registry, app)

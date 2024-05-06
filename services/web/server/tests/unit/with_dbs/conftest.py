@@ -12,15 +12,15 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import random
 import sys
 import textwrap
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 import aiopg.sa
 import pytest
@@ -34,7 +34,10 @@ import simcore_service_webserver.utils
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from faker import Faker
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.products import ProductName
+from models_library.services_enums import ServiceState
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -389,7 +392,7 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
         mock[name] = mocker.patch(
             f"simcore_service_webserver.{name}",
             autospec=True,
-            return_value={},
+            return_value=[],
         )
     # add here redirects from director-v2 via dynamic-scheduler
     # NOTE: once all above are moved to dynamic-scheduler
@@ -417,34 +420,37 @@ async def mocked_director_v2_api(mocker: MockerFixture) -> dict[str, MagicMock]:
 
 @pytest.fixture
 def create_dynamic_service_mock(
-    client: TestClient, mocked_director_v2_api: dict
-) -> Callable:
+    client: TestClient, mocked_director_v2_api: dict, faker: Faker
+) -> Callable[..., Awaitable[DynamicServiceGet]]:
     services = []
 
-    async def _create(user_id, project_id) -> dict:
-        SERVICE_UUID = str(uuid4())
+    async def _create(**service_override_kwargs) -> DynamicServiceGet:
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
         assert client.app
 
-        running_service_dict = {
-            "published_port": "23423",
-            "service_uuid": SERVICE_UUID,
+        service_config = {
+            "published_port": faker.pyint(min_value=3000, max_value=60000),
+            "service_uuid": faker.uuid4(cast_to=None),
             "service_key": SERVICE_KEY,
             "service_version": SERVICE_VERSION,
-            "service_host": "some_service_host",
-            "service_port": "some_service_port",
-            "service_state": "some_service_state",
-        }
+            "service_host": faker.url(),
+            "service_port": faker.pyint(min_value=3000, max_value=60000),
+            "service_state": random.choice(list(ServiceState)),  # noqa: S311
+            "user_id": faker.pyint(min_value=1),
+            "project_id": faker.uuid4(cast_to=None),
+        } | service_override_kwargs
 
-        services.append(running_service_dict)
+        running_service = DynamicServiceGet(**service_config)
+
+        services.append(running_service)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
         for module_name in _LIST_DYNAMIC_SERVICES_MODULES_TO_PATCH:
             mocked_director_v2_api[
                 f"{module_name}.list_dynamic_services"
             ].return_value = services
 
-        return running_service_dict
+        return running_service
 
     return _create
 
