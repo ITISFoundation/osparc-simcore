@@ -65,10 +65,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       },
       "personalizationTI": {
         templateLabel: "personalized TI Planning Tool",
-        title: "Personalized TI",
+        title: "Personalized Classic TI",
         description: "Start new personalized plan",
         newStudyLabel: "Personalized TI",
-        idToWidget: "personalizationTIPlanButton"
+        idToWidget: "personalizationNewTIPlanButton"
+      },
+      "personalizationMTI": {
+        templateLabel: "personalized mcTI Planning Tool",
+        title: "Personalized Multichannel TI",
+        description: "Start new personalized mcTI planning",
+        newStudyLabel: "PersonalizedMultichannel TI",
+        idToWidget: "personalizationNewMTIPlanButton"
+      },
+      "personalizationPMTI": {
+        templateLabel: "personalized pmTI Planning Tool",
+        title: "Personalized Phase-Modulation TI",
+        description: "Start new personalized pmTI planning",
+        newStudyLabel: "Personalized Phase-Modulation TI",
+        idToWidget: "personalizationNewPMTIPlanButton"
       }
     },
     EXPECTED_S4L_SERVICE_KEYS: {
@@ -101,7 +115,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       event: "changeMultiSelection",
       apply: "__applyMultiSelection"
     },
-    // Ordering by Posibilities:
+    // Ordering by Possibilities:
     // field: type | uuid | name | description | prj_owner | creation_date | last_change_date
     // direction: asc | desc
     orderBy: {
