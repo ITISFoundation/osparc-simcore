@@ -168,7 +168,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     },
 
     __organizationSelected: function(data) {
-      if (data && data.length>0) {
+      if (data && data.length) {
         const org = data[0];
         this.fireDataEvent("organizationSelected", org.getModel());
       }
