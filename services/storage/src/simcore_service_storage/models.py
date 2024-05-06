@@ -151,7 +151,7 @@ class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
 
 
 class FilesMetadataQueryParams(StorageQueryParamsBase):
-    project_id: ProjectID
+    project_id: ProjectID | None = None
     expand_dirs: bool = True
 
 
