@@ -7,9 +7,10 @@
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
 from models_library.services import ServicePortKey
-from pydantic import BaseModel
+from pydantic import BaseModel, parse_obj_as
 from pydantic.types import NonNegativeFloat, PositiveInt
 from servicelib.logging_utils import log_decorator
 from yarl import URL
@@ -30,7 +31,7 @@ async def list_dynamic_services(
     app: web.Application,
     user_id: PositiveInt | None = None,
     project_id: str | None = None,
-) -> list[DataType]:
+) -> list[DynamicServiceGet]:
     params = _Params(user_id=user_id, project_id=project_id)
     params_dict = params.dict(exclude_none=True)
     settings: DirectorV2Settings = get_plugin_settings(app)
@@ -48,7 +49,7 @@ async def list_dynamic_services(
     if services is None:
         services = []
     assert isinstance(services, list)  # nosec
-    return services
+    return parse_obj_as(list[DynamicServiceGet], services)
 
 
 # NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191

@@ -6,6 +6,7 @@
 
 from collections.abc import Callable, Iterator
 from http import HTTPStatus
+from typing import Awaitable
 from unittest import mock
 from unittest.mock import MagicMock, call
 
@@ -14,6 +15,7 @@ import redis.asyncio as aioredis
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -56,14 +58,14 @@ async def test_delete_project(
     storage_subsystem_mock: MockedStorageSubsystem,
     mocked_director_v2_api: dict[str, MagicMock],
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
-    fake_services: Callable,
+    fake_services: Callable[..., Awaitable[list[DynamicServiceGet]]],
     assert_get_same_project_caller: Callable,
     mock_dynamic_scheduler_rabbitmq: None,
 ):
     assert client.app
 
     # DELETE /v0/projects/{project_id}
-    fakes = fake_services(5)
+    fakes = await fake_services(5)
     mocked_director_v2_api[
         "dynamic_scheduler.api.list_dynamic_services"
     ].return_value = fakes
@@ -89,7 +91,7 @@ async def test_delete_project(
         expected_calls = [
             call(
                 app=client.app,
-                node_id=service["service_uuid"],
+                node_id=service.node_uuid,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=True,
                 progress=mock.ANY,
@@ -130,7 +132,7 @@ async def test_delete_multiple_opened_project_forbidden(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mocked_director_v2_api,
-    create_dynamic_service_mock,
+    create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
     socketio_client_factory: Callable,
     client_session_id_factory: Callable,
     user_role: UserRole,
@@ -141,7 +143,9 @@ async def test_delete_multiple_opened_project_forbidden(
     assert client.app
 
     # service in project
-    await create_dynamic_service_mock(logged_user["id"], user_project["uuid"])
+    await create_dynamic_service_mock(
+        user_id=logged_user["id"], project_id=user_project["uuid"]
+    )
     # open project in tab1
     client_session_id1 = client_session_id_factory()
     try:

@@ -184,7 +184,7 @@ def request_update_project(
     )
     mocker.patch(
         "simcore_service_webserver.director_v2.api.list_dynamic_services",
-        return_value={},
+        return_value=[],
     )
 
     async def _go(client: TestClient, project_uuid: UUID) -> None:

@@ -1,18 +1,16 @@
 import datetime
 import uuid
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import dataclass
 from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
-from simcore_postgres_database.models.projects_node_to_pricing_unit import (
-    projects_node_to_pricing_unit,
-)
+from pydantic import BaseModel, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .errors import ForeignKeyViolation, UniqueViolation
+from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
-from .utils_models import FromRowMixin
 
 
 #
@@ -38,23 +36,27 @@ class ProjectNodesDuplicateNode(BaseProjectNodesError):
     ...
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ProjectNodeCreate:
+class ProjectNodeCreate(BaseModel):
     node_id: uuid.UUID
-    required_resources: dict[str, Any] = field(default_factory=dict)
+    required_resources: dict[str, Any] = Field(default_factory=dict)
 
-    @staticmethod
-    def get_field_names(*, exclude: set[str]) -> set[str]:
-        return {f.name for f in fields(ProjectNodeCreate) if f.name not in exclude}
+    @classmethod
+    def get_field_names(cls, *, exclude: set[str]) -> set[str]:
+        return {name for name in cls.__fields__ if name not in exclude}
+
+    class Config:
+        frozen = True
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ProjectNode(ProjectNodeCreate, FromRowMixin):
+class ProjectNode(ProjectNodeCreate):
     created: datetime.datetime
     modified: datetime.datetime
 
+    class Config(ProjectNodeCreate.Config):
+        orm_mode = True
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+
+@dataclass(frozen=True, kw_only=True)
 class ProjectNodesRepo:
     project_uuid: uuid.UUID
 
@@ -82,7 +84,7 @@ class ProjectNodesRepo:
                 [
                     {
                         "project_uuid": f"{self.project_uuid}",
-                        **asdict(node),
+                        **node.dict(),
                     }
                     for node in nodes
                 ]
@@ -101,7 +103,7 @@ class ProjectNodesRepo:
             assert result  # nosec
             rows = await result.fetchall()
             assert rows is not None  # nosec
-            return [ProjectNode.from_row(r) for r in rows]
+            return [ProjectNode.from_orm(r) for r in rows]
         except ForeignKeyViolation as exc:
             # this happens when the project does not exist, as we first check the node exists
             msg = f"Project {self.project_uuid} not found"
@@ -127,7 +129,7 @@ class ProjectNodesRepo:
         assert result  # nosec
         rows = await result.fetchall()
         assert rows is not None  # nosec
-        return [ProjectNode.from_row(row) for row in rows]
+        return [ProjectNode.from_orm(row) for row in rows]
 
     async def get(self, connection: SAConnection, *, node_id: uuid.UUID) -> ProjectNode:
         """get a node in the current project
@@ -152,7 +154,7 @@ class ProjectNodesRepo:
             msg = f"Node with {node_id} not found"
             raise ProjectNodesNodeNotFound(msg)
         assert row  # nosec
-        return ProjectNode.from_row(row)
+        return ProjectNode.from_orm(row)
 
     async def update(
         self, connection: SAConnection, *, node_id: uuid.UUID, **values
@@ -181,7 +183,7 @@ class ProjectNodesRepo:
             msg = f"Node with {node_id} not found"
             raise ProjectNodesNodeNotFound(msg)
         assert row  # nosec
-        return ProjectNode.from_row(row)
+        return ProjectNode.from_orm(row)
 
     async def delete(self, connection: SAConnection, *, node_id: uuid.UUID) -> None:
         """delete a node in the current project
