@@ -1382,12 +1382,13 @@ async def test_listing_with_project_id_filter(
     assert len(src_projects_list.keys()) > 0
     node_id = list(src_projects_list.keys())[0]
     project_files_in_db = set(src_projects_list[node_id])
+    project_id = project["uuid"]
 
     assert client.app
     url = (
         client.app.router["get_files_metadata"]
         .url_for(location_id=f"{location_id}")
-        .with_query(user_id=user_id, project_id=f"{project['uuid']}")
+        .with_query(user_id=user_id, project_id=f"{project_id}")
     )
     response = await client.get(f"{url}")
     data, _ = await assert_status(response, status.HTTP_200_OK)
