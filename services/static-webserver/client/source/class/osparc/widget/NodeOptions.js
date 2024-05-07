@@ -60,8 +60,8 @@ qx.Class.define("osparc.widget.NodeOptions", {
 
       // Tier Selection
       if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-        const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"], preselectedPricingUnit);
-        sections.push(unitButtons);
+        const tierSelectionView = new osparc.node.TierSelectionView(node);
+        sections.push(tierSelectionView);
 
         if (node.isDynamic()) {
           showStartStopButton = true;
