@@ -68,6 +68,24 @@ def retrieve_project_state_from_decoded_message(event: SocketIOEvent) -> Running
 
 
 @dataclass
+class SocketIOProjectClosedWaiter:
+    def __call__(self, message: str) -> bool:
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+            # socket.io encodes messages like so
+            # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
+            if message.startswith("42"):
+                decoded_message = decode_socketio_42_message(message)
+                if (
+                    (decoded_message.name == "projectStateUpdated")
+                    and (decoded_message.obj["data"]["locked"]["status"] == "CLOSED")
+                    and (decoded_message.obj["data"]["locked"]["value"] is False)
+                ):
+                    return True
+
+            return False
+
+
+@dataclass
 class SocketIOProjectStateUpdatedWaiter:
     expected_states: tuple[RunningState, ...]
 
