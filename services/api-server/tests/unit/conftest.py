@@ -37,6 +37,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
+from pytest_mock import MockerFixture
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.httpx_calls_capture_model import (
     HttpApiCallCaptureModel,
@@ -99,8 +100,15 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
 
 
 @pytest.fixture
-def app(mock_missing_plugins: EnvVarsDict) -> FastAPI:
+def app(
+    mock_missing_plugins: EnvVarsDict, spy_async_client_or_none: Callable
+) -> FastAPI:
     """Inits app on a light environment"""
+    mock_or_none = spy_async_client_or_none(
+        "simcore_service_api_server.utils.client_base.httpx.AsyncClient"
+    )
+    if mock_or_none is not None:
+        print("Capturing", mock_or_none)
     return init_app()
 
 
