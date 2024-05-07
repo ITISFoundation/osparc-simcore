@@ -43,9 +43,10 @@ qx.Class.define("osparc.node.TierSelectionView", {
       this._add(instructionsLabel);
 
       const node = this.getNode();
-      const serviceMetadata = node.getMetaData();
-      const ricingUnitsList = new osparc.service.PricingUnitsList(serviceMetadata);
-      this._add(ricingUnitsList);
+
+      const nodePricingUnits = new osparc.study.NodePricingUnits(this.__studyData["uuid"], node.getNodeId(), null, node);
+      nodePricingUnits.showPricingUnits(false);
+      this._add(nodePricingUnits);
     }
   }
 });

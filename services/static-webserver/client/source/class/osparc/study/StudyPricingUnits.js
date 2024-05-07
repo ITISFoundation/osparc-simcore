@@ -48,7 +48,7 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
         const workbench = this.__studyData["workbench"];
         Object.keys(workbench).forEach(nodeId => {
           const node = workbench[nodeId];
-          const nodePricingUnits = new osparc.study.NodePricingUnits(node, this.__studyData["uuid"], nodeId);
+          const nodePricingUnits = new osparc.study.NodePricingUnits(this.__studyData["uuid"], nodeId, node);
           this._add(nodePricingUnits);
           promises.push(nodePricingUnits.showPricingUnits());
         });

@@ -18,28 +18,38 @@
 qx.Class.define("osparc.study.NodePricingUnits", {
   extend: qx.ui.container.Composite,
 
-  construct: function(nodeData, studyId, nodeId) {
+  construct: function(studyId, nodeId, nodeData, node) {
     this.base(arguments);
 
     this.set({
-      layout: new qx.ui.layout.VBox(5)
+      layout: new qx.ui.layout.VBox()
     });
 
-    this.__nodeData = nodeData;
     this.__studyId = studyId;
     this.__nodeId = nodeId;
+    if (nodeData) {
+      this.__nodeKey = nodeData["key"];
+      this.__nodeVersion = nodeData["version"];
+      this.__nodeLabel = nodeData["label"];
+    } else if (node) {
+      this.__nodeKey = node.getKey();
+      this.__nodeVersion = node.getVersion();
+      this.__nodeLabel = node.getLabel();
+    }
   },
 
   members: {
-    __nodeData: null,
     __studyId: null,
     __nodeId: null,
+    __nodeKey: null,
+    __nodeVersion: null,
+    __nodeLabel: null,
 
-    showPricingUnits: function() {
+    showPricingUnits: function(inGroupBox = true) {
       return new Promise(resolve => {
-        const nodeKey = this.__nodeData["key"];
-        const nodeVersion = this.__nodeData["version"];
-        const nodeLabel = this.__nodeData["label"];
+        const nodeKey = this.__nodeKey;
+        const nodeVersion = this.__nodeVersion;
+        const nodeLabel = this.__nodeLabel;
         const studyId = this.__studyId;
         const nodeId = this.__nodeId;
 
@@ -60,15 +70,19 @@ qx.Class.define("osparc.study.NodePricingUnits", {
               };
               osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
                 .then(preselectedPricingUnit => {
-                  const serviceGroup = this.__createPricingUnitsGroup(nodeLabel, pricingPlans, preselectedPricingUnit);
-                  if (serviceGroup) {
-                    this._add(serviceGroup.layout);
-
-                    const unitButtons = serviceGroup.unitButtons;
+                  if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
+                    const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"], preselectedPricingUnit);
+                    if (inGroupBox) {
+                      const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
+                      pricingUnitsLayout.add(unitButtons);
+                      this._add(pricingUnitsLayout);
+                    } else {
+                      this._add(unitButtons);
+                    }
                     unitButtons.addListener("changeSelectedUnitId", e => {
                       unitButtons.setEnabled(false);
                       const selectedPricingUnitId = e.getData();
-                      this.__pricingUnitSelected(nodeId, pricingPlans["pricingPlanId"], selectedPricingUnitId)
+                      this.__pricingUnitSelected(pricingPlans["pricingPlanId"], selectedPricingUnitId)
                         .finally(() => unitButtons.setEnabled(true));
                     });
                   }
@@ -79,26 +93,11 @@ qx.Class.define("osparc.study.NodePricingUnits", {
       });
     },
 
-    __createPricingUnitsGroup: function(nodeLabel, pricingPlans, preselectedPricingUnit) {
-      if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
-        const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
-
-        const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"], preselectedPricingUnit);
-        pricingUnitsLayout.add(unitButtons);
-
-        return {
-          layout: pricingUnitsLayout,
-          unitButtons
-        };
-      }
-      return null;
-    },
-
-    __pricingUnitSelected: function(nodeId, pricingPlanId, selectedPricingUnitId) {
+    __pricingUnitSelected: function(pricingPlanId, selectedPricingUnitId) {
       const params = {
         url: {
           studyId: this.__studyId,
-          nodeId,
+          nodeId: this.__nodeId,
           pricingPlanId,
           pricingUnitId: selectedPricingUnitId
         }
