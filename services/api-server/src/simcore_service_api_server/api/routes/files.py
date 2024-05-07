@@ -75,9 +75,7 @@ async def _get_file(
         stored_files: list[
             StorageFileMetaData
         ] = await storage_client.search_owned_files(
-            user_id=user_id,
-            file_id=file_id,
-            sha256_checksum=None,
+            user_id=user_id, file_id=file_id, limit=1
         )
         if not stored_files:
             msg = "Not found in storage"
@@ -305,15 +303,14 @@ async def search_files_page(
         user_id=user_id,
         file_id=file_id,
         sha256_checksum=sha256_checksum,
+        limit=page_params.limit,
+        offset=page_params.offset,
     )
     if page_params.offset > len(stored_files):
         _logger.debug("File with sha256_checksum=%d not found.", sha256_checksum)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Not found in storage"
         )
-    stored_files = stored_files[page_params.offset :]
-    if len(stored_files) > page_params.limit:
-        stored_files = stored_files[: page_params.limit]
     return create_page(
         [to_file_api_model(fmd) for fmd in stored_files],
         len(stored_files),
