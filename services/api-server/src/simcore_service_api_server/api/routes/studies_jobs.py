@@ -68,6 +68,10 @@ async def list_study_jobs(
     study_id: StudyID,
     page_params: Annotated[PaginationParams, Depends()],
 ):
+    """
+    New in *version 0.6*
+    """
+
     msg = f"list study jobs study_id={study_id!r} with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)
 
@@ -75,7 +79,6 @@ async def list_study_jobs(
 @router.post(
     "/{study_id:uuid}/jobs",
     response_model=Job,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def create_study_job(
     study_id: StudyID,
@@ -83,6 +86,10 @@ async def create_study_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ) -> Job:
+    """
+    New in *version 0.6*
+    """
+
     project = await webserver_api.clone_project(project_id=study_id, hidden=True)
     job = create_job_from_study(
         study_key=study_id, project=project, job_inputs=job_inputs
@@ -148,6 +155,10 @@ async def get_study_job(
     study_id: StudyID,
     job_id: JobID,
 ):
+    """
+    New in *version 0.6*
+    """
+
     msg = f"get study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)
 
@@ -156,14 +167,16 @@ async def get_study_job(
     "/{study_id:uuid}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={status.HTTP_404_NOT_FOUND: {"model": ErrorGet}},
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def delete_study_job(
     study_id: StudyID,
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    """Deletes an existing study job"""
+    """Deletes an existing study job
+
+    New in *version 0.6*
+    """
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Deleting Job '{job_name}'"):
         await webserver_api.delete_project(project_id=job_id)
@@ -172,7 +185,6 @@ async def delete_study_job(
 @router.post(
     "/{study_id:uuid}/jobs/{job_id:uuid}:start",
     response_model=JobStatus,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def start_study_job(
     request: Request,
@@ -183,6 +195,10 @@ async def start_study_job(
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     cluster_id: ClusterID | None = None,
 ) -> JobStatus:
+    """
+    New in *version 0.6*
+    """
+
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):
         await start_project(
@@ -204,7 +220,6 @@ async def start_study_job(
 @router.post(
     "/{study_id:uuid}/jobs/{job_id:uuid}:stop",
     response_model=JobStatus,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def stop_study_job(
     study_id: StudyID,
@@ -212,6 +227,10 @@ async def stop_study_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
+    """
+    New in *version 0.6*
+    """
+
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Stopping Job '{job_name}'"):
         return await stop_project(
@@ -222,7 +241,6 @@ async def stop_study_job(
 @router.post(
     "/{study_id}/jobs/{job_id}:inspect",
     response_model=JobStatus,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def inspect_study_job(
     study_id: StudyID,
@@ -230,6 +248,10 @@ async def inspect_study_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ) -> JobStatus:
+    """
+    New in *version 0.6*
+    """
+
     job_name = _compose_job_resource_name(study_id, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
@@ -241,7 +263,6 @@ async def inspect_study_job(
 @router.post(
     "/{study_id}/jobs/{job_id}/outputs",
     response_model=JobOutputs,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
 )
 async def get_study_job_outputs(
     study_id: StudyID,
@@ -250,6 +271,10 @@ async def get_study_job_outputs(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
+    """
+    New in *version 0.6*
+    """
+
     job_name = _compose_job_resource_name(study_id, job_id)
     _logger.debug("Getting Job Outputs for '%s'", job_name)
 
@@ -268,6 +293,10 @@ async def get_study_job_outputs(
     status_code=status.HTTP_501_NOT_IMPLEMENTED,
 )
 async def get_study_job_output_logfile(study_id: StudyID, job_id: JobID):
+    """
+    New in *version 0.6*
+    """
+
     msg = f"get study job output logfile study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)
 
@@ -282,7 +311,11 @@ async def get_study_job_custom_metadata(
     study_id: StudyID,
     job_id: JobID,
 ):
-    """Gets custom metadata from a job"""
+    """Gets custom metadata from a job
+
+    New in *version 0.6*
+    """
+
     msg = f"Gets metadata attached to study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
     raise NotImplementedError(msg)
 
@@ -295,6 +328,8 @@ async def get_study_job_custom_metadata(
 async def replace_study_job_custom_metadata(
     study_id: StudyID, job_id: JobID, replace: JobMetadataUpdate
 ):
-    """Changes job's custom metadata"""
+    """Changes job's custom metadata
+    New in *version 0.6*
+    """
     msg = f"Attaches metadata={replace.metadata!r} to study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
     raise NotImplementedError(msg)

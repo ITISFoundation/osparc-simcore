@@ -41,7 +41,7 @@ async def list_studies(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     """
-    New in *version 0.6.0*
+    New in *version 0.6*
     """
     projects_page = await webserver_api.get_projects_page(
         limit=page_params.limit, offset=page_params.offset
@@ -68,7 +68,7 @@ async def get_study(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     """
-    New in *version 0.6.0*
+    New in *version 0.6*
     """
     project: ProjectGet = await webserver_api.get_project(project_id=study_id)
     return _create_study_from_project(project)
@@ -85,7 +85,7 @@ async def clone_study(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     """
-    New in *version 0.6.0*
+    New in *version 0.6*
     """
     project: ProjectGet = await webserver_api.clone_project(
         project_id=study_id, hidden=False
@@ -104,7 +104,7 @@ async def list_study_ports(
 ):
     """Lists metadata on ports of a given study
 
-    New in *version 0.6.0*
+    New in *version 0.6*
     """
     project_ports: list[StudyPort] = await webserver_api.get_project_metadata_ports(
         project_id=study_id
