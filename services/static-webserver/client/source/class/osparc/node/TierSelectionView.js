@@ -23,8 +23,10 @@ qx.Class.define("osparc.node.TierSelectionView", {
   },
 
   members: {
-    _applyNode: function() {
+    _applyNode: function(node) {
       this.__populateLayout();
+
+      this.base(arguments, node);
     },
 
     __populateLayout: function() {

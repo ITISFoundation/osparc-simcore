@@ -27,6 +27,8 @@ qx.Class.define("osparc.node.BootOptionsView", {
       if (node.hasBootModes()) {
         this.__populateLayout();
       }
+
+      this.base(arguments, node);
     },
 
     __populateLayout: function() {

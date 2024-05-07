@@ -27,18 +27,9 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
     __saveBtn: null,
 
     _applyNode: function(node) {
-      if (node.isComputational() || node.isDynamic()) {
-        if (node.isComputational()) {
-          node.getStatus().bind("interactive", this, "enabled", {
-            converter: () => !osparc.data.model.NodeStatus.isComputationalRunning(node)
-          });
-        } else if (node.isDynamic()) {
-          node.getStatus().bind("interactive", this, "enabled", {
-            converter: interactive => interactive === "idle"
-          });
-        }
-        this.__populateLayout();
-      }
+      this.__populateLayout();
+
+      this.base(arguments, node);
     },
 
     __populateLayout: function() {
