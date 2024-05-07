@@ -38,12 +38,6 @@ qx.Class.define("osparc.node.BootOptionsView", {
         font: "text-14"
       }));
 
-      const instructionsMsg = this.tr("Please Stop the Service and then change the Boot Mode");
-      const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
-        rich: true
-      });
-      this._add(instructionsLabel);
-
       const node = this.getNode();
 
       const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));

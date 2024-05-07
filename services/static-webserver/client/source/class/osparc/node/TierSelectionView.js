@@ -36,12 +36,6 @@ qx.Class.define("osparc.node.TierSelectionView", {
         font: "text-14"
       }));
 
-      const instructionsMsg = this.tr("Please Stop the Service and then change the Tier");
-      const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
-        rich: true
-      });
-      this._add(instructionsLabel);
-
       const tierBox = new qx.ui.form.SelectBox().set({
         allowGrowX: false
       });
