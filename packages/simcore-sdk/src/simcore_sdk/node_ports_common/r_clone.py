@@ -172,6 +172,9 @@ async def _get_folder_size(
     return rclone_folder_size_result.bytes
 
 
+_DISABLE_RCLONE_MULTI_THREADED: Final[int] = 1
+
+
 async def _sync_sources(
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
@@ -209,15 +212,9 @@ async def _sync_sources(
             "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
             r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
             "--use-json-log",
-            # make sure stats can be noticed at the end
-            # "--stats-log-level",
-            # "INFO",
             # frequent polling for faster progress updates
             "--stats",
             "200ms",
-            # makes sure the stats are only sending the summary
-            # "--stats-one-line",
-            # "--progress",
             "--verbose",
             "sync",
             shlex.quote(source),
@@ -225,6 +222,8 @@ async def _sync_sources(
             # filter options
             *_get_exclude_filters(exclude_patterns),
             "--links",
+            "--multi-thread-streams",
+            f"{_DISABLE_RCLONE_MULTI_THREADED}",
         )
 
         async with progress_bar.sub_progress(
