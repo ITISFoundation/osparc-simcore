@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io web API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.5.1"
+    "version": "0.6.0"
   },
   "paths": {
     "/v0/meta": {
@@ -2530,6 +2530,612 @@
           }
         ]
       }
+    },
+    "/v0/studies": {
+      "get": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "List Studies",
+        "description": "New in *version 0.6*",
+        "operationId": "list_studies",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "default": 50
+            },
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "Offset",
+              "default": 0
+            },
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Study_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/studies/{study_id}": {
+      "get": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Get Study",
+        "description": "New in *version 0.6*",
+        "operationId": "get_study",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            },
+            "name": "study_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Study"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Study not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/studies/{study_id}:clone": {
+      "post": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Clone Study",
+        "description": "New in *version 0.6*",
+        "operationId": "clone_study",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            },
+            "name": "study_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Study"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Study not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/studies/{study_id}/ports": {
+      "get": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "List Study Ports",
+        "description": "Lists metadata on ports of a given study\n\nNew in *version 0.6*",
+        "operationId": "list_study_ports",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            },
+            "name": "study_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnePage_StudyPort_"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Study not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/studies/{study_id}/jobs": {
+      "post": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Create Study Job",
+        "description": "New in *version 0.6*",
+        "operationId": "create_study_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            },
+            "name": "study_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobInputs"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/studies/{study_id}/jobs/{job_id}": {
+      "delete": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Delete Study Job",
+        "description": "Deletes an existing study job\n\nNew in *version 0.6*",
+        "operationId": "delete_study_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            },
+            "name": "study_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/studies/{study_id}/jobs/{job_id}:start": {
+      "post": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Start Study Job",
+        "description": "New in *version 0.6*",
+        "operationId": "start_study_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            },
+            "name": "study_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            },
+            "name": "job_id",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "Cluster Id"
+            },
+            "name": "cluster_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/studies/{study_id}/jobs/{job_id}:stop": {
+      "post": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Stop Study Job",
+        "description": "New in *version 0.6*",
+        "operationId": "stop_study_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            },
+            "name": "study_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/studies/{study_id}/jobs/{job_id}:inspect": {
+      "post": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Inspect Study Job",
+        "description": "New in *version 0.6*",
+        "operationId": "inspect_study_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            },
+            "name": "study_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/studies/{study_id}/jobs/{job_id}/outputs": {
+      "post": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Get Study Job Outputs",
+        "description": "New in *version 0.6*",
+        "operationId": "get_study_job_outputs",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Study Id"
+            },
+            "name": "study_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOutputs"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -2869,6 +3475,37 @@
           "started_at": "2021-04-01 07:16:43.670610"
         }
       },
+      "Links": {
+        "properties": {
+          "first": {
+            "type": "string",
+            "title": "First",
+            "example": "/api/v1/users?limit=1&offset1"
+          },
+          "last": {
+            "type": "string",
+            "title": "Last",
+            "example": "/api/v1/users?limit=1&offset1"
+          },
+          "self": {
+            "type": "string",
+            "title": "Self",
+            "example": "/api/v1/users?limit=1&offset1"
+          },
+          "next": {
+            "type": "string",
+            "title": "Next",
+            "example": "/api/v1/users?limit=1&offset1"
+          },
+          "prev": {
+            "type": "string",
+            "title": "Prev",
+            "example": "/api/v1/users?limit=1&offset1"
+          }
+        },
+        "type": "object",
+        "title": "Links"
+      },
       "Meta": {
         "properties": {
           "name": {
@@ -2944,6 +3581,63 @@
         ],
         "title": "OnePage[SolverPort]",
         "description": "A single page is used to envelope a small sequence that does not require\npagination\n\nIf total >  MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE, we should consider extending this\nentrypoint to proper pagination"
+      },
+      "OnePage_StudyPort_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StudyPort"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "OnePage[StudyPort]",
+        "description": "A single page is used to envelope a small sequence that does not require\npagination\n\nIf total >  MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE, we should consider extending this\nentrypoint to proper pagination"
+      },
+      "Page_Study_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Study"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "links"
+        ],
+        "title": "Page[Study]"
       },
       "Profile": {
         "properties": {
@@ -3130,6 +3824,68 @@
           "kind"
         ],
         "title": "SolverPort",
+        "example": {
+          "key": "input_2",
+          "kind": "input",
+          "content_schema": {
+            "title": "Sleep interval",
+            "type": "integer",
+            "x_unit": "second",
+            "minimum": 0,
+            "maximum": 5
+          }
+        }
+      },
+      "Study": {
+        "properties": {
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uid"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uid"
+        ],
+        "title": "Study"
+      },
+      "StudyPort": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Key name",
+            "description": "port identifier name.Correponds to the UUID of the parameter/probe node in the study"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "input",
+              "output"
+            ],
+            "title": "Kind"
+          },
+          "content_schema": {
+            "type": "object",
+            "title": "Content Schema",
+            "description": "jsonschema for the port's value. SEE https://json-schema.org"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "kind"
+        ],
+        "title": "StudyPort",
         "example": {
           "key": "input_2",
           "kind": "input",
