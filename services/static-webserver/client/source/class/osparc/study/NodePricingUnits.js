@@ -18,7 +18,12 @@
 qx.Class.define("osparc.study.NodePricingUnits", {
   extend: qx.ui.container.Composite,
 
-  construct: function(studyId, nodeId, nodeData, node) {
+  /**
+    * @param studyId {String}
+    * @param nodeId {String}
+    * @param node {osparc.data.model.Node || Object}
+    */
+  construct: function(studyId, nodeId, node) {
     this.base(arguments);
 
     this.set({
@@ -27,14 +32,14 @@ qx.Class.define("osparc.study.NodePricingUnits", {
 
     this.__studyId = studyId;
     this.__nodeId = nodeId;
-    if (nodeData) {
-      this.__nodeKey = nodeData["key"];
-      this.__nodeVersion = nodeData["version"];
-      this.__nodeLabel = nodeData["label"];
-    } else if (node) {
+    if (node instanceof osparc.data.model.Node) {
       this.__nodeKey = node.getKey();
       this.__nodeVersion = node.getVersion();
       this.__nodeLabel = node.getLabel();
+    } else {
+      this.__nodeKey = node["key"];
+      this.__nodeVersion = node["version"];
+      this.__nodeLabel = node["label"];
     }
   },
 

@@ -44,7 +44,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
 
       const node = this.getNode();
 
-      const nodePricingUnits = new osparc.study.NodePricingUnits(this.__studyData["uuid"], node.getNodeId(), null, node);
+      const nodePricingUnits = new osparc.study.NodePricingUnits(node.getStudy().getUuid(), node.getNodeId(), node);
       nodePricingUnits.showPricingUnits(false);
       this._add(nodePricingUnits);
     }
