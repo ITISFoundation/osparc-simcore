@@ -42,11 +42,41 @@ qx.Class.define("osparc.node.TierSelectionView", {
       });
       this._add(instructionsLabel);
 
-      const node = this.getNode();
+      const tierBox = new qx.ui.form.SelectBox().set({
+        allowGrowX: false
+      });
+      this._add(tierBox);
 
-      const nodePricingUnits = new osparc.study.NodePricingUnits(node.getStudy().getUuid(), node.getNodeId(), node);
-      nodePricingUnits.showPricingUnits(false);
-      this._add(nodePricingUnits);
+      const node = this.getNode();
+      const plansParams = {
+        url: osparc.data.Resources.getServiceUrl(
+          node.getKey(),
+          node.getVersion()
+        )
+      };
+      osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
+        .then(pricingPlans => {
+          if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
+            const pUnits = pricingPlans["pricingUnits"];
+            pUnits.forEach(pUnit => {
+              const tItem = new qx.ui.form.ListItem(pUnit.unitName, null, pUnit.pricingUnitId);
+              tierBox.add(tItem);
+            });
+            const unitParams = {
+              url: {
+                studyId: node.getStudy().getUuid(),
+                nodeId: node.getNodeId()
+              }
+            };
+            osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
+              .then(preselectedPricingUnit => {
+                if (preselectedPricingUnit && preselectedPricingUnit["pricingUnitId"]) {
+                  const tierFound = tierBox.getSelectables().find(t => t.getModel() === preselectedPricingUnit["pricingUnitId"]);
+                  tierBox.setSelection([tierFound]);
+                }
+              });
+          }
+        });
     }
   }
 });
