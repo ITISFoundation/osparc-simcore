@@ -1336,13 +1336,15 @@ async def test_upload_file_is_directory_and_remove_content(
 
 @pytest.mark.parametrize("files_in_dir", [1002])
 async def test_listing_more_than_1000_objects_in_bucket(
-    directory_with_files: Callable[..., AbstractAsyncContextManager[FileUploadSchema]],
+    create_directory_with_files: Callable[
+        ..., AbstractAsyncContextManager[FileUploadSchema]
+    ],
     client: TestClient,
     location_id: LocationID,
     user_id: UserID,
     files_in_dir: int,
 ):
-    async with directory_with_files(
+    async with create_directory_with_files(
         dir_name="some-random",
         file_size_in_dir=parse_obj_as(ByteSize, "1"),
         subdir_count=1,

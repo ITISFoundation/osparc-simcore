@@ -125,7 +125,7 @@ async def test_create_soft_link(
 
     # can find
     files_list = await simcore_s3_dsm.search_owned_files(
-        user_id, f"api/{api_file_id}/{file_name}", None
+        user_id, f"api/{api_file_id}/{file_name}", None, limit=50, offset=0
     )
     assert len(files_list) == 1
     assert files_list[0] == link_file
