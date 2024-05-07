@@ -160,7 +160,7 @@ test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_USER_INPUT_FILE) ## test 
 		--product-url=$$PRODUCT_URL \
 		--user-name=$$USER_NAME \
 		--password=$$PASSWORD \
-		--file-size=$$LARGE_FILE_SIZE \
+		--large-file-size=$$LARGE_FILE_SIZE \
 		--service-key=jupyter-math \
 		$$BILLABLE_FLAG \
 		--browser chromium \
