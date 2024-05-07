@@ -36,10 +36,14 @@ qx.Class.define("osparc.node.TierSelectionView", {
         font: "text-14"
       }));
 
+      const tiersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      this._add(tiersLayout);
+
       const tierBox = new qx.ui.form.SelectBox().set({
-        allowGrowX: false
+        allowGrowX: false,
+        allowGrowY: false
       });
-      this._add(tierBox);
+      tiersLayout.add(tierBox);
 
       const node = this.getNode();
       const plansParams = {
@@ -68,6 +72,33 @@ qx.Class.define("osparc.node.TierSelectionView", {
                   const tierFound = tierBox.getSelectables().find(t => t.getModel() === preselectedPricingUnit["pricingUnitId"]);
                   tierBox.setSelection([tierFound]);
                 }
+              })
+              .finally(() => {
+                const pUnitUIs = [];
+                pUnits.forEach(pUnit => {
+                  const pUnitUI = new osparc.study.PricingUnit(pUnit).set({
+                    allowGrowX: false
+                  });
+                  pUnitUI.exclude();
+                  tiersLayout.add(pUnitUI);
+                  pUnitUIs.push(pUnitUI);
+                });
+                const showSelectedTier = pricingUnitId => {
+                  pUnitUIs.forEach(pUnitUI => pUnitUI.exclude());
+                  if (pricingUnitId) {
+                    const pUnitFound = pUnitUIs.find(pUnitUI => pUnitUI.getUnitData().getPricingUnitId() === pricingUnitId)
+                    if (pUnitFound) {
+                      pUnitFound.show();
+                    }
+                  }
+                }
+                showSelectedTier(tierBox.getSelection() && tierBox.getSelection()[0].getModel());
+                tierBox.addListener("changeSelection", e => {
+                  const selection = e.getData();
+                  if (selection.length) {
+                    showSelectedTier(selection[0].getModel());
+                  }
+                }, this);
               });
           }
         });
