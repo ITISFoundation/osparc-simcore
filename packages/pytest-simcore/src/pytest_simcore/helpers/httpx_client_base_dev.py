@@ -14,7 +14,7 @@ from .httpx_calls_capture_model import HttpApiCallCaptureModel, get_captured
 _logger = logging.getLogger(__name__)
 
 
-class AsyncClientForDevelopmentOnly(httpx.AsyncClient):
+class AsyncClientCaptureWrapper(httpx.AsyncClient):
     """
     Adds captures mechanism
     """
