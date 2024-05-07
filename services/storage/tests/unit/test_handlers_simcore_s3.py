@@ -446,7 +446,7 @@ async def user_files_ids(
     expected_number_of_user_files: int,
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
 ) -> list[SimcoreS3FileID]:
-    file_ids = []
+    _files_ids_sorted_by_creation = []
     assert expected_number_of_user_files >= 0
 
     for _ in range(expected_number_of_user_files):
@@ -456,9 +456,9 @@ async def user_files_ids(
             sha256_checksum=faker.sha256(),
         )
         assert file_path.exists()
-        file_ids.append(file_id)
+        _files_ids_sorted_by_creation.append(file_id)
 
-    return file_ids
+    return _files_ids_sorted_by_creation
 
 
 @pytest.fixture
@@ -507,7 +507,7 @@ async def test_search_files_with_queries(
     expected = user_files_ids[
         query_params.offset : query_params.offset + query_params.limit
     ]
-    assert {_.file_uuid for _ in found} == set(expected)
+    assert [_.file_uuid for _ in found] == expected
 
 
 @pytest.mark.parametrize("search_startswith", [True, False])

@@ -77,32 +77,36 @@ async def list_filter_with_partial_file_id(
     limit: int | None = None,
     offset: int | None = None,
 ) -> list[FileMetaDataAtDB]:
-    stmt = sa.select(file_meta_data).where(
-        (
-            (file_meta_data.c.user_id == f"{user_id}")
-            | file_meta_data.c.project_id.in_(f"{pid}" for pid in project_ids)
+    stmt = (
+        sa.select(file_meta_data)
+        .where(
+            (
+                (file_meta_data.c.user_id == f"{user_id}")
+                | file_meta_data.c.project_id.in_(f"{pid}" for pid in project_ids)
+            )
+            & (
+                file_meta_data.c.file_id.startswith(file_id_prefix)
+                if file_id_prefix
+                else True
+            )
+            & (
+                file_meta_data.c.file_id.ilike(f"%{partial_file_id}%")
+                if partial_file_id
+                else True
+            )
+            & (
+                file_meta_data.c.is_directory.is_(False)  # noqa FBT003
+                if only_files
+                else True
+            )
+            & (
+                file_meta_data.c.sha256_checksum == f"{sha256_checksum}"
+                if sha256_checksum
+                else True
+            )
         )
-        & (
-            file_meta_data.c.file_id.startswith(file_id_prefix)
-            if file_id_prefix
-            else True
-        )
-        & (
-            file_meta_data.c.file_id.ilike(f"%{partial_file_id}%")
-            if partial_file_id
-            else True
-        )
-        & (
-            file_meta_data.c.is_directory.is_(False)  # noqa FBT003
-            if only_files
-            else True
-        )
-        & (
-            file_meta_data.c.sha256_checksum == f"{sha256_checksum}"
-            if sha256_checksum
-            else True
-        )
-    )
+        .order_by(file_meta_data.c.created_at.asc())
+    )  # oldest first
 
     # NOTE: for the moment optional until list_files gets paginated as well
     if limit is not None:
