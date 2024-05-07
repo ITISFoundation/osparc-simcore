@@ -7,15 +7,15 @@ certifi==2024.2.2
     #   osparc-client
 click==8.1.7
     # via typer
-exceptiongroup==1.2.0
+exceptiongroup==1.2.1
     # via anyio
 h11==0.14.0
     # via httpcore
-httpcore==1.0.4
+httpcore==1.0.5
     # via httpx
 httpx==0.27.0
     # via osparc
-idna==3.6
+idna==3.7
     # via
     #   anyio
     #   httpx
@@ -28,12 +28,15 @@ nest-asyncio==1.6.0
 osparc==0.6.5
 osparc-client==0.6.5
     # via osparc
-pydantic==1.10.14
-pygments==2.17.2
+pydantic==1.10.15
+pygments==2.18.0
     # via rich
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via osparc-client
 rich==13.7.1
+    # via typer
+shellingham==1.5.4
+    # via typer
 six==1.16.0
     # via
     #   osparc-client
@@ -44,10 +47,10 @@ sniffio==1.3.1
     #   httpx
 tenacity==8.2.3
     # via osparc
-tqdm==4.66.2
+tqdm==4.66.4
     # via osparc
-typer==0.9.0
-typing-extensions==4.10.0
+typer==0.12.3
+typing-extensions==4.11.0
     # via
     #   anyio
     #   pydantic
