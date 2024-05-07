@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Final, Literal
+from typing import Any, Literal
 from uuid import uuid4
 
 import pytest
@@ -1355,11 +1355,9 @@ async def test_listing_more_than_1000_objects_in_bucket(
 
 
 async def test_listing_with_project_id_filter(
-    directory_with_files: Callable[..., AbstractAsyncContextManager[FileUploadSchema]],
     client: TestClient,
     location_id: LocationID,
     user_id: UserID,
-    project_id: ProjectID,
     faker: Faker,
     random_project_with_files: Callable[
         [int, tuple[ByteSize, ...]],
@@ -1370,45 +1368,30 @@ async def test_listing_with_project_id_filter(
             ]
         ],
     ],
-    tmp_path: Path,
 ):
-    n_files: Final[int] = 10
-    dir_name: Final[str] = "mydir"
-    dummy_project_id: ProjectID = faker.uuid4()
-
-    f = tmp_path / "myfile"
-    f.write_text("hello")
-
-    file, _ = await random_project_with_files(
+    project, src_projects_list = await random_project_with_files(
         num_nodes=1,
-        file_sizes=(ByteSize(1), ByteSize(2)),
-        file_checksums=(
-            SHA256Str("4b21854e-c0dd-461a-946b-496e02dedfd1"),
-            SHA256Str("f9617ff4-d808-4c6f-b42b-1a3fb11e63e1"),
-        ),
+        file_sizes=(ByteSize(1),),
+        file_checksums=(SHA256Str(faker.sha256()),),
     )
+    _, _ = await random_project_with_files(
+        num_nodes=1,
+        file_sizes=(ByteSize(1),),
+        file_checksums=(SHA256Str(faker.sha256()),),
+    )
+    assert len(src_projects_list.keys()) > 0
+    node_id = list(src_projects_list.keys())[0]
+    project_files_in_db = set(src_projects_list[node_id])
 
-    async with directory_with_files(
-        dir_name=dir_name,
-        file_size_in_dir=parse_obj_as(ByteSize, "1"),
-        subdir_count=1,
-        file_count=n_files,
-    ) as directory_file_upload:
-        async with directory_with_files(
-            dir_name=dir_name,
-            file_size_in_dir=parse_obj_as(ByteSize, "1"),
-            subdir_count=1,
-            file_count=n_files,
-            project_id=dummy_project_id,
-        ) as directory_file_upload:
-            assert directory_file_upload.urls[0].path
-            directory_file_id = directory_file_upload.urls[0].path.strip("/")
-            list_of_files: list[FileMetaDataGet] = await __list_files(
-                client=client,
-                user_id=user_id,
-                location_id=location_id,
-                expand_dirs=True,
-                path=directory_file_id,
-                project_id=project_id,
-            )
-            assert len(list_of_files) == n_files
+    assert client.app
+    url = (
+        client.app.router["get_files_metadata"]
+        .url_for(location_id=f"{location_id}")
+        .with_query(user_id=user_id, project_id=f"{project['uuid']}")
+    )
+    response = await client.get(f"{url}")
+    data, _ = await assert_status(response, status.HTTP_200_OK)
+
+    list_of_files = parse_obj_as(list[FileMetaDataGet], data)
+
+    assert project_files_in_db == {file.file_uuid for file in list_of_files}
