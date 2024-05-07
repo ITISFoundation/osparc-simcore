@@ -1351,3 +1351,48 @@ async def test_listing_more_than_1000_objects_in_bucket(
         )
         # for now no more than 1000 objects will be returned
         assert len(list_of_files) == 1000
+
+
+async def test_listing_with_project_id_filter(
+    directory_with_files: Callable[..., AbstractAsyncContextManager[FileUploadSchema]],
+    client: TestClient,
+    location_id: LocationID,
+    user_id: UserID,
+    project_id: ProjectID,
+    faker: Faker,
+    upload_file,
+    tmp_path: Path,
+):
+    n_files: Final[int] = 10
+    dir_name: Final[str] = "mydir"
+    dummy_project_id: ProjectID = faker.uuid4()
+
+    f = tmp_path / "myfile"
+    f.write_text("hello")
+
+    await upload_file(f, uuid4())
+
+    async with directory_with_files(
+        dir_name=dir_name,
+        file_size_in_dir=parse_obj_as(ByteSize, "1"),
+        subdir_count=1,
+        file_count=n_files,
+    ) as directory_file_upload:
+        async with directory_with_files(
+            dir_name=dir_name,
+            file_size_in_dir=parse_obj_as(ByteSize, "1"),
+            subdir_count=1,
+            file_count=n_files,
+            project_id=dummy_project_id,
+        ) as directory_file_upload:
+            assert directory_file_upload.urls[0].path
+            directory_file_id = directory_file_upload.urls[0].path.strip("/")
+            list_of_files: list[FileMetaDataGet] = await __list_files(
+                client=client,
+                user_id=user_id,
+                location_id=location_id,
+                expand_dirs=True,
+                path=directory_file_id,
+                project_id=project_id,
+            )
+            assert len(list_of_files) == n_files
