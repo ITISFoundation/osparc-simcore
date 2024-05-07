@@ -36,7 +36,7 @@ qx.Class.define("osparc.node.UpdateResourceLimitsView", {
       this.__resourceFields = [];
       this._removeAll();
 
-      this._add(new qx.ui.basic.Label(this.tr("Update Service Limits")).set({
+      this._add(new qx.ui.basic.Label(this.tr("Resource Limits")).set({
         font: "text-14"
       }));
 

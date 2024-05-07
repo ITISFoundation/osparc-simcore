@@ -32,7 +32,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
     __populateLayout: function() {
       this._removeAll();
 
-      this._add(new qx.ui.basic.Label(this.tr("Tier Options")).set({
+      this._add(new qx.ui.basic.Label(this.tr("Tiers")).set({
         font: "text-14"
       }));
 
