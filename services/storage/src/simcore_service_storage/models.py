@@ -21,6 +21,7 @@ from models_library.projects_nodes_io import (
     StorageFileID,
 )
 from models_library.users import UserID
+from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -202,11 +203,15 @@ class DeleteFolderQueryParams(StorageQueryParamsBase):
 
 
 class SearchFilesQueryParams(StorageQueryParamsBase):
-    startswith: str = ""
+    startswith: str | None = None
     sha256_checksum: SHA256Str | None = None
     kind: Literal["owned"]
     limit: int = Field(default=50, ge=1, le=100, description="Page size limit")
-    offset: int = Field(0, ge=0, description="Page offset")
+    offset: int = Field(default=0, ge=0, description="Page offset")
+
+    _empty_is_none = validator("startswith", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )
 
 
 class LocationPathParams(BaseModel):

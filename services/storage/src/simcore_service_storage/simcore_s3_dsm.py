@@ -730,11 +730,12 @@ class SimcoreS3DataManager(BaseDataManager):
 
     async def search_owned_files(
         self,
+        *,
         user_id: UserID,
-        file_id_prefix: str,
-        sha256_checksum: SHA256Str | None,
-        limit: int,
-        offset: int,
+        file_id_prefix: str | None,
+        sha256_checksum: SHA256Str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ):
         return await self._search_files(
             user_id=user_id,
@@ -750,10 +751,10 @@ class SimcoreS3DataManager(BaseDataManager):
         *,
         user_id: UserID,
         project_ids: list[ProjectID],
-        file_id_prefix: str,
-        sha256_checksum: SHA256Str | None,
-        limit: int,
-        offset: int,
+        file_id_prefix: str | None,
+        sha256_checksum: SHA256Str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> list[FileMetaData]:
         # NOTE: this entrypoint is solely used by api-server. It is the exact
         # same as list_files but does not rename the found files with project
