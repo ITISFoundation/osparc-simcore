@@ -405,7 +405,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__addTopBarSpacer(topBar);
 
-      this.__populateSecondPanel();
+      this.__populateSecondaryColumn();
     },
 
     __initMainView: function() {
@@ -496,7 +496,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       studyTreeItem.addListener("changeSelectedNode", () => {
         nodesTree.resetSelection();
-        this.__populateSecondPanel(this.getStudy());
+        this.__populateSecondaryColumn(this.getStudy());
         this.__evalIframe();
         this.__openWorkbenchTab();
         this.__loggerView.setCurrentNodeId(null);
@@ -507,7 +507,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const workbench = this.getStudy().getWorkbench();
         const node = workbench.getNode(nodeId);
         if (node) {
-          this.__populateSecondPanel(node);
+          this.__populateSecondaryColumn(node);
           this.__openIframeTab(node);
         }
         this.__loggerView.setCurrentNodeId(nodeId);
@@ -524,7 +524,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__nodesTree.nodeSelected(nodeId);
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
-            this.__populateSecondPanel(node);
+            this.__populateSecondaryColumn(node);
             this.__evalIframe(node);
             this.__loggerView.setCurrentNodeId(nodeId);
             this.fireDataEvent("changeSelectedNode", nodeId);
@@ -541,7 +541,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__nodesTree.nodeSelected(nodeId);
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
-            this.__populateSecondPanel(node);
+            this.__populateSecondaryColumn(node);
             this.__openIframeTab(node);
             this.__loggerView.setCurrentNodeId(nodeId);
           }
@@ -555,7 +555,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           if (node) {
-            this.__populateSecondPanel(node);
+            this.__populateSecondaryColumn(node);
             this.__openIframeTab(node);
             node.getLoadingPage().maximizeIFrame(true);
             node.getIFrame().maximizeIFrame(true);
@@ -784,7 +784,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__studyTreeItem.selectStudyItem();
       } else {
         const node = study.getWorkbench().getNode(nodeId);
-        this.__populateSecondPanel(node);
+        this.__populateSecondaryColumn(node);
       }
     },
 
@@ -866,7 +866,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __populateSecondPanel: function(node) {
+    __populateSecondaryColumn: function(node) {
       [
         this.__studyOptionsPage,
         this.__fileInfoPage,
@@ -880,17 +880,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       tabViewLeftPanel.setSelection([this.__nodesPage]);
 
       if (node instanceof osparc.data.model.Study) {
-        this.__populateSecondPanelStudy(node);
+        this.__populateSecondaryColumnStudy(node);
       } else if (node && node.isFilePicker()) {
-        this.__populateSecondPanelFilePicker(node);
+        this.__populateSecondaryColumnFilePicker(node);
       } else if (node && node.isParameter()) {
-        this.__populateSecondPanelParameter(node);
+        this.__populateSecondaryColumnParameter(node);
       } else if (node) {
-        this.__populateSecondPanelNode(node);
+        this.__populateSecondaryColumnNode(node);
       }
     },
 
-    __populateSecondPanelStudy: function(study) {
+    __populateSecondaryColumnStudy: function(study) {
       this.__studyOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__studyOptionsPage]);
 
@@ -1059,7 +1059,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return iterationsSection;
     },
 
-    __populateSecondPanelFilePicker: function(filePicker) {
+    __populateSecondaryColumnFilePicker: function(filePicker) {
       const fpView = new osparc.file.FilePicker(filePicker, "workbench");
       if (osparc.file.FilePicker.hasOutputAssigned(filePicker.getOutputs())) {
         this.__fileInfoPage.getChildControl("button").show();
@@ -1084,10 +1084,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         "itemReset",
         "itemSelected",
         "fileUploaded"
-      ].forEach(ev => fpView.addListener(ev, () => this.__populateSecondPanel(filePicker)));
+      ].forEach(ev => fpView.addListener(ev, () => this.__populateSecondaryColumn(filePicker)));
     },
 
-    __populateSecondPanelParameter: function(parameter) {
+    __populateSecondaryColumnParameter: function(parameter) {
       this.__serviceOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
@@ -1098,7 +1098,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __populateSecondPanelNode: async function(node) {
+    __populateSecondaryColumnNode: async function(node) {
       this.__serviceOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
@@ -1161,7 +1161,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         "bootModeChanged",
         "limitsChanged"
       ].forEach(eventName => {
-        nodeOptions.addListener(eventName, () => this.__populateSecondPanel(node));
+        nodeOptions.addListener(eventName, () => this.__populateSecondaryColumn(node));
       });
 
       return nodeOptions;
