@@ -510,13 +510,9 @@ async def test_search_files_with_queries(
     assert {_.file_uuid for _ in found} == set(expected)
 
 
-@pytest.mark.parametrize(
-    "search_startswith", pytest.param(True, False, id="with_startwith_")
-)
-@pytest.mark.parametrize(
-    "search_sha256_checksum", pytest.param(True, False, id="with_checksum_")
-)
-@pytest.mark.parametrize("kind", pytest.param("owned", "read", None, id="kind_"))
+@pytest.mark.parametrize("search_startswith", [True, False])
+@pytest.mark.parametrize("search_sha256_checksum", [True, False])
+@pytest.mark.parametrize("kind", ["owned", "read", None])
 async def test_search_files(
     client: TestClient,
     user_id: UserID,
