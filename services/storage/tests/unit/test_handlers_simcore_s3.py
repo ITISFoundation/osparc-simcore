@@ -510,9 +510,13 @@ async def test_search_files_with_queries(
     assert {_.file_uuid for _ in found} == set(expected)
 
 
-@pytest.mark.parametrize("search_startswith", [True, False])
-@pytest.mark.parametrize("search_sha256_checksum", [True, False])
-@pytest.mark.parametrize("kind", ["owned", "read", None])
+@pytest.mark.parametrize(
+    "search_startswith", pytest.param(True, False, id="with_startwith_")
+)
+@pytest.mark.parametrize(
+    "search_sha256_checksum", pytest.param(True, False, id="with_checksum_")
+)
+@pytest.mark.parametrize("kind", pytest.param("owned", "read", None, id="kind_"))
 async def test_search_files(
     client: TestClient,
     user_id: UserID,
@@ -530,8 +534,13 @@ async def test_search_files(
         client.app.router["search_files"]
         .url_for()
         .with_query(
-            user_id=user_id,
-            kind=kind,
+            jsonable_encoder(
+                {
+                    "user_id": user_id,
+                    "kind": kind,
+                },
+                exclude_none=True,
+            )
         )
     )
     response = await client.post(f"{url}")
