@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
 from time import perf_counter
-from typing import Literal
+from typing import Any, Final, Literal
 from uuid import uuid4
 
 import pytest
@@ -36,6 +36,7 @@ from models_library.api_schemas_storage import (
     SoftCopyBody,
     UploadedPart,
 )
+from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -1360,7 +1361,15 @@ async def test_listing_with_project_id_filter(
     user_id: UserID,
     project_id: ProjectID,
     faker: Faker,
-    upload_file,
+    random_project_with_files: Callable[
+        [int, tuple[ByteSize, ...]],
+        Awaitable[
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
+            ]
+        ],
+    ],
     tmp_path: Path,
 ):
     n_files: Final[int] = 10
@@ -1370,7 +1379,14 @@ async def test_listing_with_project_id_filter(
     f = tmp_path / "myfile"
     f.write_text("hello")
 
-    await upload_file(f, uuid4())
+    file, _ = await random_project_with_files(
+        num_nodes=1,
+        file_sizes=(ByteSize(1), ByteSize(2)),
+        file_checksums=(
+            SHA256Str("4b21854e-c0dd-461a-946b-496e02dedfd1"),
+            SHA256Str("f9617ff4-d808-4c6f-b42b-1a3fb11e63e1"),
+        ),
+    )
 
     async with directory_with_files(
         dir_name=dir_name,
