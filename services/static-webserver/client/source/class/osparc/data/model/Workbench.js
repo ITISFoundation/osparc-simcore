@@ -49,6 +49,7 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   events: {
+    "updateStudyDocument": "qx.event.type.Event",
     "restartAutoSaveTimer": "qx.event.type.Event",
     "pipelineChanged": "qx.event.type.Event",
     "reloadModel": "qx.event.type.Event",
@@ -259,6 +260,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
+      node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
       return node;
     },
 
@@ -286,9 +288,9 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
       };
       await osparc.data.Resources.fetch("studies", "addNode", params).catch(err => {
-        let errorMsg = this.tr("Error creating ") + key + ":" + version;
+        let errorMsg = qx.locale.Manager.tr("Error creating ") + key + ":" + version;
         if ("status" in err && err.status === 406) {
-          errorMsg = key + ":" + version + this.tr(" is retired");
+          errorMsg = key + ":" + version + qx.locale.Manager.tr(" is retired");
         }
         const errorMsgData = {
           msg: errorMsg,

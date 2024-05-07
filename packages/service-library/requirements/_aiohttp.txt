@@ -29,7 +29,7 @@ idna==3.7
     #   yarl
 isodate==0.6.1
     # via openapi-core
-jsonschema==4.21.1
+jsonschema==4.22.0
     # via
     #   openapi-core
     #   openapi-schema-validator
@@ -91,7 +91,7 @@ sqlalchemy==1.4.52
     # via aiopg
 urllib3==2.2.1
     # via requests
-werkzeug==3.0.2
+werkzeug==3.0.3
     # via openapi-core
 yarl==1.9.4
     # via aiohttp

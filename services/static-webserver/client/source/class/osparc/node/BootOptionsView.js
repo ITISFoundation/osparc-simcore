@@ -61,11 +61,12 @@ qx.Class.define("osparc.node.BootOptionsView", {
           node.setBootOptions({
             "boot_mode": newBootModeId
           });
+          node.fireEvent("updateStudyDocument");
           setTimeout(() => {
             buttonsLayout.setEnabled(true);
             node.requestStartNode();
             this.fireEvent("bootModeChanged");
-          }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL*2);
+          }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
         }
       }, this);
       buttonsLayout.add(bootModeSB);

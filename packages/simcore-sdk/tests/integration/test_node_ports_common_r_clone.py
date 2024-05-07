@@ -16,6 +16,7 @@ import aioboto3
 import aiofiles
 import pytest
 from faker import Faker
+from models_library.progress_bar import ProgressReport
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
@@ -50,9 +51,7 @@ async def cleanup_bucket_after_test(r_clone_settings: RCloneSettings) -> None:
         endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT,
     ) as s_3:
         bucket = await s_3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
-        s3_objects = []
-        async for s3_object in bucket.objects.all():
-            s3_objects.append(s3_object)  # noqa: PERF402
+        s3_objects = [_ async for _ in bucket.objects.all()]
         await asyncio.gather(*[o.delete() for o in s3_objects])
 
 
@@ -82,7 +81,7 @@ async def _create_random_binary_file(
     file_path: Path,
     file_size: ByteSize,
     # NOTE: bigger files get created faster with bigger chunk_size
-    chunk_size: int = parse_obj_as(ByteSize, "1mib"),  # noqa: B008
+    chunk_size: int = parse_obj_as(ByteSize, "1mib"),
 ):
     async with aiofiles.open(file_path, mode="wb") as file:
         bytes_written = 0
@@ -134,11 +133,11 @@ async def _upload_local_dir_to_s3(
     # Since using moto to mock the S3 api, downloading is way to fast.
     # Progress behaves as expected with CEPH and AWS S3 backends.
 
-    progress_entries: list[float] = []
+    progress_entries: list[ProgressReport] = []
 
-    async def _report_progress_upload(progress_value: float) -> None:
-        print(">>>|", progress_value, "| ⏫")
-        progress_entries.append(progress_value)
+    async def _report_progress_upload(report: ProgressReport) -> None:
+        print(">>>|", report, "| ⏫")
+        progress_entries.append(report)
 
     async with ProgressBarData(
         num_steps=1,
@@ -164,8 +163,8 @@ async def _download_from_s3_to_local_dir(
     destination_dir: Path,
     faker: Faker,
 ) -> None:
-    async def _report_progress_download(progress_value: float) -> None:
-        print(">>>|", progress_value, "| ⏬")
+    async def _report_progress_download(report: ProgressReport) -> None:
+        print(">>>|", report, "| ⏬")
 
     async with ProgressBarData(
         num_steps=1,
@@ -368,7 +367,7 @@ async def test_overwrite_an_existing_file_and_sync_again(
     assert len(generated_file_names) > 0
 
     # get s3 reference link
-    directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path(""))
+    directory_uuid = create_valid_file_uuid(f"{dir_locally_created_files}", Path())
     s3_directory_link = _fake_s3_link(r_clone_settings, directory_uuid)
 
     # sync local to remote and check

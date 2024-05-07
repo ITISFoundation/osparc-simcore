@@ -24,6 +24,8 @@ qx.Class.define("osparc.ui.basic.PoweredByOsparc", {
   construct: function() {
     this.base(arguments);
 
+    osparc.utils.Utils.setIdToWidget(this, "poweredByOsparc");
+
     this._setLayout(new qx.ui.layout.VBox(2));
 
     this.set({
