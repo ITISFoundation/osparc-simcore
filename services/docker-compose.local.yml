@@ -12,7 +12,6 @@
 #
 version: "3.8"
 x-common-environment: &common_environment
-  SC_BOOT_MODE: ${SC_BOOT_MODE:-default}
   SWARM_STACK_NAME : ${SWARM_STACK_NAME:-simcore_local}
 services:
   api-server:
