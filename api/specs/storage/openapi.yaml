@@ -8,7 +8,7 @@ info:
   license:
     name: MIT
     url: https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE
-  version: 0.4.0
+  version: 0.3.0
 servers:
 - url: /
   description: 'Default server: requests directed to serving url'
@@ -652,14 +652,14 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/simcore-s3/files/metadata:search_owned:
+  /v0/simcore-s3/files/metadata:search:
     post:
       tags:
       - simcore-s3
-      summary: search for files starting with
+      summary: search for owned files
       description: search for files starting with `startswith` and/or matching a sha256_checksum
         in the file_meta_data table
-      operationId: search_owned_files
+      operationId: search_files
       parameters:
       - required: true
         schema:
@@ -668,6 +668,14 @@ paths:
           title: User Id
           minimum: 0
         name: user_id
+        in: query
+      - required: true
+        schema:
+          type: string
+          enum:
+          - owned
+          title: Kind
+        name: kind
         in: query
       - required: false
         schema:
@@ -682,6 +690,27 @@ paths:
           pattern: ^[a-fA-F0-9]{64}$
           title: Sha256 Checksum
         name: sha256_checksum
+        in: query
+      - description: Page size limit
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          title: Limit
+          description: Page size limit
+          default: 50
+        name: limit
+        in: query
+      - description: Page offset
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          title: Offset
+          description: Page offset
+          default: 0
+        name: offset
         in: query
       responses:
         '200':

@@ -351,6 +351,8 @@ async def search_files(
     kind: Literal["owned"],
     startswith: str = "",
     sha256_checksum: SHA256Str | None = None,
+    limit: int = Query(50, ge=1, le=100, description="Page size limit"),
+    offset: int = Query(0, ge=0, description="Page offset"),
 ):
     """search for files starting with `startswith` and/or matching a sha256_checksum in the file_meta_data table"""
 
