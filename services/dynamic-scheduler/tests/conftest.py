@@ -1,6 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
+import string
 from collections.abc import AsyncIterator
 from pathlib import Path
 
@@ -45,13 +46,17 @@ def installed_package_dir() -> Path:
 @pytest.fixture
 def docker_compose_service_dynamic_scheduler_env_vars(
     services_docker_compose_file: Path,
+    env_devel_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     """env vars injected at the docker-compose"""
 
-    dynamic_scheduler = yaml.safe_load(services_docker_compose_file.read_text())[
-        "services"
-    ]["dynamic-schdlr"]
-    envs: EnvVarsDict = dynamic_scheduler.get("environment", {})
+    content = yaml.safe_load(services_docker_compose_file.read_text())
+    environment = content["services"]["dynamic-schdlr"].get("environment", {})
+
+    envs: EnvVarsDict = {
+        key: string.Template(value).safe_substitute(env_devel_dict)
+        for key, value in environment.items()
+    }
     return envs
 
 
