@@ -30,7 +30,7 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
-from simcore_postgres_database.storage_models import file_meta_data, projects
+from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
