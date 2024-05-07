@@ -120,6 +120,7 @@ async def delete_folders_of_project(request: web.Request) -> NoReturn:
 @routes.post(f"/{API_VTAG}/simcore-s3/files/metadata:search", name="search_files")
 async def search_files(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(SearchFilesQueryParams, request)
+
     log.debug(
         "received call to search_files with %s",
         f"{query_params=}",
@@ -129,11 +130,13 @@ async def search_files(request: web.Request) -> web.Response:
         SimcoreS3DataManager,
         get_dsm_provider(request.app).get(SimcoreS3DataManager.get_location_id()),
     )
-    data: list[FileMetaData]
-    data = await dsm.search_owned_files(
+
+    data: list[FileMetaData] = await dsm.search_owned_files(
         query_params.user_id,
         file_id_prefix=query_params.startswith,
         sha256_checksum=query_params.sha256_checksum,
+        limit=query_params.limit,
+        offset=query_params.offset,
     )
     log.debug(
         "Found %d files starting with '%s'",

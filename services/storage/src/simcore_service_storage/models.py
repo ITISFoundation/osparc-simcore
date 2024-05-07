@@ -26,6 +26,7 @@ from pydantic import (
     BaseModel,
     ByteSize,
     Extra,
+    Field,
     parse_obj_as,
     root_validator,
     validate_arguments,
@@ -204,6 +205,8 @@ class SearchFilesQueryParams(StorageQueryParamsBase):
     startswith: str = ""
     sha256_checksum: SHA256Str | None = None
     kind: Literal["owned"]
+    limit: int = Field(default=50, ge=1, le=100, description="Page size limit")
+    offset: int = Field(0, ge=0, description="Page offset")
 
 
 class LocationPathParams(BaseModel):

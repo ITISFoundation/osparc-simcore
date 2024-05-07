@@ -729,13 +729,20 @@ class SimcoreS3DataManager(BaseDataManager):
         return parse_obj_as(ByteSize, total_size), total_num_s3_objects
 
     async def search_owned_files(
-        self, user_id: UserID, file_id_prefix: str, sha256_checksum: SHA256Str | None
+        self,
+        user_id: UserID,
+        file_id_prefix: str,
+        sha256_checksum: SHA256Str | None,
+        limit: int,
+        offset: int,
     ):
         return await self._search_files(
             user_id=user_id,
             project_ids=[],
             file_id_prefix=file_id_prefix,
             sha256_checksum=sha256_checksum,
+            limit=limit,
+            offset=offset,
         )
 
     async def _search_files(
@@ -745,6 +752,8 @@ class SimcoreS3DataManager(BaseDataManager):
         project_ids: list[ProjectID],
         file_id_prefix: str,
         sha256_checksum: SHA256Str | None,
+        limit: int,
+        offset: int,
     ) -> list[FileMetaData]:
         # NOTE: this entrypoint is solely used by api-server. It is the exact
         # same as list_files but does not rename the found files with project
@@ -761,6 +770,8 @@ class SimcoreS3DataManager(BaseDataManager):
                 partial_file_id=None,
                 only_files=True,
                 sha256_checksum=sha256_checksum,
+                limit=limit,
+                offset=offset,
             )
             resolved_fmds = []
             for fmd in file_metadatas:

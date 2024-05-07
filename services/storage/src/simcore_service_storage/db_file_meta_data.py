@@ -74,6 +74,8 @@ async def list_filter_with_partial_file_id(
     partial_file_id: str | None,
     sha256_checksum: SHA256Str | None,
     only_files: bool,
+    limit: int | None = None,
+    offset: int | None = None,
 ) -> list[FileMetaDataAtDB]:
     stmt = sa.select(file_meta_data).where(
         (
@@ -101,6 +103,14 @@ async def list_filter_with_partial_file_id(
             else True
         )
     )
+
+    # NOTE: for the moment optional until list_files gets paginated as well
+    if limit is not None:
+        stmt = stmt.limit(limit)
+
+    if offset is not None:
+        stmt = stmt.offset(offset)
+
     return [FileMetaDataAtDB.from_orm(row) async for row in await conn.execute(stmt)]
 
 
