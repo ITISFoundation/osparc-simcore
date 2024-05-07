@@ -10,6 +10,8 @@ import os
 import random
 import re
 from collections.abc import Callable, Iterator
+from contextlib import ExitStack
+from typing import Final
 
 import pytest
 from faker import Faker
@@ -18,11 +20,16 @@ from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import (
+    MINUTE,
     AutoRegisteredUser,
+    RunningState,
     SocketIOEvent,
+    SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
 )
+
+_PROJECT_CLOSING_TIMEOUT: Final[int] = 10 * MINUTE
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -296,17 +303,23 @@ def create_new_project_and_delete(
     product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
-) -> Iterator[Callable[[bool], str]]:
-    """The first available service currently displayed in the dashboard will be opened"""
+) -> Iterator[Callable[[tuple[RunningState]], str]]:
+    """The first available service currently displayed in the dashboard will be opened
+    NOTE: cannot be used multiple times or going back to dashboard will fail!!
+    """
     created_project_uuids = []
 
-    def _do(auto_delete: bool) -> str:
-
+    def _do(
+        expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
+    ) -> str:
+        assert (
+            len(created_project_uuids) == 0
+        ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
         with log_context(
             logging.INFO,
             f"------> Opening project in {product_url=} as {product_billable=}",
         ) as ctx:
-            waiter = SocketIOProjectStateUpdatedWaiter(expected_states=("NOT_STARTED",))
+            waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
             with log_in_and_out.expect_event(
                 "framereceived", waiter
             ), page.expect_response(
@@ -324,23 +337,45 @@ def create_new_project_and_delete(
             ctx.messages.done = (
                 f"------> Opened project with {project_uuid=} in {product_url=} as {product_billable=}",
             )
-            if auto_delete:
-                created_project_uuids.append(project_uuid)
+            created_project_uuids.append(project_uuid)
             return project_uuid
 
     yield _do
 
+    # go back to dashboard and wait for project to close
+    with ExitStack() as stack:
+        for project_uuid in created_project_uuids:
+            stack.enter_context(
+                log_context(
+                    logging.INFO, f"Waiting for project with {project_uuid=} to close"
+                )
+            )
+            stack.enter_context(
+                log_in_and_out.expect_event(
+                    "framereceived",
+                    SocketIOProjectClosedWaiter(),
+                    timeout=_PROJECT_CLOSING_TIMEOUT,
+                )
+            )
+        page.get_by_test_id("dashboardBtn").click()
+        page.get_by_test_id("confirmDashboardBtn").click()
+        # Going back to projecs/studies view (In Sim4life projects:=studies)
+        page.get_by_test_id("studiesTabBtn").click()
+        page.wait_for_timeout(1000)
+
     for project_uuid in created_project_uuids:
         with log_context(
             logging.INFO,
-            (
-                "<------ Deleting project with %s",
-                "<------ Deleted project with %s",
-            ),
-            f"{project_uuid=} in {product_url=} as {product_billable=}",
-        ):
+            f"<------ Deleting project with {project_uuid=} in {product_url=} as {product_billable=}",
+        ) as ctx:
 
-            api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
+            response = api_request_context.delete(
+                f"{product_url}v0/projects/{project_uuid}"
+            )
+            assert response.status == 204
+            ctx.messages.done = (
+                f"<----- Response to {project_uuid=} deletion: {response=}"
+            )
 
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5618#discussion_r1553943415
