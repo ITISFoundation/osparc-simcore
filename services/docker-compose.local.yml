@@ -115,7 +115,6 @@ services:
   webserver:
     environment: &webserver_environment_local
       <<: *common_environment
-      GUNICORN_CMD_ARGS : --timeout=0
     ports:
       - "8080"
       - "3001:3000"
