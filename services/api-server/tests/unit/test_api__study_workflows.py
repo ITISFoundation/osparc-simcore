@@ -204,8 +204,9 @@ class MockedBackendApiDict(TypedDict):
 
 
 @pytest.fixture
-def mocked_backend(
+def mocked_backend_or_none(
     project_tests_dir: Path,
+    httpx_calls_capture_enabled: bool,
     mocked_webserver_service_api_base: MockRouter,
     mocked_storage_service_api_base: MockRouter,
     mocked_directorv2_service_api_base: MockRouter,
@@ -215,27 +216,28 @@ def mocked_backend(
     ],
     mocker: MockerFixture,
 ) -> MockedBackendApiDict | None:
-    respx_mock_from_capture(
-        [
-            mocked_webserver_service_api_base,
-            mocked_storage_service_api_base,
-            mocked_directorv2_service_api_base,
-        ],
-        project_tests_dir / "mocks" / "run_study_workflow.json",
-        [],
-    )
-
     # S3 and storage are accessed via simcore-sdk
     mock = mocker.patch(
         "simcore_service_api_server.api.routes.files.storage_upload_path", autospec=True
     )
     mock.return_value = UploadedFile(store_id=0, etag="123")
 
-    return MockedBackendApiDict(
-        webserver=mocked_webserver_service_api_base,
-        storage=mocked_storage_service_api_base,
-        director_v2=mocked_directorv2_service_api_base,
-    )
+    if not httpx_calls_capture_enabled:
+        respx_mock_from_capture(
+            [
+                mocked_webserver_service_api_base,
+                mocked_storage_service_api_base,
+                mocked_directorv2_service_api_base,
+            ],
+            project_tests_dir / "mocks" / "run_study_workflow.json",
+            [],
+        )
+        return MockedBackendApiDict(
+            webserver=mocked_webserver_service_api_base,
+            storage=mocked_storage_service_api_base,
+            director_v2=mocked_directorv2_service_api_base,
+        )
+    return None
 
 
 @pytest.mark.acceptance_test(
@@ -244,7 +246,7 @@ def mocked_backend(
 async def test_run_study_workflow(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_backend: MockedBackendApiDict,
+    mocked_backend_or_none: MockedBackendApiDict | None,
     tmp_path: Path,
     input_json_path: Path,
     input_data_path: Path,

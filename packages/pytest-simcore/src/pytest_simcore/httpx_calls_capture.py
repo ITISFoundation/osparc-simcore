@@ -20,6 +20,11 @@ def httpx_calls_capture_path_or_none(request: pytest.FixtureRequest) -> Path | N
     return capture_path
 
 
+@pytest.fixture(scope="session")
+def httpx_calls_capture_enabled(httpx_calls_capture_path_or_none) -> bool:
+    return httpx_calls_capture_path_or_none is not None
+
+
 @pytest.fixture
 def spy_async_client_or_none(
     mocker: MockerFixture, httpx_calls_capture_path_or_none: Path | None
