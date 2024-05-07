@@ -89,8 +89,7 @@ def test_sleepers(
         "studyBrowserListItem_simcore/services/comp/itis/sleeper"
     ).click()
 
-    project_uuid = create_new_project_and_delete(auto_delete=True)
-    print("project uuid: ", project_uuid)
+    project_uuid = create_new_project_and_delete()
 
     # we are now in the workbench
     with log_context(
