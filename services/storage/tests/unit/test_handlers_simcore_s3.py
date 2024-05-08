@@ -441,7 +441,7 @@ async def test_create_and_delete_folders_from_project_burst(
 
 
 @pytest.fixture
-async def user_files_ids(
+async def uploaded_file_ids(
     faker: Faker,
     expected_number_of_user_files: int,
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
@@ -462,10 +462,10 @@ async def user_files_ids(
 
 
 @pytest.fixture
-async def query_params(
-    query_params_name: str, user_id: UserID
+async def search_files_query_params(
+    query_params_choice: str, user_id: UserID
 ) -> SearchFilesQueryParams:
-    match query_params_name:
+    match query_params_choice:
         case "default":
             q = SearchFilesQueryParams(user_id=user_id, kind="owned")
         case "limited":
@@ -473,29 +473,31 @@ async def query_params(
         case "offseted":
             q = SearchFilesQueryParams(user_id=user_id, kind="owned", offset=1)
         case _:
-            pytest.fail(f"Undefined {query_params_name=}")
+            pytest.fail(f"Undefined {query_params_choice=}")
     return q
 
 
 @pytest.mark.parametrize("expected_number_of_user_files", [0, 1, 3])
-@pytest.mark.parametrize("query_params_name", ["default", "limited", "offseted"])
+@pytest.mark.parametrize("query_params_choice", ["default", "limited", "offseted"])
 async def test_search_files_with_queries(
     client: TestClient,
     user_id: UserID,
-    user_files_ids: list[SimcoreS3FileID],
-    query_params_name: str,
-    query_params: SearchFilesQueryParams,
+    uploaded_file_ids: list[SimcoreS3FileID],
+    query_params_choice: str,
+    search_files_query_params: SearchFilesQueryParams,
 ):
     assert client.app
-    assert query_params_name
+    assert query_params_choice
 
-    assert query_params.user_id == user_id
+    assert search_files_query_params.user_id == user_id
 
     url = (
         client.app.router["search_files"]
         .url_for()
         .with_query(
-            jsonable_encoder(query_params, exclude_unset=True, exclude_none=True)
+            jsonable_encoder(
+                search_files_query_params, exclude_unset=True, exclude_none=True
+            )
         )
     )
     response = await client.post(f"{url}")
@@ -504,8 +506,9 @@ async def test_search_files_with_queries(
 
     found = parse_obj_as(list[FileMetaDataGet], data)
 
-    expected = user_files_ids[
-        query_params.offset : query_params.offset + query_params.limit
+    expected = uploaded_file_ids[
+        search_files_query_params.offset : search_files_query_params.offset
+        + search_files_query_params.limit
     ]
     assert [_.file_uuid for _ in found] == expected
 
