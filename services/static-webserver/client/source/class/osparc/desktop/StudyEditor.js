@@ -186,13 +186,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             this.__startIdlingTracker();
           }
 
-          let dontCheck = false;
-          if (study.getDisableServiceAutoStart() !== null) {
-            dontCheck = study.getDisableServiceAutoStart();
-          }
           // Count dynamic services.
           // If it is larger than PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES, dynamics won't start -> Flash Message
           const maxNumber = osparc.store.StaticInfo.getInstance().getMaxNumberDyNodes();
+          const dontCheck = study.getDisableServiceAutoStart();
           if (maxNumber && !dontCheck) {
             const nodes = study.getWorkbench().getNodes();
             const nDynamics = Object.values(nodes).filter(node => node.isDynamic()).length;
@@ -251,13 +248,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
         })
         .catch(err => {
+          console.error(err);
           let msg = "";
           if ("status" in err && err["status"] == 409) { // max_open_studies_per_user
             msg = err["message"];
           } else if ("status" in err && err["status"] == 423) { // Locked
             msg = study.getName() + this.tr(" is already opened");
           } else {
-            console.error(err);
             msg = this.tr("Error opening study");
             if ("message" in err) {
               msg += "<br>" + err["message"];
