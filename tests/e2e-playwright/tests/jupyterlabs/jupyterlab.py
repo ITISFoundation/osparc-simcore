@@ -37,7 +37,9 @@ def test_jupyterlab(
     large_file_block_size: ByteSize,
 ):
     # NOTE: this waits for the jupyter to send message, but is not quite enough
-    with page.expect_response(
+    with log_context(
+        logging.INFO, f"Waiting for {service_key} responsive"
+    ), page.expect_response(
         _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR[service_key],
         timeout=_WAITING_FOR_SERVICE_TO_START,
     ):
