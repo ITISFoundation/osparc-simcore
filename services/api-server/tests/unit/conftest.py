@@ -38,7 +38,6 @@ from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.httpx_calls_capture_model import (
     HttpApiCallCaptureModel,
     PathDescription,
