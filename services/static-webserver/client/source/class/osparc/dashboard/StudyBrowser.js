@@ -549,7 +549,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               if (product in newStudiesData) {
                 const newButtonsInfo = newStudiesData[product].resources;
                 newButtonsInfo.forEach(newButtonInfo => {
-                  this.__addNewStudyFromServiceButtons(services, newButtonInfo.expectedKey, newButtonsInfo);
+                  this.__addNewStudyFromServiceButtons(services, newButtonInfo.expectedKey, newButtonInfo);
                 });
               }
             });

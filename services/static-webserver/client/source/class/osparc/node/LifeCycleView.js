@@ -27,6 +27,8 @@ qx.Class.define("osparc.node.LifeCycleView", {
       if (node.isUpdatable() || node.isDeprecated() || node.isRetired()) {
         this.__populateLayout();
       }
+
+      this.base(arguments, node);
     },
 
     __populateLayout: function() {
