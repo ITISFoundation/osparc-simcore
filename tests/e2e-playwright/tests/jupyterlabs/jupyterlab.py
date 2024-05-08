@@ -8,7 +8,7 @@
 from collections.abc import Callable
 
 from playwright.sync_api import APIRequestContext, Page
-from pydantic import AnyUrl, ByteSize, TypeAdapter
+from pydantic import AnyUrl, ByteSize
 from pytest_simcore.playwright_utils import ServiceType
 
 
@@ -21,14 +21,16 @@ def test_jupyterlab(
     product_billable: bool,
     service_key: str,
     large_file_size: ByteSize,
+    large_file_block_size: ByteSize,
 ):
     create_project_from_service_dashboard(ServiceType.DYNAMIC, service_key)
 
     if large_file_size:
-
         iframe = page.frame_locator("iframe")
-        iframe.get_by_role("menuitem", name="File").click()
-        iframe.locator("#jp-mainmenu-file > ul > li:nth-child(2)").click()
+        iframe.get_by_role("button", name="New Launcher").click()
+
+        # iframe.get_by_role("menuitem", name="File").click()
+        # iframe.locator("#jp-mainmenu-file > ul > li:nth-child(2)").click()
         iframe.get_by_label("Launcher").get_by_text("Terminal").click()
         # jp-mainmenu-file > ul > li:nth-child(2)
         # id-4a32be53-8696-4197-bc07-7a6d0045469a > div > div > div:nth-child(4) > div.jp-Launcher-cardContainer > div:nth-child(1)
@@ -39,17 +41,16 @@ def test_jupyterlab(
         terminal.press("Enter")
         terminal.fill("uv pip install numpy pandas dask[distributed] fastapi")
         terminal.press("Enter")
-        block_size = TypeAdapter(ByteSize).validate_python("64Mib")
-        blocks_count = int(large_file_size / block_size)
+        # NOTE: this call creates a large file with random blocks inside
+        blocks_count = int(large_file_size / large_file_block_size)
         terminal.fill(
-            f"dd if=/dev/urandom of=output.txt bs={block_size} count={blocks_count} iflag=fullblock"
+            f"dd if=/dev/urandom of=output.txt bs={large_file_block_size} count={blocks_count} iflag=fullblock"
         )
         terminal.press("Enter")
 
         page.wait_for_timeout(10000)
 
     # Wait until iframe is shown and create new notebook with print statement
-
     page.frame_locator(".qx-main-dark").get_by_role(
         "button", name="New Launcher"
     ).click(timeout=600000)
