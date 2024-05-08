@@ -261,6 +261,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const sortByValue = this.getOrderBy().field;
       osparc.dashboard.ResourceBrowserBase.sortStudyList(this._resourcesList, sortByValue);
       this._reloadNewCards();
+
+      studiesList.forEach(study => {
+        const state = study["state"];
+        if (state && "locked" in state && state["locked"]["value"] && state["locked"]["status"] === "CLOSING") {
+          // websocket might have already notified that the state was closed.
+          // But the /projects calls response got after the ws message. Ask again to make sure
+          const delay = 5000;
+          const studyId = study["uuid"];
+          setTimeout(() => {
+            const params = {
+              url: {
+                studyId
+              }
+            };
+            osparc.data.Resources.getOne("studies", params)
+              .then(studyData => {
+                this.__studyStateReceived(study["uuid"], studyData["state"]);
+              });
+          }, delay);
+        }
+      });
     },
 
     _reloadCards: function() {
@@ -754,7 +775,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (studyItem) {
         studyItem.setState(state);
       }
-      if (errors.length) {
+      if (errors && errors.length) {
         console.error(errors);
       }
     },
