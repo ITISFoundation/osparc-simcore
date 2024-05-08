@@ -79,7 +79,7 @@ async def list_filter_with_partial_file_id(
         (
             sa.or_(
                 (
-                    file_meta_data.c.user_id.is_(user_id)
+                    file_meta_data.c.user_id.is_(f"{user_id}")
                     if user_id is not None
                     else True
                 ),
