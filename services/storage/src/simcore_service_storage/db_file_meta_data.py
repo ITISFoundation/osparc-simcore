@@ -82,9 +82,7 @@ async def list_filter_with_partial_file_id(
 
     # Check if project_ids is not empty and add condition
     if project_ids:
-        conditions.append(
-            file_meta_data.c.project_id.in_([f"{_}" for _ in project_ids])
-        )
+        conditions.append(file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids))
 
     # Optional filters
     if file_id_prefix:

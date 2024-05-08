@@ -736,37 +736,14 @@ class SimcoreS3DataManager(BaseDataManager):
         sha256_checksum: SHA256Str | None = None,
         limit: int | None = None,
         offset: int | None = None,
-    ):
-        return await self._search_files(
-            user_id=user_id,
-            project_ids=[],
-            file_id_prefix=file_id_prefix,
-            sha256_checksum=sha256_checksum,
-            limit=limit,
-            offset=offset,
-        )
-
-    async def _search_files(
-        self,
-        *,
-        user_id: UserID,
-        project_ids: list[ProjectID],
-        file_id_prefix: str | None,
-        sha256_checksum: SHA256Str | None = None,
-        limit: int | None = None,
-        offset: int | None = None,
     ) -> list[FileMetaData]:
-        # NOTE: this entrypoint is solely used by api-server. It is the exact
-        # same as list_files but does not rename the found files with project
-        # name/node name which filters out this files
-        # TODO: unify, or use a query parameter?
         async with self.engine.acquire() as conn:
             file_metadatas: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
                 user_id=user_id,
-                project_ids=project_ids,
+                project_ids=[],
                 file_id_prefix=file_id_prefix,
                 partial_file_id=None,
                 only_files=True,
