@@ -68,7 +68,7 @@ async def get(conn: SAConnection, file_id: SimcoreS3FileID) -> FileMetaDataAtDB:
 async def list_filter_with_partial_file_id(
     conn: SAConnection,
     *,
-    user_id: UserID,
+    user_id: UserID | None,
     project_ids: list[ProjectID],
     file_id_prefix: str | None,
     partial_file_id: str | None,
@@ -77,7 +77,15 @@ async def list_filter_with_partial_file_id(
 ) -> list[FileMetaDataAtDB]:
     stmt = sa.select(file_meta_data).where(
         (
-            (file_meta_data.c.user_id == f"{user_id}")
+            sa.case(
+                [
+                    (
+                        user_id != None,
+                        file_meta_data.c.user_id == user_id,
+                    ),
+                ],
+                else_=True,
+            )
             | file_meta_data.c.project_id.in_(f"{pid}" for pid in project_ids)
         )
         & (

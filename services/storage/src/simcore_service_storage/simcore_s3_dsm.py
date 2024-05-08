@@ -151,6 +151,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
         data: list[FileMetaData] = []
         accessible_projects_ids = []
+        uid = UserID | None
         async with self.engine.acquire() as conn, conn.begin():
             if project_id is not None:
                 project_access_rights = await get_project_access_rights(
@@ -161,13 +162,15 @@ class SimcoreS3DataManager(BaseDataManager):
                         access_right="read", project_id=project_id
                     )
                 accessible_projects_ids = [project_id]
+                uid = None
             else:
                 accessible_projects_ids = await get_readable_project_ids(conn, user_id)
+                uid = user_id
             file_and_directory_meta_data: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
-                user_id=user_id,
+                user_id=uid,
                 project_ids=accessible_projects_ids,
                 file_id_prefix=None,
                 partial_file_id=uuid_filter,
