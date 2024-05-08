@@ -65,6 +65,7 @@ from .models import (
     FileMetaDataAtDB,
     UploadID,
     UploadLinks,
+    UserOrProjectFilter,
 )
 from .s3 import get_s3_client
 from .s3_client import S3MetaData, StorageS3Client
@@ -170,8 +171,9 @@ class SimcoreS3DataManager(BaseDataManager):
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
-                user_id=uid,
-                project_ids=accessible_projects_ids,
+                user_or_project_filter=UserOrProjectFilter(
+                    user_id=uid, project_ids=accessible_projects_ids
+                ),
                 file_id_prefix=None,
                 partial_file_id=uuid_filter,
                 only_files=False,
@@ -758,8 +760,9 @@ class SimcoreS3DataManager(BaseDataManager):
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
                 conn,
-                user_id=user_id,
-                project_ids=project_ids,
+                user_or_project_filter=UserOrProjectFilter(
+                    user_id=user_id, project_ids=project_ids
+                ),
                 file_id_prefix=file_id_prefix,
                 partial_file_id=None,
                 only_files=True,
