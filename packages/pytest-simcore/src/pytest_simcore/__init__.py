@@ -8,15 +8,14 @@ __version__: str = version("pytest-simcore")
 
 
 def pytest_addoption(parser: pytest.Parser):
-    simcore_group = parser.getgroup(
-        "simcore", description="options related to pytest simcore"
-    )
+    simcore_group = parser.getgroup("simcore", description="pytest-simcore options")
     simcore_group.addoption(
         "--keep-docker-up",
         action="store_true",
         default=False,
         help="Keep stack/registry up after fixtures closes",
     )
+
     simcore_group.addoption(
         "--external-envfile",
         action="store",
@@ -24,15 +23,7 @@ def pytest_addoption(parser: pytest.Parser):
         default=None,
         help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
     )
-    simcore_group.addoption(
-        "--httpx-calls-capture-path",
-        action="store",
-        type=Path,
-        default=None,
-        help="If set, it activates httpx calls capture mechanism used to generate mock data"
-        "Path to store captured client calls."
-        "NOTE: include `pytest_simcore.httpx_calls_captures`",
-    )
+
     # DUMMY
     parser.addini("HELLO", "Dummy pytest.ini setting")
 

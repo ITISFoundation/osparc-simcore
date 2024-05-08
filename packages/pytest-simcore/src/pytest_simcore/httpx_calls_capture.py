@@ -11,6 +11,18 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_client_base_dev import AsyncClientCaptureWrapper
 
 
+def pytest_addoption(parser: pytest.Parser):
+    simcore_group = parser.getgroup("simcore")
+    simcore_group.addoption(
+        "--httpx-calls-capture-path",
+        action="store",
+        type=Path,
+        default=None,
+        help="Path to store capture calls from httpx clients during the tests."
+        "If set, it activates a capture mechanism while the tests is running that can be used to generate mock data in respx",
+    )
+
+
 @pytest.fixture(scope="session")
 def httpx_calls_capture_path_or_none(request: pytest.FixtureRequest) -> Path | None:
     capture_path = None
