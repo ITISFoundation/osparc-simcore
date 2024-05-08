@@ -22,6 +22,7 @@ services:
   autoscaling:
     environment:
       <<: *common-environment
+      AUTOSCALING_LOGLEVEL: DEBUG
 
     volumes:
       - ./autoscaling:/devel/services/autoscaling
