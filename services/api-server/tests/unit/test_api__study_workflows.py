@@ -8,17 +8,15 @@ import io
 import json
 import textwrap
 import time
-from collections.abc import Callable
 from contextlib import suppress
 from pathlib import Path
 from typing import TypedDict
 
 import httpx
 import pytest
-import respx
 from fastapi.encoders import jsonable_encoder
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.httpx_calls_capture_model import SideEffectCallback
+from pytest_simcore.helpers.httpx_calls_capture_model import CreateRespxMockCallback
 from respx import MockRouter
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_service_api_server._meta import API_VTAG
@@ -210,10 +208,7 @@ def mocked_backend_or_none(
     mocked_webserver_service_api_base: MockRouter,
     mocked_storage_service_api_base: MockRouter,
     mocked_directorv2_service_api_base: MockRouter,
-    respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback]],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     mocker: MockerFixture,
 ) -> MockedBackendApiDict | None:
     # S3 and storage are accessed via simcore-sdk
@@ -223,7 +218,7 @@ def mocked_backend_or_none(
     mock.return_value = UploadedFile(store_id=0, etag="123")
 
     if not httpx_calls_capture_enabled:
-        respx_mock_from_capture(
+        create_respx_mock_from_capture(
             [
                 mocked_webserver_service_api_base,
                 mocked_storage_service_api_base,

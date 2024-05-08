@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 
 import datetime
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -27,8 +26,8 @@ from models_library.api_schemas_storage import (
 from models_library.basic_types import SHA256Str
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.httpx_calls_capture_model import (
+    CreateRespxMockCallback,
     HttpApiCallCaptureModel,
-    SideEffectCallback,
 )
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
@@ -186,10 +185,7 @@ async def test_get_file(
 async def test_delete_file(
     client: AsyncClient,
     mocked_storage_service_api_base: respx.MockRouter,
-    respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
@@ -209,7 +205,7 @@ async def test_delete_file(
     ) -> Any:
         return capture.response_body
 
-    respx_mock_from_capture(
+    create_respx_mock_from_capture(
         [mocked_storage_service_api_base],
         project_tests_dir / "mocks" / "delete_file.json",
         [search_side_effect, delete_side_effect],
@@ -301,10 +297,7 @@ async def test_search_file(
     query: dict[str, str],
     client: AsyncClient,
     mocked_storage_service_api_base: respx.MockRouter,
-    respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback] | None],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
@@ -330,7 +323,7 @@ async def test_search_file(
                 raise ValueError(msg)
         return response
 
-    respx_mock_from_capture(
+    create_respx_mock_from_capture(
         [mocked_storage_service_api_base],
         project_tests_dir / "mocks" / "search_file_checksum.json",
         [side_effect_callback],

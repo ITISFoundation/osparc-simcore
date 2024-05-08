@@ -17,6 +17,7 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_client_base_dev import AsyncClientCaptureWrapper
 
 from .helpers.httpx_calls_capture_model import (
+    CreateRespxMockCallback,
     HttpApiCallCaptureModel,
     PathDescription,
     SideEffectCallback,
@@ -100,13 +101,9 @@ class _CaptureSideEffect:
 
 @pytest.fixture
 @respx.mock(assert_all_mocked=False)
-def respx_mock_from_capture() -> (
-    Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback]], list[respx.MockRouter]
-    ]
-):
-    def _generate_mock(
-        respx_mock: list[respx.MockRouter],
+def create_respx_mock_from_capture() -> CreateRespxMockCallback:
+    def _create_mock(
+        respx_mocks: list[respx.MockRouter],
         capture_path: Path,
         side_effects_callbacks: list[SideEffectCallback],
     ) -> list[respx.MockRouter]:
@@ -120,8 +117,8 @@ def respx_mock_from_capture() -> (
         if len(side_effects_callbacks) > 0:
             assert len(side_effects_callbacks) == len(captures)
 
-        assert isinstance(respx_mock, list)
-        for router in respx_mock:
+        assert isinstance(respx_mocks, list)
+        for router in respx_mocks:
             assert (
                 router._bases
             ), "the base_url must be set before the fixture is extended"
@@ -155,7 +152,7 @@ def respx_mock_from_capture() -> (
                 else None,
             )
 
-            router = _get_correct_mock_router_for_capture(respx_mock, capture)
+            router = _get_correct_mock_router_for_capture(respx_mocks, capture)
             r = router.request(
                 capture.method.upper(),
                 url=None,
@@ -165,6 +162,6 @@ def respx_mock_from_capture() -> (
             assert r.side_effect == side_effect
             side_effects.append(side_effect)
 
-        return respx_mock
+        return respx_mocks
 
-    return _generate_mock
+    return _create_mock
