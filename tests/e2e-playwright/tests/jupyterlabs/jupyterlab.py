@@ -5,21 +5,38 @@
 # pylint: disable=too-many-statements
 # pylint: disable=unnecessary-lambda
 
-import re
-from typing import Callable, Final
+from collections.abc import Callable
+from enum import Enum
 
+import pytest
 from playwright.sync_api import APIRequestContext, Page
 from pydantic import AnyUrl, ByteSize, TypeAdapter
-from pytest_simcore.playwright_utils import RunningState, on_web_socket_default_handler
+from pytest_simcore.playwright_utils import RunningState
 
-_PROJECTS_UUID_PATTERN: Final[re.Pattern] = re.compile(
-    r"/projects/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
-)
+
+class ServiceType(str, Enum):
+    DYNAMIC = "dynamic"
+    COMPUTATIONAL = "comp"
+
+
+@pytest.fixture
+def find_service_in_dashboard(page: Page) -> Callable[[ServiceType, str], None]:
+    def _(service_type: ServiceType, service_name: str) -> None:
+        page.get_by_test_id("servicesTabBtn").click()
+        _textbox = page.get_by_test_id("searchBarFilter-textField-service")
+        _textbox.fill(service_name)
+        _textbox.press("Enter")
+        page.get_by_test_id(
+            f"studyBrowserListItem_simcore/services/dynamic/{service_name}"
+        ).click()
+
+    return _
 
 
 def test_jupyterlab(
     page: Page,
     log_in_and_out: None,
+    find_service_in_dashboard: Callable[[ServiceType, str], None],
     create_new_project_and_delete: Callable[..., None],
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
@@ -27,17 +44,7 @@ def test_jupyterlab(
     service_key: str,
     large_file_size: ByteSize,
 ):
-    # connect and listen to websocket
-    page.on("websocket", on_web_socket_default_handler)
-
-    # open services tab and filter for the service
-    page.get_by_test_id("servicesTabBtn").click()
-    _textbox = page.get_by_role("textbox", name="search")
-    _textbox.fill(service_key)
-    _textbox.press("Enter")
-    page.get_by_test_id(
-        f"studyBrowserListItem_simcore/services/dynamic/{service_key}"
-    ).click()
+    find_service_in_dashboard(ServiceType.DYNAMIC, service_key)
 
     create_new_project_and_delete(expected_states=(RunningState.UNKNOWN,))
 
