@@ -214,22 +214,3 @@ async def with_versioning_enabled(
         Bucket=storage_s3_bucket,
         VersioningConfiguration={"MFADelete": "Disabled", "Status": "Enabled"},
     )
-
-
-# @pytest.fixture
-# async def upload_file(client: TestClient, user_id: UserID, location_id: LocationID):
-#     async def _(file: Path, file_id: UUID):
-#         assert file.is_file()
-#         assert client.app
-#         url = (
-#             client.app.router["upload_file"]
-#             .url_for(
-#                 location_id=f"{location_id}",
-#                 file_id=quote(f"api/{file_id}/{file.name}", safe=""),
-#             )
-#             .with_query(file_size=f"{file.stat().st_size}", user_id=f"{user_id}")
-#         )
-#         response = await client.put(f"{url}")
-#         assert response.status == 200
-
-#     return _
