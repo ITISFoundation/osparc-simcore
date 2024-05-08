@@ -251,6 +251,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
         })
         .catch(err => {
+          console.error(err);
           let msg = "";
           if ("status" in err && err["status"] == 409) { // max_open_studies_per_user
             msg = err["message"];
