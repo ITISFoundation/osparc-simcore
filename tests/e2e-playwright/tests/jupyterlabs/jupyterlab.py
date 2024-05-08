@@ -15,15 +15,19 @@ from pydantic import ByteSize
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import MINUTE, ServiceType
 
-_WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
+_WAITING_FOR_SERVICE_TO_START: Final[int] = (
+    10 * MINUTE
+)  # NOTE: smash is 13Gib, math 2Gib
 
 _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR: Final[dict[str, re.Pattern]] = {
     "jupyter-math": re.compile(r"/api/contents/workspace"),
+    "jupyter-smash": re.compile(r"/api/contents/workspace"),
     "jupyter-octave-python-math": re.compile(r"/api/contents"),
 }
 
 _SERVICE_NAME_TAB_TO_WAIT_FOR: Final[dict[str, str]] = {
     "jupyter-math": "README.ipynb",
+    "jupyter-smash": "README.ipynb",
 }
 
 
