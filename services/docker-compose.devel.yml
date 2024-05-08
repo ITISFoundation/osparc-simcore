@@ -5,7 +5,9 @@
 #
 version: "3.8"
 x-common-environment: &common-environment
+  # Enforces *_DEBUG option in all services. ONLY allowed in devel-mode!
   DEBUG : "true"
+  # Enforces app to boot debug mode (see docker/boot.sh). ONLY allowed in devel-mode!
   SC_BOOT_MODE : debug
 
 services:
