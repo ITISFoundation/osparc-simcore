@@ -27,6 +27,8 @@ qx.Class.define("osparc.node.BootOptionsView", {
       if (node.hasBootModes()) {
         this.__populateLayout();
       }
+
+      this.base(arguments, node);
     },
 
     __populateLayout: function() {
@@ -35,12 +37,6 @@ qx.Class.define("osparc.node.BootOptionsView", {
       this._add(new qx.ui.basic.Label(this.tr("Boot Options")).set({
         font: "text-14"
       }));
-
-      const instructionsMsg = this.tr("Please Stop the Service and then change the Boot Mode");
-      const instructionsLabel = new qx.ui.basic.Label(instructionsMsg).set({
-        rich: true
-      });
-      this._add(instructionsLabel);
 
       const node = this.getNode();
 

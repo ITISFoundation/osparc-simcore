@@ -360,14 +360,14 @@ async function restoreIFrame(page) {
 async function openNodeFiles(page) {
   console.log("Opening Data produced by Node");
 
-  await utils.waitAndClick(page, '[osparc-test-id="nodeOutputFilesBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="nodeFilesBtn"]');
 }
 
 async function openNodeFilesAppMode(page) {
   console.log("Opening Data produced by Node App Mode");
 
   await utils.waitAndClick(page, '[osparc-test-id="outputsBtn"]');
-  await utils.waitAndClick(page, '[osparc-test-id="nodeOutputFilesBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="nodeFilesBtn"]');
 }
 
 async function checkDataProducedByNode(page, nFiles = 1) {

@@ -38,54 +38,23 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
   members: {
     __studyData: null,
 
-    showPricingUnits: async function(nodeIds) {
+    showPricingUnits: function() {
       const unitsLoading = () => this.fireEvent("loadingUnits");
       const unitsAdded = () => this.fireEvent("unitsReady");
       unitsLoading();
       this._removeAll();
+      const promises = [];
       if ("workbench" in this.__studyData) {
         const workbench = this.__studyData["workbench"];
         Object.keys(workbench).forEach(nodeId => {
           const node = workbench[nodeId];
-          if (nodeIds && !nodeIds.includes(nodeId)) {
-            return;
-          }
-          const plansParams = {
-            url: osparc.data.Resources.getServiceUrl(
-              node["key"],
-              node["version"]
-            )
-          };
-          osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
-            .then(pricingPlans => {
-              if (pricingPlans) {
-                const unitParams = {
-                  url: {
-                    studyId: this.__studyData["uuid"],
-                    nodeId
-                  }
-                };
-                osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
-                  .then(preselectedPricingUnit => {
-                    const serviceGroup = this.__createPricingUnitsGroup(node["label"], pricingPlans, preselectedPricingUnit);
-                    if (serviceGroup) {
-                      this._add(serviceGroup.layout);
-
-                      const unitButtons = serviceGroup.unitButtons;
-                      unitButtons.addListener("changeSelectedUnitId", e => {
-                        unitButtons.setEnabled(false);
-                        const selectedPricingUnitId = e.getData();
-                        this.__pricingUnitSelected(nodeId, pricingPlans["pricingPlanId"], selectedPricingUnitId)
-                          .finally(() => unitButtons.setEnabled(true));
-                      });
-
-                      unitsAdded();
-                    }
-                  });
-              }
-            });
+          const nodePricingUnits = new osparc.study.NodePricingUnits(this.__studyData["uuid"], nodeId, node);
+          this._add(nodePricingUnits);
+          promises.push(nodePricingUnits.showPricingUnits());
         });
       }
+      Promise.all(promises)
+        .then(() => unitsAdded());
     },
 
     __createPricingUnitsGroup: function(nodeLabel, pricingPlans, preselectedPricingUnit) {
