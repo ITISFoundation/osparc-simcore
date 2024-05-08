@@ -244,7 +244,7 @@ def log_in_and_out(
         else:
             with log_context(
                 logging.INFO,
-                f"------> Logging in {product_url=} using {user_name=}/{user_password=}",
+                f"Logging in {product_url=} using {user_name=}/{user_password=}",
             ):
                 _user_email_box = page.get_by_test_id("loginUserEmailFld")
                 _user_email_box.click()
@@ -278,11 +278,7 @@ def log_in_and_out(
 
     with log_context(
         logging.INFO,
-        (
-            "<------ Logging out of %s",
-            "<------ Logged out of %s",
-        ),
-        f"{product_url=} using {user_name=}/{user_password=}",
+        f"Logging out of {product_url=} using {user_name=}/{user_password=}",
     ):
         # click anywher to remove modal windows
         page.click(
@@ -318,7 +314,7 @@ def create_new_project_and_delete(
         ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
         with log_context(
             logging.INFO,
-            f"------> Opening project in {product_url=} as {product_billable=}",
+            f"Opening project in {product_url=} as {product_billable=}",
         ):
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
             with log_in_and_out.expect_event(
