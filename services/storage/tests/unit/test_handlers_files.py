@@ -14,6 +14,7 @@ from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
+from random import choice
 from time import perf_counter
 from typing import Any, Literal
 from uuid import uuid4
@@ -1354,6 +1355,7 @@ async def test_listing_more_than_1000_objects_in_bucket(
         assert len(list_of_files) == 1000
 
 
+@pytest.mark.parametrize("uuid_filter", [True, False])
 async def test_listing_with_project_id_filter(
     client: TestClient,
     location_id: LocationID,
@@ -1368,6 +1370,7 @@ async def test_listing_with_project_id_filter(
             ]
         ],
     ],
+    uuid_filter: bool,
 ):
     project, src_projects_list = await random_project_with_files(
         num_nodes=1,
@@ -1382,17 +1385,29 @@ async def test_listing_with_project_id_filter(
     assert len(src_projects_list.keys()) > 0
     node_id = list(src_projects_list.keys())[0]
     project_files_in_db = set(src_projects_list[node_id])
+    assert len(project_files_in_db) > 0
     project_id = project["uuid"]
+    project_file_name = Path(choice(list(project_files_in_db))).name
 
     assert client.app
+    query = {
+        "user_id": user_id,
+        "project_id": project_id,
+        "uuid_filter": project_file_name if uuid_filter else None,
+    }
+
     url = (
         client.app.router["get_files_metadata"]
         .url_for(location_id=f"{location_id}")
-        .with_query(user_id=user_id, project_id=f"{project_id}")
+        .with_query(**{k: v for k, v in query.items() if v is not None})
     )
     response = await client.get(f"{url}")
     data, _ = await assert_status(response, status.HTTP_200_OK)
 
     list_of_files = parse_obj_as(list[FileMetaDataGet], data)
 
-    assert project_files_in_db == {file.file_uuid for file in list_of_files}
+    if uuid_filter:
+        assert len(list_of_files) == 1
+        assert project_file_name == list_of_files[0].file_name
+    else:
+        assert project_files_in_db == {file.file_uuid for file in list_of_files}
