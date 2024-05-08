@@ -334,9 +334,7 @@ def create_new_project_and_delete(
             assert project_data
             project_uuid = project_data["data"]["uuid"]
 
-            ctx.messages.done = (
-                f"------> Opened project with {project_uuid=} in {product_url=} as {product_billable=}",
-            )
+            ctx.messages.done = f"<------ Project with {project_uuid=} in {product_url=} as {product_billable=} successfully opened."
             created_project_uuids.append(project_uuid)
             return project_uuid
 
@@ -347,7 +345,7 @@ def create_new_project_and_delete(
         for project_uuid in created_project_uuids:
             stack.enter_context(
                 log_context(
-                    logging.INFO, f"Waiting for project with {project_uuid=} to close"
+                    logging.INFO, f"Closing project {project_uuid=} (waiting...)"
                 )
             )
             stack.enter_context(
@@ -357,22 +355,25 @@ def create_new_project_and_delete(
                     timeout=_PROJECT_CLOSING_TIMEOUT,
                 )
             )
-        page.get_by_test_id("dashboardBtn").click()
-        page.get_by_test_id("confirmDashboardBtn").click()
-        # Going back to projecs/studies view (In Sim4life projects:=studies)
-        page.get_by_test_id("studiesTabBtn").click()
-        page.wait_for_timeout(1000)
+        with log_context(logging.INFO, "Going back to dashboard"):
+            page.get_by_test_id("dashboardBtn").click()
+            page.get_by_test_id("confirmDashboardBtn").click()
+            # Going back to projecs/studies view (In Sim4life projects:=studies)
+            page.get_by_test_id("studiesTabBtn").click()
+            page.wait_for_timeout(1000)
 
     for project_uuid in created_project_uuids:
         with log_context(
             logging.INFO,
-            f"<------ Deleting project with {project_uuid=} in {product_url=} as {product_billable=}",
+            f"------> Deleting project with {project_uuid=} in {product_url=} as {product_billable=}",
         ) as ctx:
 
             response = api_request_context.delete(
                 f"{product_url}v0/projects/{project_uuid}"
             )
-            assert response.status == 204
+            assert (
+                response.status == 204
+            ), f"Unexpected rrror while deleting project: {response.json()}"
             ctx.messages.done = (
                 f"<----- Response to {project_uuid=} deletion: {response=}"
             )
