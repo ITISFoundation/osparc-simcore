@@ -77,41 +77,36 @@ async def list_filter_with_partial_file_id(
     limit: int | None = None,
     offset: int | None = None,
 ) -> list[FileMetaDataAtDB]:
-    stmt = (
-        sa.select(file_meta_data).where(
-            (
-                (file_meta_data.c.user_id == f"{user_id}")
-                | file_meta_data.c.project_id.in_(f"{pid}" for pid in project_ids)
-            )
-            & (
-                file_meta_data.c.file_id.startswith(file_id_prefix)
-                if file_id_prefix
-                else True
-            )
-            & (
-                file_meta_data.c.file_id.ilike(f"%{partial_file_id}%")
-                if partial_file_id
-                else True
-            )
-            & (
-                file_meta_data.c.is_directory.is_(False)  # noqa FBT003
-                if only_files
-                else True
-            )
-            & (
-                file_meta_data.c.sha256_checksum == f"{sha256_checksum}"
-                if sha256_checksum
-                else True
-            )
+    # Build the core where clause with mandatory conditions
+    conditions = [file_meta_data.c.user_id == user_id]
+
+    # Check if project_ids is not empty and add condition
+    if project_ids:
+        conditions.append(
+            file_meta_data.c.project_id.in_([f"{_}" for _ in project_ids])
         )
-        # oldest first
+
+    # Optional filters
+    if file_id_prefix:
+        conditions.append(file_meta_data.c.file_id.startswith(file_id_prefix))
+    if partial_file_id:
+        conditions.append(file_meta_data.c.file_id.ilike(f"%{partial_file_id}%"))
+    if only_files:
+        conditions.append(file_meta_data.c.is_directory.is_(False))
+    if sha256_checksum:
+        conditions.append(file_meta_data.c.sha256_checksum == sha256_checksum)
+
+    where_clause = sa.and_(*conditions)
+
+    stmt = (
+        sa.select(file_meta_data).where(where_clause)
+        # sorted as oldest first
         .order_by(file_meta_data.c.created_at.asc())
     )
 
-    # NOTE: for the moment optional until list_files gets paginated as well
+    # Apply limit and offset if specified
     if limit is not None:
         stmt = stmt.limit(limit)
-
     if offset is not None:
         stmt = stmt.offset(offset)
 
