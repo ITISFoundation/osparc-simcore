@@ -126,15 +126,23 @@ class SimcoreS3DataManager(BaseDataManager):
             user_id,
             expand_dirs=expand_dirs,
             uuid_filter=ensure_ends_with(dataset_id, "/"),
+            project_id=None,
         )
         return data
 
     async def list_files(  # noqa C901
-        self, user_id: UserID, *, expand_dirs: bool, uuid_filter: str = ""
+        self,
+        user_id: UserID,
+        *,
+        expand_dirs: bool,
+        uuid_filter: str,
+        project_id: ProjectID | None,
     ) -> list[FileMetaData]:
         """
         expand_dirs `False`: returns one metadata entry for each directory
         expand_dirs `True`: returns all files in each directory (no directories will be included)
+        project_id: If passed, only list files associated with that project_id
+        uuid_filter: If passed, only list files whose 'object_name' match (ilike) the passed string
 
         NOTE: expand_dirs will be replaced by pagination in the future
         currently only {EXPAND_DIR_MAX_ITEM_COUNT} items will be returned
@@ -144,7 +152,17 @@ class SimcoreS3DataManager(BaseDataManager):
         data: list[FileMetaData] = []
         accessible_projects_ids = []
         async with self.engine.acquire() as conn, conn.begin():
-            accessible_projects_ids = await get_readable_project_ids(conn, user_id)
+            if project_id is not None:
+                project_access_rights = await get_project_access_rights(
+                    conn=conn, user_id=user_id, project_id=project_id
+                )
+                if not project_access_rights.read:
+                    raise ProjectAccessRightError(
+                        access_right="read", project_id=project_id
+                    )
+                accessible_projects_ids = [project_id]
+            else:
+                accessible_projects_ids = await get_readable_project_ids(conn, user_id)
             file_and_directory_meta_data: list[
                 FileMetaDataAtDB
             ] = await db_file_meta_data.list_filter_with_partial_file_id(
