@@ -5,6 +5,7 @@
 
 from collections import deque
 from contextlib import asynccontextmanager
+from pathlib import Path
 from random import choice, randint
 from typing import Any, AsyncIterator, Awaitable, Callable
 
@@ -12,7 +13,6 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
-from anyio import Path
 from faker import Faker
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
