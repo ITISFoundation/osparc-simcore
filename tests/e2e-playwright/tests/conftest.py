@@ -219,10 +219,7 @@ def log_in_and_out(
 ) -> Iterator[WebSocket]:
     with log_context(
         logging.INFO,
-        (
-            f"------> Opening {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
-            f"-----> Opened {product_url=} successfully",
-        ),
+        f"Opening {product_url=} using {user_name=}/{user_password=}/{auto_register=}",
     ):
         response = page.goto(f"{product_url}")
         assert response
