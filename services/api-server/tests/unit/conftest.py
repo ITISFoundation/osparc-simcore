@@ -9,7 +9,7 @@ import subprocess
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any
 from unittest import mock
 
 import aiohttp.test_utils
@@ -38,10 +38,6 @@ from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.httpx_calls_capture_model import (
-    HttpApiCallCaptureModel,
-    PathDescription,
-)
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
@@ -51,11 +47,6 @@ from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.db.repositories.api_keys import UserAndProductTuple
 from simcore_service_api_server.services.solver_job_outputs import ResultsTypes
-
-# (capture.response_body, kwargs, capture.path.path_parameters) -> response_body
-SideEffectCallback: TypeAlias = Callable[
-    [httpx.Request, dict[str, Any], HttpApiCallCaptureModel], dict[str, Any]
-]
 
 ## APP + SYNC/ASYNC CLIENTS --------------------------------------------------
 
@@ -530,99 +521,6 @@ def patch_webserver_long_running_project_tasks(
         return webserver_mock_router
 
     return _mock
-
-
-@pytest.fixture
-@respx.mock(assert_all_mocked=False)
-def respx_mock_from_capture() -> (
-    Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback]], list[respx.MockRouter]
-    ]
-):
-    def _generate_mock(
-        respx_mock: list[respx.MockRouter],
-        capture_path: Path,
-        side_effects_callbacks: list[SideEffectCallback],
-    ) -> list[respx.MockRouter]:
-        assert capture_path.is_file()
-        assert capture_path.suffix == ".json"
-
-        captures: list[HttpApiCallCaptureModel] = parse_obj_as(
-            list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
-        )
-
-        if len(side_effects_callbacks) > 0:
-            assert len(side_effects_callbacks) == len(captures)
-
-        assert isinstance(respx_mock, list)
-        for router in respx_mock:
-            assert (
-                router._bases
-            ), "the base_url must be set before the fixture is extended"
-
-        def _get_correct_mock_router_for_capture(
-            respx_mock: list[respx.MockRouter], capture: HttpApiCallCaptureModel
-        ) -> respx.MockRouter:
-            for router in respx_mock:
-                if capture.host == router._bases["host"].value:
-                    return router
-            msg = f"Missing respx.MockRouter for capture with {capture.host}"
-            raise RuntimeError(msg)
-
-        class CaptureSideEffect:
-            def __init__(
-                self,
-                capture: HttpApiCallCaptureModel,
-                side_effect: SideEffectCallback | None,
-            ):
-                self._capture = capture
-                self._side_effect_callback = side_effect
-
-            def __call__(self, request: httpx.Request, **kwargs) -> httpx.Response:
-                capture = self._capture
-                assert isinstance(capture.path, PathDescription)
-                status_code: int = capture.status_code
-                response_body: dict[str, Any] | list | None = capture.response_body
-                assert {param.name for param in capture.path.path_parameters} == set(
-                    kwargs.keys()
-                )
-                if self._side_effect_callback:
-                    response_body = self._side_effect_callback(request, kwargs, capture)
-                return httpx.Response(status_code=status_code, json=response_body)
-
-        side_effects: list[CaptureSideEffect] = []
-        for ii, capture in enumerate(captures):
-            url_path: PathDescription | str = capture.path
-            assert isinstance(url_path, PathDescription)
-
-            # path
-            path_regex: str = str(url_path.path)
-            for param in url_path.path_parameters:
-                path_regex = path_regex.replace(
-                    "{" + param.name + "}", param.respx_lookup
-                )
-
-            # response
-            side_effect = CaptureSideEffect(
-                capture=capture,
-                side_effect=side_effects_callbacks[ii]
-                if len(side_effects_callbacks)
-                else None,
-            )
-
-            router = _get_correct_mock_router_for_capture(respx_mock, capture)
-            r = router.request(
-                capture.method.upper(),
-                url=None,
-                path__regex=f"^{path_regex}$",
-            ).mock(side_effect=side_effect)
-
-            assert r.side_effect == side_effect
-            side_effects.append(side_effect)
-
-        return respx_mock
-
-    return _generate_mock
 
 
 @pytest.fixture

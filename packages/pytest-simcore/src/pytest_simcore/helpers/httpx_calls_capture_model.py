@@ -1,6 +1,6 @@
 import json
 from http import HTTPStatus
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 import httpx
 from fastapi import status
@@ -69,3 +69,13 @@ class HttpApiCallCaptureModel(BaseModel):
 
 def get_captured(name: str, response: httpx.Response) -> HttpApiCallCaptureModel:
     return HttpApiCallCaptureModel.create_from_response(response, name=name)
+
+
+class SideEffectCallback(Protocol):
+    def __call__(
+        self,
+        request: httpx.Request,
+        kwargs: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        ...

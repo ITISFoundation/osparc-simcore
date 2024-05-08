@@ -16,12 +16,14 @@ import respx
 from faker import Faker
 from fastapi import status
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.httpx_calls_capture_model import HttpApiCallCaptureModel
+from pytest_simcore.helpers.httpx_calls_capture_model import (
+    HttpApiCallCaptureModel,
+    SideEffectCallback,
+)
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs
 from simcore_service_api_server.models.schemas.studies import Study, StudyID
-from unit.conftest import SideEffectCallback
 
 
 @pytest.mark.xfail(reason="Still not implemented")

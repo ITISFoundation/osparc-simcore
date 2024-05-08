@@ -18,6 +18,7 @@ import pytest
 import respx
 from fastapi.encoders import jsonable_encoder
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.httpx_calls_capture_model import SideEffectCallback
 from respx import MockRouter
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_service_api_server._meta import API_VTAG
@@ -26,7 +27,6 @@ from simcore_service_api_server.models.schemas.errors import ErrorGet
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import Job, JobOutputs, JobStatus
 from simcore_service_api_server.models.schemas.studies import StudyPort
-from unit.conftest import SideEffectCallback
 
 
 def _handle_http_status_error(func):
