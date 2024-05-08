@@ -78,7 +78,7 @@ async def list_filter_with_partial_file_id(
     offset: int | None = None,
 ) -> list[FileMetaDataAtDB]:
     # Build the core where clause with mandatory conditions
-    conditions = [file_meta_data.c.user_id == user_id]
+    conditions = [file_meta_data.c.user_id == f"{user_id}"]
 
     # Check if project_ids is not empty and add condition
     if project_ids:
