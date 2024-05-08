@@ -85,7 +85,7 @@ async def remove_orphaned_services(
             # nothing to do
             return
         _logger.debug(
-            "Currently running dynamic services: %s",
+            "Actual running dynamic services: %s",
             [(x.node_uuid, x.host) for x in running_services],
         )
         running_services_by_id: dict[NodeID, DynamicServiceGet] = {
@@ -105,13 +105,15 @@ async def remove_orphaned_services(
             *(_ for _ in potentially_running_service_ids if isinstance(_, set))
         )
         _logger.debug(
-            "Currently known opened node ids: %s", potentially_running_service_ids_set
+            "Allowed service UUIDs from known opened projects: %s",
+            potentially_running_service_ids_set,
         )
 
         # compute the difference to find the orphaned services
         orphaned_running_service_ids = (
             set(running_services_by_id) - potentially_running_service_ids_set
         )
+        _logger.debug("Found orphaned services: %s", orphaned_running_service_ids)
         # NOTE: no need to not reraise here, since we catch everything above
         # and logged_gather first runs everything
         await logged_gather(
