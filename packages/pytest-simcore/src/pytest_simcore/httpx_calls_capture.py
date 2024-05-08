@@ -51,7 +51,7 @@ def httpx_calls_capture_enabled(httpx_calls_capture_path_or_none) -> bool:
 
 
 @pytest.fixture
-def spy_async_client_or_none(
+def create_httpx_async_client_spy_if_enabled(
     mocker: MockerFixture, httpx_calls_capture_path_or_none: Path | None
 ) -> Callable[[str], MockType | None]:
     def _(module_name: str) -> MockType | None:
@@ -71,6 +71,8 @@ def spy_async_client_or_none(
                 )
 
             spy: MockType = mocker.patch(module_name, side_effect=_wrapper)
+            spy.httpx_calls_capture_path = httpx_calls_capture_path_or_none
+
             return spy
         return None
 
@@ -102,6 +104,7 @@ class _CaptureSideEffect:
 @pytest.fixture
 @respx.mock(assert_all_mocked=False)
 def create_respx_mock_from_capture() -> CreateRespxMockCallback:
+    # NOTE: multiple improvements in
     def _create_mock(
         respx_mocks: list[respx.MockRouter],
         capture_path: Path,

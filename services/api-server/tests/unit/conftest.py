@@ -91,14 +91,14 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
 
 @pytest.fixture
 def app(
-    mock_missing_plugins: EnvVarsDict, spy_async_client_or_none: Callable
+    mock_missing_plugins: EnvVarsDict,
+    create_httpx_async_client_spy_if_enabled: Callable,
 ) -> FastAPI:
     """Inits app on a light environment"""
-    mock_or_none = spy_async_client_or_none(
+
+    create_httpx_async_client_spy_if_enabled(
         "simcore_service_api_server.utils.client_base.httpx.AsyncClient"
     )
-    if mock_or_none is not None:
-        print("Capturing", mock_or_none)
     return init_app()
 
 
