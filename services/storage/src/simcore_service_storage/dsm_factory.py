@@ -58,7 +58,7 @@ class BaseDataManager(ABC):
         uuid_filter: str = "",
         project_id: ProjectID | None = None,
     ) -> list[FileMetaData]:
-        """returns all the file meta data a user has access to (uuid_filter may be used)"""
+        """returns all the file meta data a user has access to (uuid_filter and or project_id may be used)"""
         # NOTE: expand_dirs will be replaced by pagination in the future
 
     @abstractmethod

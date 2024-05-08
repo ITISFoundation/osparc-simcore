@@ -141,6 +141,7 @@ class SimcoreS3DataManager(BaseDataManager):
         expand_dirs `False`: returns one metadata entry for each directory
         expand_dirs `True`: returns all files in each directory (no directories will be included)
         project_id: If passed, only list files associated with that project_id
+        uuid_filter: If passed, only list files whose 'object_name' match (ilike) the passed string
 
         NOTE: expand_dirs will be replaced by pagination in the future
         currently only {EXPAND_DIR_MAX_ITEM_COUNT} items will be returned
