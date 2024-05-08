@@ -5,10 +5,12 @@
 # pylint: disable=too-many-statements
 # pylint: disable=unnecessary-lambda
 
+import json
 import logging
 import re
 from collections.abc import Callable
-from typing import Final
+from dataclasses import dataclass
+from typing import Final, Literal
 
 from playwright.sync_api import Page
 from pydantic import ByteSize
@@ -29,6 +31,23 @@ _SERVICE_NAME_TAB_TO_WAIT_FOR: Final[dict[str, str]] = {
     "jupyter-math": "README.ipynb",
     "jupyter-smash": "README.ipynb",
 }
+
+
+@dataclass
+class _JLabTerminalWebSocketWaiter:
+    expected_message_type: Literal["stdout", "stdin"]
+    expected_message_contents: str
+
+    def __call__(self, message: str) -> bool:
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+            decoded_message = json.loads(message)
+            if (
+                self.expected_message_type == decoded_message[0]
+                and self.expected_message_contents in decoded_message[1]
+            ):
+                return True
+
+            return False
 
 
 def test_jupyterlab(
@@ -69,7 +88,11 @@ def test_jupyterlab(
             f"Creating multiple files and 1 file of about {large_file_size.human_readable()}",
         ):
             iframe.get_by_role("button", name="New Launcher").click()
-            iframe.get_by_label("Launcher").get_by_text("Terminal").click()
+            with page.expect_websocket() as ws_info:
+                iframe.get_by_label("Launcher").get_by_text("Terminal").click()
+            terminal_web_socket = ws_info.value
+            assert not terminal_web_socket.is_closed()
+
             terminal = iframe.locator(
                 "#jp-Terminal-0 > div > div.xterm-screen"
             ).get_by_role("textbox")
@@ -79,10 +102,16 @@ def test_jupyterlab(
             terminal.press("Enter")
             # NOTE: this call creates a large file with random blocks inside
             blocks_count = int(large_file_size / large_file_block_size)
-            terminal.fill(
-                f"dd if=/dev/urandom of=output.txt bs={large_file_block_size} count={blocks_count} iflag=fullblock"
-            )
-            terminal.press("Enter")
+            with terminal_web_socket.expect_event(
+                "framereceived",
+                _JLabTerminalWebSocketWaiter(
+                    expected_message_type="stdout", expected_message_contents="copied"
+                ),
+            ):
+                terminal.fill(
+                    f"dd if=/dev/urandom of=output.txt bs={large_file_block_size} count={blocks_count} iflag=fullblock"
+                )
+                terminal.press("Enter")
 
         # NOTE: this is to let some tester see something
         page.wait_for_timeout(2000)
