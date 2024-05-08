@@ -12,7 +12,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Final, Literal
 
-from playwright.sync_api import Page
+from playwright.sync_api import Page, WebSocket
 from pydantic import ByteSize
 from pytest_simcore.logging_utils import log_context
 from pytest_simcore.playwright_utils import MINUTE, SECOND, ServiceType
@@ -24,12 +24,14 @@ _WAITING_TIME_FILE_CREATION_PER_GB_IN_TERMINAL: Final[int] = 10 * SECOND
 _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR: Final[dict[str, re.Pattern]] = {
     "jupyter-math": re.compile(r"/api/contents/workspace"),
     "jupyter-smash": re.compile(r"/api/contents/workspace"),
+    "jupyter-smash-8-0-0": re.compile(r"/api/contents/workspace"),
     "jupyter-octave-python-math": re.compile(r"/api/contents"),
 }
 
 _SERVICE_NAME_TAB_TO_WAIT_FOR: Final[dict[str, str]] = {
     "jupyter-math": "README.ipynb",
     "jupyter-smash": "README.ipynb",
+    "jupyter-smash-8-0-0": "README.ipynb",
 }
 
 
@@ -45,6 +47,16 @@ class _JLabTerminalWebSocketWaiter:
                 self.expected_message_type == decoded_message[0]
                 and self.expected_message_contents in decoded_message[1]
             ):
+                return True
+
+            return False
+
+
+@dataclass
+class _JLabWaitForTerminalWebSocket:
+    def __call__(self, new_websocket: WebSocket) -> bool:
+        with log_context(logging.DEBUG, msg=f"received {new_websocket=}"):
+            if "terminals/websocket" in new_websocket.url:
                 return True
 
             return False
@@ -88,7 +100,7 @@ def test_jupyterlab(
             f"Creating multiple files and 1 file of about {large_file_size.human_readable()}",
         ):
             iframe.get_by_role("button", name="New Launcher").click()
-            with page.expect_websocket() as ws_info:
+            with page.expect_websocket(_JLabWaitForTerminalWebSocket()) as ws_info:
                 iframe.get_by_label("Launcher").get_by_text("Terminal").click()
             terminal_web_socket = ws_info.value
             assert not terminal_web_socket.is_closed()
@@ -108,7 +120,7 @@ def test_jupyterlab(
                     expected_message_type="stdout", expected_message_contents="copied"
                 ),
                 timeout=_WAITING_TIME_FILE_CREATION_PER_GB_IN_TERMINAL
-                * min(int(large_file_size.to("GiB")), 1),
+                * max(int(large_file_size.to("GiB")), 1),
             ):
                 terminal.fill(
                     f"dd if=/dev/urandom of=output.txt bs={large_file_block_size} count={blocks_count} iflag=fullblock"
