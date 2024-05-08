@@ -337,9 +337,7 @@ def create_new_project_and_delete(
     with ExitStack() as stack:
         for project_uuid in created_project_uuids:
             stack.enter_context(
-                log_context(
-                    logging.INFO, f"Closing project {project_uuid=} (waiting...)"
-                )
+                log_context(logging.INFO, f"Waiting for closed project {project_uuid=}")
             )
             stack.enter_context(
                 log_in_and_out.expect_event(
@@ -373,25 +371,35 @@ _INNER_CONTEXT_TIMEOUT_MS = 0.8 * _OUTER_CONTEXT_TIMEOUT_MS
 
 
 @pytest.fixture
-def find_service_in_dashboard(page: Page) -> Callable[[ServiceType, str], None]:
-    def _(service_type: ServiceType, service_name: str) -> None:
-        page.get_by_test_id("servicesTabBtn").click()
-        _textbox = page.get_by_test_id("searchBarFilter-textField-service")
-        _textbox.fill(service_name)
-        _textbox.press("Enter")
-        test_id = f"studyBrowserListItem_simcore/services/{'dynamic' if service_type is ServiceType.DYNAMIC else 'comp'}/{service_name}"
-        page.get_by_test_id(test_id).click()
+def find_service_in_dashboard(
+    page: Page,
+) -> Callable[[ServiceType, str, str | None], None]:
+    def _(
+        service_type: ServiceType, service_name: str, service_key_prefix: str | None
+    ) -> None:
+        with log_context(logging.INFO, f"Finding {service_name=} in dashboard"):
+            page.get_by_test_id("servicesTabBtn").click()
+            _textbox = page.get_by_test_id("searchBarFilter-textField-service")
+            _textbox.fill(service_name)
+            _textbox.press("Enter")
+            test_id = f"studyBrowserListItem_simcore/services/{'dynamic' if service_type is ServiceType.DYNAMIC else 'comp'}"
+            if service_key_prefix:
+                test_id = f"{test_id}/{service_key_prefix}"
+            test_id = f"{test_id}/{service_name}"
+            page.get_by_test_id(test_id).click()
 
     return _
 
 
 @pytest.fixture
 def create_project_from_service_dashboard(
-    find_service_in_dashboard: Callable[[ServiceType, str], None],
+    find_service_in_dashboard: Callable[[ServiceType, str, str | None], None],
     create_new_project_and_delete: Callable[[tuple[RunningState]], str],
-) -> Callable[[ServiceType, str], str]:
-    def _(service_type: ServiceType, service_name: str) -> str:
-        find_service_in_dashboard(service_type, service_name)
+) -> Callable[[ServiceType, str, str | None], str]:
+    def _(
+        service_type: ServiceType, service_name: str, service_key_prefix: str | None
+    ) -> str:
+        find_service_in_dashboard(service_type, service_name, service_key_prefix)
         expected_states = (RunningState.UNKNOWN,)
         if service_type is ServiceType.COMPUTATIONAL:
             expected_states = (RunningState.NOT_STARTED,)

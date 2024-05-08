@@ -5,68 +5,75 @@
 # pylint: disable=too-many-statements
 # pylint: disable=unnecessary-lambda
 
+import logging
+import re
 from collections.abc import Callable
+from typing import Final
 
-from playwright.sync_api import APIRequestContext, Page
-from pydantic import AnyUrl, ByteSize
-from pytest_simcore.playwright_utils import ServiceType
+from playwright.sync_api import Page
+from pydantic import ByteSize
+from pytest_simcore.logging_utils import log_context
+from pytest_simcore.playwright_utils import MINUTE, ServiceType
+
+_WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
 
 
 def test_jupyterlab(
     page: Page,
-    log_in_and_out: None,
-    create_project_from_service_dashboard: Callable[[ServiceType, str], str],
-    api_request_context: APIRequestContext,
-    product_url: AnyUrl,
-    product_billable: bool,
+    create_project_from_service_dashboard: Callable[
+        [ServiceType, str, str | None], str
+    ],
     service_key: str,
     large_file_size: ByteSize,
     large_file_block_size: ByteSize,
 ):
-    create_project_from_service_dashboard(ServiceType.DYNAMIC, service_key)
+    # NOTE: this waits for the jupyter to send message, but is not quite enough
+    with page.expect_response(
+        re.compile(r"/api/contents/workspace"), timeout=_WAITING_FOR_SERVICE_TO_START
+    ):
+        create_project_from_service_dashboard(ServiceType.DYNAMIC, service_key, None)
 
-    if large_file_size:
-        iframe = page.frame_locator("iframe")
-        iframe.get_by_role("button", name="New Launcher").click()
+    iframe = page.frame_locator("iframe")
 
-        # iframe.get_by_role("menuitem", name="File").click()
-        # iframe.locator("#jp-mainmenu-file > ul > li:nth-child(2)").click()
-        iframe.get_by_label("Launcher").get_by_text("Terminal").click()
-        # jp-mainmenu-file > ul > li:nth-child(2)
-        # id-4a32be53-8696-4197-bc07-7a6d0045469a > div > div > div:nth-child(4) > div.jp-Launcher-cardContainer > div:nth-child(1)
-        terminal = iframe.locator(
-            "#jp-Terminal-0 > div > div.xterm-screen"
-        ).get_by_role("textbox")
-        terminal.fill("pip install uv")
-        terminal.press("Enter")
-        terminal.fill("uv pip install numpy pandas dask[distributed] fastapi")
-        terminal.press("Enter")
-        # NOTE: this call creates a large file with random blocks inside
-        blocks_count = int(large_file_size / large_file_block_size)
-        terminal.fill(
-            f"dd if=/dev/urandom of=output.txt bs={large_file_block_size} count={blocks_count} iflag=fullblock"
+    wait_for_visible_readme_file = "README.ipynb"
+    with log_context(
+        logging.INFO,
+        f"Waiting for {wait_for_visible_readme_file} to become visible",
+    ):
+        iframe.get_by_role("tab", name=wait_for_visible_readme_file).wait_for(
+            state="visible"
         )
-        terminal.press("Enter")
+    if large_file_size:
+        with log_context(
+            logging.INFO,
+            f"Creating multiple files and 1 file of about {large_file_size.human_readable()}",
+        ):
+            iframe.get_by_role("button", name="New Launcher").click()
+            iframe.get_by_label("Launcher").get_by_text("Terminal").click()
+            terminal = iframe.locator(
+                "#jp-Terminal-0 > div > div.xterm-screen"
+            ).get_by_role("textbox")
+            terminal.fill("pip install uv")
+            terminal.press("Enter")
+            terminal.fill("uv pip install numpy pandas dask[distributed] fastapi")
+            terminal.press("Enter")
+            # NOTE: this call creates a large file with random blocks inside
+            blocks_count = int(large_file_size / large_file_block_size)
+            terminal.fill(
+                f"dd if=/dev/urandom of=output.txt bs={large_file_block_size} count={blocks_count} iflag=fullblock"
+            )
+            terminal.press("Enter")
 
-        page.wait_for_timeout(10000)
+        # NOTE: this is to let some tester see something
+        page.wait_for_timeout(2000)
 
     # Wait until iframe is shown and create new notebook with print statement
-    page.frame_locator(".qx-main-dark").get_by_role(
-        "button", name="New Launcher"
-    ).click(timeout=600000)
-
-    # Jupyter smash service
-    page.frame_locator(".qx-main-dark").locator(".jp-LauncherCard-icon").first.click()
-    page.wait_for_timeout(3000)
-    page.frame_locator(".qx-main-dark").get_by_role(
-        "tab", name="Untitled.ipynb"
-    ).click()
-    _jupyterlab_ui = (
-        page.frame_locator(".qx-main-dark")
-        .get_by_label("Untitled.ipynb")
-        .get_by_role("textbox")
-    )
-    _jupyterlab_ui.fill("print('test')")
-    _jupyterlab_ui.press("Shift+Enter")
+    with log_context(logging.INFO, "Running new notebook"):
+        iframe.get_by_role("button", name="New Launcher").click()
+        iframe.locator(".jp-LauncherCard-icon").first.click()
+        iframe.get_by_role("tab", name="Untitled.ipynb").click()
+        _jupyterlab_ui = iframe.get_by_label("Untitled.ipynb").get_by_role("textbox")
+        _jupyterlab_ui.fill("print('hello from e2e test')")
+        _jupyterlab_ui.press("Shift+Enter")
 
     page.wait_for_timeout(1000)

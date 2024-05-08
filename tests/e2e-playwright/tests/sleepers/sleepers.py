@@ -75,13 +75,15 @@ def _get_file_names(page: Page) -> list[str]:
 def test_sleepers(
     page: Page,
     log_in_and_out: WebSocket,
-    create_project_from_service_dashboard: Callable[[ServiceType, str], str],
+    create_project_from_service_dashboard: Callable[
+        [ServiceType, str, str | None], str
+    ],
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
     num_sleepers: int,
     input_sleep_time: int | None,
 ):
     project_uuid = create_project_from_service_dashboard(
-        ServiceType.COMPUTATIONAL, "sleeper"
+        ServiceType.COMPUTATIONAL, "sleeper", "itis"
     )
 
     # we are now in the workbench
