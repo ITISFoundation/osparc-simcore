@@ -21,6 +21,7 @@ from pytest_simcore.logging_utils import ContextMessages, log_context, test_logg
 from pytest_simcore.playwright_utils import (
     MINUTE,
     RunningState,
+    ServiceType,
     SocketIOEvent,
     retrieve_project_state_from_decoded_message,
     wait_for_pipeline_state,
@@ -74,22 +75,14 @@ def _get_file_names(page: Page) -> list[str]:
 def test_sleepers(
     page: Page,
     log_in_and_out: WebSocket,
-    create_new_project_and_delete: Callable[..., None],
+    create_project_from_service_dashboard: Callable[[ServiceType, str], str],
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
-    product_billable: bool,
     num_sleepers: int,
     input_sleep_time: int | None,
 ):
-    # open service tab and filter for sleeper
-    page.get_by_test_id("servicesTabBtn").click()
-    _textbox = page.get_by_test_id("searchBarFilter-textField-service")
-    _textbox.fill("sleeper")
-    _textbox.press("Enter")
-    page.get_by_test_id(
-        "studyBrowserListItem_simcore/services/comp/itis/sleeper"
-    ).click()
-
-    project_uuid = create_new_project_and_delete()
+    project_uuid = create_project_from_service_dashboard(
+        ServiceType.COMPUTATIONAL, "sleeper"
+    )
 
     # we are now in the workbench
     with log_context(

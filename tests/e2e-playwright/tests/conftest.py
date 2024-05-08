@@ -23,6 +23,7 @@ from pytest_simcore.playwright_utils import (
     MINUTE,
     AutoRegisteredUser,
     RunningState,
+    ServiceType,
     SocketIOEvent,
     SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
@@ -318,7 +319,7 @@ def create_new_project_and_delete(
         with log_context(
             logging.INFO,
             f"------> Opening project in {product_url=} as {product_billable=}",
-        ) as ctx:
+        ):
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
             with log_in_and_out.expect_event(
                 "framereceived", waiter
@@ -334,7 +335,6 @@ def create_new_project_and_delete(
             assert project_data
             project_uuid = project_data["data"]["uuid"]
 
-            ctx.messages.done = f"<------ Project with {project_uuid=} in {product_url=} as {product_billable=} successfully opened."
             created_project_uuids.append(project_uuid)
             return project_uuid
 
@@ -380,6 +380,34 @@ _INNER_CONTEXT_TIMEOUT_MS = 0.8 * _OUTER_CONTEXT_TIMEOUT_MS
 
 
 @pytest.fixture
+def find_service_in_dashboard(page: Page) -> Callable[[ServiceType, str], None]:
+    def _(service_type: ServiceType, service_name: str) -> None:
+        page.get_by_test_id("servicesTabBtn").click()
+        _textbox = page.get_by_test_id("searchBarFilter-textField-service")
+        _textbox.fill(service_name)
+        _textbox.press("Enter")
+        test_id = f"studyBrowserListItem_simcore/services/{'dynamic' if service_type is ServiceType.DYNAMIC else 'comp'}/{service_name}"
+        page.get_by_test_id(test_id).click()
+
+    return _
+
+
+@pytest.fixture
+def create_project_from_service_dashboard(
+    find_service_in_dashboard: Callable[[ServiceType, str], None],
+    create_new_project_and_delete: Callable[[tuple[RunningState]], str],
+) -> Callable[[ServiceType, str], str]:
+    def _(service_type: ServiceType, service_name: str) -> str:
+        find_service_in_dashboard(service_type, service_name)
+        expected_states = (RunningState.UNKNOWN,)
+        if service_type is ServiceType.COMPUTATIONAL:
+            expected_states = (RunningState.NOT_STARTED,)
+        return create_new_project_and_delete(expected_states)
+
+    return _
+
+
+@pytest.fixture
 def start_and_stop_pipeline(
     product_url: AnyUrl,
     page: Page,
@@ -395,11 +423,11 @@ def start_and_stop_pipeline(
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(
                 expected_states=(
-                    "PUBLISHED",
-                    "PENDING",
-                    "WAITING_FOR_CLUSTER",
-                    "WAITING_FOR_RESOURCES",
-                    "STARTED",
+                    RunningState.PUBLISHED,
+                    RunningState.PENDING,
+                    RunningState.WAITING_FOR_CLUSTER,
+                    RunningState.WAITING_FOR_RESOURCES,
+                    RunningState.STARTED,
                 )
             )
 

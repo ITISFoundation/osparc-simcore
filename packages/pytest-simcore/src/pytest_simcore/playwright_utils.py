@@ -42,6 +42,11 @@ class RunningState(str, Enum):
         )
 
 
+class ServiceType(str, Enum):
+    DYNAMIC = "DYNAMIC"
+    COMPUTATIONAL = "COMPUTATIONAL"
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AutoRegisteredUser:
     user_email: str

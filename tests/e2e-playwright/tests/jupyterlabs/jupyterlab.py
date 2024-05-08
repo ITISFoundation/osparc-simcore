@@ -6,47 +6,23 @@
 # pylint: disable=unnecessary-lambda
 
 from collections.abc import Callable
-from enum import Enum
 
-import pytest
 from playwright.sync_api import APIRequestContext, Page
 from pydantic import AnyUrl, ByteSize, TypeAdapter
-from pytest_simcore.playwright_utils import RunningState
-
-
-class ServiceType(str, Enum):
-    DYNAMIC = "dynamic"
-    COMPUTATIONAL = "comp"
-
-
-@pytest.fixture
-def find_service_in_dashboard(page: Page) -> Callable[[ServiceType, str], None]:
-    def _(service_type: ServiceType, service_name: str) -> None:
-        page.get_by_test_id("servicesTabBtn").click()
-        _textbox = page.get_by_test_id("searchBarFilter-textField-service")
-        _textbox.fill(service_name)
-        _textbox.press("Enter")
-        page.get_by_test_id(
-            f"studyBrowserListItem_simcore/services/dynamic/{service_name}"
-        ).click()
-
-    return _
+from pytest_simcore.playwright_utils import ServiceType
 
 
 def test_jupyterlab(
     page: Page,
     log_in_and_out: None,
-    find_service_in_dashboard: Callable[[ServiceType, str], None],
-    create_new_project_and_delete: Callable[..., None],
+    create_project_from_service_dashboard: Callable[[ServiceType, str], str],
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
     product_billable: bool,
     service_key: str,
     large_file_size: ByteSize,
 ):
-    find_service_in_dashboard(ServiceType.DYNAMIC, service_key)
-
-    create_new_project_and_delete(expected_states=(RunningState.UNKNOWN,))
+    create_project_from_service_dashboard(ServiceType.DYNAMIC, service_key)
 
     if large_file_size:
 
