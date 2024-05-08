@@ -470,7 +470,7 @@ async def search_files_query_params(
             q = SearchFilesQueryParams(user_id=user_id, kind="owned")
         case "limited":
             q = SearchFilesQueryParams(user_id=user_id, kind="owned", limit=1)
-        case "offseted":
+        case "with_offset":
             q = SearchFilesQueryParams(user_id=user_id, kind="owned", offset=1)
         case _:
             pytest.fail(f"Undefined {query_params_choice=}")
@@ -478,8 +478,8 @@ async def search_files_query_params(
 
 
 @pytest.mark.parametrize("expected_number_of_user_files", [0, 1, 3])
-@pytest.mark.parametrize("query_params_choice", ["default", "limited", "offseted"])
-async def test_search_files_with_queries(
+@pytest.mark.parametrize("query_params_choice", ["default", "limited", "with_offset"])
+async def test_search_files_request(
     client: TestClient,
     user_id: UserID,
     uploaded_file_ids: list[SimcoreS3FileID],
