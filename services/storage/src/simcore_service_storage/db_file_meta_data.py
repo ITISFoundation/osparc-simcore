@@ -77,16 +77,14 @@ async def list_filter_with_partial_file_id(
 ) -> list[FileMetaDataAtDB]:
     stmt = sa.select(file_meta_data).where(
         (
-            sa.case(
-                [
-                    (
-                        user_id != None,
-                        file_meta_data.c.user_id == user_id,
-                    ),
-                ],
-                else_=True,
+            sa.or_(
+                (
+                    file_meta_data.c.user_id.is_(user_id)
+                    if user_id is not None
+                    else True
+                ),
+                file_meta_data.c.project_id.in_(f"{pid}" for pid in project_ids),
             )
-            | file_meta_data.c.project_id.in_(f"{pid}" for pid in project_ids)
         )
         & (
             file_meta_data.c.file_id.startswith(file_id_prefix)
