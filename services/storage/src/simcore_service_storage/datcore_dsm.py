@@ -56,8 +56,8 @@ class DatCoreDataManager(BaseDataManager):
         user_id: UserID,
         *,
         expand_dirs: bool,
-        uuid_filter: str = "",
-        project_id: ProjectID | None = None,
+        uuid_filter: str,
+        project_id: ProjectID | None,
     ) -> list[FileMetaData]:
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         return await datcore_adapter.list_all_datasets_files_metadatas(

@@ -126,6 +126,7 @@ class SimcoreS3DataManager(BaseDataManager):
             user_id,
             expand_dirs=expand_dirs,
             uuid_filter=ensure_ends_with(dataset_id, "/"),
+            project_id=None,
         )
         return data
 
@@ -134,8 +135,8 @@ class SimcoreS3DataManager(BaseDataManager):
         user_id: UserID,
         *,
         expand_dirs: bool,
-        uuid_filter: str = "",
-        project_id: ProjectID | None = None,
+        uuid_filter: str,
+        project_id: ProjectID | None,
     ) -> list[FileMetaData]:
         """
         expand_dirs `False`: returns one metadata entry for each directory
