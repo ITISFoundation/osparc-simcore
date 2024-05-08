@@ -15,12 +15,12 @@ from typing import Final, Literal
 from playwright.sync_api import Page
 from pydantic import ByteSize
 from pytest_simcore.logging_utils import log_context
-from pytest_simcore.playwright_utils import MINUTE, ServiceType
+from pytest_simcore.playwright_utils import MINUTE, SECOND, ServiceType
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = (
     10 * MINUTE
 )  # NOTE: smash is 13Gib, math 2Gib
-
+_WAITING_TIME_FILE_CREATION_PER_GB_IN_TERMINAL: Final[int] = 10 * SECOND
 _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR: Final[dict[str, re.Pattern]] = {
     "jupyter-math": re.compile(r"/api/contents/workspace"),
     "jupyter-smash": re.compile(r"/api/contents/workspace"),
@@ -107,6 +107,8 @@ def test_jupyterlab(
                 _JLabTerminalWebSocketWaiter(
                     expected_message_type="stdout", expected_message_contents="copied"
                 ),
+                timeout=_WAITING_TIME_FILE_CREATION_PER_GB_IN_TERMINAL
+                * min(int(large_file_size.to("GiB")), 1),
             ):
                 terminal.fill(
                     f"dd if=/dev/urandom of=output.txt bs={large_file_block_size} count={blocks_count} iflag=fullblock"
