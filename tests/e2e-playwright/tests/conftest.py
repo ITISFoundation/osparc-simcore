@@ -5,6 +5,7 @@
 # pylint: disable=too-many-statements
 # pylint: disable=no-name-in-module
 
+import json
 import logging
 import os
 import random
@@ -312,7 +313,7 @@ def create_new_project_and_delete(
         with log_context(
             logging.INFO,
             f"Opening project in {product_url=} as {product_billable=}",
-        ):
+        ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
             with log_in_and_out.expect_event(
                 "framereceived", waiter
@@ -327,6 +328,11 @@ def create_new_project_and_delete(
             project_data = response_info.value.json()
             assert project_data
             project_uuid = project_data["data"]["uuid"]
+            ctx.logger.info("%s", f"{project_uuid=}")
+            ctx.logger.info(
+                "project_workbench=%s",
+                f"{json.dumps(project_data['data']['workbench'], indent=2)}",
+            )
 
             created_project_uuids.append(project_uuid)
             return project_uuid
