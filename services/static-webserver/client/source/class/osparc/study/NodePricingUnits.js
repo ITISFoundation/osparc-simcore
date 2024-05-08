@@ -43,6 +43,20 @@ qx.Class.define("osparc.study.NodePricingUnits", {
     }
   },
 
+  statics: {
+    pricingUnitSelected: function(studyId, nodeId, planId, selectedUnitId) {
+      const params = {
+        url: {
+          studyId,
+          nodeId,
+          pricingPlanId: planId,
+          pricingUnitId: selectedUnitId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "putPricingUnit", params);
+    }
+  },
+
   members: {
     __studyId: null,
     __nodeId: null,
@@ -87,7 +101,7 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                     unitButtons.addListener("changeSelectedUnitId", e => {
                       unitButtons.setEnabled(false);
                       const selectedPricingUnitId = e.getData();
-                      this.__pricingUnitSelected(pricingPlans["pricingPlanId"], selectedPricingUnitId)
+                      this.self().pricingUnitSelected(this.__studyId, this.__nodeId, pricingPlans["pricingPlanId"], selectedPricingUnitId)
                         .finally(() => unitButtons.setEnabled(true));
                     });
                   }
@@ -96,18 +110,6 @@ qx.Class.define("osparc.study.NodePricingUnits", {
             }
           });
       });
-    },
-
-    __pricingUnitSelected: function(pricingPlanId, selectedPricingUnitId) {
-      const params = {
-        url: {
-          studyId: this.__studyId,
-          nodeId: this.__nodeId,
-          pricingPlanId,
-          pricingUnitId: selectedPricingUnitId
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "putPricingUnit", params);
     }
   }
 });

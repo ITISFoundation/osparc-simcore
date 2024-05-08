@@ -52,6 +52,8 @@ qx.Class.define("osparc.node.TierSelectionView", {
           node.getVersion()
         )
       };
+      const studyId = node.getStudy().getUuid();
+      const nodeId = node.getNodeId();
       osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
         .then(pricingPlans => {
           if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
@@ -62,8 +64,8 @@ qx.Class.define("osparc.node.TierSelectionView", {
             });
             const unitParams = {
               url: {
-                studyId: node.getStudy().getUuid(),
-                nodeId: node.getNodeId()
+                studyId,
+                nodeId
               }
             };
             osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
@@ -79,6 +81,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
                   const pUnitUI = new osparc.study.PricingUnit(pUnit).set({
                     allowGrowX: false
                   });
+                  pUnitUI.getChildControl("name").exclude();
                   pUnitUI.exclude();
                   tiersLayout.add(pUnitUI);
                   pUnitUIs.push(pUnitUI);
@@ -96,7 +99,13 @@ qx.Class.define("osparc.node.TierSelectionView", {
                 tierBox.addListener("changeSelection", e => {
                   const selection = e.getData();
                   if (selection.length) {
-                    showSelectedTier(selection[0].getModel());
+                    tierBox.setEnabled(false);
+                    const selectedUnitId = selection[0].getModel();
+                    osparc.study.NodePricingUnits.pricingUnitSelected(studyId, nodeId, pricingPlans["pricingPlanId"], selectedUnitId)
+                      .finally(() => {
+                        tierBox.setEnabled(true);
+                        showSelectedTier(selectedUnitId);
+                      });
                   }
                 }, this);
               });
