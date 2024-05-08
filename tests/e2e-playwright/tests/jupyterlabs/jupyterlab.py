@@ -17,6 +17,15 @@ from pytest_simcore.playwright_utils import MINUTE, ServiceType
 
 _WAITING_FOR_SERVICE_TO_START: Final[int] = 5 * MINUTE
 
+_SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR: Final[dict[str, re.Pattern]] = {
+    "jupyter-math": re.compile(r"/api/contents/workspace"),
+    "jupyter-octave-python-math": re.compile(r"/api/contents"),
+}
+
+_SERVICE_NAME_TAB_TO_WAIT_FOR: Final[dict[str, str]] = {
+    "jupyter-math": "README.ipynb",
+}
+
 
 def test_jupyterlab(
     page: Page,
@@ -29,20 +38,25 @@ def test_jupyterlab(
 ):
     # NOTE: this waits for the jupyter to send message, but is not quite enough
     with page.expect_response(
-        re.compile(r"/api/contents/workspace"), timeout=_WAITING_FOR_SERVICE_TO_START
+        _SERVICE_NAME_EXPECTED_RESPONSE_TO_WAIT_FOR[service_key],
+        timeout=_WAITING_FOR_SERVICE_TO_START,
     ):
         create_project_from_service_dashboard(ServiceType.DYNAMIC, service_key, None)
 
     iframe = page.frame_locator("iframe")
+    if service_key == "jupyter-octave-python-math":
+        print(
+            f"skipping any more complicated stuff since this is {service_key=} which is legacy"
+        )
+        return
 
-    wait_for_visible_readme_file = "README.ipynb"
     with log_context(
         logging.INFO,
-        f"Waiting for {wait_for_visible_readme_file} to become visible",
+        f"Waiting for {_SERVICE_NAME_TAB_TO_WAIT_FOR[service_key]} to become visible",
     ):
-        iframe.get_by_role("tab", name=wait_for_visible_readme_file).wait_for(
-            state="visible"
-        )
+        iframe.get_by_role(
+            "tab", name=_SERVICE_NAME_TAB_TO_WAIT_FOR[service_key]
+        ).wait_for(state="visible")
     if large_file_size:
         with log_context(
             logging.INFO,
