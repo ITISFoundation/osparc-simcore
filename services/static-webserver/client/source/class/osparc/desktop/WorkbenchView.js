@@ -1125,6 +1125,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         });
         outputsBox.add(nodeOutputs);
       }
+
+      const nodeFilesBtn = new qx.ui.form.Button(this.tr("Service data"), "@FontAwesome5Solid/folder-open/14").set({
+        allowGrowX: false,
+        allowGrowY: false
+      });
+      osparc.utils.Utils.setIdToWidget(nodeFilesBtn, "nodeFilesBtn");
+      nodeFilesBtn.addListener("execute", () => osparc.node.BaseNodeView.openNodeDataManager(node));
+      outputsBox.add(nodeFilesBtn);
+
       const outputs = new osparc.desktop.PanelView(this.tr("Outputs"), outputsBox);
       outputs._innerContainer.set({
         margin: spacing
