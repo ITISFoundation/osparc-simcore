@@ -358,25 +358,20 @@ def create_new_project_and_delete(
         with log_context(logging.INFO, "Going back to dashboard"):
             page.get_by_test_id("dashboardBtn").click()
             page.get_by_test_id("confirmDashboardBtn").click()
-            # Going back to projecs/studies view (In Sim4life projects:=studies)
             page.get_by_test_id("studiesTabBtn").click()
-            page.wait_for_timeout(1000)
 
     for project_uuid in created_project_uuids:
         with log_context(
             logging.INFO,
-            f"------> Deleting project with {project_uuid=} in {product_url=} as {product_billable=}",
-        ) as ctx:
+            f"Deleting project with {project_uuid=} in {product_url=} as {product_billable=}",
+        ):
 
             response = api_request_context.delete(
                 f"{product_url}v0/projects/{project_uuid}"
             )
             assert (
                 response.status == 204
-            ), f"Unexpected rrror while deleting project: {response.json()}"
-            ctx.messages.done = (
-                f"<----- Response to {project_uuid=} deletion: {response=}"
-            )
+            ), f"Unexpected error while deleting project: '{response.json()}'"
 
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5618#discussion_r1553943415
