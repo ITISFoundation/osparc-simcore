@@ -1,6 +1,6 @@
 astroid==3.1.0
     # via pylint
-black==24.3.0
+black==24.4.2
 build==1.2.1
     # via pip-tools
 bump2version==1.0.1
@@ -15,9 +15,9 @@ dill==0.3.8
     # via pylint
 distlib==0.3.8
     # via virtualenv
-filelock==3.13.3
+filelock==3.14.0
     # via virtualenv
-identify==2.5.35
+identify==2.5.36
     # via pre-commit
 isort==5.13.2
     # via pylint
@@ -39,14 +39,14 @@ pathspec==0.12.1
 pip==24.0
     # via pip-tools
 pip-tools==7.4.1
-platformdirs==4.2.0
+platformdirs==4.2.1
     # via
     #   black
     #   pylint
     #   virtualenv
 pre-commit==3.7.0
 pylint==3.1.0
-pyproject-hooks==1.0.0
+pyproject-hooks==1.1.0
     # via
     #   build
     #   pip-tools
@@ -54,7 +54,7 @@ pyyaml==6.0.1
     # via
     #   pre-commit
     #   watchdog
-ruff==0.3.5
+ruff==0.4.3
 setuptools==69.2.0
     # via
     #   nodeenv
@@ -65,14 +65,13 @@ tomli==2.0.1
     #   build
     #   pip-tools
     #   pylint
-    #   pyproject-hooks
 tomlkit==0.12.4
     # via pylint
 typing-extensions==4.10.0
     # via
     #   astroid
     #   black
-virtualenv==20.25.1
+virtualenv==20.26.1
     # via pre-commit
 watchdog==4.0.0
 wheel==0.43.0
