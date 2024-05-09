@@ -1,7 +1,14 @@
+from datetime import datetime
 from enum import Enum
 from typing import Any, TypeAlias
 
 from aiopg.sa.result import RowProxy
+from models_library.basic_types import HttpUrlWithCustomMinLength
+from models_library.projects import ClassifierID, ProjectID
+from models_library.projects_access import AccessRights, GroupIDStr
+from models_library.projects_ui import StudyUI
+from models_library.users import UserID
+from pydantic import BaseModel
 from simcore_postgres_database.models.projects import ProjectType
 
 ProjectDict: TypeAlias = dict[str, Any]
@@ -20,6 +27,38 @@ class ProjectTypeAPI(str, Enum):
             ProjectTypeAPI.template: ProjectType.TEMPLATE,
             ProjectTypeAPI.user: ProjectType.STANDARD,
         }[api_type]
+
+
+class ProjectDB(BaseModel):
+    id: str
+    type: ProjectType
+    uuid: ProjectID
+    name: str
+    description: str | None
+    thumbnail: HttpUrlWithCustomMinLength | None
+    prj_owner: int
+    creation_date: datetime
+    last_change_date: datetime
+    access_rights: dict[GroupIDStr, AccessRights]
+    ui: StudyUI | None
+    classifiers: list[ClassifierID]
+    dev: dict | None
+    quality: dict[str, Any]
+    published: bool
+    hidden: bool
+
+    class Config:
+        orm_mode = True
+
+
+class UserProjectAccessRightsDB(BaseModel):
+    uid: UserID
+    read: bool
+    write: bool
+    delete: bool
+
+    class Config:
+        orm_mode = True
 
 
 __all__: tuple[str, ...] = (

@@ -118,6 +118,17 @@ class ProjectUpdate(InputSchema):
     quality: dict[str, Any] = FieldNotRequired()
 
 
+class ProjectPatch(InputSchema):
+    name: str = Field(None)
+    description: str = Field(None)
+    thumbnail: HttpUrlWithCustomMinLength = Field(None)
+    access_rights: dict[GroupIDStr, AccessRights] = Field(None)
+    classifiers: list[ClassifierID] = Field(None)
+    dev: dict | None = Field(None)
+    ui: StudyUI | None = Field(None)
+    quality: dict[str, Any] = Field(None)
+
+
 __all__: tuple[str, ...] = (
     "EmptyModel",
     "ProjectCopyOverride",

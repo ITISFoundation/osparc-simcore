@@ -81,7 +81,7 @@ from .exceptions import (
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
 )
-from .models import ProjectDict
+from .models import ProjectDB, ProjectDict, UserProjectAccessRightsDB
 
 _logger = logging.getLogger(__name__)
 
@@ -444,6 +444,68 @@ class ProjectDBAPI(BaseProjectDB):
                 project_type,
             )
 
+    # NOTE: MD: I intentionally didn't include the workbench. There is a special interface
+    # for the workbench, and at some point, this column should be removed from the table.
+    # The same holds true for access_rights/ui/classifiers/quality, but we have decided to proceed step by step.
+    _SELECTION_PROJECT_DB_ARGS = [
+        projects.c.id,
+        projects.c.type,
+        projects.c.uuid,
+        projects.c.name,
+        projects.c.description,
+        projects.c.thumbnail,
+        projects.c.prj_owner,
+        projects.c.creation_date,
+        projects.c.last_change_date,
+        projects.c.access_rights,
+        projects.c.ui,
+        projects.c.classifiers,
+        projects.c.dev,
+        projects.c.quality,
+        projects.c.published,
+        projects.c.hidden,
+    ]
+
+    async def get_project_db(self, project_uuid: ProjectID) -> ProjectDB:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select(*self._SELECTION_PROJECT_DB_ARGS).where(
+                    projects.c.uuid == f"{project_uuid}"
+                )
+            )
+            row = await result.fetchone()
+            if row is None:
+                raise ProjectNotFoundError(project_uuid=project_uuid)
+            return ProjectDB.from_orm(row)
+
+    async def get_user_project_access_rights(
+        self, user_id: UserID, project_uuid: ProjectID
+    ) -> UserProjectAccessRightsDB | None:
+        # NOTE: MD: I didn't manage to write this query in sqlalchemy, but
+        # when we migrate project access rights to its own table, this will
+        # be not needed and we can use something similar to "list_wallets_for_user"
+        raw_sql = sa.text(
+            f"""
+                select uid, max(read) as read, max(write) as write, max(delete) as delete
+                from user_to_groups utg
+                join
+                    (
+                        SELECT cast(key as int) AS id, value ->>'read' as read, value ->>'write' as write, value ->>'delete' as delete
+                        FROM projects, jsonb_each(access_rights)
+                        where "uuid" = '{project_uuid}'
+                    ) prj_access_rights on utg.gid = prj_access_rights.id
+                where utg.uid = {user_id} and utg.access_rights ->> 'read' = 'true'
+                group by uid
+            """
+        )
+
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(raw_sql)
+            row = await result.fetchone()
+            if row is None:
+                return None
+            return UserProjectAccessRightsDB.from_orm(row)
+
     async def replace_project(
         self,
         new_project_data: ProjectDict,
@@ -527,6 +589,21 @@ class ProjectDBAPI(BaseProjectDB):
             return convert_to_schema_names(project, user_email, tags=tags)
         msg = "linter unhappy without this"
         raise RuntimeError(msg)
+
+    async def patch_project(
+        self, project_uuid: ProjectID, new_partial_project_data: dict
+    ) -> ProjectDB:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                projects.update()
+                .values(last_change_date=sa.func.now(), **new_partial_project_data)
+                .where(projects.c.uuid == f"{project_uuid}")
+                .returning(*self._SELECTION_PROJECT_DB_ARGS)
+            )
+            row = await result.fetchone()
+            if row is None:
+                raise ProjectNotFoundError(project_uuid=project_uuid)
+            return ProjectDB.from_orm(row)
 
     async def update_project_owner_without_checking_permissions(
         self,

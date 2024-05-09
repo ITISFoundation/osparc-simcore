@@ -20,6 +20,15 @@ class NodeCreate(InputSchemaWithoutCamelCase):
     service_id: str | None
 
 
+class NodePatch(InputSchemaWithoutCamelCase):
+    service_version: ServiceVersion = Field(None)
+    label: str = Field(None)
+    inputs: dict = Field(None)
+    input_nodes: list[str] = Field(None)
+    progress: float | None = Field(None)
+    boot_options: dict = Field(None)
+
+
 class NodeCreated(OutputSchema):
     node_id: NodeID
 

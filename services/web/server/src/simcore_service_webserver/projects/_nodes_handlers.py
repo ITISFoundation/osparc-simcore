@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetIdle,
     NodeGetUnknown,
     NodeOutputs,
+    NodePatch,
     NodeRetrieve,
 )
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupTypeInModel
@@ -192,6 +193,37 @@ async def get_node(request: web.Request) -> web.Response:
         if isinstance(service_data, DynamicServiceGet)
         else service_data.dict()
     )
+
+
+@routes.patch(
+    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="patch_project_node"
+)
+@login_required
+@permission_required("project.node.update")
+@_handle_project_nodes_exceptions
+async def patch_project_node(request: web.Request) -> web.Response:
+    req_ctx = RequestContext.parse_obj(request)
+    path_params = parse_request_path_parameters_as(NodePathParams, request)
+    node_patch = await parse_request_body_as(NodePatch, request)
+
+    # ensure the project exists
+    await projects_api.get_project_for_user(
+        request.app,
+        project_uuid=f"{path_params.project_id}",
+        user_id=req_ctx.user_id,
+    )
+    updated_project = await projects_api.patch_project_node(
+        request.app,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        node_id=path_params.node_id,
+        node_patch=node_patch,
+    )
+    await projects_api.notify_project_node_update(
+        request.app, updated_project, path_params.node_id, errors=None
+    )
+
+    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.delete(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="delete_node")
