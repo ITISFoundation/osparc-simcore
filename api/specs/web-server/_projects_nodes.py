@@ -122,7 +122,9 @@ def update_node_outputs(
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def patch_project_node(project_id: str, node_id: str, _new: NodePatch):  # noqa: ARG001
+def patch_project_node(
+    project_id: ProjectID, node_id: str, _new: NodePatch
+):  # noqa: ARG001
     ...
 
 

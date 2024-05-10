@@ -2333,6 +2333,7 @@ paths:
         schema:
           title: Project Id
           type: string
+          format: uuid
         name: project_id
         in: path
       requestBody:
@@ -2522,6 +2523,7 @@ paths:
         schema:
           title: Project Id
           type: string
+          format: uuid
         name: project_id
         in: path
       - required: true
@@ -2960,7 +2962,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -10792,7 +10794,6 @@ components:
       - title
       - text
       - date
-      - product
       - id
       - read
       type: object
@@ -10824,6 +10825,7 @@ components:
             - UNDEFINED
             type: string
           - type: string
+          default: UNDEFINED
         id:
           title: Id
           type: string
@@ -10839,7 +10841,6 @@ components:
       - title
       - text
       - date
-      - product
       type: object
       properties:
         user_id:
@@ -10869,6 +10870,7 @@ components:
             - UNDEFINED
             type: string
           - type: string
+          default: UNDEFINED
     UserNotificationPatch:
       title: UserNotificationPatch
       required:

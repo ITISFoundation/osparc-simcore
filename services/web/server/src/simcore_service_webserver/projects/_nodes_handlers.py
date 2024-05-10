@@ -73,6 +73,7 @@ from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
+    ProjectInvalidRightsError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNodeResourcesInvalidError,
     ProjectNotFoundError,
@@ -98,6 +99,8 @@ def _handle_project_nodes_exceptions(handler: Handler):
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except WalletNotEnoughCreditsError as exc:
             raise web.HTTPPaymentRequired(reason=f"{exc}") from exc
+        except ProjectInvalidRightsError as exc:
+            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
 
     return wrapper
 
@@ -206,21 +209,13 @@ async def patch_project_node(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_patch = await parse_request_body_as(NodePatch, request)
 
-    # ensure the project exists
-    await projects_api.get_project_for_user(
+    await projects_api.patch_project_node(
         request.app,
-        project_uuid=f"{path_params.project_id}",
-        user_id=req_ctx.user_id,
-    )
-    updated_project = await projects_api.patch_project_node(
-        request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
         node_id=path_params.node_id,
         node_patch=node_patch,
-    )
-    await projects_api.notify_project_node_update(
-        request.app, updated_project, path_params.node_id, errors=None
     )
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

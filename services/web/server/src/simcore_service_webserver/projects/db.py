@@ -496,7 +496,7 @@ class ProjectDBAPI(BaseProjectDB):
                     ) prj_access_rights on utg.gid = prj_access_rights.id
                 where utg.uid = {user_id} and utg.access_rights ->> 'read' = 'true'
                 group by uid
-            """
+            """  # noqa: S608
         )
 
         async with self.engine.acquire() as conn:

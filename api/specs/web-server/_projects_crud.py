@@ -100,7 +100,7 @@ async def replace_project(project_id: ProjectID, _replace: ProjectReplace):
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def patch_project(project_id: str, _new: ProjectPatch):
+def patch_project(project_id: ProjectID, _new: ProjectPatch):
     ...
 
 

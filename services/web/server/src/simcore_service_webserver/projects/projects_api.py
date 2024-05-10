@@ -31,6 +31,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodePatch
 from models_library.errors import ErrorDict
+from models_library.products import ProductName
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -815,22 +816,33 @@ async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool
 async def patch_project_node(
     app: web.Application,
     *,
+    product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     node_patch: NodePatch,
-) -> ProjectDict:
+) -> None:
     _node_patch_exclude_unset: dict[str, Any] = node_patch.dict(exclude_unset=True)
-
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+
+    # 1. Check user permissions
+    _user_project_access_rights = await db.get_user_project_access_rights(
+        user_id, project_id
+    )
+    if not _user_project_access_rights or not _user_project_access_rights.write:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
+
+    # 2. Patch the project node
     updated_project, _ = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
-        product_name=None,  # MD: I will add it
+        product_name=product_name,
         new_node_data=_node_patch_exclude_unset,
     )
-    return updated_project
+
+    # 3. Notify project node update
+    await notify_project_node_update(app, updated_project, node_id, errors=None)
 
 
 async def update_project_node_outputs(
