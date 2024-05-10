@@ -822,7 +822,9 @@ async def patch_project_node(
     node_id: NodeID,
     node_patch: NodePatch,
 ) -> None:
-    _node_patch_exclude_unset: dict[str, Any] = node_patch.dict(exclude_unset=True)
+    _node_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
+        node_patch, exclude_unset=True, by_alias=True
+    )
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # 1. Check user permissions

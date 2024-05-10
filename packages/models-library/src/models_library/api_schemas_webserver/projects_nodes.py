@@ -1,6 +1,7 @@
 from typing import Any, ClassVar, Literal
 
-from pydantic import Field
+from models_library.projects_nodes import InputsDict
+from pydantic import BaseModel, Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
@@ -20,13 +21,17 @@ class NodeCreate(InputSchemaWithoutCamelCase):
     service_id: str | None
 
 
+class BootOptions(BaseModel):
+    boot_mode: str
+
+
 class NodePatch(InputSchemaWithoutCamelCase):
-    service_version: ServiceVersion = Field(None)
+    service_version: ServiceVersion = Field(None, alias="version")
     label: str = Field(None)
-    inputs: dict = Field(None)
-    input_nodes: list[str] = Field(None)
-    progress: float | None = Field(None)
-    boot_options: dict = Field(None)
+    inputs: InputsDict = Field(None)
+    input_nodes: list[NodeID] = Field(None, alias="inputNodes")
+    progress: float | None = Field(None, ge=0, le=100)  # NOTE: MD: deprecated?
+    boot_options: BootOptions = Field(None, alias="bootOptions")
 
 
 class NodeCreated(OutputSchema):
