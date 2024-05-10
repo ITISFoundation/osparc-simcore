@@ -307,7 +307,7 @@ def mocked_webserver_service_api_base(
         assert_all_called=False,
         assert_all_mocked=services_mock_enabled,
     ) as respx_mock:
-        if not services_mock_enabled:
+        if services_mock_enabled:
             # healthcheck_readiness_probe, healthcheck_liveness_probe
             response_body = {
                 "name": "webserver",
