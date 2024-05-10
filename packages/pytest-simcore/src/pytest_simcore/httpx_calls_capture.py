@@ -80,14 +80,13 @@ def spy_httpx_calls_capture_path(
 ) -> Path:
     if capture_path := request.config.getoption("--spy-httpx-calls-capture-path"):
         assert isinstance(capture_path, Path)
-        assert capture_path.is_file()
     else:
         capture_path = (
             tmp_path_factory.mktemp("session_fixture_spy_httpx_calls_capture_path")
             / _DEFAULT_CAPTURE_PATHNAME
         )
-
     assert capture_path.suffix == ".json"
+    capture_path.touch()
     return capture_path
 
 
@@ -160,11 +159,12 @@ class _CaptureSideEffect:
 
 @pytest.fixture
 def create_respx_mock_from_capture(
-    spy_httpx_calls_enabled: bool,
+    services_mock_enabled: bool,
 ) -> CreateRespxMockCallback:
     """Creates a respx.MockRouter from httpx calls captures in capture_path **ONLY**
     if spy_httpx_calls_enabled=False  otherwise it skips this fixture
     """
+
     # NOTE: multiple improvements on this function planed in https://github.com/ITISFoundation/osparc-simcore/issues/5705
     def _(
         respx_mocks: list[respx.MockRouter],
@@ -175,11 +175,7 @@ def create_respx_mock_from_capture(
         assert capture_path.is_file()
         assert capture_path.suffix == ".json"
 
-        if spy_httpx_calls_enabled:
-            print(
-                f"🔊 Skipping creation of respx.MockRouter from {capture_path.name} since {spy_httpx_calls_enabled=}"
-            )
-        else:
+        if services_mock_enabled:
             captures: list[HttpApiCallCaptureModel] = parse_obj_as(
                 list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
             )
@@ -218,9 +214,11 @@ def create_respx_mock_from_capture(
                 # response
                 side_effect = _CaptureSideEffect(
                     capture=capture,
-                    side_effect=side_effects_callbacks[ii]
-                    if len(side_effects_callbacks)
-                    else None,
+                    side_effect=(
+                        side_effects_callbacks[ii]
+                        if len(side_effects_callbacks)
+                        else None
+                    ),
                 )
 
                 router = _get_correct_mock_router_for_capture(respx_mocks, capture)
@@ -232,6 +230,10 @@ def create_respx_mock_from_capture(
 
                 assert r.side_effect == side_effect
                 side_effects.append(side_effect)
+        else:
+            print(
+                f"🔊 Skipping creation of respx.MockRouter from {capture_path.name} since --spy-httpx-calls-enabled=true"
+            )
 
         return respx_mocks
 
