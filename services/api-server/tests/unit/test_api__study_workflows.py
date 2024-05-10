@@ -204,7 +204,7 @@ class MockedBackendApiDict(TypedDict):
 @pytest.fixture
 def mocked_backend_or_none(
     project_tests_dir: Path,
-    httpx_calls_capture_enabled: bool,
+    spy_httpx_calls_enabled: bool,
     mocked_webserver_service_api_base: MockRouter,
     mocked_storage_service_api_base: MockRouter,
     mocked_directorv2_service_api_base: MockRouter,
@@ -217,7 +217,7 @@ def mocked_backend_or_none(
     )
     mock.return_value = UploadedFile(store_id=0, etag="123")
 
-    if not httpx_calls_capture_enabled:
+    if not spy_httpx_calls_enabled:
         create_respx_mock_from_capture(
             respx_mocks=[
                 mocked_webserver_service_api_base,

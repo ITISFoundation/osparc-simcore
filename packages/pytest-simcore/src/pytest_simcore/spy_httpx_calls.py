@@ -27,12 +27,18 @@ from .helpers.httpx_calls_capture_model import (
 def pytest_addoption(parser: pytest.Parser):
     simcore_group = parser.getgroup("simcore")
     simcore_group.addoption(
-        "--httpx-calls-capture-path",
+        "--spy-httpx-calls-enabled",
+        action="store",
+        type=bool,
+        default=None,
+        help="If set, it activates a capture mechanism while the tests is running that can be used to generate mock data in respx",
+    )
+    simcore_group.addoption(
+        "--spy-httpx-calls-capture-path",
         action="store",
         type=Path,
         default=None,
-        help="Path to store capture calls from httpx clients during the tests."
-        "If set, it activates a capture mechanism while the tests is running that can be used to generate mock data in respx",
+        help="Path to store capture calls from httpx clients during the tests.",
     )
 
 
@@ -46,7 +52,7 @@ def httpx_calls_capture_path_or_none(request: pytest.FixtureRequest) -> Path | N
 
 
 @pytest.fixture(scope="session")
-def httpx_calls_capture_enabled(httpx_calls_capture_path_or_none) -> bool:
+def spy_httpx_calls_enabled(httpx_calls_capture_path_or_none: Path | None) -> bool:
     return httpx_calls_capture_path_or_none is not None
 
 
@@ -57,7 +63,7 @@ def create_httpx_async_client_spy_if_enabled(
     def _(module_name: str) -> MockType | None:
         if httpx_calls_capture_path_or_none is not None:
             print(
-                "🚨 httpx capture enabled.",
+                "🚨 Spying httpx calls enabled.",
                 "Saving captures from '{module_name}' at",
                 httpx_calls_capture_path_or_none,
                 "...",
