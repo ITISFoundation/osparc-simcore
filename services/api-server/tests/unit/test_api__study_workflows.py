@@ -16,7 +16,7 @@ import httpx
 import pytest
 from fastapi.encoders import jsonable_encoder
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.httpx_calls_capture_model import CreateRespxMockCallback
+from pytest_simcore.helpers.httpx_calls_capture_models import CreateRespxMockCallback
 from respx import MockRouter
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_service_api_server._meta import API_VTAG

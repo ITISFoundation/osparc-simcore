@@ -4,14 +4,14 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 """
-The pytest_simcore.spy_httpx_calls module provides fixtures to capture the calls made by instances of httpx.AsyncClient
+The pytest_simcore.httpx_calls_capture module provides fixtures to capture the calls made by instances of httpx.AsyncClient
 when interacting with a real backend. These captures can then be used to create a respx.MockRouter, which emulates the backend while running
 your tests.
 
 This module ensures a reliable reproduction and maintenance of mock responses that reflect the real backend environments used for testing.
 
 ## Setting Up the Module and Spy in Your Test Suite (once)
-- Include 'pytest_simcore.spy_httpx_calls' in your `pytest_plugins`.
+- Include 'pytest_simcore.httpx_calls_capture' in your `pytest_plugins`.
 - Implement `create_httpx_async_client_spy_if_enabled("module.name.httpx.AsyncClient")` within your codebase.
 
 ## Creating Mock Captures (every time you want to create/update the mock)
@@ -41,7 +41,7 @@ from pydantic import parse_obj_as
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_client_base_dev import AsyncClientCaptureWrapper
 
-from .helpers.httpx_calls_capture_model import (
+from .helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
     PathDescription,

@@ -17,13 +17,13 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.httpbin_service",
+    "pytest_simcore.httpx_calls_capture",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
-    "pytest_simcore.spy_httpx_calls",
     "pytest_simcore.tmp_path_extra",
 ]
 

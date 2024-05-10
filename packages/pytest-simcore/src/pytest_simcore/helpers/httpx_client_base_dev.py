@@ -9,7 +9,7 @@ from jsonschema import ValidationError
 from pydantic import parse_file_as
 
 from .httpx_calls_capture_errors import CaptureProcessingError
-from .httpx_calls_capture_model import HttpApiCallCaptureModel, get_captured
+from .httpx_calls_capture_models import HttpApiCallCaptureModel, get_captured
 
 _logger = logging.getLogger(__name__)
 

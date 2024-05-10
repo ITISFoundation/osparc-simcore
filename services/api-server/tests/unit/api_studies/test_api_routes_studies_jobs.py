@@ -15,7 +15,7 @@ import respx
 from faker import Faker
 from fastapi import status
 from pydantic import parse_obj_as
-from pytest_simcore.helpers.httpx_calls_capture_model import (
+from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
 )
