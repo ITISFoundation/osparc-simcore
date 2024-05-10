@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Literal, get_args
+from typing import Any, Literal
 from urllib.parse import unquote
 
 import httpx
@@ -21,12 +21,12 @@ from .httpx_calls_capture_parameters import (
     PathDescription,
 )
 
-service_hosts = Literal["storage", "catalog", "webserver", "director-v2"]
+ServiceHostNames = Literal["storage", "catalog", "webserver", "director-v2"]
 
 assert CapturedParameterSchema  # nosec
 
 
-def _get_openapi_specs(host: service_hosts) -> dict[str, Any]:
+def _get_openapi_specs(host: ServiceHostNames) -> dict[str, Any]:
     url: str
     match host:
         case "storage":
@@ -117,9 +117,6 @@ def _determine_path(
 
 
 def enhance_from_openapi_spec(response: httpx.Response) -> PathDescription:
-    assert response.url.host in get_args(
-        service_hosts
-    ), f"{response.url.host} is not in {service_hosts} - please add it yourself"
     openapi_spec: dict[str, Any] = _get_openapi_specs(response.url.host)
     return _determine_path(
         openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0])
