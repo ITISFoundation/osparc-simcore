@@ -1,7 +1,7 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Final, Literal
+from typing import Final, Literal, NamedTuple
 from uuid import UUID
 
 from models_library.api_schemas_storage import (
@@ -263,6 +263,11 @@ class CopyAsSoftLinkParams(BaseModel):
         if v is not None:
             return urllib.parse.unquote(f"{v}")
         return v
+
+
+class UserOrProjectFilter(NamedTuple):
+    user_id: UserID | None
+    project_ids: list[ProjectID]
 
 
 __all__ = (

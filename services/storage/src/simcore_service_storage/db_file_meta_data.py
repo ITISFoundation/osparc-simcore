@@ -14,7 +14,7 @@ from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .exceptions import FileMetaDataNotFoundError
-from .models import FileMetaData, FileMetaDataAtDB
+from .models import FileMetaData, FileMetaDataAtDB, UserOrProjectFilter
 
 
 async def exists(conn: SAConnection, file_id: SimcoreS3FileID) -> bool:
@@ -68,8 +68,7 @@ async def get(conn: SAConnection, file_id: SimcoreS3FileID) -> FileMetaDataAtDB:
 async def list_filter_with_partial_file_id(
     conn: SAConnection,
     *,
-    user_id: UserID,
-    project_ids: list[ProjectID],
+    user_or_project_filter: UserOrProjectFilter,
     file_id_prefix: str | None,
     partial_file_id: str | None,
     sha256_checksum: SHA256Str | None,
@@ -77,11 +76,13 @@ async def list_filter_with_partial_file_id(
     limit: int | None = None,
     offset: int | None = None,
 ) -> list[FileMetaDataAtDB]:
-    # Build the core where clause with mandatory conditions
-    conditions = [file_meta_data.c.user_id == f"{user_id}"]
+    conditions = []
 
-    # Check if project_ids is not empty and add condition
-    if project_ids:
+    # user_or_project_filter
+    if user_id := user_or_project_filter.user_id:
+        conditions.append(file_meta_data.c.user_id == f"{user_id}")
+    elif project_ids := user_or_project_filter.project_ids:
+        # Check if project_ids is not empty and add condition
         conditions.append(file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids))
 
     # Optional filters
