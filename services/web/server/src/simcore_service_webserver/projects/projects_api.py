@@ -1562,23 +1562,6 @@ async def notify_project_state_update(
             await send_message_to_standard_group(app, group_id=room, message=message)
 
 
-async def notify_project_update(app: web.Application, project: ProjectDict) -> None:
-    if await is_project_hidden(app, ProjectID(project["uuid"])):
-        return
-    message = SocketMessageDict(
-        event_type=SOCKET_IO_PROJECT_UPDATED_EVENT,
-        data={
-            "project_uuid": project["uuid"],
-            "data": project,
-        },
-    )
-    rooms_to_notify: Generator[GroupID, None, None] = (
-        gid for gid, rights in project["accessRights"].items() if rights["read"]
-    )
-    for room in rooms_to_notify:
-        await send_message_to_standard_group(app, group_id=room, message=message)
-
-
 async def notify_project_node_update(
     app: web.Application,
     project: dict,
