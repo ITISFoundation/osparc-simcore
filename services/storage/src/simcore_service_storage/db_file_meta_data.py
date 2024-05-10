@@ -73,41 +73,42 @@ async def list_filter_with_partial_file_id(
     partial_file_id: str | None,
     sha256_checksum: SHA256Str | None,
     only_files: bool,
+    limit: int | None = None,
+    offset: int | None = None,
 ) -> list[FileMetaDataAtDB]:
-    stmt = sa.select(file_meta_data).where(
-        (
-            sa.or_(
-                (
-                    file_meta_data.c.user_id == f"{user_or_project_filter.user_id}"
-                    if user_or_project_filter.user_id is not None
-                    else True
-                ),
-                file_meta_data.c.project_id.in_(
-                    f"{pid}" for pid in user_or_project_filter.project_ids
-                ),
-            )
-        )
-        & (
-            file_meta_data.c.file_id.startswith(file_id_prefix)
-            if file_id_prefix
-            else True
-        )
-        & (
-            file_meta_data.c.file_id.ilike(f"%{partial_file_id}%")
-            if partial_file_id
-            else True
-        )
-        & (
-            file_meta_data.c.is_directory.is_(False)  # noqa FBT003
-            if only_files
-            else True
-        )
-        & (
-            file_meta_data.c.sha256_checksum == f"{sha256_checksum}"
-            if sha256_checksum
-            else True
-        )
+    conditions = []
+
+    # user_or_project_filter
+    if user_id := user_or_project_filter.user_id:
+        conditions.append(file_meta_data.c.user_id == f"{user_id}")
+    elif project_ids := user_or_project_filter.project_ids:
+        # Check if project_ids is not empty and add condition
+        conditions.append(file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids))
+
+    # Optional filters
+    if file_id_prefix:
+        conditions.append(file_meta_data.c.file_id.startswith(file_id_prefix))
+    if partial_file_id:
+        conditions.append(file_meta_data.c.file_id.ilike(f"%{partial_file_id}%"))
+    if only_files:
+        conditions.append(file_meta_data.c.is_directory.is_(False))
+    if sha256_checksum:
+        conditions.append(file_meta_data.c.sha256_checksum == sha256_checksum)
+
+    where_clause = sa.and_(*conditions)
+
+    stmt = (
+        sa.select(file_meta_data).where(where_clause)
+        # sorted as oldest first
+        .order_by(file_meta_data.c.created_at.asc())
     )
+
+    # Apply limit and offset if specified
+    if limit is not None:
+        stmt = stmt.limit(limit)
+    if offset is not None:
+        stmt = stmt.offset(offset)
+
     return [FileMetaDataAtDB.from_orm(row) async for row in await conn.execute(stmt)]
 
 
