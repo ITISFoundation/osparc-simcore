@@ -38,7 +38,6 @@ from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import HttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.utils_docker import get_service_published_port
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.utils_host import get_localhost_ip
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
@@ -51,43 +50,10 @@ from simcore_service_api_server.services.solver_job_outputs import ResultsTypes
 
 
 @pytest.fixture
-def backend_services_env_vars(
-    services_mock_enabled: bool,
-    osparc_simcore_root_dir: Path,
-) -> EnvVarsDict:
-    # If spying, get correct HOST and PORTS to real back-end
-    overrides = {}
-    if not services_mock_enabled:
-        try:
-            content = yaml.safe_load(
-                (osparc_simcore_root_dir / ".stack-simcore-production.yml").read_text()
-            )
-        except FileNotFoundError as err:
-            pytest.fail(
-                f"Cannot run spy-mode without deploying osparc-simcore locally\n. TIP: `make prod-up`\n{err}"
-            )
-
-        for name in [
-            "catalog",
-            "director-v2",
-            "storage",
-            "webserver",
-        ]:
-            prefix = name.replace("-", "_").upper()
-            for ports in content["services"][name]["ports"]:
-                target = ports["target"]
-                if target in (8000, 8080):
-                    published = get_service_published_port(f"simcore_{name}", target)
-                    overrides[f"{prefix}_HOST"] = get_localhost_ip()
-                    overrides[f"{prefix}_PORT"] = str(published)
-    return overrides
-
-
-@pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     default_app_env_vars: EnvVarsDict,
-    backend_services_env_vars: EnvVarsDict,
+    backend_env_vars_overrides: EnvVarsDict,
 ) -> EnvVarsDict:
     env_vars = setenvs_from_dict(
         monkeypatch,
@@ -101,7 +67,7 @@ def app_environment(
             "SC_BOOT_MODE": "production",
             "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
             "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
-            **backend_services_env_vars,
+            **backend_env_vars_overrides,
         },
     )
 

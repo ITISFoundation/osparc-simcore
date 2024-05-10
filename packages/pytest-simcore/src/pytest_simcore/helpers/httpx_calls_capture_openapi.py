@@ -116,7 +116,9 @@ def _determine_path(
     raise PathNotInOpenApiSpecError(msg)
 
 
-def enhance_from_openapi_spec(response: httpx.Response) -> PathDescription:
+def enhance_path_description_from_openapi_spec(
+    response: httpx.Response,
+) -> PathDescription:
     openapi_spec: dict[str, Any] = _get_openapi_specs(response.url.host)
     return _determine_path(
         openapi_spec, Path(response.request.url.raw_path.decode("utf8").split("?")[0])

@@ -32,14 +32,18 @@ This module ensures a reliable reproduction and maintenance of mock responses th
 import json
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 import httpx
 import pytest
 import respx
+import yaml
 from pydantic import parse_obj_as
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_client_base_dev import AsyncClientCaptureWrapper
+from pytest_simcore.helpers.utils_docker import get_service_published_port
+from pytest_simcore.helpers.utils_envs import EnvVarsDict
+from pytest_simcore.helpers.utils_host import get_localhost_ip
 
 from .helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
@@ -47,6 +51,7 @@ from .helpers.httpx_calls_capture_models import (
     PathDescription,
     SideEffectCallback,
 )
+from .helpers.httpx_calls_capture_openapi import ServiceHostNames
 
 _DEFAULT_CAPTURE_PATHNAME = "spy-httpx-calls-capture-path.json"
 
@@ -133,6 +138,34 @@ def create_httpx_async_client_spy_if_enabled(
         return None
 
     return _
+
+
+@pytest.fixture
+def backend_env_vars_overrides(
+    services_mock_enabled: bool,
+    osparc_simcore_root_dir: Path,
+) -> EnvVarsDict:
+    """If spying, returns the correct HOST and PORTS to real back-end"""
+    overrides = {}
+    if not services_mock_enabled:
+        try:
+            content = yaml.safe_load(
+                (osparc_simcore_root_dir / ".stack-simcore-production.yml").read_text()
+            )
+        except FileNotFoundError as err:
+            pytest.fail(
+                f"Cannot run spy-mode without deploying osparc-simcore locally\n. TIP: `make prod-up`\n{err}"
+            )
+
+        for name in get_args(ServiceHostNames):
+            prefix = name.replace("-", "_").upper()
+            for ports in content["services"][name]["ports"]:
+                target = ports["target"]
+                if target in (8000, 8080):
+                    published = get_service_published_port(f"simcore_{name}", target)
+                    overrides[f"{prefix}_HOST"] = get_localhost_ip()
+                    overrides[f"{prefix}_PORT"] = str(published)
+    return overrides
 
 
 class _CaptureSideEffect:

@@ -8,7 +8,7 @@ import respx
 from fastapi import status
 from pydantic import BaseModel, Field
 
-from .httpx_calls_capture_openapi import enhance_from_openapi_spec
+from .httpx_calls_capture_openapi import enhance_path_description_from_openapi_spec
 from .httpx_calls_capture_parameters import PathDescription
 
 
@@ -40,7 +40,7 @@ class HttpApiCallCaptureModel(BaseModel):
 
         path: PathDescription | str
         if enhance_from_openapi_specs:
-            path = enhance_from_openapi_spec(response)
+            path = enhance_path_description_from_openapi_spec(response)
         else:
             path = response.request.url.path
 
