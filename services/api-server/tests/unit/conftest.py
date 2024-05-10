@@ -97,7 +97,7 @@ def app(
     """Inits app on a light environment"""
 
     create_httpx_async_client_spy_if_enabled(
-        "simcore_service_api_server.utils.client_base.httpx.AsyncClient"
+        "simcore_service_api_server.utils.client_base.AsyncClient"
     )
     return init_app()
 
@@ -124,6 +124,7 @@ async def client(
         headers={"Content-Type": "application/json"},
         transport=ASGITransport(app=app),
     ) as httpx_async_client:
+        assert isinstance(httpx_async_client, httpx.AsyncClient)
         yield httpx_async_client
 
 
@@ -273,11 +274,19 @@ def mocked_directorv2_service_api_base(
         yield respx_mock
 
 
+def _create_respx_mock_kwargs(base_url: str, spy_httpx_calls_enabled: bool) -> dict:
+    return {
+        "base_url": base_url if not spy_httpx_calls_enabled else None,
+        "assert_all_called": False,
+        "assert_all_mocked": not spy_httpx_calls_enabled,
+    }
+
+
 @pytest.fixture
 def mocked_webserver_service_api_base(
     app: FastAPI,
     webserver_service_openapi_specs: dict[str, Any],
-    spy_httpx_calls_enabled: bool,
+    services_mock_enabled: bool,
 ) -> Iterator[MockRouter]:
     """
     Creates a respx.mock to capture calls to webserver API
@@ -292,12 +301,13 @@ def mocked_webserver_service_api_base(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_WEBSERVER.base_url,
+        base_url=settings.API_SERVER_WEBSERVER.base_url
+        if services_mock_enabled
+        else None,
         assert_all_called=False,
-        assert_all_mocked=not spy_httpx_calls_enabled,
+        assert_all_mocked=services_mock_enabled,
     ) as respx_mock:
-
-        if not spy_httpx_calls_enabled:
+        if not services_mock_enabled:
             # healthcheck_readiness_probe, healthcheck_liveness_probe
             response_body = {
                 "name": "webserver",
@@ -319,7 +329,7 @@ def mocked_storage_service_api_base(
     app: FastAPI,
     storage_service_openapi_specs: dict[str, Any],
     faker: Faker,
-    spy_httpx_calls_enabled: bool,
+    services_mock_enabled: bool,
 ) -> Iterator[MockRouter]:
     """
     Creates a respx.mock to capture calls to strage API
@@ -334,13 +344,15 @@ def mocked_storage_service_api_base(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_STORAGE.base_url,
+        base_url=settings.API_SERVER_STORAGE.base_url
+        if services_mock_enabled
+        else None,
         assert_all_called=False,
-        assert_all_mocked=not spy_httpx_calls_enabled,
+        assert_all_mocked=services_mock_enabled,
     ) as respx_mock:
         assert openapi["paths"]["/v0/"]["get"]["operationId"] == "health_check"
 
-        if not spy_httpx_calls_enabled:
+        if services_mock_enabled:
             respx_mock.get(path="/v0/", name="health_check").respond(
                 status.HTTP_200_OK,
                 json=Envelope[HealthCheck](
@@ -373,7 +385,7 @@ def mocked_storage_service_api_base(
 def mocked_catalog_service_api_base(
     app: FastAPI,
     catalog_service_openapi_specs: dict[str, Any],
-    spy_httpx_calls_enabled: bool,
+    services_mock_enabled: bool,
 ) -> Iterator[MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_CATALOG
@@ -384,11 +396,13 @@ def mocked_catalog_service_api_base(
 
     # pylint: disable=not-context-manager
     with respx.mock(
-        base_url=settings.API_SERVER_CATALOG.base_url,
+        base_url=settings.API_SERVER_CATALOG.base_url
+        if services_mock_enabled
+        else None,
         assert_all_called=False,
-        assert_all_mocked=not spy_httpx_calls_enabled,
+        assert_all_mocked=services_mock_enabled,
     ) as respx_mock:
-        if not spy_httpx_calls_enabled:
+        if services_mock_enabled:
             respx_mock.get("/v0/").respond(
                 status.HTTP_200_OK,
                 text="simcore_service_catalog.api.routes.health@2023-07-03T12:59:12.024551+00:00",
@@ -421,7 +435,7 @@ def mocked_solver_job_outputs(mocker) -> None:
 
 @pytest.fixture
 def patch_webserver_long_running_project_tasks(
-    app: FastAPI, faker: Faker
+    app: FastAPI, faker: Faker, services_mock_enabled: bool
 ) -> Callable[[MockRouter], MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER is not None
@@ -497,41 +511,44 @@ def patch_webserver_long_running_project_tasks(
         # that preserves the resultswith state
 
     def _mock(webserver_mock_router: MockRouter) -> MockRouter:
-        long_running_task_workflow = _LongRunningProjectTasks()
+        if services_mock_enabled:
+            long_running_task_workflow = _LongRunningProjectTasks()
 
-        webserver_mock_router.post(
-            path__regex="/projects",
-            name="create_projects",
-        ).mock(side_effect=long_running_task_workflow.create_project_task)
+            webserver_mock_router.post(
+                path__regex="/projects",
+                name="create_projects",
+            ).mock(side_effect=long_running_task_workflow.create_project_task)
 
-        webserver_mock_router.post(
-            path__regex=r"/projects/(?P<project_id>[\w-]+):clone$",
-            name="project_clone",
-        ).mock(side_effect=long_running_task_workflow.clone_project_task)
+            webserver_mock_router.post(
+                path__regex=r"/projects/(?P<project_id>[\w-]+):clone$",
+                name="project_clone",
+            ).mock(side_effect=long_running_task_workflow.clone_project_task)
 
-        # Tasks routes ----------------
+            # Tasks routes ----------------
 
-        webserver_mock_router.get(
-            path__regex=r"/tasks/(?P<task_id>[\w-]+)$",
-            name="get_task_status",
-        ).respond(
-            status.HTTP_200_OK,
-            json={
-                "data": jsonable_encoder(
-                    TaskStatus(
-                        task_progress=TaskProgress(message="fake job done", percent=1),
-                        done=True,
-                        started="2018-07-01T11:13:43Z",
-                    ),
-                    by_alias=True,
-                )
-            },
-        )
+            webserver_mock_router.get(
+                path__regex=r"/tasks/(?P<task_id>[\w-]+)$",
+                name="get_task_status",
+            ).respond(
+                status.HTTP_200_OK,
+                json={
+                    "data": jsonable_encoder(
+                        TaskStatus(
+                            task_progress=TaskProgress(
+                                message="fake job done", percent=1
+                            ),
+                            done=True,
+                            started="2018-07-01T11:13:43Z",
+                        ),
+                        by_alias=True,
+                    )
+                },
+            )
 
-        webserver_mock_router.get(
-            path__regex=r"/tasks/(?P<task_id>[\w-]+)/result$",
-            name="get_task_result",
-        ).mock(side_effect=long_running_task_workflow.get_result)
+            webserver_mock_router.get(
+                path__regex=r"/tasks/(?P<task_id>[\w-]+)/result$",
+                name="get_task_result",
+            ).mock(side_effect=long_running_task_workflow.get_result)
 
         return webserver_mock_router
 

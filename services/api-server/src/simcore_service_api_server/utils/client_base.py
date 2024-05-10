@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import httpx
 from fastapi import FastAPI
+from httpx import AsyncClient
 
 from .app_data import AppDataMixin
 
@@ -50,7 +51,7 @@ def setup_client_instance(
     assert issubclass(api_cls, BaseServiceClientApi)  # nosec
 
     # NOTE: this term is mocked in tests. If you need to modify pay attention to the mock
-    client: httpx.AsyncClient = httpx.AsyncClient(base_url=api_baseurl)
+    client = AsyncClient(base_url=api_baseurl)
 
     # events
     def _create_instance() -> None:

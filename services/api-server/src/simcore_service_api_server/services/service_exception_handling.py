@@ -7,11 +7,13 @@ from typing import Any
 import httpx
 from fastapi import HTTPException, status
 from pydantic import ValidationError
+from servicelib.error_codes import create_error_code
 
 from ..models.schemas.errors import ErrorGet
 
 _logger = logging.getLogger(__name__)
 
+MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience! [{}]"
 
 DEFAULT_BACKEND_SERVICE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_429_TOO_MANY_REQUESTS: {
@@ -106,4 +108,15 @@ def backend_service_exception_handler(
             )
         raise HTTPException(
             status_code=status_code, detail=detail, headers=headers
+        ) from exc
+    except Exception as exc:
+        error_code = create_error_code(exc)
+        _logger.exception(
+            "Back-end service failed unexpectedly [%s]",
+            f"{error_code}",
+            extra={"error_code": error_code},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(error_code),
         ) from exc

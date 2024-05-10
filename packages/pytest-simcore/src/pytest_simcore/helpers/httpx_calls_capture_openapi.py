@@ -28,27 +28,33 @@ assert CapturedParameterSchema  # nosec
 
 def _get_openapi_specs(host: service_hosts) -> dict[str, Any]:
     url: str
-    if host == "storage":
-        settings = StorageSettings.create_from_envs()
-        url = settings.base_url + "/dev/doc/swagger.json"
-    elif host == "catalog":
-        settings = CatalogSettings.create_from_envs()
-        url = settings.base_url + "/api/v0/openapi.json"
-    elif host == "webserver":
-        settings = WebServerSettings.create_from_envs()
-        url = settings.base_url + "/dev/doc/swagger.json"
-    elif host == "director-v2":
-        settings = DirectorV2Settings.create_from_envs()
-        url = settings.base_url + "/api/v2/openapi.json"
-    else:
-        msg = f"{host=} has not been added yet to the testing system. Please do so yourself"
-        raise OpenApiSpecError(msg)
-    with httpx.Client() as session:
-        response = session.get(url)
-        response.raise_for_status()
-        openapi_spec = jsonref.loads(response.read().decode("utf8"))
-        assert isinstance(openapi_spec, dict)
-        return openapi_spec
+    match host:
+        case "storage":
+            settings = StorageSettings.create_from_envs()
+            url = settings.base_url + "/dev/doc/swagger.json"
+        case "catalog":
+            settings = CatalogSettings.create_from_envs()
+            url = settings.base_url + "/api/v0/openapi.json"
+        case "webserver":
+            settings = WebServerSettings.create_from_envs()
+            url = settings.base_url + "/dev/doc/swagger.json"
+        case "director-v2":
+            settings = DirectorV2Settings.create_from_envs()
+            url = settings.base_url + "/api/v2/openapi.json"
+        case _:
+            msg = f"{host=} has not been added yet to the testing system. Please do so yourself"
+            raise OpenApiSpecError(msg)
+
+    response = httpx.get(url)
+    response.raise_for_status()
+
+    if not response.content:
+        msg = f"Cannot retrieve OAS from {url=}"
+        raise RuntimeError(msg)
+    openapi_spec = jsonref.loads(response.read().decode("utf8"))
+
+    assert isinstance(openapi_spec, dict)
+    return openapi_spec
 
 
 def _get_params(

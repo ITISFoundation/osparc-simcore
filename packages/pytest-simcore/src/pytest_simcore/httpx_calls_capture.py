@@ -91,6 +91,12 @@ def spy_httpx_calls_capture_path(
     return capture_path
 
 
+@pytest.fixture(scope="session")
+def services_mock_enabled(spy_httpx_calls_enabled: bool) -> bool:
+    """Flag to indicate when to enable/disable service mocks when httpx calls are disabled/enabled"""
+    return not spy_httpx_calls_enabled
+
+
 @pytest.fixture
 def create_httpx_async_client_spy_if_enabled(
     mocker: MockerFixture,
