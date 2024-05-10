@@ -5331,6 +5331,15 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/BootChoice'
+    BootOptions:
+      title: BootOptions
+      required:
+      - boot_mode
+      type: object
+      properties:
+        boot_mode:
+          title: Boot Mode
+          type: string
     ChangePasswordBody:
       title: ChangePasswordBody
       required:
@@ -7895,8 +7904,8 @@ components:
       title: NodePatch
       type: object
       properties:
-        service_version:
-          title: Service Version
+        version:
+          title: Version
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           type: string
         label:
@@ -7905,17 +7914,19 @@ components:
         inputs:
           title: Inputs
           type: object
-        input_nodes:
-          title: Input Nodes
+        inputNodes:
+          title: Inputnodes
           type: array
           items:
             type: string
+            format: uuid
         progress:
           title: Progress
+          maximum: 100.0
+          minimum: 0.0
           type: number
-        boot_options:
-          title: Boot Options
-          type: object
+        bootOptions:
+          $ref: '#/components/schemas/BootOptions'
     NodeRetrieve:
       title: NodeRetrieve
       type: object
