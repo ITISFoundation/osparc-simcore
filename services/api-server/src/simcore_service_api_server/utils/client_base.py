@@ -29,8 +29,7 @@ class BaseServiceClientApi(AppDataMixin):
             resp = await self.client.get(self.health_check_path, timeout=1)
             resp.raise_for_status()
             return True
-        except (httpx.HTTPStatusError, httpx.RequestError) as err:
-            _logger.error("%s not responsive: %s", self.service_name, err)
+        except (httpx.HTTPStatusError, httpx.RequestError):
             return False
 
     ping = is_responsive  # alias
