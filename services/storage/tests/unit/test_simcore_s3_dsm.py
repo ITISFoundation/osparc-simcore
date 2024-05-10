@@ -2,8 +2,8 @@
 # pylint:disable=redefined-outer-name
 
 from collections.abc import Awaitable, Callable
+from contextlib import AbstractAsyncContextManager
 from pathlib import Path
-from typing import AsyncContextManager
 
 import pytest
 from aiopg.sa.engine import Engine
@@ -37,7 +37,9 @@ def mock_copy_transfer_cb() -> Callable[[int], None]:
 
 async def test__copy_path_s3_s3(
     simcore_s3_dsm: SimcoreS3DataManager,
-    directory_with_files: Callable[..., AsyncContextManager[FileUploadSchema]],
+    create_directory_with_files: Callable[
+        ..., AbstractAsyncContextManager[FileUploadSchema]
+    ],
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
     user_id: UserID,
@@ -68,7 +70,7 @@ async def test__copy_path_s3_s3(
 
     FILE_COUNT = 4
     SUBDIR_COUNT = 5
-    async with directory_with_files(
+    async with create_directory_with_files(
         dir_name="some-random",
         file_size_in_dir=file_size,
         subdir_count=SUBDIR_COUNT,

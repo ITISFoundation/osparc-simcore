@@ -20,12 +20,18 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
+from models_library.rest_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+)
 from models_library.users import UserID
+from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from pydantic import (
     AnyUrl,
     BaseModel,
     ByteSize,
     Extra,
+    Field,
     parse_obj_as,
     root_validator,
     validate_arguments,
@@ -201,9 +207,20 @@ class DeleteFolderQueryParams(StorageQueryParamsBase):
 
 
 class SearchFilesQueryParams(StorageQueryParamsBase):
-    startswith: str = ""
+    startswith: str | None = None
     sha256_checksum: SHA256Str | None = None
     kind: Literal["owned"]
+    limit: int = Field(
+        default=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        ge=1,
+        le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+        description="Page size limit",
+    )
+    offset: int = Field(default=0, ge=0, description="Page offset")
+
+    _empty_is_none = validator("startswith", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )
 
 
 class LocationPathParams(BaseModel):

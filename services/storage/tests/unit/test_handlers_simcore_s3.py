@@ -31,6 +31,7 @@ from servicelib.aiohttp.long_running_tasks.client import long_running_task_reque
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.storage_models import file_meta_data
+from simcore_service_storage.models import SearchFilesQueryParams
 from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
@@ -439,6 +440,79 @@ async def test_create_and_delete_folders_from_project_burst(
     )
 
 
+@pytest.fixture
+async def uploaded_file_ids(
+    faker: Faker,
+    expected_number_of_user_files: int,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+) -> list[SimcoreS3FileID]:
+    _files_ids_sorted_by_creation = []
+    assert expected_number_of_user_files >= 0
+
+    for _ in range(expected_number_of_user_files):
+        file_path, file_id = await upload_file(
+            file_size=parse_obj_as(ByteSize, "10Mib"),
+            file_name=faker.file_name(),
+            sha256_checksum=faker.sha256(),
+        )
+        assert file_path.exists()
+        _files_ids_sorted_by_creation.append(file_id)
+
+    return _files_ids_sorted_by_creation
+
+
+@pytest.fixture
+async def search_files_query_params(
+    query_params_choice: str, user_id: UserID
+) -> SearchFilesQueryParams:
+    match query_params_choice:
+        case "default":
+            q = SearchFilesQueryParams(user_id=user_id, kind="owned")
+        case "limited":
+            q = SearchFilesQueryParams(user_id=user_id, kind="owned", limit=1)
+        case "with_offset":
+            q = SearchFilesQueryParams(user_id=user_id, kind="owned", offset=1)
+        case _:
+            pytest.fail(f"Undefined {query_params_choice=}")
+    return q
+
+
+@pytest.mark.parametrize("expected_number_of_user_files", [0, 1, 3])
+@pytest.mark.parametrize("query_params_choice", ["default", "limited", "with_offset"])
+async def test_search_files_request(
+    client: TestClient,
+    user_id: UserID,
+    uploaded_file_ids: list[SimcoreS3FileID],
+    query_params_choice: str,
+    search_files_query_params: SearchFilesQueryParams,
+):
+    assert client.app
+    assert query_params_choice
+
+    assert search_files_query_params.user_id == user_id
+
+    url = (
+        client.app.router["search_files"]
+        .url_for()
+        .with_query(
+            jsonable_encoder(
+                search_files_query_params, exclude_unset=True, exclude_none=True
+            )
+        )
+    )
+    response = await client.post(f"{url}")
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert not error
+
+    found = parse_obj_as(list[FileMetaDataGet], data)
+
+    expected = uploaded_file_ids[
+        search_files_query_params.offset : search_files_query_params.offset
+        + search_files_query_params.limit
+    ]
+    assert [_.file_uuid for _ in found] == expected
+
+
 @pytest.mark.parametrize("search_startswith", [True, False])
 @pytest.mark.parametrize("search_sha256_checksum", [True, False])
 @pytest.mark.parametrize("kind", ["owned", "read", None])
@@ -454,22 +528,26 @@ async def test_search_files(
     assert client.app
     _file_name: str = faker.file_name()
     _sha256_checksum: SHA256Str = parse_obj_as(SHA256Str, faker.sha256())
-    _query_params: dict[str, Any] = {
-        "user_id": user_id,
-        "kind": kind,
-        "startswith": "",
-    }
+
     url = (
         client.app.router["search_files"]
         .url_for()
-        .with_query(**{k: v for k, v in _query_params.items() if v is not None})
+        .with_query(
+            jsonable_encoder(
+                {
+                    "user_id": user_id,
+                    "kind": kind,
+                },
+                exclude_none=True,
+            )
+        )
     )
-
     response = await client.post(f"{url}")
 
     if kind != "owned":
-        _ = await assert_status(response, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        await assert_status(response, status.HTTP_422_UNPROCESSABLE_ENTITY)
         return
+
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
@@ -494,8 +572,10 @@ async def test_search_files(
     # search again with part of the file uuid shall return the same
     if search_startswith:
         url.update_query(startswith=file_id[0:5])
+
     if search_sha256_checksum:
         url.update_query(sha256_checksum=_sha256_checksum)
+
     response = await client.post(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
@@ -508,11 +588,13 @@ async def test_search_files(
     # search again with some other stuff shall return empty
     if search_startswith:
         url = url.update_query(startswith="Iamlookingforsomethingthatdoesnotexist")
+
     if search_sha256_checksum:
         dummy_sha256 = faker.sha256()
         while dummy_sha256 == _sha256_checksum:
             dummy_sha256 = faker.sha256()
         url = url.update_query(sha256_checksum=dummy_sha256)
+
     if search_startswith or search_sha256_checksum:
         response = await client.post(f"{url}")
         data, error = await assert_status(response, status.HTTP_200_OK)
