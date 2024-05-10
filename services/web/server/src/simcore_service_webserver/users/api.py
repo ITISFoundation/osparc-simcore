@@ -13,7 +13,7 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from models_library.products import ProductName
-from models_library.users import GroupID, UserID
+from models_library.users import FirstNameStr, GroupID, LastNameStr, UserID
 from pydantic import ValidationError, parse_obj_as
 from simcore_postgres_database.models.users import UserRole
 
@@ -264,8 +264,8 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
 
 
 class FullNameDict(TypedDict):
-    first_name: str | None
-    last_name: str | None
+    first_name: FirstNameStr | None
+    last_name: LastNameStr | None
 
 
 async def get_user_fullname(app: web.Application, user_id: UserID) -> FullNameDict:

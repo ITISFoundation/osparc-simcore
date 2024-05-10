@@ -8,6 +8,7 @@ from typing import Final
 import redis
 from aiohttp import web
 from models_library.projects import ProjectID
+from models_library.projects_access import PositiveIntWithExclusiveMinimumRemoved
 from models_library.projects_state import Owner, ProjectLocked, ProjectStatus
 from redis.asyncio.lock import Lock
 from servicelib.background_task import periodic_task
@@ -21,6 +22,7 @@ _logger = logging.getLogger(__name__)
 
 PROJECT_REDIS_LOCK_KEY: str = "project_lock:{}"
 PROJECT_LOCK_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
+PROJECT_LOCK_ACQUIRE_TIMEOUT: Final[float] = 5.0
 ProjectLock = Lock
 
 
@@ -49,10 +51,13 @@ async def lock_project(
     )
     try:
         if not await redis_lock.acquire(
-            blocking=False,
+            blocking_timeout=PROJECT_LOCK_ACQUIRE_TIMEOUT,
             token=ProjectLocked(
                 value=True,
-                owner=Owner(user_id=user_id, **user_fullname),
+                owner=Owner(
+                    user_id=PositiveIntWithExclusiveMinimumRemoved(user_id),
+                    **user_fullname,
+                ),
                 status=status,
             ).json(),
         ):
