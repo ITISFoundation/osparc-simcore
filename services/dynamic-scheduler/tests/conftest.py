@@ -53,12 +53,12 @@ def docker_compose_service_dynamic_scheduler_env_vars(
     environment = content["services"]["dynamic-schdlr"].get("environment", {})
 
     envs: EnvVarsDict = {}
-    for env_name, value in environment.items():
+    for name, value in environment.items():
         try:
-            envs.update(env_name=string.Template(value).substitute(env_devel_dict))
+            envs[name] = string.Template(value).substitute(env_devel_dict)
         except (KeyError, ValueError) as err:  # noqa: PERF203
             pytest.fail(
-                f"{err}: {value} is not defined in .env-devel but used as RHS in docker-compose services['dynamic-schdlr'].environment[{env_name}]"
+                f"{err}: {value} is not defined in .env-devel but used as RHS in docker-compose services['dynamic-schdlr'].environment[{name}]"
             )
     return envs
 
