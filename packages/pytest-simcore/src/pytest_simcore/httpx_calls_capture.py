@@ -153,69 +153,80 @@ class _CaptureSideEffect:
 
 
 @pytest.fixture
-@respx.mock(assert_all_mocked=False)
-def create_respx_mock_from_capture() -> CreateRespxMockCallback:
+def create_respx_mock_from_capture(
+    spy_httpx_calls_enabled: bool,
+) -> CreateRespxMockCallback:
+    """Creates a respx.MockRouter from httpx calls captures in capture_path **ONLY**
+    if spy_httpx_calls_enabled=False  otherwise it skips this fixture
+    """
     # NOTE: multiple improvements on this function planed in https://github.com/ITISFoundation/osparc-simcore/issues/5705
-    def _create_mock(
+    def _(
         respx_mocks: list[respx.MockRouter],
         capture_path: Path,
         side_effects_callbacks: list[SideEffectCallback],
     ) -> list[respx.MockRouter]:
+
         assert capture_path.is_file()
         assert capture_path.suffix == ".json"
 
-        captures: list[HttpApiCallCaptureModel] = parse_obj_as(
-            list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
-        )
-
-        if len(side_effects_callbacks) > 0:
-            assert len(side_effects_callbacks) == len(captures)
-
-        assert isinstance(respx_mocks, list)
-        for router in respx_mocks:
-            assert (
-                router._bases
-            ), "the base_url must be set before the fixture is extended"
-
-        def _get_correct_mock_router_for_capture(
-            respx_mock: list[respx.MockRouter], capture: HttpApiCallCaptureModel
-        ) -> respx.MockRouter:
-            for router in respx_mock:
-                if capture.host == router._bases["host"].value:
-                    return router
-            msg = f"Missing respx.MockRouter for capture with {capture.host}"
-            raise RuntimeError(msg)
-
-        side_effects: list[_CaptureSideEffect] = []
-        for ii, capture in enumerate(captures):
-            url_path: PathDescription | str = capture.path
-            assert isinstance(url_path, PathDescription)
-
-            # path
-            path_regex: str = str(url_path.path)
-            for param in url_path.path_parameters:
-                path_regex = path_regex.replace(
-                    "{" + param.name + "}", param.respx_lookup
-                )
-
-            # response
-            side_effect = _CaptureSideEffect(
-                capture=capture,
-                side_effect=side_effects_callbacks[ii]
-                if len(side_effects_callbacks)
-                else None,
+        if spy_httpx_calls_enabled:
+            print(
+                f"🔊 Skipping creation of respx.MockRouter from {capture_path.name} since {spy_httpx_calls_enabled=}"
+            )
+        else:
+            captures: list[HttpApiCallCaptureModel] = parse_obj_as(
+                list[HttpApiCallCaptureModel], json.loads(capture_path.read_text())
             )
 
-            router = _get_correct_mock_router_for_capture(respx_mocks, capture)
-            r = router.request(
-                capture.method.upper(),
-                url=None,
-                path__regex=f"^{path_regex}$",
-            ).mock(side_effect=side_effect)
+            if len(side_effects_callbacks) > 0:
+                assert len(side_effects_callbacks) == len(captures)
 
-            assert r.side_effect == side_effect
-            side_effects.append(side_effect)
+            assert isinstance(respx_mocks, list)
+            for router in respx_mocks:
+                assert (
+                    router._bases
+                ), "the base_url must be set before the fixture is extended"
+                router._assert_all_mocked = not spy_httpx_calls_enabled
+
+            def _get_correct_mock_router_for_capture(
+                respx_mock: list[respx.MockRouter], capture: HttpApiCallCaptureModel
+            ) -> respx.MockRouter:
+                for router in respx_mock:
+                    if capture.host == router._bases["host"].value:
+                        return router
+                msg = f"Missing respx.MockRouter for capture with {capture.host}"
+                raise RuntimeError(msg)
+
+            side_effects: list[_CaptureSideEffect] = []
+            for ii, capture in enumerate(captures):
+                url_path: PathDescription | str = capture.path
+                assert isinstance(url_path, PathDescription)
+
+                # path
+                path_regex: str = str(url_path.path)
+                for param in url_path.path_parameters:
+                    path_regex = path_regex.replace(
+                        "{" + param.name + "}", param.respx_lookup
+                    )
+
+                # response
+                side_effect = _CaptureSideEffect(
+                    capture=capture,
+                    side_effect=side_effects_callbacks[ii]
+                    if len(side_effects_callbacks)
+                    else None,
+                )
+
+                router = _get_correct_mock_router_for_capture(respx_mocks, capture)
+                r = router.request(
+                    capture.method.upper(),
+                    url=None,
+                    path__regex=f"^{path_regex}$",
+                ).mock(side_effect=side_effect)
+
+                assert r.side_effect == side_effect
+                side_effects.append(side_effect)
 
         return respx_mocks
 
-    return _create_mock
+    return _

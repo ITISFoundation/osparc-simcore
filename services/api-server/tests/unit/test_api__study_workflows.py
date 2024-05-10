@@ -202,37 +202,34 @@ class MockedBackendApiDict(TypedDict):
 
 
 @pytest.fixture
-def mocked_backend_or_none(
+def mocked_backend(
     project_tests_dir: Path,
-    spy_httpx_calls_enabled: bool,
     mocked_webserver_service_api_base: MockRouter,
     mocked_storage_service_api_base: MockRouter,
     mocked_directorv2_service_api_base: MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     mocker: MockerFixture,
-) -> MockedBackendApiDict | None:
+) -> MockedBackendApiDict:
     # S3 and storage are accessed via simcore-sdk
     mock = mocker.patch(
         "simcore_service_api_server.api.routes.files.storage_upload_path", autospec=True
     )
     mock.return_value = UploadedFile(store_id=0, etag="123")
 
-    if not spy_httpx_calls_enabled:
-        create_respx_mock_from_capture(
-            respx_mocks=[
-                mocked_webserver_service_api_base,
-                mocked_storage_service_api_base,
-                mocked_directorv2_service_api_base,
-            ],
-            capture_path=project_tests_dir / "mocks" / "run_study_workflow.json",
-            side_effects_callbacks=[],
-        )
-        return MockedBackendApiDict(
-            webserver=mocked_webserver_service_api_base,
-            storage=mocked_storage_service_api_base,
-            director_v2=mocked_directorv2_service_api_base,
-        )
-    return None
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_webserver_service_api_base,
+            mocked_storage_service_api_base,
+            mocked_directorv2_service_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "run_study_workflow.json",
+        side_effects_callbacks=[],
+    )
+    return MockedBackendApiDict(
+        webserver=mocked_webserver_service_api_base,
+        storage=mocked_storage_service_api_base,
+        director_v2=mocked_directorv2_service_api_base,
+    )
 
 
 @pytest.mark.acceptance_test(
@@ -241,7 +238,7 @@ def mocked_backend_or_none(
 async def test_run_study_workflow(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
-    mocked_backend_or_none: MockedBackendApiDict | None,
+    mocked_backend: MockedBackendApiDict,
     tmp_path: Path,
     input_json_path: Path,
     input_data_path: Path,

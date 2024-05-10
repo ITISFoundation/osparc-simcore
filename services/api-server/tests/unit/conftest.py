@@ -251,25 +251,24 @@ def mocked_directorv2_service_api_base(
     openapi = deepcopy(directorv2_service_openapi_specs)
     assert Version(openapi["info"]["version"]).major == 2
 
-    if spy_httpx_calls_enabled:
-        print("Spying httpx calls. Skipping respx mocks.")
-        return
-
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=settings.API_SERVER_DIRECTOR_V2.base_url,
         assert_all_called=False,
-        assert_all_mocked=True,  # IMPORTANT: KEEP always True!
+        assert_all_mocked=not spy_httpx_calls_enabled,
     ) as respx_mock:
-        assert openapi
-        assert (
-            openapi["paths"]["/"]["get"]["operationId"] == "check_service_health__get"
-        )
 
-        respx_mock.get(path="/", name="check_service_health__get").respond(
-            status.HTTP_200_OK,
-            json=openapi["components"]["schemas"]["HealthCheckGet"]["example"],
-        )
+        if not spy_httpx_calls_enabled:
+            assert openapi
+            assert (
+                openapi["paths"]["/"]["get"]["operationId"]
+                == "check_service_health__get"
+            )
+
+            respx_mock.get(path="/", name="check_service_health__get").respond(
+                status.HTTP_200_OK,
+                json=openapi["components"]["schemas"]["HealthCheckGet"]["example"],
+            )
 
         yield respx_mock
 
@@ -291,23 +290,20 @@ def mocked_webserver_service_api_base(
     openapi = deepcopy(webserver_service_openapi_specs)
     assert Version(openapi["info"]["version"]).major == 0
 
-    if spy_httpx_calls_enabled:
-        print("Spying httpx calls. Skipping respx mocks.")
-
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=settings.API_SERVER_WEBSERVER.base_url,
         assert_all_called=False,
         assert_all_mocked=not spy_httpx_calls_enabled,
     ) as respx_mock:
-        # healthcheck_readiness_probe, healthcheck_liveness_probe
-        response_body = {
-            "name": "webserver",
-            "version": "1.0.0",
-            "api_version": "1.0.0",
-        }
 
         if not spy_httpx_calls_enabled:
+            # healthcheck_readiness_probe, healthcheck_liveness_probe
+            response_body = {
+                "name": "webserver",
+                "version": "1.0.0",
+                "api_version": "1.0.0",
+            }
             respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
                 status.HTTP_200_OK, json=response_body
             )
@@ -335,9 +331,6 @@ def mocked_storage_service_api_base(
 
     openapi = deepcopy(storage_service_openapi_specs)
     assert Version(openapi["info"]["version"]).major == 0
-
-    if spy_httpx_calls_enabled:
-        print("Spying httpx calls. Skipping respx mocks.")
 
     # pylint: disable=not-context-manager
     with respx.mock(
@@ -388,10 +381,6 @@ def mocked_catalog_service_api_base(
     openapi = deepcopy(catalog_service_openapi_specs)
     assert Version(openapi["info"]["version"]).major == 0
     schemas = openapi["components"]["schemas"]
-
-    if spy_httpx_calls_enabled:
-        print("Spying httpx calls. Skipping respx mocks.")
-        return
 
     # pylint: disable=not-context-manager
     with respx.mock(
