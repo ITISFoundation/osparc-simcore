@@ -3,6 +3,31 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+"""
+The pytest_simcore.spy_httpx_calls module provides fixtures to capture the calls made by instances of httpx.AsyncClient
+when interacting with a real backend. These captures can then be used to create a respx.MockRouter, which emulates the backend while running
+your tests.
+
+This module ensures a reliable reproduction and maintenance of mock responses that reflect the real backend environments used for testing.
+
+## Setting Up the Module and Spy in Your Test Suite (once)
+- Include 'pytest_simcore.spy_httpx_calls' in your `pytest_plugins`.
+- Implement `create_httpx_async_client_spy_if_enabled("module.name.httpx.AsyncClient")` within your codebase.
+
+## Creating Mock Captures (every time you want to create/update the mock)
+- Initialize the real backend.
+- Execute tests using the command: `pytest --spy-httpx-calls-enabled=true --spy-httpx-calls-capture-path="my-captures.json"`.
+- Terminate the real backend once testing is complete.
+
+## Configuring Tests with Mock Captures (once)
+- Transfer `my-captures.json` to the `tests/mocks` directory.
+- Utilize `create_respx_mock_from_capture(..., capture_path=".../my-captures.json", ...)` to automatically generate a mock for your tests.
+
+## Utilizing Mocks (normal test runs)
+- Conduct your tests without enabling the spy, i.e., do not use the `--spy-httpx-calls-enabled` flag.
+
+
+"""
 
 import json
 from collections.abc import Callable
@@ -23,6 +48,8 @@ from .helpers.httpx_calls_capture_model import (
     SideEffectCallback,
 )
 
+_DEFAULT_CAPTURE_PATHNAME = "spy-httpx-calls-capture-path.json"
+
 
 def pytest_addoption(parser: pytest.Parser):
     simcore_group = parser.getgroup("simcore")
@@ -38,46 +65,61 @@ def pytest_addoption(parser: pytest.Parser):
         action="store",
         type=Path,
         default=None,
-        help="Path to store capture calls from httpx clients during the tests.",
+        help=f"Path to json file to store capture calls from httpx clients during the tests. Otherwise using a temporary path named {_DEFAULT_CAPTURE_PATHNAME}",
     )
 
 
 @pytest.fixture(scope="session")
-def httpx_calls_capture_path_or_none(request: pytest.FixtureRequest) -> Path | None:
-    capture_path = None
-    if capture_path := request.config.getoption("--httpx-calls-capture-path"):
-        assert isinstance(capture_path, Path)
-        assert capture_path.is_file()
-    return capture_path
+def spy_httpx_calls_enabled(request: pytest.FixtureRequest) -> bool:
+    return bool(request.config.getoption("--spy-httpx-calls-enabled"))
 
 
 @pytest.fixture(scope="session")
-def spy_httpx_calls_enabled(httpx_calls_capture_path_or_none: Path | None) -> bool:
-    return httpx_calls_capture_path_or_none is not None
+def spy_httpx_calls_capture_path(
+    request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory
+) -> Path:
+    if capture_path := request.config.getoption("--spy-httpx-calls-capture-path"):
+        assert isinstance(capture_path, Path)
+        assert capture_path.is_file()
+    else:
+        capture_path = tmp_path_factory.mktemp("captures") / _DEFAULT_CAPTURE_PATHNAME
+
+    assert capture_path.suffix == ".json"
+    return capture_path
 
 
 @pytest.fixture
 def create_httpx_async_client_spy_if_enabled(
-    mocker: MockerFixture, httpx_calls_capture_path_or_none: Path | None
+    mocker: MockerFixture,
+    spy_httpx_calls_enabled: bool,
+    spy_httpx_calls_capture_path: Path,
 ) -> Callable[[str], MockType | None]:
-    def _(module_name: str) -> MockType | None:
-        if httpx_calls_capture_path_or_none is not None:
+
+    assert spy_httpx_calls_capture_path
+
+    def _(spy_target: str) -> MockType | None:
+
+        assert spy_target
+        assert isinstance(spy_target, str)
+        assert spy_target.endswith(
+            "AsyncClient"
+        ), "Expects AsyncClient instance as spy target"
+
+        if spy_httpx_calls_enabled:
             print(
-                "🚨 Spying httpx calls enabled.",
-                "Saving captures from '{module_name}' at",
-                httpx_calls_capture_path_or_none,
+                f"🚨 Spying httpx calls of '{spy_target}'",
+                f"Saving captures dumped at '{spy_httpx_calls_capture_path}'",
                 "...",
             )
 
             def _wrapper(*args, **kwargs):
-                assert not args
-                assert httpx_calls_capture_path_or_none
+                assert not args, "AsyncClient should be called only with key-arguments"
                 return AsyncClientCaptureWrapper(
-                    capture_file=httpx_calls_capture_path_or_none, **kwargs
+                    capture_file=spy_httpx_calls_capture_path, **kwargs
                 )
 
-            spy: MockType = mocker.patch(module_name, side_effect=_wrapper)
-            spy.httpx_calls_capture_path = httpx_calls_capture_path_or_none
+            spy: MockType = mocker.patch(spy_target, side_effect=_wrapper)
+            spy.httpx_calls_capture_path = spy_httpx_calls_capture_path
 
             return spy
         return None
@@ -110,7 +152,7 @@ class _CaptureSideEffect:
 @pytest.fixture
 @respx.mock(assert_all_mocked=False)
 def create_respx_mock_from_capture() -> CreateRespxMockCallback:
-    # NOTE: multiple improvements in
+    # NOTE: multiple improvements on this function planed in https://github.com/ITISFoundation/osparc-simcore/issues/5705
     def _create_mock(
         respx_mocks: list[respx.MockRouter],
         capture_path: Path,
