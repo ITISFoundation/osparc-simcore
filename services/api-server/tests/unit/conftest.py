@@ -243,12 +243,17 @@ def catalog_service_openapi_specs(osparc_simcore_services_dir: Path) -> dict[str
 def mocked_directorv2_service_api_base(
     app: FastAPI,
     directorv2_service_openapi_specs: dict[str, Any],
-) -> Iterator[MockRouter]:
+    spy_httpx_calls_enabled: bool,
+) -> Iterator[MockRouter | None]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
 
     openapi = deepcopy(directorv2_service_openapi_specs)
     assert Version(openapi["info"]["version"]).major == 2
+
+    if spy_httpx_calls_enabled:
+        print("Spying httpx calls. Skipping respx mocks.")
+        return
 
     # pylint: disable=not-context-manager
     with respx.mock(
@@ -271,8 +276,10 @@ def mocked_directorv2_service_api_base(
 
 @pytest.fixture
 def mocked_webserver_service_api_base(
-    app: FastAPI, webserver_service_openapi_specs: dict[str, Any]
-) -> Iterator[MockRouter]:
+    app: FastAPI,
+    webserver_service_openapi_specs: dict[str, Any],
+    spy_httpx_calls_enabled: bool,
+) -> Iterator[MockRouter | None]:
     """
     Creates a respx.mock to capture calls to webserver API
     Includes only basic routes to check that the configuration is correct
@@ -283,6 +290,10 @@ def mocked_webserver_service_api_base(
 
     openapi = deepcopy(webserver_service_openapi_specs)
     assert Version(openapi["info"]["version"]).major == 0
+
+    if spy_httpx_calls_enabled:
+        print("Spying httpx calls. Skipping respx mocks.")
+        return None
 
     # pylint: disable=not-context-manager
     with respx.mock(
@@ -309,8 +320,11 @@ def mocked_webserver_service_api_base(
 
 @pytest.fixture
 def mocked_storage_service_api_base(
-    app: FastAPI, storage_service_openapi_specs: dict[str, Any], faker: Faker
-) -> Iterator[MockRouter]:
+    app: FastAPI,
+    storage_service_openapi_specs: dict[str, Any],
+    faker: Faker,
+    spy_httpx_calls_enabled: bool,
+) -> Iterator[MockRouter | None]:
     """
     Creates a respx.mock to capture calls to strage API
     Includes only basic routes to check that the configuration is correct
@@ -321,6 +335,10 @@ def mocked_storage_service_api_base(
 
     openapi = deepcopy(storage_service_openapi_specs)
     assert Version(openapi["info"]["version"]).major == 0
+
+    if spy_httpx_calls_enabled:
+        print("Spying httpx calls. Skipping respx mocks.")
+        return
 
     # pylint: disable=not-context-manager
     with respx.mock(
@@ -359,14 +377,20 @@ def mocked_storage_service_api_base(
 
 @pytest.fixture
 def mocked_catalog_service_api_base(
-    app: FastAPI, catalog_service_openapi_specs: dict[str, Any]
-) -> Iterator[MockRouter]:
+    app: FastAPI,
+    catalog_service_openapi_specs: dict[str, Any],
+    spy_httpx_calls_enabled: bool,
+) -> Iterator[MockRouter | None]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_CATALOG
 
     openapi = deepcopy(catalog_service_openapi_specs)
     assert Version(openapi["info"]["version"]).major == 0
     schemas = openapi["components"]["schemas"]
+
+    if spy_httpx_calls_enabled:
+        print("Spying httpx calls. Skipping respx mocks.")
+        return
 
     # pylint: disable=not-context-manager
     with respx.mock(

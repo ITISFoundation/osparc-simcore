@@ -57,7 +57,7 @@ def pytest_addoption(parser: pytest.Parser):
         "--spy-httpx-calls-enabled",
         action="store",
         type=bool,
-        default=None,
+        default=False,
         help="If set, it activates a capture mechanism while the tests is running that can be used to generate mock data in respx",
     )
     simcore_group.addoption(
@@ -82,7 +82,10 @@ def spy_httpx_calls_capture_path(
         assert isinstance(capture_path, Path)
         assert capture_path.is_file()
     else:
-        capture_path = tmp_path_factory.mktemp("captures") / _DEFAULT_CAPTURE_PATHNAME
+        capture_path = (
+            tmp_path_factory.mktemp("session_fixture_spy_httpx_calls_capture_path")
+            / _DEFAULT_CAPTURE_PATHNAME
+        )
 
     assert capture_path.suffix == ".json"
     return capture_path
@@ -107,9 +110,9 @@ def create_httpx_async_client_spy_if_enabled(
 
         if spy_httpx_calls_enabled:
             print(
-                f"🚨 Spying httpx calls of '{spy_target}'",
+                f"🚨 Spying httpx calls of '{spy_target}'.",
                 f"Saving captures dumped at '{spy_httpx_calls_capture_path}'",
-                "...",
+                " ...",
             )
 
             def _wrapper(*args, **kwargs):
