@@ -244,7 +244,7 @@ def mocked_directorv2_service_api_base(
     app: FastAPI,
     directorv2_service_openapi_specs: dict[str, Any],
     spy_httpx_calls_enabled: bool,
-) -> Iterator[MockRouter | None]:
+) -> Iterator[MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_DIRECTOR_V2
 
@@ -279,7 +279,7 @@ def mocked_webserver_service_api_base(
     app: FastAPI,
     webserver_service_openapi_specs: dict[str, Any],
     spy_httpx_calls_enabled: bool,
-) -> Iterator[MockRouter | None]:
+) -> Iterator[MockRouter]:
     """
     Creates a respx.mock to capture calls to webserver API
     Includes only basic routes to check that the configuration is correct
@@ -293,13 +293,12 @@ def mocked_webserver_service_api_base(
 
     if spy_httpx_calls_enabled:
         print("Spying httpx calls. Skipping respx mocks.")
-        return None
 
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=settings.API_SERVER_WEBSERVER.base_url,
         assert_all_called=False,
-        assert_all_mocked=True,
+        assert_all_mocked=not spy_httpx_calls_enabled,
     ) as respx_mock:
         # healthcheck_readiness_probe, healthcheck_liveness_probe
         response_body = {
@@ -308,12 +307,13 @@ def mocked_webserver_service_api_base(
             "api_version": "1.0.0",
         }
 
-        respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
-            status.HTTP_200_OK, json=response_body
-        )
-        respx_mock.get(path="/v0/health", name="healthcheck_liveness_probe").respond(
-            status.HTTP_200_OK, json=response_body
-        )
+        if not spy_httpx_calls_enabled:
+            respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
+                status.HTTP_200_OK, json=response_body
+            )
+            respx_mock.get(
+                path="/v0/health", name="healthcheck_liveness_probe"
+            ).respond(status.HTTP_200_OK, json=response_body)
 
         yield respx_mock
 
@@ -324,7 +324,7 @@ def mocked_storage_service_api_base(
     storage_service_openapi_specs: dict[str, Any],
     faker: Faker,
     spy_httpx_calls_enabled: bool,
-) -> Iterator[MockRouter | None]:
+) -> Iterator[MockRouter]:
     """
     Creates a respx.mock to capture calls to strage API
     Includes only basic routes to check that the configuration is correct
@@ -338,39 +338,40 @@ def mocked_storage_service_api_base(
 
     if spy_httpx_calls_enabled:
         print("Spying httpx calls. Skipping respx mocks.")
-        return
 
     # pylint: disable=not-context-manager
     with respx.mock(
         base_url=settings.API_SERVER_STORAGE.base_url,
         assert_all_called=False,
-        assert_all_mocked=True,
+        assert_all_mocked=not spy_httpx_calls_enabled,
     ) as respx_mock:
         assert openapi["paths"]["/v0/"]["get"]["operationId"] == "health_check"
-        respx_mock.get(path="/v0/", name="health_check").respond(
-            status.HTTP_200_OK,
-            json=Envelope[HealthCheck](
-                data={
-                    "name": "storage",
-                    "status": "ok",
-                    "api_version": "1.0.0",
-                    "version": "1.0.0",
-                },
-            ).dict(),
-        )
 
-        assert openapi["paths"]["/v0/status"]["get"]["operationId"] == "get_status"
-        respx_mock.get(path="/v0/status", name="get_status").respond(
-            status.HTTP_200_OK,
-            json=Envelope[AppStatusCheck](
-                data={
-                    "app_name": "storage",
-                    "version": "1.0.0",
-                    "url": faker.url(),
-                    "diagnostics_url": faker.url(),
-                }
-            ).dict(),
-        )
+        if not spy_httpx_calls_enabled:
+            respx_mock.get(path="/v0/", name="health_check").respond(
+                status.HTTP_200_OK,
+                json=Envelope[HealthCheck](
+                    data={
+                        "name": "storage",
+                        "status": "ok",
+                        "api_version": "1.0.0",
+                        "version": "1.0.0",
+                    },
+                ).dict(),
+            )
+
+            assert openapi["paths"]["/v0/status"]["get"]["operationId"] == "get_status"
+            respx_mock.get(path="/v0/status", name="get_status").respond(
+                status.HTTP_200_OK,
+                json=Envelope[AppStatusCheck](
+                    data={
+                        "app_name": "storage",
+                        "version": "1.0.0",
+                        "url": faker.url(),
+                        "diagnostics_url": faker.url(),
+                    }
+                ).dict(),
+            )
 
         yield respx_mock
 
@@ -380,7 +381,7 @@ def mocked_catalog_service_api_base(
     app: FastAPI,
     catalog_service_openapi_specs: dict[str, Any],
     spy_httpx_calls_enabled: bool,
-) -> Iterator[MockRouter | None]:
+) -> Iterator[MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_CATALOG
 
@@ -396,15 +397,16 @@ def mocked_catalog_service_api_base(
     with respx.mock(
         base_url=settings.API_SERVER_CATALOG.base_url,
         assert_all_called=False,
-        assert_all_mocked=True,
+        assert_all_mocked=not spy_httpx_calls_enabled,
     ) as respx_mock:
-        respx_mock.get("/v0/").respond(
-            status.HTTP_200_OK,
-            text="simcore_service_catalog.api.routes.health@2023-07-03T12:59:12.024551+00:00",
-        )
-        respx_mock.get("/v0/meta").respond(
-            status.HTTP_200_OK, json=schemas["Meta"]["example"]
-        )
+        if not spy_httpx_calls_enabled:
+            respx_mock.get("/v0/").respond(
+                status.HTTP_200_OK,
+                text="simcore_service_catalog.api.routes.health@2023-07-03T12:59:12.024551+00:00",
+            )
+            respx_mock.get("/v0/meta").respond(
+                status.HTTP_200_OK, json=schemas["Meta"]["example"]
+            )
 
         yield respx_mock
 
