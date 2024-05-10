@@ -36,7 +36,9 @@ async def test_get_solver_pricing_plan(
 ):
 
     respx_mock = create_respx_mock_from_capture(
-        [mocked_webserver_service_api_base], project_tests_dir / "mocks" / capture, []
+        respx_mocks=[mocked_webserver_service_api_base],
+        capture_path=project_tests_dir / "mocks" / capture,
+        side_effects_callbacks=[],
     )
     assert respx_mock
 

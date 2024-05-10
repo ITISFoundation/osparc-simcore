@@ -206,9 +206,9 @@ async def test_delete_file(
         return capture.response_body
 
     create_respx_mock_from_capture(
-        [mocked_storage_service_api_base],
-        project_tests_dir / "mocks" / "delete_file.json",
-        [search_side_effect, delete_side_effect],
+        respx_mocks=[mocked_storage_service_api_base],
+        capture_path=project_tests_dir / "mocks" / "delete_file.json",
+        side_effects_callbacks=[search_side_effect, delete_side_effect],
     )
 
     response = await client.delete(
@@ -324,9 +324,9 @@ async def test_search_file(
         return response
 
     create_respx_mock_from_capture(
-        [mocked_storage_service_api_base],
-        project_tests_dir / "mocks" / "search_file_checksum.json",
-        [side_effect_callback],
+        respx_mocks=[mocked_storage_service_api_base],
+        capture_path=project_tests_dir / "mocks" / "search_file_checksum.json",
+        side_effects_callbacks=[side_effect_callback],
     )
 
     response = await client.get(f"{API_VTAG}/files:search", auth=auth, params=query)

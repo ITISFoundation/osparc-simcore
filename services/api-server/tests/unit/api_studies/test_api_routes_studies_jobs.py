@@ -148,9 +148,12 @@ async def test_start_stop_delete_study_job(
         return body
 
     create_respx_mock_from_capture(
-        [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
-        capture_file,
-        [_side_effect_no_project_id]
+        respx_mocks=[
+            mocked_webserver_service_api_base,
+            mocked_directorv2_service_api_base,
+        ],
+        capture_path=capture_file,
+        side_effects_callbacks=[_side_effect_no_project_id]
         + [_side_effect_with_project_id] * 3
         + [_side_effect_no_project_id],
     )
@@ -215,9 +218,12 @@ async def test_create_study_job(
     _default_side_effect.patch_called = False
 
     create_respx_mock_from_capture(
-        [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
-        _capture_file,
-        [_default_side_effect] * 5,
+        respx_mocks=[
+            mocked_webserver_service_api_base,
+            mocked_directorv2_service_api_base,
+        ],
+        capture_path=_capture_file,
+        side_effects_callbacks=[_default_side_effect] * 5,
     )
 
     response = await client.post(

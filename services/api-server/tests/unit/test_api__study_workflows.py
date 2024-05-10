@@ -219,13 +219,13 @@ def mocked_backend_or_none(
 
     if not httpx_calls_capture_enabled:
         create_respx_mock_from_capture(
-            [
+            respx_mocks=[
                 mocked_webserver_service_api_base,
                 mocked_storage_service_api_base,
                 mocked_directorv2_service_api_base,
             ],
-            project_tests_dir / "mocks" / "run_study_workflow.json",
-            [],
+            capture_path=project_tests_dir / "mocks" / "run_study_workflow.json",
+            side_effects_callbacks=[],
         )
         return MockedBackendApiDict(
             webserver=mocked_webserver_service_api_base,

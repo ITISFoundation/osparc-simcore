@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from collections.abc import Callable
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Final
@@ -11,7 +10,6 @@ from uuid import UUID
 
 import httpx
 import pytest
-import respx
 from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
@@ -94,9 +92,9 @@ async def test_get_solver_job_wallet(
         return response
 
     create_respx_mock_from_capture(
-        [mocked_webserver_service_api_base],
-        project_tests_dir / "mocks" / capture,
-        [_get_job_wallet_side_effect, _get_wallet_side_effect],
+        respx_mocks=[mocked_webserver_service_api_base],
+        capture_path=project_tests_dir / "mocks" / capture,
+        side_effects_callbacks=[_get_job_wallet_side_effect, _get_wallet_side_effect],
     )
 
     solver_key: str = "simcore/services/comp/my_super_hpc_solver"
@@ -169,9 +167,9 @@ async def test_get_solver_job_pricing_unit(
         return capture.response_body
 
     create_respx_mock_from_capture(
-        [mocked_webserver_service_api_base],
-        project_tests_dir / "mocks" / capture_file,
-        [_get_job_side_effect, _get_pricing_unit_side_effect]
+        respx_mocks=[mocked_webserver_service_api_base],
+        capture_path=project_tests_dir / "mocks" / capture_file,
+        side_effects_callbacks=[_get_job_side_effect, _get_pricing_unit_side_effect]
         if capture_file == "get_job_pricing_unit_success.json"
         else [_get_job_side_effect],
     )
@@ -250,9 +248,12 @@ async def test_start_solver_job_pricing_unit_with_payment(
 
     _put_pricing_plan_and_unit_side_effect.was_called = False
     create_respx_mock_from_capture(
-        [mocked_webserver_service_api_base, mocked_directorv2_service_api_base],
-        project_tests_dir / "mocks" / capture_name,
-        callbacks,
+        respx_mocks=[
+            mocked_webserver_service_api_base,
+            mocked_directorv2_service_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / capture_name,
+        side_effects_callbacks=callbacks,
     )
 
     response = await client.post(
@@ -274,10 +275,7 @@ async def test_get_solver_job_pricing_unit_no_payment(
     mocked_webserver_service_api_base,
     mocked_directorv2_service_api_base,
     mocked_groups_extra_properties,
-    create_respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback]],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
@@ -287,9 +285,15 @@ async def test_get_solver_job_pricing_unit_no_payment(
     _job_id: str = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
 
     create_respx_mock_from_capture(
-        [mocked_directorv2_service_api_base, mocked_webserver_service_api_base],
-        project_tests_dir / "mocks" / "start_job_no_payment.json",
-        [_start_job_side_effect, get_inspect_job_side_effect(job_id=_job_id)],
+        respx_mocks=[
+            mocked_directorv2_service_api_base,
+            mocked_webserver_service_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "start_job_no_payment.json",
+        side_effects_callbacks=[
+            _start_job_side_effect,
+            get_inspect_job_side_effect(job_id=_job_id),
+        ],
     )
 
     response = await client.post(
@@ -305,10 +309,7 @@ async def test_stop_job(
     client: AsyncClient,
     mocked_directorv2_service_api_base,
     mocked_groups_extra_properties,
-    create_respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback]],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
@@ -328,9 +329,12 @@ async def test_stop_job(
         return jsonable_encoder(task)
 
     create_respx_mock_from_capture(
-        [mocked_directorv2_service_api_base],
-        project_tests_dir / "mocks" / "stop_job.json",
-        [_stop_job_side_effect, get_inspect_job_side_effect(job_id=_job_id)],
+        respx_mocks=[mocked_directorv2_service_api_base],
+        capture_path=project_tests_dir / "mocks" / "stop_job.json",
+        side_effects_callbacks=[
+            _stop_job_side_effect,
+            get_inspect_job_side_effect(job_id=_job_id),
+        ],
     )
 
     response = await client.post(
@@ -353,10 +357,7 @@ async def test_get_solver_job_outputs(
     mocked_storage_service_api_base,
     mocked_groups_extra_properties,
     mocked_solver_job_outputs,
-    create_respx_mock_from_capture: Callable[
-        [list[respx.MockRouter], Path, list[SideEffectCallback]],
-        list[respx.MockRouter],
-    ],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     sufficient_credits: bool,
@@ -386,9 +387,12 @@ async def test_get_solver_job_outputs(
         return jsonable_encoder(envelope)
 
     create_respx_mock_from_capture(
-        [mocked_webserver_service_api_base, mocked_storage_service_api_base],
-        project_tests_dir / "mocks" / "get_solver_outputs.json",
-        [_sf, _sf, _sf, _wallet_side_effect, _sf],
+        respx_mocks=[
+            mocked_webserver_service_api_base,
+            mocked_storage_service_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "get_solver_outputs.json",
+        side_effects_callbacks=[_sf, _sf, _sf, _wallet_side_effect, _sf],
     )
 
     _solver_key: Final[str] = "simcore/services/comp/isolve"
