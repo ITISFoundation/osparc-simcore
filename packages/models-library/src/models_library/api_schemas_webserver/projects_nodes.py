@@ -1,6 +1,5 @@
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, TypeAlias
 
-from models_library.boot_options import BootOptions
 from models_library.projects_nodes import InputsDict
 from pydantic import Field
 
@@ -20,6 +19,9 @@ class NodeCreate(InputSchemaWithoutCamelCase):
     service_key: ServiceKey
     service_version: ServiceVersion
     service_id: str | None
+
+
+BootOptions: TypeAlias = Any
 
 
 class NodePatch(InputSchemaWithoutCamelCase):
