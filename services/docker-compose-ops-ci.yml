@@ -24,8 +24,8 @@ services:
     image: minio/minio:RELEASE.2020-05-16T01-33-21Z
     init: true
     environment:
-      - MINIO_ACCESS_KEY=${S3_ACCESS_KEY:?access_key_required}
-      - MINIO_SECRET_KEY=${S3_SECRET_KEY:?secret_key_required}
+      MINIO_ACCESS_KEY : ${S3_ACCESS_KEY:?access_key_required}
+      MINIO_SECRET_KEY : ${S3_SECRET_KEY:?secret_key_required}
     ports:
       - "9001:9000"
     command: server /data

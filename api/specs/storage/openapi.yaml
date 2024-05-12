@@ -652,14 +652,14 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/simcore-s3/files/metadata:search_owned:
+  /v0/simcore-s3/files/metadata:search:
     post:
       tags:
       - simcore-s3
-      summary: search for files starting with
+      summary: search for owned files
       description: search for files starting with `startswith` and/or matching a sha256_checksum
         in the file_meta_data table
-      operationId: search_owned_files
+      operationId: search_files
       parameters:
       - required: true
         schema:
@@ -673,7 +673,6 @@ paths:
         schema:
           type: string
           title: Startswith
-          default: ''
         name: startswith
         in: query
       - required: false
@@ -682,6 +681,31 @@ paths:
           pattern: ^[a-fA-F0-9]{64}$
           title: Sha256 Checksum
         name: sha256_checksum
+        in: query
+      - required: true
+        schema:
+          type: string
+          enum:
+          - owned
+          title: Kind
+        name: kind
+        in: query
+      - required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          title: Limit
+          default: 20
+        name: limit
+        in: query
+      - required: false
+        schema:
+          type: integer
+          minimum: 0
+          title: Offset
+          default: 0
+        name: offset
         in: query
       responses:
         '200':

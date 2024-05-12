@@ -1,9 +1,9 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-import re
+import string
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
 
 import pytest
 import simcore_service_dynamic_scheduler
@@ -49,33 +49,17 @@ def docker_compose_service_dynamic_scheduler_env_vars(
     env_devel_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     """env vars injected at the docker-compose"""
-
-    dynamic_scheduler = yaml.safe_load(services_docker_compose_file.read_text())[
-        "services"
-    ]["dynamic-schdlr"]
-
-    def _substitute(item):
-        key, value = item.split("=")
-        if m := re.match(r"\${([^{}:-]\w+)", value):
-            expected_env_var = m.group(1)
-            try:
-                # NOTE: if this raises, then the RHS env-vars in the docker-compose are
-                # not defined in the env-devel
-                if value := env_devel_dict[expected_env_var]:
-                    return key, value
-            except KeyError:
-                pytest.fail(
-                    f"{expected_env_var} is not defined in .env-devel but used in docker-compose"
-                    f" services[{dynamic_scheduler}].environment[{key}]"
-                )
-        return None
+    content = yaml.safe_load(services_docker_compose_file.read_text())
+    environment = content["services"]["dynamic-schdlr"].get("environment", {})
 
     envs: EnvVarsDict = {}
-    for item in dynamic_scheduler.get("environment", []):
-        if found := _substitute(item):
-            key, value = found
-            envs[key] = value
-
+    for name, value in environment.items():
+        try:
+            envs[name] = string.Template(value).substitute(env_devel_dict)
+        except (KeyError, ValueError) as err:  # noqa: PERF203
+            pytest.fail(
+                f"{err}: {value} is not defined in .env-devel but used as RHS in docker-compose services['dynamic-schdlr'].environment[{name}]"
+            )
     return envs
 
 
