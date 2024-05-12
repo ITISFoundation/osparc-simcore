@@ -1,7 +1,8 @@
 from typing import Any, ClassVar, Literal
 
+from models_library.boot_options import BootOptions
 from models_library.projects_nodes import InputsDict
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
@@ -19,10 +20,6 @@ class NodeCreate(InputSchemaWithoutCamelCase):
     service_key: ServiceKey
     service_version: ServiceVersion
     service_id: str | None
-
-
-class BootOptions(BaseModel):
-    boot_mode: str
 
 
 class NodePatch(InputSchemaWithoutCamelCase):

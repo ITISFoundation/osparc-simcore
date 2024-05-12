@@ -5331,15 +5331,6 @@ components:
           type: object
           additionalProperties:
             $ref: '#/components/schemas/BootChoice'
-    BootOptions:
-      title: BootOptions
-      required:
-      - boot_mode
-      type: object
-      properties:
-        boot_mode:
-          title: Boot Mode
-          type: string
     ChangePasswordBody:
       title: ChangePasswordBody
       required:
@@ -7926,7 +7917,8 @@ components:
           minimum: 0.0
           type: number
         bootOptions:
-          $ref: '#/components/schemas/BootOptions'
+          title: Bootoptions
+          type: object
     NodeRetrieve:
       title: NodeRetrieve
       type: object
