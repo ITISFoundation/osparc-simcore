@@ -21,7 +21,7 @@ class NodeCreate(InputSchemaWithoutCamelCase):
     service_id: str | None
 
 
-BootOptions: TypeAlias = Any
+BootOptions: TypeAlias = dict
 
 
 class NodePatch(InputSchemaWithoutCamelCase):
