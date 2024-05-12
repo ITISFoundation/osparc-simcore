@@ -9,7 +9,7 @@ from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_ui import StudyUI
 from models_library.users import UserID
 from pydantic import BaseModel
-from simcore_postgres_database.models.projects import ProjectType
+from simcore_postgres_database.models.projects import ProjectType, projects
 
 ProjectDict: TypeAlias = dict[str, Any]
 ProjectProxy: TypeAlias = RowProxy
@@ -49,6 +49,11 @@ class ProjectDB(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+assert set(ProjectDB.__fields__.keys()).issubset(  # nosec
+    {c.name for c in projects.columns}
+)
 
 
 class UserProjectAccessRightsDB(BaseModel):

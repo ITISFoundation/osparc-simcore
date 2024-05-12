@@ -84,18 +84,18 @@ _logger = logging.getLogger(__name__)
 
 def _handle_projects_exceptions(handler: Handler):
     @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
+    async def _wrapper(request: web.Request) -> web.StreamResponse:
         try:
             return await handler(request)
 
-        except (ProjectNotFoundError,) as exc:
+        except ProjectNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except ProjectOwnerNotFoundInTheProjectAccessRightsError as exc:
-            raise web.HTTPBadRequest(reason=f"{exc}")
+            raise web.HTTPBadRequest(reason=f"{exc}") from exc
         except ProjectInvalidRightsError as exc:
-            raise web.HTTPUnauthorized(reason=f"{exc}")
+            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
 
-    return wrapper
+    return _wrapper
 
 
 routes = web.RouteTableDef()

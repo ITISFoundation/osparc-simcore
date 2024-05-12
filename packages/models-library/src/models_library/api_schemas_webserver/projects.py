@@ -10,7 +10,7 @@ from typing import Any, Literal, TypeAlias
 from pydantic import Field, validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
-from ..basic_types import HttpUrlWithCustomMinLength
+from ..basic_types import HttpUrlWithCustomMinLength, IDStr
 from ..emails import LowerCaseEmailStr
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
@@ -118,9 +118,13 @@ class ProjectUpdate(InputSchema):
     quality: dict[str, Any] = FieldNotRequired()
 
 
+ProjectName: TypeAlias = IDStr
+ProjectDescription: TypeAlias = IDStr
+
+
 class ProjectPatch(InputSchema):
-    name: str = Field(None)
-    description: str = Field(None)
+    name: ProjectName = Field(None)
+    description: ProjectDescription = Field(None)
     thumbnail: HttpUrlWithCustomMinLength = Field(None)
     access_rights: dict[GroupIDStr, AccessRights] = Field(None)
     classifiers: list[ClassifierID] = Field(None)
