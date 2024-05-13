@@ -210,6 +210,12 @@ async def _assert_has_entries(
                 assert len(scheduled) == len(set(scheduled))
 
 
+async def _sleep_in_interval(lower: NonNegativeFloat, upper: NonNegativeFloat) -> None:
+    assert upper >= lower
+    radom_wait = random.uniform(lower, upper)  # noqa: S311
+    await asyncio.sleep(radom_wait)
+
+
 @pytest.mark.parametrize("max_workers", [10])
 @pytest.mark.parametrize(
     "deferred_tasks_to_start",
@@ -255,8 +261,7 @@ async def test_workflow_with_remote_process_interruptions(
         # emulate issues with processing start & stop DeferredManager
         for _ in range(start_stop_cycles):
             await manager.stop()
-            radom_wait = random.uniform(0.2, 0.4)  # noqa: S311
-            await asyncio.sleep(radom_wait)
+            await _sleep_in_interval(0.2, 0.4)
             await manager.start()
 
         await _assert_has_entries(manager, "get-results", count=deferred_tasks_to_start)
@@ -346,23 +351,68 @@ class ServiceManager:
 
     @contextlib.asynccontextmanager
     async def pause_redis(self) -> AsyncIterator[None]:
+        # save db for clean restore point
+        await self.redis_client.redis.save()
+
         async with self._pause_container("redis", self.redis_client):
             yield
 
 
+@pytest.mark.parametrize("max_workers", [10])
+@pytest.mark.parametrize("deferred_tasks_to_start", [100])
+@pytest.mark.parametrize(
+    "service",
+    [
+        "rabbit",
+        "redis",
+    ],
+)
 async def test_paused_services(
     async_docker_client: aiodocker.Docker,
     redis_client: RedisClientSDK,
     rabbit_client: RabbitMQClient,
+    remote_process: _RemoteProcess,
+    rabbit_service: RabbitSettings,
+    redis_service: RedisSettings,
+    max_workers: int,
+    deferred_tasks_to_start: int,
+    service: str,
 ):
     service_manager = ServiceManager(async_docker_client, redis_client, rabbit_client)
 
-    async with service_manager.pause_rabbit():
-        print("[rabbit]: paused")
+    async with _RemoteProcessLifecycleManager(
+        remote_process, rabbit_service, redis_service, max_workers
+    ) as manager:
 
-    print("[rabbit]: resumed")
+        # start all in parallel
+        await asyncio.gather(
+            *[
+                manager.start_deferred_task(0.1, i)
+                for i in range(deferred_tasks_to_start)
+            ]
+        )
+        # makes sure tasks have been scheduled
+        await _assert_has_entries(
+            manager, "get-scheduled", count=deferred_tasks_to_start
+        )
 
-    async with service_manager.pause_redis():
-        print("[redis]: paused")
+        # if this fails all scheduled tasks have already finished
+        assert len(await manager.get_results()) < deferred_tasks_to_start
 
-    print("[redis]: resumed")
+        # emulate issues with 3rd party services
+        match service:
+            case "rabbit":
+                print("[rabbit]: pausing")
+                async with service_manager.pause_rabbit():
+                    print("[rabbit]: paused")
+                    await _sleep_in_interval(0.2, 0.4)
+                print("[rabbit]: resumed")
+
+            case "redis":
+                print("[redis]: pausing")
+                async with service_manager.pause_redis():
+                    print("[redis]: paused")
+                    await _sleep_in_interval(0.2, 0.4)
+                print("[redis]: resumed")
+
+        await _assert_has_entries(manager, "get-results", count=deferred_tasks_to_start)
