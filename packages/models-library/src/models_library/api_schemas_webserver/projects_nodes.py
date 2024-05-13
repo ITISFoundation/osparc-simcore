@@ -29,7 +29,9 @@ class NodePatch(InputSchemaWithoutCamelCase):
     label: str = Field(None)
     inputs: InputsDict = Field(None)
     input_nodes: list[NodeID] = Field(None, alias="inputNodes")
-    progress: float | None = Field(None, ge=0, le=100)  # NOTE: MD: deprecated?
+    progress: float | None = Field(
+        None, ge=0, le=100
+    )  # NOTE: it is used by frontend for File Picker progress
     boot_options: BootOptions = Field(None, alias="bootOptions")
 
 
