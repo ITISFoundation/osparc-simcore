@@ -2,17 +2,20 @@
 # pylint:disable=unused-argument
 
 import asyncio
+import contextlib
 import json
 import random
 import sys
-from collections.abc import AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator, Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
+import aiodocker
 import psutil
 import pytest
 from pydantic import NonNegativeFloat, NonNegativeInt, SecretStr
 from pydantic.json import pydantic_encoder
+from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -58,17 +61,17 @@ class _RemoteProcess:
 
 
 @pytest.fixture
-async def cleanup_redis(redis_service: RedisSettings) -> AsyncIterator[None]:
+async def redis_client(redis_service: RedisSettings) -> AsyncIterator[RedisClientSDK]:
     redis_client_sdk = RedisClientSDK(
         redis_service.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
     )
     await redis_client_sdk.redis.flushall()
-    yield
+    yield redis_client_sdk
     await redis_client_sdk.redis.flushall()
 
 
 @pytest.fixture
-async def remote_process(cleanup_redis: None) -> AsyncIterable[_RemoteProcess]:
+async def remote_process(redis_client: RedisClientSDK) -> AsyncIterable[_RemoteProcess]:
     python_interpreter = sys.executable
     current_module_path = (
         Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -257,3 +260,109 @@ async def test_workflow_with_remote_process_interruptions(
             await manager.start()
 
         await _assert_has_entries(manager, "get-results", count=deferred_tasks_to_start)
+
+
+@pytest.fixture
+async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
+    async with aiodocker.Docker() as docker_client:
+        yield docker_client
+
+
+@contextlib.asynccontextmanager
+async def paused_container(
+    async_docker_client: aiodocker.Docker, container_name: str
+) -> AsyncIterator[None]:
+    containers = await async_docker_client.containers.list(
+        filters={"name": [f"{container_name}."]}
+    )
+    await asyncio.gather(*(c.pause() for c in containers))
+    # refresh
+    container_attrs = await asyncio.gather(*(c.show() for c in containers))
+    for container_status in container_attrs:
+        assert container_status["State"]["Status"] == "paused"
+
+    yield
+
+    await asyncio.gather(*(c.unpause() for c in containers))
+    # refresh
+    container_attrs = await asyncio.gather(*(c.show() for c in containers))
+    for container_status in container_attrs:
+        assert container_status["State"]["Status"] == "running"
+    # NOTE: container takes some time to start
+
+
+@pytest.fixture
+async def rabbit_client(
+    create_rabbitmq_client: Callable[[str], RabbitMQClient],
+) -> RabbitMQClient:
+    return create_rabbitmq_client("pinger")
+
+
+class ClientWithPingProtocol(Protocol):
+    async def ping(self) -> bool:
+        ...
+
+
+class ServiceManager:
+    def __init__(
+        self,
+        async_docker_client: aiodocker.Docker,
+        redis_client: RedisClientSDK,
+        rabbit_client: RabbitMQClient,
+    ) -> None:
+        self.async_docker_client = async_docker_client
+        self.redis_client = redis_client
+        self.rabbit_client = rabbit_client
+
+    @contextlib.asynccontextmanager
+    async def _pause_container(
+        self, container_name: str, client: ClientWithPingProtocol
+    ) -> AsyncIterator[None]:
+
+        async with paused_container(self.async_docker_client, container_name):
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(0.1),
+                stop=stop_after_delay(10),
+                reraise=True,
+                retry=retry_if_exception_type(AssertionError),
+            ):
+                with attempt:
+                    assert await client.ping() is False
+            yield
+
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(10),
+            reraise=True,
+            retry=retry_if_exception_type(AssertionError),
+        ):
+            with attempt:
+                assert await client.ping() is True
+
+    @contextlib.asynccontextmanager
+    async def pause_rabbit(self) -> AsyncIterator[None]:
+        async with self._pause_container("rabbit", self.rabbit_client):
+            yield
+
+    @contextlib.asynccontextmanager
+    async def pause_redis(self) -> AsyncIterator[None]:
+        async with self._pause_container("redis", self.redis_client):
+            yield
+
+
+async def test_paused_services(
+    async_docker_client: aiodocker.Docker,
+    redis_client: RedisClientSDK,
+    rabbit_client: RabbitMQClient,
+):
+    service_manager = ServiceManager(async_docker_client, redis_client, rabbit_client)
+
+    async with service_manager.pause_rabbit():
+        print("[rabbit]: paused")
+
+    print("[rabbit]: resumed")
+
+    async with service_manager.pause_redis():
+        print("[redis]: paused")
+
+    print("[redis]: resumed")

@@ -23,9 +23,10 @@ from .retry_policies import RedisRetryPolicyUponInitialization
 from .utils import logged_gather
 
 _DEFAULT_LOCK_TTL: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
+_DEFAULT_CONNECTION_TIMEOUT_S: Final[NonNegativeFloat] = 5
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class BaseRedisError(PydanticErrorMixin, RuntimeError):
@@ -59,16 +60,19 @@ class RedisClientSDK:
                 redis.exceptions.ConnectionError,
                 redis.exceptions.TimeoutError,
             ],
+            socket_timeout=_DEFAULT_CONNECTION_TIMEOUT_S,
+            socket_connect_timeout=_DEFAULT_CONNECTION_TIMEOUT_S,
+            retry_on_timeout=True,
             encoding="utf-8",
             decode_responses=True,
         )
 
-    @retry(**RedisRetryPolicyUponInitialization(logger).kwargs)
+    @retry(**RedisRetryPolicyUponInitialization(_logger).kwargs)
     async def setup(self) -> None:
         if not await self._client.ping():
             await self.shutdown()
             raise CouldNotConnectToRedisError(dsn=self.redis_dsn)
-        logger.info(
+        _logger.info(
             "Connection to %s succeeded with %s",
             f"redis at {self.redis_dsn=}",
             f"{self._client=}",
@@ -78,10 +82,10 @@ class RedisClientSDK:
         await self._client.close(close_connection_pool=True)
 
     async def ping(self) -> bool:
-        try:
-            return await self._client.ping()
-        except redis.exceptions.ConnectionError:
-            return False
+        with log_catch(_logger, reraise=False):
+            await self._client.ping()
+            return True
+        return False
 
     @contextlib.asynccontextmanager
     async def lock_context(
@@ -119,8 +123,8 @@ class RedisClientSDK:
 
         async def _extend_lock(lock: Lock) -> None:
             with log_context(
-                logger, logging.DEBUG, f"Extending lock {lock_unique_id}"
-            ), log_catch(logger, reraise=False):
+                _logger, logging.DEBUG, f"Extending lock {lock_unique_id}"
+            ), log_catch(_logger, reraise=False):
                 await lock.reacquire()
 
         try:
@@ -156,7 +160,7 @@ class RedisClientSDK:
                 await ttl_lock.release()
             except redis.exceptions.LockNotOwnedError:
                 # if this appears outside tests it can cause issues since something might be happening
-                logger.warning(
+                _logger.warning(
                     "Attention: lock is no longer owned. This is unexpected and requires investigation"
                 )
 
