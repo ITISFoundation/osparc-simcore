@@ -98,11 +98,35 @@ qx.Class.define("osparc.data.model.Service", {
       nullable: false
     },
 
+    // ------ ignore for serializing ------
     hits: {
       check: "Number",
       init: 0,
       event: "changeHits",
       nullable: false
     }
+    // ------ ignore for serializing ------
+  },
+
+  statics: {
+    IgnoreSerializationProps: [
+      "hits"
+    ]
+  },
+
+  members: {
+    __serviceData: null,
+
+    serialize: function() {
+      let jsonObject = {};
+      const propertyKeys = this.self().getProperties();
+      propertyKeys.forEach(key => {
+        if (this.self().IgnoreSerializationProps.includes(key)) {
+          return;
+        }
+        jsonObject[key] = this.get(key);
+      });
+      return jsonObject;
+    },
   }
 });
