@@ -130,7 +130,8 @@ qx.Class.define("osparc.data.model.Study", {
     workbench: {
       check: "osparc.data.model.Workbench",
       nullable: false,
-      init: {}
+      init: {},
+      event: "changeWorkbench",
     },
 
     ui: {
