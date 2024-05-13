@@ -123,14 +123,14 @@ ProjectDescription: TypeAlias = IDStr
 
 
 class ProjectPatch(InputSchema):
-    name: ProjectName = Field(None)
-    description: ProjectDescription = Field(None)
-    thumbnail: HttpUrlWithCustomMinLength = Field(None)
-    access_rights: dict[GroupIDStr, AccessRights] = Field(None)
-    classifiers: list[ClassifierID] = Field(None)
-    dev: dict | None = Field(None)
-    ui: StudyUI | None = Field(None)
-    quality: dict[str, Any] = Field(None)
+    name: ProjectName = FieldNotRequired()
+    description: ProjectDescription = FieldNotRequired()
+    thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
+    access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
+    classifiers: list[ClassifierID] = FieldNotRequired()
+    dev: dict | None = FieldNotRequired()
+    ui: StudyUI | None = FieldNotRequired()
+    quality: dict[str, Any] = FieldNotRequired()
 
 
 __all__: tuple[str, ...] = (

@@ -51,7 +51,7 @@ def mock_project_uses_available_services(mocker: MockerFixture):
         (UserRole.PRODUCT_OWNER, status.HTTP_204_NO_CONTENT),
     ],
 )
-async def test_patch_project_node_access_rights(
+async def test_patch_project_node_entrypoint_access(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

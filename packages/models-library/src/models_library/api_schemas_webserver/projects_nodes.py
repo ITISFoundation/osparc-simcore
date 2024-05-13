@@ -9,6 +9,7 @@ from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
 from ..services_resources import ServiceResourcesDict
+from ..utils.pydantic_tools_extension import FieldNotRequired
 from ._base import InputSchemaWithoutCamelCase, OutputSchema
 
 assert ServiceResourcesDict  # nosec
@@ -25,14 +26,14 @@ BootOptions: TypeAlias = dict
 
 
 class NodePatch(InputSchemaWithoutCamelCase):
-    service_version: ServiceVersion = Field(None, alias="version")
+    service_version: ServiceVersion = FieldNotRequired(alias="version")
     label: str = Field(None)
     inputs: InputsDict = Field(None)
-    input_nodes: list[NodeID] = Field(None, alias="inputNodes")
+    input_nodes: list[NodeID] = FieldNotRequired(alias="inputNodes")
     progress: float | None = Field(
         None, ge=0, le=100
     )  # NOTE: it is used by frontend for File Picker progress
-    boot_options: BootOptions = Field(None, alias="bootOptions")
+    boot_options: BootOptions = FieldNotRequired(alias="bootOptions")
 
 
 class NodeCreated(OutputSchema):
