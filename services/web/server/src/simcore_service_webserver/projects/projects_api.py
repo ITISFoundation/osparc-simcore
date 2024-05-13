@@ -28,7 +28,10 @@ from models_library.api_schemas_directorv2.dynamic_services import (
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     RPCDynamicServiceCreate,
 )
+from models_library.api_schemas_webserver.projects import ProjectPatch
+from models_library.api_schemas_webserver.projects_nodes import NodePatch
 from models_library.errors import ErrorDict
+from models_library.products import ProductName
 from models_library.projects import Project, ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -101,7 +104,7 @@ from ..socketio.messages import (
     send_message_to_user,
 )
 from ..storage import api as storage_api
-from ..users.api import FullNameDict, get_user_fullname, get_user_role
+from ..users.api import FullNameDict, get_user, get_user_fullname, get_user_role
 from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
     PreferredWalletIdFrontendUserPreference,
@@ -118,8 +121,10 @@ from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
     NodeNotFoundError,
+    ProjectInvalidRightsError,
     ProjectLockError,
     ProjectNodeResourcesInvalidError,
+    ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
 )
@@ -194,6 +199,53 @@ async def update_project_last_change_timestamp(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     assert db  # nosec
     await db.update_project_last_change_timestamp(ProjectIDStr(f"{project_uuid}"))
+
+
+async def patch_project(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    project_patch: ProjectPatch,
+):
+    _project_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
+        project_patch, exclude_unset=True, by_alias=False
+    )
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+
+    # 1. Get project
+    project_db = await db.get_project_db(project_uuid=project_uuid)
+
+    # 2. Check user permissions
+    _user_project_access_rights = await db.get_project_access_rights_for_user(
+        user_id, project_uuid
+    )
+    if not _user_project_access_rights.write:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
+
+    # 3. If patching access rights
+    if new_prj_access_rights := _project_patch_exclude_unset.get("access_rights"):
+        # 3.1 Check if user is Owner and therefore can modify access rights
+        if not _user_project_access_rights.delete:
+            raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
+        # 3.2 Ensure the prj owner is always in the access rights
+        _prj_required_permissions = {
+            "read": True,
+            "write": True,
+            "delete": True,
+        }
+        user: dict = await get_user(app, project_db.prj_owner)
+        _prj_owner_primary_group = f'{user["primary_gid"]}'
+        if _prj_owner_primary_group not in new_prj_access_rights:
+            raise ProjectOwnerNotFoundInTheProjectAccessRightsError
+        if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:
+            raise ProjectOwnerNotFoundInTheProjectAccessRightsError
+
+    # 4. Patch the project
+    await db.patch_project(
+        project_uuid=project_uuid,
+        new_partial_project_data=_project_patch_exclude_unset,
+    )
 
 
 #
@@ -759,6 +811,40 @@ async def update_project_node_state(
 async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool:
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     return await db.is_hidden(project_id)
+
+
+async def patch_project_node(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    node_patch: NodePatch,
+) -> None:
+    _node_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
+        node_patch, exclude_unset=True, by_alias=True
+    )
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+
+    # 1. Check user permissions
+    _user_project_access_rights = await db.get_project_access_rights_for_user(
+        user_id, project_id
+    )
+    if not _user_project_access_rights.write:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
+
+    # 2. Patch the project node
+    updated_project, _ = await db.update_project_node_data(
+        user_id=user_id,
+        project_uuid=project_id,
+        node_id=node_id,
+        product_name=product_name,
+        new_node_data=_node_patch_exclude_unset,
+    )
+
+    # 3. Notify project node update
+    await notify_project_node_update(app, updated_project, node_id, errors=None)
 
 
 async def update_project_node_outputs(

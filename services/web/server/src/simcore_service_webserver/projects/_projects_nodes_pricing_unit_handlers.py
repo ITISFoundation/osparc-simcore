@@ -37,7 +37,7 @@ class PricingUnitNotFoundError(PricingUnitError):
     msg_template = "Pricing unit not found"
 
 
-def _handle_project_nodes_pricing_unit_exceptions(handler: Handler):
+def _handle_projects_nodes_pricing_unit_exceptions(handler: Handler):
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
@@ -61,7 +61,7 @@ routes = web.RouteTableDef()
 )
 @login_required
 @permission_required("project.wallet.*")
-@_handle_project_nodes_pricing_unit_exceptions
+@_handle_projects_nodes_pricing_unit_exceptions
 async def get_project_node_pricing_unit(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
@@ -110,7 +110,7 @@ class _ProjectNodePricingUnitPathParams(BaseModel):
 )
 @login_required
 @permission_required("project.wallet.*")
-@_handle_project_nodes_pricing_unit_exceptions
+@_handle_projects_nodes_pricing_unit_exceptions
 async def connect_pricing_unit_to_project_node(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
