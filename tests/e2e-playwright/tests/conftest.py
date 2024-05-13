@@ -304,7 +304,7 @@ def create_new_project_and_delete(
     """
     created_project_uuids = []
 
-    def _do(
+    def _(
         expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
     ) -> str:
         assert (
@@ -337,7 +337,7 @@ def create_new_project_and_delete(
             created_project_uuids.append(project_uuid)
             return project_uuid
 
-    yield _do
+    yield _
 
     # go back to dashboard and wait for project to close
     with ExitStack() as stack:
