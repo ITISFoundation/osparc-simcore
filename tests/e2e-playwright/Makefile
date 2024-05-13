@@ -150,7 +150,7 @@ test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_USER_INPUT_FILE) ## test 
     if [ "$$BILLABLE" = "y" ]; then \
         BILLABLE_FLAG="--product-billable"; \
     fi; \
-	pytest -s tests/jupyterlabs/jupyterlab.py \
+	pytest -s tests/jupyterlabs/ \
 		--color=yes \
 		--product-url=$$PRODUCT_URL \
 		--user-name=$$USER_NAME \
