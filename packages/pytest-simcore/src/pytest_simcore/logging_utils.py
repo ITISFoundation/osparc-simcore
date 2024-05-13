@@ -11,7 +11,6 @@ def _timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
     total_seconds = delta.total_seconds()
     minutes, rem_seconds = divmod(abs(total_seconds), 60)
     seconds, milliseconds = divmod(rem_seconds, 1)
-    sign = "-" if total_seconds < 0 else ""
     result = ""
 
     if int(minutes) != 0:
