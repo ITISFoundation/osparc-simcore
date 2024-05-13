@@ -59,8 +59,11 @@ class SocketIOEvent:
     obj: dict[str, Any]
 
 
+_SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
+
+
 def decode_socketio_42_message(message: str) -> SocketIOEvent:
-    data = json.loads(message.removeprefix("42"))
+    data = json.loads(message.removeprefix(_SOCKETIO_MESSAGE_PREFIX))
     return SocketIOEvent(name=data[0], obj=data[1])
 
 
@@ -78,7 +81,7 @@ class SocketIOProjectClosedWaiter:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
             # socket.io encodes messages like so
             # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-            if message.startswith("42"):
+            if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if (
                     (decoded_message.name == "projectStateUpdated")
@@ -98,7 +101,7 @@ class SocketIOProjectStateUpdatedWaiter:
         with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
             # socket.io encodes messages like so
             # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-            if message.startswith("42"):
+            if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if decoded_message.name == "projectStateUpdated":
                     return (
@@ -124,7 +127,7 @@ class SocketIOOsparcMessagePrinter:
         if self.include_logger_messages:
             osparc_messages.append("logger")
 
-        if message.startswith("42"):
+        if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
             decoded_message: SocketIOEvent = decode_socketio_42_message(message)
             if decoded_message.name in osparc_messages:
                 print("WS Message:", decoded_message.name, decoded_message.obj)
@@ -177,4 +180,4 @@ def on_web_socket_default_handler(ws) -> None:
 
     ws.on("framesent", lambda payload: ctx.logger.info("⬇️ %s", payload))
     ws.on("framereceived", lambda payload: ctx.logger.info("⬆️ %s", payload))
-    ws.on("close", lambda payload: stack.close())
+    ws.on("close", lambda payload: stack.close())  # noqa: ARG005
