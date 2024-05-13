@@ -109,10 +109,7 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 
 # Define the file where user input will be saved
 USER_INPUT_FILE := .e2e-playwright-env.txt
-
-
-# Prompt the user for input and store it into variables
-$(USER_INPUT_FILE):
+$(USER_INPUT_FILE):## Prompt the user for input and store it into variables
 		@read -p "Enter your product URL: " PRODUCT_URL; \
 		read -p "Is the product billable [y/n]: " BILLABLE; \
 		read -p "Enter your username: " USER_NAME; \
@@ -137,6 +134,33 @@ test-sleepers-anywhere: _check_venv_active $(USER_INPUT_FILE) ## test sleepers a
 		--browser chromium \
 		--headed
 
+# Define the file where user input will be saved
+JUPYTER_USER_INPUT_FILE := .e2e-playwright-jupyterlab-env.txt
+$(JUPYTER_USER_INPUT_FILE): ## Prompt the user for input and store it into variables
+		@read -p "Enter your product URL: " PRODUCT_URL; \
+		read -p "Is the product billable [y/n]: " BILLABLE; \
+		read -p "Enter your username: " USER_NAME; \
+		read -s -p "Enter your password: " PASSWORD; echo ""; \
+		read -p "Enter the size of the large file (human readable form e.g. 3Gib): " LARGE_FILE_SIZE; \
+		echo "$$PRODUCT_URL $$USER_NAME $$PASSWORD $$LARGE_FILE_SIZE $$BILLABLE" > $(JUPYTER_USER_INPUT_FILE)
+
+test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_USER_INPUT_FILE) ## test jupyterlabs anywhere and keeps a cache as to where
+	@IFS=' ' read -r PRODUCT_URL USER_NAME PASSWORD LARGE_FILE_SIZE BILLABLE < $(JUPYTER_USER_INPUT_FILE); \
+	BILLABLE_FLAG=""; \
+    if [ "$$BILLABLE" = "y" ]; then \
+        BILLABLE_FLAG="--product-billable"; \
+    fi; \
+	pytest -s tests/jupyterlabs/ \
+		--color=yes \
+		--product-url=$$PRODUCT_URL \
+		--user-name=$$USER_NAME \
+		--password=$$PASSWORD \
+		--large-file-size=$$LARGE_FILE_SIZE \
+		--service-key=jupyter-math \
+		$$BILLABLE_FLAG \
+		--browser chromium \
+		--headed
 
 clean:
 	@rm -rf $(USER_INPUT_FILE)
+	@rm -rf $(JUPYTER_USER_INPUT_FILE)
