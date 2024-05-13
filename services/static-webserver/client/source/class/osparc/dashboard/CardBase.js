@@ -307,9 +307,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
         case "study":
         case "template":
           model = new osparc.data.model.Study(resourceData);
+          model["resourceType"] = resourceData["resourceType"];
           break;
         case "service":
           model = new osparc.data.model.Service(resourceData);
+          model["resourceType"] = resourceData["resourceType"];
           break;
       }
 
