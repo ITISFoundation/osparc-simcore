@@ -203,7 +203,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     workbench: {
-      check: "Object",
+      check: "osparc.data.model.Workbench",
       nullable: true,
       apply: "__applyWorkbench"
     },
@@ -293,49 +293,55 @@ qx.Class.define("osparc.dashboard.CardBase", {
       dragover : true
     },
 
+    __dataModel: null,
+
     isResourceType: function(resourceType) {
       return this.getResourceType() === resourceType;
     },
 
     __applyResourceData: function(resourceData) {
-      let uuid = null;
-      let owner = "";
-      let defaultHits = null;
-      let workbench = null;
+      this.set({
+        resourceType: resourceData.resourceType
+      });
+
       switch (resourceData["resourceType"]) {
         case "study":
-          uuid = resourceData.uuid ? resourceData.uuid : uuid;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
-          workbench = resourceData.workbench ? resourceData.workbench : workbench;
+        case "template": {
+          const model = this.__dataModel = new osparc.data.model.Study(resourceData);
+          model.bind("uuid", this, "uuid");
+          model.bind("name", this, "title");
+          model.bind("description", this, "description");
+          model.bind("workbench", this, "workbench");
+          model.bind("prjOwner", this, "owner");
+          model.bind("accessRights", this, "accessRights");
+          model.bind("lastChangeDate", this, "lastChangeDate");
+          model.bind("thumbnail", this, "icon", {
+            converter: t => t || this.self().PRODUCT_ICON
+          });
+          model.bind("state", this, "state");
+          model.bind("classifiers", this, "classifiers");
+          model.bind("quality", this, "quality");
+          model.getUi().bind("mode", this, "uiMode");
           break;
-        case "template":
-          uuid = resourceData.uuid ? resourceData.uuid : uuid;
-          owner = resourceData.prjOwner ? resourceData.prjOwner : owner;
-          workbench = resourceData.workbench ? resourceData.workbench : workbench;
+        }
+        case "service": {
+          this.set({
+            uuid: resourceData.key,
+            title: resourceData.name,
+            description: resourceData.description,
+            owner: resourceData.owner ? resourceData.owner : "",
+            accessRights: resourceData.accessRights ? resourceData.accessRights : {},
+            lastChangeDate: null,
+            icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
+            state: {},
+            classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
+            quality: resourceData.quality ? resourceData.quality : null,
+            uiMode: null,
+            hits: resourceData.hits ? resourceData.hits : 0
+          });
           break;
-        case "service":
-          uuid = resourceData.key ? resourceData.key : uuid;
-          owner = resourceData.owner ? resourceData.owner : owner;
-          defaultHits = 0;
-          break;
+        }
       }
-
-      this.set({
-        resourceType: resourceData.resourceType,
-        uuid,
-        title: resourceData.name,
-        description: resourceData.description,
-        owner,
-        accessRights: resourceData.accessRights ? resourceData.accessRights : {},
-        lastChangeDate: resourceData.lastChangeDate ? new Date(resourceData.lastChangeDate) : null,
-        icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
-        state: resourceData.state ? resourceData.state : {},
-        classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
-        quality: resourceData.quality ? resourceData.quality : null,
-        uiMode: resourceData.ui && resourceData.ui.mode ? resourceData.ui.mode : null,
-        hits: resourceData.hits ? resourceData.hits : defaultHits,
-        workbench
-      });
     },
 
     __applyUuid: function(value, old) {
@@ -418,21 +424,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyWorkbench: function(workbench) {
-      if (this.isResourceType("study") || this.isResourceType("template")) {
-        this.setEmptyWorkbench(Object.keys(workbench).length === 0);
-      }
       if (workbench === null) {
         // it is a service
         return;
       }
 
+      const workbenchData = workbench.serialize();
+      if (this.isResourceType("study") || this.isResourceType("template")) {
+        this.setEmptyWorkbench(Object.keys(workbenchData).length === 0);
+      }
+
       // Updatable study
-      if (osparc.study.Utils.isWorkbenchRetired(workbench)) {
+      if (osparc.study.Utils.isWorkbenchRetired(workbenchData)) {
         this.setUpdatable("retired");
-      } else if (osparc.study.Utils.isWorkbenchDeprecated(workbench)) {
+      } else if (osparc.study.Utils.isWorkbenchDeprecated(workbenchData)) {
         this.setUpdatable("deprecated");
       } else {
-        osparc.study.Utils.isWorkbenchUpdatable(workbench)
+        osparc.study.Utils.isWorkbenchUpdatable(workbenchData)
           .then(updatable => {
             if (updatable) {
               this.setUpdatable("updatable");
@@ -441,7 +449,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       // Block card
-      osparc.study.Utils.getInaccessibleServices(workbench)
+      osparc.study.Utils.getInaccessibleServices(workbenchData)
         .then(unaccessibleServices => {
           if (unaccessibleServices.length) {
             this.__enableCard(false);
