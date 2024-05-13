@@ -323,20 +323,18 @@ qx.Class.define("osparc.dashboard.CardBase", {
           break;
         }
         case "service": {
-          this.set({
-            uuid: resourceData.key,
-            title: resourceData.name,
-            description: resourceData.description,
-            owner: resourceData.owner ? resourceData.owner : "",
-            accessRights: resourceData.accessRights ? resourceData.accessRights : {},
-            lastChangeDate: null,
-            icon: resourceData.thumbnail || this.self().PRODUCT_ICON,
-            state: {},
-            classifiers: resourceData.classifiers && resourceData.classifiers ? resourceData.classifiers : [],
-            quality: resourceData.quality ? resourceData.quality : null,
-            uiMode: null,
-            hits: resourceData.hits ? resourceData.hits : 0
+          const model = this.__dataModel = new osparc.data.model.Service(resourceData);
+          model.bind("key", this, "uuid");
+          model.bind("name", this, "title");
+          model.bind("description", this, "description");
+          model.bind("owner", this, "owner");
+          model.bind("accessRights", this, "accessRights");
+          model.bind("thumbnail", this, "icon", {
+            converter: t => t || this.self().PRODUCT_ICON
           });
+          model.bind("classifiers", this, "classifiers");
+          model.bind("quality", this, "quality");
+          model.bind("hits", this, "hits");
           break;
         }
       }
