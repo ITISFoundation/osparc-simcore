@@ -30,7 +30,7 @@ class ProjectTypeAPI(str, Enum):
 
 
 class ProjectDB(BaseModel):
-    id: str
+    id: int
     type: ProjectType
     uuid: ProjectID
     name: str

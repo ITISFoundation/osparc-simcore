@@ -2962,7 +2962,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -9160,9 +9160,13 @@ components:
       properties:
         name:
           title: Name
+          maxLength: 50
+          minLength: 1
           type: string
         description:
           title: Description
+          maxLength: 50
+          minLength: 1
           type: string
         thumbnail:
           title: Thumbnail
