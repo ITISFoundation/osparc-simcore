@@ -55,7 +55,7 @@ qx.Class.define("osparc.desktop.credits.Usage", {
       selectBoxContainer.add(this.__fetchingImg);
       container.add(selectBoxContainer);
 
-      const filterContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox())
+      const filterContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5))
       this.__dateFilters = new osparc.desktop.credits.DateFilters();
       this.__dateFilters.addListener("change", e => {
         this.__table.getTableModel().setFilters(e.getData())
@@ -73,13 +73,20 @@ qx.Class.define("osparc.desktop.credits.Usage", {
         this.__handleExport()
       });
       filterContainer.add(this.__exportButton);
+      const refreshButton = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/14").set({
+        allowStretchY: false,
+        alignY: "bottom"
+      });
+      refreshButton.addListener("execute", () => this.__table && this.__table.getTableModel().reloadData());
+      filterContainer.add(refreshButton)
       container.add(filterContainer);
 
       this._add(container);
 
       walletSelectBox.addListener("changeSelection", e => {
-        if (walletSelectBox.getSelection().length) {
-          this.__selectedWallet = walletSelectBox.getSelection()[0].getModel()
+        const selection = e.getData();
+        if (selection.length) {
+          this.__selectedWallet = selection[0].getModel()
           if (this.__table) {
             this.__table.getTableModel().setWalletId(this.__selectedWallet.getWalletId())
             this.__table.getTableModel().reloadData()

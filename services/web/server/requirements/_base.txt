@@ -23,6 +23,10 @@ aiosignal==1.2.0
 aiosmtplib==1.1.6
 aiozipkin==1.1.1
 alembic==1.8.1
+anyio==4.3.0
+    # via
+    #   fast-depends
+    #   watchfiles
 arrow==1.2.3
 async-timeout==4.0.2
     # via
@@ -39,6 +43,7 @@ attrs==21.4.0
 bidict==0.22.0
     # via python-socketio
 cachetools==5.3.2
+captcha==0.5.0
 certifi==2023.7.22
     # via requests
 cffi==1.15.0
@@ -57,7 +62,12 @@ email-validator==1.2.1
     # via pydantic
 et-xmlfile==1.1.0
     # via openpyxl
+exceptiongroup==1.2.1
+    # via anyio
 faker==19.6.1
+fast-depends==2.4.2
+    # via faststream
+faststream==0.2.12
 frozenlist==1.3.0
     # via
     #   aiohttp
@@ -67,6 +77,7 @@ greenlet==2.0.2
 gunicorn==20.1.0
 idna==3.3
     # via
+    #   anyio
     #   email-validator
     #   requests
     #   yarl
@@ -111,6 +122,8 @@ packaging==23.1
 pamqp==3.2.1
     # via aiormq
 passlib==1.7.4
+pillow==10.3.0
+    # via captcha
 pint==0.19.2
 prometheus-client==0.14.1
 psycopg2-binary==2.9.6
@@ -121,6 +134,7 @@ pycountry==23.12.11
 pycparser==2.21
     # via cffi
 pydantic==1.9.0
+    # via fast-depends
 pygments==2.15.1
     # via rich
 pyinstrument==4.6.1
@@ -159,6 +173,8 @@ six==1.16.0
     #   jsonschema
     #   openapi-core
     #   python-dateutil
+sniffio==1.3.1
+    # via anyio
 sqlalchemy==1.4.47
     # via
     #   aiopg
@@ -170,15 +186,21 @@ toolz==0.12.0
 tqdm==4.64.0
 twilio==7.12.0
 typer==0.4.1
+    # via faststream
 typing-extensions==4.3.0
     # via
     #   aiodebug
     #   aiodocker
+    #   anyio
     #   pydantic
 ujson==5.5.0
     # via aiohttp-swagger
 urllib3==1.26.11
     # via requests
+uvloop==0.19.0
+    # via faststream
+watchfiles==0.21.0
+    # via faststream
 werkzeug==2.1.2
 yarl==1.5.1
     # via

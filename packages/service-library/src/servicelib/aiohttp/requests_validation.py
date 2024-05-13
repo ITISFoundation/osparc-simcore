@@ -13,10 +13,10 @@ from contextlib import contextmanager
 from typing import TypeAlias, TypeVar, Union
 
 from aiohttp import web
+from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
 from servicelib.aiohttp import status
 
-from ..json_serialization import json_dumps
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)

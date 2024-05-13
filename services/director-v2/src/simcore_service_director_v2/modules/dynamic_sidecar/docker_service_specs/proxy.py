@@ -8,6 +8,7 @@ from models_library.services_resources import (
     MEMORY_250MB,
 )
 from pydantic import ByteSize
+from servicelib.common_headers import X_SIMCORE_USER_AGENT
 
 from ....core.dynamic_services_settings import DynamicServicesSettings
 from ....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
@@ -73,12 +74,12 @@ def get_dynamic_proxy_spec(
     return {
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": {
-            # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": f"{dynamic_services_scheduler_settings.TRAEFIK_SIMCORE_ZONE}",
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns} {scheduler_data.node_uuid}.services.{scheduler_data.request_dns}",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowheaders": f"{X_SIMCORE_USER_AGENT}",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accessControlAllowOriginList": ",".join(
                 [
                     f"{scheduler_data.request_scheme}://{scheduler_data.request_dns}",

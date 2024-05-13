@@ -5,9 +5,9 @@
 
 
 from enum import Enum
-from typing import Any, Literal
+from typing import Annotated, Any
 
-from fastapi import FastAPI, Query, status
+from fastapi import Depends, FastAPI, Query, status
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
     FileUploadCompleteFutureResponse,
@@ -22,7 +22,6 @@ from models_library.api_schemas_storage import (
     TableSynchronisation,
 )
 from models_library.app_diagnostics import AppStatusCheck
-from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, StorageFileID
@@ -31,7 +30,11 @@ from pydantic import AnyUrl, ByteSize
 from servicelib.long_running_tasks._models import TaskGet, TaskId, TaskStatus
 from settings_library.s3 import S3Settings
 from simcore_service_storage._meta import API_VTAG
-from simcore_service_storage.models import DatasetMetaData, FileMetaData
+from simcore_service_storage.models import (
+    DatasetMetaData,
+    FileMetaData,
+    SearchFilesQueryParams,
+)
 
 TAGS_DATASETS: list[str | Enum] = ["datasets"]
 TAGS_FILES: list[str | Enum] = ["files"]
@@ -343,15 +346,10 @@ async def delete_folders_of_project(
     f"/{API_VTAG}/simcore-s3/files/metadata:search",
     response_model=Envelope[FileMetaDataGet],
     tags=TAGS_SIMCORE_S3,
-    summary="search for files starting with",
+    summary="search for owned files",
     operation_id="search_files",
 )
-async def search_files(
-    user_id: UserID,
-    startswith: str = "",
-    sha256_checksum: SHA256Str | None = None,
-    access_right: Literal["read", "write"] = "read",
-):
+async def search_files(_query_params: Annotated[SearchFilesQueryParams, Depends()]):
     """search for files starting with `startswith` and/or matching a sha256_checksum in the file_meta_data table"""
 
 

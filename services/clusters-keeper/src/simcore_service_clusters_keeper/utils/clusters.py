@@ -160,7 +160,7 @@ def _convert_ec2_state_to_cluster_state(
             return ClusterState.STOPPED
 
 
-_EC2_INSTANCE_MAX_START_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes=3)
+_EC2_INSTANCE_MAX_START_TIME: Final[datetime.timedelta] = datetime.timedelta(minutes=1)
 _DASK_SCHEDULER_READYNESS_MAX_TIME: Final[datetime.timedelta] = datetime.timedelta(
     minutes=1
 )

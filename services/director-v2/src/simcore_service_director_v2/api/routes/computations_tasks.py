@@ -11,7 +11,11 @@ from typing import Annotated, NamedTuple
 
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
-from models_library.api_schemas_directorv2.comp_tasks import TaskLogFileGet
+from models_library.api_schemas_directorv2.comp_tasks import (
+    TaskLogFileGet,
+    TasksOutputs,
+    TasksSelection,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -164,22 +168,28 @@ async def get_task_log_file(
     return await _get_task_log_file(user_id, project_id, node_uuid)
 
 
-# NOTE: This handler function is NOT ACTIVE
-# but still kept as reference for future extensions that will tackle
-# real-time log streaming (instead of logfile download)
-#
-# @router.get(
-#    "/{project_id}/tasks/{node_uuid}/logs",
-#    summary="Gets computation task log",
-# )
-# - Implement close as possible to https://docs.docker.com/engine/api/v1.41/#operation/ContainerTop
-async def get_task_logs(
-    user_id: UserID,
+@router.post(
+    "/{project_id}/tasks/-/outputs:batchGet",
+    summary="Gets all outputs for selected tasks",
+    response_model=TasksOutputs,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Cannot find computation or the tasks in it"
+        }
+    },
+)
+async def get_batch_tasks_outputs(
     project_id: ProjectID,
-    node_uuid: NodeID,
-) -> str:
-    """Gets ``stdout`` and ``stderr`` logs from a computation task.
-    It can return a list of the tail or stream live
-    """
+    selection: TasksSelection,
+    comp_tasks_repo: Annotated[
+        CompTasksRepository, Depends(get_repository(CompTasksRepository))
+    ],
+):
+    nodes_outputs = await comp_tasks_repo.get_outputs_from_tasks(
+        project_id, set(selection.nodes_ids)
+    )
 
-    raise NotImplementedError(f"/{project_id=}/tasks/{node_uuid=}/logs")
+    if not nodes_outputs:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+
+    return TasksOutputs(nodes_outputs=nodes_outputs)

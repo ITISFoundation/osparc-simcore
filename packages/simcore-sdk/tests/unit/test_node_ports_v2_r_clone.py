@@ -89,17 +89,17 @@ async def test__async_command_ok() -> None:
         (
             ["__i_do_not_exist__"],
             127,
-            "/bin/sh: 1: __i_do_not_exist__: not found\n/bin/sh: 1: __i_do_not_exist__: not found",
+            "/bin/sh: 1: __i_do_not_exist__: not found",
         ),
         (
             ["ls_", "-lah"],
             127,
-            "/bin/sh: 1: ls_: not found\n/bin/sh: 1: ls_: not found",
+            "/bin/sh: 1: ls_: not found",
         ),
         (
             ["echo", "this command will fail", "&&", "false"],
             1,
-            "this command will fail\nthis command will fail",
+            "this command will fail",
         ),
     ],
 )

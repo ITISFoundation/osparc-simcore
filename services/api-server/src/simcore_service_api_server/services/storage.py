@@ -7,12 +7,13 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_storage import FileMetaDataArray
 from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
 from models_library.api_schemas_storage import FileUploadSchema, PresignedLink
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
-from pydantic import AnyUrl
+from pydantic import AnyUrl, PositiveInt
 from starlette.datastructures import URL
 
 from ..core.settings import StorageSettings
@@ -53,14 +54,17 @@ class StorageApi(BaseServiceClientApi):
     SIMCORE_S3_ID = 0
 
     @_exception_mapper({})
-    async def list_files(self, user_id: int) -> list[StorageFileMetaData]:
+    async def list_files(
+        self,
+        user_id: int,
+    ) -> list[StorageFileMetaData]:
         """Lists metadata of all s3 objects name as api/* from a given user"""
 
         # search_files_starting_with
-
         response = await self.client.post(
             "/simcore-s3/files/metadata:search",
             params={
+                "kind": "owned",
                 "user_id": str(user_id),
                 "startswith": "api/",
             },
@@ -74,29 +78,31 @@ class StorageApi(BaseServiceClientApi):
         return files
 
     @_exception_mapper({})
-    async def search_files(
+    async def search_owned_files(
         self,
         *,
         user_id: int,
         file_id: UUID | None,
-        sha256_checksum: SHA256Str | None,
-        access_right: AccessRight,
+        sha256_checksum: SHA256Str | None = None,
+        limit: PositiveInt | None = None,
+        offset: PositiveInt | None = None,
     ) -> list[StorageFileMetaData]:
         # NOTE: can NOT use /locations/0/files/metadata with uuid_filter=api/ because
         # logic in storage 'wrongly' assumes that all data is associated to a project and
         # here there is no project, so it would always returns an empty
-        params: dict = {
-            "user_id": f"{user_id}",
-            "startswith": None if file_id is None else f"api/{file_id}",
-            "sha256_checksum": None
-            if sha256_checksum is None
-            else f"{sha256_checksum}",
-            "access_right": access_right,
-        }
-
         response = await self.client.post(
             "/simcore-s3/files/metadata:search",
-            params={k: v for k, v in params.items() if v is not None},
+            params=jsonable_encoder(
+                {
+                    "kind": "owned",
+                    "user_id": f"{user_id}",
+                    "startswith": None if file_id is None else f"api/{file_id}",
+                    "sha256_checksum": sha256_checksum,
+                    "limit": limit,
+                    "offset": offset,
+                },
+                exclude_none=True,
+            ),
         )
         response.raise_for_status()
 
@@ -104,6 +110,7 @@ class StorageApi(BaseServiceClientApi):
         files: list[StorageFileMetaData] = (
             [] if files_metadata is None else files_metadata.__root__
         )
+        assert len(files) <= limit if limit else True  # nosec
         return files
 
     @_exception_mapper({})

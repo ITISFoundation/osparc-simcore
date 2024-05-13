@@ -10,7 +10,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store",
         type=int,
         default=2,
-        help="URL pointing to the deployment to be tested",
+        help="number of sleepers to create",
     )
 
     group.addoption(
@@ -18,7 +18,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store",
         type=int,
         default=None,
-        help="URL pointing to the deployment to be tested",
+        help="number of seconds each sleeper sleeps",
     )
 
 

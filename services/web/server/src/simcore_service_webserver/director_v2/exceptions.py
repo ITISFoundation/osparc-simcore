@@ -16,6 +16,10 @@ class DirectorServiceError(WebServerBaseError, RuntimeError):
         self.reason = reason
 
 
+class ComputationNotFoundError(DirectorServiceError):
+    msg_template = "Computation '{project_id}' not found"
+
+
 class ClusterNotFoundError(DirectorServiceError):
     """Cluster was not found in director-v2"""
 

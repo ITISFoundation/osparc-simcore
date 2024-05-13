@@ -6,11 +6,8 @@
 # pylint:disable=too-many-nested-blocks
 
 import sys
-from collections import deque
 from copy import deepcopy
 from pathlib import Path
-from random import randint
-from secrets import choice
 from typing import Any, Awaitable, Callable, Literal
 
 import pytest
@@ -33,12 +30,15 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
-from simcore_postgres_database.storage_models import file_meta_data, projects
+from simcore_postgres_database.storage_models import file_meta_data
+from simcore_service_storage.models import SearchFilesQueryParams
 from simcore_service_storage.s3_client import StorageS3Client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from tests.helpers.utils_file_meta_data import assert_file_meta_data_in_db
 from tests.helpers.utils_project import clone_project_data
 from yarl import URL
+
+from ..helpers.utils import get_updated_project
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -106,7 +106,7 @@ async def _request_copy_folders(
         if lr_task.done():
             return await lr_task.result()
 
-    assert False, "Copy folders failed!"
+    pytest.fail(reason="Copy folders failed!")
 
 
 async def test_copy_folders_from_non_existing_project(
@@ -178,130 +178,6 @@ async def test_copy_folders_from_empty_project(
         assert num_entries == 0
 
 
-async def _get_updated_project(aiopg_engine: Engine, project_id: str) -> dict[str, Any]:
-    async with aiopg_engine.acquire() as conn:
-        result = await conn.execute(
-            sa.select(projects).where(projects.c.uuid == project_id)
-        )
-        row = await result.fetchone()
-        assert row
-        return dict(row)
-
-
-@pytest.fixture
-async def random_project_with_files(
-    aiopg_engine: Engine,
-    create_project: Callable[[], Awaitable[dict[str, Any]]],
-    create_project_node: Callable[..., Awaitable[NodeID]],
-    create_simcore_file_id: Callable[
-        [ProjectID, NodeID, str, Path | None], SimcoreS3FileID
-    ],
-    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
-    faker: Faker,
-) -> Callable[
-    [int, tuple[ByteSize, ...]],
-    Awaitable[
-        tuple[
-            dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]]
-        ]
-    ],
-]:
-    async def _creator(
-        num_nodes: int = 12,
-        file_sizes: tuple[ByteSize, ...] = (
-            parse_obj_as(ByteSize, "7Mib"),
-            parse_obj_as(ByteSize, "110Mib"),
-            parse_obj_as(ByteSize, "1Mib"),
-        ),
-        file_checksums: tuple[SHA256Str, ...] = (
-            parse_obj_as(
-                SHA256Str,
-                "311e2e130d83cfea9c3b7560699c221b0b7f9e5d58b02870bd52b695d8b4aabd",
-            ),
-            parse_obj_as(
-                SHA256Str,
-                "08e297db979d3c84f6b072c2a1e269e8aa04e82714ca7b295933a0c9c0f62b2e",
-            ),
-            parse_obj_as(
-                SHA256Str,
-                "488f3b57932803bbf644593bd46d95599b1d4da1d63bc020d7ebe6f1c255f7f3",
-            ),
-        ),
-    ) -> tuple[
-        dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]]
-    ]:
-        assert len(file_sizes) == len(file_checksums)
-        project = await create_project()
-        src_projects_list: dict[
-            NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]
-        ] = {}
-        upload_tasks: deque[Awaitable] = deque()
-        for _node_index in range(num_nodes):
-            # NOTE: we put some more outputs in there to simulate a real case better
-            new_node_id = NodeID(faker.uuid4())
-            output3_file_id = create_simcore_file_id(
-                ProjectID(project["uuid"]),
-                new_node_id,
-                faker.file_name(),
-                Path("outputs/output3"),
-            )
-            src_node_id = await create_project_node(
-                ProjectID(project["uuid"]),
-                new_node_id,
-                outputs={
-                    "output_1": faker.pyint(),
-                    "output_2": faker.pystr(),
-                    "output_3": f"{output3_file_id}",
-                },
-            )
-            assert src_node_id == new_node_id
-
-            # upload the output 3 and some random other files at the root of each node
-            src_projects_list[src_node_id] = {}
-            checksum: SHA256Str = choice(file_checksums)
-            src_file, _ = await upload_file(
-                file_size=choice(file_sizes),
-                file_name=Path(output3_file_id).name,
-                file_id=output3_file_id,
-                sha256_checksum=checksum,
-            )
-            src_projects_list[src_node_id][output3_file_id] = {
-                "path": src_file,
-                "sha256_checksum": checksum,
-            }
-
-            async def _upload_file_and_update_project(project, src_node_id):
-                src_file_name = faker.file_name()
-                src_file_uuid = create_simcore_file_id(
-                    ProjectID(project["uuid"]), src_node_id, src_file_name, None
-                )
-                checksum: SHA256Str = choice(file_checksums)
-                src_file, _ = await upload_file(
-                    file_size=choice(file_sizes),
-                    file_name=src_file_name,
-                    file_id=src_file_uuid,
-                    sha256_checksum=checksum,
-                )
-                src_projects_list[src_node_id][src_file_uuid] = {
-                    "path": src_file,
-                    "sha256_checksum": checksum,
-                }
-
-            # add a few random files in the node storage
-            upload_tasks.extend(
-                [
-                    _upload_file_and_update_project(project, src_node_id)
-                    for _ in range(randint(0, 3))
-                ]
-            )
-        await logged_gather(*upload_tasks, max_concurrency=2)
-
-        project = await _get_updated_project(aiopg_engine, project["uuid"])
-        return project, src_projects_list
-
-    return _creator
-
-
 @pytest.fixture
 def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
     monkeypatch.setenv("STORAGE_CLEANER_INTERVAL_S", "1")
@@ -346,7 +222,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
     assert data == jsonable_encoder(
-        await _get_updated_project(aiopg_engine, dst_project["uuid"])
+        await get_updated_project(aiopg_engine, dst_project["uuid"])
     )
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
@@ -404,7 +280,7 @@ async def test_copy_folders_from_valid_project(
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
     assert data == jsonable_encoder(
-        await _get_updated_project(aiopg_engine, dst_project["uuid"])
+        await get_updated_project(aiopg_engine, dst_project["uuid"])
     )
 
     # check that file meta data was effectively copied
@@ -564,9 +440,82 @@ async def test_create_and_delete_folders_from_project_burst(
     )
 
 
+@pytest.fixture
+async def uploaded_file_ids(
+    faker: Faker,
+    expected_number_of_user_files: int,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+) -> list[SimcoreS3FileID]:
+    _files_ids_sorted_by_creation = []
+    assert expected_number_of_user_files >= 0
+
+    for _ in range(expected_number_of_user_files):
+        file_path, file_id = await upload_file(
+            file_size=parse_obj_as(ByteSize, "10Mib"),
+            file_name=faker.file_name(),
+            sha256_checksum=faker.sha256(),
+        )
+        assert file_path.exists()
+        _files_ids_sorted_by_creation.append(file_id)
+
+    return _files_ids_sorted_by_creation
+
+
+@pytest.fixture
+async def search_files_query_params(
+    query_params_choice: str, user_id: UserID
+) -> SearchFilesQueryParams:
+    match query_params_choice:
+        case "default":
+            q = SearchFilesQueryParams(user_id=user_id, kind="owned")
+        case "limited":
+            q = SearchFilesQueryParams(user_id=user_id, kind="owned", limit=1)
+        case "with_offset":
+            q = SearchFilesQueryParams(user_id=user_id, kind="owned", offset=1)
+        case _:
+            pytest.fail(f"Undefined {query_params_choice=}")
+    return q
+
+
+@pytest.mark.parametrize("expected_number_of_user_files", [0, 1, 3])
+@pytest.mark.parametrize("query_params_choice", ["default", "limited", "with_offset"])
+async def test_search_files_request(
+    client: TestClient,
+    user_id: UserID,
+    uploaded_file_ids: list[SimcoreS3FileID],
+    query_params_choice: str,
+    search_files_query_params: SearchFilesQueryParams,
+):
+    assert client.app
+    assert query_params_choice
+
+    assert search_files_query_params.user_id == user_id
+
+    url = (
+        client.app.router["search_files"]
+        .url_for()
+        .with_query(
+            jsonable_encoder(
+                search_files_query_params, exclude_unset=True, exclude_none=True
+            )
+        )
+    )
+    response = await client.post(f"{url}")
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert not error
+
+    found = parse_obj_as(list[FileMetaDataGet], data)
+
+    expected = uploaded_file_ids[
+        search_files_query_params.offset : search_files_query_params.offset
+        + search_files_query_params.limit
+    ]
+    assert [_.file_uuid for _ in found] == expected
+
+
 @pytest.mark.parametrize("search_startswith", [True, False])
 @pytest.mark.parametrize("search_sha256_checksum", [True, False])
-@pytest.mark.parametrize("access_right", ["read", "write"])
+@pytest.mark.parametrize("kind", ["owned", "read", None])
 async def test_search_files(
     client: TestClient,
     user_id: UserID,
@@ -574,19 +523,31 @@ async def test_search_files(
     faker: Faker,
     search_startswith: bool,
     search_sha256_checksum: bool,
-    access_right: Literal["read", "write"],
+    kind: Literal["owned"],
 ):
     assert client.app
     _file_name: str = faker.file_name()
     _sha256_checksum: SHA256Str = parse_obj_as(SHA256Str, faker.sha256())
-    _query_params: dict[str, Any] = {
-        "user_id": user_id,
-        "access_right": access_right,
-        "startswith": "",
-    }
-    url = client.app.router["search_files"].url_for().with_query(**_query_params)
 
+    url = (
+        client.app.router["search_files"]
+        .url_for()
+        .with_query(
+            jsonable_encoder(
+                {
+                    "user_id": user_id,
+                    "kind": kind,
+                },
+                exclude_none=True,
+            )
+        )
+    )
     response = await client.post(f"{url}")
+
+    if kind != "owned":
+        await assert_status(response, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        return
+
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     list_fmds = parse_obj_as(list[FileMetaDataGet], data)
@@ -611,8 +572,10 @@ async def test_search_files(
     # search again with part of the file uuid shall return the same
     if search_startswith:
         url.update_query(startswith=file_id[0:5])
+
     if search_sha256_checksum:
         url.update_query(sha256_checksum=_sha256_checksum)
+
     response = await client.post(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
@@ -625,11 +588,13 @@ async def test_search_files(
     # search again with some other stuff shall return empty
     if search_startswith:
         url = url.update_query(startswith="Iamlookingforsomethingthatdoesnotexist")
+
     if search_sha256_checksum:
         dummy_sha256 = faker.sha256()
         while dummy_sha256 == _sha256_checksum:
             dummy_sha256 = faker.sha256()
         url = url.update_query(sha256_checksum=dummy_sha256)
+
     if search_startswith or search_sha256_checksum:
         response = await client.post(f"{url}")
         data, error = await assert_status(response, status.HTTP_200_OK)

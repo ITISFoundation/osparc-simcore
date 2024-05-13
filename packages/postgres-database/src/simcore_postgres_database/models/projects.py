@@ -69,6 +69,7 @@ projects = sa.Table(
         ),
         nullable=True,
         doc="Project's owner",
+        index=True,
     ),
     sa.Column(
         "creation_date",

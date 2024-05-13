@@ -111,16 +111,19 @@ async def stop_dynamic_services_in_project(
                     user_id,
                     project_id,
                 ),
+                description="stopping services",
             )
         )
 
         services_to_stop = [
             stop_dynamic_service(
                 app=app,
-                node_id=service["service_uuid"],
+                node_id=service.node_uuid,
                 simcore_user_agent=simcore_user_agent,
                 save_state=save_state,
-                progress=progress_bar.sub_progress(1),
+                progress=progress_bar.sub_progress(
+                    1, description=f"{service.node_uuid}"
+                ),
             )
             for service in running_dynamic_services
         ]

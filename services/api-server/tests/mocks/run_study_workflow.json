@@ -138,9 +138,9 @@
    "data": {
     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Daeab71fe-f71b-11ee-8fca-0242ac140008%26hidden%3Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
     "task_name": "POST /v0/projects?from_study=aeab71fe-f71b-11ee-8fca-0242ac140008&hidden=true",
-    "status_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
-    "result_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24/result",
-    "abort_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24"
+    "status_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24",
+    "result_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24/result",
+    "abort_href": "http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Daeab71fe-f71b-11ee-8fca-0242ac140008%2526hidden%253Dtrue.194a6216-eb67-4769-8e45-ec19f7076b24"
    }
   },
   "status_code": 202
@@ -3238,15 +3238,15 @@
   }
  },
  {
-  "name": "POST /simcore-s3/files/metadata:search",
-  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search?user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4&access_right=read')>",
+  "name": "POST /simcore-s3/files/metadata:search_owned",
+  "description": "<Request('POST', 'http://storage:8080/v0/simcore-s3/files/metadata:search_owned?user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4')>",
   "method": "POST",
   "host": "storage",
   "path": {
-   "path": "/v0/simcore-s3/files/metadata:search",
+   "path": "/v0/simcore-s3/files/metadata:search_owned",
    "path_parameters": []
   },
-  "query": "user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4&access_right=read",
+  "query": "user_id=1&startswith=api%2F5b0cd3cd-5ceb-3d74-9961-246840c1e1d4",
   "response_body": {
    "data": []
   }

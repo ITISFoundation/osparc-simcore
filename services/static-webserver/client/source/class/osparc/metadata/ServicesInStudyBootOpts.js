@@ -85,8 +85,11 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
         if (canIWrite && hasBootModes) {
           const bootModeSB = osparc.data.model.Node.getBootModesSelectBox(nodeMetaData, workbench, nodeId);
           bootModeSB.addListener("changeSelection", e => {
-            const newBootModeId = e.getData()[0].bootModeId;
-            this.__updateBootMode(nodeId, newBootModeId);
+            const selection = e.getData();
+            if (selection.length) {
+              const newBootModeId = selection[0].bootModeId;
+              this.__updateBootMode(nodeId, newBootModeId);
+            }
           }, this);
           this._servicesGrid.add(bootModeSB, {
             row: i,

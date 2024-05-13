@@ -11,12 +11,14 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 import simcore_service_webserver
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.projects_state import ProjectState
+from models_library.utils.json_serialization import json_dumps
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_envs import EnvVarsDict, setenvs_from_dict
@@ -24,7 +26,6 @@ from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
-from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._crud_api_create import (
@@ -284,7 +285,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
                 print(
                     f"--> waiting for creation {attempt.retry_state.attempt_number}..."
                 )
-                result = await client.get(f"{status_url}")
+                result = await client.get(urlparse(status_url).path)
                 data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
@@ -298,7 +299,7 @@ def request_create_project() -> Callable[..., Awaitable[ProjectDict]]:
 
         # get result GET /{task_id}/result
         print("--> getting project creation result...")
-        result = await client.get(f"{result_url}")
+        result = await client.get(urlparse(result_url).path)
         data, error = await assert_status(result, expected_creation_response)
         if error:
             assert not data

@@ -1,38 +1,17 @@
-import json
 from typing import Any
 
 from fastapi import FastAPI
 from pyinstrument import Profiler
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from starlette.requests import Request
 
-
-def _check_response_headers(
-    response_headers: dict[bytes, bytes]
-) -> list[tuple[bytes, bytes]]:
-    original_content_type: str = response_headers[b"content-type"].decode()
-    assert original_content_type in {
-        "application/x-ndjson",
-        "application/json",
-    }  # nosec
-    headers: dict = {}
-    headers[b"content-type"] = b"application/x-ndjson"
-    return list(headers.items())
-
-
-def _append_profile(body: str, profile: str) -> str:
-    try:
-        json.loads(body)
-        body += "\n" if not body.endswith("\n") else ""
-    except json.decoder.JSONDecodeError:
-        pass
-    body += json.dumps({"profile": profile})
-    return body
+from .._utils_profiling_middleware import append_profile, check_response_headers
 
 
 def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, Any]):
     if (
         content_type := response_headers.get(b"content-type")
-    ) and content_type == b"application/json":
+    ) and content_type == MIMETYPE_APPLICATION_JSON.encode():
         return True
     if (more_body := message.get("more_body")) is not None:
         return not more_body
@@ -40,7 +19,7 @@ def is_last_response(response_headers: dict[bytes, bytes], message: dict[str, An
     raise RuntimeError(msg)
 
 
-class ApiServerProfilerMiddleware:
+class ProfilerMiddleware:
     """Following
     https://www.starlette.io/middleware/#cleanup-and-error-handling
     https://www.starlette.io/middleware/#reusing-starlette-components
@@ -49,7 +28,7 @@ class ApiServerProfilerMiddleware:
 
     def __init__(self, app: FastAPI):
         self._app: FastAPI = app
-        self._profile_header_trigger: str = "x-profile-api-server"
+        self._profile_header_trigger: str = "x-profile"
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -61,7 +40,7 @@ class ApiServerProfilerMiddleware:
         request_headers = dict(request.headers)
         response_headers: dict[bytes, bytes] = {}
 
-        if request_headers.get(self._profile_header_trigger) == "true":
+        if request_headers.get(self._profile_header_trigger) is not None:
             request_headers.pop(self._profile_header_trigger)
             scope["headers"] = [
                 (k.encode("utf8"), v.encode("utf8")) for k, v in request_headers.items()
@@ -74,13 +53,15 @@ class ApiServerProfilerMiddleware:
                 nonlocal response_headers
                 if message["type"] == "http.response.start":
                     response_headers = dict(message.get("headers"))
-                    message["headers"] = _check_response_headers(response_headers)
+                    message["headers"] = check_response_headers(response_headers)
                 elif message["type"] == "http.response.body":
                     if is_last_response(response_headers, message):
                         profiler.stop()
-                        message["body"] = _append_profile(
+                        message["body"] = append_profile(
                             message["body"].decode(),
-                            profiler.output_text(unicode=True, color=True),
+                            profiler.output_text(
+                                unicode=True, color=True, show_all=True
+                            ),
                         ).encode()
                     else:
                         message["more_body"] = True

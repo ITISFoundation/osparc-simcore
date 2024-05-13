@@ -15,9 +15,7 @@
 
 ************************************************************************ */
 
-/**
- *
- */
+/* eslint-disable no-underscore-dangle */
 
 qx.Class.define("osparc.desktop.WorkbenchView", {
   extend: qx.ui.splitpane.Pane,
@@ -99,10 +97,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __nodesTree: null,
     __storagePage: null,
     __studyOptionsPage: null,
-    __infoPage: null,
-    __settingsPage: null,
-    __outputsPage: null,
-    __nodeOptionsPage: null,
+    __fileInfoPage: null,
+    __serviceOptionsPage: null,
     __workbenchPanel: null,
     __workbenchPanelPage: null,
     __workbenchUI: null,
@@ -399,28 +395,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       studyOptionsPage.exclude();
       tabViewSecondary.add(studyOptionsPage);
 
-      const infoPage = this.__infoPage = this.__createTabPage("@FontAwesome5Solid/info", this.tr("Information"));
-      infoPage.exclude();
-      tabViewSecondary.add(infoPage);
+      const fileInfoPage = this.__fileInfoPage = this.__createTabPage("@FontAwesome5Solid/info", this.tr("Information"));
+      fileInfoPage.exclude();
+      tabViewSecondary.add(fileInfoPage);
 
-      const settingsPage = this.__settingsPage = this.__createTabPage("@FontAwesome5Solid/sign-in-alt", this.tr("Settings"));
-      settingsPage.exclude();
-      tabViewSecondary.add(settingsPage);
-
-      const outputsPage = this.__outputsPage = this.__createTabPage("@FontAwesome5Solid/sign-out-alt", this.tr("Outputs"));
-      osparc.utils.Utils.setIdToWidget(outputsPage.getChildControl("button"), "outputsTabButton");
-      outputsPage.exclude();
-      tabViewSecondary.add(outputsPage);
-
-      const nodeOptionsPage = this.__nodeOptionsPage = this.__createTabPage("@FontAwesome5Solid/cogs", this.tr("Service Options"));
-      nodeOptionsPage.getLayout().setSpacing(20);
-      osparc.utils.Utils.setIdToWidget(nodeOptionsPage.getChildControl("button"), "nodeOptionsTabButton");
-      nodeOptionsPage.exclude();
-      tabViewSecondary.add(nodeOptionsPage);
+      const serviceOptionsPage = this.__serviceOptionsPage = this.__createTabPage("@FontAwesome5Solid/exchange-alt", this.tr("Service options"));
+      serviceOptionsPage.exclude();
+      tabViewSecondary.add(serviceOptionsPage);
 
       this.__addTopBarSpacer(topBar);
 
-      this.__populateSecondPanel();
+      this.__populateSecondaryColumn();
     },
 
     __initMainView: function() {
@@ -511,7 +496,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       studyTreeItem.addListener("changeSelectedNode", () => {
         nodesTree.resetSelection();
-        this.__populateSecondPanel(this.getStudy());
+        this.__populateSecondaryColumn(this.getStudy());
         this.__evalIframe();
         this.__openWorkbenchTab();
         this.__loggerView.setCurrentNodeId(null);
@@ -522,7 +507,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const workbench = this.getStudy().getWorkbench();
         const node = workbench.getNode(nodeId);
         if (node) {
-          this.__populateSecondPanel(node);
+          this.__populateSecondaryColumn(node);
           this.__openIframeTab(node);
         }
         this.__loggerView.setCurrentNodeId(nodeId);
@@ -539,7 +524,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__nodesTree.nodeSelected(nodeId);
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
-            this.__populateSecondPanel(node);
+            this.__populateSecondaryColumn(node);
             this.__evalIframe(node);
             this.__loggerView.setCurrentNodeId(nodeId);
             this.fireDataEvent("changeSelectedNode", nodeId);
@@ -556,7 +541,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             this.__nodesTree.nodeSelected(nodeId);
             const workbench = this.getStudy().getWorkbench();
             const node = workbench.getNode(nodeId);
-            this.__populateSecondPanel(node);
+            this.__populateSecondaryColumn(node);
             this.__openIframeTab(node);
             this.__loggerView.setCurrentNodeId(nodeId);
           }
@@ -570,7 +555,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           if (node) {
-            this.__populateSecondPanel(node);
+            this.__populateSecondaryColumn(node);
             this.__openIframeTab(node);
             node.getLoadingPage().maximizeIFrame(true);
             node.getIFrame().maximizeIFrame(true);
@@ -799,7 +784,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__studyTreeItem.selectStudyItem();
       } else {
         const node = study.getWorkbench().getNode(nodeId);
-        this.__populateSecondPanel(node);
+        this.__populateSecondaryColumn(node);
       }
     },
 
@@ -881,13 +866,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __populateSecondPanel: function(node) {
+    __populateSecondaryColumn: function(node) {
       [
         this.__studyOptionsPage,
-        this.__infoPage,
-        this.__settingsPage,
-        this.__outputsPage,
-        this.__nodeOptionsPage
+        this.__fileInfoPage,
+        this.__serviceOptionsPage
       ].forEach(page => {
         page.removeAll();
         page.getChildControl("button").exclude();
@@ -897,17 +880,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       tabViewLeftPanel.setSelection([this.__nodesPage]);
 
       if (node instanceof osparc.data.model.Study) {
-        this.__populateSecondPanelStudy(node);
+        this.__populateSecondaryColumnStudy(node);
       } else if (node && node.isFilePicker()) {
-        this.__populateSecondPanelFilePicker(node);
+        this.__populateSecondaryColumnFilePicker(node);
       } else if (node && node.isParameter()) {
-        this.__populateSecondPanelParameter(node);
+        this.__populateSecondaryColumnParameter(node);
       } else if (node) {
-        this.__populateSecondPanelNode(node);
+        this.__populateSecondaryColumnNode(node);
       }
     },
 
-    __populateSecondPanelStudy: function(study) {
+    __populateSecondaryColumnStudy: function(study) {
       this.__studyOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__studyOptionsPage]);
 
@@ -1076,13 +1059,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return iterationsSection;
     },
 
-    __populateSecondPanelFilePicker: function(filePicker) {
+    __populateSecondaryColumnFilePicker: function(filePicker) {
       const fpView = new osparc.file.FilePicker(filePicker, "workbench");
       if (osparc.file.FilePicker.hasOutputAssigned(filePicker.getOutputs())) {
-        this.__infoPage.getChildControl("button").show();
-        this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
+        this.__fileInfoPage.getChildControl("button").show();
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__fileInfoPage]);
 
-        this.__infoPage.add(fpView, {
+        this.__fileInfoPage.add(fpView, {
           flex: 1
         });
       } else {
@@ -1090,10 +1073,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
         tabViewLeftPanel.setSelection([this.__storagePage]);
 
-        this.__settingsPage.getChildControl("button").show();
-        this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+        this.__serviceOptionsPage.getChildControl("button").show();
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
-        this.__settingsPage.add(fpView, {
+        this.__serviceOptionsPage.add(fpView, {
           flex: 1
         });
       }
@@ -1101,127 +1084,96 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         "itemReset",
         "itemSelected",
         "fileUploaded"
-      ].forEach(ev => fpView.addListener(ev, () => this.__populateSecondPanel(filePicker)));
+      ].forEach(ev => fpView.addListener(ev, () => this.__populateSecondaryColumn(filePicker)));
     },
 
-    __populateSecondPanelParameter: function(parameter) {
-      this.__settingsPage.getChildControl("button").show();
-      this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+    __populateSecondaryColumnParameter: function(parameter) {
+      this.__serviceOptionsPage.getChildControl("button").show();
+      this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
       const view = new osparc.node.ParameterEditor(parameter);
       view.buildForm(false);
-      this.__settingsPage.add(view, {
+      this.__serviceOptionsPage.add(view, {
         flex: 1
       });
     },
 
-    __populateSecondPanelNode: async function(node) {
-      this.__settingsPage.getChildControl("button").show();
-      this.__outputsPage.getChildControl("button").show();
-      if (![this.__settingsPage, this.__outputsPage].includes(this.getChildControl("side-panel-right-tabs").getSelection()[0])) {
-        this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
-      }
+    __populateSecondaryColumnNode: async function(node) {
+      this.__serviceOptionsPage.getChildControl("button").show();
+      this.getChildControl("side-panel-right-tabs").setSelection([this.__serviceOptionsPage]);
 
+      const spacing = 8;
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(spacing*2));
+
+      // INPUTS FORM
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
-        const scrollContainer = new qx.ui.container.Scroll();
-        scrollContainer.add(node.getPropsForm());
-        this.__settingsPage.add(scrollContainer, {
-          flex: 1
+        const inputsForm = node.getPropsForm().set({
+          allowGrowX: false
         });
+        const inputs = new osparc.desktop.PanelView(this.tr("Inputs"), inputsForm);
+        inputs._innerContainer.set({
+          margin: spacing
+        });
+        vBox.add(inputs);
       }
 
+      // OUTPUTS
+      const outputsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(spacing));
       if (node.hasOutputs()) {
         const nodeOutputs = new osparc.widget.NodeOutputs(node, node.getMetaData().outputs).set({
           offerProbes: true
         });
-        this.__outputsPage.add(nodeOutputs);
+        outputsBox.add(nodeOutputs);
       }
 
-      const outputFilesBtn = new qx.ui.form.Button(this.tr("Service data"), "@FontAwesome5Solid/folder-open/14").set({
-        allowGrowX: false
+      const nodeFilesBtn = new qx.ui.form.Button(this.tr("Service data"), "@FontAwesome5Solid/folder-open/14").set({
+        allowGrowX: false,
+        allowGrowY: false
       });
-      osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
-      outputFilesBtn.addListener("execute", () => osparc.node.BaseNodeView.openNodeDataManager(node));
-      this.__outputsPage.add(outputFilesBtn);
+      osparc.utils.Utils.setIdToWidget(nodeFilesBtn, "nodeFilesBtn");
+      nodeFilesBtn.addListener("execute", () => osparc.node.BaseNodeView.openNodeDataManager(node));
+      outputsBox.add(nodeFilesBtn);
 
-      const showPage = await this.__populateNodeOptionsPage(node);
-      // if it's deprecated or retired show the LifeCycleView right away
-      if (showPage && node.hasOutputs() && node.isDynamic() && (node.isDeprecated() || node.isRetired())) {
-        this.getChildControl("side-panel-right-tabs").setSelection([this.__nodeOptionsPage]);
+      const outputs = new osparc.desktop.PanelView(this.tr("Outputs"), outputsBox);
+      outputs._innerContainer.set({
+        margin: spacing
+      });
+      vBox.add(outputs);
+
+      // NODE OPTIONS
+      const nodeOptions = this.__getNodeOptionsPage(node);
+      if (nodeOptions) {
+        const options = new osparc.desktop.PanelView(this.tr("Options"), nodeOptions);
+        options._innerContainer.set({
+          margin: spacing
+        });
+        nodeOptions.bind("visibility", options, "visibility");
+        vBox.add(options);
       }
+
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(vBox);
+      this.__serviceOptionsPage.add(scrollContainer, {
+        flex: 1
+      });
     },
 
-    __populateNodeOptionsPage: async function(node) {
+    __getNodeOptionsPage: function(node) {
       if (osparc.auth.Data.getInstance().isGuest()) {
-        return false;
+        return null;
       }
 
-      let showPage = false;
-      let showStartStopButton = false;
+      const nodeOptions = new osparc.widget.NodeOptions(node);
+      nodeOptions.buildLayout();
+      [
+        "versionChanged",
+        "bootModeChanged",
+        "limitsChanged"
+      ].forEach(eventName => {
+        nodeOptions.addListener(eventName, () => this.__populateSecondaryColumn(node));
+      });
 
-      const sections = [];
-
-      // Life Cycle
-      if (
-        node.isDynamic() &&
-        (node.isUpdatable() || node.isDeprecated() || node.isRetired())
-      ) {
-        const lifeCycleView = new osparc.node.LifeCycleView(node);
-        node.addListener("versionChanged", () => this.__populateSecondPanel(node));
-        sections.push(lifeCycleView);
-        showPage = true;
-        showStartStopButton = true;
-      }
-
-      // Boot Options
-      if (node.hasBootModes()) {
-        const bootOptionsView = new osparc.node.BootOptionsView(node);
-        node.addListener("bootModeChanged", () => this.__populateSecondPanel(node));
-        sections.push(bootOptionsView);
-        showPage = true;
-        showStartStopButton = true;
-      }
-
-      // Update Resource Limits
-      if (
-        await osparc.data.Permissions.getInstance().checkCanDo("override_services_specifications") &&
-        (node.isComputational() || node.isDynamic())
-      ) {
-        const updateResourceLimitsView = new osparc.node.UpdateResourceLimitsView(node);
-        node.addListener("limitsChanged", () => this.__populateSecondPanel(node));
-        sections.push(updateResourceLimitsView);
-        showPage = true;
-        showStartStopButton |= node.isDynamic();
-      }
-
-      this.__nodeOptionsPage.removeAll();
-      if (showPage) {
-        const introLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-        const title = new qx.ui.basic.Label(this.tr("Service Options")).set({
-          font: "text-14"
-        });
-        introLayout.add(title);
-
-        if (showStartStopButton) {
-          // Only available to dynamic services
-          const instructions = new qx.ui.basic.Label(this.tr("To proceed with the following actions, the service needs to be Stopped.")).set({
-            font: "text-13",
-            rich: true,
-            wrap: true
-          });
-          introLayout.add(instructions);
-
-          const startStopButton = new osparc.node.StartStopButton();
-          startStopButton.setNode(node);
-          introLayout.add(startStopButton);
-        }
-
-        this.__nodeOptionsPage.add(introLayout);
-        sections.forEach(section => this.__nodeOptionsPage.add(section));
-        this.__nodeOptionsPage.getChildControl("button").setVisibility(showPage ? "visible" : "excluded");
-      }
-
-      return showPage;
+      return nodeOptions;
     },
 
     getLogger: function() {

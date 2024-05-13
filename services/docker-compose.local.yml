@@ -11,81 +11,85 @@
 #   - use vscode debugger "Python: Remote Attach *" config in  ''.vscode-template/launch.json'
 #
 version: "3.8"
+x-common-environment: &common_environment
+  SWARM_STACK_NAME : ${SWARM_STACK_NAME:-simcore_local}
 services:
   api-server:
     environment:
-      - API_SERVER_REMOTE_DEBUG_PORT=3000
+      <<: *common_environment
+      API_SERVER_REMOTE_DEBUG_PORT : 3000
     ports:
       - "8006:8000"
       - "3006:3000"
 
   autoscaling:
     environment:
-      - AUTOSCALING_REMOTE_DEBUGGING_PORT=3000
+      <<: *common_environment
+      AUTOSCALING_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8007:8000"
       - "3012:3000"
 
   catalog:
     environment:
-      - CATALOG_REMOTE_DEBUGGING_PORT=3000
+      <<: *common_environment
+      CATALOG_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8005:8000"
       - "3005:3000"
 
   clusters-keeper:
     environment:
-      - CLUSTERS_KEEPER_REMOTE_DEBUGGING_PORT=3000
+      <<: *common_environment
+      CLUSTERS_KEEPER_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8010:8000"
       - "3015:3000"
 
   director:
     environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
+      <<: *common_environment
     ports:
       - "8080"
       - "3004:3000"
-    # TODO: disable all pdb-debug modes if not used !!!
-    #stdin_open: true
-    #tty: true
 
   director-v2:
     environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
-      - DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS={}
-      - DIRECTOR_V2_REMOTE_DEBUGGING_PORT=3000
+      <<: *common_environment
+      DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS : "{}"
+      DIRECTOR_V2_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8000"
       - "3009:3000"
 
   datcore-adapter:
     environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-      - DATCORE_ADAPTER_REMOTE_DEBUG_PORT=3000
+      <<: *common_environment
+      DATCORE_ADAPTER_REMOTE_DEBUG_PORT : 3000
     ports:
       - "8000"
       - "3010:3000"
 
   invitations:
     environment:
-      - INVITATIONS_REMOTE_DEBUGGING_PORT=3000
+      <<: *common_environment
+      INVITATIONS_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8008:8000"
       - "3017:3000"
 
   payments:
     environment:
-      - PAYMENTS_REMOTE_DEBUGGING_PORT=3000
+      <<: *common_environment
+      PAYMENTS_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8011:8000"
       - "3018:3000"
 
   dynamic-schdlr:
     environment:
-      - DYNAMIC_SCHEDULER_REMOTE_DEBUGGING_PORT=3000
+      <<: *common_environment
+      DYNAMIC_SCHEDULER_REMOTE_DEBUGGING_PORT : 3000
     ports:
      - "8012:8000"
      - "3016:3000"
@@ -94,24 +98,22 @@ services:
 
   resource-usage-tracker:
     environment:
-      - RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT=3000
+      RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8009:8000"
       - "3014:3000"
 
   storage:
     environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-      - STORAGE_REMOTE_DEBUGGING_PORT=3000
+      <<: *common_environment
+      STORAGE_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8080"
       - "3003:3000"
 
   webserver:
-    environment:
-      - GUNICORN_CMD_ARGS=--timeout=0
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-      - REST_SWAGGER_API_DOC_ENABLED=1
+    environment: &webserver_environment_local
+      <<: *common_environment
     ports:
       - "8080"
       - "3001:3000"
@@ -124,20 +126,23 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.priority=3
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry
 
+  wb-api-server:
+    environment:
+      <<: *webserver_environment_local
+    ports:
+      - "8080"
+      - "3019:3000"
+
   wb-db-event-listener:
     environment:
-      SC_BOOT_MODE: ${SC_BOOT_MODE:-default}
-      WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-INFO}
-      REST_SWAGGER_API_DOC_ENABLED: 1
+      <<: *webserver_environment_local
     ports:
       - "8080"
       - "3013:3000"
 
   wb-garbage-collector:
     environment:
-      SC_BOOT_MODE: ${SC_BOOT_MODE:-default}
-      WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-INFO}
-      REST_SWAGGER_API_DOC_ENABLED: 1
+      <<: *webserver_environment_local
     ports:
       - "8080"
       - "3011:3000"
@@ -147,19 +152,16 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes/:/var/lib/docker/volumes/
     environment:
-      - LOGLEVEL=${LOG_LEVEL:-INFO}
-      - AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
+      <<: *common_environment
+      AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME : ${SWARM_STACK_NAME:-simcore_local}
 
   dask-sidecar:
     environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-    # ports:
-      # dashboard UI currently disabled because of dnsrr mode
-      # - "8788:8787"
+      <<: *common_environment
 
   dask-scheduler:
     environment:
-      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+      <<: *common_environment
     ports:
       # dashboard UI
       - "8787:8787"

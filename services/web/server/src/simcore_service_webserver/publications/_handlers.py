@@ -1,8 +1,8 @@
-import json
 import logging
 
 from aiohttp import MultipartReader, hdrs, web
 from json2html import json2html
+from models_library.utils.json_serialization import json_dumps
 from servicelib.mimetype_constants import (
     MIMETYPE_APPLICATION_JSON,
     MIMETYPE_APPLICATION_ZIP,
@@ -62,7 +62,7 @@ async def service_submission(request: web.Request):
         attachments = [
             AttachmentTuple(
                 filename="metadata.json",
-                payload=bytearray(json.dumps(data, indent=4), "utf-8"),
+                payload=bytearray(json_dumps(data, indent=4), "utf-8"),
             )
         ]
         if filename and filedata:
@@ -81,7 +81,7 @@ async def service_submission(request: web.Request):
             context={
                 "user": user_email,
                 "data": json2html.convert(
-                    json=json.dumps(data), table_attributes='class="pure-table"'
+                    json=json_dumps(data), table_attributes='class="pure-table"'
                 ),
                 "subject": "New service submission",
             },
