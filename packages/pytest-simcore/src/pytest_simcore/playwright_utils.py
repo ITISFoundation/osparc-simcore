@@ -47,6 +47,15 @@ class ServiceType(str, Enum):
     COMPUTATIONAL = "COMPUTATIONAL"
 
 
+class _OSparcMessages(str, Enum):
+    NODE_UPDATED = "nodeUpdated"
+    NODE_PROGRESS = "nodeProgress"
+    PROJECT_STATE_UPDATED = "projectStateUpdated"
+    SERVICE_DISK_USAGE = "serviceDiskUsage"
+    WALLET_OSPARC_CREDITS_UPDATED = "walletOsparcCreditsUpdated"
+    LOGGER = "logger"
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AutoRegisteredUser:
     user_email: str
@@ -68,7 +77,7 @@ def decode_socketio_42_message(message: str) -> SocketIOEvent:
 
 
 def retrieve_project_state_from_decoded_message(event: SocketIOEvent) -> RunningState:
-    assert event.name == "projectStateUpdated"
+    assert event.name == _OSparcMessages.PROJECT_STATE_UPDATED.value
     assert "data" in event.obj
     assert "state" in event.obj["data"]
     assert "value" in event.obj["data"]["state"]
@@ -84,7 +93,10 @@ class SocketIOProjectClosedWaiter:
             if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
                 if (
-                    (decoded_message.name == "projectStateUpdated")
+                    (
+                        decoded_message.name
+                        == _OSparcMessages.PROJECT_STATE_UPDATED.value
+                    )
                     and (decoded_message.obj["data"]["locked"]["status"] == "CLOSED")
                     and (decoded_message.obj["data"]["locked"]["value"] is False)
                 ):
@@ -103,7 +115,7 @@ class SocketIOProjectStateUpdatedWaiter:
             # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
             if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
                 decoded_message = decode_socketio_42_message(message)
-                if decoded_message.name == "projectStateUpdated":
+                if decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value:
                     return (
                         retrieve_project_state_from_decoded_message(decoded_message)
                         in self.expected_states
@@ -117,15 +129,9 @@ class SocketIOOsparcMessagePrinter:
     include_logger_messages: bool = False
 
     def __call__(self, message: str) -> None:
-        osparc_messages = [
-            "nodeUpdated",
-            "nodeProgress",
-            "projectStateUpdated",
-            "serviceDiskUsage",
-            "walletOsparcCreditsUpdated",
-        ]
-        if self.include_logger_messages:
-            osparc_messages.append("logger")
+        osparc_messages = [_.value for _ in _OSparcMessages]
+        if not self.include_logger_messages:
+            osparc_messages.pop(osparc_messages.index(_OSparcMessages.LOGGER.value))
 
         if message.startswith(_SOCKETIO_MESSAGE_PREFIX):
             decoded_message: SocketIOEvent = decode_socketio_42_message(message)
