@@ -291,7 +291,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       dragover : true
     },
 
-    __dataModel: null,
+    __resourceModel: null,
 
     isResourceType: function(resourceType) {
       return this.getResourceType() === resourceType;
@@ -302,41 +302,53 @@ qx.Class.define("osparc.dashboard.CardBase", {
         resourceType: resourceData.resourceType
       });
 
+      let model = null;
       switch (resourceData["resourceType"]) {
         case "study":
-        case "template": {
-          const model = this.__dataModel = new osparc.data.model.Study(resourceData);
-          model.bind("uuid", this, "uuid");
-          model.bind("name", this, "title");
-          model.bind("description", this, "description");
-          model.bind("workbench", this, "workbench");
-          model.bind("prjOwner", this, "owner");
-          model.bind("accessRights", this, "accessRights");
-          model.bind("lastChangeDate", this, "lastChangeDate");
-          model.bind("thumbnail", this, "icon", {
-            converter: t => t || this.self().PRODUCT_ICON
-          });
-          model.bind("state", this, "state");
-          model.bind("classifiers", this, "classifiers");
-          model.bind("quality", this, "quality");
-          model.getUi().bind("mode", this, "uiMode");
+        case "template":
+          model = new osparc.data.model.Study(resourceData);
           break;
-        }
-        case "service": {
-          const model = this.__dataModel = new osparc.data.model.Service(resourceData);
-          model.bind("key", this, "uuid");
-          model.bind("name", this, "title");
-          model.bind("description", this, "description");
-          model.bind("owner", this, "owner");
-          model.bind("accessRights", this, "accessRights");
-          model.bind("thumbnail", this, "icon", {
-            converter: t => t || this.self().PRODUCT_ICON
-          });
-          model.bind("classifiers", this, "classifiers");
-          model.bind("quality", this, "quality");
-          model.bind("hits", this, "hits");
+        case "service":
+          model = new osparc.data.model.Service(resourceData);
           break;
-        }
+      }
+
+      this.__bindModelToCard(model);
+    },
+
+    getResourceModel: function() {
+      return this.__resourceModel;
+    },
+
+    __bindModelToCard: function(model) {
+      this.__resourceModel = model;
+      if (model instanceof osparc.data.model.Study) {
+        model.bind("uuid", this, "uuid");
+        model.bind("name", this, "title");
+        model.bind("description", this, "description");
+        model.bind("workbench", this, "workbench");
+        model.bind("prjOwner", this, "owner");
+        model.bind("accessRights", this, "accessRights");
+        model.bind("lastChangeDate", this, "lastChangeDate");
+        model.bind("thumbnail", this, "icon", {
+          converter: t => t || this.self().PRODUCT_ICON
+        });
+        model.bind("state", this, "state");
+        model.bind("classifiers", this, "classifiers");
+        model.bind("quality", this, "quality");
+        model.getUi().bind("mode", this, "uiMode");
+      } else if (model instanceof osparc.data.model.Service) {
+        model.bind("key", this, "uuid");
+        model.bind("name", this, "title");
+        model.bind("description", this, "description");
+        model.bind("owner", this, "owner");
+        model.bind("accessRights", this, "accessRights");
+        model.bind("thumbnail", this, "icon", {
+          converter: t => t || this.self().PRODUCT_ICON
+        });
+        model.bind("classifiers", this, "classifiers");
+        model.bind("quality", this, "quality");
+        model.bind("hits", this, "hits");
       }
     },
 
