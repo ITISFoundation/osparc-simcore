@@ -1,7 +1,8 @@
 import functools
 import logging
 
-from faststream.exceptions import HandlerException, RejectMessage
+from faststream.exceptions import FastStreamException, RejectMessage
+from redis.exceptions import RedisError
 
 _logger = logging.getLogger(__name__)
 
@@ -19,7 +20,9 @@ def stop_retry_for_unintended_errors(func):
         try:
             return await func(*args, **kwargs)
         except Exception as e:
-            if isinstance(e, HandlerException):
+            if isinstance(e, FastStreamException | RedisError):
+                # if there are issues with Redis or FastStream (core dependencies)
+                # message is always retried
                 raise
 
             msg = (
