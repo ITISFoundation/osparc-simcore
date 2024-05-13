@@ -81,7 +81,7 @@ from .exceptions import (
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
 )
-from .models import ProjectDB, ProjectDict, UserProjectAccessRightsDB
+from .models import ProjectDB, ProjectDict, UserProjectAccessRights
 
 _logger = logging.getLogger(__name__)
 
@@ -447,7 +447,7 @@ class ProjectDBAPI(BaseProjectDB):
     # NOTE: MD: I intentionally didn't include the workbench. There is a special interface
     # for the workbench, and at some point, this column should be removed from the table.
     # The same holds true for access_rights/ui/classifiers/quality, but we have decided to proceed step by step.
-    _SELECTION_PROJECT_DB_ARGS = [
+    _SELECTION_PROJECT_DB_ARGS = [  # noqa: RUF012
         projects.c.id,
         projects.c.type,
         projects.c.uuid,
@@ -478,9 +478,12 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return ProjectDB.from_orm(row)
 
-    async def get_user_project_access_rights(
+    async def get_project_access_rights_for_user(
         self, user_id: UserID, project_uuid: ProjectID
-    ) -> UserProjectAccessRightsDB | None:
+    ) -> UserProjectAccessRights:
+        """
+        User project access rights. Aggregated across all his groups.
+        """
         # NOTE: MD: I didn't manage to write this query in sqlalchemy, but
         # when we migrate project access rights to its own table, this will
         # be not needed and we can use something similar to "list_wallets_for_user"
@@ -494,7 +497,7 @@ class ProjectDBAPI(BaseProjectDB):
                         FROM projects, jsonb_each(access_rights)
                         where "uuid" = '{project_uuid}'
                     ) prj_access_rights on utg.gid = prj_access_rights.id
-                where utg.uid = {user_id} and utg.access_rights ->> 'read' = 'true'
+                where utg.uid = {user_id}
                 group by uid
             """  # noqa: S608
         )
@@ -503,8 +506,10 @@ class ProjectDBAPI(BaseProjectDB):
             result = await conn.execute(raw_sql)
             row = await result.fetchone()
             if row is None:
-                return None
-            return UserProjectAccessRightsDB.from_orm(row)
+                raise ProjectInvalidRightsError(
+                    user_id=user_id, project_uuid=project_uuid
+                )
+            return UserProjectAccessRights.from_orm(row)
 
     async def replace_project(
         self,

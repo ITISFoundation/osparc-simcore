@@ -36,7 +36,7 @@ class ProjectDB(BaseModel):
     name: str
     description: str | None
     thumbnail: HttpUrlWithCustomMinLength | None
-    prj_owner: int
+    prj_owner: UserID
     creation_date: datetime
     last_change_date: datetime
     access_rights: dict[GroupIDStr, AccessRights]
@@ -56,7 +56,7 @@ assert set(ProjectDB.__fields__.keys()).issubset(  # nosec
 )
 
 
-class UserProjectAccessRightsDB(BaseModel):
+class UserProjectAccessRights(BaseModel):
     uid: UserID
     read: bool
     write: bool

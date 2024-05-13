@@ -217,10 +217,10 @@ async def patch_project(
     project_db = await db.get_project_db(project_uuid=project_uuid)
 
     # 2. Check user permissions
-    _user_project_access_rights = await db.get_user_project_access_rights(
+    _user_project_access_rights = await db.get_project_access_rights_for_user(
         user_id, project_uuid
     )
-    if not _user_project_access_rights or not _user_project_access_rights.write:
+    if not _user_project_access_rights.write:
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
     # 3. If patching access rights
@@ -828,10 +828,10 @@ async def patch_project_node(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # 1. Check user permissions
-    _user_project_access_rights = await db.get_user_project_access_rights(
+    _user_project_access_rights = await db.get_project_access_rights_for_user(
         user_id, project_id
     )
-    if not _user_project_access_rights or not _user_project_access_rights.write:
+    if not _user_project_access_rights.write:
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
 
     # 2. Patch the project node

@@ -41,6 +41,39 @@ def mock_project_uses_available_services(mocker: MockerFixture):
 
 
 @pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_204_NO_CONTENT),
+        (UserRole.USER, status.HTTP_204_NO_CONTENT),
+        (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
+        (UserRole.ADMIN, status.HTTP_204_NO_CONTENT),
+        (UserRole.PRODUCT_OWNER, status.HTTP_204_NO_CONTENT),
+    ],
+)
+async def test_patch_project_access_rights(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+):
+    assert client.app
+    base_url = client.app.router["patch_project"].url_for(
+        project_id=user_project["uuid"]
+    )
+    # name & description
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(
+            {
+                "name": "testing-name",
+            }
+        ),
+    )
+    await assert_status(resp, expected)
+
+
+@pytest.mark.parametrize(
     "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
 )
 async def test_patch_project(
