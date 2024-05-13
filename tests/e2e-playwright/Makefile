@@ -109,10 +109,7 @@ test-sleepers-dev: _check_venv_active ## runs sleepers test on local deploy
 
 # Define the file where user input will be saved
 USER_INPUT_FILE := .e2e-playwright-env.txt
-
-
-# Prompt the user for input and store it into variables
-$(USER_INPUT_FILE):
+$(USER_INPUT_FILE):## Prompt the user for input and store it into variables
 		@read -p "Enter your product URL: " PRODUCT_URL; \
 		read -p "Is the product billable [y/n]: " BILLABLE; \
 		read -p "Enter your username: " USER_NAME; \
@@ -139,9 +136,7 @@ test-sleepers-anywhere: _check_venv_active $(USER_INPUT_FILE) ## test sleepers a
 
 # Define the file where user input will be saved
 JUPYTER_USER_INPUT_FILE := .e2e-playwright-jupyterlab-env.txt
-
-# Prompt the user for input and store it into variables
-$(JUPYTER_USER_INPUT_FILE):
+$(JUPYTER_USER_INPUT_FILE): ## Prompt the user for input and store it into variables
 		@read -p "Enter your product URL: " PRODUCT_URL; \
 		read -p "Is the product billable [y/n]: " BILLABLE; \
 		read -p "Enter your username: " USER_NAME; \
