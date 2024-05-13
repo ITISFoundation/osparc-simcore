@@ -231,7 +231,7 @@ async def _sleep_in_interval(lower: NonNegativeFloat, upper: NonNegativeFloat) -
         10,
     ],
 )
-async def test_workflow_with_remote_process_interruptions(
+async def test_workflow_with_process_running_deferred_manager_outages(
     remote_process: _RemoteProcess,
     rabbit_service: RabbitSettings,
     redis_service: RedisSettings,
@@ -367,7 +367,7 @@ class ServiceManager:
         "redis",
     ],
 )
-async def test_paused_services(
+async def test_workflow_with_third_party_services_outages(
     async_docker_client: aiodocker.Docker,
     redis_client: RedisClientSDK,
     rabbit_client: RabbitMQClient,
